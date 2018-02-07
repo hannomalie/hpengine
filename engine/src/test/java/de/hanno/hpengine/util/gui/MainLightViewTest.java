@@ -8,7 +8,7 @@ public class MainLightViewTest extends ViewTest {
     @Ignore
     @Test
     public void showMaterialView() {
-        openViewInFrame(new MainLightView());
+        openViewInFrame(new MainLightView(engine));
     }
 
 }

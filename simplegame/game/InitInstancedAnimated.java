@@ -27,7 +27,7 @@ public class InitInstancedAnimated implements LifeCycle {
             new Vector3f(0, 0, 0),
             new Vector3f(-clusterDistance, 0, clusterDistance)};
 
-    public void init() {
+    public void init(Engine engine) {
 
         try {
             Engine.getInstance().getSceneManager().getScene().add(new Camera());

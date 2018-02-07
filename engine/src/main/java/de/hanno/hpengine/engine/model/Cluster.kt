@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.transform.*
 import org.joml.Vector3f
@@ -11,9 +12,9 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
     //    TODO: Bounds for cluster
     override fun isInitialized() = true
 
-    override fun update(seconds: Float) {
+    override fun update(engine: Engine, seconds: Float) {
         for (i in 0..size - 1) {
-            get(i).update(seconds)
+            get(i).update(engine, seconds)
         }
     }
 

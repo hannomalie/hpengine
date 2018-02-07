@@ -9,12 +9,18 @@ import javax.swing.table.AbstractTableModel;
 
 public class PointLightsTableModel extends AbstractTableModel {
 
+    private Engine engine;
+
+    public PointLightsTableModel(Engine engine) {
+        this.engine = engine;
+    }
+
     public int getColumnCount() {
         return 3;
     }
 
     public int getRowCount() {
-        Scene scene = Engine.getInstance().getSceneManager().getScene();
+        Scene scene = engine.getSceneManager().getScene();
         if(scene != null) {
             return scene.getPointLights().size();
         }
@@ -23,14 +29,14 @@ public class PointLightsTableModel extends AbstractTableModel {
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            PointLight light = Engine.getInstance().getSceneManager().getScene().getPointLights().get(row);
+            PointLight light = engine.getSceneManager().getScene().getPointLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 
         } else if (col == 1) {
-            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getPointLights().get(row).getPosition());
+            return Util.vectorToString(engine.getSceneManager().getScene().getPointLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getPointLights().get(row).getColor());
+            return Util.vectorToString(engine.getSceneManager().getScene().getPointLights().get(row).getColor());
 
         }
         return "";

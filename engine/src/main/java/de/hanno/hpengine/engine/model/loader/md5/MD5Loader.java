@@ -1,9 +1,9 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import org.joml.Matrix4f;
@@ -22,20 +22,21 @@ public class MD5Loader {
     /**
      * Constructs and AnimatedModel instace based on a MD5 StaticModel an MD5 Animation
      *
+     *
+     * @param materialFactory
      * @param md5Model The MD5 StaticModel
      * @param animModel The MD5 Animation
-     * @param defaultColour Default colour to use if there are no textures
      * @return
      * @throws Exception
      */
-    public static AnimatedModel process(MD5Model md5Model, MD5AnimModel animModel, Vector4f defaultColour) throws Exception {
+    public static AnimatedModel process(MaterialFactory materialFactory, MD5Model md5Model, MD5AnimModel animModel) throws Exception {
         List<Matrix4f> invJointMatrices = calcInJointMatrices(md5Model);
         List<AnimatedFrame> animatedFrames = processAnimationFrames(md5Model, animModel, invJointMatrices);
 
         List<MD5Mesh> list = new ArrayList<>();
         for (MD5Mesh md5Mesh : md5Model.getMeshes()) {
             MD5Mesh mesh = generateMesh(md5Model, md5Mesh);
-            handleTexture(mesh, md5Mesh, defaultColour);
+            handleTexture(materialFactory, mesh, md5Mesh);
             list.add(mesh);
         }
 
@@ -254,13 +255,13 @@ public class MD5Loader {
         return result;
     }
 
-    private static void handleTexture(Mesh mesh, MD5Mesh md5Mesh, Vector4f defaultColour) throws Exception {
+    private static void handleTexture(MaterialFactory materialFactory, Mesh mesh, MD5Mesh md5Mesh) throws Exception {
         String texturePath = md5Mesh.getDiffuseTexture();
         if (texturePath != null && texturePath.length() > 0) {
             try {
 
                 MaterialInfo materialInfo = new MaterialInfo();
-                materialInfo.put(Material.MAP.DIFFUSE, Engine.getInstance().getTextureFactory().getTexture(texturePath));
+                materialInfo.put(Material.MAP.DIFFUSE, materialFactory.getTextureFactory().getTexture(texturePath));
 
                 // Handle normal Maps;
                 int pos = texturePath.lastIndexOf(".");
@@ -269,27 +270,27 @@ public class MD5Loader {
                     String extension = texturePath.substring(pos, texturePath.length());
                     String normalMapFileName = basePath + "_local" + extension;
                     if (new File(normalMapFileName).exists()) {
-                        Texture normalMap = Engine.getInstance().getTextureFactory().getTexture(normalMapFileName);
+                        Texture normalMap = materialFactory.getTextureFactory().getTexture(normalMapFileName);
                         materialInfo.put(Material.MAP.NORMAL, normalMap);
                     }
                     String heightMapFileName = basePath + "_h" + extension;
                     if (new File(heightMapFileName).exists()) {
-                        Texture heightMap = Engine.getInstance().getTextureFactory().getTexture(heightMapFileName);
+                        Texture heightMap = materialFactory.getTextureFactory().getTexture(heightMapFileName);
                         materialInfo.put(Material.MAP.HEIGHT, heightMap);
                     }
                     String specularMapFile = basePath + "_s" + extension;
                     if (new File(specularMapFile).exists()) {
-                        Texture specularMap = Engine.getInstance().getTextureFactory().getTexture(specularMapFile);
+                        Texture specularMap = materialFactory.getTextureFactory().getTexture(specularMapFile);
                         materialInfo.put(Material.MAP.SPECULAR, specularMap);
                     }
                 }
-                Material material = Engine.getInstance().getMaterialFactory().getMaterial(materialInfo);
+                Material material = materialFactory.getMaterial(materialInfo);
                 mesh.setMaterial(material);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            mesh.setMaterial(Engine.getInstance().getMaterialFactory().getDefaultMaterial());
+            mesh.setMaterial(materialFactory.getDefaultMaterial());
         }
     }
 }

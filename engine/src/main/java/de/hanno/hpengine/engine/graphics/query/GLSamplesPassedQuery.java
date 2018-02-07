@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.query;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.opengl.GL15;
 
 import static org.lwjgl.opengl.GL15.*;
@@ -10,20 +10,22 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
 
     private final int query;
     private final int target = GL15.GL_SAMPLES_PASSED;
+    private final GpuContext gpuContext;
     private volatile boolean finished = false;
     private boolean started;
 
-    public GLSamplesPassedQuery() {
-
-        query = Engine.getInstance().getGpuContext().calculate(() -> glGenQueries());
+    public GLSamplesPassedQuery(GpuContext gpuContext) {
+        this.gpuContext = gpuContext;
+        query = this.gpuContext.calculate(() -> glGenQueries());
     }
 
     @Override
-    public void begin() {
-        Engine.getInstance().getGpuContext().execute(() -> {
+    public GLTimerQuery begin() {
+        gpuContext.execute(() -> {
             glBeginQuery(GL15.GL_SAMPLES_PASSED, query);
         });
         started = true;
+        return null;
     }
 
     @Override
@@ -31,7 +33,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             glEndQuery(target);
         });
         finished = true;
@@ -45,9 +47,9 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
     @Override
     public Integer getResult() {
         if(!finished) { throw new IllegalStateException("Don't query result before query is finished!"); }
-        while(!resultsAvailable()) {
+        while(!resultsAvailable(gpuContext)) {
         }
 
-        return Engine.getInstance().getGpuContext().calculate( () -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
+        return gpuContext.calculate( () -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
     }
 }

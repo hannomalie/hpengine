@@ -1,19 +1,15 @@
 package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
-import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import jogl.DDSImage;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -30,7 +26,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -61,6 +56,8 @@ public class TextureFactory {
     private static volatile boolean USE_TEXTURE_STREAMING = false;
 
     private volatile BufferedImage defaultTextureAsBufferedImage = null;
+    private GpuContext gpuContext;
+
     public CubeMap getCubeMap() {
         return cubeMap;
     }
@@ -97,7 +94,8 @@ public class TextureFactory {
      */
     Texture defaultTexture = null;
 
-    public TextureFactory(Engine engine) {
+    public TextureFactory(Engine engine, GpuContext gpuContext) {
+        this.gpuContext = gpuContext;
         System.out.println("TextureFactory constructor");
         GpuContext.exitOnGLError("Begin TextureFactory constructor");
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -158,9 +156,9 @@ public class TextureFactory {
         lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
         GpuContext.exitOnGLError("After load lensFlareTexture");
         try {
-            cubeMap = getCubeMap("hp/assets/textures/skybox.png");
+            cubeMap = getCubeMap(this, "hp/assets/textures/skybox.png");
             GpuContext.exitOnGLError("After load cubemap");
-            Engine.getInstance().getGpuContext().activeTexture(0);
+            this.gpuContext.activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
         } catch (IOException e) {
             LOGGER.severe(e.getMessage());
@@ -191,7 +189,7 @@ public class TextureFactory {
 				if(FilenameUtils.isExtension(file.getAbsolutePath(), "hptexture")) {
 					getTexture(file.getAbsolutePath());
 				} else {
-					getCubeMap(file.getAbsolutePath());
+					getCubeMap(this, file.getAbsolutePath());
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -218,7 +216,7 @@ public class TextureFactory {
      */
     private int createTextureID()
     {
-        return Engine.getInstance().getGpuContext().genTextures();
+        return gpuContext.genTextures();
     }
     
     /**
@@ -250,14 +248,14 @@ public class TextureFactory {
         }
         LOGGER.info(resourceName + " requested");
         if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
-            Texture texture = new Texture(resourceName, srgba);
+            Texture texture = new Texture(this, resourceName, srgba);
             TEXTURES.put(resourceName, texture);
             Engine.getEventBus().post(new TexturesChangedEvent());
-            texture.readAndUpload();
+            texture.readAndUpload(this);
             return texture;
         }
 
-        Texture texture = new Texture(resourceName, srgba);
+        Texture texture = new Texture(this, resourceName, srgba);
         TEXTURES.put(resourceName, texture);
         LOGGER.severe("Adding " + resourceName);
         convertAndUpload(texture, this);
@@ -278,7 +276,7 @@ public class TextureFactory {
                 if (imageExists) {
                     LOGGER.info(texture.getPath() + " available as dds: " + textureAvailableAsDDS(texture.getPath()));
                     if (!textureAvailableAsDDS(texture.getPath())) {
-                        bufferedImage = Engine.getInstance().getTextureFactory().loadImage(texture.getPath());
+                        bufferedImage = TextureFactory.this.loadImage(texture.getPath());
                         if (bufferedImage != null) {
                             texture.setData(new byte[de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][]);
                         }
@@ -313,13 +311,13 @@ public class TextureFactory {
                             texture.setMipmapsGenerated(true);
                         }
                         texture.setSourceDataCompressed(true);
-                        texture.upload(texture.buffer(), texture.srgba);
+                        texture.upload(this, texture.buffer(), texture.srgba);
                         LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + texture.getPath());
                         return;
                     }
 
                 } else {
-                    bufferedImage = Engine.getInstance().getTextureFactory().getDefaultTextureAsBufferedImage();
+                    bufferedImage = getDefaultTextureAsBufferedImage();
                     LOGGER.severe("Texture " + texture.getPath() + " cannot be read, default de.hanno.hpengine.texture data inserted instead...");
                 }
 
@@ -340,10 +338,10 @@ public class TextureFactory {
                     texture.setDstPixelFormat(texture.dstPixelFormat);
                     texture.setSrcPixelFormat(texture.srcPixelFormat);
 
-                    byte[] bytes = Engine.getInstance().getTextureFactory().convertImageData(bufferedImage);
+                    byte[] bytes = TextureFactory.this.convertImageData(bufferedImage);
                     texture.setData(0, bytes);
                     ByteBuffer textureBuffer = texture.buffer();
-                    texture.upload(textureBuffer, texture.srgba);
+                    texture.upload(textureFactory, textureBuffer, texture.srgba);
                     LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + texture.getPath());
                 } else {
                     LOGGER.warning("BufferedImage couldn't be loaded!");
@@ -364,10 +362,6 @@ public class TextureFactory {
 //        }
     }
 
-    public static int getTextureId() {
-        return Engine.getInstance().getGpuContext().genTextures();
-    }
-
     private boolean textureLoaded(String resourceName) {
         return TEXTURES.containsKey(resourceName);
     }
@@ -385,7 +379,7 @@ public class TextureFactory {
     	return f.exists();
 	}
 
-	public CubeMap getCubeMap(String resourceName) throws IOException {
+	public CubeMap getCubeMap(TextureFactory textureFactory, String resourceName) throws IOException {
 		CubeMap tex = (CubeMap) TEXTURES.get(resourceName+ "_cube");
         
         if (tex != null && tex instanceof CubeMap) {
@@ -393,7 +387,7 @@ public class TextureFactory {
         }
 
         if (Texture.COMPILED_TEXTURES && cubeMapPreCompiled(resourceName)) {
-        	tex = CubeMap.read(resourceName, createTextureID());
+        	tex = CubeMap.read(textureFactory, resourceName, createTextureID());
         	if (tex != null) {
                 TEXTURES.put(resourceName+ "_cube",tex);
                 return tex;
@@ -423,10 +417,10 @@ public class TextureFactory {
          
          // create the de.hanno.de.hanno.hpengine.texture ID for this de.hanno.de.hanno.hpengine.texture
          int textureID = createTextureID(); 
-         CubeMap cubeMap = new CubeMap(resourceName, target);
+         CubeMap cubeMap = new CubeMap(this, resourceName, target);
          
          // bind this de.hanno.de.hanno.hpengine.texture
-        Engine.getInstance().getGpuContext().bindTexture(target, textureID);
+        gpuContext.bindTexture(target, textureID);
 
          BufferedImage bufferedImage = null;
          if (asStream) {
@@ -458,7 +452,7 @@ public class TextureFactory {
 
     public void upload(CubeMap cubeMap) {
 
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             cubeMap.bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
             {
@@ -648,7 +642,7 @@ public class TextureFactory {
     }
     
     private void generateMipMaps(Texture texture, boolean mipmap) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             texture.bind(15);
             if (mipmap) {
 //                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -668,34 +662,34 @@ public class TextureFactory {
         generateMipMaps(textureId, textureMinFilter, GL11.GL_LINEAR);
     }
     public void generateMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        Engine.getInstance().getGpuContext().activeTexture(0);
-        Engine.getInstance().getGpuContext().bindTexture(TEXTURE_2D, textureId);
+        gpuContext.activeTexture(0);
+        gpuContext.bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
 		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
     public void enableMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        Engine.getInstance().getGpuContext().bindTexture(TEXTURE_2D, textureId);
+        gpuContext.bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
     }
     
     public void generateMipMapsCubeMap(int textureId) {
-        Engine.getInstance().getGpuContext().execute(() -> {
-            Engine.getInstance().getGpuContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
+        gpuContext.execute(() -> {
+            gpuContext.bindTexture(TEXTURE_CUBE_MAP, textureId);
             GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
         });
     }
     
-    public static ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {
-        Engine.getInstance().getGpuContext().bindTexture(TEXTURE_2D, textureId);
+    public ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {
+        gpuContext.bindTexture(TEXTURE_2D, textureId);
 		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
 		return pixels;
     }
     
-    public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
-    	int copyTextureId = getTextureId();
-        Engine.getInstance().getGpuContext().bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId);
+    public int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
+    	int copyTextureId = gpuContext.genTextures();
+        gpuContext.bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -713,7 +707,7 @@ public class TextureFactory {
 				copyTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
 				width, height, 6);
 
-        Engine.getInstance().getGpuContext().bindTexture(15, TEXTURE_CUBE_MAP, 0);
+        gpuContext.bindTexture(15, TEXTURE_CUBE_MAP, 0);
 		return copyTextureId;
     }
     
@@ -739,7 +733,7 @@ public class TextureFactory {
 
     public int getTexture(int width, int height, int format, GlTextureTarget target, int depth) {
         int textureId = createTextureID();
-        Engine.getInstance().getGpuContext().bindTexture(target, textureId);
+        gpuContext.bindTexture(target, textureId);
 
         setupTextureParameters(target);
 
@@ -766,7 +760,7 @@ public class TextureFactory {
     // TODO return proper object
     public int getTexture3D(int gridSize, int gridTextureFormatSized, int filterMin, int filterMag, int wrapMode) {
         final int[] grid = new int[1];
-        Engine.getInstance().getGpuContext().execute(()-> {
+        gpuContext.execute(()-> {
             grid[0] = GL11.glGenTextures();
             GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0]);
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, filterMin);
@@ -788,10 +782,10 @@ public class TextureFactory {
         }
         int finalWidth = width;
         int finalHeight = height;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             blur2dProgramSeperableHorizontal.use();
-            Engine.getInstance().getGpuContext().bindTexture(0, TEXTURE_2D, sourceTexture);
-            Engine.getInstance().getGpuContext().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture);
+            gpuContext.bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
             blur2dProgramSeperableHorizontal.setUniform("width", finalWidth);
             blur2dProgramSeperableHorizontal.setUniform("height", finalHeight);
             blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
@@ -816,10 +810,10 @@ public class TextureFactory {
         }
         int finalWidth = width;
         int finalHeight = height;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             blur2dProgramSeperableHorizontal.use();
-            Engine.getInstance().getGpuContext().bindTexture(0, TEXTURE_2D, sourceTexture);
-            Engine.getInstance().getGpuContext().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture);
+            gpuContext.bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
             blur2dProgramSeperableHorizontal.setUniform("width", finalWidth);
             blur2dProgramSeperableHorizontal.setUniform("height", finalHeight);
             blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
@@ -830,47 +824,51 @@ public class TextureFactory {
         });
     }
 
-    public static void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes, RenderTarget target) {
-        GPUProfiler.start("BLURRRRRRR");
-        int copyTextureId = GL11.glGenTextures();
-        Engine.getInstance().getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+//    public void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes, RenderTarget target) {
+//        GPUProfiler.start("BLURRRRRRR");
+//        int copyTextureId = GL11.glGenTextures();
+//        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+//
+//        GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
+////		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+////		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+////		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+////		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//
+//        GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+//                copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+//                width, height, 1);
+//
+//        float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
+//        float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
+//        // TODO: Reset texture sizes after upscaling!!!
+//        if(upscaleToFullscreen) {
+//            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
+//            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+//            scaleForShaderX = 1;
+//            scaleForShaderY = 1;
+//        }
+//
+//        target.use(false);
+//        target.setTargetTexture(sourceTextureId, 0);
+//
+//        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+//
+//        Engine.getInstance().getProgramFactory().getBlurProgram().use();
+//        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("mipmap", mipmap);
+//        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleX", scaleForShaderX);
+//        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleY", scaleForShaderY);
+//        QuadVertexBuffer.getFullscreenBuffer().draw();
+//        target.unuse();
+//        GL11.glDeleteTextures(copyTextureId);
+//        GPUProfiler.end();
+//    }
 
-        GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
-//		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-
-        GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
-                copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
-                width, height, 1);
-
-        float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
-        float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
-        // TODO: Reset texture sizes after upscaling!!!
-        if(upscaleToFullscreen) {
-            Engine.getInstance().getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-            scaleForShaderX = 1;
-            scaleForShaderY = 1;
-        }
-
-        target.use(false);
-        target.setTargetTexture(sourceTextureId, 0);
-
-        Engine.getInstance().getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
-
-        Engine.getInstance().getProgramFactory().getBlurProgram().use();
-        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("mipmap", mipmap);
-        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleX", scaleForShaderX);
-        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleY", scaleForShaderY);
-        QuadVertexBuffer.getFullscreenBuffer().draw();
-        target.unuse();
-        GL11.glDeleteTextures(copyTextureId);
-        GPUProfiler.end();
+    public GpuContext getGpuContext() {
+        return gpuContext;
     }
 }

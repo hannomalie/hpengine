@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
@@ -14,9 +15,13 @@ import java.util.List;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
     private final ArrayList<long[]> handleLists;
-    private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
+	private final Engine engine;
+	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
 
-	public CubeMapArrayRenderTarget(int width, int height, int depth, CubeMapArray... cubeMapArray) {
+	public CubeMapArrayRenderTarget(Engine engine, int width, int height, int depth, CubeMapArray... cubeMapArray) {
+		super(engine.getGpuContext());
+		this.gpuContext = engine.getGpuContext();
+		this.engine = engine;
 		this.width = width;
 		this.height = height;
 		this.clearR = 0;
@@ -30,17 +35,17 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
             long[] currentList = new long[cma.getCubemapCount()];
             handleLists.add(currentList);
             for(int cubemapIndex = 0; cubemapIndex < cma.getCubemapCount(); cubemapIndex++) {
-                int cubeMapView = Engine.getInstance().getGpuContext().genTextures();
+                int cubeMapView = this.engine.getGpuContext().genTextures();
                 int finalCubemapIndex = cubemapIndex;
-                Engine.getInstance().getGpuContext().execute(() -> {
+                this.engine.getGpuContext().execute(() -> {
                     GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cma.getTextureID(),
                             cma.getInternalFormat(), 0, 1,
                             6 * finalCubemapIndex, 6);
 
                 });
-                long handle = Engine.getInstance().getGpuContext().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+                long handle = this.engine.getGpuContext().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
                 currentList[cubemapIndex] = handle;
-                Engine.getInstance().getGpuContext().execute(() -> {
+                this.engine.getGpuContext().execute(() -> {
                     ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 });
             }
@@ -48,7 +53,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
 
-        Engine.getInstance().getGpuContext().execute(() -> {
+        this.engine.getGpuContext().execute(() -> {
 			framebufferLocation = GL30.glGenFramebuffers();
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 			IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
@@ -60,7 +65,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			}
 			GL20.glDrawBuffers(scratchBuffer);
 
-            CubeMapArray depthCubeMapArray = new CubeMapArray(depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
+            CubeMapArray depthCubeMapArray = new CubeMapArray(engine.getGpuContext(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
 			depthbufferLocation = depthCubeMapArray.getTextureID();
@@ -126,8 +131,8 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		return cubeMapArrays.get(i);
 	}
 
-	public void bindCubeMapFace(int unit, int attachment, int cubemapIndex, int sideIndex) {
-		cubeMapArrays.get(attachment).bind(6*cubemapIndex + sideIndex, unit);
+	public void bindCubeMapFace(GpuContext gpuContext, int unit, int attachment, int cubemapIndex, int sideIndex) {
+		cubeMapArrays.get(attachment).bind(gpuContext, 6*cubemapIndex + sideIndex, unit);
 	}
 
     public ArrayList<long[]> getHandleLists() {

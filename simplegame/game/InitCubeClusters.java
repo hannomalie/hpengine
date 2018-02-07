@@ -31,7 +31,7 @@ public class InitCubeClusters implements LifeCycle {
             new Vector3f(0, 0, 0),
             new Vector3f(-clusterDistance, 0, clusterDistance)};
 
-    public void init() {
+    public void init(Engine engine) {
 
         try {
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"), "cube").execute(Engine.getInstance());

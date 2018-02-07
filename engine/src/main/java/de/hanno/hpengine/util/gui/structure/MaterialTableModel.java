@@ -10,13 +10,19 @@ import java.util.stream.Collectors;
 
 public class MaterialTableModel extends AbstractTableModel {
 
+    private Engine engine;
+
+    public MaterialTableModel(Engine engine) {
+        this.engine = engine;
+    }
+
     public int getColumnCount() {
         return 1;
     }
 
     public int getRowCount() {
         try {
-            return Engine.getInstance().getMaterialFactory().MATERIALS.size();
+            return engine.getMaterialFactory().MATERIALS.size();
         } catch (IllegalStateException e) {
             return 0;
         }
@@ -30,7 +36,7 @@ public class MaterialTableModel extends AbstractTableModel {
     }
 
     private Material getMaterial(int row) {
-        return Engine.getInstance().getMaterialFactory().MATERIALS
+        return engine.getMaterialFactory().MATERIALS
                 .stream()
                 .sorted(Comparator.comparing(Material::getName))
                 .collect(Collectors.toList())

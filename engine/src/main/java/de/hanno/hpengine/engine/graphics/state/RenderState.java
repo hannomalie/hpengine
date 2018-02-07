@@ -27,13 +27,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RenderState {
+    private GpuContext gpuContext;
+
     public final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
 
     public final DirectionalLightState directionalLightState = new DirectionalLightState();
-    public final EntitiesState entitiesState = new EntitiesState();
+    public final EntitiesState entitiesState;
 
-    public final CommandOrganization commandOrganizationStatic = new CommandOrganization();
-    public final CommandOrganization commandOrganizationAnimated = new CommandOrganization();
+    public final CommandOrganization commandOrganizationStatic;
+    public final CommandOrganization commandOrganizationAnimated;
 
     public Camera camera = new Camera();
     public long pointlightMovedInCycle;
@@ -51,6 +53,7 @@ public class RenderState {
      * @param source
      */
     public RenderState(RenderState source) {
+        this(source.gpuContext);
         init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic);
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated);
@@ -61,7 +64,10 @@ public class RenderState {
 //        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
     }
 
-    public RenderState() {
+    public RenderState(GpuContext gpuContext) {
+        entitiesState = new EntitiesState(gpuContext);
+        commandOrganizationStatic = new CommandOrganization(gpuContext);
+        commandOrganizationAnimated = new CommandOrganization(gpuContext);
     }
 
     public void init(VertexIndexBuffer<Vertex> vertexIndexBufferStatic, VertexIndexBuffer vertexIndexBufferAnimated, List<BufferableMatrix4f> joints, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor, long entityAddedInCycle) {
@@ -124,9 +130,9 @@ public class RenderState {
 //        });
 //    }
 
-    public void bufferMaterials() {
-        Engine.getInstance().getGpuContext().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<Material>(Engine.getInstance().getMaterialFactory().getMaterials());
+    public void bufferMaterials(Engine engine) {
+        engine.getGpuContext().execute(() -> {
+            ArrayList<Material> materials = new ArrayList<Material>(engine.getMaterialFactory().getMaterials());
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
         });
     }

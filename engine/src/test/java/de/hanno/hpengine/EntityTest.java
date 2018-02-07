@@ -1,14 +1,13 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
-import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.*;
+import org.joml.Vector3f;
 import org.junit.Assert;
 import org.junit.Test;
-import org.joml.Vector3f;
 
 import java.io.File;
 import java.nio.FloatBuffer;
@@ -19,7 +18,7 @@ public class EntityTest extends TestWithEngine {
 	@Test
 	public void writeAndRead() throws Exception {
         EntityFactory entityFactory = engine.getEntityFactory();
-        Entity entity = entityFactory.getEntity("default", new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj")));
+        Entity entity = entityFactory.getEntity("default", new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj")));
 
 		String filename = "default.hpentity";
 
@@ -31,7 +30,7 @@ public class EntityTest extends TestWithEngine {
 	}
     @Test
     public void loadParented() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
         Entity entity = engine.getEntityFactory().getEntity("xxx", model);
         engine.getSceneManager().getScene().add(entity);
 
@@ -51,7 +50,7 @@ public class EntityTest extends TestWithEngine {
 
     @Test
     public void testInstanceBuffering() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
         Entity parentEntity = engine.getEntityFactory().getEntity("parent", model);
         parentEntity.setSelected(true);
         parentEntity.setTranslation(new Vector3f(2,2,2));
@@ -80,8 +79,8 @@ public class EntityTest extends TestWithEngine {
 
         Entity secondEntity = engine.getEntityFactory().getEntity("second", model);
         engine.getSceneManager().getScene().add(secondEntity);
-        Assert.assertEquals(0, Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
-        Assert.assertEquals(4, Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
+        Assert.assertEquals(0, engine.getSceneManager().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
+        Assert.assertEquals(4, engine.getSceneManager().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
 
 //        TODO: Reimplement this
 //        {
@@ -106,7 +105,7 @@ public class EntityTest extends TestWithEngine {
 //        }
 
 
-        engine.getRenderSystem().getRenderState().getCurrentReadState().bufferEntities(Engine.getInstance().getSceneManager().getScene().getEntities());
+        engine.getRenderSystem().getRenderState().getCurrentReadState().bufferEntities(engine.getSceneManager().getScene().getEntities());
         FloatBuffer floatValues = engine.getRenderSystem().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);

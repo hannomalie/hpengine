@@ -1,13 +1,13 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -22,6 +22,8 @@ import static org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect;
 public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T> {
 
     static final Logger LOGGER = Logger.getLogger(VertexBuffer.class.getName());
+
+    GpuContext gpuContext;
 
     private transient volatile boolean uploaded = true;
     private int maxLod;
@@ -45,30 +47,31 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
     private int triangleCount;
 	public EnumSet<DataChannels> channels;
 
-    public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
-        super(64, GL15.GL_ARRAY_BUFFER);
-        setInternals(values, channels);
+    public VertexBuffer(GpuContext gpuContext, float[] values, EnumSet<DataChannels> channels) {
+        super(gpuContext, 64, GL15.GL_ARRAY_BUFFER);
+        setInternals(gpuContext, values, channels);
 	}
-	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
-        super(64, GL15.GL_ARRAY_BUFFER);
-        setInternals(buffer, channels);
+	public VertexBuffer(GpuContext gpuContext, FloatBuffer buffer, EnumSet<DataChannels> channels) {
+        super(gpuContext, 64, GL15.GL_ARRAY_BUFFER);
+        setInternals(gpuContext, buffer, channels);
 	}
 
-    public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> channels, IndexBuffer ... indicesBuffer) {
-        this(verticesFloatBuffer, channels);
+    public VertexBuffer(GpuContext gpuContext, FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> channels, IndexBuffer ... indicesBuffer) {
+        this(gpuContext, verticesFloatBuffer, channels);
     }
 
-    private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels) {
+    private void setInternals(GpuContext gpuContext, FloatBuffer buffer, EnumSet<DataChannels> channels) {
         float[] values = new float[buffer.capacity()];
         buffer.get(values);
-        setInternals(values, channels);
+        setInternals(gpuContext, values, channels);
     }
 
-    private void setInternals(float[] values, EnumSet<DataChannels> channels) {
+    private void setInternals(GpuContext gpuContext, float[] values, EnumSet<DataChannels> channels) {
+        this.gpuContext = gpuContext;
         this.channels = channels;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             bind();
-            setVertexArrayObject(VertexArrayObject.getForChannels(channels));
+            setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
         });
         setCapacityInBytes(values.length * Float.BYTES);
         this.verticesCount = calculateVerticesCount(buffer, channels);
@@ -151,11 +154,11 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
     public CompletableFuture<VertexBuffer> upload() {
         VertexBuffer self = this;
         buffer.rewind();
-        return Engine.getInstance().getGpuContext().execute(new FutureCallable<VertexBuffer>() {
+        return gpuContext.execute(new FutureCallable<VertexBuffer>() {
             @Override
             public VertexBuffer execute() throws Exception {
                 bind();
-                setVertexArrayObject(VertexArrayObject.getForChannels(channels));
+                setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
                 return self;
             }
         });

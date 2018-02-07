@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.scene.Scene;
@@ -11,11 +12,11 @@ public interface Component extends LifeCycle, Serializable {
 	void setEntity(Entity entity);
 	Entity getEntity();
 
-	default void update(float seconds) {}
+	default void update(Engine engine, float seconds) {}
 
 	String getIdentifier();
 
-	default void initAfterAdd(Entity entity) { if(entity.isInitialized()) { init(); }}
+	default void initAfterAdd(Entity entity) {}
 
-    default void registerInScene(Scene scene) {}
+    default void registerInScene(Scene scene, Engine engine) {}
 }

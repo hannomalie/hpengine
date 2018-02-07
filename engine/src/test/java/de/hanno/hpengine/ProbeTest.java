@@ -1,20 +1,19 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.transform.AABB;
-import junit.framework.Assert;
-import org.junit.Test;
-import org.joml.Vector3f;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
+import de.hanno.hpengine.engine.transform.AABB;
+import junit.framework.Assert;
+import org.joml.Vector3f;
+import org.junit.Test;
 
-public class ProbeTest extends TestWithRenderer {
+public class ProbeTest extends TestWithEngine {
 	
 	@Test
 	public void assignsProbesProperly() throws Exception {
-        EnvironmentProbe probeNear = Engine.getInstance().getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC, 1);
-        EnvironmentProbe probeFar = Engine.getInstance().getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
+        EnvironmentProbe probeNear = engine.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC, 1);
+        EnvironmentProbe probeFar = engine.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
 		
 		Entity centeredEntity = new Entity() {
 			@Override public void setSelected(boolean selected) { }
@@ -31,9 +30,9 @@ public class ProbeTest extends TestWithRenderer {
 
 		Assert.assertTrue(probeNear.contains(centeredEntity.getMinMaxWorld()));
 		Assert.assertTrue(probeFar.contains(centeredEntity.getMinMaxWorld()));
-        Assert.assertEquals(probeNear, Engine.getInstance().getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
+        Assert.assertEquals(probeNear, engine.getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
 
         centeredEntity.translateLocal(new Vector3f(10,0,0));
-        Assert.assertEquals(probeFar, Engine.getInstance().getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
+        Assert.assertEquals(probeFar, engine.getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
 	}
 }

@@ -1,11 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.model.QuadVertexBuffer;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -34,6 +35,29 @@ public final class OpenGLContext implements GpuContext {
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private RenderTarget frontBuffer;
+
+
+    public RenderTarget createFrontBuffer() {
+        RenderTarget frontBuffer = new RenderTarget(this) {
+            @Override
+            public int getWidth() {
+                return getCanvasWidth();
+            }
+
+            @Override
+            public int getHeight() {
+                return getCanvasHeight();
+            }
+
+            @Override
+            public void use(boolean clear) {
+                super.use(false);
+            }
+        };
+        frontBuffer.framebufferLocation = 0;
+        return frontBuffer;
+    }
 
 
     private int canvasWidth = Config.getInstance().getWidth();
@@ -53,6 +77,17 @@ public final class OpenGLContext implements GpuContext {
     private GLFWWindowCloseCallbackI closeCallback = l -> System.exit(0);
 
     protected OpenGLContext() {
+        init();
+        fullscreenBuffer = new QuadVertexBuffer(this, true);
+        debugBuffer = new QuadVertexBuffer(this, false);
+
+        fullscreenBuffer.upload();
+        debugBuffer.upload();
+    }
+
+    @Override
+    public RenderTarget getFrontBuffer() {
+        return frontBuffer;
     }
 
     @Override
@@ -91,7 +126,7 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public boolean isSignaled(long gpuCommandSync) {
-        return Engine.getInstance().getGpuContext().calculate(() -> {
+        return calculate(() -> {
             if(gpuCommandSync > 0) {
                 int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
                 if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
@@ -119,7 +154,7 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public boolean isError() {
-        return Engine.getInstance().getGpuContext().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
+        return calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
     }
 
     private final void privateInit() throws LWJGLException {
@@ -162,6 +197,8 @@ public final class OpenGLContext implements GpuContext {
         // Map the internal OpenGL coordinate system to the entire screen
         viewPort(0, 0, Config.getInstance().getWidth(), Config.getInstance().getHeight());
         maxTextureUnits = (GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+
+        frontBuffer = createFrontBuffer();
 
         initialized = true;
         LOGGER.info("OpenGLContext initialized");
@@ -220,7 +257,7 @@ public final class OpenGLContext implements GpuContext {
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
     @Override
     public void bindTexture(GlTextureTarget target, int textureId) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        execute(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
         });
@@ -234,7 +271,7 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        execute(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
@@ -246,19 +283,19 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public void bindTextures(IntBuffer textureIds) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        execute(() -> {
             GL44.glBindTextures(0, textureIds);
         });
     }
     @Override
     public void bindTextures(int count, IntBuffer textureIds) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        execute(() -> {
             GL44.glBindTextures(0, textureIds);
         });
     }
     @Override
     public void bindTextures(int firstUnit, int count, IntBuffer textureIds) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        execute(() -> {
             GL44.glBindTextures(firstUnit, textureIds);
         });
     }
@@ -466,10 +503,10 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public void benchmark(Runnable runnable) {
-        GLTimerQuery.getInstance().begin();
-        runnable.run();
-        GLTimerQuery.getInstance().end();
-        LOGGER.info(GLTimerQuery.getInstance().getResult().toString());
+//        GLTimerQuery.getInstance().begin();
+//        runnable.run();
+//        GLTimerQuery.getInstance().end();
+//        LOGGER.info(GLTimerQuery.getInstance().getResult().toString());
     }
 
 
@@ -485,7 +522,7 @@ public final class OpenGLContext implements GpuContext {
     }
 
 
-    public void init() {
+    private void init() {
         this.openGLThread = new TimeStepThread(OpenGLContext.OPENGL_THREAD_NAME, 0.0f) {
 
             @Override
@@ -535,5 +572,17 @@ public final class OpenGLContext implements GpuContext {
     static boolean isOpenGLThread() {
         if(OpenGLContext.OPENGL_THREAD_ID == -1) throw new IllegalStateException("OpenGLThread id is -1, initialization failed!");
         return Thread.currentThread().getId() == OpenGLContext.OPENGL_THREAD_ID;
+    }
+
+
+    private final QuadVertexBuffer fullscreenBuffer;
+    private final QuadVertexBuffer debugBuffer;
+    @Override
+    public VertexBuffer getFullscreenBuffer() {
+        return fullscreenBuffer;
+    }
+    @Override
+    public VertexBuffer getDebugBuffer() {
+        return debugBuffer;
     }
 }

@@ -15,13 +15,15 @@ public class ProbesTree extends WebCheckBoxTree {
 
     private static final Logger LOGGER = Logger.getLogger(ProbesTree.class.getName());
     private SetSelectedListener selectionListener;
+    private Engine engine;
 
-    public ProbesTree() {
+    public ProbesTree(Engine engine) {
         super(new DefaultMutableTreeNode("Probes"));
+        this.engine = engine;
     }
 
     public void reload() {
-        addProbes(Engine.getInstance());
+        addProbes(engine);
         DefaultTreeModel model = (DefaultTreeModel)getModel();
         model.reload();
         revalidate();
@@ -35,7 +37,7 @@ public class ProbesTree extends WebCheckBoxTree {
         DefaultMutableTreeNode top = getRootNode();
         top.removeAllChildren();
 
-        List<EnvironmentProbe> probes = Engine.getInstance().getEnvironmentProbeFactory().getProbes();
+        List<EnvironmentProbe> probes = engine.getEnvironmentProbeFactory().getProbes();
         for (EnvironmentProbe environmentProbe : probes) {
             top.add(new DefaultMutableTreeNode(environmentProbe));
         }

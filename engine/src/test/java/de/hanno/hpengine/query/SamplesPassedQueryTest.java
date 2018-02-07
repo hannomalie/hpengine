@@ -1,19 +1,19 @@
 package de.hanno.hpengine.query;
 
+import de.hanno.hpengine.TestWithEngine;
 import de.hanno.hpengine.engine.graphics.query.GLSamplesPassedQuery;
 import junit.framework.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.TestWithRenderer;
 
 import java.util.logging.Logger;
 
-public class SamplesPassedQueryTest extends TestWithRenderer {
+public class SamplesPassedQueryTest extends TestWithEngine {
 
     private static final Logger LOGGER = Logger.getLogger(SamplesPassedQueryTest.class.getName());
 
     @Test
     public void testSamplesPassed() throws InterruptedException {
-        GLSamplesPassedQuery query = new GLSamplesPassedQuery();
+        GLSamplesPassedQuery query = new GLSamplesPassedQuery(engine.getGpuContext());
 
         query.begin();
 

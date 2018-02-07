@@ -1,12 +1,10 @@
 package de.hanno.hpengine.engine.model.material;
 
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 
@@ -16,11 +14,13 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 public class Material implements Serializable, Bufferable {
+
+	private int materialIndex;
+
 	public enum MaterialType {
 		DEFAULT,
 		FOLIAGE,
@@ -61,18 +61,19 @@ public class Material implements Serializable, Bufferable {
 
 	private MaterialInfo materialInfo = new MaterialInfo();
 
-	public void init() {
+	public void init(MaterialFactory materialFactory) {
+		materialIndex = materialFactory.indexOf(this);
 		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
 			String name = materialInfo.maps.getTextureNames().get(map);
 			try {
 				Texture tex;
 				if(map.equals(MAP.ENVIRONMENT)) {
-                    tex = Engine.getInstance().getTextureFactory().getCubeMap(name);
+                    tex = materialFactory.getTextureFactory().getCubeMap(materialFactory.getTextureFactory(), name);
 					if(tex == null) {
-                        tex = Engine.getInstance().getTextureFactory().getCubeMap();
+                        tex = materialFactory.getTextureFactory().getCubeMap();
 					}
 				} else {
-                    tex = Engine.getInstance().getTextureFactory().getTexture(name);
+                    tex = materialFactory.getTextureFactory().getTexture(name);
 				}
 				materialInfo.maps.getTextures().put(map, tex);
 			} catch (IOException e) {
@@ -80,7 +81,7 @@ public class Material implements Serializable, Bufferable {
 			}
 		}
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
-            materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, Engine.getInstance().getTextureFactory().getCubeMap());
+            materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, materialFactory.getTextureFactory().getCubeMap());
 		}
 		initialized = true;
 	}
@@ -103,7 +104,7 @@ public class Material implements Serializable, Bufferable {
     public boolean hasRoughnessMap() { return materialInfo.maps.getTextures().containsKey(MAP.ROUGHNESS); }
 
 	public void setTexturesActive(Program program) {
-		program.setUniform("materialIndex", Engine.getInstance().getMaterialFactory().indexOf(this));
+		program.setUniform("materialIndex", materialIndex);
 
 //		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 //			MAP map = entry.getKey();
@@ -137,14 +138,6 @@ public class Material implements Serializable, Bufferable {
 	public void setTexturesUsed() {
 		materialInfo.maps.getTextures().forEach((key, value) -> value.setUsedNow());
     }
-
-	public void setTexturesInactive() {
-		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
-			MAP map = entry.getKey();
-            Engine.getInstance().getGpuContext().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
-		}
-		
-	}
 
 	public String getName() {
 		return materialInfo.name;

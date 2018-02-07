@@ -2,7 +2,9 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -12,6 +14,11 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 public class MockContext implements GpuContext {
+
+    @Override
+    public RenderTarget getFrontBuffer() {
+        return null;
+    }
 
     @Override
     public long getWindowHandle() {
@@ -62,11 +69,6 @@ public class MockContext implements GpuContext {
     @Override
     public boolean isError() {
         return false;
-    }
-
-    @Override
-    public void init() {
-
     }
 
     @Override
@@ -267,5 +269,15 @@ public class MockContext implements GpuContext {
     @Override
     public void destroy() {
 
+    }
+
+    @Override
+    public VertexBuffer getFullscreenBuffer() {
+        return null;
+    }
+
+    @Override
+    public VertexBuffer getDebugBuffer() {
+        return null;
     }
 }

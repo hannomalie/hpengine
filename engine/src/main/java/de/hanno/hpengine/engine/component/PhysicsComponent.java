@@ -30,28 +30,28 @@ public class PhysicsComponent extends BaseComponent {
 	}
 
     @Override
-    public void init() {
+    public void init(Engine engine) {
         initialTransform = Util.toBullet(owner);
-        actuallyCreatePhysicsObject();
+        actuallyCreatePhysicsObject(engine);
 
         initialized = true;
     }
 
-    private void actuallyCreatePhysicsObject() {
+    private void actuallyCreatePhysicsObject(Engine engine) {
         MotionState motionState = new DefaultMotionState(initialTransform);
         rigidBodyConstructionInfo = new RigidBodyConstructionInfo(info.mass, motionState, info.shapeSupplier.get(), info.inertia);
         rigidBodyConstructionInfo.restitution = 0.5f;
         rigidBody = new RigidBody(rigidBodyConstructionInfo);
         rigidBody.setUserPointer(owner);
-        registerRigidBody();
+        registerRigidBody(engine);
     }
 
-    private void registerRigidBody() {
+    private void registerRigidBody(Engine engine) {
         try {
-            Engine.getInstance().getPhysicsFactory().getCommandQueue().addCommand(new FutureCallable<Object>() {
+            engine.getPhysicsFactory().getCommandQueue().addCommand(new FutureCallable<Object>() {
                 @Override
                 public Object execute() throws Exception {
-                    Engine.getInstance().getPhysicsFactory().registerRigidBody(rigidBody);
+                    engine.getPhysicsFactory().registerRigidBody(rigidBody);
                     return null;
                 }
             }).get();
@@ -62,7 +62,7 @@ public class PhysicsComponent extends BaseComponent {
         }
     }
 
-    public void update(float seconds) {
+    public void update(Engine engine, float seconds) {
 		com.bulletphysics.linearmath.Transform out = new com.bulletphysics.linearmath.Transform();
 		rigidBody.getWorldTransform(out);
 		Matrix4f temp = new Matrix4f();
@@ -71,10 +71,10 @@ public class PhysicsComponent extends BaseComponent {
         owner.set(converted);
     }
 
-    public void reset() {
+    public void reset(Engine engine) {
         if(isInitialized()) {
-            Engine.getInstance().getPhysicsFactory().unregisterRigidBody(rigidBody);
-            actuallyCreatePhysicsObject();
+            engine.getPhysicsFactory().unregisterRigidBody(rigidBody);
+            actuallyCreatePhysicsObject(engine);
         }
     }
 

@@ -1,8 +1,11 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.util.ressources.CodeSource;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
 import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
 
-public class ProgramFactory {
+public class ProgramFactory implements Manager {
 
     private CodeSource firstpassDefaultVertexshaderSource;
     private CodeSource firstpassAnimatedDefaultVertexshaderSource;
@@ -31,8 +34,12 @@ public class ProgramFactory {
     private Program linesProgram;
 
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
+    private Engine engine;
+    private GpuContext gpuContext;
 
-    public ProgramFactory() {
+    public ProgramFactory(Engine engine) {
+        this.engine = engine;
+        gpuContext = engine.getGpuContext();
         try {
             firstpassAnimatedDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
             firstpassDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
@@ -65,7 +72,7 @@ public class ProgramFactory {
         return getProgram(vertexShaderSource, fragmentShaderSource, defines);
     }
 	public Program getProgram(Defines defines) {
-		Program program = new Program(firstpassDefaultVertexshaderSource, null, firstpassDefaultFragmentshaderSource, defines);
+		Program program = new Program(this, firstpassDefaultVertexshaderSource, null, firstpassDefaultFragmentshaderSource, defines);
 		LOADED_PROGRAMS.add(program);
 		Engine.getEventBus().register(program);
 		return program;
@@ -75,8 +82,8 @@ public class ProgramFactory {
         return getComputeProgram(computeShaderLocation, new Defines());
     }
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, Defines defines) {
-        return Engine.getInstance().getGpuContext().calculate(() -> {
-            ComputeShaderProgram program = new ComputeShaderProgram(getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
+        return engine.getGpuContext().calculate(() -> {
+            ComputeShaderProgram program = new ComputeShaderProgram(this, getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);
             return program;
@@ -87,8 +94,8 @@ public class ProgramFactory {
 		return getProgram(vertexShaderSource, null, fragmentShaderSource, defines);
 	}
 	public Program getProgram(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource, Defines defines) {
-        return Engine.getInstance().getGpuContext().calculate(() -> {
-            Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
+        return engine.getGpuContext().calculate(() -> {
+            Program program = new Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);
             return program;
@@ -105,7 +112,7 @@ public class ProgramFactory {
 
     public VertexShader getDefaultFirstpassVertexShader() {
         try {
-            return VertexShader.load(firstpassDefaultVertexshaderSource, new Defines());
+            return VertexShader.load(this, firstpassDefaultVertexshaderSource, new Defines());
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Default vertex de.hanno.hpengine.shader cannot be loaded...");
@@ -156,5 +163,20 @@ public class ProgramFactory {
 
     public Program getAppendDrawCommandProgram() {
         return appendDrawcommandsProgram;
+    }
+
+    @NotNull
+    @Override
+    public Engine getEngine() {
+        return engine;
+    }
+
+    public GpuContext getGpuContext() {
+        return gpuContext;
+    }
+
+    @Override
+    public void update(float deltaSeconds) {
+
     }
 }

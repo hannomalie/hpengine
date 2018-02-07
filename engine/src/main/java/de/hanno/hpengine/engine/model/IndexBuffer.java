@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -11,17 +12,17 @@ import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class IndexBuffer extends AbstractPersistentMappedBuffer {
 
-    public IndexBuffer() {
-        this(GL_ELEMENT_ARRAY_BUFFER);
+    public IndexBuffer(GpuContext gpuContext) {
+        this(gpuContext, GL_ELEMENT_ARRAY_BUFFER);
         setCapacityInBytes(4*3*50);
     }
 
-    public IndexBuffer(int target) {
-        super(target);
+    public IndexBuffer(GpuContext gpuContext, int target) {
+        super(gpuContext, target);
     }
 
-    public IndexBuffer(IntBuffer intBuffer) {
-        this();
+    public IndexBuffer(GpuContext gpuContext, IntBuffer intBuffer) {
+        this(gpuContext);
         put(intBuffer);
     }
 

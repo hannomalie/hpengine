@@ -1,18 +1,21 @@
 package de.hanno.hpengine.engine.threads;
 
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.config.Config;
 
 public class UpdateThread extends FpsCountedTimeStepThread {
 
-    public UpdateThread(String name, float minCycleTimeInS) {
+    private Engine engine;
+
+    public UpdateThread(Engine engine, String name, float minCycleTimeInS) {
         super(name, minCycleTimeInS);
+        this.engine = engine;
     }
 
     @Override
     public void update(float seconds) {
         try {
-            Engine.getInstance().update(seconds);
+            engine.update(seconds);
         } catch (Throwable e) {
             e.printStackTrace();
         }

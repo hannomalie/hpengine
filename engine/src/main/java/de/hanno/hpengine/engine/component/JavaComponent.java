@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.component;
 
 import de.hanno.compiler.RuntimeJavaCompiler;
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
@@ -57,22 +58,22 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public void init() {
+    public void init(Engine engine) {
         if(!isInitialized()) {
             observerJavaFile = new FileAlterationObserver(javaCodeSource.isFileBased() ? javaCodeSource.getFile().getParent() : JavaComponent.getDirectory());
             addFileListeners();
             initWrappingComponent();
-            super.init();
+            super.init(engine);
         }
         if(isLifeCycle) {
-            ((LifeCycle) instance).init();
+            ((LifeCycle) instance).init(engine);
         }
     }
 
     @Override
-    public void update(float seconds) {
+    public void update(Engine engine, float seconds) {
         if(isLifeCycle) {
-            ((LifeCycle) instance).update(seconds);
+            ((LifeCycle) instance).update(engine, seconds);
         }
     }
 

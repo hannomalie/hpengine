@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL40;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
@@ -13,8 +14,8 @@ import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.DrawElementsIndirectCommand> {
 
-    public CommandBuffer(int capacityInBytes) {
-        super(GL40.GL_DRAW_INDIRECT_BUFFER);
+    public CommandBuffer(GpuContext gpuContext, int capacityInBytes) {
+        super(gpuContext, GL40.GL_DRAW_INDIRECT_BUFFER);
         setCapacityInBytes(capacityInBytes);
     }
 

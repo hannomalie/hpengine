@@ -9,13 +9,19 @@ import java.util.List;
 
 public class TextureTableModel extends AbstractTableModel {
 
+    private Engine engine;
+
+    public TextureTableModel(Engine engine) {
+        this.engine = engine;
+    }
+
     public int getColumnCount() {
         return 4;
     }
 
     public int getRowCount() {
         try {
-            return Engine.getInstance().getTextureFactory().TEXTURES.size();
+            return engine.getTextureFactory().TEXTURES.size();
         } catch (IllegalStateException e) {
             return 0;
         }
@@ -23,7 +29,7 @@ public class TextureTableModel extends AbstractTableModel {
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            List<Object> paths = Arrays.asList(Engine.getInstance().getTextureFactory().TEXTURES.keySet()
+            List<Object> paths = Arrays.asList(engine.getTextureFactory().TEXTURES.keySet()
                     .toArray());
             return paths.get(row);
         } else if(col == 1) {
@@ -40,7 +46,7 @@ public class TextureTableModel extends AbstractTableModel {
     }
 
     private Texture getTexture(int row) {
-        List<Object> textures = Arrays.asList(Engine.getInstance().getTextureFactory().TEXTURES.values()
+        List<Object> textures = Arrays.asList(engine.getTextureFactory().TEXTURES.values()
                 .toArray());
         return (Texture) textures.get(row);
     }

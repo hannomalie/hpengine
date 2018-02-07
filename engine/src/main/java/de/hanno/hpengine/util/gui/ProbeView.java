@@ -63,10 +63,10 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-            CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Boolean execute() throws Exception {
-                    return Engine.getInstance().getEnvironmentProbeFactory().remove(probe);
+                    return engine.getEnvironmentProbeFactory().remove(probe);
                 }
             });
     		
@@ -105,8 +105,8 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-                Engine.getInstance().getGpuContext().execute(() -> {
-                    Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
+                engine.getGpuContext().execute(() -> {
+                    engine.getEnvironmentProbeFactory().updateBuffers();
 				});
 			}
 		});
@@ -138,7 +138,7 @@ public class ProbeView extends WebPanel {
 		}
 		colorPanel.setOpaque(true);
 		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField,
-				new WebLabel(String.format("ProbesArrayIndex: %d TexUnitIndex: %d", probe.getIndex(), probe.getTextureUnitIndex())));
+				new WebLabel(String.format("ProbesArrayIndex: %d TexUnitIndex: %d", probe.getIndex(), probe.getTextureUnitIndex(engine.getGpuContext()))));
 		
 		webComponentPanel.addElement(groupPanel);
 		webComponentPanel.addElement(colorPanel);

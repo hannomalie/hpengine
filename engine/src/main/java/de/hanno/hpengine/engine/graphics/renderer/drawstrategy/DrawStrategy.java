@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -12,10 +12,10 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 
 public interface DrawStrategy {
 
-    static int draw(RenderState renderState, RenderBatch renderBatch) {
-        return draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera());
+    static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch) {
+        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera());
     }
-    static int draw(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible) {
+    static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible) {
         if(invisible) {
             return 0;
         }
@@ -30,7 +30,7 @@ public interface DrawStrategy {
 
 //        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE))
         {
-            Engine.getInstance().getGpuContext().disable(GlCap.CULL_FACE);
+            gpuContext.disable(GlCap.CULL_FACE);
         }
 
         if (Config.getInstance().isDrawLines()) {

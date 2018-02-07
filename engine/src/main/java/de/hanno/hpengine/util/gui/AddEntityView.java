@@ -60,7 +60,7 @@ public class AddEntityView extends WebPanel {
                         new SwingWorkerWithProgress<EntityListResult>(hostComponent, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
-								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(Engine.getInstance());
+								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(engine);
 								System.out.println("result.entities.size() = " + result.entities.size());
 								engine.getSceneManager().getScene().addAll(result.entities);
                                 Thread.sleep(100);

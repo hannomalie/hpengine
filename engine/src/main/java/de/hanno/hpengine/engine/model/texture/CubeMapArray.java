@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 
@@ -12,22 +12,23 @@ public class CubeMapArray {
 	private int mipMapCount = 1;
 	private int internalFormat;
 	
-	public CubeMapArray(int textureCount, int resolution) {
-		this(textureCount, GL11.GL_LINEAR_MIPMAP_LINEAR, resolution);
+	public CubeMapArray(GpuContext gpuContext, int textureCount, int resolution) {
+		this(gpuContext, textureCount, GL11.GL_LINEAR_MIPMAP_LINEAR, resolution);
 	}
 	
-	public CubeMapArray(int textureCount, int magTextureFilter, int resolution) {
-		this(textureCount, magTextureFilter, GL30.GL_RGBA16F, resolution);
+	public CubeMapArray(GpuContext gpuContext, int textureCount, int magTextureFilter, int resolution) {
+		this(gpuContext, textureCount, magTextureFilter, GL30.GL_RGBA16F, resolution);
 	}
 	/**
+	 * @param gpuContext
+	 * @param textureCount the actual number of cubemap textures you want to allocate
 	 * @param resolution
-     * @param textureCount the actual number of cubemap textures you want to allocate
 	 */
-	public CubeMapArray(int textureCount, int magTextureFilter, int internalFormat, int resolution) {
+	public CubeMapArray(GpuContext gpuContext, int textureCount, int magTextureFilter, int internalFormat, int resolution) {
         this.resolution = resolution;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
 			textureId = GL11.glGenTextures();
-			bind();
+			bind(gpuContext);
 
             if(Texture.filterRequiresMipmaps(magTextureFilter)) {
 //                mipMapCount = EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT;
@@ -60,18 +61,18 @@ public class CubeMapArray {
 		}
 	}
 
-	public void bind() {
-        Engine.getInstance().getGpuContext().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
+	public void bind(GpuContext gpuContext) {
+        gpuContext.bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 
-	public void bind(int unit) {
-        Engine.getInstance().getGpuContext().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
+	public void bind(GpuContext gpuContext, int unit) {
+        gpuContext.bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
-	public void bind(int layer, int unit) {
-		bind(layer, unit, 0);
+	public void bind(GpuContext gpuContext, int layer, int unit) {
+		bind(gpuContext, layer, unit, 0);
 	}
-	public void bind(int layer, int unit, int level) {
-        Engine.getInstance().getGpuContext().bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
+	public void bind(GpuContext gpuContext, int layer, int unit, int level) {
+        gpuContext.bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
 	}
 
 	public int getTextureID() {

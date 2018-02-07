@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.light;
 
 import java.util.List;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.StaticModel;
@@ -50,7 +51,7 @@ public class TubeLight extends Entity {
 	}
 	
 	@Override
-	public void update(float seconds) {
+	public void update(Engine engine, float seconds) {
 	}
 
     public void draw(Program program) {

@@ -20,7 +20,7 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);
 		}
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(data.capacity() * 8);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), data.capacity() * 8);
 		buffer.putValues(byteBuffer);
 
         DoubleBuffer result = buffer.getBuffer().asDoubleBuffer();
@@ -40,7 +40,7 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 			data.putDouble(i*Double.BYTES, i);
 		}
 
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(16*8);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 16*8);
         buffer.putValues(data);
 
         DoubleBuffer result = buffer.getBuffer().asDoubleBuffer();
@@ -61,7 +61,7 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 			data.put(i, i);
 		}
 		
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(16);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 16);
 		
 		buffer.putValues(4*Double.BYTES, byteBuffer);
 
@@ -77,7 +77,7 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 	@Test
 	public void storageBufferLayoutsCorrectly() {
 		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(64*8);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 64*8);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override
@@ -108,7 +108,7 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 	public void storageBufferLayoutsCorrectlyWithIndex() {
 		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 		double[] secondArray = new double[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(48*8);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 48*8);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override

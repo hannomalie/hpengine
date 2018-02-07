@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -24,15 +25,18 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_T
 public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     public static final int SHADOWMAP_RESOLUTION = 2048;
+    private final Engine engine;
 
     transient private RenderTarget renderTarget;
     transient private Program directionalShadowPassProgram;
+    private final GpuContext gpuContext;
 
-    public DirectionalLightShadowMapExtension() {
+    public DirectionalLightShadowMapExtension(Engine engine) {
+        gpuContext = engine.getGpuContext();
+        this.engine = engine;
+        directionalShadowPassProgram = engine.getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
-        directionalShadowPassProgram = Engine.getInstance().getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
-
-        renderTarget = new RenderTargetBuilder()
+        renderTarget = new RenderTargetBuilder(engine.getGpuContext())
                 .setWidth(SHADOWMAP_RESOLUTION)
                 .setHeight(SHADOWMAP_RESOLUTION)
                 .setClearRGBA(1f, 1f, 1f, 1f)
@@ -47,7 +51,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     private long renderedInCycle;
     @Override
-    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("Directional shadowmap");
         if(renderedInCycle < renderState.directionalLightHasMovedInCycle ||
                 renderedInCycle < renderState.entitiesState.entityMovedInCycle ||
@@ -58,9 +62,9 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     }
 
     private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {
-        Engine.getInstance().getGpuContext().depthMask(true);
-        Engine.getInstance().getGpuContext().enable(DEPTH_TEST);
-        Engine.getInstance().getGpuContext().disable(CULL_FACE);
+        gpuContext.depthMask(true);
+        gpuContext.enable(DEPTH_TEST);
+        gpuContext.disable(CULL_FACE);
 
         // TODO: Better instance culling
         List<RenderBatch> visibles = renderState.getRenderBatchesStatic();
@@ -76,9 +80,9 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         for(int i = 0; i < visibles.size(); i++) {
             RenderBatch e = visibles.get(i);
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
-            DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
+            DrawStrategy.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
         }
-        Engine.getInstance().getTextureFactory().generateMipMaps(getShadowMapId());
+        engine.getTextureFactory().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;
 
         renderedInCycle = renderState.getCycle();

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.camera;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.StaticModel;
@@ -86,9 +87,9 @@ public class Camera extends Entity {
         storeMatrices();
 	}
 
-	public void update(float seconds) {
+	public void update(Engine engine, float seconds) {
 		saveViewMatrixAsLastViewMatrix();
-		super.update(seconds);
+		super.update(engine, seconds);
         if(hasMoved()) {
             transform();
             storeMatrices();

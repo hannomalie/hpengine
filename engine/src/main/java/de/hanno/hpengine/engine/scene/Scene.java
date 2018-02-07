@@ -61,6 +61,7 @@ public class Scene implements LifeCycle, Serializable {
 	private transient volatile long pointLightMovedInCycle;
 	private transient volatile long currentCycle;
 	private transient volatile boolean initiallyDrawn;
+	private Engine engine;
 
 	public Scene() {
         this("new-scene-" + System.currentTimeMillis());
@@ -70,20 +71,20 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	@Override
-	public void init() {
-		LifeCycle.super.init();
+	public void init(Engine engine) {
+		LifeCycle.super.init(engine);
+		this.engine = engine;
 		getEventBus().register(this);
         entityContainer = new SimpleContainer();
-		entityContainer.init();
         entities.forEach(Entity::initialize);
-        entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
+        entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this, engine)));
 		addAll(entities);
 		for (ProbeData data : probes) {
-            Engine.getInstance().getGpuContext().execute(() -> {
+            engine.getGpuContext().execute(() -> {
                 try {
 					// TODO: Remove this f***
-					EnvironmentProbe probe = Engine.getInstance().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
-					Engine.getInstance().getRenderer().addRenderProbeCommand(probe);
+					EnvironmentProbe probe = engine.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
+					engine.getRenderer().addRenderProbeCommand(probe);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -120,11 +121,11 @@ public class Scene implements LifeCycle, Serializable {
 			entities.clear();
 			entities.addAll(entityContainer.getEntities());
 			probes.clear();
-			for (EnvironmentProbe probe : Engine.getInstance().getEnvironmentProbeFactory().getProbes()) {
-				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
-				if(probes.contains(probeData)) { continue; }
-				probes.add(probeData);
-			}
+//			for (EnvironmentProbe probe : Engine.getInstance().getEnvironmentProbeFactory().getProbes()) {
+//				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
+//				if(probes.contains(probeData)) { continue; }
+//				probes.add(probeData);
+//			}
 			out.writeObject(this);
 //			FSTObjectOutput newOut = new FSTObjectOutput(out);
 //			newOut.writeObject(this);
@@ -213,7 +214,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void addAll(List<Entity> entities) {
 		entityContainer.insert(entities);
 		entities.forEach(e -> e.getComponents().values().forEach(c -> {
-			c.registerInScene(Scene.this);
+			c.registerInScene(Scene.this, engine);
 			Scene.this.register(c);
 		}));
 		calculateMinMax(entities);
@@ -262,26 +263,26 @@ public class Scene implements LifeCycle, Serializable {
 		}
 	}
 
-	public void update(float seconds) {
+	public void update(Engine engine, float seconds) {
 		cacheEntityIndices();
 		Iterator<PointLight> pointLightsIterator = pointLights.iterator();
 		while (pointLightsIterator.hasNext()) {
-			pointLightsIterator.next().update(seconds);
+			pointLightsIterator.next().update(engine, seconds);
 		}
 
 		for(int i = 0; i < areaLights.size(); i++) {
-			areaLights.get(i).update(seconds);
+			areaLights.get(i).update(engine, seconds);
 		}
 		List<Entity> entities = entityContainer.getEntities();
 
 		for(int i = 0; i < entities.size(); i++) {
 		    try {
-                entities.get(i).update(seconds);
+                entities.get(i).update(engine, seconds);
             } catch (Exception e) {
 		        LOGGER.warning(e.getMessage());
             }
 		}
-		directionalLight.update(seconds);
+		directionalLight.update(engine, seconds);
 
 		for(int i = 0; i < getPointLights().size(); i++) {
 			PointLight pointLight = getPointLights().get(i);
@@ -357,19 +358,19 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	private Vector3f tempDistVector = new Vector3f();
-	public void addRenderBatches(Camera camera, RenderState currentWriteState) {
+	public void addRenderBatches(Engine engine, Camera camera, RenderState currentWriteState) {
 		Vector3f cameraWorldPosition = camera.getPosition();
 
-		Program firstpassDefaultProgram = Engine.getInstance().getProgramFactory().getFirstpassDefaultProgram();
+		Program firstpassDefaultProgram = engine.getProgramFactory().getFirstpassDefaultProgram();
 
-		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getSceneManager().getScene().getModelComponents();
+		List<ModelComponent> modelComponentsStatic = engine.getSceneManager().getScene().getModelComponents();
 
-		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic);
+		addBatches(engine, camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic);
 
 	}
 
-	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponentsStatic) {
-		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic, (batch) -> {
+	public void addBatches(Engine engine, Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program program, List<ModelComponent> modelComponentsStatic) {
+		addBatches(engine, camera, currentWriteState, cameraWorldPosition, program, modelComponentsStatic, (batch) -> {
 			if(batch.isStatic()) {
 				currentWriteState.addStatic(batch);
 			} else {
@@ -378,13 +379,13 @@ public class Scene implements LifeCycle, Serializable {
 		});
 	}
 
-	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponents, Consumer<RenderBatch> addToRenderStateRunnable) {
+	public void addBatches(Engine engine, Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponents, Consumer<RenderBatch> addToRenderStateRunnable) {
 		for (ModelComponent modelComponent : modelComponents) {
 			Entity entity = modelComponent.getEntity();
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-			int entityIndexOf = Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
+			int entityIndexOf = engine.getSceneManager().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
 
 			List<Mesh> meshes = modelComponent.getMeshes();
 			for(int i = 0; i < meshes.size(); i++) {

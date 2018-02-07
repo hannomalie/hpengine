@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import de.hanno.hpengine.TestWithEngine;
@@ -26,7 +26,7 @@ public class JavaComponentTest extends TestWithEngine {
                 "\t}\n" +
                 "}");
 
-        component.init();
+        component.init(engine);
         Assert.assertTrue(component.getCompiledClass().getSimpleName().equals("Test"));
         Assert.assertTrue(component.getInstance() instanceof Runnable);
     }

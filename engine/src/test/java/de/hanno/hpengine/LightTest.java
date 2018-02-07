@@ -1,18 +1,17 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.transform.AABB;
 import junit.framework.Assert;
-import org.junit.Test;
 import org.joml.Vector3f;
+import org.junit.Test;
 
-public class LightTest extends TestWithRenderer {
+public class LightTest extends TestWithEngine {
 
 	@Test
 	public void tubeLightHasCorrectProportions() {
-        TubeLight tubeLight = Engine.getInstance().getLightFactory().getTubeLight();
+        TubeLight tubeLight = engine.getLightFactory().getTubeLight();
 		
 		Assert.assertEquals(new Vector3f(), tubeLight.getPosition());
 		Assert.assertEquals(200, tubeLight.getLength(), 1.0f);
@@ -29,7 +28,7 @@ public class LightTest extends TestWithRenderer {
 	
 	@Test
 	public void areaLightHasCorrectProportions() {
-        AreaLight areaLight = Engine.getInstance().getLightFactory().getAreaLight(100,100,200);
+        AreaLight areaLight = engine.getLightFactory().getAreaLight(100,100,200);
 		
 		Assert.assertEquals(new Vector3f(), areaLight.getPosition());
 		Assert.assertEquals(100, areaLight.getWidth(), 1.0f);

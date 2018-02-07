@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -22,7 +23,7 @@ public interface Mesh<T extends Bufferable> {
 
     Material getMaterial();
 
-    void init();
+    void init(MaterialFactory materialFactory);
 
     void setMaterial(Material material);
 

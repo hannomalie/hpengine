@@ -2,21 +2,17 @@ package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.IndexBuffer;
-import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.BatchKey;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,14 +25,19 @@ public class EntitiesState {
     public long entityAddedInCycle;
     public RenderBatches renderBatchesStatic = new RenderBatches();
     public RenderBatches renderBatchesAnimated = new RenderBatches();
-    public VertexIndexBuffer<Vertex> vertexIndexBufferStatic = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTCHANNELS);
-    public VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
-    public GPUBuffer<Entity> entitiesBuffer = new PersistentMappedBuffer(8000);
-    public GPUBuffer<BufferableMatrix4f> jointsBuffer = new PersistentMappedBuffer(8000);
-    public GPUBuffer<Material> materialBuffer = new PersistentMappedBuffer(8000);
+    public VertexIndexBuffer<Vertex> vertexIndexBufferStatic;
+    public VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated;
+    public GPUBuffer<Entity> entitiesBuffer;
+    public GPUBuffer<BufferableMatrix4f> jointsBuffer;
+    public GPUBuffer<Material> materialBuffer;
     public List<BufferableMatrix4f> joints;
 
-    public EntitiesState() {
+    public EntitiesState(GpuContext gpuContext) {
+        vertexIndexBufferStatic = new VertexIndexBuffer<>(gpuContext, 10,10, ModelComponent.DEFAULTCHANNELS);
+        vertexIndexBufferAnimated = new VertexIndexBuffer<>(gpuContext, 10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
+        entitiesBuffer = new PersistentMappedBuffer(gpuContext, 8000);
+        jointsBuffer = new PersistentMappedBuffer(gpuContext, 8000);
+        materialBuffer = new PersistentMappedBuffer(gpuContext, 8000);
     }
 
 }

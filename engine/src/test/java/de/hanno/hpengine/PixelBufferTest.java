@@ -11,7 +11,7 @@ import org.lwjgl.opengl.GL13;
 
 import java.nio.FloatBuffer;
 
-public class PixelBufferTest extends TestWithRenderer {
+public class PixelBufferTest extends TestWithEngine {
 	
 	@Test
 	public void downloadWorks() throws InterruptedException {
@@ -47,7 +47,7 @@ public class PixelBufferTest extends TestWithRenderer {
 		Assert.assertEquals(0.3f, onePixel[2], 0.01f);
 		////
 		
-		PixelBufferObject pixelBufferObject = new PixelBufferObject(1, 1);
+		PixelBufferObject pixelBufferObject = new PixelBufferObject(engine.getGpuContext(), 1, 1);
 		pixelBufferObject.readPixelsFromTexture(textureId, 0, GlTextureTarget.TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
 
 		float[] result = pixelBufferObject.mapBuffer();

@@ -1,18 +1,15 @@
 package de.hanno.hpengine;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
+import org.junit.Assert;
+import org.junit.Test;
+import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-
-import static org.lwjgl.opengl.ARBBufferStorage.glBufferStorage;
-import static org.lwjgl.opengl.GL15.glGenBuffers;
 
 public class StorageBufferTest extends TestWithEngine {
 
@@ -24,7 +21,7 @@ public class StorageBufferTest extends TestWithEngine {
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);
 		}
-        GPUBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 0);
         buffer.putValues(byteBuffer);
 
         DoubleBuffer result = buffer.getBuffer().asDoubleBuffer();
@@ -45,7 +42,7 @@ public class StorageBufferTest extends TestWithEngine {
 			data.put(i, i);
 		}
 
-        GPUBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 0);
         buffer.putValues(byteBuffer);
 
 		buffer.putValues(byteBuffer);
@@ -67,7 +64,7 @@ public class StorageBufferTest extends TestWithEngine {
 			data.put(i, i);
 		}
 
-        GPUBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 0);
 
 		buffer.putValues(4*Double.BYTES, byteBuffer);
 
@@ -98,7 +95,7 @@ public class StorageBufferTest extends TestWithEngine {
 		};
 
 
-        GPUBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 0);
 		buffer.put(bufferable, bufferable, bufferable, bufferable);
 
 
@@ -147,7 +144,7 @@ public class StorageBufferTest extends TestWithEngine {
         CustomBufferable customBufferable1 = new CustomBufferable(0, 1, 0);
         CustomBufferable customBufferable2 = new CustomBufferable(1, 0, 0);
 
-        PersistentMappedBuffer<CustomBufferable> buffer = new PersistentMappedBuffer<>(3 * customBufferable0.getBytesPerObject());
+        PersistentMappedBuffer<CustomBufferable> buffer = new PersistentMappedBuffer<>(engine.getGpuContext(), 3 * customBufferable0.getBytesPerObject());
         buffer.put(customBufferable0, customBufferable1, customBufferable2);
         CustomBufferable fromBuffer = new CustomBufferable(-1, -1, -1);
         buffer.get(0, fromBuffer);

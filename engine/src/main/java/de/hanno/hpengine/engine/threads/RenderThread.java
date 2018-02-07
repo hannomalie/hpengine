@@ -5,15 +5,18 @@ import de.hanno.hpengine.engine.config.Config;
 
 public class RenderThread extends TimeStepThread {
 
-    public RenderThread(String name) {
+    private Engine engine;
+
+    public RenderThread(Engine engine, String name) {
         super(name, 0.016f);
+        this.engine = engine;
     }
 
     @Override
     public void update(float seconds) {
         if (Config.getInstance().isMultithreadedRendering()) {
             try {
-                Engine.getInstance().actuallyDraw();
+                engine.actuallyDraw();
             } catch (Exception e) {
                 e.printStackTrace();
             }

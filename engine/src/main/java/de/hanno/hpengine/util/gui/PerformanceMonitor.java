@@ -15,13 +15,10 @@ import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
-import com.carrotsearch.hppc.FloatArrayList;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.StackedAreaChart;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -37,7 +34,6 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.TimeSeries;
@@ -62,10 +58,12 @@ public class PerformanceMonitor {
 	private DefaultCategoryDataset breakdownDataset;
 
 	private JFrame frame;
+	private Engine engine;
 
 	@SuppressWarnings("deprecation")
-	public PerformanceMonitor(Renderer myRenderer) {
+	public PerformanceMonitor(Engine engine, Renderer myRenderer) {
 		this.myRenderer = myRenderer;
+		this.engine = engine;
 	}
 
 	public void init() {
@@ -206,8 +204,8 @@ public class PerformanceMonitor {
 
 		public void actionPerformed(ActionEvent event) {
 			long actualFpsValue = (long) renderer.getCurrentFPS();
-			long actualCpsValue = (long) Engine.getInstance().getUpdateThread().getFpsCounter().getFPS();
-			long syncTimeMS = TimeUnit.NANOSECONDS.toMillis(Engine.getInstance().getRenderSystem().getCpuGpuSyncTimeNs());
+			long actualCpsValue = (long) engine.getUpdateThread().getFpsCounter().getFPS();
+			long syncTimeMS = TimeUnit.NANOSECONDS.toMillis(engine.getRenderSystem().getCpuGpuSyncTimeNs());
 			double actualSyncTimeFps = syncTimeMS == 0 ? 0 : 1000d/syncTimeMS;
 			thirtyFPS(30);
 			sixtyFPS(60);

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
@@ -19,7 +20,7 @@ public interface Renderer extends LifeCycle {
 
     void draw(DrawResult result, RenderState renderState);
 
-    void update(float seconds);
+    void update(Engine engine, float seconds);
 
     void batchLine(Vector3f from, Vector3f to);
 
@@ -315,11 +316,11 @@ public interface Renderer extends LifeCycle {
         }
     }
 
-    static Renderer create() {
+    static Renderer create(Engine engine) {
         try {
             Class<? extends Renderer> rendererClass = Config.getInstance().getRendererClass();
             Renderer instance = rendererClass.newInstance();
-            instance.init();
+            instance.init(engine);
             return instance;
         } catch (InstantiationException | IllegalAccessException e) {
             e.printStackTrace();

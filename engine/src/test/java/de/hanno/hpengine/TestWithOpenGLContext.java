@@ -1,6 +1,5 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -10,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 
 public class TestWithOpenGLContext {
+
+    private static GpuContext gpuContext;
 
     @BeforeClass
     public static void init() throws LWJGLException {
@@ -23,12 +24,11 @@ public class TestWithOpenGLContext {
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(false);
-        GpuContext.create();
-        Engine.getInstance().getGpuContext();
+        gpuContext = GpuContext.create();
     }
 
     @AfterClass
     public static void destroy() {
-        Engine.getInstance().getGpuContext().destroy();
+        gpuContext.destroy();
     }
 }

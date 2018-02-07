@@ -6,7 +6,6 @@ import static org.lwjgl.opengl.GL21.*;
 
 import java.nio.ByteBuffer;
 
-import de.hanno.hpengine.engine.Engine;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -20,8 +19,10 @@ public class PixelBufferObject {
 	private int height;
 	private ByteBuffer buffer;
 	private float[] array;
+	private final GpuContext gpuContext;
 
-	public PixelBufferObject(int width, int height) {
+	public PixelBufferObject(GpuContext gpuContext, int width, int height) {
+		this.gpuContext = gpuContext;
 		id = glGenBuffers();
 		this.width = width;
 		this.height = height;
@@ -42,7 +43,7 @@ public class PixelBufferObject {
 
 	public void readPixelsFromTexture(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type) {
 		bind();
-        Engine.getInstance().getGpuContext().bindTexture(target, textureId);
+        gpuContext.bindTexture(target, textureId);
 		glGetTexImage(target.glTarget, mipmapLevel, format, type, buffer);
 		unbind();
 	}
@@ -51,17 +52,17 @@ public class PixelBufferObject {
 	}
 	public void glTexSubImage2D(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type, int offsetX, int offsetY, int width, int height, ByteBuffer buffer) {
 		mapAndUnmap(offsetX, offsetY, width, height, buffer);
-        Engine.getInstance().getGpuContext().execute(() -> {
-            Engine.getInstance().getGpuContext().bindTexture(target, textureId);
+        gpuContext.execute(() -> {
+            gpuContext.bindTexture(target, textureId);
 			GL11.glTexSubImage2D(target.glTarget, mipmapLevel, offsetX, offsetY, width, height, GL_RGBA, GL_FLOAT, 0);
 		});
 		unbind();
 	}
 
 	public void glCompressedTexImage2D(int textureId, GlTextureTarget target, int level, int internalformat, int width, int height, int border, ByteBuffer textureBuffer) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
 			mapAndUnmap(0, 0, width, height, buffer);
-            Engine.getInstance().getGpuContext().bindTexture(target, textureId);
+            gpuContext.bindTexture(target, textureId);
 			GL13.glCompressedTexImage2D(target.glTarget, level, internalformat, width, height, border, null);
 		});
 		unbind();

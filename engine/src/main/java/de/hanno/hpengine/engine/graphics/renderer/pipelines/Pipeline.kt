@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CoarseCullingPhase.ONE
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.*
@@ -33,15 +34,16 @@ interface Pipeline {
     companion object {
         val HIGHZ_FORMAT = GL30.GL_R32F
 
-        inline fun <reified T> create(useFrustumCulling: Boolean,
+        inline fun <reified T> create(engine: Engine,
+                                      useFrustumCulling: Boolean,
                                       useBackfaceCulling: Boolean,
                                       useLineDrawingIfActivated: Boolean,
                                       renderCam: Camera? = null,
                                       cullCam: Camera? = renderCam): Pipeline {
             return when(T::class) {
-                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
-                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
-                else -> SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
+                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
+                else -> SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
             }
         }
     }

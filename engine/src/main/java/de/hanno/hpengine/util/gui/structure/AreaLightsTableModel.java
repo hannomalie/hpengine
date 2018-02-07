@@ -8,27 +8,33 @@ import javax.swing.table.AbstractTableModel;
 
 public class AreaLightsTableModel extends AbstractTableModel {
 
+    private Engine engine;
+
+    public AreaLightsTableModel(Engine engine) {
+        this.engine = engine;
+    }
+
     public int getColumnCount() {
         return 3;
     }
 
     public int getRowCount() {
-        if(Engine.getInstance().getSceneManager().getScene() != null) {
-            return Engine.getInstance().getSceneManager().getScene().getAreaLights().size();
+        if(engine.getSceneManager().getScene() != null) {
+            return engine.getSceneManager().getScene().getAreaLights().size();
         }
         return 0;
     }
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            AreaLight light = Engine.getInstance().getSceneManager().getScene().getAreaLights().get(row);
+            AreaLight light = engine.getSceneManager().getScene().getAreaLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().z);
 
         } else if (col == 1) {
-            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getAreaLights().get(row).getPosition());
+            return Util.vectorToString(engine.getSceneManager().getScene().getAreaLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getAreaLights().get(row).getColor());
+            return Util.vectorToString(engine.getSceneManager().getScene().getAreaLights().get(row).getColor());
 
         }
         return "";

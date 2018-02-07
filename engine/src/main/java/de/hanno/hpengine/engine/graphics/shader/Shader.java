@@ -21,23 +21,23 @@ public interface Shader extends Reloadable {
 
     Logger LOGGER = Logger.getLogger(Shader.class.getName());
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, String filename) throws Exception {
-        return loadShader(type, new File(getDirectory() + filename), new Defines());
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(GpuContext gpuContext, Class<SHADERTYPE> type, String filename) throws Exception {
+        return loadShader(gpuContext, type, new File(getDirectory() + filename), new Defines());
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file) throws Exception {
-        return loadShader(type, file, new Defines());
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(GpuContext gpuContext, Class<SHADERTYPE> type, File file) throws Exception {
+        return loadShader(gpuContext, type, file, new Defines());
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file, Defines defines) throws Exception {
-        return loadShader(type, new CodeSource(file), defines);
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(GpuContext gpuContext, Class<SHADERTYPE> type, File file, Defines defines) throws Exception {
+        return loadShader(gpuContext, type, new CodeSource(file), defines);
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource) {
-        return loadShader(type, shaderSource, new Defines());
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(GpuContext gpuContext, Class<SHADERTYPE> type, CodeSource shaderSource) {
+        return loadShader(gpuContext, type, shaderSource, new Defines());
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource, Defines defines) {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(GpuContext gpuContext, Class<SHADERTYPE> type, CodeSource shaderSource, Defines defines) {
 
         if (shaderSource == null) {
             LOGGER.severe("Shadersource null, returning null de.hanno.hpengine.shader");
@@ -74,7 +74,7 @@ public interface Shader extends Reloadable {
         final int[] shaderID = new int[1];
         final SHADERTYPE finalShader1 = shader;
         final String finalResultingShaderSource = resultingShaderSource;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             shaderID[0] = GL20.glCreateShader(finalShader.getShaderType().glShaderType);
             finalShader1.setId(shaderID[0]);
             GL20.glShaderSource(shaderID[0], finalResultingShaderSource);
@@ -85,7 +85,7 @@ public interface Shader extends Reloadable {
 
         final boolean[] shaderLoadFailed = new boolean[1];
         final int finalNewlineCount = newlineCount;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             if (GL20.glGetShaderi(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.getSimpleName() + ": " + shaderSource.getFilename());
                 String shaderInfoLog = GL20.glGetShaderInfoLog(shaderID[0], 10000);

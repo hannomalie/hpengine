@@ -2,6 +2,7 @@ package scripts;
 
 import com.carrotsearch.hppc.IntFloatHashMap;
 import com.carrotsearch.hppc.IntFloatMap;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Instance;
@@ -18,7 +19,7 @@ public class SimpleMoveComponent implements LifeCycle {
     private int[] counters = new int[randomCount];
     private int[] flips = new int[randomCount];
 
-    public void init() {
+    public void init(Engine engine) {
         Random random = new Random();
         for(int i = 0; i < randomCount; i++) {
             float v = 100f * random.nextFloat();
@@ -28,7 +29,7 @@ public class SimpleMoveComponent implements LifeCycle {
         }
     }
 
-    public void update(final float seconds) {
+    public void update(Engine engine, final float seconds) {
         entity.translateLocal(new Vector3f(0,0,seconds));
 
         for(int i = 0; i < entity.getInstances().size(); i++) {

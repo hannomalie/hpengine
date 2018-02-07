@@ -18,9 +18,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class LoadEntitiyView extends WebPanel {
+public class LoadEntityView extends WebPanel {
 
-	private LoadEntitiyView() { }
+	private final Engine engine;
+
+	private LoadEntityView(Engine engine) { this.engine = engine; }
 	
 	public static List<Entity> showDialog(Engine engine) {
 		
@@ -36,12 +38,12 @@ public class LoadEntitiyView extends WebPanel {
 		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
 			if(chosenFile != null) {
-                Entity entity = Engine.getInstance().getEntityFactory().readWithoutInit(chosenFile.getName());
+                Entity entity = engine.getEntityFactory().readWithoutInit(chosenFile.getName());
 				if(entity == null) {
 					showError(chosenFile);
 					continue;
 				}
-                CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
+                CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Boolean execute() throws Exception {
 						entity.initialize();

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.util.AbstractBuilder;
 
 import java.util.ArrayList;
@@ -15,6 +16,11 @@ public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, Re
     float clearA = 0f;
     List<ColorAttachmentDefinition> colorAttachments = new ArrayList<>();
     boolean useDepthBuffer = true;
+    private final GpuContext gpuContext;
+
+    public RenderTargetBuilder(GpuContext gpuContext) {
+        this.gpuContext = gpuContext;
+    }
 
     public RenderTargetBuilder setWidth(int width) {
         this.width = width;
@@ -67,7 +73,7 @@ public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, Re
 
     @Override
     public RenderTarget build() {
-        return new RenderTarget(this);
+        return new RenderTarget(gpuContext, this);
     }
 
     @Override

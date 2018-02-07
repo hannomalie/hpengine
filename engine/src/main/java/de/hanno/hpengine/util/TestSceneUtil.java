@@ -1,13 +1,15 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestSceneUtil {
-    public static List<Entity> loadTestScene(PhysicsFactory physicsFactory, Scene scene) {
+    public static List<Entity> loadTestScene(MaterialFactory materialFactory, PhysicsFactory physicsFactory, EntityFactory entityFactory, LightFactory lightFactory, Scene scene) {
         List<Entity> entities = new ArrayList<>();
         int entityCount = 3;
 
@@ -31,7 +33,7 @@ public class TestSceneUtil {
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            StaticModel sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+            StaticModel sphere = new OBJLoader().loadTexturedModel(materialFactory, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {
@@ -44,15 +46,15 @@ public class TestSceneUtil {
                                 .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
                                 .setAmbient(1);
                         materialInfo.setName("Default_" + i + "_" + j);
-                        Material mat = Engine.getInstance().getMaterialFactory().getMaterial(materialInfo);
+                        Material mat = materialFactory.getMaterial(materialInfo);
                         mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
                         mat.setMetallic((float)j/entityCount);
                         mat.setRoughness((float)k/entityCount);
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
-                            Entity entity = Engine.getInstance().getEntityFactory().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
-                            PointLight pointLight = Engine.getInstance().getLightFactory().getPointLight(10);
+                            Entity entity = entityFactory.getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
+                            PointLight pointLight = lightFactory.getPointLight(10);
                             pointLight.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);

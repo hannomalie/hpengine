@@ -25,19 +25,20 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.*
 import java.io.File
 
-open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
+open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: Engine,
+                                                              useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
                                                               useLineDrawing: Boolean = true,
                                                               open val renderCam: Camera? = null,
-                                                              open val cullCam: Camera? = renderCam) : SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+                                                              open val cullCam: Camera? = renderCam) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = Engine.getInstance().programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
-    private var occlusionCullingPhase2Vertex: Program = Engine.getInstance().programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase1Vertex: Program = engine.programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase2Vertex: Program = engine.programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
 
 
-    var highZBuffer: RenderTarget = RenderTargetBuilder()
+    var highZBuffer: RenderTarget = RenderTargetBuilder(engine.gpuContext)
                 .setWidth(Config.getInstance().width / 2).setHeight(Config.getInstance().height / 2)
                 .add(ColorAttachmentDefinition().setInternalFormat(Pipeline.HIGHZ_FORMAT)
                         .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
@@ -58,13 +59,13 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
         debugPrintPhase1(drawDescriptionAnimated, Pipeline.CullingPhase.ANIMATED_ONE)
     }
 
-    private val highZProgram = Engine.getInstance().programFactory.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
+    private val highZProgram = engine.programFactory.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
 
     open fun renderHighZMap() {
-        SimpleDrawStrategy.renderHighZMap(depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
+        SimpleDrawStrategy.renderHighZMap(engine.gpuContext, depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
     }
 
-    open var depthMap = Engine.getInstance().renderer.gBuffer.visibilityMap
+    open var depthMap = engine.renderer.gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
         if (Config.getInstance().isPrintPipelineDebugOutput) {
@@ -123,7 +124,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram = Engine.getInstance().programFactory.appendDrawCommandProgram
+        val appendProgram = engine.programFactory.appendDrawCommandProgram
 
         GPUProfiler.start("Buffer compaction")
         with(commandOrganization) {
@@ -205,8 +206,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
             setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
             setUniform("camPosition", camera.position)
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
-            Engine.getInstance().gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
-            Engine.getInstance().gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, Pipeline.HIGHZ_FORMAT)
+            engine.gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
+            engine.gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, Pipeline.HIGHZ_FORMAT)
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (commandOrganization.commands.size + 2) / 3 * 3, invocationsPerCommand)
             GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT)
             GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)

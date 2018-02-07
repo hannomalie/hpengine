@@ -15,7 +15,7 @@ public class GetMaterialCommand implements Command<MaterialResult> {
 	
 	@Override
 	public MaterialResult execute(Engine engine) {
-        Material material = Engine.getInstance().getMaterialFactory().getMaterial(materialInfo);
+        Material material = engine.getMaterialFactory().getMaterial(materialInfo);
 		return new MaterialResult(material);
 	}
 

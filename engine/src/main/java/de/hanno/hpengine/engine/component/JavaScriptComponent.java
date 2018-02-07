@@ -10,6 +10,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     String script = "";
     private ScriptContext context;
     private Map map = new HashMap();
+    private Engine engine;
 
     public JavaScriptComponent(String script) {
         super();
@@ -26,15 +27,16 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     @Override
-    public void init() {
-        super.init();
-        context = Engine.getInstance().getScriptManager().createContext();
-        Engine.getInstance().getScriptManager().evalInit(this);
+    public void init(Engine engine) {
+        super.init(engine);
+        this.engine = engine;
+        context = engine.getScriptManager().createContext();
+        engine.getScriptManager().evalInit(this);
     }
 
     @Override
-    public void update(float seconds) {
-        Engine.getInstance().getScriptManager().evalUpdate(this, seconds);
+    public void update(Engine engine, float seconds) {
+        engine.getScriptManager().evalUpdate(this, seconds);
     }
 
     public void setInt(String name, int value) {
@@ -50,12 +52,12 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     public void eval(String script) {
-        Engine.getInstance().getScriptManager().eval(getContext(), script);
+        engine.getScriptManager().eval(getContext(), script);
     }
 
     @Override
     public void reload() {
-        init();
+        init(engine);
     }
 
     @Override

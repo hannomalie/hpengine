@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.buffer;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL44;
 
@@ -13,13 +13,15 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 
 public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> implements GPUBuffer<T> {
+    private final GpuContext gpuContext;
     protected int target = 0;
     private int id;
     protected volatile ByteBuffer buffer;
     private IntBuffer intBuffer;
     private boolean bound = false;
 
-    public AbstractPersistentMappedBuffer(int target) {
+    public AbstractPersistentMappedBuffer(GpuContext gpuContext, int target) {
+        this.gpuContext = gpuContext;
         this.target = target;
     }
 
@@ -40,7 +42,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
         if(buffer != null) {
             boolean needsResize = buffer.capacity()  <= capacityInBytes;
             if(needsResize) {
-                Engine.getInstance().getGpuContext().execute(() -> {
+                gpuContext.execute(() -> {
                     bind();
                     if(GL15.glGetBufferParameteri(target, GL15.GL_BUFFER_MAPPED) == 1) {
                         glUnmapBuffer(target);
@@ -57,7 +59,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
         }
         {
             int finalCapacityInBytes = 2*capacityInBytes;
-            Engine.getInstance().getGpuContext().execute(() -> {
+            gpuContext.execute(() -> {
                 bind();
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
                 GL44.glBufferStorage(target, finalCapacityInBytes, flags);
@@ -74,7 +76,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
     public void bind() {
 //        TODO: Make this somehow possible
 //        if(bound) {return;}
-        Engine.getInstance().getGpuContext().execute(bindBufferRunnable);
+        gpuContext.execute(bindBufferRunnable);
         bound = true;
     }
 
@@ -87,7 +89,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
 
     @Override
     public void unbind() {
-        Engine.getInstance().getGpuContext().execute(() -> glBindBuffer(target, 0));
+        gpuContext.execute(() -> glBindBuffer(target, 0));
         bound = false;
     }
 

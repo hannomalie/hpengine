@@ -1,27 +1,20 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
-import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.graphics.renderer.PixelBufferObject;
-import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.StorageBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.PixelBufferObject;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.util.Util;
+import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -47,9 +40,6 @@ public class GBuffer {
 
 	private int fullScreenMipmapCount;
 
-	private StaticModel probeBox;
-	private Entity probeBoxEntity;
-
 	private ByteBuffer vec4Buffer = BufferUtils.createByteBuffer(4*4).order(ByteOrder.nativeOrder());
 	private FloatBuffer fBuffer = vec4Buffer.asFloatBuffer();
 	private float[] onePixel = new float[4];
@@ -60,30 +50,30 @@ public class GBuffer {
 
 	private final int exposureIndex = 0;
 
-    public GBuffer() {
+    public GBuffer(GpuContext gpuContext) {
 
-		gBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+		gBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 				.add(4, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 				.add(1, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA32F))
 				.add(1, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 				.build();
-		reflectionBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+		reflectionBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
 								.setTextureFilter(GL11.GL_LINEAR))
 						.setClearRGBA(0, 0, 0, 0)
 						.build();
-		laBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth())
+		laBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth())
 						.setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
                                 .setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR))
 						.build();
-		finalBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+		finalBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL11.GL_RGBA8))
 						.build();
-		halfScreenBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
+		halfScreenBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
@@ -92,29 +82,14 @@ public class GBuffer {
 		identityMatrixBuffer.rewind();
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
-		pixelBufferObject = new PixelBufferObject(1, 1);
+		pixelBufferObject = new PixelBufferObject(gpuContext, 1, 1);
 		
-         storageBuffer = new PersistentMappedBuffer(4*8);//new StorageBuffer(16);
+         storageBuffer = new PersistentMappedBuffer(gpuContext, 4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
         GpuContext.exitOnGLError("grid de.hanno.hpengine.texture creation");
 	}
 	
-	public void init() {
-		probeBox = null;
-		try {
-			probeBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/probebox.obj"));
-            Material probeBoxMaterial = Engine.getInstance().getMaterialFactory().getDefaultMaterial();
-			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
-			probeBox.setMaterial(probeBoxMaterial);
-            probeBoxEntity = Engine.getInstance().getEntityFactory().getEntity("ProbeBox", probeBox);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	public int getLightAccumulationMapOneId() {
 		return laBuffer.getRenderedTexture(0);
 	}
@@ -151,10 +126,6 @@ public class GBuffer {
 
 	public void use(boolean clear) {
 		gBuffer.use(clear);
-	}
-
-	public Entity getProbeBoxEntity() {
-		return probeBoxEntity;
 	}
 
 	public RenderTarget getLightAccumulationBuffer() {

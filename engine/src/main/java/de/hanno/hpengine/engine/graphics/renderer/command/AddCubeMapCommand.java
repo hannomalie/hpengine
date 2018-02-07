@@ -15,7 +15,7 @@ public class AddCubeMapCommand extends AddTextureCommand {
 	public TextureResult execute(Engine engine) {
 		Texture texture = null;
 		try {
-            texture = Engine.getInstance().getTextureFactory().getCubeMap(path);
+            texture = engine.getTextureFactory().getCubeMap(engine.getTextureFactory(), path);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

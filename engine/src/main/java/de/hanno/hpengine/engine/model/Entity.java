@@ -42,6 +42,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	};
 
 	private List<Instance> instancesTemp = new ArrayList();
+	private Engine engine;
 
 	public Instance addInstance(Entity entity) {
 		return addInstance(entity, new SimpleTransform());
@@ -113,15 +114,14 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
 	@Override
-	public void initialize() {
-		LifeCycle.super.init();
-
+	public void init(Engine engine) {
 		for(Component component : components.values()) {
-			component.init();
+			component.init(engine);
 		}
 		for(Entity child: getChildren()) {
 			child.initialize();
 		}
+		this.engine = engine;
 		initialized = true;
 	}
 
@@ -177,18 +177,18 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
 	@Override
-	public void update(float seconds) {
+	public void update(Engine engine, float seconds) {
 		recalculateIfDirty();
 		for (Component c : components.values()) {
             if(!c.isInitialized()) { continue; }
-			c.update(seconds);
+			c.update(engine, seconds);
 		}
 		for(int i = 0; i < clusters.size(); i++) {
 			Cluster cluster = clusters.get(i);
-			cluster.update(seconds);
+			cluster.update(engine, seconds);
 		}
 		for(int i = 0; i < getChildren().size(); i++) {
-			getChildren().get(i).update(seconds);
+			getChildren().get(i).update(engine, seconds);
 		}
 	}
 
@@ -340,7 +340,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Mesh> meshes = modelComponent.getMeshes();
 		for(Mesh mesh : meshes) {
-            int materialIndex = Engine.getInstance().getMaterialFactory().indexOf(mesh.getMaterial());
+            int materialIndex = engine.getMaterialFactory().indexOf(mesh.getMaterial());
 			{
 				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0(), modelComponent.getMinMax(this, mesh));
 			}
@@ -349,7 +349,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
-                    int instanceMaterialIndex = Engine.getInstance().getMaterialFactory().indexOf(instance.getMaterials().get(meshIndex));
+                    int instanceMaterialIndex = engine.getMaterialFactory().indexOf(instance.getMaterials().get(meshIndex));
                     putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
                 }
             }
@@ -396,10 +396,10 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(materialIndex);
 		buffer.putInt((int) getUpdate().getAsDouble());
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-		int entityBufferIndex = Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(modelComponent);
+		int entityBufferIndex = engine.getSceneManager().getScene().getEntityBufferIndex(modelComponent);
 		buffer.putInt(entityBufferIndex + meshIndex);
 
-		buffer.putInt(Engine.getInstance().getSceneManager().getScene().getEntities().indexOf(this));
+		buffer.putInt(engine.getSceneManager().getScene().getEntities().indexOf(this));
 		buffer.putInt(meshIndex);
 		buffer.putInt(modelComponent.getBaseVertex(meshIndex));
 		buffer.putInt(modelComponent.getBaseJointIndex());
@@ -445,12 +445,12 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		m33(buffer.getFloat());
 
 		setSelected(buffer.getInt() == 1);
-        Material material = Engine.getInstance().getMaterialFactory().getMaterialsAsList().get(buffer.getInt());
+        Material material = engine.getMaterialFactory().getMaterialsAsList().get(buffer.getInt());
 		System.out.println(material.getName());
 		System.out.println(material);
 		setUpdate(Update.values()[buffer.getInt()]);
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-		int entityBufferIndex = Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(modelComponent);
+		int entityBufferIndex = engine.getSceneManager().getScene().getEntityBufferIndex(modelComponent);
 		buffer.getInt();
 
 		System.out.println("Entity index " + buffer.getInt());

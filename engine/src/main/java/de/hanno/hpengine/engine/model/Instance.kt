@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
@@ -42,8 +43,8 @@ open class Instance
         return true
     }
 
-    override fun update(seconds: Float) {
-        animationController.update(seconds)
+    override fun update(engine: Engine, seconds: Float) {
+        animationController.update(engine, seconds)
     }
 
     override fun getMinMax(): AABB {

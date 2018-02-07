@@ -13,12 +13,12 @@ public class EntityViewTest extends TestWithEngine {
 
     @Test
     public void testEntityViewGui() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity parentEntity = engine.getEntityFactory().getEntity("parent", model);
 
         JFrame frame = new JFrame();
 
-        frame.add(new EntityView(Engine.getInstance(), parentEntity));
+        frame.add(new EntityView(engine, parentEntity));
 
         frame.setVisible(true);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);

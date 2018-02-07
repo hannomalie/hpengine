@@ -1,21 +1,21 @@
 package de.hanno.hpengine.engine.graphics.buffer;
 
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
 
-import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersistentMappedBuffer<T> {
 
-    public PersistentMappedBuffer(int capacityInBytes) {
-        this(capacityInBytes, GL43.GL_SHADER_STORAGE_BUFFER);
+    public PersistentMappedBuffer(GpuContext gpuContext, int capacityInBytes) {
+        this(gpuContext, capacityInBytes, GL43.GL_SHADER_STORAGE_BUFFER);
     }
 
-    public PersistentMappedBuffer(int capacityInBytes, int target) {
-        super(target);
+    public PersistentMappedBuffer(GpuContext gpuContext, int capacityInBytes, int target) {
+        super(gpuContext, target);
         setCapacityInBytes(capacityInBytes);
     }
 

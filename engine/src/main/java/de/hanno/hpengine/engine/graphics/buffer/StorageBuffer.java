@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.buffer;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL43;
@@ -18,13 +18,15 @@ public abstract class StorageBuffer implements GPUBuffer {
     private int size = -1;
 
     private volatile DoubleBuffer tempBuffer;
+    private final GpuContext gpuContext;
 
-    public StorageBuffer(int size) {
-        this(BufferUtils.createDoubleBuffer(size));
+    public StorageBuffer(GpuContext gpuContext, int size) {
+        this(gpuContext, BufferUtils.createDoubleBuffer(size));
     }
 
-    public StorageBuffer(DoubleBuffer data) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+    public StorageBuffer(GpuContext gpuContext, DoubleBuffer data) {
+        this.gpuContext = gpuContext;
+        this.gpuContext.execute(() -> {
             id = GL15.glGenBuffers();
             buffer(data);
             unbind();
@@ -34,7 +36,7 @@ public abstract class StorageBuffer implements GPUBuffer {
 
     private void buffer(DoubleBuffer data) {
         bind();
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, data, GL15.GL_DYNAMIC_COPY);
             setSizeInBytes(GL15.glGetBufferParameteri(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
         });
@@ -42,7 +44,7 @@ public abstract class StorageBuffer implements GPUBuffer {
 
     @Override
     public void bind() {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, id);
         });
     }
@@ -67,7 +69,7 @@ public abstract class StorageBuffer implements GPUBuffer {
 
     @Override
     public void putValues(int offset, ByteBuffer values) {
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             bind();
             if (offset * primitiveByteSize + values.capacity() * primitiveByteSize > size) {
                 throw new IndexOutOfBoundsException(String.format("Can't put values into de.hanno.hpengine.shader storage buffer %d (size: %d, offset %d, length %d)", id, size, offset * primitiveByteSize, values.capacity() * primitiveByteSize));
@@ -115,7 +117,7 @@ public abstract class StorageBuffer implements GPUBuffer {
     @Override
     public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             ByteBuffer tempByteBuffer = BufferUtils.createByteBuffer(20 * 4 * bufferable.length); // TODO Estimate better
             tempBuffer = tempByteBuffer.asDoubleBuffer();
             for (int i = 0; i < bufferable.length; i++) {

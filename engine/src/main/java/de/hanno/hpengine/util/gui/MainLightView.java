@@ -1,37 +1,37 @@
 package de.hanno.hpengine.util.gui;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.TwoSidesPanel;
+import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.button.WebButton;
+import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
+import com.alee.laf.slider.WebSlider;
 import com.alee.laf.text.WebFormattedTextField;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
-
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import com.alee.extended.panel.WebComponentPanel;
-import com.alee.laf.colorchooser.WebColorChooserPanel;
-import com.alee.laf.slider.WebSlider;
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainLightView extends WebPanel {
 
-    public MainLightView() {
+    private Engine engine;
+
+    public MainLightView(Engine engine) {
+        this.engine = engine;
 
         List<Component> panels = getPanels();
         this.removeAll();
@@ -48,7 +48,7 @@ public class MainLightView extends WebPanel {
         lightColorChooserPanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                DirectionalLight light = Engine.getInstance().getSceneManager().getScene().getDirectionalLight();
+                DirectionalLight light = engine.getSceneManager().getScene().getDirectionalLight();
                 Color color = lightColorChooserPanel.getColor();
                 light.setColor(new Vector3f(color.getRed() / 255.f,
                         color.getGreen() / 255.f,
@@ -91,7 +91,7 @@ public class MainLightView extends WebPanel {
         WebFormattedVec3Field positionField = new WebFormattedVec3Field("Position", new Vector3f()) {
             @Override
             public void onValueChange(Vector3f current) {
-                Engine.getInstance().getSceneManager().getScene().getDirectionalLight().setTranslation(current);
+                engine.getSceneManager().getScene().getDirectionalLight().setTranslation(current);
             }
         };
         movablePanel.addElement(positionField);
@@ -99,26 +99,26 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 3600, 0) {
             @Override
             public void onValueChange(int value, int delta) {
-                Engine.getInstance().getSceneManager().getScene().getDirectionalLight().rotate(new AxisAngle4f(1, 0, 0, 0.01f * delta));
+                engine.getSceneManager().getScene().getDirectionalLight().rotate(new AxisAngle4f(1, 0, 0, 0.01f * delta));
             }
         });
         movablePanel.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 3600, 0) {
             @Override
             public void onValueChange(int value, int delta) {
-                Engine.getInstance().getSceneManager().getScene().getDirectionalLight().rotate(new AxisAngle4f(0, 1, 0, 0.01f * delta));
+                engine.getSceneManager().getScene().getDirectionalLight().rotate(new AxisAngle4f(0, 1, 0, 0.01f * delta));
             }
         });
         movablePanel.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 3600, 0) {
             @Override
             public void onValueChange(int value, int delta) {
-                Engine.getInstance().getSceneManager().getScene().getDirectionalLight().rotate(new AxisAngle4f(0, 0, 1, 0.01f * delta));
+                engine.getSceneManager().getScene().getDirectionalLight().rotate(new AxisAngle4f(0, 0, 1, 0.01f * delta));
             }
         });
 
         movablePanel.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
             @Override
             public void onValueChange(int value, int delta) {
-                DirectionalLight directionalLight = Engine.getInstance().getSceneManager().getScene().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getSceneManager().getScene().getDirectionalLight();
                 Vector3f axis = directionalLight.getRightDirection();
                 axis = new Vector3f(1, 0, 0);
                 directionalLight.translate(axis.mul(delta));
@@ -128,7 +128,7 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
             @Override
             public void onValueChange(int value, int delta) {
-                DirectionalLight directionalLight = Engine.getInstance().getSceneManager().getScene().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getSceneManager().getScene().getDirectionalLight();
                 Vector3f axis = directionalLight.getUpDirection();
                 axis = new Vector3f(0, 1, 0);
                 directionalLight.translate(axis.mul(delta));
@@ -138,7 +138,7 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
             @Override
             public void onValueChange(int value, int delta) {
-                DirectionalLight directionalLight = Engine.getInstance().getSceneManager().getScene().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getSceneManager().getScene().getDirectionalLight();
                 Vector3f axis = directionalLight.getViewDirection().negate(null);
                 axis = new Vector3f(0, 0, -1);
                 directionalLight.translate(axis.mul(delta));
@@ -149,7 +149,7 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new WebFormattedVec3Field("View Direction", new Vector3f(0, 0, -1)) {
             @Override
             public void onValueChange(Vector3f current) {
-                DirectionalLight directionalLight = Engine.getInstance().getSceneManager().getScene().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getSceneManager().getScene().getDirectionalLight();
                 Quaternionf temp = new Quaternionf();
                 temp.fromAxisAngleRad(current.x, current.y, current.z, 0);
                 directionalLight.rotation(temp);
@@ -161,7 +161,7 @@ public class MainLightView extends WebPanel {
         webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(0, 0, 0)) {
             @Override
             public void onValueChange(Vector3f current) {
-                DirectionalLight light = Engine.getInstance().getSceneManager().getScene().getDirectionalLight();
+                DirectionalLight light = engine.getSceneManager().getScene().getDirectionalLight();
                 light.setWidth(current.x);
                 light.setHeight(current.y);
                 light.setFar(current.z);
@@ -170,18 +170,18 @@ public class MainLightView extends WebPanel {
         webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", new Vector3f()) {
             @Override
             public void onValueChange(Vector3f current) {
-                Engine.getInstance().getSceneManager().getScene().getDirectionalLight().setTranslation(current);
+                engine.getSceneManager().getScene().getDirectionalLight().setTranslation(current);
             }
         });
 
         webComponentPanel.addElement(new WebButton("Use Light Cam") {{
             addActionListener(e -> {
-                Engine.getInstance().getSceneManager().setActiveCamera(Engine.getInstance().getSceneManager().getScene().getDirectionalLight());
+                engine.getSceneManager().setActiveCamera(engine.getSceneManager().getScene().getDirectionalLight());
             });
         }});
         webComponentPanel.addElement(new WebButton("Use World Cam") {{
             addActionListener(e -> {
-                Engine.getInstance().getSceneManager().restoreWorldCamera();
+                engine.getSceneManager().restoreWorldCamera();
             });
         }});
 

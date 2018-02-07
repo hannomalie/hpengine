@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.camera;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
@@ -32,7 +33,7 @@ public class MovableCamera extends Camera {
                         private float yawAccel = 0;
 
                          @Override
-                         public void update(float seconds) {
+                         public void update(Engine engine, float seconds) {
 //                             linearVel.fma(seconds, linearAcc);
 //                             // update angular velocity based on angular acceleration
 //                             angularVel.fma(seconds, angularAcc);
@@ -42,17 +43,17 @@ public class MovableCamera extends Camera {
 //                             position.fma(seconds, linearVel);
 
                              float turbo = 1f;
-                             if (Input.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
                                  turbo = 3f;
                              }
 
                              float rotationAmount = 10.1f * turbo * seconds * rotationDelta * Config.getInstance().getCameraSpeed();
-                             if (Input.isMouseClicked(0)) {
-                                 double pitchAmount = Math.toRadians((Input.getDYSmooth() * rotationAmount) % 360);
+                             if (engine.getInput().isMouseClicked(0)) {
+                                 double pitchAmount = Math.toRadians((engine.getInput().getDYSmooth() * rotationAmount) % 360);
                                  pitchAccel = (float) Math.max(2 * Math.PI, pitchAccel + pitchAmount);
                                  pitchAccel = Math.max(0, pitchAccel * 0.9f);
 
-                                 double yawAmount = Math.toRadians((Input.getDXSmooth() * rotationAmount) % 360);
+                                 double yawAmount = Math.toRadians((engine.getInput().getDXSmooth() * rotationAmount) % 360);
                                  yawAccel = (float) Math.max(2 * Math.PI, yawAccel + yawAmount);
                                  yawAccel = Math.max(0, yawAccel * 0.9f);
 
@@ -64,22 +65,22 @@ public class MovableCamera extends Camera {
                              }
 
                              float moveAmount = turbo * posDelta * seconds * Config.getInstance().getCameraSpeed();
-                             if (Input.isKeyPressed(GLFW_KEY_W)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_W)) {
                                  getEntity().translate(new Vector3f(0, 0, -moveAmount));
                              }
-                             if (Input.isKeyPressed(GLFW_KEY_S)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_S)) {
                                  getEntity().translate(new Vector3f(0, 0, moveAmount));
                              }
-                             if (Input.isKeyPressed(GLFW_KEY_A)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_A)) {
                                  getEntity().translate(new Vector3f(-moveAmount, 0, 0));
                              }
-                             if (Input.isKeyPressed(GLFW_KEY_D)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_D)) {
                                  getEntity().translate(new Vector3f(moveAmount, 0, 0));
                              }
-                             if (Input.isKeyPressed(GLFW_KEY_Q)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_Q)) {
                                  getEntity().translate(new Vector3f(0, -moveAmount, 0));
                              }
-                             if (Input.isKeyPressed(GLFW_KEY_E)) {
+                             if (engine.getInput().isKeyPressed(GLFW_KEY_E)) {
                                  getEntity().translate(new Vector3f(0, moveAmount, 0));
                              }
 

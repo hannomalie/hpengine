@@ -21,7 +21,7 @@ public class MockedRendererEngineTest {
         // TODO: Make running this test possible
         Config.getInstance().setRendererClass(MockRenderer.class);
         Config.getInstance().setGpuContextClass(MockContext.class);
-        Engine.init();
+        Engine.create();
     }
 
     public static class MockRenderer implements Renderer {
@@ -37,7 +37,7 @@ public class MockedRendererEngineTest {
         }
 
         @Override
-        public void update(float seconds) {
+        public void update(Engine engine, float seconds) {
 
         }
 

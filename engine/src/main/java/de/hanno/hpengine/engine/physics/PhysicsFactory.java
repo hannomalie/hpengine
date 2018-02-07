@@ -16,9 +16,9 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.*;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -39,11 +39,13 @@ public class PhysicsFactory {
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
     private final CommandQueue commandQueue = new CommandQueue();
+    private Renderer renderer;
 
-	public PhysicsFactory() {
-		this(new Vector3f(0,-20,0));
+    public PhysicsFactory(Renderer renderer) {
+		this(new Vector3f(0,-20,0), renderer);
 	}
-	public PhysicsFactory(Vector3f gravity) {
+	public PhysicsFactory(Vector3f gravity, Renderer renderer) {
+        this.renderer = renderer;
         setupBullet(gravity);
         new TimeStepThread("Physics", 0.001f) {
 
@@ -221,7 +223,7 @@ public class PhysicsFactory {
 			
 			@Override
 			public void drawLine(Vector3f start, Vector3f end, Vector3f color) {
-                Engine.getInstance().getRenderer().batchLine(
+                renderer.batchLine(
 						new org.joml.Vector3f(start.x, start.y, start.z),
 						new org.joml.Vector3f(end.x, end.y, end.z));
 			}

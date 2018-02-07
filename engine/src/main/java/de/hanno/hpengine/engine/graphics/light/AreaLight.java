@@ -1,14 +1,12 @@
 package de.hanno.hpengine.engine.graphics.light;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.Frustum;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.util.Util;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.util.Util;
 
 import java.util.List;
 
@@ -29,9 +27,6 @@ public class AreaLight extends Camera {
         setFar(5000f);
         setFov(180f);
         setRatio(1);
-        Entity plane = Engine.getInstance().getEntityFactory().getEntity(generateName() ,model);
-        plane.translation(new Vector3f(0, 0, -getNear()));
-        plane.setParent(this);
 		initialize();
 	}
 	

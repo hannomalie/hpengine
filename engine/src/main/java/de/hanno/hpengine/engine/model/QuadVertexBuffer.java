@@ -1,28 +1,17 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+
 import javax.vecmath.Vector2f;
 import java.util.EnumSet;
 
 public class QuadVertexBuffer extends VertexBuffer {
 
-    private static final VertexBuffer fullscreenBuffer = new QuadVertexBuffer(true);
-    private static final VertexBuffer debugBuffer = new QuadVertexBuffer(false);
-	static {
-		fullscreenBuffer.upload();
-		debugBuffer.upload();
+	public QuadVertexBuffer(GpuContext gpuContext, boolean fullscreen) {
+		super(gpuContext, getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 	}
-    public static VertexBuffer getFullscreenBuffer() {
-        return fullscreenBuffer;
-    }
-    public static VertexBuffer getDebugBuffer() {
-        return debugBuffer;
-    }
-
-	public QuadVertexBuffer(boolean fullscreen) {
-		super(getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
-	}
-	public QuadVertexBuffer(Vector2f leftBottom, Vector2f rightUpper) {
-		super(getPositionsAndTexCoords(leftBottom, rightUpper), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+	public QuadVertexBuffer(GpuContext gpuContext, Vector2f leftBottom, Vector2f rightUpper) {
+		super(gpuContext, getPositionsAndTexCoords(leftBottom, rightUpper), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 	}
 
 	static float[] getPositionsAndTexCoords(boolean fullscreen) {

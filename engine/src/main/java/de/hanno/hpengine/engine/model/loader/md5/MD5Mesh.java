@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -266,7 +267,7 @@ public class MD5Mesh implements Mesh {
     }
 
     @Override
-    public void init() {
+    public void init(MaterialFactory materialFactory) {
 
     }
 

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 
 import java.io.Serializable;
@@ -13,7 +14,7 @@ public abstract class BaseComponent implements Component, Serializable {
     public String getIdentifier() { return this.getClass() + " " + System.currentTimeMillis(); }
 
     @Override
-    public void init() {
+    public void init(Engine engine) {
         initialized = true;
     }
 

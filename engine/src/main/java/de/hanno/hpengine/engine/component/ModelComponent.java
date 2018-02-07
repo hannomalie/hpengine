@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -60,6 +61,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
             DataChannels.POSITION3);
     private VertexIndexOffsets vertexIndexOffsets;
     private int jointsOffset = 0;
+    private Engine engine;
 
     public ModelComponent(Model model) {
         super();
@@ -73,39 +75,40 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
 
     private transient WeakReference<Material> materialCache = null;
-    public Material getMaterial() {
+    public Material getMaterial(MaterialFactory materialFactory) {
         if(materialCache != null && materialCache.get() != null && materialCache.get().getName().equals(materialName)) {
             return materialCache.get();
         }
-        Material material = Engine.getInstance().getMaterialFactory().getMaterial(materialName);
+        Material material = materialFactory.getMaterial(materialName);
         materialCache = new WeakReference<>(material);
         if(material == null) {
             Logger.getGlobal().info("Material null, default is applied");
-            return Engine.getInstance().getMaterialFactory().getDefaultMaterial();
+            return materialFactory.getDefaultMaterial();
         }
         return material;
     }
-    public void setMaterial(String materialName) {
+    public void setMaterial(MaterialFactory materialFactory, String materialName) {
         this.materialName = materialName;
-        model.setMaterial(Engine.getInstance().getMaterialFactory().getMaterial(materialName));
+        model.setMaterial(materialFactory.getMaterial(materialName));
         for(Entity child : entity.getChildren()) {
-            child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialName));
+            child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialFactory, materialName));
         }
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void init(Engine engine) {
+        super.init(engine);
+        this.engine = engine;
         initialized = true;
     }
 
     @Override
-    public void registerInScene(Scene scene) {
+    public void registerInScene(Scene scene, Engine engine) {
         if(model.isStatic()) {
-            VertexIndexBuffer<Vertex> vertexIndexBuffer = Engine.getInstance().getRenderSystem().getVertexIndexBufferStatic();
+            VertexIndexBuffer<Vertex> vertexIndexBuffer = engine.getRenderSystem().getVertexIndexBufferStatic();
             putToBuffer(vertexIndexBuffer, DEFAULTCHANNELS);
         } else {
-            VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = Engine.getInstance().getRenderSystem().getVertexIndexBufferAnimated();
+            VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = this.engine.getRenderSystem().getVertexIndexBufferAnimated();
             putToBuffer(vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
 
             jointsOffset = scene.getJoints().size(); // TODO: Proper allocation
@@ -132,7 +135,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
-        Engine.getInstance().getGpuContext().execute(() -> {
+        engine.getGpuContext().execute(() -> {
             vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 
@@ -274,9 +277,9 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
 
     @Override
-    public void update(float seconds) {
+    public void update(Engine engine, float seconds) {
         if(model instanceof AnimatedModel) {
-            animationController.update(seconds);
+            animationController.update(engine, seconds);
         }
     }
 

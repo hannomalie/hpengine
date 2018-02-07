@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import de.hanno.hpengine.engine.scene.Scene;
@@ -12,7 +12,7 @@ public class SceneTest extends TestWithEngine {
 	@Test
 	public void writeAndRead() throws Exception {
 		Scene scene = new Scene();
-		scene.init();
+		scene.init(engine);
 		Assert.assertTrue(scene.write(SCENENAME));
 
 		Scene loadedScene = Scene.read(SCENENAME);
@@ -24,7 +24,7 @@ public class SceneTest extends TestWithEngine {
     @Test
     public void loadScene() throws Exception {
         Scene scene = new Scene();
-        scene.init();
+        scene.init(engine);
         engine.getSceneManager().setScene(scene);
         Entity entity = engine.getEntityFactory().getEntity();
         scene.add(entity);
@@ -32,7 +32,7 @@ public class SceneTest extends TestWithEngine {
         Assert.assertTrue(scene.write(SCENENAME));
 
         Scene loadedScene = Scene.read(SCENENAME);
-        loadedScene.init();
+        loadedScene.init(engine);
         engine.getSceneManager().setScene(loadedScene);
 
         Assert.assertEquals(1, engine.getSceneManager().getScene().getEntities().size());

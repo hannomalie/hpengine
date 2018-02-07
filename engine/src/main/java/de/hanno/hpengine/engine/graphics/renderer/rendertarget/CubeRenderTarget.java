@@ -11,8 +11,9 @@ import org.lwjgl.BufferUtils;
 
 public class CubeRenderTarget extends RenderTarget {
 
-	public CubeRenderTarget(CubeRenderTargetBuilder builder) {
-		this.width = builder.width;
+	public CubeRenderTarget(Engine engine, CubeRenderTargetBuilder builder) {
+        super(engine.getGpuContext());
+        this.width = builder.width;
 		this.height = builder.height;
 		this.clearR = builder.clearR;
 		this.clearG = builder.clearR;
@@ -28,14 +29,14 @@ public class CubeRenderTarget extends RenderTarget {
 
 		for (int i = 0; i < colorBufferCount; i++) {
 			int internalFormat = builder.colorAttachments.get(i).internalFormat;
-            int cubeMap = Engine.getInstance().getTextureFactory().getCubeMap(width, height, internalFormat);
+            int cubeMap = engine.getTextureFactory().getCubeMap(width, height, internalFormat);
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, cubeMap, 0);
 			renderedTextures[i] = cubeMap;
 			scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
 		}
 
 		if(builder.useDepthBuffer) {
-            int depthCubeMap = Engine.getInstance().getTextureFactory().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
+            int depthCubeMap = engine.getTextureFactory().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
 		}
 		GL20.glDrawBuffers(scratchBuffer);
@@ -49,8 +50,8 @@ public class CubeRenderTarget extends RenderTarget {
 	}
 //
 //	public void setCubeMapFace(int index) {
-//		Engine.getInstance().getRenderer().getOpenGLContext().clearDepthBuffer();
-//		Engine.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
+//		engine.getRenderer().getOpenGLContext().clearDepthBuffer();
+//		engine.getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
 //		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
 //	}
 

@@ -15,8 +15,8 @@ public class TestWithRenderer {
 	
 	@BeforeClass
 	public static void init() {
-		Engine.init();
-		engine = Engine.getInstance();
-        renderer = Engine.getInstance().getRenderer();
+		Engine.create();
+		engine = Engine.create();
+        renderer = engine.getRenderer(); // TODO: Isolate this
 	}
 }

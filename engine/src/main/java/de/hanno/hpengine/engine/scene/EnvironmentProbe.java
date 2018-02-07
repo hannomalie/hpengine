@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.model.Entity;
 import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -13,7 +14,9 @@ import java.util.List;
 import java.util.Random;
 
 public class EnvironmentProbe extends Entity {
-	
+
+	private final EnvironmentProbeFactory environmentProbeFactory;
+
 	public enum Update {
 		STATIC,
 		DYNAMIC
@@ -28,7 +31,8 @@ public class EnvironmentProbe extends Entity {
 	
 
 	protected EnvironmentProbe(Engine engine, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
-        this.renderer = Engine.getInstance().getRenderer();
+        this.renderer = engine.getRenderer();
+        this.environmentProbeFactory = engine.getEnvironmentProbeFactory();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(engine, this, center, resolution, resolution, probeIndex);
@@ -72,12 +76,12 @@ public class EnvironmentProbe extends Entity {
 	public void move(Vector3f amount) {
 		super.translate(amount);
 		resetAllProbes();
-        Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
+        environmentProbeFactory.updateBuffers();
 		box.move(amount);
 	}
 	
 	private void resetAllProbes() {
-        Engine.getInstance().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+        environmentProbeFactory.getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
 	}
@@ -119,12 +123,12 @@ public class EnvironmentProbe extends Entity {
 	public void setSize(float size) {
 		resetAllProbes();
 		box.setSize(size);
-        Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
+        environmentProbeFactory.updateBuffers();
 	}
 	public void setSize(float sizeX, float sizeY, float sizeZ) {
 		resetAllProbes();
 		box.setSize(sizeX, sizeY, sizeZ);
-        Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
+        environmentProbeFactory.updateBuffers();
 	}
 
 	public Vector3f getSize() {
@@ -135,17 +139,17 @@ public class EnvironmentProbe extends Entity {
 		return sampler;
 	}
 
-	public int getTextureUnitIndex() {
+	public int getTextureUnitIndex(GpuContext gpuContext) {
 		int index = getIndex();
-        return Engine.getInstance().getGpuContext().getMaxTextureUnits() - index - 1;
+        return gpuContext.getMaxTextureUnits() - index - 1;
 	}
 
 	public int getIndex() {
-        return Engine.getInstance().getEnvironmentProbeFactory().getProbes().indexOf(this);
+        return environmentProbeFactory.getProbes().indexOf(this);
 	}
 
 	public Vector3f getDebugColor() {
-        float colorHelper = (float)getIndex()/(float) Engine.getInstance().getEnvironmentProbeFactory().getProbes().size();
+        float colorHelper = (float)getIndex()/(float) environmentProbeFactory.getProbes().size();
 		Random randomGenerator = new Random();
 		randomGenerator.setSeed((long)colorHelper);
 		float random = randomGenerator.nextFloat();

@@ -14,7 +14,7 @@ public class Init implements LifeCycle {
 
     private boolean initialized;
 
-    public void init() {
+    public void init(Engine engine) {
 
         try {
             ArrayList<Entity> entities = new ArrayList<Entity>();

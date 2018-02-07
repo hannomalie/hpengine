@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
 import de.hanno.hpengine.engine.model.loader.md5.*;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import org.joml.Vector4f;
 
 import java.io.File;
@@ -31,9 +32,9 @@ public class LoadModelCommand implements Command<EntityListResult> {
         try {
             List<Entity> entities = new ArrayList<>();
             ModelComponent modelComponent;
-            Model model = getModel();
+            Model model = getModel(engine.getMaterialFactory());
             modelComponent = new ModelComponent(model);
-            List<Entity> allChildrenAndSelf = Engine.getInstance().getEntityFactory().getEntity(name).getAllChildrenAndSelf();
+            List<Entity> allChildrenAndSelf = engine.getEntityFactory().getEntity(name).getAllChildrenAndSelf();
             if(!allChildrenAndSelf.isEmpty()) {
                 allChildrenAndSelf.get(0).addComponent(modelComponent);
                 allChildrenAndSelf.get(0).initialize();
@@ -49,14 +50,14 @@ public class LoadModelCommand implements Command<EntityListResult> {
         }
     }
 
-    protected Model getModel() throws Exception {
+    protected Model getModel(MaterialFactory materialFactory) throws Exception {
         Model model;
         if(file.getAbsolutePath().endsWith("md5mesh")) {
             MD5Model parsedModel = MD5Model.parse(file.getAbsolutePath());
             MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
-            model = MD5Loader.process(parsedModel, parsedAnimModel, new Vector4f());
+            model = MD5Loader.process(materialFactory, parsedModel, parsedAnimModel);
         } else {
-            model = new OBJLoader().loadTexturedModel(file);
+            model = new OBJLoader().loadTexturedModel(materialFactory, file);
         }
         return model;
     }

@@ -8,10 +8,6 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import java.util.List;
 
 public interface EntitiesContainer {
-    void init();
-
-    boolean isInitialized();
-
     void insert(Entity entity);
 
     void insert(List<Entity> entities);

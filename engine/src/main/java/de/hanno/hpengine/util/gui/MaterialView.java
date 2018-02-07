@@ -40,8 +40,10 @@ public class MaterialView extends WebPanel {
 
 	private Material material;
 	private WebTextField nameField;
+	private Engine engine;
 
-	public MaterialView(Material material) {
+	public MaterialView(Engine engine, Material material) {
+		this.engine = engine;
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(5);
@@ -62,10 +64,10 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-                CompletableFuture<MaterialResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
+                CompletableFuture<MaterialResult> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public MaterialResult execute() throws Exception {
-						return new GetMaterialCommand(newInfo).execute(Engine.getInstance());
+						return new GetMaterialCommand(newInfo).execute(engine);
                     }
                 });
 				MaterialResult result;
@@ -300,7 +302,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					transparencyInput.setValue(((float)value/100f));
     					material.setTransparency(((float)value/100f));
-    		        	Engine.getInstance().getEventBus().post(new MaterialChangedEvent(material));
+    		        	engine.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -323,7 +325,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxScaleInput.setValue(((float)value/100f));
     					material.setParallaxScale(((float)value/100f));
-                        Engine.getInstance().getEventBus().post(new MaterialChangedEvent(material));
+                        engine.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -346,7 +348,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxBiasInput.setValue(((float)value/100f));
     					material.setParallaxBias(((float)value/100f));
-                        Engine.getInstance().getEventBus().post(new MaterialChangedEvent(material));
+                        engine.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -360,7 +362,7 @@ public class MaterialView extends WebPanel {
 			materialTypeInput.addActionListener(e -> {
 				Material.MaterialType selected = (Material.MaterialType) materialTypeInput.getSelectedItem();
 				material.setMaterialType(selected);
-                Engine.getInstance().getEventBus().post(new MaterialChangedEvent(material));
+                engine.getEventBus().post(new MaterialChangedEvent(material));
 			});
 			materialTypeInput.setSelectedItem(material.getMaterialType());
 			GroupPanel materialTypePanel = new GroupPanel(4, new WebLabel("Maeterial Type"), materialTypeInput);
@@ -391,10 +393,10 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-        CompletableFuture<MaterialResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
+        CompletableFuture<MaterialResult> future = engine.getGpuContext().execute(new FutureCallable() {
             @Override
             public MaterialResult execute() throws Exception {
-				return new InitMaterialCommand(material).execute(Engine.getInstance());
+				return new InitMaterialCommand(material).execute(engine);
             }
         });
 
@@ -416,7 +418,7 @@ public class MaterialView extends WebPanel {
 	}
 
 	private List<Texture> getAllTexturesSorted() {
-        List<Texture> temp = (List<Texture>) Engine.getInstance().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+        List<Texture> temp = (List<Texture>) engine.getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
 			@Override
 			public int compare(Texture o1, Texture o2) {
 				return (o1.getPath().compareTo(o2.getPath()));

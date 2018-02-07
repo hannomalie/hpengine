@@ -9,7 +9,7 @@ public class InitCornellBox implements LifeCycle {
 
     private boolean initialized;
 
-    public void init() {
+    public void init(Engine engine) {
 
         try {
             {

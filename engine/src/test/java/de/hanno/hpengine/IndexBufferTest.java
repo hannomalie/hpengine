@@ -12,7 +12,7 @@ public class IndexBufferTest extends TestWithEngine {
     public void testBuffersCorrectly() {
         int[] indexArray = new int[]{99,98,97,96,95,94,93,92,91,90};
         int[] indexArray2 = new int[]{1,2,3,4,5};
-        IndexBuffer indexBuffer = new IndexBuffer();
+        IndexBuffer indexBuffer = new IndexBuffer(engine.getGpuContext());
         indexBuffer.put(indexArray);
 
         IntBuffer bufferedIndices = indexBuffer.getBuffer().asIntBuffer();
@@ -42,7 +42,7 @@ public class IndexBufferTest extends TestWithEngine {
         int[] indexArray = new int[]{99,98,97,96,95,94,93,92,91,90};
         int[] indexArray2 = new int[]{1,2,3,4,5};
         int[] expectedAppended = new int[]{1,2,3,4,5};
-        IndexBuffer indexBuffer = new IndexBuffer();
+        IndexBuffer indexBuffer = new IndexBuffer(engine.getGpuContext());
         indexBuffer.put(indexArray);
 
         IntBuffer bufferedIndices = indexBuffer.getBuffer().asIntBuffer();

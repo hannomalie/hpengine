@@ -46,17 +46,19 @@ public class DeferredRenderer implements Renderer {
     VertexBuffer buffer;
 
     private FPSCounter fpsCounter = new FPSCounter();
+	private Engine engine;
 
 	public DeferredRenderer() {
     }
 
 	@Override
-	public void init() {
-        if(!(Engine.getInstance().getGpuContext() instanceof OpenGLContext)) {
+	public void init(Engine engine) {
+        if(!(engine.getGpuContext() instanceof OpenGLContext)) {
     		throw new IllegalStateException("Cannot use this DeferredRenderer with a non-OpenGlContext!");
 		}
+		this.engine = engine;
 
-		Renderer.super.init();
+		Renderer.super.init(engine);
 
         if (!initialized) {
             setupBuffers();
@@ -64,16 +66,15 @@ public class DeferredRenderer implements Renderer {
             try {
                 setupShaders();
                 setUpGBuffer();
-                simpleDrawStrategy = new SimpleDrawStrategy();
+                simpleDrawStrategy = new SimpleDrawStrategy(engine);
             } catch (Exception e) {
                 e.printStackTrace();
                 System.err.println("Cannot init DeferredRenderer");
                 System.exit(-1);
             }
-            gBuffer.init();
 
             float[] points = {0f, 0f, 0f, 0f};
-            buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3));
+            buffer = new VertexBuffer(engine.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
 			buffer.upload();
 			initialized = true;
         }
@@ -86,7 +87,7 @@ public class DeferredRenderer implements Renderer {
 			float width = 2f;
 			float widthDiv = width/6f;
 			for (int i = 0; i < 6; i++) {
-				QuadVertexBuffer quadVertexBuffer = new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height));
+				QuadVertexBuffer quadVertexBuffer = new QuadVertexBuffer(engine.getGpuContext(), new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height));
 				add(quadVertexBuffer);
 				quadVertexBuffer.upload();
 			}
@@ -98,10 +99,10 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		GpuContext.exitOnGLError("Before setupGBuffer");
 
-        gBuffer = Engine.getInstance().getGpuContext().calculate(() -> new GBuffer());
+        gBuffer = engine.getGpuContext().calculate(() -> new GBuffer(engine.getGpuContext()));
 
-        Engine.getInstance().getGpuContext().execute(() -> {
-            Engine.getInstance().getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        engine.getGpuContext().execute(() -> {
+            engine.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			GpuContext.exitOnGLError("setupGBuffer");
 		});
@@ -111,7 +112,7 @@ public class DeferredRenderer implements Renderer {
 		GpuContext.exitOnGLError("Before setupShaders");
 	}
 
-	public void update(float seconds) {
+	public void update(Engine engine, float seconds) {
 	}
 
 
@@ -126,7 +127,7 @@ public class DeferredRenderer implements Renderer {
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramFactory.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
-			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
+			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer());
 			for(int i = 0; i < 6; i++) {
 //                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 			}
@@ -154,14 +155,14 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		GPUProfiler.start("Create new fence");
-        Engine.getInstance().getGpuContext().createNewGPUFenceForReadState(renderState);
+        engine.getGpuContext().createNewGPUFenceForReadState(renderState);
 		GPUProfiler.end();
 		GPUProfiler.start("Waiting for driver");
 		GPUProfiler.start("Poll events");
 		glfwPollEvents();
 		GPUProfiler.end();
 		GPUProfiler.start("Swap buffers");
-        glfwSwapBuffers(Engine.getInstance().getGpuContext().getWindowHandle());
+        glfwSwapBuffers(engine.getGpuContext().getWindowHandle());
 		GPUProfiler.end();
 		GPUProfiler.end();
 		GPUProfiler.end();
@@ -169,19 +170,19 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void drawToQuad(int texture) {
-        drawToQuad(texture, QuadVertexBuffer.getFullscreenBuffer(), Engine.getInstance().getProgramFactory().getRenderToQuadProgram());
+        drawToQuad(texture, engine.getGpuContext().getFullscreenBuffer(), engine.getProgramFactory().getRenderToQuadProgram());
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {
-        drawToQuad(texture, buffer, Engine.getInstance().getProgramFactory().getRenderToQuadProgram());
+        drawToQuad(texture, buffer, engine.getProgramFactory().getRenderToQuadProgram());
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
-        Engine.getInstance().getGpuContext().disable(GlCap.DEPTH_TEST);
+        engine.getGpuContext().disable(GlCap.DEPTH_TEST);
 
-        Engine.getInstance().getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
-        Engine.getInstance().getGpuContext().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
+        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        engine.getGpuContext().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}
@@ -287,7 +288,7 @@ public class DeferredRenderer implements Renderer {
 
     @Override
 	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-        simpleDrawStrategy.setMainPipelineRef(renderState.registerPipeline(GPUCulledMainPipeline::new));
+        simpleDrawStrategy.setMainPipelineRef(renderState.registerPipeline(() -> new GPUCulledMainPipeline(engine)));
 	}
 
 }

@@ -1,20 +1,21 @@
 package de.hanno.hpengine.engine.container;
 
-import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
+import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
 import de.hanno.hpengine.engine.scene.AABB;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
-import org.lwjgl.BufferUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.BufferUtils;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -68,8 +69,8 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	}
 
 	@Override
-    public void init() {
-		LifeCycle.super.init();
+    public void init(Engine engine) {
+		LifeCycle.super.init(engine);
 		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors()/2);
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
@@ -144,7 +145,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 //		rootNode.getVisible(de.hanno.hpengine.camera, result);
 //		rootNode.getVisibleThreaded(de.hanno.hpengine.camera, result);
 
-		result = getEntities().stream().filter(e -> e.isInFrustum((Camera) camera)).collect(Collectors.toList());
+		result = getEntities().stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<>(result);
 	}
@@ -178,17 +179,17 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 //		buffer.drawDebug();
 //		buffer.delete();
 
-        batchLines(rootNode);
-        Engine.getInstance().getRenderer().drawLines(program);
+        batchLines(renderer, rootNode);
+        renderer.drawLines(program);
 	}
 
-	private void batchLines(Node node) {
+	private void batchLines(Renderer renderer, Node node) {
         if(node.hasChildren()) {
             for(Node child : node.children) {
-                batchLines(child);
+                batchLines(renderer, child);
             }
         } else if(node.hasEntities()){
-            DrawLinesExtension.batchAABBLines(node.looseAabb.getMin(), node.looseAabb.getMax());
+            DrawLinesExtension.batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
         }
     }
 
@@ -637,13 +638,13 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 			}
 		}
 
-		public void drawDebug(Renderer renderer, Program program) {
-			VertexBuffer buffer = new VertexBuffer(getPoints(), EnumSet.of(DataChannels.POSITION3));
+		public void drawDebug(Renderer renderer, GpuContext gpuContext, Program program) {
+			VertexBuffer buffer = new VertexBuffer(gpuContext, getPoints(), EnumSet.of(DataChannels.POSITION3));
 			buffer.upload();
 			buffer.drawDebug();
 			if (hasChildren()) {
 				for (int i = 0; i < 8; i++) {
-					children[i].drawDebug(renderer, program);
+					children[i].drawDebug(renderer, gpuContext, program);
 				}
 			}
 		}

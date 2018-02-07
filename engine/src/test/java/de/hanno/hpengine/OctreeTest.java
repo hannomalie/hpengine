@@ -1,5 +1,6 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.container.Octree.Node;
@@ -86,7 +87,7 @@ public class OctreeTest extends TestWithEngine {
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 0);
-		octree.init();
+		octree.init(engine);
 		octree.insert(entity);
 		Assert.assertFalse(octree.rootNode.hasChildren());
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
@@ -161,7 +162,7 @@ public class OctreeTest extends TestWithEngine {
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
-		octree.init();
+		octree.init(engine);
 		octree.insert(entityBottomLeftBack);
 		octree.insert(entityTopRightFront);
 //		Assert.assertEquals(1, octree.getCurrentDeepness());
@@ -177,11 +178,11 @@ public class OctreeTest extends TestWithEngine {
 		Camera camera = new Camera();
 
 		Assert.assertTrue(octree.rootNode.isVisible(camera));
-		Assert.assertTrue(entityBottomLeftBack.isInFrustum((Camera) camera));
-		Assert.assertFalse(entityTopRightFront.isInFrustum((Camera) camera));
+		Assert.assertTrue(entityBottomLeftBack.isInFrustum(camera));
+		Assert.assertFalse(entityTopRightFront.isInFrustum(camera));
 
 		camera.translateLocal(new Vector3f(0, 0, -2));
-		camera.update(1);
+		camera.update(engine, 1);
 		Helpers.assertEpsilonEqual(new Vector3f(0,0,-2), camera.getPosition(), 0.001f);
 		Helpers.assertEpsilonEqual(new Vector3f(0,0,-1), camera.getViewDirection(), 0.001f);
 		camera.getFrustum().calculate(camera);
@@ -202,7 +203,7 @@ public class OctreeTest extends TestWithEngine {
 		getLogger().setLevel(Level.OFF);
 		
 		Octree octree = new Octree(new Vector3f(), 2000f, 7);
-		octree.init();
+		octree.init(engine);
 		Random random = new Random();
 		final int entityCount = 10000;
 		List<Entity> toAdd = new ArrayList<>();

@@ -23,9 +23,9 @@ public abstract class AbstractProgram {
 
     protected HashMap<String, Uniform> uniforms = new HashMap<>();
     protected Defines defines = new Defines();
-	protected final int id = Engine.getInstance().getGpuContext().createProgramId();
+	protected final int id;
 
-    public AbstractProgram() { }
+    public AbstractProgram(int id) { this.id = id; }
 	
 	public void use() {
 		GL20.glUseProgram(getId());

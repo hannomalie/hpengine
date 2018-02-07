@@ -1,6 +1,5 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
@@ -43,7 +42,7 @@ public class VertexBufferTest extends TestWithEngine {
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
 
-        VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
         buffer.upload();
         float[] bufferedData = buffer.getVertexData();
         Assert.assertArrayEquals(vertexData, bufferedData, 0f);
@@ -137,7 +136,7 @@ public class VertexBufferTest extends TestWithEngine {
 		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
 		};
 		
-		VertexBuffer<Vertex> buffer = new VertexBuffer<>(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		VertexBuffer<Vertex> buffer = new VertexBuffer<>(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 		float[] result = buffer.getValues(DataChannels.TEXCOORD);
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
 
@@ -155,7 +154,7 @@ public class VertexBufferTest extends TestWithEngine {
     @Test
     public void benchmarkBufferUpload() {
         int floatBufferSize = 8*10000000;
-        VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(floatBufferSize), ModelComponent.DEFAULTCHANNELS);
+        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(floatBufferSize), ModelComponent.DEFAULTCHANNELS);
 
         System.out.println("Starting VertexBufferUpload");
         long start = System.currentTimeMillis();
@@ -175,7 +174,7 @@ public class VertexBufferTest extends TestWithEngine {
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
 
-        VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
         buffer.upload();
         Assert.assertEquals(6, buffer.getVerticesCount());
         Assert.assertEquals(2, buffer.getTriangleCount());
@@ -187,7 +186,7 @@ public class VertexBufferTest extends TestWithEngine {
     public void benchmarkVAOAndVBB() {
         int count = 100000000;
 
-        Engine.getInstance().getGpuContext().execute(() -> {
+        engine.getGpuContext().execute(() -> {
             int vbo = GL15.glGenBuffers();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, BufferUtils.createFloatBuffer(30), VertexBuffer.Usage.STATIC.getValue());
@@ -199,37 +198,37 @@ public class VertexBufferTest extends TestWithEngine {
             GL20.glEnableVertexAttribArray(1);
             GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 4, 4);
 
-            GLTimerQuery.getInstance().begin();
+            GLTimerQuery query = new GLTimerQuery(engine.getGpuContext()).begin();
 
             for(int i = 0; i < 10000000; i++) {
                 GL30.glBindVertexArray(vao);
             }
-            GLTimerQuery.getInstance().end();
-            System.out.println(GLTimerQuery.getInstance().getResult());
+            query.end();
+            System.out.println(query.getResult());
         });
 
-        Engine.getInstance().getGpuContext().execute(() -> {
-            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
+        engine.getGpuContext().execute(() -> {
+            VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
             buffer.upload();
 
-            GLTimerQuery.getInstance().begin();
+            GLTimerQuery query = new GLTimerQuery(engine.getGpuContext()).begin();
             for(int i = 0; i < count; i++) {
                 buffer.bind();
             }
-            GLTimerQuery.getInstance().end();
-            System.out.println("VB bind" + GLTimerQuery.getInstance().getResult());
+            query.end();
+            System.out.println("VB bind" + query.getResult());
         });
 
-        Engine.getInstance().getGpuContext().execute(() -> {
-            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
+        engine.getGpuContext().execute(() -> {
+            VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
             buffer.upload();
 
-            GLTimerQuery.getInstance().begin();
+            GLTimerQuery query = new GLTimerQuery(engine.getGpuContext()).begin();
             for(int i = 0; i < count; i++) {
                 buffer.draw();
             }
-            GLTimerQuery.getInstance().end();
-            System.out.println("VB draw " + GLTimerQuery.getInstance().getResult());
+            query.end();
+            System.out.println("VB draw " + query.getResult());
         });
     }
 }

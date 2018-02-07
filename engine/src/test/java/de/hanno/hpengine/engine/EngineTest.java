@@ -6,8 +6,8 @@ import org.junit.Test;
 public class EngineTest {
     @Test
     public void testSimpleInit() throws Exception {
-        Engine.init();
-        Assert.assertTrue(Engine.getInstance().isInitialized());
+        Engine engine = Engine.create();
+        Assert.assertTrue(engine.isInitialized());
     }
 
 }

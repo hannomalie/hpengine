@@ -1,13 +1,14 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.transform.AABB;
-import jme3tools.optimize.LodGenerator;
+import org.joml.Vector3f;
 import org.junit.Assert;
 import org.junit.Test;
-import org.joml.Vector3f;
 
 import java.io.File;
 
@@ -15,7 +16,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void loadsPlaneCorrectly() throws Exception {
-        StaticModel plane = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/plane.obj"));
+        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/plane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(4, planeMesh.getFaces().size());
 
@@ -28,7 +29,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void calculatesLodsCorrectly() throws Exception {
-        StaticModel plane = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
+        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(6, planeMesh.getFaces().size());
 
@@ -40,7 +41,7 @@ public class MeshTest extends TestWithEngine {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-        StaticModel sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        StaticModel sphere = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity entity = engine.getEntityFactory().getEntity("sphere", sphere);
 
         entity.setTranslation(new Vector3f(0, 0, 0));

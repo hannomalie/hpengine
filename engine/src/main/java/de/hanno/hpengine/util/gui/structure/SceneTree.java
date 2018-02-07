@@ -23,9 +23,11 @@ public class SceneTree extends WebCheckBoxTree {
     private static final Logger LOGGER = Logger.getLogger(SceneTree.class.getName());
 
     private SetSelectedListener selectionListener = null;
+    private Engine engine;
 
-    public SceneTree() {
+    public SceneTree(Engine engine) {
         super(new DefaultMutableTreeNode("Scene"));
+        this.engine = engine;
         addCheckStateChangeListener(new SetVisibilityCheckStateListener());
         addOctreeSceneObjects();
         Engine.getEventBus().register(this);
@@ -41,7 +43,6 @@ public class SceneTree extends WebCheckBoxTree {
     }
 
     private DefaultMutableTreeNode addOctreeSceneObjects() {
-        Engine engine = Engine.getInstance();
         DefaultMutableTreeNode top = getRootNode();
         top.removeAllChildren();
 
@@ -64,7 +65,7 @@ public class SceneTree extends WebCheckBoxTree {
                 Component c = super.getTreeCellRendererComponent(tree, value, arg2, arg3, arg4, arg5, arg6);
 
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-                Optional<Entity> entityOption = Engine.getInstance().getSceneManager().getScene().getEntity(node.toString());
+                Optional<Entity> entityOption = engine.getSceneManager().getScene().getEntity(node.toString());
                 if(entityOption.isPresent()) {
                     if(entityOption.get().isVisible()) {
                         checkBox.setChecked();

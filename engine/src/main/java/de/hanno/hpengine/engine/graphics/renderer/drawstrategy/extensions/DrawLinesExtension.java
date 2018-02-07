@@ -24,18 +24,20 @@ public class DrawLinesExtension implements RenderExtension {
 
     private final Program linesProgram;
     private final FloatBuffer identityMatrix44Buffer;
+    private final Engine engine;
 
-    public DrawLinesExtension() throws Exception {
+    public DrawLinesExtension(Engine engine) throws Exception {
+        this.engine = engine;
         identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
-        linesProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
+        linesProgram = this.engine.getProgramFactory().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
     }
 
     @Override
-    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 
-            GpuContext context = Engine.getInstance().getGpuContext();
+            GpuContext context = engine.getGpuContext();
             context.disable(CULL_FACE);
             context.depthMask(false);
 
@@ -50,10 +52,10 @@ public class DrawLinesExtension implements RenderExtension {
 
             renderBatches(renderState.getRenderBatchesStatic());
             renderBatches(renderState.getRenderBatchesAnimated());
-            firstPassResult.linesDrawn += Engine.getInstance().getRenderer().drawLines(linesProgram);
+            firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
 
 //            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            Engine.getInstance().getSceneManager().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
+//            engine.getSceneManager().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;
@@ -66,63 +68,64 @@ public class DrawLinesExtension implements RenderExtension {
 //                }
 //            }
 
-            Engine.getInstance().getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
-            Engine.getInstance().getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
-            Engine.getInstance().getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
             linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            int linesDrawn = Engine.getInstance().getRenderer().drawLines(linesProgram);
+            int linesDrawn = engine.getRenderer().drawLines(linesProgram);
 
-            Engine.getInstance().getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getRightDirection().mul(15));
-            Engine.getInstance().getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getUpDirection().mul(15));
-            Engine.getInstance().getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getViewDirection().mul(15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getRightDirection().mul(15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getUpDirection().mul(15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getViewDirection().mul(15));
             linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
-            linesDrawn += Engine.getInstance().getRenderer().drawLines(linesProgram);
+            linesDrawn += engine.getRenderer().drawLines(linesProgram);
 //            firstPassResult.linesDrawn += linesDrawn;
 
 
-            Engine.getInstance().getPhysicsFactory().debugDrawWorld();
-            firstPassResult.linesDrawn += Engine.getInstance().getRenderer().drawLines(linesProgram);
+            engine.getPhysicsFactory().debugDrawWorld();
+            firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
         }
         if(Config.getInstance().isDrawCameras()) {
 //            TODO: Use renderstate somehow?
-            List<Entity> entities = Engine.getInstance().getSceneManager().getScene().getEntities();
+            List<Entity> entities = engine.getSceneManager().getScene().getEntities();
             for(int i = 0; i < entities.size(); i++) {
                 Entity entity = entities.get(i);
                 if(entity instanceof Camera) {
                     Camera camera = (Camera) entity;
                     Vector3f[] corners = camera.getFrustumCorners();
-                    Engine.getInstance().getRenderer().batchLine(corners[0], corners[1]);
-                    Engine.getInstance().getRenderer().batchLine(corners[1], corners[2]);
-                    Engine.getInstance().getRenderer().batchLine(corners[2], corners[3]);
-                    Engine.getInstance().getRenderer().batchLine(corners[3], corners[0]);
+                    engine.getRenderer().batchLine(corners[0], corners[1]);
+                    engine.getRenderer().batchLine(corners[1], corners[2]);
+                    engine.getRenderer().batchLine(corners[2], corners[3]);
+                    engine.getRenderer().batchLine(corners[3], corners[0]);
 
-                    Engine.getInstance().getRenderer().batchLine(corners[4], corners[5]);
-                    Engine.getInstance().getRenderer().batchLine(corners[5], corners[6]);
-                    Engine.getInstance().getRenderer().batchLine(corners[6], corners[7]);
-                    Engine.getInstance().getRenderer().batchLine(corners[7], corners[4]);
+                    engine.getRenderer().batchLine(corners[4], corners[5]);
+                    engine.getRenderer().batchLine(corners[5], corners[6]);
+                    engine.getRenderer().batchLine(corners[6], corners[7]);
+                    engine.getRenderer().batchLine(corners[7], corners[4]);
 
-                    Engine.getInstance().getRenderer().batchLine(corners[0], corners[6]);
-                    Engine.getInstance().getRenderer().batchLine(corners[1], corners[7]);
-                    Engine.getInstance().getRenderer().batchLine(corners[2], corners[4]);
-                    Engine.getInstance().getRenderer().batchLine(corners[3], corners[5]);
+                    engine.getRenderer().batchLine(corners[0], corners[6]);
+                    engine.getRenderer().batchLine(corners[1], corners[7]);
+                    engine.getRenderer().batchLine(corners[2], corners[4]);
+                    engine.getRenderer().batchLine(corners[3], corners[5]);
                 }
             }
-            firstPassResult.linesDrawn += Engine.getInstance().getRenderer().drawLines(linesProgram);
+            firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
         }
     }
 
     private void renderBatches(List<RenderBatch> batches) {
+        Renderer renderer = engine.getRenderer();
+
         for (RenderBatch batch : batches) {
             if(Config.getInstance().isDrawBoundingVolumes()) {
                 boolean renderAABBs = true;
                 if(renderAABBs) {
-                    batchAABBLines(batch.getMinWorld(), batch.getMaxWorld());
+                    batchAABBLines(renderer, batch.getMinWorld(), batch.getMaxWorld());
                     for(AABB minMax : batch.getInstanceMinMaxWorlds()) {
-                        batchAABBLines(minMax.getMin(), minMax.getMax());
+                        batchAABBLines(renderer, minMax.getMin(), minMax.getMax());
                     }
                 } else {
                     float radius = batch.getBoundingSphereRadius();
-                    Renderer renderer = Engine.getInstance().getRenderer();
                     Vector3f center = batch.getCenterWorld();
                     renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(radius, 0, 0)));
                     renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(-radius, 0, 0)));
@@ -146,68 +149,68 @@ public class DrawLinesExtension implements RenderExtension {
         }
     }
 
-    public static void batchAABBLines(Vector3f minWorld, Vector3f maxWorld) {
+    public static void batchAABBLines(Renderer renderer, Vector3f minWorld, Vector3f maxWorld) {
         {
             Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
 
 
         {
             Vector3f min = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
             Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
         {
             Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
             Vector3f max = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
-            Engine.getInstance().getRenderer().batchLine(min, max);
+            renderer.batchLine(min, max);
         }
     }
 }

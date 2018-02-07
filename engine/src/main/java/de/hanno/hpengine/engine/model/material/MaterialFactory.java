@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.MaterialAddedEvent;
 import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.model.material.Material.MAP;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -27,8 +28,10 @@ public class MaterialFactory {
     public ListWithSyncedAdder<Material> MATERIALS = new ListWithSyncedAdder();
 
 	private Material defaultMaterial;
+	private TextureFactory textureFactory;
 
-	public MaterialFactory() {
+	public MaterialFactory(TextureFactory textureFactory) {
+		this.textureFactory = textureFactory;
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.x = (1.0f);
         defaultMaterial = getMaterial(defaultTemp, false);
@@ -80,24 +83,24 @@ public class MaterialFactory {
     }
 
 	public Material getMaterial(MaterialInfo materialInfo, boolean readFromHdd) {
-        if(materialInfo.name == null || materialInfo.name == "") {
-            materialInfo.name = "Material_" + count++;
-        }
- 		return MATERIALS.addIfAbsent(() -> {
- 		    if(readFromHdd) {
-                Material readMaterial = read(getDirectory() + materialInfo.name);
-                if(readMaterial != null) {
-                    return readMaterial;
-                }
-            }
-            Material newMaterial = new Material();
-            newMaterial.setMaterialInfo(new MaterialInfo(materialInfo));
-            newMaterial.init();
+		if (materialInfo.name == null || materialInfo.name == "") {
+			materialInfo.name = "Material_" + count++;
+		}
+		return MATERIALS.addIfAbsent(() -> {
+			if (readFromHdd) {
+				Material readMaterial = read(getDirectory() + materialInfo.name);
+				if (readMaterial != null) {
+					return readMaterial;
+				}
+			}
+			Material newMaterial = new Material();
+			newMaterial.setMaterialInfo(new MaterialInfo(materialInfo));
+			newMaterial.init(this);
 
-            write(newMaterial, materialInfo.name);
+			write(newMaterial, materialInfo.name);
 
-            EventBus.getInstance().post(new MaterialAddedEvent());
-            return newMaterial;
+			EventBus.getInstance().post(new MaterialAddedEvent());
+			return newMaterial;
 		});
 	}
 
@@ -113,7 +116,7 @@ public class MaterialFactory {
 			if(map.equals(MAP.DIFFUSE)) {
 				srgba = true;
 			}
-            textures.put(map, Engine.getInstance().getTextureFactory().getTexture(hashMap.get(map), srgba));
+            textures.put(map, getTextureFactory().getTexture(hashMap.get(map), srgba));
 		}
 		MaterialInfo info = new MaterialInfo(textures);
 		info.name = name;
@@ -166,7 +169,7 @@ public class MaterialFactory {
                 Material material = (Material) in.readObject();
                 in.close();
                 handleEvolution(material.getMaterialInfo());
-                material.init();
+                material.init(this);
                 return material;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -195,5 +198,9 @@ public class MaterialFactory {
 
 	public Material getSkyboxMaterial() {
 		return skyboxMaterial;
+	}
+
+	public TextureFactory getTextureFactory() {
+		return textureFactory;
 	}
 }

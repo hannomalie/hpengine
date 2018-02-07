@@ -14,17 +14,6 @@ public class SimpleContainer implements EntitiesContainer {
 
     private Set<Entity> entities = new CopyOnWriteArraySet<>();
     List<Entity> result = new CopyOnWriteArrayList<>();
-    private boolean initialized;
-
-    @Override
-    public void init() {
-        initialized = true;
-    }
-
-    @Override
-    public boolean isInitialized() {
-        return initialized;
-    }
 
     @Override
     public void insert(Entity entity) {

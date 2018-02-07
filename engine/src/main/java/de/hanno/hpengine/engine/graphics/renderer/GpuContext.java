@@ -3,7 +3,9 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -16,6 +18,9 @@ import java.util.logging.Logger;
 
 public interface GpuContext {
     Logger LOGGER = Logger.getLogger(GpuContext.class.getName());
+
+
+    RenderTarget getFrontBuffer();
 
     long getWindowHandle();
 
@@ -40,8 +45,6 @@ public interface GpuContext {
         try {
             LOGGER.info("GpuContext is being initialized");
             GpuContext context = gpuContextClass.newInstance();
-            context.init();
-            LOGGER.info("GpuContext is initialized");
             return context;
         } catch (IllegalAccessException | InstantiationException e) {
             LOGGER.severe("GpuContext class " + gpuContextClass.getCanonicalName() + " probably doesn't feature a public no args constructor");
@@ -67,8 +70,6 @@ public interface GpuContext {
     }
 
     boolean isError();
-
-    void init();
 
     void update(float seconds);
 
@@ -149,5 +150,8 @@ public interface GpuContext {
     void benchmark(Runnable runnable);
 
     void destroy();
+
+    VertexBuffer getFullscreenBuffer();
+    VertexBuffer getDebugBuffer();
 
 }

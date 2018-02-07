@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -79,11 +79,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         this.normals = normals;
     }
 
-    public void init() {
+    public void init(MaterialFactory materialFactory) {
 
         if (material == null) {
             LOGGER.log(Level.INFO, "No material found!!!");
-            material = Engine.getInstance().getMaterialFactory().getDefaultMaterial();
+            material = materialFactory.getDefaultMaterial();
         }
         compiledVertices.clear();
 

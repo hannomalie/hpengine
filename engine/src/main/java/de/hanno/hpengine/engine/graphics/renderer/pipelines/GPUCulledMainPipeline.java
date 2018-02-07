@@ -10,8 +10,8 @@ import java.nio.FloatBuffer;
 
 public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 
-    public GPUCulledMainPipeline() {
-        super(true, true, true, null, null);
+    public GPUCulledMainPipeline(Engine engine) {
+        super(engine, true, true, true, null, null);
     }
 
 //    This can be used for debug drawing

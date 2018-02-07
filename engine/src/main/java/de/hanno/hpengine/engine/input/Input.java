@@ -4,50 +4,56 @@ import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.ClickEvent;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Input {
 
-    private static IntArrayList currentKeys = new IntArrayList();
-    private static IntArrayList keysPressed = new IntArrayList();
-    private static IntArrayList keysReleased = new IntArrayList();
+    private IntArrayList currentKeys = new IntArrayList();
+    private IntArrayList keysPressed = new IntArrayList();
+    private IntArrayList keysReleased = new IntArrayList();
 
-    private static IntArrayList currentMouse = new IntArrayList();
-    private static IntArrayList downMouse = new IntArrayList();
-    private static IntArrayList upMouse = new IntArrayList();
+    private IntArrayList currentMouse = new IntArrayList();
+    private IntArrayList downMouse = new IntArrayList();
+    private IntArrayList upMouse = new IntArrayList();
 
-    private static final int FIRST_KEY = GLFW_KEY_SPACE;
-    private static final int NUM_KEYS = GLFW_KEY_LAST - GLFW_KEY_SPACE;
-    private static final int NUM_BUTTONS = 3;
+    private final int FIRST_KEY = GLFW_KEY_SPACE;
+    private final int NUM_KEYS = GLFW_KEY_LAST - GLFW_KEY_SPACE;
+    private final int NUM_BUTTONS = 3;
 
-    private static int dx;
-    private static int dy;
+    private int dx;
+    private int dy;
 
-    private static int dxLast;
-    private static int dyLast;
+    private int dxLast;
+    private int dyLast;
 
-    private static int dxBeforeLast;
-    private static int dyBeforeLast;
+    private int dxBeforeLast;
+    private int dyBeforeLast;
 
-    private static final boolean HOLD_KEYS_AS_PRESSED_KEYS = true;
+    private final boolean HOLD_KEYS_AS_PRESSED_KEYS = true;
 
-    private static boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
-    private static boolean STRG_PRESSED_LAST_FRAME = false;
-    public static volatile int PICKING_CLICK = 0;
-    private static double[] mouseX = new double[1];
-    private static double[] mouseY = new double[1];
-    private static double[] mouseXLast = new double[1];
-    private static double[] mouseYLast = new double[1];
+    private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
+    private boolean STRG_PRESSED_LAST_FRAME = false;
+    public volatile int PICKING_CLICK = 0;
+    private double[] mouseX = new double[1];
+    private double[] mouseY = new double[1];
+    private double[] mouseXLast = new double[1];
+    private double[] mouseYLast = new double[1];
+    private final GpuContext gpuContext;
 
-    public static void update() {
+    public Input(GpuContext gpuContext) {
+        this.gpuContext = gpuContext;
+    }
+
+    public void update() {
         updateKeyboard();
         updateMouse();
     }
 
-    private static void updateKeyboard() {
+    private void updateKeyboard() {
 
-        if(Input.isMouseClicked(0)) {
+        if(isMouseClicked(0)) {
             if(!MOUSE_LEFT_PRESSED_LAST_FRAME) {
                 Engine.getEventBus().post(new ClickEvent());
             }
@@ -56,8 +62,8 @@ public class Input {
             MOUSE_LEFT_PRESSED_LAST_FRAME = false;
         }
         {
-            if (PICKING_CLICK == 0 && Input.isKeyDown(GLFW_KEY_LEFT_CONTROL)) {
-                if (Input.isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
+            if (PICKING_CLICK == 0 && isKeyDown(gpuContext, GLFW_KEY_LEFT_CONTROL)) {
+                if (isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
                     PICKING_CLICK = 1;
                     STRG_PRESSED_LAST_FRAME = true;
                 }
@@ -74,13 +80,13 @@ public class Input {
         }
 
         for (int i = FIRST_KEY; i < NUM_KEYS; i++) {
-            if (isKeyDown(i) && !currentKeys.contains(i)) {
+            if (isKeyDown(gpuContext, i) && !currentKeys.contains(i)) {
                 keysPressed.add(i);
             }
         }
 
         for (int i = FIRST_KEY; i < NUM_KEYS; i++) {
-            if (!isKeyDown(i) && currentKeys.contains(i)) {
+            if (!isKeyDown(gpuContext, i) && currentKeys.contains(i)) {
                 keysReleased.add(i);
             }
         }
@@ -88,13 +94,13 @@ public class Input {
         currentKeys.clear();
 
         for (int i = 0; i < NUM_KEYS; i++) {
-            if (isKeyDown(FIRST_KEY + i)) {
+            if (isKeyDown(gpuContext, FIRST_KEY + i)) {
                 currentKeys.add(i);
             }
         }
     }
 
-    private static void updateMouse() {
+    private void updateMouse() {
         downMouse.clear();
         upMouse.clear();
 
@@ -128,58 +134,58 @@ public class Input {
         dyLast = dy;
         mouseXLast[0] = mouseX[0];
         mouseYLast[0] = mouseY[0];
-        glfwGetCursorPos(Engine.getInstance().getGpuContext().getWindowHandle(), mouseX, mouseY);
+        glfwGetCursorPos(gpuContext.getWindowHandle(), mouseX, mouseY);
         dx = (int) -(mouseXLast[0] - mouseX[0]);
         dy = (int) (mouseYLast[0] - mouseY[0]);
     }
 
 
-    private static boolean isKeyDown(int keyCode) {
-        return glfwGetKey(Engine.getInstance().getGpuContext().getWindowHandle(), keyCode) == GLFW_PRESS;
+    private boolean isKeyDown(GpuContext gpuContext, int keyCode) {
+        return glfwGetKey(gpuContext.getWindowHandle(), keyCode) == GLFW_PRESS;
     }
 
-    public static boolean isKeyPressed(int keyCode) {
+    public boolean isKeyPressed(int keyCode) {
         return keysPressed.contains(keyCode);
     }
 
-    public static boolean isKeyUp(int keyCode) {
+    public boolean isKeyUp(int keyCode) {
         return keysReleased.contains(keyCode);
     }
 
 
-    private static boolean isMouseDown(int buttonCode) {
-        return glfwGetMouseButton(Engine.getInstance().getGpuContext().getWindowHandle(), buttonCode) == GLFW_PRESS;
+    private boolean isMouseDown(int buttonCode) {
+        return glfwGetMouseButton(gpuContext.getWindowHandle(), buttonCode) == GLFW_PRESS;
     }
 
-    public static boolean isMouseClicked(int buttonCode) {
+    public boolean isMouseClicked(int buttonCode) {
         return downMouse.contains(buttonCode);
     }
 
-    public static boolean isMouseUp(int buttonCode) {
+    public boolean isMouseUp(int buttonCode) {
         return upMouse.contains(buttonCode);
     }
 
-    public static int getDX() {
+    public int getDX() {
         return dx;
     }
 
-    public static int getDY() {
+    public int getDY() {
         return dy;
     }
 
-    public static int getDXSmooth() {
+    public int getDXSmooth() {
         return (dx + dxLast + dxBeforeLast) / 3;
     }
 
-    public static int getDYSmooth() {
+    public int getDYSmooth() {
         return (dy + dyLast + dyBeforeLast) / 3;
     }
 
-    public static int getMouseX() {
+    public int getMouseX() {
         return (int) mouseX[0];
     }
 
-    public static int getMouseY() {
+    public int getMouseY() {
         return Config.getInstance().getHeight() - (int) mouseY[0];
     }
 }

@@ -48,7 +48,7 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-            engine.getSceneManager().setActiveCamera(Engine.getInstance().getLightFactory().getCameraForAreaLight(light));
+            engine.getSceneManager().setActiveCamera(engine.getLightFactory().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			engine.getSceneManager().restoreWorldCamera();
@@ -63,10 +63,10 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-            CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Boolean execute() throws Exception {
-                    return Engine.getInstance().getSceneManager().getScene().getAreaLights().remove(light);
+                    return engine.getSceneManager().getScene().getAreaLights().remove(light);
                 }
             });
 

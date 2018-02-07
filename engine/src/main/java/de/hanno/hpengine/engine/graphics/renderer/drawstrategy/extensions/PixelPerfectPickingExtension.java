@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.EntitySelectedEvent;
@@ -25,17 +26,16 @@ public class PixelPerfectPickingExtension implements RenderExtension {
         floatBuffer = BufferUtils.createFloatBuffer(4);
     }
     @Override
-    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
-        Engine engine = Engine.getInstance();
-        if (Input.PICKING_CLICK == 1) {
-            Engine.getInstance().getGpuContext().readBuffer(4);
+        if (engine.getInput().PICKING_CLICK == 1) {
+            gpuContext.readBuffer(4);
 
             floatBuffer.rewind();
-            Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) Engine.getInstance().getGpuContext().getCanvasWidth(),
-                    (float) Config.getInstance().getHeight() / (float) Engine.getInstance().getGpuContext().getCanvasHeight());
-            int adjustedX = (int) (Input.getMouseX() * ratio.x);
-            int adjustedY = (int) (Input.getMouseY() * ratio.y);
+            Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) gpuContext.getCanvasWidth(),
+                    (float) Config.getInstance().getHeight() / (float) gpuContext.getCanvasHeight());
+            int adjustedX = (int) (engine.getInput().getMouseX() * ratio.x);
+            int adjustedY = (int) (engine.getInput().getMouseY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
             Logger.getGlobal().info("Picked: " + adjustedX + " : " + adjustedY);
             try {
@@ -50,7 +50,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            Input.PICKING_CLICK = 0;
+            engine.getInput().PICKING_CLICK = 0;
         }
     }
 }

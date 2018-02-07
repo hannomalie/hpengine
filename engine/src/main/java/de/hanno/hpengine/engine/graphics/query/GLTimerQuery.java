@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.query;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 
 import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT;
 import static org.lwjgl.opengl.GL15.glGenQueries;
@@ -8,35 +8,31 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class GLTimerQuery implements GLQuery<Float> {
 
-    private static GLTimerQuery instance;
-    public static GLTimerQuery getInstance() {
-        if(instance == null) {
-            instance = new GLTimerQuery();
-        }
-        return instance;
-    }
+    private GpuContext gpuContext;
 
     private final int start;
     private final int end;
     private volatile boolean finished = false;
     private boolean started;
 
-    public GLTimerQuery() {
+    public GLTimerQuery(GpuContext gpuContext) {
+        this.gpuContext = gpuContext;
         start = glGenQuery();
         end = glGenQuery();
     }
 
     private int glGenQuery() {
-        return Engine.getInstance().getGpuContext().calculate( () -> glGenQueries());
+        return gpuContext.calculate( () -> glGenQueries());
     }
 
     @Override
-    public void begin() {
+    public GLTimerQuery begin() {
         finished = false;
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             glQueryCounter(start, GL_TIMESTAMP);
         }, true);
         started = true;
+        return this;
     }
 
     @Override
@@ -44,7 +40,7 @@ public class GLTimerQuery implements GLQuery<Float> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        Engine.getInstance().getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             glQueryCounter(end, GL_TIMESTAMP);
         }, true);
         finished = true;
@@ -61,17 +57,17 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     public long getStartTime() {
-        return Engine.getInstance().getGpuContext().calculate( () -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
+        return gpuContext.calculate( () -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
     }
 
     public long getEndTime() {
-        return Engine.getInstance().getGpuContext().calculate( () -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
+        return gpuContext.calculate( () -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
     }
 
     @Override
     public Float getResult() {
         if(!finished) { throw new IllegalStateException("Don't query result before query is finished!"); }
-        while(!resultsAvailable()) {
+        while(!resultsAvailable(gpuContext)) {
         }
         return getTimeTaken() / 1000000f;
     }

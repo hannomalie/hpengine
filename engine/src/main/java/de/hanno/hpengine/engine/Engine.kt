@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.light.LightFactory
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
+import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.EntityFactory
 import de.hanno.hpengine.engine.model.material.MaterialFactory
 import de.hanno.hpengine.engine.model.texture.TextureFactory
@@ -36,34 +37,35 @@ import java.util.logging.Logger
 class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
 
     val gpuContext: GpuContext = GpuContext.create()
-    val updateThread: UpdateThread = UpdateThread("Update", MILLISECONDS.toSeconds(8).toFloat())
+    val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
     private val drawCounter = AtomicInteger(-1)
     private val commandQueue = CommandQueue()
 
     val entityFactory = EntityFactory()
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
-    val renderSystem by lazy { RenderSystem() }
-    val environmentProbeFactory by lazy { EnvironmentProbeFactory()}
-    val lightFactory by lazy { LightFactory() }
-    val sceneManager = SceneManager()
+    val renderSystem by lazy { RenderSystem(this@Engine) }
+    val input by lazy { Input(gpuContext) }
+    val environmentProbeFactory by lazy { EnvironmentProbeFactory(this@Engine)}
+    val lightFactory by lazy { LightFactory(this@Engine) }
+    val sceneManager = SceneManager(this@Engine)
     val scriptManager by lazy { ScriptManager().apply { defineGlobals(this@Engine) } }
-    val physicsFactory by lazy { PhysicsFactory() }
-    val programFactory by lazy { ProgramFactory() }
-    val textureFactory by lazy { TextureFactory(this@Engine) }
-    val materialFactory by lazy { MaterialFactory() }
-    val renderer: Renderer by lazy { Renderer.create() }
+    val physicsFactory by lazy { PhysicsFactory(renderer) }
+    val programFactory by lazy { ProgramFactory(this@Engine) }
+    val textureFactory by lazy { TextureFactory(this@Engine, gpuContext) }
+    val materialFactory by lazy { MaterialFactory(textureFactory) }
+    val renderer: Renderer by lazy { Renderer.create(this@Engine) }
 
     @Volatile var isInitialized: Boolean = false
 
     val fpsCounter: FPSCounter
         get() = updateThread.fpsCounter
 
-    private fun initialize() {
+    init {
         eventBus.register(this)
         gpuContext.registerPerFrameCommand(this)
 
         renderer.registerPipelines(renderSystem.renderState)
-        _instance.startSimulation()
+        startSimulation()
         isInitialized = true
         drawCounter.set(0)
         eventBus.post(EngineInitializedEvent())
@@ -75,12 +77,10 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         renderSystem.renderThread.start()
     }
 
-    fun update(seconds: Float) {
+    fun update(deltaSeconds: Float) {
         try {
             commandQueue.executeCommands()
-            sceneManager.activeCamera.update(seconds)
-            sceneManager.scene.setCurrentCycle(renderSystem.drawCycle.get())
-            sceneManager.scene.update(seconds)
+            sceneManager.update(deltaSeconds)
             updateRenderState()
             renderSystem.drawCycle.getAndIncrement()
             if (!Config.getInstance().isMultithreadedRendering) {
@@ -101,7 +101,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         if (gpuContext.isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLightCamera = scene.directionalLight
             renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
-            scene.addRenderBatches(sceneManager.activeCamera, renderSystem.renderState.currentWriteState)
+            scene.addRenderBatches(this, sceneManager.activeCamera, renderSystem.renderState.currentWriteState)
             renderSystem.renderState.update()
             renderSystem.renderState.currentWriteState.cycle = renderSystem.drawCycle.get()
         }
@@ -135,7 +135,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferMaterials() }
+        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferMaterials(this@Engine) }
     }
 
     @Subscribe
@@ -144,9 +144,9 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         renderSystem.renderState.addCommand { renderStateX ->
             if (event.material.isPresent) {
                 //                renderStateX.bufferMaterial(event.getMaterials().get());
-                renderStateX.bufferMaterials()
+                renderStateX.bufferMaterials(this@Engine)
             } else {
-                renderStateX.bufferMaterials()
+                renderStateX.bufferMaterials(this@Engine)
             }
         }
     }
@@ -167,11 +167,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
 
     companion object {
-        @Volatile private lateinit var _instance: Engine
-
-        @JvmStatic fun getInstance(): Engine {
-            return _instance
-        }
 
         private val LOGGER = Logger.getLogger(Engine::class.java.name)
 
@@ -202,18 +197,18 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
                 e.printStackTrace()
             }
 
-            init(gameDir)
+            val engine = create(gameDir)
             if (debug) {
-                DebugFrame()
+                DebugFrame(engine)
             }
             if (sceneName != null) {
                 val scene = Scene.read(sceneName)
-                Engine.getInstance().sceneManager.scene = scene
+                engine.sceneManager.scene = scene
             }
 
             try {
-                val initScript = JavaComponent(String(Files.readAllBytes(Engine.getInstance().directoryManager.gameInitScript.toPath())))
-                initScript.init()
+                val initScript = JavaComponent(String(Files.readAllBytes(engine.directoryManager.gameInitScript.toPath())))
+                initScript.init(engine)
                 println("initScript = " + initScript.isInitialized)
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -222,12 +217,10 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         }
 
         @JvmOverloads
-        @JvmStatic fun init(gameDirName: String = GAMEDIR_NAME) {
-            _instance = Engine(gameDirName)
-            _instance!!.initialize()
-        }
+        @JvmStatic fun create(gameDirName: String = GAMEDIR_NAME) = Engine(gameDirName)
 
         @JvmStatic val eventBus: EventBus
             get() = EventBus.getInstance()
     }
+
 }
