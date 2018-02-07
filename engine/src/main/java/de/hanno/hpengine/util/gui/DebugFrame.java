@@ -342,7 +342,7 @@ public class DebugFrame implements HostComponent {
                     new SwingWorkerWithProgress<Result<Scene>>(this, "Load de.hanno.hpengine.scene...", "Unable to load de.hanno.hpengine.scene " + sceneName){
                         @Override
                         public Result<Scene> doInBackground() throws Exception {
-                            Scene newScene = Scene.read(sceneName);
+                            Scene newScene = Scene.Companion.read(sceneName);
                             engine.getSceneManager().setScene(newScene);
                             return new Result(newScene);
                         }

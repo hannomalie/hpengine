@@ -22,7 +22,7 @@ class RenderManager(override val engine: Engine) : Manager {
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
     var renderThread: RenderThread = RenderThread(engine, "Render")
 
-    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(engine.gpuContext), RenderState(engine.gpuContext), RenderState(engine.gpuContext), Consumer { renderState -> renderState.bufferEntities(engine.sceneManager.scene.entities) })
+    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(engine.gpuContext), RenderState(engine.gpuContext), RenderState(engine.gpuContext), Consumer { renderState -> renderState.bufferEntities(engine.sceneManager.scene.getEntities()) })
 
     val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
     val vertexIndexBufferAnimated = VertexIndexBuffer<AnimatedVertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)

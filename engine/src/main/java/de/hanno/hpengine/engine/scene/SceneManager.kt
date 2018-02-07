@@ -4,9 +4,13 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.MovableCamera
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.manager.Registry
+import de.hanno.hpengine.engine.manager.SimpleRegistry
 import org.joml.Vector3f
 
 class SceneManager(override val engine: Engine): Manager {
+    val registry: Registry = SimpleRegistry()
+
     val camera = MovableCamera()
     var activeCamera: Camera = camera
 

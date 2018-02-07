@@ -115,13 +115,13 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     @Handler
     fun handle(e: EntityAddedEvent) {
         sceneManager.scene.setUpdateCache(true)
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.getEntities()) }
     }
 
     @Subscribe
     @Handler
     fun handle(e: SceneInitEvent) {
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.getEntities()) }
     }
 
     @Subscribe
@@ -129,7 +129,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     fun handle(event: EntityChangedMaterialEvent) {
         val entity = event.entity
         //            buffer(entity);
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.getEntities()) }
     }
 
     @Subscribe

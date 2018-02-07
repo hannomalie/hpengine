@@ -29,7 +29,7 @@ public class DirectoryManager {
         dirs.add(new File(Texture.getDirectory()));
         dirs.add(new File(Material.getDirectory()));
         dirs.add(new File(Entity.getDirectory()));
-        dirs.add(new File(Scene.getDirectory()));
+        dirs.add(new File(Scene.Companion.getDirectory()));
 
         dirs.add(new File(GAMEDIR_NAME));
 
