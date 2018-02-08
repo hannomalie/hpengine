@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntitiesContainer;
+import de.hanno.hpengine.engine.container.EntityManager;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.Engine;
@@ -125,7 +125,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        EntitiesContainer entitiesContainer = engine.getSceneManager().getScene().getEntitiesContainer();
+        EntityManager entityManager = engine.getSceneManager().getScene().getEntityManager();
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
@@ -139,7 +139,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
             engine.getLightManager().renderAreaLightShadowMaps(renderState);
             if (Config.getInstance().isUseDpsm()) {
-                engine.getLightManager().renderPointLightShadowMaps_dpsm(renderState, entitiesContainer);
+                engine.getLightManager().renderPointLightShadowMaps_dpsm(renderState, entityManager);
             } else {
                 engine.getLightManager().renderPointLightShadowMaps(renderState);
             }

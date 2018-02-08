@@ -13,19 +13,18 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.graphics.renderer.command.RemoveEntityCommand;
-import de.hanno.hpengine.engine.graphics.renderer.command.Result;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.Instance;
+import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.Update;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.util.Util;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.LimitedWebFormattedTextField;
 import de.hanno.hpengine.util.gui.input.TransformablePanel;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
@@ -36,8 +35,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class EntityView extends WebPanel {
@@ -236,32 +233,6 @@ public class EntityView extends WebPanel {
             Entity.write(entity, nameField.getText());
         });
         webComponentPanel.addElement(saveEntityButton);
-
-        WebButton removeEntityButton = new WebButton("Remove Entity");
-        removeEntityButton.addActionListener(e -> {
-            CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
-                @Override
-                public Result execute() throws Exception {
-                    return new RemoveEntityCommand(entity).execute(engine);
-                }
-            });
-
-            Result result = null;
-            try {
-                result = future.get(1, TimeUnit.MINUTES);
-            } catch (Exception e1) {
-                e1.printStackTrace();
-                showNotification(NotificationIcon.error, "Not able to remove entity");
-            }
-
-            if (!result.isSuccessful()) {
-                showNotification(NotificationIcon.error, "Not able to remove entity");
-            } else {
-                showNotification(NotificationIcon.plus, "Entity removed");
-                Engine.getEventBus().post(new EntityAddedEvent());
-            }
-        });
-        webComponentPanel.addElement(removeEntityButton);
 
         Material material = engine.getMaterialManager().getDefaultMaterial();
         if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {

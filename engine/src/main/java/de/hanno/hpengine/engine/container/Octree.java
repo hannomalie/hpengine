@@ -24,7 +24,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Octree implements LifeCycle, Serializable, EntitiesContainer {
+public class Octree implements LifeCycle, Serializable, EntityManager {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
@@ -87,10 +87,10 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 																					.map(pair -> pair.getKey()).collect(Collectors.toList()));}
 	
 	@Override
-    public void insert(Entity entity) {
+    public void add(Entity entity) {
 
 		if(entity.hasChildren()) {
-			insert(entity.getChildren());
+			add(entity.getChildren());
 		}
 
 	   Node insertedInto = rootNode.insert(entity);
@@ -107,7 +107,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	public void insertWithoutOptimize(Entity entity) {
 
 		if(entity.hasChildren()) {
-			insert(entity.getChildren());
+			add(entity.getChildren());
 		}
 
 	   Node insertedInto = rootNode.insert(entity);
@@ -120,7 +120,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	
 	
 	@Override
-    public void insert(List<Entity> entities){
+    public void add(List<Entity> entities){
 
         if(entities == null) {
             return;
@@ -137,7 +137,6 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		LOGGER.info("Took " + (end - start) + " ms to optimize.");
 	}
 
-	@Override
     public List<Entity> getVisible(Camera camera) {
 		StopWatch.getInstance().start("Octree get visible");
 		List<Entity> result = new ArrayList<>();
@@ -158,29 +157,6 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 				node.optimize();
 			}
 		}
-	}
-	
-	@Override
-    public void drawDebug(Renderer renderer, Camera camera, Program program) {
-//		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-//		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
-//
-//		// List of 24*3 = 72 floats per floatarray
-//		List<float[]> arrays = rootNode.getPointsForLineDrawing(de.hanno.hpengine.camera);
-//		float[] points = new float[arrays.size() * 72];
-//		for (int i = 0; i < arrays.size(); i++) {
-//			float[] array = arrays.get(i);
-//			for (int z = 0; z < 72; z++) {
-//				points[24*3*i + z] = array[z];
-//			}
-//
-//		};
-//		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
-//		buffer.drawDebug();
-//		buffer.delete();
-
-        batchLines(renderer, rootNode);
-        renderer.drawLines(program);
 	}
 
 	private void batchLines(Renderer renderer, Node node) {
@@ -685,17 +661,11 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
     public List<Entity> getEntities() {
 		return new CopyOnWriteArrayList<>(entityNodeMappings.keySet());
 	}
-	
-	@Override
-    public int getEntityCount() {
-		return getEntities().size();
-	}
 
 	public int getCurrentDeepness() {
 		return rootNode.getMaxDeepness();
 	}
 
-	@Override
     public boolean remove(Entity entity) {
 		entityNodeMappings.remove(entity);
 		return rootNode.remove(entity);

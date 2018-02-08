@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
-import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.EntitySelectedEvent;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -28,7 +27,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
     @Override
     public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
-        if (engine.getInput().PICKING_CLICK == 1) {
+        if (engine.getInput().getPickingClick() == 1) {
             gpuContext.readBuffer(4);
 
             floatBuffer.rewind();
@@ -50,7 +49,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            engine.getInput().PICKING_CLICK = 0;
+            engine.getInput().setPickingClick(0);
         }
     }
 }

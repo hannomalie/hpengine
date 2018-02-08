@@ -10,7 +10,6 @@
     <version>1.0-SNAPSHOT</version>
 
     <modules>
-        <module>editor</module>
         <module>engine</module>
         <!--<module>simplegame</module>-->
     </modules>

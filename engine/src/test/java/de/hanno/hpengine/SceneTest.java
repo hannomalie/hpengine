@@ -10,7 +10,7 @@ public class SceneTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws Exception {
-		Scene scene = new Scene();
+		Scene scene = new Scene(engine);
 		scene.init(engine);
 		Assert.assertTrue(scene.write(SCENENAME));
 
@@ -22,7 +22,7 @@ public class SceneTest extends TestWithEngine {
 
     @Test
     public void loadScene() throws Exception {
-        Scene scene = new Scene();
+        Scene scene = new Scene(engine);
         scene.init(engine);
         engine.getSceneManager().setScene(scene);
         Entity entity = engine.getEntityManager().getEntity();

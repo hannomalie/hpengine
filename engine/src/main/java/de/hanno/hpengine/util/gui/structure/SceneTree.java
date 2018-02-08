@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
-import de.hanno.hpengine.engine.container.EntitiesContainer;
+import de.hanno.hpengine.engine.container.EntityManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.util.Parentable;
@@ -47,7 +47,7 @@ public class SceneTree extends WebCheckBoxTree {
         top.removeAllChildren();
 
         if(engine.getSceneManager().getScene() != null) {
-            spanTree(top, engine.getSceneManager().getScene().getEntitiesContainer());
+            spanTree(top, engine.getSceneManager().getScene().getEntityManager());
             LOGGER.info("Added " + engine.getSceneManager().getScene().getEntities().size());
         } else {
             LOGGER.info("Scene is currently null");
@@ -107,7 +107,7 @@ public class SceneTree extends WebCheckBoxTree {
         return top;
     }
 
-    private void spanTree(DefaultMutableTreeNode parent, EntitiesContainer container) {
+    private void spanTree(DefaultMutableTreeNode parent, EntityManager container) {
 
         java.util.List<Entity> rootEntities = new ArrayList<>();
         rootEntities.addAll(container.getEntities());

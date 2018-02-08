@@ -9,20 +9,19 @@ import de.hanno.hpengine.engine.manager.SimpleRegistry
 import org.joml.Vector3f
 
 class SceneManager(override val engine: Engine): Manager {
-    val registry: Registry = SimpleRegistry()
+//    val camera = MovableCamera()
+//    var activeCamera: Camera = camera
 
-    val camera = MovableCamera()
-    var activeCamera: Camera = camera
-
-    var scene: Scene = Scene()
+    var scene: Scene = Scene(engine = engine)
         set(value) {
             onSetScene(value)
             field = value
         }
+    var activeCamera: Camera = scene.activeCamera
 
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
-        activeCamera.update(engine, deltaSeconds)
+//        activeCamera.update(engine, deltaSeconds)
         scene.setCurrentCycle(engine.renderManager.drawCycle.get())
         scene.update(engine, deltaSeconds)
     }
@@ -41,13 +40,13 @@ class SceneManager(override val engine: Engine): Manager {
 
 
     init {
-        camera.initialize()
-        camera.setTranslation(Vector3f(0f, 20f, 0f))
-        activeCamera = camera
+//        camera.initialize()
+//        camera.setTranslation(Vector3f(0f, 20f, 0f))
+//        activeCamera = camera
         scene.init(engine)
     }
 
     fun restoreWorldCamera() {
-        activeCamera = camera
+//        activeCamera = camera
     }
 }

@@ -6,10 +6,12 @@ import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.Engine.Companion.eventBus
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.camera.MovableInputControllerSystem
 import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.container.EntitiesContainer
+import de.hanno.hpengine.engine.container.EntityManager
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.graphics.light.AreaLight
@@ -20,6 +22,9 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
+import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.manager.Registry
+import de.hanno.hpengine.engine.manager.SimpleRegistry
 import de.hanno.hpengine.engine.model.Entity
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
@@ -31,17 +36,24 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
 import java.util.logging.Logger
 
-
-class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.currentTimeMillis()) : LifeCycle, Serializable {
-
+class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
     var name = ""
+    init {
+        this.name = name
+    }
+
+    val systems: Registry = SimpleRegistry()
+    private val movableInputControllerManager = systems.register(MovableInputControllerSystem(engine))
+
+    val camera = Camera().apply { this.addComponent(movableInputControllerManager.create()) }
+    var activeCamera: Camera = camera
+
     private val probes = CopyOnWriteArrayList<ProbeData>()
 
     @Transient
-    var entitiesContainer: EntitiesContainer = SimpleContainer()
+    var entityManager: EntityManager = SimpleContainer()
         private set
     @Transient private var initialized = false
-    private val entities = CopyOnWriteArrayList<Entity>()
     val joints: List<BufferableMatrix4f> = CopyOnWriteArrayList()
     private val pointLights = CopyOnWriteArrayList<PointLight>()
     private val tubeLights = CopyOnWriteArrayList<TubeLight>()
@@ -65,12 +77,11 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     @Volatile
     @Transient
     var isInitiallyDrawn: Boolean = false
-    private var engine: Engine? = null
     private val min = Vector4f()
     private val max = Vector4f()
     val minMax = arrayOf(min, max)
 
-    internal var registeredModelComponents: MutableList<ModelComponent> = CopyOnWriteArrayList()
+    private var registeredModelComponents: MutableList<ModelComponent> = CopyOnWriteArrayList()
 
 
     val modelComponents: List<ModelComponent>
@@ -80,18 +91,12 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     private val tempDistVector = Vector3f()
 
-    init {
-        this.name = name
-    }
-
     override fun init(engine: Engine) {
         super.init(engine)
-        this.engine = engine
         eventBus.register(this)
-        entitiesContainer = SimpleContainer()
-        entities.forEach(Consumer { it.initialize() })
-        entities.forEach { entity -> entity.getComponents().values.forEach { c -> c.registerInScene(this@Scene, engine) } }
-        addAll(entities)
+        entityManager = SimpleContainer()
+        getEntities().forEach(Consumer { it.initialize() })
+        getEntities().forEach { entity -> entity.getComponents().values.forEach { c -> c.registerInScene(this@Scene, engine) } }
         for (data in probes) {
             engine.gpuContext.execute {
                 try {
@@ -132,14 +137,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         try {
             fos = FileOutputStream(directory + fileName + ".hpscene")
             out = ObjectOutputStream(fos)
-            entities.clear()
-            entities.addAll(entitiesContainer.entities)
             probes.clear()
-            //			for (EnvironmentProbe probe : Engine.getInstance().getEnvironmentProbeManager().getProbes()) {
-            //				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
-            //				if(probes.contains(probeData)) { continue; }
-            //				probes.add(probeData);
-            //			}
             out.writeObject(this)
             //			FSTObjectOutput newOut = new FSTObjectOutput(out);
             //			newOut.writeObject(this);
@@ -162,7 +160,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun calculateMinMax() {
-        calculateMinMax(entitiesContainer.entities)
+        calculateMinMax(entityManager.entities)
     }
 
     private fun calculateMinMax(entities: List<Entity>) {
@@ -188,7 +186,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun addAll(entities: List<Entity>) {
-        entitiesContainer.insert(entities)
+        entityManager.add(entities)
         entities.forEach { e ->
             e.getComponents().values.forEach { c ->
                 c.registerInScene(this@Scene, engine)
@@ -224,7 +222,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             updateCache = false
             entityIndices.clear()
             var index = 0
-            for (current in entitiesContainer.entities) {
+            for (current in entityManager.entities) {
                 if (!current.hasComponent(ModelComponent::class.java)) {
                     continue
                 }
@@ -236,6 +234,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     override fun update(engine: Engine, seconds: Float) {
         cacheEntityIndices()
+        systems.update(seconds)
         val pointLightsIterator = pointLights.iterator()
         while (pointLightsIterator.hasNext()) {
             pointLightsIterator.next().update(engine, seconds)
@@ -244,7 +243,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         for (i in areaLights.indices) {
             areaLights[i].update(engine, seconds)
         }
-        val entities = entitiesContainer.entities
+        val entities = entityManager.entities
 
         for (i in entities.indices) {
             try {
@@ -266,8 +265,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             pointLight.isHasMoved = false
         }
 
-        for (i in 0 until entitiesContainer.entities.size) {
-            val entity = entitiesContainer.entities[i]
+        for (i in 0 until entityManager.entities.size) {
+            val entity = entityManager.entities[i]
             if (!entity.hasMoved()) {
                 continue
             }
@@ -283,11 +282,11 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun getEntities(): List<Entity> {
-        return entitiesContainer.entities
+        return entityManager.entities
     }
 
     fun getEntity(name: String): Optional<Entity> {
-        val candidates = entitiesContainer.entities.filter { e -> e.name == name }
+        val candidates = entityManager.entities.filter { e -> e.name == name }
         return if (candidates.isNotEmpty()) Optional.of(candidates[0]) else Optional.ofNullable(null)
     }
 
@@ -297,10 +296,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun setInitialized(initialized: Boolean) {
         this.initialized = initialized
-    }
-
-    fun removeEntity(entity: Entity): Boolean {
-        return entitiesContainer.remove(entity)
     }
 
     fun getPointLights(): List<PointLight> {
@@ -409,7 +404,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
                 handleEvolution(scene)
                 `in`.close()
                 fis.close()
-                scene.entitiesContainer = SimpleContainer()//new Octree(new Vector3f(), 400, 6);
+                scene.entityManager = SimpleContainer()//new Octree(new Vector3f(), 400, 6);
                 scene
             } catch (e: IOException) {
                 e.printStackTrace()

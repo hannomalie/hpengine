@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntitiesContainer;
+import de.hanno.hpengine.engine.container.EntityManager;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
@@ -430,7 +430,7 @@ public class LightManager {
 		pointlightShadowMapsRenderedInCycle = renderState.getCycle();
 	}
 
-	public void renderPointLightShadowMaps_dpsm(RenderState renderState, EntitiesContainer octree) {
+	public void renderPointLightShadowMaps_dpsm(RenderState renderState, EntityManager octree) {
 		GPUProfiler.start("PointLight shadowmaps");
         engine.getGpuContext().depthMask(true);
         engine.getGpuContext().enable(DEPTH_TEST);

@@ -1,6 +1,5 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.container.Octree.Node;
@@ -88,7 +87,7 @@ public class OctreeTest extends TestWithEngine {
 		
 		Octree octree = new Octree(new Vector3f(), 0);
 		octree.init(engine);
-		octree.insert(entity);
+		octree.add(entity);
 		Assert.assertFalse(octree.rootNode.hasChildren());
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
 		Assert.assertEquals(octree.rootNode.getSize(), Octree.DEFAULT_SIZE, 0.1f);
@@ -163,8 +162,8 @@ public class OctreeTest extends TestWithEngine {
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
 		octree.init(engine);
-		octree.insert(entityBottomLeftBack);
-		octree.insert(entityTopRightFront);
+		octree.add(entityBottomLeftBack);
+		octree.add(entityTopRightFront);
 //		Assert.assertEquals(1, octree.getCurrentDeepness());
 		
 		Assert.assertEquals(5, octree.rootNode.children[0].getSize(), 0.1f);
@@ -246,7 +245,7 @@ public class OctreeTest extends TestWithEngine {
 		}
 
 		long start = System.currentTimeMillis();
-		octree.insert(toAdd);
+		octree.add(toAdd);
 		long end = System.currentTimeMillis();
 		LOGGER.info("Took " + (end - start) + " ms to insert " + entityCount +  " entities.");
 		LOGGER.info("Current deepness is " + octree.getCurrentDeepness());
