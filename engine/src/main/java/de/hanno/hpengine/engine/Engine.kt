@@ -4,9 +4,12 @@ import com.alee.laf.WebLookAndFeel
 import com.alee.utils.SwingUtils
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
+import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.component.JavaComponent
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -20,11 +23,11 @@ import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.Registry
 import de.hanno.hpengine.engine.manager.SimpleRegistry
 import de.hanno.hpengine.engine.entity.EntityManager
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
@@ -57,8 +60,9 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     val programManager = ProgramManager(this)
     val textureManager = TextureManager(eventBus, programManager, gpuContext)
     val materialManager = MaterialManager(this, textureManager)
-    private val cameraComponentSystem = systems.register(CameraComponentSystem(this))
-    private val inputComponentSystem = systems.register(InputComponentSystem(this))
+    val cameraComponentSystem = systems.register(CameraComponentSystem(this), Camera::class.java)
+    val inputComponentSystem = systems.register(InputComponentSystem(this), InputControllerComponent::class.java)
+    val modelComponentSystem = systems.register(ModelComponentSystem(this), ModelComponent::class.java)
     val sceneManager = SceneManager(this)
     val lightManager = LightManager(eventBus, materialManager, sceneManager, gpuContext, programManager, inputComponentSystem)
     val scriptManager = ScriptManager().apply { defineGlobals(this@Engine) }
@@ -213,10 +217,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
             if (debug) {
                 DebugFrame(engine)
             }
-            if (sceneName != null) {
-                val scene = Scene.read(sceneName)
-                engine.sceneManager.scene = scene
-            }
 
             try {
                 val initScript = JavaComponent(String(Files.readAllBytes(engine.directoryManager.gameInitScript.toPath())))
@@ -233,3 +233,4 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     }
 
 }
+

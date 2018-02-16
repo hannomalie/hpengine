@@ -331,28 +331,6 @@ public class DebugFrame implements HostComponent {
 	        menuScene.add(sceneSaveMenuItem);
         }
         {
-            WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
-            Customizer<WebFileChooser> customizer = arg0 -> arg0.setFileFilter(new FileNameExtensionFilter("HP scenes", "hpscene"));
-
-            sceneLoadMenuItem.addActionListener(e -> {
-                File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/scenes/", customizer);
-                if(chosenFile != null) {
-
-                    String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-                    new SwingWorkerWithProgress<Result<Scene>>(this, "Load de.hanno.hpengine.scene...", "Unable to load de.hanno.hpengine.scene " + sceneName){
-                        @Override
-                        public Result<Scene> doInBackground() throws Exception {
-                            Scene newScene = Scene.Companion.read(sceneName);
-                            engine.getSceneManager().setScene(newScene);
-                            return new Result(newScene);
-                        }
-                    }.execute();
-                }
-            });
-
-            menuScene.add(sceneLoadMenuItem);
-        }
-        {
             WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load Testscene" );
 
             sceneLoadMenuItem.addActionListener(e -> {
@@ -399,16 +377,6 @@ public class DebugFrame implements HostComponent {
 			});
 
         	menuEntity.add(entityAddMenuItem);
-        }
-        {
-        	WebMenuItem entityLoadMenuItem = new WebMenuItem ( "Load existing" );
-        	entityLoadMenuItem.addActionListener(e -> {
-
-				engine.getSceneManager().getScene().addAll(LoadEntityView.showDialog(engine));
-				scenePane.reload();
-			});
-
-        	menuEntity.add(entityLoadMenuItem);
         }
         WebMenu menuProbe = new WebMenu("Probe");
         {

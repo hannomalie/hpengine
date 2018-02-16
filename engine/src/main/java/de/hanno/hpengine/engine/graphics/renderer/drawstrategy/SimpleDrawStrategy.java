@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.*;
@@ -111,7 +110,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
 
         StaticModel skyBox = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
-        skyBoxEntity = this.engine.getEntityManager().getEntity(new Vector3f(), "skybox", skyBox);
+        skyBoxEntity = this.engine.getEntityManager().create();
+        skyBoxEntity.addComponent(new ModelComponent(skyBoxEntity, skyBox));
         skyBoxEntity.init(engine);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);
         VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(engine.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
@@ -126,7 +126,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        EntityContainer entityManager = engine.getSceneManager().getScene().getEntityManager();
+        List<Entity> entities = engine.getSceneManager().getScene().getEntityManager().getEntities();
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
@@ -140,7 +140,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
             engine.getLightManager().renderAreaLightShadowMaps(renderState);
             if (Config.getInstance().isUseDpsm()) {
-                engine.getLightManager().renderPointLightShadowMaps_dpsm(renderState, entityManager);
+                engine.getLightManager().renderPointLightShadowMaps_dpsm(renderState, entities);
             } else {
                 engine.getLightManager().renderPointLightShadowMaps(renderState);
             }

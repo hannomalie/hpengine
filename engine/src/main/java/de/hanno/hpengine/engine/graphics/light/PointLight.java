@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
-import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 
@@ -22,11 +21,10 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	public static float DEFAULT_RANGE = 1f;
 	private Vector4f color;
 	
-	protected PointLight(Vector3f position, StaticModel model, Vector4f colorIntensity, float range) {
-		super(position, generateName(), model);
+	protected PointLight(Vector3f position, Vector4f colorIntensity, float range) {
+		super(generateName(), position);
 		setColor(colorIntensity);
 		scale(range);
-		initialize();
 	}
 	
 	private static String generateName() {

@@ -25,18 +25,13 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 	private T parent;
 	private List<T> children = new ArrayList<>();
 
-	transient private boolean hasMoved = true;
-	transient protected FloatBuffer modelMatrixBuffer;
-	transient protected FloatBuffer viewMatrixBuffer;
-
-	private transient Vector3f tempVec3;
-	private transient Quaternionf tempQuat;
+	private boolean hasMoved = true;
+	final protected FloatBuffer modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	final protected FloatBuffer viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
     public Transform() {
 		identity();
-		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		modelMatrixBuffer.rewind();
-		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		viewMatrixBuffer.rewind();
 	}
 
@@ -147,16 +142,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		return this.getTransformationWithoutRecalculation().invert(viewMatrix);
 	}
 
-	public void initialize() {
-		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		modelMatrixBuffer.rewind();
-		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		viewMatrixBuffer.rewind();
-		tempVec3 = new Vector3f();
-		tempQuat = new Quaternionf();
-		recalculate();
-	}
-
 	protected void bufferMatrixes() {
 		synchronized(modelMatrixBuffer) {
 			modelMatrixBuffer.rewind();
@@ -180,14 +165,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 			recalculateIfDirty();
 		}
 		return viewMatrixBuffer;
-	}
-
-	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-		stream.defaultReadObject();
-		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		modelMatrixBuffer.rewind();
-		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		viewMatrixBuffer.rewind();
 	}
 
 	Vector3f position = new Vector3f();

@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.InputComponentSystem;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.event.LightChangedEvent;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
 import de.hanno.hpengine.engine.event.SceneInitEvent;
@@ -193,13 +192,10 @@ public class LightManager {
 
     private void initLights() {
         for (PointLight pointLight : pointLights) {
-            pointLight.initialize();
         }
         for (AreaLight areaLight : areaLights) {
-            areaLight.initialize();
         }
 
-        directionalLight.getEntity().initialize();
     }
 
 	public PointLight getPointLight() {
@@ -220,9 +216,8 @@ public class LightManager {
 	public PointLight getPointLight(Vector3f position, Vector4f colorIntensity, float range) {
 		Material material = materialManager.getDefaultMaterial();
 		
-		PointLight light = new PointLight(position, sphereMesh, colorIntensity, range);
-		light.initialize();
-		updatePointLightArrays();
+		PointLight light = new PointLight(position, colorIntensity, range);
+        updatePointLightArrays();
 		return light;
 	}
 	private void updatePointLightArrays() {
@@ -464,7 +459,7 @@ public class LightManager {
 		pointlightShadowMapsRenderedInCycle = renderState.getCycle();
 	}
 
-	public void renderPointLightShadowMaps_dpsm(RenderState renderState, EntityContainer octree) {
+	public void renderPointLightShadowMaps_dpsm(RenderState renderState, List<Entity> entities) {
 		GPUProfiler.start("PointLight shadowmaps");
         gpuContext.depthMask(true);
         gpuContext.enable(DEPTH_TEST);
@@ -477,12 +472,11 @@ public class LightManager {
 
             gpuContext.clearDepthAndColorBuffer();
 			PointLight light = sceneManager.getScene().getPointLights().get(i);
-			List<Entity> visibles = octree.getEntities();
 			pointShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
 			pointShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
 			pointShadowPassProgram.setUniform("isBack", false);
 
-			for (Entity e : visibles) {
+			for (Entity e : entities) {
 				e.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(modelComponent -> {
                     pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getTransformationBuffer());
 					modelComponent.getMaterial(materialManager).setTexturesActive(pointShadowPassProgram);
@@ -497,7 +491,7 @@ public class LightManager {
 			pointShadowPassProgram.setUniform("isBack", true);
 			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayBack, i);
             gpuContext.clearDepthAndColorBuffer();
-			for (Entity e : visibles) {
+			for (Entity e : entities) {
 				e.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(modelComponent -> {
                     pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getTransformationBuffer());
 					modelComponent.getMaterial(materialManager).setTexturesActive(pointShadowPassProgram);

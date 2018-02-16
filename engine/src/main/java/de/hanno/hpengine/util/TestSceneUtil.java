@@ -1,5 +1,6 @@
 package de.hanno.hpengine.util;
 
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
@@ -53,7 +54,8 @@ public class TestSceneUtil {
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
-                            Entity entity = entityManager.getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
+                            Entity entity = entityManager.create(position, "Entity_" + System.currentTimeMillis());
+                            entity.addComponent(new ModelComponent(entity, sphere));
                             PointLight pointLight = lightManager.getPointLight(10);
                             pointLight.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);
@@ -97,7 +99,6 @@ public class TestSceneUtil {
 //			StopWatch.getInstance().stopAndPrintMS();
 
             for(Entity entity : entities) {
-                entity.initialize();
             }
         } catch (Exception e) {
             e.printStackTrace();

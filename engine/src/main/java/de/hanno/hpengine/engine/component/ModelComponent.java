@@ -64,6 +64,17 @@ public class ModelComponent extends BaseComponent implements Serializable {
     private int jointsOffset = 0;
     private Engine engine;
 
+    public int getJointsOffset() {
+        return jointsOffset;
+    }
+
+    public void setJointsOffset(int jointsOffset) {
+        this.jointsOffset = jointsOffset;
+    }
+
+    public ModelComponent(Entity entity) {
+        this.entity = entity;
+    }
     public ModelComponent(Entity entity, Model model) {
         super();
         this.entity = entity;
@@ -102,20 +113,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
         super.init(engine);
         this.engine = engine;
         initialized = true;
-    }
-
-    @Override
-    public void registerInScene(Scene scene, Engine engine) {
-        if(model.isStatic()) {
-            VertexIndexBuffer<Vertex> vertexIndexBuffer = engine.getRenderManager().getVertexIndexBufferStatic();
-            putToBuffer(engine.getGpuContext(), vertexIndexBuffer, DEFAULTCHANNELS);
-        } else {
-            VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = this.engine.getRenderManager().getVertexIndexBufferAnimated();
-            putToBuffer(engine.getGpuContext(), vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
-
-            jointsOffset = scene.getJoints().size(); // TODO: Proper allocation
-            scene.getJoints().addAll(((AnimatedModel) model).getFrames().stream().flatMap(frame -> Arrays.stream(frame.getJointMatrices())).collect(Collectors.toList()));
-        }
     }
 
     public VertexIndexOffsets putToBuffer(GpuContext gpuContext, VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {

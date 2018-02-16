@@ -120,7 +120,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram = this.engine.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", new Defines());
         Config.getInstance().setUseAmbientOcclusion(false);
         pipeline = new SimplePipeline(engine, false, false, false);
-        orthoCam = new Camera(engine.getEntityManager().getEntity(), ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+        orthoCam = new Camera(engine.getEntityManager().create(), ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
     }
 
     private long entityMovedLastInCycle;

@@ -5,13 +5,11 @@ import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.CameraComponentSystem
-import de.hanno.hpengine.engine.camera.InputComponentSystem
-import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.ModelComponent.DEFAULTANIMATEDCHANNELS
+import de.hanno.hpengine.engine.component.ModelComponent.DEFAULTCHANNELS
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.container.EntityContainer
-import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.graphics.light.AreaLight
 import de.hanno.hpengine.engine.graphics.light.PointLight
@@ -21,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -38,23 +37,23 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     val systems = engine.systems
-    var entityManager: EntityContainer = SimpleContainer()
-        private set
+    var entityManager = engine.entityManager
 
 
-    private val cameraComponentSystem = systems.get(CameraComponentSystem::class.java)
-    private val movableInputControllerManager = systems.get(InputComponentSystem::class.java)
+    private val cameraComponentSystem = systems.get(Camera::class.java)
+    private val movableInputControllerManager = systems.get(InputControllerComponent::class.java)
+    private val modelComponentSystem = systems.get(ModelComponent::class.java)
 
     val camera = entityManager.create()
             .apply { addComponent(movableInputControllerManager.create(this)) }
             .apply { addComponent(cameraComponentSystem.create(this)) }
+            .apply { entityManager.add(this) }
 
     var activeCamera = camera
 
     private val probes = CopyOnWriteArrayList<ProbeData>()
 
-    @Transient private var initialized = false
-    val joints: List<BufferableMatrix4f> = CopyOnWriteArrayList()
+    val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
     @Volatile
     @Transient private var updateCache = true
@@ -78,11 +77,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     private val max = Vector4f()
     val minMax = arrayOf(min, max)
 
-    private var registeredModelComponents: MutableList<ModelComponent> = CopyOnWriteArrayList()
-
-
     val modelComponents: List<ModelComponent>
-        get() = registeredModelComponents
+        get() = modelComponentSystem.components
 
     private val entityIndices = IntArrayList()
 
@@ -91,21 +87,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     override fun init(engine: Engine) {
         super.init(engine)
         engine.eventBus.register(this)
-        entityManager = SimpleContainer()
-        getEntities().forEach(Consumer { it.initialize() })
-        getEntities().forEach { entity -> entity.getComponents().values.forEach { c -> c.registerInScene(this@Scene, engine) } }
-        for (data in probes) {
-            engine.gpuContext.execute {
-                try {
-                    // TODO: Remove this f***
-                    val probe = engine.environmentProbeManager.getProbe(data.center, data.size, data.update, data.weight)
-                    engine.renderer.addRenderProbeCommand(probe)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-        initialized = true
         engine.eventBus.post(SceneInitEvent())
     }
 
@@ -173,8 +154,21 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         entityManager.add(entities)
         entities.forEach { e ->
             e.getComponents().values.forEach { c ->
-                c.registerInScene(this@Scene, engine)
-                this@Scene.register(c)
+                if(c is ModelComponent) {
+
+                    if (c.model.isStatic()) {
+                        val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
+                        c.putToBuffer(engine.gpuContext, vertexIndexBuffer, DEFAULTCHANNELS)
+                    } else {
+                        val vertexIndexBuffer = this.engine.renderManager.vertexIndexBufferAnimated
+                        c.putToBuffer(engine.gpuContext, vertexIndexBuffer, DEFAULTANIMATEDCHANNELS)
+
+                        c.jointsOffset = joints.size // TODO: Proper allocation
+                        val elements = (c.model as AnimatedModel).frames
+                                .flatMap { frame -> frame.jointMatrices.toList() }
+                        joints.addAll(elements)
+                    }
+                }
             }
         }
         calculateMinMax(entities)
@@ -185,13 +179,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun add(entity: Entity) = addAll(listOf(entity))
-
-    //TODO: Handle deregistration, or prohibit it
-    private fun register(c: Component) {
-        if (c is ModelComponent) {
-            registeredModelComponents.add(c)
-        }
-    }
 
     fun getEntityBufferIndex(modelComponent: ModelComponent): Int {
         cacheEntityIndices()
@@ -260,12 +247,9 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         return if (candidates.isNotEmpty()) Optional.of(candidates[0]) else Optional.ofNullable(null)
     }
 
-    override fun isInitialized(): Boolean {
-        return initialized
-    }
+    override fun isInitialized() = true
 
     fun setInitialized(initialized: Boolean) {
-        this.initialized = initialized
     }
 
     fun getPointLights(): List<PointLight> {
@@ -354,33 +338,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         private const val serialVersionUID = 1L
 
         private val LOGGER = Logger.getLogger(Scene::class.java.name)
-
-        @JvmStatic fun read(name: String): Scene {
-            val fileName = FilenameUtils.getBaseName(name)
-            var fis: FileInputStream? = null
-            var `in`: ObjectInputStream? = null
-            return try {
-                fis = FileInputStream(directory + fileName + ".hpscene")
-                `in` = ObjectInputStream(fis)
-                val scene = `in`.readObject() as Scene
-
-                //			FSTObjectInput newIn = new FSTObjectInput(in);
-                //			Scene de.hanno.hpengine.scene = (Scene)newIn.readObject();
-                //			newIn.close();
-
-                handleEvolution(scene)
-                `in`.close()
-                fis.close()
-                scene.entityManager = SimpleContainer()//new Octree(new Vector3f(), 400, 6);
-                scene
-            } catch (e: IOException) {
-                e.printStackTrace()
-                throw e
-            } catch (e: ClassNotFoundException) {
-                e.printStackTrace()
-                throw e
-            }
-        }
 
         private val absoluteMaximum = Vector4f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
         private val absoluteMinimum = Vector4f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)

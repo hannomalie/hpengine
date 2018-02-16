@@ -1,81 +1,49 @@
 package de.hanno.hpengine.engine.entity;
 
-import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.container.EntityContainer;
+import de.hanno.hpengine.engine.container.SimpleContainer;
 import de.hanno.hpengine.engine.event.bus.EventBus;
-import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.Update;
-import org.apache.commons.io.FilenameUtils;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.util.List;
 
 public class EntityManager {
+
+    EntityContainer entities = new SimpleContainer();
+
     public EntityManager(EventBus eventbus) {
         eventbus.register(this);
-	}
-	public Entity getEntity() {
-		Entity entity = new Entity();
-		entity.initialize();
-		return entity;
-	}
-
-	public Entity getEntity(String name, Model model) {
-		return getEntity(new Vector3f(), name, model);
-	}
-
-	public Entity getEntity(Vector3f position, String name, Model model) {
-		Entity entity = new Entity(position, name, model);
-		entity.setTranslation(position);
-		entity.setName(name);
-		entity.initialize();
-		return entity;
-	}
-
-	public Entity getEntity(String name) throws IOException, ClassNotFoundException {
-//		Entity entity = read(name);
-		Entity entity = new Entity();
-		entity.setName(name);
-		return entity;
-	}
-
-    public Entity read(String resourceName) throws IOException, ClassNotFoundException {
-		String fileName = FilenameUtils.getBaseName(resourceName);
-		FileInputStream fis = null;
-		ObjectInputStream in = null;
-		fis = new FileInputStream(Entity.getDirectory() + fileName + ".hpentity");
-		in = new ObjectInputStream(fis);
-		Entity entity = (Entity) in.readObject();
-		handleEvolution(entity);
-		entity.initialize();
-		in.close();
-
-		return entity;
-	}
-    
-    public Entity readWithoutInit(String resourceName) {
-		String fileName = FilenameUtils.getBaseName(resourceName);
-		FileInputStream fis = null;
-		ObjectInputStream in = null;
-		try {
-			fis = new FileInputStream(Entity.getDirectory() + fileName + ".hpentity");
-			in = new ObjectInputStream(fis);
-			Entity entity = (Entity) in.readObject();
-			handleEvolution(entity);
-			in.close();
-			
-			return entity;
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-    
-    private void handleEvolution(Entity entity) {
-		if(entity.getUpdate() == null) {
-			entity.setUpdate(Update.DYNAMIC);
-		}
     }
 
+    @NotNull
+    public Entity create() {
+        Entity entity = new Entity();
+        return entity;
+    }
+
+    @NotNull
+    public Entity create(String name) {
+        return create(new Vector3f(), name);
+    }
+
+    @NotNull
+    public Entity create(Vector3f position, String name) {
+        Entity entity = new Entity(name, position);
+
+        return entity;
+    }
+
+    @NotNull
+    public List<Entity> getEntities() {
+        return entities.getEntities();
+    }
+
+    public void add(Entity entity) {
+        entities.add(entity);
+    }
+
+    public void add(@NotNull List<Entity> entities) {
+        this.entities.add(entities);
+    }
 }

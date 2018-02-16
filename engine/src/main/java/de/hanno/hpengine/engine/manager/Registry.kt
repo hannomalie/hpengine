@@ -4,35 +4,37 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 
 interface Registry {
-    fun <T> get(clazz: Class<T>) : ComponentSystem<T>
+    fun <T : Component> get(componentClass: Class<T>): ComponentSystem<T>
     fun getMangers(): List<ComponentSystem<*>>
     fun update(deltaSeconds: Float)
-    fun <COMPONENT_TYPE, T: ComponentSystem<COMPONENT_TYPE>> register(manager: T) = register(manager.javaClass, manager)!!
-    fun <COMPONENT_TYPE, T: ComponentSystem<COMPONENT_TYPE>> register(clazz: Class<T>, manager: T): T
+    fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE, clazz: Class<COMPONENT_TYPE>): SYSTEM_TYPE
 }
 
-interface ComponentSystem<T> {
+interface ComponentSystem<T : Component> {
     fun update(deltaSeconds: Float)
     val components: List<T>
-    fun create(entity: Entity): Component
+    fun create(entity: Entity): T
     fun addComponent(component: T)
 }
 
-class SimpleRegistry: Registry {
+class SimpleRegistry : Registry {
 
     override fun getMangers(): List<ComponentSystem<*>> = managers.values.toList()
 
     private val managers = mutableMapOf<Class<*>, ComponentSystem<*>>()
 
-    override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(clazz: Class<T>, manager: T): T {
-        managers.put(clazz, manager)
-        return manager
+    override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(system: T, clazz: Class<COMPONENT_TYPE>): T {
+        managers.put(clazz, system)
+        return system
     }
 
-    override fun <T> get(clazz: Class<T>): ComponentSystem<T> {
-        if(!managers.contains(clazz)) { throw IllegalStateException("Requested manager of clazz $clazz, but no manager registered.")}
-        return (managers[clazz] as ComponentSystem<T>?)!!
+    override fun <T : Component> get(componentClass: Class<T>): ComponentSystem<T> {
+        if (!managers.contains(componentClass)) {
+            throw IllegalStateException("Requested manager of componentClass $componentClass, but no manager registered.")
+        }
+        return (managers[componentClass] as ComponentSystem<T>?)!!
     }
+
     override fun update(deltaSeconds: Float) {
         managers.values.forEach { it.update(deltaSeconds) }
     }

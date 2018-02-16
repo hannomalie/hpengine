@@ -21,7 +21,7 @@ public class InitSponza implements LifeCycle {
             }
             engine.getSceneManager().getScene().addAll(loaded.entities);
 
-            Entity entity = engine.getEntityManager().getEntity();
+            Entity entity = engine.getEntityManager().create();
             entity.addComponent(new Camera(entity));
             engine.getSceneManager().getScene().add(entity);
             Thread.sleep(500);

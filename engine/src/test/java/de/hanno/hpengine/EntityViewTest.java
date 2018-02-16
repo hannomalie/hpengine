@@ -14,7 +14,7 @@ public class EntityViewTest extends TestWithEngine {
     @Test
     public void testEntityViewGui() throws Exception {
         StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
-        Entity parentEntity = engine.getEntityManager().getEntity("parent", model);
+        Entity parentEntity = engine.getEntityManager().create("parent");
 
         JFrame frame = new JFrame();
 

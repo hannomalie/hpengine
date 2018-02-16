@@ -4,7 +4,6 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.light.*;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
@@ -88,8 +87,7 @@ public class EnvironmentSampler extends Entity {
         camera.setWidth(width);
 		camera.setWidth(height);
         translate(position);
-		initialize();
-		this.engine = engine;
+        this.engine = engine;
         this.renderer = engine.getRenderer();
 		this.probe = probe;
 		float far = 5000f;
@@ -162,7 +160,6 @@ public class EnvironmentSampler extends Entity {
 			return;
 		}
 
-		EntityContainer octree = scene.getEntityManager();
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();

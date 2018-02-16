@@ -19,16 +19,14 @@ public class TubeLight extends Entity {
 	private Vector3f color;
 
 	protected TubeLight(Vector3f position, StaticModel model, Vector3f colorIntensity, float length, float radius, String materialName) {
-		super(position, generateName(), model);
+		super(generateName(), position);
 		setColor(colorIntensity);
 		scale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...m�h
-		initialize();
 	}
 	public TubeLight(Vector3f position, StaticModel model, Vector3f color, float length, float radius) {
-		super(position, generateName(), model);
+		super(generateName(), position);
 		setColor(color);
 		scale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...m�h
-		initialize();
 	}
 	
 	private static String generateName() {

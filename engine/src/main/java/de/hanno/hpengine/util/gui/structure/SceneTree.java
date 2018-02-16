@@ -15,6 +15,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -47,7 +48,7 @@ public class SceneTree extends WebCheckBoxTree {
         top.removeAllChildren();
 
         if(engine.getSceneManager().getScene() != null) {
-            spanTree(top, engine.getSceneManager().getScene().getEntityManager());
+            spanTree(top, engine.getSceneManager().getScene().getEntityManager().getEntities());
             LOGGER.info("Added " + engine.getSceneManager().getScene().getEntities().size());
         } else {
             LOGGER.info("Scene is currently null");
@@ -107,10 +108,10 @@ public class SceneTree extends WebCheckBoxTree {
         return top;
     }
 
-    private void spanTree(DefaultMutableTreeNode parent, EntityContainer container) {
+    private void spanTree(DefaultMutableTreeNode parent, List<Entity> entities) {
 
         java.util.List<Entity> rootEntities = new ArrayList<>();
-        rootEntities.addAll(container.getEntities());
+        rootEntities.addAll(entities);
 
         Map<Entity, DefaultMutableTreeNode> rootEntityMappings = new HashMap<>();
 

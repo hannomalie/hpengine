@@ -3,7 +3,6 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -17,23 +16,10 @@ import java.util.List;
 
 public class EntityTest extends TestWithEngine {
 
-	@Test
-	public void writeAndRead() throws Exception {
-        EntityManager entityManager = engine.getEntityManager();
-        Entity entity = entityManager.getEntity("default", new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj")));
-
-		String filename = "default.hpentity";
-
-		Assert.assertTrue(Entity.write(entity, filename));
-
-        Entity loadedEntity = entityManager.read(filename);
-		Assert.assertTrue(entity.equals(loadedEntity));
-
-	}
     @Test
     public void loadParented() throws Exception {
         StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
-        Entity entity = engine.getEntityManager().getEntity("xxx", model);
+        Entity entity = engine.getEntityManager().create("xxx");
         engine.getSceneManager().getScene().add(entity);
 
         Assert.assertTrue(engine.getSceneManager().getScene().getEntities().contains(entity));
@@ -53,7 +39,7 @@ public class EntityTest extends TestWithEngine {
     @Test
     public void testInstanceBuffering() throws Exception {
         StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
-        Entity parentEntity = engine.getEntityManager().getEntity("parent", model);
+        Entity parentEntity = engine.getEntityManager().create("parent");
         parentEntity.setSelected(true);
         parentEntity.setTranslation(new Vector3f(2,2,2));
         engine.getSceneManager().getScene().add(parentEntity);
@@ -62,7 +48,7 @@ public class EntityTest extends TestWithEngine {
         Assert.assertFalse(parentEntity.hasChildren());
         Assert.assertTrue(parentEntity.getName().equals("parent"));
 
-        Entity childEntity = engine.getEntityManager().getEntity("child", model);
+        Entity childEntity = engine.getEntityManager().create("child");
         childEntity.setTranslation(new Vector3f(2,2,2));
         childEntity.setParent(parentEntity);
         engine.getSceneManager().getScene().add(childEntity);
@@ -79,7 +65,7 @@ public class EntityTest extends TestWithEngine {
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
 
-        Entity secondEntity = engine.getEntityManager().getEntity("second", model);
+        Entity secondEntity = engine.getEntityManager().create("second");
         engine.getSceneManager().getScene().add(secondEntity);
         Assert.assertEquals(0, engine.getSceneManager().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
         Assert.assertEquals(4, engine.getSceneManager().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));

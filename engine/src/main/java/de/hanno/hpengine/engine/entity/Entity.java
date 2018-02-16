@@ -101,19 +101,17 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public Map<String, Component> components = new HashMap<>();
 
 	public Entity() {
+	    this("Entity"  +String.valueOf(System.currentTimeMillis()));
 	}
 
-	public Entity(String name, StaticModel model) {
-		this(new Vector3f(0, 0, 0), name, model);
+	public Entity(String name) {
+		this(name, new Vector3f(0, 0, 0));
 	}
 
-	public Entity(Vector3f position, String name, Model model) {
-	    this();
-		addComponent(new ModelComponent(this, model));
+	public Entity(String name, Vector3f position) {
 		this.name = name;
 		setTranslation(position);
-		initialize();
-	}
+    }
 
 	@Override
 	public void init(Engine engine) {
@@ -121,8 +119,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 			component.init(engine);
 		}
 		for(Entity child: getChildren()) {
-			child.initialize();
-		}
+        }
 		this.engine = engine;
 		initialized = true;
 	}
@@ -132,7 +129,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 	public Entity addComponent(Component component , String key) {
 		getComponents().put(key, component);
-		component.initAfterAdd(this);
 		return this;
 	}
 
