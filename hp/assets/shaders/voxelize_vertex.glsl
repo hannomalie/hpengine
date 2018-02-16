@@ -14,7 +14,7 @@ layout(std430, binding=1) buffer _materials {
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
-layout(std430, binding=4) buffer _entityOffsets {
+layout(std430, binding=4) buffer entityOffsets {
 	int entityOffsets[2000];
 };
 
@@ -31,7 +31,7 @@ out vec4 position_world;
 out vec3 v_vertex;
 out vec3 v_normal;
 out vec2 v_texcoord;
-//flat out Entity v_entity;
+//flat out Entity ventity;
 out int v_materialIndex;
 out int v_isStatic;
 

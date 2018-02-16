@@ -74,7 +74,7 @@ public class ProgramManager implements Manager {
 	public Program getProgram(Defines defines) {
 		Program program = new Program(this, firstpassDefaultVertexshaderSource, null, firstpassDefaultFragmentshaderSource, defines);
 		LOADED_PROGRAMS.add(program);
-		Engine.getEventBus().register(program);
+		engine.getEventBus().register(program);
 		return program;
 	}
 
@@ -85,7 +85,7 @@ public class ProgramManager implements Manager {
         return engine.getGpuContext().calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(this, getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
-            Engine.getEventBus().register(program);
+            engine.getEventBus().register(program);
             return program;
         });
 	}
@@ -97,7 +97,7 @@ public class ProgramManager implements Manager {
         return engine.getGpuContext().calculate(() -> {
             Program program = new Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
             LOADED_PROGRAMS.add(program);
-            Engine.getEventBus().register(program);
+            engine.getEventBus().register(program);
             return program;
         });
 	}

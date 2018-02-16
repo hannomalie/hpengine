@@ -239,7 +239,7 @@ public class DeferredRenderer implements Renderer {
 	public void executeRenderProbeCommands(RenderState extract) {
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(extract.camera).ifPresent(command -> {
+		renderProbeCommandQueue.takeNearest(extract.camera.getEntity()).ifPresent(command -> {
 			command.getProbe().draw(command.isUrgent(), extract);
 		});
 		counter++;

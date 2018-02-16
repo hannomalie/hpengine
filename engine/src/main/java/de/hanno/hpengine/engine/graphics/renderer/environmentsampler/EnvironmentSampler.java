@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntityManager;
+import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.light.*;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
@@ -54,7 +54,7 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.L
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
-public class EnvironmentSampler extends Camera {
+public class EnvironmentSampler extends Entity {
 	public static volatile boolean deferredRenderingForProbes = false;
 	private final Engine engine;
 	private Program cubeMapProgram;
@@ -80,11 +80,13 @@ public class EnvironmentSampler extends Camera {
 	private Program secondPassDirectionalProgram;
 	
 	private RenderTarget renderTarget;
-	
-	public EnvironmentSampler(Engine engine, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) throws Exception {
-		super(0.1f, 5000f, 90f, 1f);
-        setWidth(width);
-        setWidth(height);
+	private Camera camera;
+
+	public EnvironmentSampler(Entity entity, Engine engine, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) throws Exception {
+		Camera camera = new Camera(entity, 0.1f, 5000f, 90f, 1f);
+		entity.addComponent(camera);
+        camera.setWidth(width);
+		camera.setWidth(height);
         translate(position);
 		initialize();
 		this.engine = engine;
@@ -94,10 +96,10 @@ public class EnvironmentSampler extends Camera {
 		float near = 0.1f;
 		float fov = 90f;
 		Matrix4f projectionMatrix = Util.createPerspective(fov, 1, near, far);
-		setFar(far);
-		setNear(near);
-		setFov(fov);
-		setRatio(1f);
+		camera.setFar(far);
+		camera.setNear(near);
+		camera.setFov(fov);
+		camera.setRatio(1f);
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
 		setParent(probe);
 		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
@@ -146,78 +148,85 @@ public class EnvironmentSampler extends Camera {
 
 		fullscreenBuffer = new QuadVertexBuffer(engine.getGpuContext(), true);
 		fullscreenBuffer.upload();
-		Engine.getEventBus().register(this);
+		engine.getEventBus().register(this);
 		GpuContext.exitOnGLError("EnvironmentSampler constructor");
 	}
 
 	public void drawCubeMap(boolean urgent, RenderState extract) {
 		drawCubeMapSides(urgent, extract);
 	}
-	
-	private void drawCubeMapSides(boolean urgent, RenderState extract) {
-        Scene scene = engine.getSceneManager().getScene();
-        if(scene == null) { return; }
 
-        EntityManager octree = scene.getEntityManager();
+	private void drawCubeMapSides(boolean urgent, RenderState extract) {
+		Scene scene = engine.getSceneManager().getScene();
+		if (scene == null) {
+			return;
+		}
+
+		EntityContainer octree = scene.getEntityManager();
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();
 
-		DirectionalLight light = scene.getDirectionalLight();
-        engine.getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 8);
-        engine.getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
+		DirectionalLight light = engine.getLightManager().directionalLight;
+		engine.getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 8);
+		engine.getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
 
-        engine.getGpuContext().disable(DEPTH_TEST);
-        engine.getGpuContext().depthFunc(LEQUAL);
+		engine.getGpuContext().disable(DEPTH_TEST);
+		engine.getGpuContext().depthFunc(LEQUAL);
 
-        renderTarget.use(false);
+		renderTarget.use(false);
 		bindProgramSpecificsPerCubeMap();
 
 		boolean filteringRequired = false;
-		for(int i = 0; i < 6; i++) {
+		for (int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
 			boolean fullRerenderRequired = urgent || !drawnOnce;
-			boolean aPointLightHasMoved = !scene.getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !scene.getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
-			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
+			boolean aPointLightHasMoved = !scene.getPointLights().stream().filter(e -> {
+				return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius());
+			}).filter(e -> {
+				return e.hasMoved();
+			}).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !engine.getLightManager().areaLights.stream().filter(e -> {
+				return e.hasMoved();
+			}).collect(Collectors.toList()).isEmpty();
+			boolean rerenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
-			if(noNeedToRedraw) {  // early exit if only static objects visible and lights didn't change
+			if (noNeedToRedraw) {  // early exit if only static objects visible and lights didn't change
 //				continue;
-			} else if(rerenderLightingRequired) {
+			} else if (rerenderLightingRequired) {
 //				cubeMapLightingProgram.use();
-			} else if(fullRerenderRequired) {
+			} else if (fullRerenderRequired) {
 //				cubeMapProgram.use();
 			}
 			filteringRequired = true;
 
 			GPUProfiler.start("side " + i);
 			if (deferredRenderingForProbes) {
-				if (!sidesDrawn.contains(i))
-				{
+				if (!sidesDrawn.contains(i)) {
 					GPUProfiler.start("Switch attachment");
-                    engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), i);
-                    engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(1, probe.getIndex(), i);
-                    engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(2, probe.getIndex(), i);
-                    engine.getGpuContext().clearDepthAndColorBuffer();
+					engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), i);
+					engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(1, probe.getIndex(), i);
+					engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(2, probe.getIndex(), i);
+					engine.getGpuContext().clearDepthAndColorBuffer();
 					GPUProfiler.end();
 
 					GPUProfiler.start("Fill GBuffer");
-					drawFirstPass(i, this, scene.getEntities(), extract);
-                    engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().resetAttachments();
+					drawFirstPass(i, this.getCamera(), scene.getEntities(), extract);
+					engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().resetAttachments();
 
 					GPUProfiler.end();
 				}
 				GPUProfiler.start("Second pass");
-                engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
-                engine.getGpuContext().clearDepthAndColorBuffer();
+				engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
+				engine.getGpuContext().clearDepthAndColorBuffer();
 				drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights());
 				GPUProfiler.end();
 				registerSideAsDrawn(i);
 			} else {
-                engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
-                engine.getGpuContext().clearDepthAndColorBuffer();
-				drawEntities(extract, cubeMapProgram, getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
+				engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
+				engine.getGpuContext().clearDepthAndColorBuffer();
+				drawEntities(extract, cubeMapProgram, getViewMatrixAsBuffer(), getCamera().getProjectionMatrixAsBuffer());
 			}
 			GPUProfiler.end();
 		}
@@ -282,7 +291,7 @@ public class EnvironmentSampler extends Camera {
 
 		GPUProfiler.start("Cubemapside draw entities");
 		for (RenderBatch e : renderState.getRenderBatchesStatic()) {
-			if (!Spatial.isInFrustum(this, e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
+			if (!Spatial.isInFrustum(getCamera(), e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
 				continue;
 			}
 			DrawStrategy.draw(engine.getGpuContext(), renderState, e);
@@ -310,11 +319,11 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
         firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
         firstpassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
-        firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getEntity().getViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", engine.getSceneManager().getScene().getDirectionalLight().getViewDirection());
+        firstpassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
+        firstpassDefaultProgram.setUniform("lightDirection", engine.getLightManager().directionalLight.getViewDirection());
         firstpassDefaultProgram.setUniform("near", camera.getNear());
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
@@ -332,7 +341,7 @@ public class EnvironmentSampler extends Camera {
 	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
         CubeMapArrayRenderTarget cubeMapArrayRenderTarget = engine.getEnvironmentProbeManager().getCubeMapArrayRenderTarget();
 		Vector3f camPosition = getPosition();//.negate(null);
-		camPosition.add(getViewDirection().mul(getNear()));
+		camPosition.add(getViewDirection().mul(getCamera().getNear()));
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
 		GPUProfiler.start("Directional light");
@@ -358,10 +367,10 @@ public class EnvironmentSampler extends Camera {
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeManager.RESOLUTION);
 		FloatBuffer viewMatrix = getViewMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-		FloatBuffer projectionMatrix = getProjectionMatrixAsBuffer();
+		FloatBuffer projectionMatrix = getCamera().getProjectionMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getEntity().getViewDirection());
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		secondPassDirectionalProgram.setUniform("currentProbe", probe.getIndex());
         secondPassDirectionalProgram.setUniform("activeProbeCount", engine.getEnvironmentProbeManager().getProbes().size());
@@ -374,7 +383,7 @@ public class EnvironmentSampler extends Camera {
 		GPUProfiler.end();
 
         engine.getGpuContext().enable(CULL_FACE);
-		doPointLights(this, pointLights, camPosition, viewMatrix, projectionMatrix);
+		doPointLights(this.getCamera(), pointLights, camPosition, viewMatrix, projectionMatrix);
         engine.getGpuContext().disable(CULL_FACE);
 
 		doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
@@ -424,13 +433,13 @@ public class EnvironmentSampler extends Camera {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = engine.getSceneManager().getScene().getDirectionalLight();
-		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
+		DirectionalLight light = engine.getLightManager().directionalLight;
+		cubeMapProgram.setUniform("lightDirection", light.getEntity().getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", Config.getInstance().getAmbientLight());
 		cubeMapProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 		cubeMapProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-		cubeMapProgram.setUniformAsMatrix4("shadowMatrix", light.getViewMatrixAsBuffer());
+		cubeMapProgram.setUniformAsMatrix4("shadowMatrix", light.getEntity().getViewMatrixAsBuffer());
 		GPUProfiler.end();
 	}
 
@@ -774,4 +783,7 @@ public class EnvironmentSampler extends Camera {
 		return cubeMapFaceViews;
 	}
 
+	public Camera getCamera() {
+		return camera;
+	}
 }

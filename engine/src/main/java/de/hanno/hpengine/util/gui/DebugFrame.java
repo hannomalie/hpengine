@@ -219,7 +219,7 @@ public class DebugFrame implements HostComponent {
         infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
         infoSplitPane.setDividerLocation(125);
         infoSplitPane.setContinuousLayout(true);
-		Engine.getEventBus().register(this);
+		engine.getEventBus().register(this);
 
         new TimeStepThread("DisplayTitleUpdate", 1.0f) {
             @Override
@@ -231,7 +231,7 @@ public class DebugFrame implements HostComponent {
 
     private void init() {
         textureTable = new JTable(new TextureTableModel(engine)) {
-            { Engine.getEventBus().register(this); }
+            { engine.getEventBus().register(this); }
             @Subscribe
             @Handler
             public void handle(TexturesChangedEvent e) {
@@ -240,7 +240,7 @@ public class DebugFrame implements HostComponent {
         };
 
         areaLightsTable = new JTable(new AreaLightsTableModel(engine)) {
-            { Engine.getEventBus().register(this); }
+            { engine.getEventBus().register(this); }
             @Subscribe
             @Handler
             public void handle(LightChangedEvent e) {
@@ -248,7 +248,7 @@ public class DebugFrame implements HostComponent {
             }
         };
         materialTable = new MaterialTable(engine) {
-            { Engine.getEventBus().register(this); }
+            { engine.getEventBus().register(this); }
             @Subscribe
             @Handler
             public void handle(MaterialChangedEvent e) {
@@ -273,12 +273,12 @@ public class DebugFrame implements HostComponent {
         directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(engine.getRenderer().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
         sceneTree = new SceneTree(this.engine);
         scenePane = new ReloadableScrollPane(sceneTree) {
-            { Engine.getEventBus().register(this); }
+            { engine.getEventBus().register(this); }
             @Subscribe @Handler public void handle(EntityAddedEvent e) { sceneTree.reload();viewport.setView((sceneTree)); }
         };
         probesTree = new ProbesTree(this.engine);
         probesPane = new ReloadableScrollPane(probesTree) {
-            { Engine.getEventBus().register(this); }
+            { engine.getEventBus().register(this); }
             @Subscribe @Handler public void handle(ProbeAddedEvent e) { probesTree.reload();viewport.setView((sceneTree)); }
         };
     }
@@ -361,7 +361,7 @@ public class DebugFrame implements HostComponent {
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
                         engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getEntityManager(), engine.getLightManager(), engine.getSceneManager().getScene()));
-                        Engine.getEventBus().post(new EntityAddedEvent());
+                        engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(engine.getSceneManager().getScene());
                     }
@@ -914,11 +914,11 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
-			Engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
+			engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
 		});
 		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
-			Engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
+			engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
 		});
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
@@ -1017,13 +1017,13 @@ public class DebugFrame implements HostComponent {
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
-                    engine.getSceneManager().getScene().getDirectionalLight().setScatterFactor((float)value);
+                    engine.getLightManager().directionalLight.setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getRainEffect())) {
 				@Override public void onValueChange(int value, int delta) {
 					Config.getInstance().setRainEffect((float) value/100);
-					Engine.getEventBus().post(new GlobalDefineChangedEvent());
+					engine.getEventBus().post(new GlobalDefineChangedEvent());
 				}
 			},
 			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getCameraSpeed())) {
@@ -1084,7 +1084,7 @@ public class DebugFrame implements HostComponent {
 					float valueAsFactor = ((float) value) / adjustable.factor();
 					try {
 						field.setFloat(engine, valueAsFactor);
-						Engine.getEventBus().post(new GlobalDefineChangedEvent());
+						engine.getEventBus().post(new GlobalDefineChangedEvent());
 					} catch (IllegalArgumentException | IllegalAccessException e1) {
 						e1.printStackTrace();
 					}
@@ -1117,7 +1117,7 @@ public class DebugFrame implements HostComponent {
 				try {
 					currentValue = field.getBoolean(Config.getInstance());
 					field.setBoolean(Config.getInstance(), !currentValue);
-					Engine.getEventBus().post(new GlobalDefineChangedEvent());
+					engine.getEventBus().post(new GlobalDefineChangedEvent());
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}

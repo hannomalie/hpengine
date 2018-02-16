@@ -203,8 +203,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             setUniform("maxDrawCommands", commandOrganization.commands.size)
             val camera = cullCam ?: renderState.camera
             setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
-            setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-            setUniform("camPosition", camera.position)
+            setUniformAsMatrix4("viewMatrix", camera.entity.viewMatrixAsBuffer)
+            setUniform("camPosition", camera.entity.position)
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             engine.gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
             engine.gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, Pipeline.HIGHZ_FORMAT)

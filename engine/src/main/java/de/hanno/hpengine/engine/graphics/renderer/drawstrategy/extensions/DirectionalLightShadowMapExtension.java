@@ -46,7 +46,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
                         .setTextureFilter(GL11.GL_LINEAR))
                 .build();
 
-        Engine.getEventBus().register(this);
+        engine.getEventBus().register(this);
     }
 
     private long renderedInCycle;

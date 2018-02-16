@@ -1,8 +1,12 @@
 package de.hanno.hpengine.engine.component
 
+import de.hanno.hpengine.engine.model.Entity
 import java.io.Serializable
 
-abstract class InputControllerComponent : BaseComponent(), Serializable {
+abstract class InputControllerComponent(entity: Entity) : BaseComponent(), Serializable {
+    init {
+        this.entity = entity
+    }
 
     override fun getIdentifier(): String {
         return "InputControllerComponent"

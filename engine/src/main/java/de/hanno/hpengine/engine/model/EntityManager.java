@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.event.bus.EventBus;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 
@@ -9,8 +9,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 public class EntityManager {
-    public EntityManager() {
-        Engine.getEventBus().register(this);
+    public EntityManager(EventBus eventbus) {
+        eventbus.register(this);
 	}
 	public Entity getEntity() {
 		Entity entity = new Entity();

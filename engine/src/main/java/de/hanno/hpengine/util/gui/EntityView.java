@@ -144,7 +144,7 @@ public class EntityView extends WebPanel {
                         materials.remove(materials.get(finalI));
                         materials.add(finalI, selectedMaterial);
                         currentInstance.setMaterials(materials);
-                        Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+                        engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
                     }, currentInstance.getMaterials().get(finalI));
                 }
             }
@@ -180,7 +180,7 @@ public class EntityView extends WebPanel {
                 WebComboBox cb = (WebComboBox) e.getSource();
                 Material selectedMaterial = engine.getMaterialManager().getMaterialsAsList().get(cb.getSelectedIndex());
                 mesh.setMaterial(selectedMaterial);
-                Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+                engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
             }, mesh.getMaterial());
             meshPanels.add(materialSelectionPanel);
         }
@@ -224,7 +224,7 @@ public class EntityView extends WebPanel {
         WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Update.class).toArray(), entity.getUpdate());
         updateComboBox.addActionListener(e -> {
             entity.setUpdate((Update) updateComboBox.getSelectedItem());
-            Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+            engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         });
         webComponentPanel.addElement(updateComboBox);
 
@@ -243,7 +243,7 @@ public class EntityView extends WebPanel {
             WebComboBox cb = (WebComboBox) e.getSource();
             Material selectedMaterial = engine.getMaterialManager().getMaterialsAsList().get(cb.getSelectedIndex());
             entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(engine.getMaterialManager(), selectedMaterial.getName()));
-            Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+            engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         }, material);
 
         if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {

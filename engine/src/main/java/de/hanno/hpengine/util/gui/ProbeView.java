@@ -75,7 +75,7 @@ public class ProbeView extends WebPanel {
     			result = future.get(1, TimeUnit.MINUTES);
 				if(result.equals(Boolean.TRUE)) {
 					showNotification(NotificationIcon.plus, "Probe removed");
-					Engine.getEventBus().post(new ProbesChangedEvent());
+					engine.getEventBus().post(new ProbesChangedEvent());
 				} else {
 					showNotification(NotificationIcon.error, "Not able to remove probe");
 				}
@@ -87,7 +87,7 @@ public class ProbeView extends WebPanel {
 
         webComponentPanel.addElement(removeProbeButton);
         webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-        	engine.getSceneManager().setActiveCamera(probe.getSampler());
+        	engine.getSceneManager().setActiveCamera(probe.getSampler().getCamera());
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
         	engine.getSceneManager().restoreWorldCamera();

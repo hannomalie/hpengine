@@ -37,7 +37,7 @@ public class RenderState {
     public final CommandOrganization commandOrganizationStatic;
     public final CommandOrganization commandOrganizationAnimated;
 
-    public Camera camera = new Camera();
+    public Camera camera = new Camera(new Entity());
     public long pointlightMovedInCycle;
     public long directionalLightHasMovedInCycle;
     public boolean sceneInitiallyDrawn;

@@ -4,27 +4,22 @@ import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.Engine.Companion.eventBus
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.MovableInputControllerSystem
+import de.hanno.hpengine.engine.camera.CameraComponentSystem
+import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.container.EntityManager
+import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.graphics.light.AreaLight
-import de.hanno.hpengine.engine.graphics.light.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.PointLight
 import de.hanno.hpengine.engine.graphics.light.TubeLight
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
-import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.manager.Registry
-import de.hanno.hpengine.engine.manager.SimpleRegistry
 import de.hanno.hpengine.engine.model.Entity
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
@@ -42,23 +37,24 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         this.name = name
     }
 
-    val systems: Registry = SimpleRegistry()
-    private val movableInputControllerManager = systems.register(MovableInputControllerSystem(engine))
+    val systems = engine.systems
+    var entityManager: EntityContainer = SimpleContainer()
+        private set
 
-    val camera = Camera().apply { this.addComponent(movableInputControllerManager.create()) }
-    var activeCamera: Camera = camera
+
+    private val cameraComponentSystem = systems.get(CameraComponentSystem::class.java)
+    private val movableInputControllerManager = systems.get(InputComponentSystem::class.java)
+
+    val camera = entityManager.create()
+            .apply { addComponent(movableInputControllerManager.create(this)) }
+            .apply { addComponent(cameraComponentSystem.create(this)) }
+
+    var activeCamera = camera
 
     private val probes = CopyOnWriteArrayList<ProbeData>()
 
-    @Transient
-    var entityManager: EntityManager = SimpleContainer()
-        private set
     @Transient private var initialized = false
     val joints: List<BufferableMatrix4f> = CopyOnWriteArrayList()
-    private val pointLights = CopyOnWriteArrayList<PointLight>()
-    private val tubeLights = CopyOnWriteArrayList<TubeLight>()
-    val areaLights: List<AreaLight> = CopyOnWriteArrayList()
-    val directionalLight = DirectionalLight()
 
     @Volatile
     @Transient private var updateCache = true
@@ -73,7 +69,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     @Volatile
     @Transient private var pointLightMovedInCycle: Long = 0
     @Volatile
-    @Transient private var currentCycle: Long = 0
+    @Transient
+    var currentCycle: Long = 0
     @Volatile
     @Transient
     var isInitiallyDrawn: Boolean = false
@@ -93,7 +90,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     override fun init(engine: Engine) {
         super.init(engine)
-        eventBus.register(this)
+        engine.eventBus.register(this)
         entityManager = SimpleContainer()
         getEntities().forEach(Consumer { it.initialize() })
         getEntities().forEach { entity -> entity.getComponents().values.forEach { c -> c.registerInScene(this@Scene, engine) } }
@@ -108,21 +105,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
                 }
             }
         }
-        initLights()
         initialized = true
-        eventBus.post(SceneInitEvent())
-    }
-
-    private fun initLights() {
-        for (pointLight in pointLights) {
-            pointLight.initialize()
-        }
-        for (areaLight in areaLights) {
-            areaLight.initialize()
-        }
-
-        directionalLight.addInputController()
-        directionalLight.initialize()
+        engine.eventBus.post(SceneInitEvent())
     }
 
     fun write() {
@@ -196,8 +180,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         calculateMinMax(entities)
         updateCache = true
         entityAddedInCycle = currentCycle
-        eventBus.post(MaterialAddedEvent())
-        eventBus.post(EntityAddedEvent())
+        engine.eventBus.post(MaterialAddedEvent())
+        engine.eventBus.post(EntityAddedEvent())
     }
 
     fun add(entity: Entity) = addAll(listOf(entity))
@@ -235,14 +219,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     override fun update(engine: Engine, seconds: Float) {
         cacheEntityIndices()
         systems.update(seconds)
-        val pointLightsIterator = pointLights.iterator()
-        while (pointLightsIterator.hasNext()) {
-            pointLightsIterator.next().update(engine, seconds)
-        }
-
-        for (i in areaLights.indices) {
-            areaLights[i].update(engine, seconds)
-        }
         val entities = entityManager.entities
 
         for (i in entities.indices) {
@@ -253,7 +229,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             }
 
         }
-        directionalLight.update(engine, seconds)
 
         for (i in 0 until getPointLights().size) {
             val pointLight = getPointLights()[i]
@@ -261,7 +236,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
                 continue
             }
             pointLightMovedInCycle = currentCycle
-            eventBus.post(PointLightMovedEvent())
+            engine.eventBus.post(PointLightMovedEvent())
             pointLight.isHasMoved = false
         }
 
@@ -273,11 +248,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             calculateMinMax()
             entity.isHasMoved = false
             entityMovedInCycle = currentCycle
-        }
-
-        if (directionalLight.hasMoved()) {
-            directionalLightMovedInCycle = currentCycle
-            directionalLight.isHasMoved = false
         }
     }
 
@@ -299,24 +269,25 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun getPointLights(): List<PointLight> {
-        return pointLights
+        return engine.lightManager.pointLights
     }
 
     fun getTubeLights(): List<TubeLight> {
-        return tubeLights
+        return engine.lightManager.tubeLights
     }
+    fun getAreaLights(): List<AreaLight> = engine.lightManager.areaLights
 
     fun addPointLight(pointLight: PointLight) {
-        pointLights.add(pointLight)
-        eventBus.post(LightChangedEvent())
+        engine.lightManager.pointLights.add(pointLight)
+        engine.eventBus.post(LightChangedEvent())
     }
 
     fun addTubeLight(tubeLight: TubeLight) {
-        tubeLights.add(tubeLight)
+        engine.lightManager.tubeLights.add(tubeLight)
     }
 
     fun addRenderBatches(engine: Engine, camera: Camera, currentWriteState: RenderState) {
-        val cameraWorldPosition = camera.position
+        val cameraWorldPosition = camera.entity.position
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
@@ -328,7 +299,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun addBatches(engine: Engine, camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, program: Program, modelComponentsStatic: List<ModelComponent>) {
         addBatches(engine, camera, currentWriteState, cameraWorldPosition, program, modelComponentsStatic, Consumer{ batch ->
-            if (batch.isStatic()) {
+            if (batch.isStatic) {
                 currentWriteState.addStatic(batch)
             } else {
                 currentWriteState.addAnimated(batch)
@@ -369,10 +340,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun entityMovedInCycle(): Long {
         return entityMovedInCycle
-    }
-
-    fun setCurrentCycle(currentCycle: Long) {
-        this.currentCycle = currentCycle
     }
 
     fun directionalLightMovedInCycle(): Long {

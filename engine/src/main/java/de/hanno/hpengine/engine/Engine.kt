@@ -4,16 +4,21 @@ import com.alee.laf.WebLookAndFeel
 import com.alee.utils.SwingUtils
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
+import de.hanno.hpengine.engine.camera.CameraComponentSystem
+import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
+import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.manager.Registry
+import de.hanno.hpengine.engine.manager.SimpleRegistry
 import de.hanno.hpengine.engine.model.EntityManager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -36,24 +41,29 @@ import java.util.logging.Logger
 
 class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
 
+    val eventBus: EventBus = MBassadorEventBus()
     val gpuContext: GpuContext = GpuContext.create()
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
     private val drawCounter = AtomicInteger(-1)
     private val commandQueue = CommandQueue()
 
-    val entityManager = EntityManager()
+    val systems: Registry = SimpleRegistry()
+
+    val entityManager = EntityManager(eventBus)
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
-    val renderManager by lazy { RenderManager(this@Engine) }
-    val input by lazy { Input(gpuContext) }
-    val environmentProbeManager by lazy { EnvironmentProbeManager(this@Engine) }
-    val lightManager by lazy { LightManager(this@Engine) }
-    val sceneManager = SceneManager(this@Engine)
-    val scriptManager by lazy { ScriptManager().apply { defineGlobals(this@Engine) } }
-    val physicsManager by lazy { PhysicsManager(renderer) }
-    val programManager by lazy { ProgramManager(this@Engine) }
-    val textureManager by lazy { TextureManager(this@Engine) }
-    val materialManager by lazy { MaterialManager(textureManager) }
-    val renderer: Renderer by lazy { Renderer.create(this@Engine) }
+    val renderManager = RenderManager(this)
+    val input = Input(this, gpuContext)
+    val environmentProbeManager = EnvironmentProbeManager(this)
+    val programManager = ProgramManager(this)
+    val textureManager = TextureManager(eventBus, programManager, gpuContext)
+    val materialManager = MaterialManager(this, textureManager)
+    private val cameraComponentSystem = systems.register(CameraComponentSystem(this))
+    private val inputComponentSystem = systems.register(InputComponentSystem(this))
+    val sceneManager = SceneManager(this)
+    val lightManager = LightManager(eventBus, materialManager, sceneManager, gpuContext, programManager, inputComponentSystem)
+    val scriptManager = ScriptManager().apply { defineGlobals(this@Engine) }
+    val renderer: Renderer = Renderer.create(this)
+    val physicsManager = PhysicsManager(renderer)
 
     @Volatile var isInitialized: Boolean = false
 
@@ -80,6 +90,8 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     fun update(deltaSeconds: Float) {
         try {
             commandQueue.executeCommands()
+            lightManager.update(this, deltaSeconds, sceneManager.scene.currentCycle)
+            systems.update(deltaSeconds)
             sceneManager.update(deltaSeconds)
             updateRenderState()
             renderManager.drawCycle.getAndIncrement()
@@ -99,8 +111,8 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         }
 
         if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
-            val directionalLightCamera = scene.directionalLight
-            renderManager.renderState.currentWriteState.init(renderManager.vertexIndexBufferStatic, renderManager.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderManager.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
+            val directionalLight = lightManager.directionalLight
+            renderManager.renderState.currentWriteState.init(renderManager.vertexIndexBufferStatic, renderManager.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), lightManager.directionalLightMovedInCycle, scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderManager.drawCycle.get(), lightManager.directionalLight.getEntity().viewMatrixAsBuffer, directionalLight.projectionMatrixAsBuffer, directionalLight.viewProjectionMatrixAsBuffer, directionalLight.scatterFactor, directionalLight.direction, directionalLight.color, scene.entityAddedInCycle)
             scene.addRenderBatches(this, sceneManager.activeCamera, renderManager.renderState.currentWriteState)
             renderManager.renderState.update()
             renderManager.renderState.currentWriteState.cycle = renderManager.drawCycle.get()
@@ -218,9 +230,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
         @JvmOverloads
         @JvmStatic fun create(gameDirName: String = GAMEDIR_NAME) = Engine(gameDirName)
-
-        @JvmStatic val eventBus: EventBus
-            get() = EventBus.getInstance()
     }
 
 }

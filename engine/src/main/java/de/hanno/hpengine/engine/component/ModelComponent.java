@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -63,8 +64,9 @@ public class ModelComponent extends BaseComponent implements Serializable {
     private int jointsOffset = 0;
     private Engine engine;
 
-    public ModelComponent(Model model) {
+    public ModelComponent(Entity entity, Model model) {
         super();
+        this.entity = entity;
         this.model = model;
         if(!model.isStatic()) {
             AnimatedModel animatedModel = (AnimatedModel) model;
@@ -106,17 +108,17 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public void registerInScene(Scene scene, Engine engine) {
         if(model.isStatic()) {
             VertexIndexBuffer<Vertex> vertexIndexBuffer = engine.getRenderManager().getVertexIndexBufferStatic();
-            putToBuffer(vertexIndexBuffer, DEFAULTCHANNELS);
+            putToBuffer(engine.getGpuContext(), vertexIndexBuffer, DEFAULTCHANNELS);
         } else {
             VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = this.engine.getRenderManager().getVertexIndexBufferAnimated();
-            putToBuffer(vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
+            putToBuffer(engine.getGpuContext(), vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
 
             jointsOffset = scene.getJoints().size(); // TODO: Proper allocation
             scene.getJoints().addAll(((AnimatedModel) model).getFrames().stream().flatMap(frame -> Arrays.stream(frame.getJointMatrices())).collect(Collectors.toList()));
         }
     }
 
-    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {
+    public VertexIndexOffsets putToBuffer(GpuContext gpuContext, VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {
 
         List compiledVertices = model.getCompiledVertices();
 
@@ -135,7 +137,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
-        engine.getGpuContext().execute(() -> {
+        gpuContext.execute(() -> {
             vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 

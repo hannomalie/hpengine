@@ -1,6 +1,7 @@
 package de.hanno.hpengine.util;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
@@ -459,50 +460,44 @@ public class Util {
 		return newlineCount;
 	}
 
-	public static TypedTuple<Matrix4f[],Matrix4f[]> getCubeViewProjectionMatricesForPosition(Engine engine, Vector3f position) {
-		Camera camera = new Camera();
+	public static TypedTuple<Matrix4f[],Matrix4f[]> getCubeViewProjectionMatricesForPosition(Vector3f position) {
+		Camera camera = new Camera(new Entity());
 		camera.setProjectionMatrix(Util.createPerspective(90, 1, 0.1f, 250f));
-		camera.translation(position);
+		camera.getEntity().translation(position);
 		Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
 		Matrix4f[] resultViewMatrices = new Matrix4f[6];
 		Matrix4f[] resultProjectionMatrices = new Matrix4f[6];
 
-			camera.rotation(new Quaternionf().identity());
-			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-90)));
-			camera.update(engine, 0);
-		resultViewMatrices[0] = camera.getViewMatrix();
+			camera.getEntity().rotation(new Quaternionf().identity());
+			camera.getEntity().rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.getEntity().rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-90)));
+		resultViewMatrices[0] = camera.getEntity().getViewMatrix();
 		resultProjectionMatrices[0] = projectionMatrix;
-			camera.rotation(new Quaternionf().identity());
-			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(90)));
-			camera.update(engine, 0);
+			camera.getEntity().rotation(new Quaternionf().identity());
+			camera.getEntity().rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.getEntity().rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(90)));
 		resultViewMatrices[1] = camera.getViewMatrix();
 		resultProjectionMatrices[1] = projectionMatrix;
 			camera.rotation(new Quaternionf().identity());
 			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
 			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90)));
 			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
-			camera.update(engine, 0);
 		resultViewMatrices[2] = camera.getViewMatrix();
 		resultProjectionMatrices[2] = projectionMatrix;
 			camera.rotation(new Quaternionf().identity());
 			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
 			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(-90)));
             camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
-			camera.update(engine, 0);
 		resultViewMatrices[3] = camera.getViewMatrix();
 		resultProjectionMatrices[3] = projectionMatrix;
 			camera.rotation(new Quaternionf().identity());
 			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
 			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-180)));
-			camera.update(engine, 0);
 		resultViewMatrices[4] = camera.getViewMatrix();
 		resultProjectionMatrices[4] = projectionMatrix;
 			camera.rotation(new Quaternionf().identity());
 			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.update(engine, 0);
 		resultViewMatrices[5] = camera.getViewMatrix();
 		resultProjectionMatrices[5] = projectionMatrix;
 

@@ -1,5 +1,8 @@
 package de.hanno.hpengine.engine.manager
 
+import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.model.Entity
+
 interface Registry {
     fun <T> get(clazz: Class<T>) : ComponentSystem<T>
     fun getMangers(): List<ComponentSystem<*>>
@@ -11,6 +14,8 @@ interface Registry {
 interface ComponentSystem<T> {
     fun update(deltaSeconds: Float)
     val components: List<T>
+    fun create(entity: Entity): Component
+    fun addComponent(component: T)
 }
 
 class SimpleRegistry: Registry {

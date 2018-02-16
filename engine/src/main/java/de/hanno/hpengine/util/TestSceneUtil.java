@@ -29,7 +29,7 @@ public class TestSceneUtil {
 
         try {
 //            StaticMesh skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
-//            Entity skyBoxEntity = EntityManager.getInstance().getEntity(new Vector3f(), skyBox);
+//            Entity skyBoxEntity = EntityContainer.getInstance().getEntity(new Vector3f(), skyBox);
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 

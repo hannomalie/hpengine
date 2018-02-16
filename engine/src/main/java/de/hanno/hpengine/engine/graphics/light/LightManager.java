@@ -1,52 +1,61 @@
 package de.hanno.hpengine.engine.graphics.light;
 
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
-import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntityManager;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.StaticModel;
-import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.camera.InputComponentSystem;
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.event.LightChangedEvent;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
 import de.hanno.hpengine.engine.event.SceneInitEvent;
+import de.hanno.hpengine.engine.event.bus.EventBus;
+import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
-import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
+import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.scene.Scene;
-import de.hanno.hpengine.engine.graphics.shader.*;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
+import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.scene.SceneManager;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL42;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
@@ -56,9 +65,12 @@ public class LightManager {
 	public static int MAX_AREALIGHT_SHADOWMAPS = 2;
 	public static int MAX_POINTLIGHT_SHADOWMAPS = 5;
 	public static int AREALIGHT_SHADOWMAP_RESOLUTION = 512;
-	private final Engine engine;
+    private final SceneManager sceneManager;
+    private final GpuContext gpuContext;
+    private final MaterialManager materialManager;
+    private final ProgramManager programManager;
 
-	private int pointLightDepthMapsArrayCube;
+    private int pointLightDepthMapsArrayCube;
 	private int pointLightDepthMapsArrayFront;
 	private int pointLightDepthMapsArrayBack;
 	private RenderTarget renderTarget;
@@ -67,6 +79,7 @@ public class LightManager {
 	private Program areaShadowPassProgram;
 	private Program pointShadowPassProgram;
 	private Program pointCubeShadowPassProgram;
+	private final Entity cameraEntity;
 	private Camera camera;
 
 	private int pointLightsForwardMaxCount = 20;
@@ -87,24 +100,35 @@ public class LightManager {
     private StaticModel planeMesh;
 
 	private volatile GPUBuffer lightBuffer;
+
+    public List<PointLight> pointLights = new CopyOnWriteArrayList<>();
+    public List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
+    public List<AreaLight> areaLights = new CopyOnWriteArrayList();
+    public DirectionalLight directionalLight = new DirectionalLight(new Entity());
+//                    .apply { addComponent(cameraComponentSystem.create(this, Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f), -2500f, 2500f, 60f, 16f / 9f)) }
+
+    private DirectionalLight directionalLightComponent;
 	
-	public LightManager(Engine engine) {
-		this.engine = engine;
+	public LightManager(EventBus eventBus, MaterialManager materialManager, SceneManager sceneManager, GpuContext gpuContext, ProgramManager programManager, InputComponentSystem inputControllerSystem) {
+        this.materialManager = materialManager;
+		this.sceneManager = sceneManager;
+		this.gpuContext = gpuContext;
+        this.programManager = programManager;
 		sphereMesh = null;
 		try {
-			sphereMesh = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
-			sphereMesh.setMaterial(engine.getMaterialManager().getDefaultMaterial());
-            cubeMesh = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"));
-			cubeMesh.setMaterial(engine.getMaterialManager().getDefaultMaterial());
-            planeMesh = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/planeRotated.obj"));
-			planeMesh.setMaterial(engine.getMaterialManager().getDefaultMaterial());
+            sphereMesh = new OBJLoader().loadTexturedModel(this.materialManager, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+			sphereMesh.setMaterial(this.materialManager.getDefaultMaterial());
+            cubeMesh = new OBJLoader().loadTexturedModel(this.materialManager, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"));
+			cubeMesh.setMaterial(this.materialManager.getDefaultMaterial());
+            planeMesh = new OBJLoader().loadTexturedModel(this.materialManager, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/planeRotated.obj"));
+			planeMesh.setMaterial(this.materialManager.getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		this.renderTarget = new RenderTargetBuilder(engine.getGpuContext())
+		this.renderTarget = new RenderTargetBuilder(this.gpuContext)
                                 .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
 								.setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
 								.add(new ColorAttachmentDefinition()
@@ -112,12 +136,12 @@ public class LightManager {
                                         .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
 								.build();
 
-		if(Config.getInstance().isUseDpsm()) {
+        if(Config.getInstance().isUseDpsm()) {
 // TODO: Use wrapper
-			this.pointShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_fragment.glsl")), new Defines());
+			this.pointShadowPassProgram = this.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_fragment.glsl")), new Defines());
 
 			pointLightDepthMapsArrayFront = GL11.glGenTextures();
-            engine.getGpuContext().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront);
+            this.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront);
 			GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -125,29 +149,30 @@ public class LightManager {
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 
 			pointLightDepthMapsArrayBack = GL11.glGenTextures();
-            engine.getGpuContext().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack);
+            this.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack);
 			GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 		} else {
-			this.pointCubeShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cube_fragment.glsl")), new Defines());
+			this.pointCubeShadowPassProgram = this.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cube_fragment.glsl")), new Defines());
 
-			CubeMapArray cubeMapArray = new CubeMapArray(engine.getGpuContext(), MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION);
+			CubeMapArray cubeMapArray = new CubeMapArray(this.gpuContext, MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION);
 			pointLightDepthMapsArrayCube = cubeMapArray.getTextureID();
 			this.cubemapArrayRenderTarget = new CubeMapArrayRenderTarget(
-					engine, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray);
+                    gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray);
 		}
 
-		this.areaShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
-		this.camera = new Camera(Util.createPerspective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
+		this.areaShadowPassProgram = this.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
+		this.cameraEntity = new Entity();
+		this.camera = new Camera(cameraEntity, Util.createPerspective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		// TODO: WRAP METHODS SEPARATELY
-        engine.getGpuContext().execute(() -> {
+        this.gpuContext.execute(() -> {
 			for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
-                int renderedTextureTemp = engine.getGpuContext().genTextures();
-                engine.getGpuContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+                int renderedTextureTemp = this.gpuContext.genTextures();
+                this.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
 				GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION/2, AREALIGHT_SHADOWMAP_RESOLUTION/2, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 				GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 				GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -158,9 +183,24 @@ public class LightManager {
 		});
 
 //		lightBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(1000));
-        lightBuffer = engine.getGpuContext().calculate(() -> new PersistentMappedBuffer(engine.getGpuContext(), 1000));
-		Engine.getEventBus().register(this);
-	}
+        lightBuffer = this.gpuContext.calculate(() -> new PersistentMappedBuffer(this.gpuContext, 1000));
+		eventBus.register(this);
+        directionalLightComponent = createDirectionalLight(directionalLight.getEntity());
+        directionalLight.getEntity().addComponent(directionalLightComponent);
+        inputControllerSystem.addComponent(directionalLight.addInputController());
+        initLights();
+    }
+
+    private void initLights() {
+        for (PointLight pointLight : pointLights) {
+            pointLight.initialize();
+        }
+        for (AreaLight areaLight : areaLights) {
+            areaLight.initialize();
+        }
+
+        directionalLight.getEntity().initialize();
+    }
 
 	public PointLight getPointLight() {
 		return getPointLight(new Vector3f());
@@ -178,7 +218,7 @@ public class LightManager {
 		return getPointLight(new Vector3f(), new Vector4f(1,1,1,1), range);
 	}
 	public PointLight getPointLight(Vector3f position, Vector4f colorIntensity, float range) {
-		Material material = engine.getMaterialManager().getDefaultMaterial();
+		Material material = materialManager.getDefaultMaterial();
 		
 		PointLight light = new PointLight(position, sphereMesh, colorIntensity, range);
 		light.initialize();
@@ -190,8 +230,8 @@ public class LightManager {
 		float[] colors = new float[pointLightsForwardMaxCount*3];
 		float[] radiuses = new float[pointLightsForwardMaxCount];
 		
-		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, engine.getSceneManager().getScene().getPointLights().size()); i++) {
-			PointLight light =  engine.getSceneManager().getScene().getPointLights().get(i);
+		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, sceneManager.getScene().getPointLights().size()); i++) {
+			PointLight light =  sceneManager.getScene().getPointLights().get(i);
 			positions[3*i] = light.getPosition().x;
 			positions[3*i+1] = light.getPosition().y;
 			positions[3*i+2] = light.getPosition().z;
@@ -271,14 +311,12 @@ public class LightManager {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternionf orientation, Vector3f color, int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(position, planeMesh, color, new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(position, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		return areaLight;
 	}
 	
 	private void updateAreaLightArrays() {
-		List<AreaLight> areaLights = engine.getSceneManager().getScene().getAreaLights();
-
 		float[] positions = new float[areaLightsForwardMaxCount*3];
 		float[] colors = new float[areaLightsForwardMaxCount*3];
 		float[] widthHeightRanges = new float[areaLightsForwardMaxCount*3];
@@ -334,29 +372,25 @@ public class LightManager {
 	}
 
 	public void renderAreaLightShadowMaps(RenderState renderState) {
-        Scene scene = engine.getSceneManager().getScene();
-        if(scene == null) { return; }
-
-        List<AreaLight> areaLights = scene.getAreaLights();
+        Scene scene = sceneManager.getScene();
 
 		GPUProfiler.start("Arealight shadowmaps");
-        engine.getGpuContext().depthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().disable(CULL_FACE);
+        gpuContext.depthMask(true);
+        gpuContext.enable(DEPTH_TEST);
+        gpuContext.disable(CULL_FACE);
 		renderTarget.use(true);
 
 		for(int i = 0; i < Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size()); i++) {
 
 			renderTarget.setTargetTexture(areaLightDepthMaps.get(i), 0);
 
-            engine.getGpuContext().clearDepthAndColorBuffer();
+            gpuContext.clearDepthAndColorBuffer();
 
 			AreaLight light = areaLights.get(i);
-			Camera camera = light;
 
 			areaShadowPassProgram.use();
-			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.getViewMatrixAsBuffer());
+			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.getComponent(Camera.class).getProjectionMatrixAsBuffer());
 //			directionalShadowPassProgram.setUniform("near", de.hanno.hpengine.camera.getNear());
 //			directionalShadowPassProgram.setUniform("far", de.hanno.hpengine.camera.getFar());
 
@@ -367,7 +401,7 @@ public class LightManager {
 //				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterials().hasDiffuseMap());
 //				areaShadowPassProgram.setUniform("color", modelComponent.getMaterials().getDiffuse());
 
-				DrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
+				DrawStrategy.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
 			}
 		}
 		GPUProfiler.end();
@@ -375,24 +409,24 @@ public class LightManager {
 
 	private long pointlightShadowMapsRenderedInCycle;
 	public void renderPointLightShadowMaps(RenderState renderState) {
-        Scene scene = engine.getSceneManager().getScene();
+        Scene scene = sceneManager.getScene();
         if(scene == null) { return; }
 
         boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle;
         if(!needToRedraw) { return; }
 
 		GPUProfiler.start("PointLight shadowmaps");
-        engine.getGpuContext().depthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().enable(CULL_FACE);
+        gpuContext.depthMask(true);
+        gpuContext.enable(DEPTH_TEST);
+        gpuContext.enable(CULL_FACE);
 		cubemapArrayRenderTarget.use(false);
-        engine.getGpuContext().clearDepthAndColorBuffer();
-        engine.getGpuContext().viewPort(0, 0, 2*128, 2*128);
+        gpuContext.clearDepthAndColorBuffer();
+        gpuContext.viewPort(0, 0, 2*128, 2*128);
         //TODO: WTF is with the 256...
 
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
-			PointLight light = engine.getSceneManager().getScene().getPointLights().get(i);
+			PointLight light = sceneManager.getScene().getPointLights().get(i);
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
 			pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
@@ -400,7 +434,7 @@ public class LightManager {
             pointCubeShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
             pointCubeShadowPassProgram.setUniform("lightIndex", i);
 			TypedTuple<Matrix4f[], Matrix4f[]> viewProjectionMatrices
-                    = Util.getCubeViewProjectionMatricesForPosition(engine, light.getPosition());
+                    = Util.getCubeViewProjectionMatricesForPosition(light.getPosition());
             FloatBuffer[] viewMatrices = new FloatBuffer[6];
             FloatBuffer[] projectionMatrices = new FloatBuffer[6];
 			for(int floatBufferIndex = 0; floatBufferIndex < 6; floatBufferIndex++) {
@@ -422,7 +456,7 @@ public class LightManager {
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (RenderBatch e : renderState.getRenderBatchesStatic()) {
-                DrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
+                DrawStrategy.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
 		}
@@ -430,19 +464,19 @@ public class LightManager {
 		pointlightShadowMapsRenderedInCycle = renderState.getCycle();
 	}
 
-	public void renderPointLightShadowMaps_dpsm(RenderState renderState, EntityManager octree) {
+	public void renderPointLightShadowMaps_dpsm(RenderState renderState, EntityContainer octree) {
 		GPUProfiler.start("PointLight shadowmaps");
-        engine.getGpuContext().depthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().disable(CULL_FACE);
+        gpuContext.depthMask(true);
+        gpuContext.enable(DEPTH_TEST);
+        gpuContext.disable(CULL_FACE);
 		renderTarget.use(false);
 
 		pointShadowPassProgram.use();
-		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, engine.getSceneManager().getScene().getPointLights().size()); i++) {
+		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, sceneManager.getScene().getPointLights().size()); i++) {
 			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i);
 
-            engine.getGpuContext().clearDepthAndColorBuffer();
-			PointLight light = engine.getSceneManager().getScene().getPointLights().get(i);
+            gpuContext.clearDepthAndColorBuffer();
+			PointLight light = sceneManager.getScene().getPointLights().get(i);
 			List<Entity> visibles = octree.getEntities();
 			pointShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
 			pointShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
@@ -451,42 +485,65 @@ public class LightManager {
 			for (Entity e : visibles) {
 				e.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(modelComponent -> {
                     pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getTransformationBuffer());
-					modelComponent.getMaterial(engine.getMaterialManager()).setTexturesActive(pointShadowPassProgram);
-					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.getMaterialManager()).hasDiffuseMap());
-					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(engine.getMaterialManager()).getDiffuse());
+					modelComponent.getMaterial(materialManager).setTexturesActive(pointShadowPassProgram);
+					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(materialManager).hasDiffuseMap());
+					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(materialManager).getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, engine.getSceneManager().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
-                    DrawStrategy.draw(engine.getGpuContext(), renderState, batch);
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, sceneManager.getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    DrawStrategy.draw(gpuContext, renderState, batch);
 				});
 			}
 
 			pointShadowPassProgram.setUniform("isBack", true);
 			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayBack, i);
-            engine.getGpuContext().clearDepthAndColorBuffer();
+            gpuContext.clearDepthAndColorBuffer();
 			for (Entity e : visibles) {
 				e.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(modelComponent -> {
                     pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getTransformationBuffer());
-					modelComponent.getMaterial(engine.getMaterialManager()).setTexturesActive(pointShadowPassProgram);
-					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.getMaterialManager()).hasDiffuseMap());
-					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(engine.getMaterialManager()).getDiffuse());
+					modelComponent.getMaterial(materialManager).setTexturesActive(pointShadowPassProgram);
+					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(materialManager).hasDiffuseMap());
+					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(materialManager).getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, engine.getSceneManager().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
-                    DrawStrategy.draw(engine.getGpuContext(), renderState, batch);
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, sceneManager.getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    DrawStrategy.draw(gpuContext, renderState, batch);
 				});
 			}
 		}
 		GPUProfiler.end();
 	}
 
+	public void update(Engine engine, float deltaSeconds, long currentCycle) {
+
+        Iterator<PointLight> pointLightsIterator = pointLights.iterator();
+        while (pointLightsIterator.hasNext()) {
+            pointLightsIterator.next().update(engine, deltaSeconds);
+        }
+
+        for (int i = 0; i < areaLights.size(); i++) {
+            areaLights.get(i).update(engine, deltaSeconds);
+        }
+        directionalLight.update(engine, deltaSeconds);
+
+        if (directionalLight.getEntity().hasMoved()) {
+            directionalLightMovedInCycle = currentCycle;
+            directionalLight.entity.setHasMoved(false);
+        }
+    }
+    transient private long directionalLightMovedInCycle = 0;
+
+	public long getDirectionalLightMovedInCycle() {
+		return directionalLightMovedInCycle;
+	}
+
 	public int getDepthMapForAreaLight(AreaLight light) {
-		int index = engine.getSceneManager().getScene().getAreaLights().indexOf(light);
+		int index = areaLights.indexOf(light);
 		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
 
 		return areaLightDepthMaps.get(index);
 	}
 
 	public Camera getCameraForAreaLight(AreaLight light) {
-		camera.setTranslation(light.getPosition().negate(null));
+		cameraEntity.setTranslation(light.getPosition().negate(null));
 		//		de.hanno.hpengine.camera.getOrientation().x = -lights.getOrientation().x;
 //		de.hanno.hpengine.camera.getOrientation().y = -lights.getOrientation().y;
 //		de.hanno.hpengine.camera.getOrientation().z = -lights.getOrientation().z;
@@ -508,12 +565,12 @@ public class LightManager {
 //		c.setPosition(newPosition);
 //		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
 //		c.updateShadow();
-		return light.getViewProjectionMatrixAsBuffer();
+		return light.getComponent(Camera.class).getViewProjectionMatrixAsBuffer();
 	}
 
 	private void bufferLights() {
-		List<PointLight> pointLights = engine.getSceneManager().getScene().getPointLights();
-        engine.getGpuContext().execute(() -> {
+		List<PointLight> pointLights = sceneManager.getScene().getPointLights();
+        gpuContext.execute(() -> {
 //			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {
 				lightBuffer.put(Util.toArray(pointLights, PointLight.class));
@@ -557,4 +614,7 @@ public class LightManager {
 		return cubemapArrayRenderTarget;
 	}
 
+    public DirectionalLight createDirectionalLight(Entity entity) {
+        return new DirectionalLight(entity);
+	}
 }

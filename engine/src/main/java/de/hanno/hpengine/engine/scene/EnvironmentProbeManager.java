@@ -50,7 +50,7 @@ public class EnvironmentProbeManager {
 		this.environmentMapsArray1 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
 		this.environmentMapsArray2 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
 		this.environmentMapsArray3 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR, RESOLUTION);
-        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engine, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engine.getGpuContext(), EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
 	}
@@ -69,7 +69,7 @@ public class EnvironmentProbeManager {
 		EnvironmentProbe probe = new EnvironmentProbe(engine, center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();
-        Engine.getEventBus().post(new ProbeAddedEvent(probe));
+        engine.getEventBus().post(new ProbeAddedEvent(probe));
 		return probe;
 	}
 	
@@ -279,7 +279,7 @@ public class EnvironmentProbeManager {
 	}
 
 	public void clearProbes() {
-		probes.forEach( p -> { Engine.getEventBus().unregister(p.getSampler()); });
+		probes.forEach( p -> { engine.getEventBus().unregister(p.getSampler()); });
 		probes.clear();
 	}
 

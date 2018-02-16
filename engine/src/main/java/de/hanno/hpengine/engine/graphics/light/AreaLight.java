@@ -1,33 +1,28 @@
 package de.hanno.hpengine.engine.graphics.light;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.camera.Frustum;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.util.Util;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.nio.FloatBuffer;
 import java.util.List;
 
 
-public class AreaLight extends Camera {
-	
+public class AreaLight extends Entity {
+
+	Camera camera;
 	public static float DEFAULT_RANGE = 1f;
 	private Vector3f color;
 	transient private RenderTarget renderTarget;
 
-	protected AreaLight(Vector3f position, StaticModel model, Vector3f color, Vector3f scale) {
-		super(position, generateName(), model);
-        projectionMatrix = Util.createPerspective(getFov(), getRatio(), getNear(), getFar());
-        frustum = new Frustum(this);
-		setColor(color);
+	protected AreaLight(Vector3f position, Vector3f color, Vector3f scale) {
 		scale(scale);
-		setNear(1f);
-        setFar(5000f);
-        setFov(180f);
-        setRatio(1);
-		initialize();
+		setTranslation(position);
+		setColor(color);
+		camera = new Camera(this, Util.createPerspective(180, 1, 1f, 5000f), 1f, 5000f, 180f, 1);
 	}
 	
 	public void setColor(Vector3f color) {
@@ -116,5 +111,9 @@ public class AreaLight extends Camera {
 	}
 	public float getHeight() {
 		return (getScale().y);
+	}
+
+	public FloatBuffer getViewProjectionMatrixAsBuffer() {
+		return camera.getViewMatrixAsBuffer();
 	}
 }

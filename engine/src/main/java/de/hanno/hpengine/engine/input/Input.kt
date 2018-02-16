@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 
 import org.lwjgl.glfw.GLFW.*
 
-class Input(private val gpuContext: GpuContext) {
+class Input(val engine: Engine, private val gpuContext: GpuContext) {
 
     private val currentKeys = IntArrayList()
     private val keysPressed = IntArrayList()
@@ -59,7 +59,7 @@ class Input(private val gpuContext: GpuContext) {
 
         if (isMouseClicked(0)) {
             if (!MOUSE_LEFT_PRESSED_LAST_FRAME) {
-                Engine.eventBus.post(ClickEvent())
+                engine.eventBus.post(ClickEvent())
             }
             MOUSE_LEFT_PRESSED_LAST_FRAME = true
         } else {

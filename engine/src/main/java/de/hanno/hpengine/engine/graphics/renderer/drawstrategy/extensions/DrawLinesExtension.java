@@ -90,8 +90,8 @@ public class DrawLinesExtension implements RenderExtension {
             List<Entity> entities = engine.getSceneManager().getScene().getEntities();
             for(int i = 0; i < entities.size(); i++) {
                 Entity entity = entities.get(i);
-                if(entity instanceof Camera) {
-                    Camera camera = (Camera) entity;
+                if(entity.getComponent(Camera.class) != null) {
+                    Camera camera = entity.getComponent(Camera.class);
                     Vector3f[] corners = camera.getFrustumCorners();
                     engine.getRenderer().batchLine(corners[0], corners[1]);
                     engine.getRenderer().batchLine(corners[1], corners[2]);

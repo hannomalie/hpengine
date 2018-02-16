@@ -60,7 +60,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
         } else {
             instance = entity.addInstance(new SimpleTransform());
         }
-        Engine.getEventBus().post(new EntityAddedEvent());
+//        TODO Implement this @EntityFactory
+//        engine.getEventBus().post(new EntityAddedEvent());
         return instance;
     }
 
@@ -82,7 +83,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public void addCluster(Cluster cluster) {
 		clusters.add(cluster);
 		recalculateInstances();
-		Engine.getEventBus().post(new EntityAddedEvent());
+		engine.getEventBus().post(new EntityAddedEvent());
 	}
 
 	private Update update = Update.DYNAMIC;
@@ -98,7 +99,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	
 	public Map<String, Component> components = new HashMap<>();
 
-	protected Entity() {
+	public Entity() {
 	}
 
 	protected Entity(String name, StaticModel model) {
@@ -107,7 +108,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	protected Entity(Vector3f position, String name, Model model) {
 	    this();
-		addComponent(new ModelComponent(model));
+		addComponent(new ModelComponent(this, model));
 		this.name = name;
 		setTranslation(position);
 		initialize();
@@ -129,7 +130,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return addComponent(component, component.getIdentifier());
 	}
 	public Entity addComponent(Component component , String key) {
-		component.setEntity(this);
 		getComponents().put(key, component);
 		component.initAfterAdd(this);
 		return this;
@@ -140,6 +140,10 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 	public void removeComponent(String key) {
 		getComponents().remove(key);
+	}
+
+	public <T extends Component> T getComponent(Class<T> type) {
+		return getComponent(type, type.getSimpleName());
 	}
 
 	public <T extends Component> T getComponent(Class<T> type, String key) {
@@ -331,7 +335,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 				child.setUpdate(update);
 			}
 		}
-		Engine.getEventBus().post(new UpdateChangedEvent(this));
+		engine.getEventBus().post(new UpdateChangedEvent(this));
 	}
 
 	@Override
@@ -516,7 +520,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public void addExistingInstance(Instance instance) {
 		Cluster firstCluster = getOrCreateFirstCluster();
 		firstCluster.add(instance);
-		Engine.getEventBus().post(new EntityAddedEvent());
+		engine.getEventBus().post(new EntityAddedEvent());
 		recalculateInstances();
 	}
 
@@ -537,7 +541,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		}).collect(Collectors.toList());
 		firstCluster.addAll(collect);
 		recalculateInstances();
-		Engine.getEventBus().post(new EntityAddedEvent());
+		engine.getEventBus().post(new EntityAddedEvent());
     }
     public void addInstances(List<Instance> instances) {
         if(getParent() != null) {
@@ -548,7 +552,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		Cluster firstCluster = getOrCreateFirstCluster();
 		firstCluster.addAll(instances);
 		recalculateInstances();
-        Engine.getEventBus().post(new EntityAddedEvent());
+        engine.getEventBus().post(new EntityAddedEvent());
     }
 
 	private Cluster getOrCreateFirstCluster() {

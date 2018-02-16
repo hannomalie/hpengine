@@ -35,7 +35,7 @@ public class EnvironmentProbe extends Entity {
         this.environmentProbeManager = engine.getEnvironmentProbeManager();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		sampler = new EnvironmentSampler(engine, this, center, resolution, resolution, probeIndex);
+		sampler = new EnvironmentSampler(engine.getEntityManager().getEntity(), engine, this, center, resolution, resolution, probeIndex);
 		sampler.initialize();
 		this.setWeight(weight);
 		super.initialize();
@@ -136,7 +136,7 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	public Camera getCamera(){
-		return sampler;
+		return sampler.getCamera();
 	}
 
 	public int getTextureUnitIndex(GpuContext gpuContext) {

@@ -24,7 +24,7 @@ public class AnimatedModelTest extends TestWithEngine {
         ModelComponent component = result.entities.get(0).getComponent(ModelComponent.class, ModelComponent.class.getSimpleName());
         AnimatedModel animatedModel = (AnimatedModel) component.getModel();
 
-//        Entity entity = EntityManager.getInstance().getEntity("bla", animatedModel);
+//        Entity entity = EntityContainer.getInstance().getEntity("bla", animatedModel);
 //        Engine.getInstance().getSceneManager().getScene().add(entity);
 
 

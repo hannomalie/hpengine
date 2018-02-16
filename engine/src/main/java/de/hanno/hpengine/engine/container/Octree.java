@@ -24,7 +24,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Octree implements LifeCycle, Serializable, EntityManager {
+public class Octree implements LifeCycle, Serializable, EntityContainer {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
@@ -75,7 +75,7 @@ public class Octree implements LifeCycle, Serializable, EntityManager {
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
-        Engine.getEventBus().register(this);
+        engine.getEventBus().register(this);
 	}
 
 	@Override

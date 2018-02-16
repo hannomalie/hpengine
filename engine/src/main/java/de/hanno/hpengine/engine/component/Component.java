@@ -9,7 +9,6 @@ import java.io.Serializable;
 
 public interface Component extends LifeCycle, Serializable {
 
-	void setEntity(Entity entity);
 	Entity getEntity();
 
 	default void update(Engine engine, float seconds) {}

@@ -37,7 +37,7 @@ public class PointLightView extends EntityView {
 				light.setColor(new Vector4f(color.getRed()/255.f,
 						color.getGreen()/255.f,
 						color.getBlue()/255.f, 1f));
-				Engine.getEventBus().post(new PointLightMovedEvent());
+				engine.getEventBus().post(new PointLightMovedEvent());
 			}
 		});
 		JScrollPane lightColorChooserScrollPanel = new JScrollPane(lightColorChooserPanel);

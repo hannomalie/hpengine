@@ -174,7 +174,7 @@ public class OctreeTest extends TestWithEngine {
 		Assert.assertTrue(octree.rootNode.children[3].getEntities().contains(entityTopRightFront));
 		
 		// Octree culling
-		Camera camera = new Camera();
+		Camera camera = new Camera(new Entity());
 
 		Assert.assertTrue(octree.rootNode.isVisible(camera));
 		Assert.assertTrue(entityBottomLeftBack.isInFrustum(camera));

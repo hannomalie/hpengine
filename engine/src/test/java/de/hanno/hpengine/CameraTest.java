@@ -2,19 +2,20 @@ package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.Frustum;
-import junit.framework.Assert;
-import org.joml.AxisAngle4f;
-import org.junit.Test;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.Util;
+import junit.framework.Assert;
+import org.joml.AxisAngle4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.junit.Test;
 
 public class CameraTest extends TestWithRenderer {
 	
 	@Test
 	public void rotation() {
-		Camera camera = new Camera();
+		Camera camera = new Camera(new Entity());
         Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
         Assert.assertEquals(new Vector3f(1,0,0), camera.getRightDirection());
         Assert.assertEquals(new Vector3f(0,0,-1), camera.getViewDirection());
@@ -30,16 +31,16 @@ public class CameraTest extends TestWithRenderer {
 		Assert.assertEquals(0, camera.getRightDirection().y, epsilon);
 		Assert.assertEquals(-1, camera.getRightDirection().z, epsilon);
 		
-		Assert.assertEquals(-1, ((Vector3f)(camera.getViewDirection())).x, epsilon);
-		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection())).y, epsilon);
-		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection())).z, epsilon);
+		Assert.assertEquals(-1, camera.getViewDirection().x, epsilon);
+		Assert.assertEquals(0, camera.getViewDirection().y, epsilon);
+		Assert.assertEquals(0, camera.getViewDirection().z, epsilon);
 	}
 	
 	@Test
 	public void inFrustum() {
 		Matrix4f projectionMatrix = Util.createPerspective(60, 16/9, 0.1f, 100f);
-		Camera camera = new Camera(projectionMatrix, 0.1f, 100f, 60, 16/9);
-		Assert.assertEquals(new Vector3f(0,0,-1), ((Vector3f)(camera.getViewDirection())));
+		Camera camera = new Camera(new Entity(), projectionMatrix, 0.1f, 100f, 60, 16/9);
+		Assert.assertEquals(new Vector3f(0,0,-1), camera.getViewDirection());
 		
 		Frustum frustum = camera.getFrustum();
 

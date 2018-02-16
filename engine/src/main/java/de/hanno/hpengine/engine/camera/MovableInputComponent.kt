@@ -4,11 +4,12 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.model.Entity
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent: InputControllerComponent() {
+class MovableInputComponent(entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -26,6 +27,10 @@ class MovableInputComponent: InputControllerComponent() {
 
     private var pitchAccel = 0f
     private var yawAccel = 0f
+
+    init {
+        this.entity = entity
+    }
 
     override fun update(engine: Engine, seconds: Float) {
         //                             linearVel.fma(seconds, linearAcc);
@@ -85,9 +90,12 @@ class MovableInputComponent: InputControllerComponent() {
     }
 }
 
-class MovableInputControllerSystem(val engine: Engine): ComponentSystem<MovableInputComponent> {
+class InputComponentSystem(val engine: Engine): ComponentSystem<InputControllerComponent> {
     override fun update(deltaSeconds: Float) { components.forEach { it.update(engine, deltaSeconds) } }
-    override val components = mutableListOf<MovableInputComponent>()
+    override val components = mutableListOf<InputControllerComponent>()
 
-    fun create() = MovableInputComponent().also { components.add(it); }
+    override fun create(entity: Entity) = MovableInputComponent(entity).also { components.add(it); }
+    override fun addComponent(component: InputControllerComponent) {
+        components.add(component)
+    }
 }

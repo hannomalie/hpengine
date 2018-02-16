@@ -157,7 +157,7 @@ public class MaterialView extends WebPanel {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
-	        	Engine.getEventBus().post(new MaterialChangedEvent(material));
+	        	engine.getEventBus().post(new MaterialChangedEvent(material));
 	        });
 	        
 	        WebButton removeTextureButton = new WebButton("Remove");
@@ -184,14 +184,14 @@ public class MaterialView extends WebPanel {
 			@Override
 			public void onValueChange(Vector3f current) {
 				material.setDiffuse(current);
-	        	Engine.getEventBus().post(new MaterialChangedEvent(material));
+	        	engine.getEventBus().post(new MaterialChangedEvent(material));
 			}
 		});
         webComponentPanel.addElement(new ColorChooserButton("Diffuse", new ColorChooserFrame() {
 			@Override
 			public void onColorChange(Vector3f color) {
 				material.setDiffuse(color);
-	        	Engine.getEventBus().post(new MaterialChangedEvent(material));
+	        	engine.getEventBus().post(new MaterialChangedEvent(material));
 			}
 		}));
 
@@ -234,7 +234,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					roughnessInput.setValue(((float)value/100f));
     					material.setRoughness(((float)value/100f));
-    		        	Engine.getEventBus().post(new MaterialChangedEvent(material));
+    		        	engine.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
                 GroupPanel groupPanelRoughness = new GroupPanel ( 4, new WebLabel("Roughness"), roughnessInput, roughnessSliderInput );
@@ -256,7 +256,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					metallicInput.setValue(((float)value/100f));
     					material.setMetallic(((float)value/100f));
-    		        	Engine.getEventBus().post(new MaterialChangedEvent(material));
+    		        	engine.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -279,7 +279,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					ambientInput.setValue(((float)value/100f));
     					material.setAmbient(((float)value/100f));
-    		        	Engine.getEventBus().post(new MaterialChangedEvent(material));
+    		        	engine.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -407,7 +407,7 @@ public class MaterialView extends WebPanel {
 				showNotification(NotificationIcon.plus, "Material changed");
 
 				init(result.material);
-				Engine.getEventBus().post(new MaterialChangedEvent(material));
+				engine.getEventBus().post(new MaterialChangedEvent(material));
 			} else {
 				showNotification(NotificationIcon.error, "Not able to change materials");
 			}

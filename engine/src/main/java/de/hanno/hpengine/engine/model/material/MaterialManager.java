@@ -22,7 +22,6 @@ public class MaterialManager {
     private static final Logger LOGGER = Logger.getLogger(MaterialManager.class.getName());
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
-    private static MaterialManager instance;
 	private final Material skyboxMaterial;
 
     public ListWithSyncedAdder<Material> MATERIALS = new ListWithSyncedAdder();
@@ -30,7 +29,7 @@ public class MaterialManager {
 	private Material defaultMaterial;
 	private TextureManager textureManager;
 
-	public MaterialManager(TextureManager textureManager) {
+	public MaterialManager(Engine engine, TextureManager textureManager) {
 		this.textureManager = textureManager;
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.x = (1.0f);
@@ -40,7 +39,7 @@ public class MaterialManager {
 		if(Config.getInstance().isLoadDefaultMaterials()) {
 		    initDefaultMaterials();
         }
-		Engine.getEventBus().register(this);
+		engine.getEventBus().register(this);
 	}
 
 	public void initDefaultMaterials() {

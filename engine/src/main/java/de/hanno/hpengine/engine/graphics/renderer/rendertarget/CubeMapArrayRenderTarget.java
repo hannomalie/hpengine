@@ -15,13 +15,11 @@ import java.util.List;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
     private final ArrayList<long[]> handleLists;
-	private final Engine engine;
 	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
 
-	public CubeMapArrayRenderTarget(Engine engine, int width, int height, int depth, CubeMapArray... cubeMapArray) {
-		super(engine.getGpuContext());
-		this.gpuContext = engine.getGpuContext();
-		this.engine = engine;
+	public CubeMapArrayRenderTarget(GpuContext gpuContext, int width, int height, int depth, CubeMapArray... cubeMapArray) {
+		super(gpuContext);
+		this.gpuContext = gpuContext;
 		this.width = width;
 		this.height = height;
 		this.clearR = 0;
@@ -35,17 +33,17 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
             long[] currentList = new long[cma.getCubemapCount()];
             handleLists.add(currentList);
             for(int cubemapIndex = 0; cubemapIndex < cma.getCubemapCount(); cubemapIndex++) {
-                int cubeMapView = this.engine.getGpuContext().genTextures();
+                int cubeMapView = this.gpuContext.genTextures();
                 int finalCubemapIndex = cubemapIndex;
-                this.engine.getGpuContext().execute(() -> {
+                this.gpuContext.execute(() -> {
                     GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cma.getTextureID(),
                             cma.getInternalFormat(), 0, 1,
                             6 * finalCubemapIndex, 6);
 
                 });
-                long handle = this.engine.getGpuContext().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+                long handle = this.gpuContext.calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
                 currentList[cubemapIndex] = handle;
-                this.engine.getGpuContext().execute(() -> {
+                this.gpuContext.execute(() -> {
                     ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 });
             }
@@ -53,7 +51,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
 
-        this.engine.getGpuContext().execute(() -> {
+        this.gpuContext.execute(() -> {
 			framebufferLocation = GL30.glGenFramebuffers();
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 			IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
@@ -65,7 +63,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			}
 			GL20.glDrawBuffers(scratchBuffer);
 
-            CubeMapArray depthCubeMapArray = new CubeMapArray(engine.getGpuContext(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
+            CubeMapArray depthCubeMapArray = new CubeMapArray(gpuContext, depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
 			depthbufferLocation = depthCubeMapArray.getTextureID();

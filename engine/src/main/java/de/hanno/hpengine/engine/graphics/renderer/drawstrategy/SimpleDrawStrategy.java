@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.EntityManager;
+import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.Engine;
@@ -113,7 +113,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         skyBoxEntity = this.engine.getEntityManager().getEntity(new Vector3f(), "skybox", skyBox);
         skyBoxEntity.init(engine);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);
-        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
+        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(engine.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
         skyBoxRenderBatch = new RenderBatch().init(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(), 1000, skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.getInstanceMinMaxWorlds());
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engine);
@@ -125,13 +125,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        EntityManager entityManager = engine.getSceneManager().getScene().getEntityManager();
+        EntityContainer entityManager = engine.getSceneManager().getScene().getEntityManager();
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
 
-        engine.getEnvironmentProbeManager().drawAlternating(renderState.camera);
+        engine.getEnvironmentProbeManager().drawAlternating(renderState.camera.getEntity());
         engine.getRenderer().executeRenderProbeCommands(renderState);
 
         if (!Config.getInstance().isUseDirectTextureOutput()) {

@@ -1,10 +1,11 @@
 package de.hanno.hpengine.engine.model.texture;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
+import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -57,6 +58,7 @@ public class TextureManager {
 
     private volatile BufferedImage defaultTextureAsBufferedImage = null;
     private GpuContext gpuContext;
+    private EventBus eventBus;
 
     public CubeMap getCubeMap() {
         return cubeMap;
@@ -94,8 +96,9 @@ public class TextureManager {
      */
     Texture defaultTexture = null;
 
-    public TextureManager(Engine engine) {
-        this.gpuContext = engine.getGpuContext();
+    public TextureManager(EventBus eventBus, ProgramManager programManager, GpuContext gpuContext) {
+        this.eventBus = eventBus;
+        this.gpuContext = gpuContext;
         System.out.println("TextureManager constructor");
         GpuContext.exitOnGLError("Begin TextureManager constructor");
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -120,8 +123,8 @@ public class TextureManager {
         Defines verticalDefines = new Defines() {{
             add(Define.getDefine("VERTICAL", true));
         }};
-        blur2dProgramSeperableHorizontal = engine.getProgramManager().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
-        blur2dProgramSeperableVertical = engine.getProgramManager().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
+        blur2dProgramSeperableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
+        blur2dProgramSeperableVertical = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
 
         GpuContext.exitOnGLError("After TextureManager constructor");
 
@@ -250,7 +253,7 @@ public class TextureManager {
         if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
             Texture texture = new Texture(this, resourceName, srgba);
             TEXTURES.put(resourceName, texture);
-            Engine.getEventBus().post(new TexturesChangedEvent());
+            postTextureChangedEvent();
             texture.readAndUpload(this);
             return texture;
         }
@@ -350,7 +353,7 @@ public class TextureManager {
                 e.printStackTrace();
                 LOGGER.severe("Texture not found: " + texture.getPath() + ". Default de.hanno.hpengine.texture returned...");
             }
-            Engine.getEventBus().post(new TexturesChangedEvent());
+            postTextureChangedEvent();
         });
 //        try {
 //            // TODO: Check out why this is necessary
@@ -870,5 +873,9 @@ public class TextureManager {
 
     public GpuContext getGpuContext() {
         return gpuContext;
+    }
+
+    public void postTextureChangedEvent() {
+        eventBus.post(new TexturesChangedEvent());
     }
 }

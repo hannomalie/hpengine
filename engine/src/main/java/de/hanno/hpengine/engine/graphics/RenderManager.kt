@@ -51,7 +51,7 @@ class RenderManager(override val engine: Engine) : Manager {
                 engine.renderer.endFrame()
                 engine.sceneManager.scene.isInitiallyDrawn = true
 
-                Engine.eventBus.post(FrameFinishedEvent(latestDrawResult))
+                engine.eventBus.post(FrameFinishedEvent(latestDrawResult))
             }
             lastTimeSwapped = renderState.stopRead()
         }

@@ -284,7 +284,7 @@ public class Texture implements Serializable, Reloadable {
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
             });
             setUploaded();
-            Engine.getEventBus().post(new TexturesChangedEvent());
+            textureManager.postTextureChangedEvent();
         };
 
         textureManager.getCommandQueue().addCommand(uploadRunnable);

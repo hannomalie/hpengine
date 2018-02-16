@@ -46,7 +46,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     public float sceneScale = 2;
 
     private Matrix4f ortho = de.hanno.hpengine.util.Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
-    private Camera orthoCam = new Camera(ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+    private Camera orthoCam;
     private Matrix4f viewX;
     public FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
     private Matrix4f viewY;
@@ -120,6 +120,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram = this.engine.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", new Defines());
         Config.getInstance().setUseAmbientOcclusion(false);
         pipeline = new SimplePipeline(engine, false, false, false);
+        orthoCam = new Camera(engine.getEntityManager().getEntity(), ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
     }
 
     private long entityMovedLastInCycle;
@@ -238,7 +239,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
-            FloatBuffer viewMatrixAsBuffer1 = orthoCam.getViewMatrixAsBuffer();
+            FloatBuffer viewMatrixAsBuffer1 = orthoCam.getEntity().getViewMatrixAsBuffer();
             voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
             FloatBuffer projectionMatrixAsBuffer1 = orthoCam.getProjectionMatrixAsBuffer();
             voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
@@ -337,8 +338,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
         voxelConeTraceProgram.use();
         Vector3f camTranslation = new Vector3f();
-        voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.getTranslation(camTranslation));
-        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+        voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.getEntity().getTranslation(camTranslation));
+        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getEntity().getViewMatrixAsBuffer());
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.getRenderer().getGBuffer().getStorageBuffer());
         voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderState));
@@ -414,7 +415,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private void initOrthoCam() {
         ortho = Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
-        orthoCam = new Camera(ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
 
         orthoCam.setPerspective(false);
         orthoCam.setWidth(getGridSizeScaled());

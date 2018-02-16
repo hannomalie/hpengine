@@ -1,14 +1,15 @@
 package de.hanno.hpengine.engine.container;
 
-import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.model.Entity;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.stream.Collectors;
 
-public class SimpleContainer implements EntityManager {
+public class SimpleContainer implements EntityContainer {
 
     private Set<Entity> entities = new CopyOnWriteArraySet<>();
     List<Entity> result = new CopyOnWriteArrayList<>();
