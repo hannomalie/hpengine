@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.light;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.util.Util;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

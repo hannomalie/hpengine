@@ -20,7 +20,7 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
-import de.hanno.hpengine.engine.model.Entity
+import de.hanno.hpengine.engine.entity.Entity
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import org.joml.Vector4f

@@ -20,7 +20,7 @@ import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;

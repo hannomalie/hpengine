@@ -16,7 +16,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.CommandBuffer
-import de.hanno.hpengine.engine.model.Entity
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util

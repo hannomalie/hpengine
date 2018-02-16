@@ -27,7 +27,7 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.material.Material;

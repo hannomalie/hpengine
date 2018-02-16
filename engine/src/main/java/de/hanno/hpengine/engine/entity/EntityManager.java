@@ -1,6 +1,9 @@
-package de.hanno.hpengine.engine.model;
+package de.hanno.hpengine.engine.entity;
 
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.bus.EventBus;
+import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.Update;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 

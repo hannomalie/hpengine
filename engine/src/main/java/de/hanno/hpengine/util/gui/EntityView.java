@@ -18,7 +18,7 @@ import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Update;

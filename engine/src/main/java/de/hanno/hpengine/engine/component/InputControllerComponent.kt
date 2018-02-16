@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.component
 
-import de.hanno.hpengine.engine.model.Entity
+import de.hanno.hpengine.engine.entity.Entity
 import java.io.Serializable
 
 abstract class InputControllerComponent(entity: Entity) : BaseComponent(), Serializable {

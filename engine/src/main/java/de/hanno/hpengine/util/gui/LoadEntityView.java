@@ -8,7 +8,7 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
 import javax.swing.filechooser.FileNameExtensionFilter;

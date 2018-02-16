@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;

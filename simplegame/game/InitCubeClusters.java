@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.joml.Vector3f;

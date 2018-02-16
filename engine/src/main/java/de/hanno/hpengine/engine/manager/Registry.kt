@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.model.Entity
+import de.hanno.hpengine.engine.entity.Entity
 
 interface Registry {
     fun <T> get(clazz: Class<T>) : ComponentSystem<T>

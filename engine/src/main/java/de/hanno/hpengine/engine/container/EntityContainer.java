@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.container;
 
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

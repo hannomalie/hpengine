@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.model.material.Material;

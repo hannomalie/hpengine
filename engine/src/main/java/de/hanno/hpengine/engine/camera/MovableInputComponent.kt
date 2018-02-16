@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.model.Entity
+import de.hanno.hpengine.engine.entity.Entity
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*

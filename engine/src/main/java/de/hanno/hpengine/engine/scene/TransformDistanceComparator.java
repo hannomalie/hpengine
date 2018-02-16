@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.scene;
 
 import java.util.Comparator;
 
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 
 public class TransformDistanceComparator<T extends Entity> implements Comparator<T>{
 

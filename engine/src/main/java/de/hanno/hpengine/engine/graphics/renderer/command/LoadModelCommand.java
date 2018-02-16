@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
 import de.hanno.hpengine.engine.model.loader.md5.*;

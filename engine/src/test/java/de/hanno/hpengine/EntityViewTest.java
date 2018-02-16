@@ -1,6 +1,7 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
 import org.junit.Test;
 import de.hanno.hpengine.util.gui.EntityView;

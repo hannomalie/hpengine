@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 
 import java.util.ArrayList;

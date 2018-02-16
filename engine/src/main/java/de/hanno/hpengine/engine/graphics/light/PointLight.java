@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;

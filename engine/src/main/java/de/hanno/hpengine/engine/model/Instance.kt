@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.Material

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;

@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;

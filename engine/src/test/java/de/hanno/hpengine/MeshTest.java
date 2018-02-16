@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;

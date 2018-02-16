@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.model.texture.Texture;

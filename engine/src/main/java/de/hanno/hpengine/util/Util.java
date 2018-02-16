@@ -1,7 +1,6 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;

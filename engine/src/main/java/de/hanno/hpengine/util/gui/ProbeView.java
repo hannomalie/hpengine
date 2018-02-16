@@ -13,7 +13,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector3f;

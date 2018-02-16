@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
 import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 

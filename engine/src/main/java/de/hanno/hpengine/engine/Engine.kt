@@ -19,7 +19,7 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.Registry
 import de.hanno.hpengine.engine.manager.SimpleRegistry
-import de.hanno.hpengine.engine.model.EntityManager
+import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager

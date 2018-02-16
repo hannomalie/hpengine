@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.Transformable;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 

@@ -1,5 +1,6 @@
-package de.hanno.hpengine.engine.model;
+package de.hanno.hpengine.engine.entity;
 
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.transform.*;
 import de.hanno.hpengine.engine.camera.Camera;
@@ -102,11 +103,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public Entity() {
 	}
 
-	protected Entity(String name, StaticModel model) {
+	public Entity(String name, StaticModel model) {
 		this(new Vector3f(0, 0, 0), name, model);
 	}
 
-	protected Entity(Vector3f position, String name, Model model) {
+	public Entity(Vector3f position, String name, Model model) {
 	    this();
 		addComponent(new ModelComponent(this, model));
 		this.name = name;

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import org.joml.Vector3f

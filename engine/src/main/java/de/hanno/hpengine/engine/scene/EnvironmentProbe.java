@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.scene;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;

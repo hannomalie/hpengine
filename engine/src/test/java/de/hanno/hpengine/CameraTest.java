@@ -2,7 +2,7 @@ package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.Frustum;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.Util;
 import junit.framework.Assert;

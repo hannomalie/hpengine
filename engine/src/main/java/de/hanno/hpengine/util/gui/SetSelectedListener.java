@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui;
 
 import com.alee.laf.rootpane.WebFrame;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 
 import javax.swing.*;

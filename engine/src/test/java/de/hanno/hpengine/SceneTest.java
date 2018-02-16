@@ -1,6 +1,6 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import org.junit.Assert;
 import org.junit.Test;
 import de.hanno.hpengine.engine.scene.Scene;

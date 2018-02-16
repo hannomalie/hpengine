@@ -4,7 +4,7 @@ import com.carrotsearch.hppc.IntFloatHashMap;
 import com.carrotsearch.hppc.IntFloatMap;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Instance;
 import org.joml.Vector3f;
 

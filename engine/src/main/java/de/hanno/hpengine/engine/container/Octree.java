@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLi
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.stopwatch.StopWatch;

@@ -3,7 +3,7 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.container.Octree.Node;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import junit.framework.Assert;

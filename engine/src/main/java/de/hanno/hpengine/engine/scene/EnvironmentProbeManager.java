@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import org.lwjgl.BufferUtils;

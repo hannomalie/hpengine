@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.event;
 
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 
 public class UpdateChangedEvent {
     private final Entity entity;

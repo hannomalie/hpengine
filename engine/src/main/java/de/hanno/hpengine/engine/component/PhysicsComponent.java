@@ -6,7 +6,7 @@ import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;

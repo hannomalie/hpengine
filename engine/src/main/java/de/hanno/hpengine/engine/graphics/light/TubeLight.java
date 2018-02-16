@@ -4,7 +4,7 @@ import java.util.List;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 

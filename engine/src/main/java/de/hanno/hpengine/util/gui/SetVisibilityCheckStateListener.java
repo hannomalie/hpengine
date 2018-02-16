@@ -3,7 +3,7 @@ package de.hanno.hpengine.util.gui;
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.container.Octree;
 
 import javax.swing.tree.DefaultMutableTreeNode;

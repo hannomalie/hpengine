@@ -2,6 +2,8 @@ package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
