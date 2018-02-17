@@ -87,27 +87,25 @@ public class DrawLinesExtension implements RenderExtension {
         }
         if(Config.getInstance().isDrawCameras()) {
 //            TODO: Use renderstate somehow?
-            List<Entity> entities = engine.getSceneManager().getScene().getEntities();
-            for(int i = 0; i < entities.size(); i++) {
-                Entity entity = entities.get(i);
-                if(entity.getComponent(Camera.class) != null) {
-                    Camera camera = entity.getComponent(Camera.class);
-                    Vector3f[] corners = camera.getFrustumCorners();
-                    engine.getRenderer().batchLine(corners[0], corners[1]);
-                    engine.getRenderer().batchLine(corners[1], corners[2]);
-                    engine.getRenderer().batchLine(corners[2], corners[3]);
-                    engine.getRenderer().batchLine(corners[3], corners[0]);
+            List<Camera> components = engine.getCameraComponentSystem().getComponents();
+            for(int i = 0; i < components.size(); i++) {
+                Camera camera = components.get(i);
+                if(camera.equals(engine.getSceneManager().getActiveCamera())) { continue; }
+                Vector3f[] corners = camera.getFrustumCorners();
+                engine.getRenderer().batchLine(corners[0], corners[1]);
+                engine.getRenderer().batchLine(corners[1], corners[2]);
+                engine.getRenderer().batchLine(corners[2], corners[3]);
+                engine.getRenderer().batchLine(corners[3], corners[0]);
 
-                    engine.getRenderer().batchLine(corners[4], corners[5]);
-                    engine.getRenderer().batchLine(corners[5], corners[6]);
-                    engine.getRenderer().batchLine(corners[6], corners[7]);
-                    engine.getRenderer().batchLine(corners[7], corners[4]);
+                engine.getRenderer().batchLine(corners[4], corners[5]);
+                engine.getRenderer().batchLine(corners[5], corners[6]);
+                engine.getRenderer().batchLine(corners[6], corners[7]);
+                engine.getRenderer().batchLine(corners[7], corners[4]);
 
-                    engine.getRenderer().batchLine(corners[0], corners[6]);
-                    engine.getRenderer().batchLine(corners[1], corners[7]);
-                    engine.getRenderer().batchLine(corners[2], corners[4]);
-                    engine.getRenderer().batchLine(corners[3], corners[5]);
-                }
+                engine.getRenderer().batchLine(corners[0], corners[6]);
+                engine.getRenderer().batchLine(corners[1], corners[7]);
+                engine.getRenderer().batchLine(corners[2], corners[4]);
+                engine.getRenderer().batchLine(corners[3], corners[5]);
             }
             firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
         }

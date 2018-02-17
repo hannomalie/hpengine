@@ -4,12 +4,13 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.container.SimpleContainer;
 import de.hanno.hpengine.engine.event.bus.EventBus;
+import de.hanno.hpengine.engine.manager.Manager;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.List;
 
-public class EntityManager {
+public class EntityManager implements Manager {
 
     private final Engine engine;
     private final EventBus eventbus;
@@ -53,5 +54,14 @@ public class EntityManager {
         for(Entity entity: entities) {
             add(entity);
         }
+    }
+
+    @Override
+    public void clear() {
+        entities.clear();
+    }
+
+    @Override
+    public void update(float deltaSeconds) {
     }
 }

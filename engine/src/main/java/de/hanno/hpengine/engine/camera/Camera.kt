@@ -30,7 +30,6 @@ open class Camera: Component {
         init(camera)
     }
 
-
     constructor(entity: Entity, projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float) {
         this.entity = entity
         init(projectionMatrix, near, far, fov, ratio)
@@ -245,4 +244,5 @@ class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {
     override fun addComponent(component: Camera) {
         components.add(component)
     }
+    override fun clear() = components.clear()
 }

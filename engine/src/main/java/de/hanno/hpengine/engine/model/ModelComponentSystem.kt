@@ -74,4 +74,5 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
             updateCache = true
         }
     }
+    override fun clear() = components.clear()
 }

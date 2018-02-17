@@ -4,11 +4,16 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.manager.Manager
 
-class SceneManager(override val engine: Engine): Manager {
+class SceneManager(val engine: Engine): Manager {
+
     var scene: Scene = Scene(engine = engine)
         set(value) {
             onSetScene(value)
-            field = value
+            engine.commandQueue.execute({
+//                TODO: Make this possible with moving systems to scene
+//                engine.systems.clearSystems()
+                field = value
+            }, true)
         }
     var activeCamera: Camera = scene.activeCamera.getComponent(Camera::class.java)
 
@@ -20,9 +25,10 @@ class SceneManager(override val engine: Engine): Manager {
     }
 
     private fun onSetScene(nextScene: Scene) {
+        engine.entityManager.clear()
         engine.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
-        engine.renderManager.resetAllocations()
+        engine.renderManager.clear()
         engine.modelComponentSystem.components.clear()
         nextScene.init(engine)
         restoreWorldCamera()
@@ -42,5 +48,7 @@ class SceneManager(override val engine: Engine): Manager {
 
     fun restoreWorldCamera() {
 //        activeCamera = camera
+    }
+    override fun clear() {
     }
 }

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -29,7 +30,7 @@ public class MaterialManager {
 	public static int count = 0;
 	private final Material skyboxMaterial;
 
-    public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
+    public Map<String, Material> MATERIALS = new ConcurrentSkipListMap<>();
 
 	private Material defaultMaterial;
 	private TextureManager textureManager;

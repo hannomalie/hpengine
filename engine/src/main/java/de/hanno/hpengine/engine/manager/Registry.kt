@@ -8,6 +8,9 @@ interface Registry {
     fun getSystems(): List<ComponentSystem<*>>
     fun update(deltaSeconds: Float)
     fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
+    fun clearSystems() {
+        getSystems().forEach { it.clear() }
+    }
 }
 
 interface ComponentSystem<T : Component> {
@@ -15,6 +18,11 @@ interface ComponentSystem<T : Component> {
     val components: List<T>
     fun create(entity: Entity): T
     fun addComponent(component: T)
+    fun clear()
+    fun onSceneSet() {
+        clear()
+    }
+
 }
 
 class SimpleRegistry : Registry {

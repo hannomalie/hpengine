@@ -102,16 +102,16 @@ public class DebugFrame implements HostComponent {
 	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
 	
     JTable materialTable;
-    private final ReloadableScrollPane materialPane =  new ReloadableScrollPane(materialTable);
+    private final ReloadableScrollPane materialPane;
     JTable textureTable;
-    private final ReloadableScrollPane texturePane = new ReloadableScrollPane(textureTable);
-	private final ReloadableScrollPane mainLightPane = new ReloadableScrollPane(new MainLightView(engine));
+    private final ReloadableScrollPane texturePane;
+	private final ReloadableScrollPane mainLightPane;
     JTable pointsLightsTable;
-	private final ReloadableScrollPane pointLightsPane = new ReloadableScrollPane(pointsLightsTable);
+	private final ReloadableScrollPane pointLightsPane;
     JTable tubeLightsTable;
-	private final ReloadableScrollPane tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
+	private final ReloadableScrollPane tubeLightsPane;
     JTable areaLightsTable;
-    private final ReloadableScrollPane areaLightsPane = new ReloadableScrollPane(areaLightsTable);
+    private final ReloadableScrollPane areaLightsPane;
 
     private SceneTree sceneTree;
 	private ReloadableScrollPane scenePane;
@@ -227,6 +227,12 @@ public class DebugFrame implements HostComponent {
                 SwingUtilities.invokeLater(getSetTitleRunnable());
             }
         }.start();
+        materialPane = new ReloadableScrollPane(materialTable);
+        texturePane = new ReloadableScrollPane(textureTable);
+        mainLightPane = new ReloadableScrollPane(new MainLightView(this.engine));
+        pointLightsPane = new ReloadableScrollPane(pointsLightsTable);
+        tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
+        areaLightsPane = new ReloadableScrollPane(areaLightsTable);
     }
 
     private void init() {

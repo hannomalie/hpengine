@@ -18,4 +18,6 @@ public interface EntityContainer {
         add(entity);
         return entity;
     }
+
+    void clear();
 }

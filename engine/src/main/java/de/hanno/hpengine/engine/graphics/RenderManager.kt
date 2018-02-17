@@ -17,8 +17,7 @@ import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
-class RenderManager(override val engine: Engine) : Manager {
-
+class RenderManager(val engine: Engine) : Manager {
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
     var renderThread: RenderThread = RenderThread(engine, "Render")
 
@@ -64,6 +63,6 @@ class RenderManager(override val engine: Engine) : Manager {
             engine.renderManager.vertexIndexBufferAnimated.resetAllocations()
             StopWatch.getInstance().stopAndPrintMS()
         }, true)
-
     }
+    override fun clear() = resetAllocations()
 }

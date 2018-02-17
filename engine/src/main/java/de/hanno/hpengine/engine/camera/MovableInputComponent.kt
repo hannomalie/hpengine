@@ -98,4 +98,5 @@ class InputComponentSystem(val engine: Engine): ComponentSystem<InputControllerC
     override fun addComponent(component: InputControllerComponent) {
         components.add(component)
     }
+    override fun clear() = components.clear()
 }

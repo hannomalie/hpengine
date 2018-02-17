@@ -31,4 +31,9 @@ public class SimpleContainer implements EntityContainer {
         return result;
     }
 
+    @Override
+    public void clear() {
+        entities.clear();
+    }
+
 }

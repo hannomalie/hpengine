@@ -166,7 +166,6 @@ public class ProgramManager implements Manager {
     }
 
     @NotNull
-    @Override
     public Engine getEngine() {
         return engine;
     }
@@ -177,6 +176,11 @@ public class ProgramManager implements Manager {
 
     @Override
     public void update(float deltaSeconds) {
+
+    }
+
+    @Override
+    public void clear() {
 
     }
 }

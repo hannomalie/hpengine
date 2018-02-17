@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
@@ -19,7 +20,6 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.Registry
 import de.hanno.hpengine.engine.manager.SimpleRegistry
-import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -45,7 +45,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     val gpuContext: GpuContext = GpuContext.create()
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
     private val drawCounter = AtomicInteger(-1)
-    private val commandQueue = CommandQueue()
+    val commandQueue = CommandQueue()
 
     val systems: Registry = SimpleRegistry()
 

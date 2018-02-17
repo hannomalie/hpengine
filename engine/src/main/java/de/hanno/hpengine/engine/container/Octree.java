@@ -662,6 +662,11 @@ public class Octree implements LifeCycle, Serializable, EntityContainer {
 		return new CopyOnWriteArrayList<>(entityNodeMappings.keySet());
 	}
 
+	@Override
+	public void clear() {
+		entityNodeMappings.clear();
+	}
+
 	public int getCurrentDeepness() {
 		return rootNode.getMaxDeepness();
 	}
