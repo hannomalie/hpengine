@@ -52,7 +52,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
     val renderManager = RenderManager(this)
     val input = Input(this, gpuContext)
-    val environmentProbeManager = EnvironmentProbeManager(this)
     val programManager = ProgramManager(this)
     val textureManager = TextureManager(eventBus, programManager, gpuContext)
     val materialManager = MaterialManager(this, textureManager)

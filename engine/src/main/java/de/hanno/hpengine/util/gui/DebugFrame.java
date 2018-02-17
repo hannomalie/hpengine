@@ -396,7 +396,7 @@ public class DebugFrame implements HostComponent {
                             @Override
                             public Result execute() throws Exception {
                                 // TODO: Remove this f***
-                                EnvironmentProbe probe = engine.getEnvironmentProbeManager().getProbe(new Vector3f(), 50);
+                                EnvironmentProbe probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Vector3f(), 50);
                                 engine.getRenderer().addRenderProbeCommand(probe, true);
                                 return new Result(true);
                             }
@@ -870,7 +870,7 @@ public class DebugFrame implements HostComponent {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
 		forceProbeGBufferRedraw.addActionListener(e -> {
-            engine.getEnvironmentProbeManager().getProbes().forEach(probe -> {
+            engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().forEach(probe -> {
 				probe.getSampler().resetDrawing();
 			});
 		});

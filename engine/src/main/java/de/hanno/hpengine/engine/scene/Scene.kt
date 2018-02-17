@@ -36,6 +36,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     val systems = engine.systems
     val entityManager = EntityManager(engine, engine.eventBus)
+    val environmentProbeManager = EnvironmentProbeManager(engine)
 
     private val cameraComponentSystem = systems.get(CameraComponentSystem::class.java)
     private val movableInputControllerManager = systems.get(InputComponentSystem::class.java)

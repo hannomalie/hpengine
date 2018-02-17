@@ -175,7 +175,7 @@ public class EnvironmentProbeManager {
 	public void drawDebug(Program program, Octree octree) {
 		List<float[]> arrays = new ArrayList<>();
 
-		for (EnvironmentProbe probe : engine.getEnvironmentProbeManager().getProbes()) {
+		for (EnvironmentProbe probe : engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes()) {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
@@ -266,10 +266,10 @@ public class EnvironmentProbeManager {
 	}
 
 	public void bindEnvironmentProbePositions(AbstractProgram program) {
-		program.setUniform("activeProbeCount", engine.getEnvironmentProbeManager().getProbes().size());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", engine.getEnvironmentProbeManager().getMinPositions());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", engine.getEnvironmentProbeManager().getMaxPositions());
-		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", engine.getEnvironmentProbeManager().getWeights());
+		program.setUniform("activeProbeCount", engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().size());
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", engine.getSceneManager().getScene().getEnvironmentProbeManager().getMinPositions());
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", engine.getSceneManager().getScene().getEnvironmentProbeManager().getMaxPositions());
+		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", engine.getSceneManager().getScene().getEnvironmentProbeManager().getWeights());
 
 //		EnvironmentProbeManager.getInstance().getProbes().forEach(probe -> {
 //			int probeIndex = probe.getIndex();

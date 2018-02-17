@@ -26,7 +26,7 @@ class SceneManager(val engine: Engine): Manager {
 
     private fun onSetScene(nextScene: Scene) {
         engine.sceneManager.scene.entityManager.clear()
-        engine.environmentProbeManager.clearProbes()
+        engine.sceneManager.scene.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
         engine.renderManager.clear()
         engine.modelComponentSystem.components.clear()

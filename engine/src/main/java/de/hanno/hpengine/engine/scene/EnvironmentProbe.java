@@ -32,7 +32,7 @@ public class EnvironmentProbe extends Entity {
 
 	protected EnvironmentProbe(Engine engine, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
         this.renderer = engine.getRenderer();
-        this.environmentProbeManager = engine.getEnvironmentProbeManager();
+        this.environmentProbeManager = engine.getSceneManager().getScene().getEnvironmentProbeManager();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		Entity entity = new Entity();
