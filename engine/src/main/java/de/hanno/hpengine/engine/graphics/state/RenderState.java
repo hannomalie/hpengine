@@ -113,8 +113,8 @@ public class RenderState {
         return entitiesState.vertexIndexBufferAnimated;
     }
 
-    public void bufferEntities(List<Entity> entities) {
-        entitiesState.entitiesBuffer.put(Util.toArray(entities.stream().filter(entity -> entity.hasComponent(ModelComponent.COMPONENT_KEY)).collect(Collectors.toList()), Entity.class));
+    public void bufferEntities(List<ModelComponent> modelComponents) {
+        entitiesState.entitiesBuffer.put(Util.toArray(modelComponents, ModelComponent.class));
     }
     public void bufferJoints(List<BufferableMatrix4f> joints) {
         entitiesState.jointsBuffer.put(Util.toArray(joints, BufferableMatrix4f.class));
@@ -132,7 +132,7 @@ public class RenderState {
 
     public void bufferMaterials(Engine engine) {
         engine.getGpuContext().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<Material>(engine.getMaterialManager().getMaterials());
+            List<Material> materials = engine.getMaterialManager().getMaterials();
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
         });
     }

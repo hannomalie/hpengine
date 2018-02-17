@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model.material;
 
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.MaterialAddedEvent;
 import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.model.material.Material.MAP;
@@ -12,7 +12,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.model.material.Material.getDirectory;
@@ -24,7 +29,7 @@ public class MaterialManager {
 	public static int count = 0;
 	private final Material skyboxMaterial;
 
-    public ListWithSyncedAdder<Material> MATERIALS = new ListWithSyncedAdder();
+    public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
 
 	private Material defaultMaterial;
 	private TextureManager textureManager;
@@ -82,25 +87,29 @@ public class MaterialManager {
     }
 
 	public Material getMaterial(MaterialInfo materialInfo, boolean readFromHdd) {
-		if (materialInfo.name == null || materialInfo.name == "") {
+		if (materialInfo.name == null || "".equals(materialInfo.name)) {
 			materialInfo.name = "Material_" + count++;
 		}
-		return MATERIALS.addIfAbsent(() -> {
+		Supplier<Material> supplier = () -> {
 			if (readFromHdd) {
 				Material readMaterial = read(getDirectory() + materialInfo.name);
 				if (readMaterial != null) {
+					readMaterial.setMaterialIndex(MATERIALS.size());
 					return readMaterial;
 				}
 			}
 			Material newMaterial = new Material();
 			newMaterial.setMaterialInfo(new MaterialInfo(materialInfo));
 			newMaterial.init(this);
+			newMaterial.setMaterialIndex(MATERIALS.size());
 
 			write(newMaterial, materialInfo.name);
 
 			EventBus.getInstance().post(new MaterialAddedEvent());
 			return newMaterial;
-		});
+		};
+		addMaterial(materialInfo.name, supplier.get());
+		return MATERIALS.get(materialInfo.name);
 	}
 
     public Material getMaterial(HashMap<MAP, String> hashMap) {
@@ -123,29 +132,25 @@ public class MaterialManager {
 	}
 
     public Material getMaterial(String materialName) {
-        return MATERIALS.addIfAbsent(() -> {
-            Material material = read(materialName);
+		Supplier<Material> supplier = () -> {
+			Material material = read(materialName);
 
-            if(material == null) {
-                material = getDefaultMaterial();
-                Logger.getGlobal().info(() -> "Failed to get material " + materialName);
-            }
-            EventBus.getInstance().post(new MaterialAddedEvent());
-            return material;
-        });
+			if (material == null) {
+				material = getDefaultMaterial();
+				Logger.getGlobal().info(() -> "Failed to get material " + materialName);
+			} else {
+				material.setMaterialIndex(MATERIALS.size());
+			}
+			EventBus.getInstance().post(new MaterialAddedEvent());
+			return material;
+		};
+		addMaterial(materialName, supplier.get());
+		return MATERIALS.get(materialName);
     }
 
 	private void addMaterial(String key, Material material) {
-	    if(MATERIALS.contains(material)) {
-            Logger.getGlobal().warning(() -> "Material already defined: " + key);
-            return;
-        }
-        MATERIALS.add(material);
+	    MATERIALS.putIfAbsent(key, material);
     }
-    private void addMaterial(Material material) {
-        addMaterial(material.getName(), material);
-    }
-
     public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
 			getMaterial(materialLib.get(key));
@@ -167,7 +172,6 @@ public class MaterialManager {
                 ObjectInputStream in = new ObjectInputStream(fis);
                 Material material = (Material) in.readObject();
                 in.close();
-                handleEvolution(material.getMaterialInfo());
                 material.init(this);
                 return material;
             } catch (ClassNotFoundException e) {
@@ -179,20 +183,8 @@ public class MaterialManager {
 		return null;
 	}
 
-    private void handleEvolution(MaterialInfo materialInfo) {
-    	
-    }
-
-	public ListWithSyncedAdder<Material> getMaterials() {
-		return MATERIALS;
-	}
-
-	public List<Material> getMaterialsAsList() {
-		return getMaterials();
-	}
-
-	public int indexOf(Material material) {
-		return MATERIALS.indexOf(material);
+	public List<Material> getMaterials() {
+		return new ArrayList<>(MATERIALS.values());
 	}
 
 	public Material getSkyboxMaterial() {

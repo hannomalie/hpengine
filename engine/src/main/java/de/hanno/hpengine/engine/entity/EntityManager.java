@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.entity;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.container.SimpleContainer;
 import de.hanno.hpengine.engine.event.bus.EventBus;
@@ -10,9 +11,13 @@ import java.util.List;
 
 public class EntityManager {
 
+    private final Engine engine;
+    private final EventBus eventbus;
     EntityContainer entities = new SimpleContainer();
 
-    public EntityManager(EventBus eventbus) {
+    public EntityManager(Engine engine, EventBus eventbus) {
+        this.engine = engine;
+        this.eventbus = eventbus;
         eventbus.register(this);
     }
 
@@ -41,9 +46,12 @@ public class EntityManager {
 
     public void add(Entity entity) {
         entities.add(entity);
+        entity.setIndex(entities.getEntities().indexOf(entity));
     }
 
     public void add(@NotNull List<Entity> entities) {
-        this.entities.add(entities);
+        for(Entity entity: entities) {
+            add(entity);
+        }
     }
 }

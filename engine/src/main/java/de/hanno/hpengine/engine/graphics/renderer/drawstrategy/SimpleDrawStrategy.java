@@ -249,7 +249,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         program.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
         Vector3f translation = new Vector3f();
         program.setUniform("eyePos_world", camera.getTranslation(translation));
-        program.setUniform("materialIndex", engine.getMaterialManager().indexOf(engine.getMaterialManager().getSkyboxMaterial()));
+        program.setUniform("materialIndex", engine.getMaterialManager().getSkyboxMaterial().getMaterialIndex());
         program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
         program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());

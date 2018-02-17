@@ -31,8 +31,7 @@ public class InitInstancedAnimated implements LifeCycle {
     public void init(Engine engine) {
 
         try {
-            Engine.getInstance().getSceneManager().getScene().add(new Camera());
-            loadLotsOfInstances("/assets/models/doom3monster/monster.md5mesh", 1, "hellknight");
+            loadLotsOfInstances(engine, "/assets/models/doom3monster/monster.md5mesh", 1, "hellknight");
             Thread.sleep(500);
 //            loadLotsOfInstances("/assets/models/cube.obj", 100, "cube");
 //            Thread.sleep(500);
@@ -43,11 +42,11 @@ public class InitInstancedAnimated implements LifeCycle {
 
     }
 
-    protected void loadLotsOfInstances(String assetPath, int scale, String name) {
-        LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name).execute(Engine.getInstance());
+    protected void loadLotsOfInstances(Engine engine, String assetPath, int scale, String name) {
+        LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name).execute(engine);
         System.out.println("loaded entities : " + loaded.entities.size());
         for (final Entity current : loaded.entities) {
-//                File componentScriptFile = new File(Engine.getInstance().getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
+//                File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
 //                current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
 
             for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
@@ -79,7 +78,7 @@ public class InitInstancedAnimated implements LifeCycle {
             }
         }
 
-        Engine.getInstance().getSceneManager().getScene().addAll(loaded.entities);
+        engine.getSceneManager().getScene().addAll(loaded.entities);
     }
 
     public boolean isInitialized() {

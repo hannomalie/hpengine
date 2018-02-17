@@ -1,14 +1,11 @@
 package de.hanno.hpengine.engine.scene
 
-import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.InputControllerComponent
+import de.hanno.hpengine.engine.camera.CameraComponentSystem
+import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.component.ModelComponent.DEFAULTANIMATEDCHANNELS
-import de.hanno.hpengine.engine.component.ModelComponent.DEFAULTCHANNELS
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.graphics.light.AreaLight
@@ -19,7 +16,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -40,9 +37,9 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     var entityManager = engine.entityManager
 
 
-    private val cameraComponentSystem = systems.get(Camera::class.java)
-    private val movableInputControllerManager = systems.get(InputControllerComponent::class.java)
-    private val modelComponentSystem = systems.get(ModelComponent::class.java)
+    private val cameraComponentSystem = systems.get(CameraComponentSystem::class.java)
+    private val movableInputControllerManager = systems.get(InputComponentSystem::class.java)
+    private val modelComponentSystem = systems.get(ModelComponentSystem::class.java)
 
     val camera = entityManager.create()
             .apply { addComponent(movableInputControllerManager.create(this)) }
@@ -53,10 +50,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     private val probes = CopyOnWriteArrayList<ProbeData>()
 
-    val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
-
-    @Volatile
-    @Transient private var updateCache = true
     @Volatile
     @Transient private var entityMovedInCycle: Long = 0
     @Volatile
@@ -79,8 +72,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     val modelComponents: List<ModelComponent>
         get() = modelComponentSystem.components
-
-    private val entityIndices = IntArrayList()
 
     private val tempDistVector = Vector3f()
 
@@ -152,27 +143,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun addAll(entities: List<Entity>) {
         entityManager.add(entities)
-        entities.forEach { e ->
-            e.getComponents().values.forEach { c ->
-                if(c is ModelComponent) {
-
-                    if (c.model.isStatic()) {
-                        val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
-                        c.putToBuffer(engine.gpuContext, vertexIndexBuffer, DEFAULTCHANNELS)
-                    } else {
-                        val vertexIndexBuffer = this.engine.renderManager.vertexIndexBufferAnimated
-                        c.putToBuffer(engine.gpuContext, vertexIndexBuffer, DEFAULTANIMATEDCHANNELS)
-
-                        c.jointsOffset = joints.size // TODO: Proper allocation
-                        val elements = (c.model as AnimatedModel).frames
-                                .flatMap { frame -> frame.jointMatrices.toList() }
-                        joints.addAll(elements)
-                    }
-                }
-            }
-        }
+        modelComponentSystem.allocateVertexIndexBufferSpace(entities)
         calculateMinMax(entities)
-        updateCache = true
         entityAddedInCycle = currentCycle
         engine.eventBus.post(MaterialAddedEvent())
         engine.eventBus.post(EntityAddedEvent())
@@ -180,31 +152,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun add(entity: Entity) = addAll(listOf(entity))
 
-    fun getEntityBufferIndex(modelComponent: ModelComponent): Int {
-        cacheEntityIndices()
-        val index = modelComponents.indexOf(modelComponent)
-        return if (index < 0 || index > entityIndices.size()) {
-            -1
-        } else entityIndices.get(index)
-    }
-
-    private fun cacheEntityIndices() {
-        if (updateCache) {
-            updateCache = false
-            entityIndices.clear()
-            var index = 0
-            for (current in entityManager.entities) {
-                if (!current.hasComponent(ModelComponent::class.java)) {
-                    continue
-                }
-                entityIndices.add(index)
-                index += current.instanceCount * current.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)!!.meshes.size
-            }
-        }
-    }
-
     override fun update(engine: Engine, seconds: Float) {
-        cacheEntityIndices()
         systems.update(seconds)
         val entities = entityManager.entities
 
@@ -275,14 +223,12 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        val modelComponentsStatic = engine.sceneManager.scene.modelComponents
-
-        addBatches(engine, camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic)
+        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, engine.modelComponentSystem.components)
 
     }
 
-    fun addBatches(engine: Engine, camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, program: Program, modelComponentsStatic: List<ModelComponent>) {
-        addBatches(engine, camera, currentWriteState, cameraWorldPosition, program, modelComponentsStatic, Consumer{ batch ->
+    fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, program: Program, modelComponents: List<ModelComponent>) {
+        addBatches(camera, currentWriteState, cameraWorldPosition, program, modelComponents, Consumer{ batch ->
             if (batch.isStatic) {
                 currentWriteState.addStatic(batch)
             } else {
@@ -291,13 +237,13 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         })
     }
 
-    fun addBatches(engine: Engine, camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>, addToRenderStateRunnable: Consumer<RenderBatch>) {
+    fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>, addToRenderStateRunnable: Consumer<RenderBatch>) {
         for (modelComponent in modelComponents) {
             val entity = modelComponent.entity
             val distanceToCamera = tempDistVector.length()
             val isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.boundingSphereRadius
 
-            val entityIndexOf = engine.sceneManager.scene.getEntityBufferIndex(entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY))
+            val entityIndexOf = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).entityBufferIndex
 
             val meshes = modelComponent.meshes
             for (i in meshes.indices) {
@@ -311,15 +257,11 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
                 val (min1, max1) = modelComponent.getMinMax(entity, mesh)
                 val meshBufferIndex = entityIndexOf + i * entity.instanceCount
 
-                val batch = (currentWriteState.entitiesState.cash as java.util.Map<BatchKey, RenderBatch>).computeIfAbsent(BatchKey(mesh, -1)) { (mesh1, clusterIndex) -> RenderBatch() }
+                val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (mesh1, clusterIndex) -> RenderBatch() }
                 batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible, entity.isSelected, Config.getInstance().isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.update, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds)
                 addToRenderStateRunnable.accept(batch)
             }
         }
-    }
-
-    fun setUpdateCache(updateCache: Boolean) {
-        this.updateCache = updateCache
     }
 
     fun entityMovedInCycle(): Long {

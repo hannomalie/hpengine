@@ -19,7 +19,15 @@ import java.util.logging.Logger;
 
 public class Material implements Serializable, Bufferable {
 
-	private int materialIndex;
+	private transient int materialIndex = -1;
+
+	public void setMaterialIndex(int materialIndex) {
+		this.materialIndex = materialIndex;
+	}
+
+	public int getMaterialIndex() {
+		return materialIndex;
+	}
 
 	public enum MaterialType {
 		DEFAULT,
@@ -62,7 +70,6 @@ public class Material implements Serializable, Bufferable {
 	private MaterialInfo materialInfo = new MaterialInfo();
 
 	public void init(MaterialManager materialManager) {
-		materialIndex = materialManager.indexOf(this);
 		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
 			String name = materialInfo.maps.getTextureNames().get(map);
 			try {

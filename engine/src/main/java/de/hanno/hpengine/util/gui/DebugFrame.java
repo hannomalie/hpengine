@@ -338,7 +338,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getEntityManager(), engine.getLightManager(), engine.getSceneManager().getScene()));
+                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getEntityManager(), engine.getLightManager(), engine.getSceneManager().getScene(), engine.getModelComponentSystem()));
                         engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(engine.getSceneManager().getScene());

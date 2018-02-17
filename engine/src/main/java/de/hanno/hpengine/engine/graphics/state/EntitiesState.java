@@ -27,7 +27,7 @@ public class EntitiesState {
     public RenderBatches renderBatchesAnimated = new RenderBatches();
     public VertexIndexBuffer<Vertex> vertexIndexBufferStatic;
     public VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated;
-    public GPUBuffer<Entity> entitiesBuffer;
+    public GPUBuffer<ModelComponent> entitiesBuffer;
     public GPUBuffer<BufferableMatrix4f> jointsBuffer;
     public GPUBuffer<Material> materialBuffer;
     public List<BufferableMatrix4f> joints;

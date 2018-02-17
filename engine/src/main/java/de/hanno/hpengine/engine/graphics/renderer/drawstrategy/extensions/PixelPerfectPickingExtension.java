@@ -43,7 +43,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
                     e.setSelected(false);
                 });
                 int index = (int) floatBuffer.get(componentIndex);
-                Entity entity = engine.getSceneManager().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).get(index);
+                Entity entity = engine.getSceneManager().getScene().getEntities().get(index);
                 entity.setSelected(true);
                 engine.getEventBus().post(new EntitySelectedEvent(entity));
             } catch (Exception e) {

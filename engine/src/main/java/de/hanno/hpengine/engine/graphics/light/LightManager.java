@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.InputComponentSystem;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.LightChangedEvent;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
 import de.hanno.hpengine.engine.event.SceneInitEvent;
@@ -26,7 +27,7 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.model.ModelComponentSystem;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -68,8 +69,9 @@ public class LightManager {
     private final GpuContext gpuContext;
     private final MaterialManager materialManager;
     private final ProgramManager programManager;
+	private final ModelComponentSystem modelComponentSystem;
 
-    private int pointLightDepthMapsArrayCube;
+	private int pointLightDepthMapsArrayCube;
 	private int pointLightDepthMapsArrayFront;
 	private int pointLightDepthMapsArrayBack;
 	private RenderTarget renderTarget;
@@ -108,11 +110,12 @@ public class LightManager {
 
     private DirectionalLight directionalLightComponent;
 	
-	public LightManager(EventBus eventBus, MaterialManager materialManager, SceneManager sceneManager, GpuContext gpuContext, ProgramManager programManager, InputComponentSystem inputControllerSystem) {
+	public LightManager(EventBus eventBus, MaterialManager materialManager, SceneManager sceneManager, GpuContext gpuContext, ProgramManager programManager, InputComponentSystem inputControllerSystem, ModelComponentSystem modelComponentSystem) {
         this.materialManager = materialManager;
 		this.sceneManager = sceneManager;
 		this.gpuContext = gpuContext;
         this.programManager = programManager;
+        this.modelComponentSystem = modelComponentSystem;
 		sphereMesh = null;
 		try {
             sphereMesh = new OBJLoader().loadTexturedModel(this.materialManager, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
@@ -483,7 +486,7 @@ public class LightManager {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(materialManager).hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(materialManager).getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, sceneManager.getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex(), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
                     DrawStrategy.draw(gpuContext, renderState, batch);
 				});
 			}
@@ -498,7 +501,7 @@ public class LightManager {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(materialManager).hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(materialManager).getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, sceneManager.getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex(), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
                     DrawStrategy.draw(gpuContext, renderState, batch);
 				});
 			}

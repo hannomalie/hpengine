@@ -34,10 +34,10 @@ public class InitCubeClusters implements LifeCycle {
     public void init(Engine engine) {
 
         try {
-            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"), "cube").execute(Engine.getInstance());
+            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"), "cube").execute(engine);
             System.out.println("loaded entities : " + loaded.entities.size());
             for(final Entity current : loaded.entities) {
-                File componentScriptFile = new File(Engine.getInstance().getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
+                File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
                 current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
 
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
@@ -67,7 +67,7 @@ public class InitCubeClusters implements LifeCycle {
                 }
             }
 
-            Engine.getInstance().getSceneManager().getScene().addAll(loaded.entities);
+            engine.getSceneManager().getScene().addAll(loaded.entities);
             Thread.sleep(500);
             initialized = true;
         } catch (Exception e) {

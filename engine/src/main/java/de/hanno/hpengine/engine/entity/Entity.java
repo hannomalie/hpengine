@@ -1,19 +1,21 @@
 package de.hanno.hpengine.engine.entity;
 
-import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.transform.*;
+import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
-import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
-import de.hanno.hpengine.engine.event.UpdateChangedEvent;
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.model.Cluster;
+import de.hanno.hpengine.engine.model.Instance;
+import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.Update;
+import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.transform.*;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -44,8 +46,9 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	private List<Instance> instancesTemp = new ArrayList();
 	private Engine engine;
+    private int index = -1;
 
-	public Instance addInstance(Entity entity) {
+    public Instance addInstance(Entity entity) {
 		return addInstance(entity, new SimpleTransform());
 	}
 	public static Instance addInstance(Entity entity, Transform transform) {
@@ -84,7 +87,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public void addCluster(Cluster cluster) {
 		clusters.add(cluster);
 		recalculateInstances();
-		engine.getEventBus().post(new EntityAddedEvent());
 	}
 
 	private Update update = Update.DYNAMIC;
@@ -332,7 +334,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 				child.setUpdate(update);
 			}
 		}
-		engine.getEventBus().post(new UpdateChangedEvent(this));
 	}
 
 	@Override
@@ -341,7 +342,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Mesh> meshes = modelComponent.getMeshes();
 		for(Mesh mesh : meshes) {
-            int materialIndex = engine.getMaterialManager().indexOf(mesh.getMaterial());
+            int materialIndex = mesh.getMaterial().getMaterialIndex();
 			{
 				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0(), modelComponent.getMinMax(this, mesh));
 			}
@@ -350,7 +351,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
-                    int instanceMaterialIndex = engine.getMaterialManager().indexOf(instance.getMaterials().get(meshIndex));
+                    int instanceMaterialIndex = instance.getMaterials().get(meshIndex).getMaterialIndex();
                     putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
                 }
             }
@@ -397,8 +398,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(materialIndex);
 		buffer.putInt((int) getUpdate().getAsDouble());
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-		int entityBufferIndex = engine.getSceneManager().getScene().getEntityBufferIndex(modelComponent);
-		buffer.putInt(entityBufferIndex + meshIndex);
+		buffer.putInt(modelComponent.getEntityBufferIndex() + meshIndex);
 
 		buffer.putInt(engine.getSceneManager().getScene().getEntities().indexOf(this));
 		buffer.putInt(meshIndex);
@@ -446,12 +446,13 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		m33(buffer.getFloat());
 
 		setSelected(buffer.getInt() == 1);
-        Material material = engine.getMaterialManager().getMaterialsAsList().get(buffer.getInt());
+        Material material = null;// TODO: Reimplement in manager = engine.getMaterialManager().getMaterialsAsList().get(buffer.getInt());
 		System.out.println(material.getName());
 		System.out.println(material);
 		setUpdate(Update.values()[buffer.getInt()]);
-		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-		int entityBufferIndex = engine.getSceneManager().getScene().getEntityBufferIndex(modelComponent);
+//		TODO: SAME HERE
+//		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+//		int entityBufferIndex = engine.getModelComponentSystem().getEntityBufferIndex(modelComponent);
 		buffer.getInt();
 
 		System.out.println("Entity index " + buffer.getInt());
@@ -517,7 +518,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public void addExistingInstance(Instance instance) {
 		Cluster firstCluster = getOrCreateFirstCluster();
 		firstCluster.add(instance);
-		engine.getEventBus().post(new EntityAddedEvent());
 		recalculateInstances();
 	}
 
@@ -567,4 +567,12 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public List<AABB> getInstanceMinMaxWorlds() {
 		return getInstances().stream().map(it -> it.getMinMaxWorld()).collect(Collectors.toList());
 	}
+
+    public int getIndex() {
+	    return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
 }

@@ -4,10 +4,10 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 
 interface Registry {
-    fun <T : Component> get(componentClass: Class<T>): ComponentSystem<T>
-    fun getMangers(): List<ComponentSystem<*>>
+    fun <T : ComponentSystem<*>> get(systemClass: Class<T>): T
+    fun getSystems(): List<ComponentSystem<*>>
     fun update(deltaSeconds: Float)
-    fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE, clazz: Class<COMPONENT_TYPE>): SYSTEM_TYPE
+    fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
 }
 
 interface ComponentSystem<T : Component> {
@@ -19,24 +19,24 @@ interface ComponentSystem<T : Component> {
 
 class SimpleRegistry : Registry {
 
-    override fun getMangers(): List<ComponentSystem<*>> = managers.values.toList()
+    override fun getSystems(): List<ComponentSystem<*>> = systems.values.toList()
 
-    private val managers = mutableMapOf<Class<*>, ComponentSystem<*>>()
+    private val systems = mutableMapOf<Class<*>, ComponentSystem<*>>()
 
-    override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(system: T, clazz: Class<COMPONENT_TYPE>): T {
-        managers.put(clazz, system)
+    override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(system: T): T {
+        systems.put(system::class.java, system)
         return system
     }
 
-    override fun <T : Component> get(componentClass: Class<T>): ComponentSystem<T> {
-        if (!managers.contains(componentClass)) {
-            throw IllegalStateException("Requested manager of componentClass $componentClass, but no manager registered.")
+    override fun <T : ComponentSystem<*>> get(systemClass: Class<T>): T {
+        if (!systems.contains(systemClass)) {
+            throw IllegalStateException("Requested system of class $systemClass, but no system registered.")
         }
-        return (managers[componentClass] as ComponentSystem<T>?)!!
+        return (systems[systemClass] as T)
     }
 
     override fun update(deltaSeconds: Float) {
-        managers.values.forEach { it.update(deltaSeconds) }
+        systems.values.forEach { it.update(deltaSeconds) }
     }
 
 }

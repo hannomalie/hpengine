@@ -36,10 +36,7 @@ public class MaterialTableModel extends AbstractTableModel {
     }
 
     private Material getMaterial(int row) {
-        return engine.getMaterialManager().MATERIALS
-                .stream()
-                .sorted(Comparator.comparing(Material::getName))
-                .collect(Collectors.toList())
+        return engine.getMaterialManager().getMaterials()
                 .get(row);
     }
 

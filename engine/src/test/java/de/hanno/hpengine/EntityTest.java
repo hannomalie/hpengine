@@ -67,8 +67,8 @@ public class EntityTest extends TestWithEngine {
 
         Entity secondEntity = engine.getEntityManager().create("second");
         engine.getSceneManager().getScene().add(secondEntity);
-        Assert.assertEquals(0, engine.getSceneManager().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
-        Assert.assertEquals(4, engine.getSceneManager().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
+        Assert.assertEquals(0, parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex());
+        Assert.assertEquals(4, secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex());
 
 //        TODO: Reimplement this
 //        {
@@ -93,7 +93,7 @@ public class EntityTest extends TestWithEngine {
 //        }
 
 
-        engine.getRenderManager().getRenderState().getCurrentReadState().bufferEntities(engine.getSceneManager().getScene().getEntities());
+        engine.getRenderManager().getRenderState().getCurrentReadState().bufferEntities(engine.getModelComponentSystem().getComponents());
         FloatBuffer floatValues = engine.getRenderManager().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);

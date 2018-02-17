@@ -1,6 +1,5 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
@@ -8,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
+import de.hanno.hpengine.engine.model.ModelComponentSystem;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestSceneUtil {
-    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, LightManager lightManager, Scene scene) {
+    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, LightManager lightManager, Scene scene, ModelComponentSystem modelComponentSystem) {
         List<Entity> entities = new ArrayList<>();
         int entityCount = 3;
 
@@ -55,7 +55,7 @@ public class TestSceneUtil {
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
                             Entity entity = entityManager.create(position, "Entity_" + System.currentTimeMillis());
-                            entity.addComponent(new ModelComponent(entity, sphere));
+                            entity.addComponent(modelComponentSystem.create(entity, sphere));
                             PointLight pointLight = lightManager.getPointLight(10);
                             pointLight.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);

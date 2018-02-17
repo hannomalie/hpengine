@@ -1,33 +1,30 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
-import de.hanno.hpengine.engine.model.material.MaterialManager;
-import de.hanno.hpengine.engine.scene.AnimatedVertex;
-import de.hanno.hpengine.engine.transform.AABB;
-import de.hanno.hpengine.engine.transform.Transform;
-import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.scene.Scene;
-import de.hanno.hpengine.engine.scene.Vertex;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
+import de.hanno.hpengine.engine.transform.AABB;
+import de.hanno.hpengine.engine.transform.Transform;
+import org.joml.Matrix4f;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
-public class ModelComponent extends BaseComponent implements Serializable {
+public class ModelComponent extends BaseComponent implements Serializable, Bufferable {
     public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
     private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
@@ -63,6 +60,16 @@ public class ModelComponent extends BaseComponent implements Serializable {
     private VertexIndexOffsets vertexIndexOffsets;
     private int jointsOffset = 0;
     private Engine engine;
+    public transient int componentIndex = -1;
+    private int entityBufferIndex;
+
+    public int getEntityBufferIndex() {
+        return entityBufferIndex;
+    }
+
+    public void setEntityBufferIndex(int entityBufferIndex) {
+        this.entityBufferIndex = entityBufferIndex;
+    }
 
     public int getJointsOffset() {
         return jointsOffset;
@@ -320,5 +327,90 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public List<Material> getMaterials() {
         return getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
+    }
+
+    @Override
+    public void putToBuffer(ByteBuffer buffer) {
+
+        int meshIndex = 0;
+        List<Mesh> meshes = getMeshes();
+        for(Mesh mesh : meshes) {
+            int materialIndex = mesh.getMaterial().getMaterialIndex();
+            {
+                putValues(buffer, entity.getTransformation(), meshIndex, materialIndex, getAnimationFrame0(), getMinMax(entity, mesh));
+            }
+
+            for(Cluster cluster : entity.getClusters()) {
+                for(int i = 0; i < cluster.size(); i++) {
+                    Instance instance = cluster.get(i);
+                    Matrix4f instanceMatrix = instance.getTransformation();
+                    int instanceMaterialIndex = instance.getMaterials().get(meshIndex).getMaterialIndex();
+                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
+                }
+            }
+
+            // TODO: This has to be the outer loop i think?
+            if(entity.hasParent()) {
+                for(Instance instance : entity.getParent().getInstances()) {
+                    Matrix4f instanceMatrix = instance.getTransformation();
+                    putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex(), entity.getMinMaxWorld());
+                }
+            }
+            meshIndex++;
+        }
+    }
+
+    private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0, AABB minMaxWorld) {
+        buffer.putFloat(mm.m00());
+        buffer.putFloat(mm.m01());
+        buffer.putFloat(mm.m02());
+        buffer.putFloat(mm.m03());
+        buffer.putFloat(mm.m10());
+        buffer.putFloat(mm.m11());
+        buffer.putFloat(mm.m12());
+        buffer.putFloat(mm.m13());
+        buffer.putFloat(mm.m20());
+        buffer.putFloat(mm.m21());
+        buffer.putFloat(mm.m22());
+        buffer.putFloat(mm.m23());
+        buffer.putFloat(mm.m30());
+        buffer.putFloat(mm.m31());
+        buffer.putFloat(mm.m32());
+        buffer.putFloat(mm.m33());
+
+        buffer.putInt(entity.isSelected() ? 1 : 0);
+        buffer.putInt(materialIndex);
+        buffer.putInt((int) entity.getUpdate().getAsDouble());
+        buffer.putInt(entityBufferIndex + meshIndex);
+
+        buffer.putInt(entity.getIndex());
+        buffer.putInt(meshIndex);
+        buffer.putInt(getBaseVertex(meshIndex));
+        buffer.putInt(getBaseJointIndex());
+
+        buffer.putInt(animationFrame0);
+        buffer.putInt(0);
+        buffer.putInt(0);
+        buffer.putInt(0);
+
+        buffer.putInt(isInvertTexCoordY() ? 1 : 0);
+        buffer.putInt(0);
+        buffer.putInt(0);
+        buffer.putInt(0);
+
+        buffer.putFloat(minMaxWorld.getMin().x);
+        buffer.putFloat(minMaxWorld.getMin().y);
+        buffer.putFloat(minMaxWorld.getMin().z);
+        buffer.putFloat(1);
+
+        buffer.putFloat(minMaxWorld.getMax().x);
+        buffer.putFloat(minMaxWorld.getMax().y);
+        buffer.putFloat(minMaxWorld.getMax().z);
+        buffer.putFloat(1);
+    }
+
+    @Override
+    public int getBytesPerObject() {
+        return entity.getBytesPerInstance() * getMeshes().size() * entity.getInstanceCount();
     }
 }

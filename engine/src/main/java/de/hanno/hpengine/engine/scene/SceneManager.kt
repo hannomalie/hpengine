@@ -19,11 +19,12 @@ class SceneManager(override val engine: Engine): Manager {
         scene.update(engine, deltaSeconds)
     }
 
-    private fun onSetScene(value: Scene) {
+    private fun onSetScene(nextScene: Scene) {
         engine.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
         engine.renderManager.resetAllocations()
-        value.init(engine)
+        engine.modelComponentSystem.components.clear()
+        nextScene.init(engine)
         restoreWorldCamera()
         engine.renderManager.renderState.addCommand { renderState1 ->
             renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
