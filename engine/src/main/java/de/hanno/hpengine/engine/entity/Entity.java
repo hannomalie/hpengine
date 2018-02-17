@@ -452,7 +452,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		setUpdate(Update.values()[buffer.getInt()]);
 //		TODO: SAME HERE
 //		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-//		int entityBufferIndex = engine.getModelComponentSystem().getEntityBufferIndex(modelComponent);
+//		int entityBufferIndex = engine.getSceneManager().getScene().getModelComponentSystem().getEntityBufferIndex(modelComponent);
 		buffer.getInt();
 
 		System.out.println("Entity index " + buffer.getInt());

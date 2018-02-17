@@ -344,7 +344,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getLightManager(), engine.getSceneManager().getScene(), engine.getModelComponentSystem()));
+                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getScene().getLightManager(), engine.getSceneManager().getScene(), engine.getSceneManager().getScene().getModelComponentSystem()));
                         engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(engine.getSceneManager().getScene());
@@ -362,7 +362,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
-	    			Scene newScene = new Scene(engine);
+	    			Scene newScene = new Scene(engine, engine.getSceneManager());
 	    			engine.getSceneManager().setScene(newScene);
 	    			init(new EngineInitializedEvent());
         	});
@@ -422,7 +422,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().addPointLight(engine.getLightManager().getPointLight(50));
+                        engine.getSceneManager().getScene().addPointLight(engine.getScene().getLightManager().getPointLight(50));
                         return new Result(true);
                     }
                 });
@@ -451,7 +451,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        engine.getSceneManager().getScene().addTubeLight(engine.getLightManager().getTubeLight());
+                        engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight());
                         return new Result(true);
                     }
                 });
@@ -480,7 +480,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().getAreaLights().add(engine.getLightManager().getAreaLight(50, 50, 20));
+                        engine.getSceneManager().getScene().getAreaLights().add(engine.getScene().getLightManager().getAreaLight(50, 50, 20));
                         return new Result(true);
                     }
                 });
@@ -507,7 +507,7 @@ public class DebugFrame implements HostComponent {
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
 			try {
-				engine.getScriptManager().eval(console.getText());
+				engine.getSceneManager().getScene().getScriptManager().eval(console.getText());
 			} catch (ScriptException e1) {
 				showError("Line " + e1.getLineNumber() + " contains errors.");
 				e1.printStackTrace();
@@ -748,7 +748,7 @@ public class DebugFrame implements HostComponent {
                 }
             }
         });
-        AutoCompletion ac = new AutoCompletion(engine.getScriptManager().getProvider());
+        AutoCompletion ac = new AutoCompletion(engine.getScene().getScriptManager().getProvider());
         ac.install(console);
     }
 
@@ -991,7 +991,7 @@ public class DebugFrame implements HostComponent {
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
-                    engine.getLightManager().directionalLight.setScatterFactor((float)value);
+                    engine.getScene().getLightManager().directionalLight.setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getRainEffect())) {

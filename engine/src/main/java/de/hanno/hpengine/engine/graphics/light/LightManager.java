@@ -370,8 +370,6 @@ public class LightManager {
 	}
 
 	public void renderAreaLightShadowMaps(RenderState renderState) {
-        Scene scene = sceneManager.getScene();
-
 		GPUProfiler.start("Arealight shadowmaps");
         gpuContext.depthMask(true);
         gpuContext.enable(DEPTH_TEST);
@@ -407,9 +405,6 @@ public class LightManager {
 
 	private long pointlightShadowMapsRenderedInCycle;
 	public void renderPointLightShadowMaps(RenderState renderState) {
-        Scene scene = sceneManager.getScene();
-        if(scene == null) { return; }
-
         boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle;
         if(!needToRedraw) { return; }
 
@@ -422,7 +417,7 @@ public class LightManager {
         gpuContext.viewPort(0, 0, 2*128, 2*128);
         //TODO: WTF is with the 256...
 
-		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
+		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, sceneManager.getScene().getPointLights().size()); i++) {
 
 			PointLight light = sceneManager.getScene().getPointLights().get(i);
 			pointCubeShadowPassProgram.use();

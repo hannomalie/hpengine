@@ -87,7 +87,7 @@ public class DrawLinesExtension implements RenderExtension {
         }
         if(Config.getInstance().isDrawCameras()) {
 //            TODO: Use renderstate somehow?
-            List<Camera> components = engine.getCameraComponentSystem().getComponents();
+            List<Camera> components = engine.getScene().getCameraComponentSystem().getComponents();
             for(int i = 0; i < components.size(); i++) {
                 Camera camera = components.get(i);
                 if(camera.equals(engine.getSceneManager().getActiveCamera())) { continue; }

@@ -30,13 +30,13 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     public void init(Engine engine) {
         super.init(engine);
         this.engine = engine;
-        context = engine.getScriptManager().createContext();
-        engine.getScriptManager().evalInit(this);
+        context = engine.getScene().getScriptManager().createContext();
+        engine.getScene().getScriptManager().evalInit(this);
     }
 
     @Override
     public void update(Engine engine, float seconds) {
-        engine.getScriptManager().evalUpdate(this, seconds);
+        engine.getScene().getScriptManager().evalUpdate(this, seconds);
     }
 
     public void setInt(String name, int value) {
@@ -52,7 +52,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     public void eval(String script) {
-        engine.getScriptManager().eval(getContext(), script);
+        engine.getScene().getScriptManager().eval(getContext(), script);
     }
 
     @Override

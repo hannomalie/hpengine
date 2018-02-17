@@ -17,7 +17,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
+import de.hanno.hpengine.engine.graphics.light.LightManager
+import de.hanno.hpengine.engine.manager.Registry
+import de.hanno.hpengine.engine.manager.SimpleRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -28,22 +32,23 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
 import java.util.logging.Logger
 
-class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
+class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine, sceneManager: SceneManager = engine.sceneManager) : LifeCycle, Serializable {
     var name = ""
     init {
         this.name = name
     }
 
-    val systems = engine.systems
+    val systems: Registry = SimpleRegistry()
     val entityManager = EntityManager(engine, engine.eventBus)
     val environmentProbeManager = EnvironmentProbeManager(engine)
-
-    private val cameraComponentSystem = systems.get(CameraComponentSystem::class.java)
-    private val movableInputControllerManager = systems.get(InputComponentSystem::class.java)
-    private val modelComponentSystem = systems.get(ModelComponentSystem::class.java)
+    val cameraComponentSystem = systems.register(CameraComponentSystem(engine))
+    val inputComponentSystem = systems.register(InputComponentSystem(engine))
+    val modelComponentSystem = systems.register(ModelComponentSystem(engine))
+    val lightManager = LightManager(engine.eventBus, engine.materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
+    val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager) }
 
     val camera = entityManager.create()
-            .apply { addComponent(movableInputControllerManager.create(this)) }
+            .apply { addComponent(inputComponentSystem.create(this)) }
             .apply { addComponent(cameraComponentSystem.create(this)) }
             .apply { entityManager.add(this) }
 
@@ -202,21 +207,21 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun getPointLights(): List<PointLight> {
-        return engine.lightManager.pointLights
+        return engine.getScene().lightManager.pointLights
     }
 
     fun getTubeLights(): List<TubeLight> {
-        return engine.lightManager.tubeLights
+        return engine.getScene().lightManager.tubeLights
     }
-    fun getAreaLights(): List<AreaLight> = engine.lightManager.areaLights
+    fun getAreaLights(): List<AreaLight> = engine.getScene().lightManager.areaLights
 
     fun addPointLight(pointLight: PointLight) {
-        engine.lightManager.pointLights.add(pointLight)
+        engine.getScene().lightManager.pointLights.add(pointLight)
         engine.eventBus.post(LightChangedEvent())
     }
 
     fun addTubeLight(tubeLight: TubeLight) {
-        engine.lightManager.tubeLights.add(tubeLight)
+        engine.getScene().lightManager.tubeLights.add(tubeLight)
     }
 
     fun addRenderBatches(engine: Engine, camera: Camera, currentWriteState: RenderState) {
@@ -224,7 +229,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, engine.modelComponentSystem.components)
+        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentSystem.components)
 
     }
 
