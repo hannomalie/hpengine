@@ -42,7 +42,7 @@ public class MeshTest extends TestWithEngine {
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
         StaticModel sphere = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
-        Entity entity = engine.getEntityManager().create("sphere");
+        Entity entity = engine.getSceneManager().getScene().getEntityManager().create("sphere");
 
         entity.setTranslation(new Vector3f(0, 0, 0));
 

@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
@@ -34,8 +35,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     val systems = engine.systems
-    var entityManager = engine.entityManager
-
+    val entityManager = EntityManager(engine, engine.eventBus)
 
     private val cameraComponentSystem = systems.get(CameraComponentSystem::class.java)
     private val movableInputControllerManager = systems.get(InputComponentSystem::class.java)

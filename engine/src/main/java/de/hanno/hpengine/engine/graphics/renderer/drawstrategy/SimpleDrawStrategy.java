@@ -108,9 +108,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         gpuContext = this.engine.getGpuContext();
 
-
         StaticModel skyBox = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
-        skyBoxEntity = this.engine.getEntityManager().create();
+        skyBoxEntity = this.engine.getSceneManager().getScene().getEntityManager().create();
         skyBoxEntity.addComponent(new ModelComponent(skyBoxEntity, skyBox));
         skyBoxEntity.init(engine);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);

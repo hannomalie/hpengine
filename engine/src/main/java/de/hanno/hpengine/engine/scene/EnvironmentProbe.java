@@ -35,8 +35,7 @@ public class EnvironmentProbe extends Entity {
         this.environmentProbeManager = engine.getEnvironmentProbeManager();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		Entity entity = engine.getEntityManager().create();
-		engine.getEntityManager().add(entity);
+		Entity entity = new Entity();
 		sampler = new EnvironmentSampler(entity, engine, this, center, resolution, resolution, probeIndex);
         this.setWeight(weight);
     }

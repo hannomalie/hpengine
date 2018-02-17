@@ -32,7 +32,7 @@ public class JavaComponentTest extends TestWithEngine {
 
     @Test
     public void testJavaComponent() throws IOException, ClassNotFoundException {
-        Entity entity = engine.getEntityManager().create();
+        Entity entity = engine.getSceneManager().getScene().getEntityManager().create();
         entity.addComponent(new JavaComponent("public class Bla implements de.hanno.hpengine.engine.lifecycle.LifeCycle {" +
                 "public void update(float seconds) { System.out.println(\"blubb\"); }" +
                 "}"));

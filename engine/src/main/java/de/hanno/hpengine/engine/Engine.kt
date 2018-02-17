@@ -49,7 +49,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
     val systems: Registry = SimpleRegistry()
 
-    val entityManager = EntityManager(this, eventBus)
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
     val renderManager = RenderManager(this)
     val input = Input(this, gpuContext)
