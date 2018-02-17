@@ -4,33 +4,25 @@ import com.alee.laf.WebLookAndFeel
 import com.alee.utils.SwingUtils
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
-import de.hanno.hpengine.engine.camera.CameraComponentSystem
-import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.manager.Registry
-import de.hanno.hpengine.engine.manager.SimpleRegistry
-import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
-import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
-import de.hanno.hpengine.util.script.ScriptManager
 import net.engio.mbassy.listener.Handler
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
@@ -47,18 +39,19 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     private val drawCounter = AtomicInteger(-1)
     val commandQueue = CommandQueue()
 
-    val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
-    val renderManager = RenderManager(this)
+    val managers = SimpleManagerRegistry()
+
+    val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
+    val renderManager = managers.register(RenderManager(this))
     val input = Input(this, gpuContext)
-    val programManager = ProgramManager(this)
-    val textureManager = TextureManager(eventBus, programManager, gpuContext)
-    val materialManager = MaterialManager(this, textureManager)
+    val programManager = managers.register(ProgramManager(this))
+    val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
+    val materialManager = managers.register(MaterialManager(this, textureManager))
+
     val sceneManager = SceneManager(this)
 
     val renderer: Renderer = Renderer.create(this)
     val physicsManager = PhysicsManager(renderer)
-
-    @Volatile var isInitialized: Boolean = false
 
     val fpsCounter: FPSCounter
         get() = updateThread.fpsCounter
@@ -66,10 +59,8 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     init {
         eventBus.register(this)
         gpuContext.registerPerFrameCommand(this)
-
         renderer.registerPipelines(renderManager.renderState)
         startSimulation()
-        isInitialized = true
         drawCounter.set(0)
         eventBus.post(EngineInitializedEvent())
     }

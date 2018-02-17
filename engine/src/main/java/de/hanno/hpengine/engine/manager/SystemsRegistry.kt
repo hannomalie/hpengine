@@ -3,7 +3,30 @@ package de.hanno.hpengine.engine.manager
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 
-interface Registry {
+interface ManagerRegistry {
+    fun getManagers(): Collection<Manager>
+    fun <T : Manager> get(managerClass: Class<T>): T
+    fun update(deltaSeconds: Float) {
+        getManagers().forEach{ it.update(deltaSeconds) }
+    }
+    fun <T : Manager> register(manager: T): T
+    fun clearManager() {
+        getManagers().forEach { it.clear() }
+    }
+}
+
+class SimpleManagerRegistry: ManagerRegistry {
+    private val managers = mutableMapOf<Class<*>, Manager>()
+    override fun getManagers() = managers.values as List<Manager>
+    override fun <T : Manager> register(manager: T): T {
+        managers.put(manager::class.java, manager)
+        return manager
+    }
+    override fun <T : Manager> get(managerClass: Class<T>) = managerClass.cast(managers.get(managerClass))
+
+}
+
+interface SystemsRegistry {
     fun <T : ComponentSystem<*>> get(systemClass: Class<T>): T
     fun getSystems(): List<ComponentSystem<*>>
     fun update(deltaSeconds: Float)
@@ -25,7 +48,7 @@ interface ComponentSystem<T : Component> {
 
 }
 
-class SimpleRegistry : Registry {
+class SimpleSystemsRegistry : SystemsRegistry {
 
     override fun getSystems(): List<ComponentSystem<*>> = systems.values.toList()
 

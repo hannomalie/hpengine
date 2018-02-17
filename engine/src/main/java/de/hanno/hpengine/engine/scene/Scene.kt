@@ -18,8 +18,8 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.graphics.light.LightManager
-import de.hanno.hpengine.engine.manager.Registry
-import de.hanno.hpengine.engine.manager.SimpleRegistry
+import de.hanno.hpengine.engine.manager.SystemsRegistry
+import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
@@ -38,7 +38,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         this.name = name
     }
 
-    val systems: Registry = SimpleRegistry()
+    val systems: SystemsRegistry = SimpleSystemsRegistry()
     val entityManager = EntityManager(engine, engine.eventBus)
     val environmentProbeManager = EnvironmentProbeManager(engine)
     val cameraComponentSystem = systems.register(CameraComponentSystem(engine))

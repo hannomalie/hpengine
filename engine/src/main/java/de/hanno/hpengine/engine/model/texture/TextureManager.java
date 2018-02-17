@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
@@ -50,7 +51,7 @@ import static de.hanno.hpengine.engine.model.texture.Texture.*;
  * @author Kevin Glass
  * @author Brian Matzon
  */
-public class TextureManager {
+public class TextureManager implements Manager {
     private static final Logger LOGGER = Logger.getLogger(TextureManager.class.getName());
     private static final int TEXTURE_FACTORY_THREAD_COUNT = 1;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
@@ -877,5 +878,15 @@ public class TextureManager {
 
     public void postTextureChangedEvent() {
         eventBus.post(new TexturesChangedEvent());
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    @Override
+    public void update(float deltaSeconds) {
+
     }
 }

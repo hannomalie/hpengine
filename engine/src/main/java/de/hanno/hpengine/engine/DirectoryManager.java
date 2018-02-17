@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.model.texture.Texture;
@@ -9,7 +10,7 @@ import de.hanno.hpengine.engine.model.texture.Texture;
 import java.io.File;
 import java.util.ArrayList;
 
-public class DirectoryManager {
+public class DirectoryManager implements Manager {
 
     public static final String WORKDIR_NAME = "hp";
     public static final String ASSETDIR_NAME = "hp/assets";
@@ -54,5 +55,15 @@ public class DirectoryManager {
             return folder.mkdir();
         }
         return true;
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    @Override
+    public void update(float deltaSeconds) {
+
     }
 }

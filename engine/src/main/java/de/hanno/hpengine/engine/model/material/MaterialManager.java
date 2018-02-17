@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.MaterialAddedEvent;
 import de.hanno.hpengine.engine.event.bus.EventBus;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.material.Material.MAP;
 import de.hanno.hpengine.engine.model.texture.TextureManager;
 import org.apache.commons.io.FilenameUtils;
@@ -17,20 +18,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.model.material.Material.getDirectory;
 import static de.hanno.hpengine.engine.model.material.Material.write;
 
-public class MaterialManager {
+public class MaterialManager implements Manager {
     private static final Logger LOGGER = Logger.getLogger(MaterialManager.class.getName());
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
 	private final Material skyboxMaterial;
 
-    public Map<String, Material> MATERIALS = new ConcurrentSkipListMap<>();
+    public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
 
 	private Material defaultMaterial;
 	private TextureManager textureManager;
@@ -194,5 +194,15 @@ public class MaterialManager {
 
 	public TextureManager getTextureManager() {
 		return textureManager;
+	}
+
+	@Override
+	public void clear() {
+
+	}
+
+	@Override
+	public void update(float deltaSeconds) {
+
 	}
 }
