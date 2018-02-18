@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
-import de.hanno.hpengine.engine.instacing.ClustersComponent
+import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import java.util.concurrent.CopyOnWriteArrayList
@@ -82,10 +82,10 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 }
 
 val Entity.instances: List<Instance>
-    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: kotlin.collections.emptyList()
+    get() = this.getComponent(ClustersComponent::class.java, ClustersComponent.clustersComponentType)?.getInstances() ?: kotlin.collections.emptyList()
 
 val Entity.clusters: List<Cluster>
-    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: kotlin.collections.emptyList()
+    get() = this.getComponent(ClustersComponent::class.java, ClustersComponent.clustersComponentType)?.getClusters() ?: kotlin.collections.emptyList()
 
 val Entity.instanceCount: Int
-    get() = this.getComponent(ClustersComponent::class.java)?.getInstanceCount() ?: 1
+    get() = this.getComponent(ClustersComponent::class.java, ClustersComponent.clustersComponentType)?.getInstanceCount() ?: 1

@@ -17,8 +17,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
+import de.hanno.hpengine.engine.entity.SimpleEntitySystem
+import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.graphics.light.LightManager
-import de.hanno.hpengine.engine.instacing.ClustersComponentSystem
+import de.hanno.hpengine.engine.instancing.ClustersComponent
+import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.SystemsRegistry
 import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
@@ -49,6 +52,12 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     val modelComponentSystem = systems.register(ModelComponentSystem(engine))
     val lightManager = LightManager(engine.eventBus, engine.materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
     val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager) }
+
+    val entitySystems = SimpleEntitySystemRegistry()
+    val bla = entitySystems.register(object: SimpleEntitySystem(engine, this, listOf(ModelComponent::class.java, ClustersComponent::class.java)) {
+        override fun update(deltaSeconds: Float) {
+        }
+    })
 
     val camera = entityManager.create()
             .apply { addComponent(inputComponentSystem.create(this)) }
@@ -126,7 +135,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     private fun calculateMinMax(entities: List<Entity>) {
-        if (entities.size == 0) {
+        if (entities.isEmpty()) {
             min.set(-1f, -1f, -1f, -1f)
             max.set(1f, 1f, 1f, 1f)
             return
@@ -158,13 +167,14 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun add(entity: Entity) = addAll(listOf(entity))
 
-    override fun update(engine: Engine, seconds: Float) {
-        systems.update(seconds)
+    override fun update(engine: Engine, deltaSeconds: Float) {
+        systems.update(deltaSeconds)
+        entitySystems.update(deltaSeconds)
         val entities = entityManager.entities
 
         for (i in entities.indices) {
             try {
-                entities[i].update(engine, seconds)
+                entities[i].update(engine, deltaSeconds)
             } catch (e: Exception) {
                 LOGGER.warning(e.message)
             }

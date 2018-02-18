@@ -20,7 +20,7 @@ import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.instacing.ClustersComponent;
+import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Update;
@@ -231,12 +231,6 @@ public class EntityView extends WebPanel {
             engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         });
         webComponentPanel.addElement(updateComboBox);
-
-        WebButton saveEntityButton = new WebButton("Save Entity");
-        saveEntityButton.addActionListener(e -> {
-            Entity.write(entity, nameField.getText());
-        });
-        webComponentPanel.addElement(saveEntityButton);
 
         Material material = engine.getMaterialManager().getDefaultMaterial();
         if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {

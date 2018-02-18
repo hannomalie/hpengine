@@ -185,7 +185,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         GPUProfiler.start("Visibility detection")
         val occlusionCullingPhase = if (phase.coarsePhase == Pipeline.CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
         with(occlusionCullingPhase) {
-            commandOrganization.commands.map { it.primCount }.reduce({ a, b -> a + b })
+//            commandOrganization.commands.map { it.primCount }.reduce({ a, b -> a + b })
             val invocationsPerCommand : Int = commandOrganization.commands.map { it.primCount }.max()!!//4096
             use()
             with(commandOrganization) {

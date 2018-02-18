@@ -13,8 +13,12 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public class Material implements Serializable, Bufferable {
@@ -142,8 +146,16 @@ public class Material implements Serializable, Bufferable {
 //        GPUProfiler.end();
 	}
 
+	List<Texture> tempTextures = new ArrayList<>(100);
 	public void setTexturesUsed() {
-		materialInfo.maps.getTextures().forEach((key, value) -> value.setUsedNow());
+		if(tempTextures == null) {
+			tempTextures = new ArrayList<>(100); // TODO: Remove when materials are not serialized anymore
+		}
+		tempTextures.clear();
+		tempTextures.addAll(materialInfo.maps.getTextures().values());
+		for(int i = 0; i < tempTextures.size(); i++) {
+			tempTextures.get(i).setUsedNow();
+		}
     }
 
 	public String getName() {

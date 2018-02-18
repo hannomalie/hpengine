@@ -6,32 +6,20 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
-import de.hanno.hpengine.engine.event.EntityAddedEvent;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.engine.instacing.ClustersComponent;
+import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
-import de.hanno.hpengine.engine.model.Instance;
-import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Update;
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.transform.*;
-import org.apache.commons.io.FilenameUtils;
-import org.joml.Matrix4f;
+import de.hanno.hpengine.engine.transform.AABB;
+import de.hanno.hpengine.engine.transform.SimpleSpatial;
+import de.hanno.hpengine.engine.transform.Spatial;
+import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-public class Entity extends Transform<Entity> implements LifeCycle, Serializable {
+public class Entity extends Transform<Entity> implements LifeCycle {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 	public final SimpleSpatial spatial = new SimpleSpatial() {
@@ -45,7 +33,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 			}
 		}
 	};
-	private Engine engine;
     private int index = -1;
 
 	private Update update = Update.DYNAMIC;
@@ -75,8 +62,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		for(Component component : components.values()) {
 			component.init(engine);
 		}
-		this.engine = engine;
-	}
+    }
 
 	public Entity addComponent(Component component) {
 		return addComponent(component, component.getIdentifier());
@@ -200,30 +186,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return name;
 	}
 
-	public static boolean write(Entity entity, String resourceName) {
-		String fileName = FilenameUtils.getBaseName(resourceName);
-		FileOutputStream fos = null;
-		ObjectOutputStream out = null;
-
-		try {
-			fos = new FileOutputStream(getDirectory() + fileName + ".hpentity");
-			out = new ObjectOutputStream(fos);
-			out.writeObject(entity);
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				out.close();
-				fos.close();
-				return true;
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return false;
-	}
-
 	public static String getDirectory() {
 		return DirectoryManager.WORKDIR_NAME + "/assets/entities/";
 	}
@@ -296,7 +258,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	private List<AABB> emptyList = new ArrayList<>();
 	public List<AABB> getInstanceMinMaxWorlds() {
-		ClustersComponent clusters = getComponent(ClustersComponent.class);
+		ClustersComponent clusters = getComponent(ClustersComponent.class, ClustersComponent.Companion.getClustersComponentType());
 		if(clusters == null) { return emptyList; }
 		return clusters.getInstancesMinMaxWorlds();
 	}

@@ -45,7 +45,6 @@ interface ComponentSystem<T : Component> {
     fun onSceneSet() {
         clear()
     }
-
 }
 
 class SimpleSystemsRegistry : SystemsRegistry {

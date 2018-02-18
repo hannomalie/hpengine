@@ -1,9 +1,11 @@
-package de.hanno.hpengine.engine.instacing
+package de.hanno.hpengine.engine.instancing
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.event.EntityAddedEvent
+import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
@@ -12,7 +14,7 @@ import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.*
 import java.util.*
 
-class ClustersComponent(private val entity: Entity): Component {
+class ClustersComponent(private val eventBus: EventBus, private val entity: Entity): Component {
 
     private val instances = mutableListOf<Instance>()
     private val clusters = mutableListOf<Cluster>()
@@ -51,6 +53,7 @@ class ClustersComponent(private val entity: Entity): Component {
             spatial.instance = instance
             addExistingInstance(instance)
         }
+        eventBus.post(EntityAddedEvent())
     }
 
     private fun recalculateInstances() {
@@ -93,6 +96,7 @@ class ClustersComponent(private val entity: Entity): Component {
         }
         firstCluster.addAll(collect)
         recalculateInstances()
+        eventBus.post(EntityAddedEvent())
     }
 
     fun addInstances(instances: List<Instance>) {
@@ -104,6 +108,7 @@ class ClustersComponent(private val entity: Entity): Component {
         val firstCluster = getOrCreateFirstCluster()
         firstCluster.addAll(instances)
         recalculateInstances()
+        eventBus.post(EntityAddedEvent())
     }
 
     private fun getOrCreateFirstCluster(): Cluster {
@@ -125,6 +130,10 @@ class ClustersComponent(private val entity: Entity): Component {
         clusters.add(cluster)
         recalculateInstances()
     }
+
+    companion object {
+        val clustersComponentType = ClustersComponent::class.java.simpleName
+    }
 }
 
 class ClustersComponentSystem(val engine: Engine) : ComponentSystem<ClustersComponent> {
@@ -138,7 +147,9 @@ class ClustersComponentSystem(val engine: Engine) : ComponentSystem<ClustersComp
         }
     }
 
-    override fun create(entity: Entity) = ClustersComponent(entity)
+    override fun create(entity: Entity): ClustersComponent {
+        return ClustersComponent(engine.eventBus, entity).also { addComponent(it) }
+    }
 
     override fun addComponent(component: ClustersComponent) {
         components.add(component)

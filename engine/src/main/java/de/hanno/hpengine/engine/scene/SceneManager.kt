@@ -37,6 +37,7 @@ class SceneManager(val engine: Engine): Manager {
             renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
             renderState1.setVertexIndexBufferAnimated(engine.renderManager.vertexIndexBufferAnimated)
         }
+        nextScene.entitySystems.gatherEntities()
     }
 
 

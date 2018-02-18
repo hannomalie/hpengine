@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
+import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
@@ -73,7 +74,7 @@ public class InitInstancedAnimated implements LifeCycle {
                         }
                     }
                 }
-                current.addCluster(cluster);
+                current.getComponent(ClustersComponent.class, ClustersComponent.Companion.getClustersComponentType()).addCluster(cluster);
                 System.out.println("Added " + cluster.size());
             }
         }
