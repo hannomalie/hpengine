@@ -93,8 +93,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
     private List<Cluster> clusters = new CopyOnWriteArrayList<>();
 
-	protected boolean initialized = false;
-
 	protected String name = "Entity_" + System.currentTimeMillis();
 
 	private boolean selected = false;
@@ -120,10 +118,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		for(Component component : components.values()) {
 			component.init(engine);
 		}
-		for(Entity child: getChildren()) {
-        }
 		this.engine = engine;
-		initialized = true;
 	}
 
 	public Entity addComponent(Component component) {
@@ -181,11 +176,10 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	@Override
 	public void update(Engine engine, float seconds) {
-		recalculateIfDirty();
-		for (Component c : components.values()) {
-            if(!c.isInitialized()) { continue; }
-			c.update(engine, seconds);
+		if(hasParent()) {
+			return;
 		}
+		recalculateIfDirty();
 		for(int i = 0; i < clusters.size(); i++) {
 			Cluster cluster = clusters.get(i);
 			cluster.update(engine, seconds);
@@ -284,11 +278,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	@Override
 	public int hashCode() {
 		return getName().hashCode();
-	}
-
-	@Override
-	public boolean isInitialized() {
-		return initialized;
 	}
 
 	@Override

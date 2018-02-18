@@ -78,11 +78,6 @@ public class Octree implements LifeCycle, Serializable, EntityContainer {
         engine.getEventBus().register(this);
 	}
 
-	@Override
-	public boolean isInitialized() {
-		return true;
-	}
-
 	public List<Entity> getEntitiesForNode(Node node) { return Collections.unmodifiableList(entityNodeMappings.entrySet().stream().filter(pair -> pair.getValue().equals(node))
 																					.map(pair -> pair.getKey()).collect(Collectors.toList()));}
 	

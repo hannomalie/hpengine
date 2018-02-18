@@ -9,9 +9,6 @@ import java.util.*
 
 class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), LifeCycle, Spatial by spatial {
 
-    //    TODO: Bounds for cluster
-    override fun isInitialized() = true
-
     override fun update(engine: Engine, seconds: Float) {
         for (i in 0..size - 1) {
             get(i).update(engine, seconds)

@@ -27,11 +27,6 @@ public class MockedRendererEngineTest {
     public static class MockRenderer implements Renderer {
 
         @Override
-        public boolean isInitialized() {
-            return false;
-        }
-
-        @Override
         public void draw(DrawResult result, RenderState renderState) {
 
         }

@@ -119,7 +119,6 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     public void init(Engine engine) {
         super.init(engine);
         this.engine = engine;
-        initialized = true;
     }
 
     public VertexIndexOffsets putToBuffer(GpuContext gpuContext, VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {

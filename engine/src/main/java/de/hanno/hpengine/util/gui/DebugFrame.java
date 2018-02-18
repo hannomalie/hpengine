@@ -362,7 +362,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
-	    			Scene newScene = new Scene(engine, engine.getSceneManager());
+	    			Scene newScene = new Scene(System.currentTimeMillis() + "", engine, engine.getSceneManager());
 	    			engine.getSceneManager().setScene(newScene);
 	    			init(new EngineInitializedEvent());
         	});

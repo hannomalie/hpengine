@@ -12,10 +12,6 @@ abstract class InputControllerComponent(entity: Entity) : BaseComponent(), Seria
         return "InputControllerComponent"
     }
 
-    override fun isInitialized(): Boolean {
-        return true
-    }
-
     companion object {
 
         private const val serialVersionUID = 1L

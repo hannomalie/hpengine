@@ -206,7 +206,6 @@ public class DeferredRenderer implements Renderer {
 		return (getDeltaInMS() / 1000d);
 	}
 
-	@Override
 	public boolean isInitialized() {
 		return initialized;
 	}

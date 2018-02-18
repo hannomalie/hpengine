@@ -33,8 +33,6 @@ public class PhysicsComponent extends BaseComponent {
     public void init(Engine engine) {
         initialTransform = Util.toBullet(owner);
         actuallyCreatePhysicsObject(engine);
-
-        initialized = true;
     }
 
     private void actuallyCreatePhysicsObject(Engine engine) {
@@ -72,10 +70,8 @@ public class PhysicsComponent extends BaseComponent {
     }
 
     public void reset(Engine engine) {
-        if(isInitialized()) {
-            engine.getPhysicsManager().unregisterRigidBody(rigidBody);
-            actuallyCreatePhysicsObject(engine);
-        }
+        engine.getPhysicsManager().unregisterRigidBody(rigidBody);
+        actuallyCreatePhysicsObject(engine);
     }
 
 	@Override
@@ -92,9 +88,6 @@ public class PhysicsComponent extends BaseComponent {
     }
 
     private boolean isStatic() {
-        if(isInitialized()) {
-            return rigidBody.getInvMass() == Float.POSITIVE_INFINITY;
-        }
-        return true;
+        return rigidBody.getInvMass() == Float.POSITIVE_INFINITY;
     }
 }

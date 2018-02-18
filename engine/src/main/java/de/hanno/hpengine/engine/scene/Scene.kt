@@ -76,9 +76,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     private val max = Vector4f()
     val minMax = arrayOf(min, max)
 
-    val modelComponents: List<ModelComponent>
-        get() = modelComponentSystem.components
-
     private val tempDistVector = Vector3f()
 
     override fun init(engine: Engine) {
@@ -201,11 +198,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         return if (candidates.isNotEmpty()) Optional.of(candidates[0]) else Optional.ofNullable(null)
     }
 
-    override fun isInitialized() = true
-
-    fun setInitialized(initialized: Boolean) {
-    }
-
     fun getPointLights(): List<PointLight> {
         return engine.getScene().lightManager.pointLights
     }
@@ -272,10 +264,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun entityMovedInCycle(): Long {
         return entityMovedInCycle
-    }
-
-    fun directionalLightMovedInCycle(): Long {
-        return directionalLightMovedInCycle
     }
 
     fun pointLightMovedInCycle(): Long {

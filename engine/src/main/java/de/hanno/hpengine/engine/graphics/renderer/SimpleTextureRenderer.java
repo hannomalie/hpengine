@@ -176,11 +176,6 @@ public class SimpleTextureRenderer implements Renderer {
 		return (getDeltainMS() / 1000d);
 	}
 
-	@Override
-	public boolean isInitialized() {
-		return initialized;
-	}
-
 	public int drawLines(Program program) {
 		return 0;
 	}

@@ -35,8 +35,6 @@ open class Camera: Component {
         init(projectionMatrix, near, far, fov, ratio)
     }
 
-    override fun isInitialized() = true
-
     override fun getIdentifier() = this.javaClass.simpleName
 
     private lateinit var entity: Entity

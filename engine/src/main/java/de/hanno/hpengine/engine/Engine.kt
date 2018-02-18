@@ -201,7 +201,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
             try {
                 val initScript = JavaComponent(String(Files.readAllBytes(engine.directoryManager.gameInitScript.toPath())))
                 initScript.init(engine)
-                println("initScript = " + initScript.isInitialized)
+                println("InitScript initialized")
             } catch (e: IOException) {
                 e.printStackTrace()
             }

@@ -77,7 +77,6 @@ public class EntityView extends WebPanel {
                 }
             });
             physicsPanel.addElement(removePhysicsComponent);
-            if(entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).isInitialized()) {
                 javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
                 physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).getRigidBody().getLinearVelocity(tempVec3))) {
                     @Override
@@ -96,7 +95,6 @@ public class EntityView extends WebPanel {
                     entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).reset(engine);
                 });
                 physicsPanel.addElement(resetTransformButton);
-            }
         } else {
             WebButton addBallPhysicsComponentButton = new WebButton("Add Ball PhysicsComponent");
             addBallPhysicsComponentButton.addActionListener(e -> {

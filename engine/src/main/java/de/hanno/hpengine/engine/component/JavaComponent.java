@@ -59,12 +59,10 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @Override
     public void init(Engine engine) {
-        if(!isInitialized()) {
-            observerJavaFile = new FileAlterationObserver(javaCodeSource.isFileBased() ? javaCodeSource.getFile().getParent() : JavaComponent.getDirectory());
-            addFileListeners();
-            initWrappingComponent();
-            super.init(engine);
-        }
+        observerJavaFile = new FileAlterationObserver(javaCodeSource.isFileBased() ? javaCodeSource.getFile().getParent() : JavaComponent.getDirectory());
+        addFileListeners();
+        initWrappingComponent();
+        super.init(engine);
         if(isLifeCycle) {
             ((LifeCycle) instance).init(engine);
         }
@@ -154,10 +152,8 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @Override
     public void load() {
-        initialized = false;
         javaCodeSource.load();
         initWrappingComponent();
-        initialized = true;
     }
 
     @Override

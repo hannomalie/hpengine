@@ -40,10 +40,6 @@ open class Instance
         return children
     }
 
-    override fun isInitialized(): Boolean {
-        return true
-    }
-
     override fun update(engine: Engine, seconds: Float) {
         animationController.update(engine, seconds)
     }
