@@ -29,14 +29,16 @@ public class MaterialManager implements Manager {
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
 	private final Material skyboxMaterial;
+	private final EventBus eventBus;
 
-    public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
+	public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
 
 	private Material defaultMaterial;
 	private TextureManager textureManager;
 
 	public MaterialManager(Engine engine, TextureManager textureManager) {
 		this.textureManager = textureManager;
+		this.eventBus = engine.getEventBus();
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.x = (1.0f);
         defaultMaterial = getMaterial(defaultTemp, false);
@@ -106,7 +108,6 @@ public class MaterialManager implements Manager {
 
 			write(newMaterial, materialInfo.name);
 
-			EventBus.getInstance().post(new MaterialAddedEvent());
 			return newMaterial;
 		};
 		addMaterial(materialInfo.name, supplier.get());
@@ -142,7 +143,6 @@ public class MaterialManager implements Manager {
 			} else {
 				material.setMaterialIndex(MATERIALS.size());
 			}
-			EventBus.getInstance().post(new MaterialAddedEvent());
 			return material;
 		};
 		addMaterial(materialName, supplier.get());
@@ -151,6 +151,7 @@ public class MaterialManager implements Manager {
 
 	private void addMaterial(String key, Material material) {
 	    MATERIALS.putIfAbsent(key, material);
+		eventBus.post(new MaterialAddedEvent());
     }
     public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {

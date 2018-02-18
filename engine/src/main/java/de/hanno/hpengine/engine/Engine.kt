@@ -91,7 +91,8 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     private fun updateRenderState() {
         val scene = sceneManager.scene
         if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
-            renderManager.renderState.requestSingletonAction(0)
+            val bufferEntitiesActionIndex = 0
+            renderManager.renderState.requestSingletonAction(bufferEntitiesActionIndex)
         }
 
         if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {

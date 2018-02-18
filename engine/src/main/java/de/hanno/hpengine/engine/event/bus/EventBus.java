@@ -7,12 +7,4 @@ public interface EventBus {
     void register(Object object);
 
     void unregister(Object object);
-
-    static EventBus getInstance() {
-        return SingletonHelper.eventBus;
-    }
-
-    class SingletonHelper {
-        private static final EventBus eventBus = new MBassadorEventBus();
-    }
 }
