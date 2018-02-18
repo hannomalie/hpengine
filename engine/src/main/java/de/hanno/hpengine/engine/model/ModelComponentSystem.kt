@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
+import de.hanno.hpengine.engine.instacing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import java.util.concurrent.CopyOnWriteArrayList
@@ -16,13 +17,15 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     @Transient
     var updateCache = true
 
-    override val components = mutableListOf<ModelComponent>()
+    private val components = mutableListOf<ModelComponent>()
+
+    override fun getComponents(): List<ModelComponent> = components
 
     override fun create(entity: Entity) = ModelComponent(entity)
 
     override fun update(deltaSeconds: Float) {
         cacheEntityIndices()
-        for (component in components) {
+        for (component in getComponents()) {
             component.update(engine, deltaSeconds)
         }
     }
@@ -35,7 +38,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     override fun addComponent(component: ModelComponent) {
         components.add(component)
-        component.componentIndex = components.indexOf(component)
+        component.componentIndex = getComponents().indexOf(component)
     }
 
     private fun cacheEntityIndices() {
@@ -43,7 +46,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
             updateCache = false
             entityIndices.clear()
             var index = 0
-            for (current in components) {
+            for (current in getComponents()) {
                 entityIndices.add(index)
                 current.entityBufferIndex = index
                 index += current.entity.instanceCount * current.meshes.size
@@ -57,7 +60,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
             e.getComponents().values.forEach { c ->
                 if(c is ModelComponent) {
 
-                    if (c.model.isStatic()) {
+                    if (c.model.isStatic) {
                         val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
                         c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTCHANNELS)
                     } else {
@@ -75,4 +78,14 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         }
     }
     override fun clear() = components.clear()
+
 }
+
+val Entity.instances: List<Instance>
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: kotlin.collections.emptyList()
+
+val Entity.clusters: List<Cluster>
+    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: kotlin.collections.emptyList()
+
+val Entity.instanceCount: Int
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstanceCount() ?: 1

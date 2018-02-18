@@ -100,4 +100,9 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		buffer.putDouble(color.z);
 		buffer.putDouble(-1);
 	}
+
+	@Override
+	public int getBytesPerObject() {
+		return Double.BYTES * 8;
+	}
 }

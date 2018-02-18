@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -131,7 +132,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             commandBuffers[phase]!!.sizeInBytes = commandBuffer.sizeInBytes
             val instanceCount = commands.map { it.primCount }.reduce({ a, b -> a + b })
             visibilityBuffers[phase]!!.sizeInBytes = instanceCount * java.lang.Integer.BYTES
-            commandOrganization.entitiesBuffersCompacted[phase]!!.sizeInBytes = instanceCount * Entity.getBytesPerInstance()
+            commandOrganization.entitiesBuffersCompacted[phase]!!.sizeInBytes = instanceCount * ModelComponent.getBytesPerInstance()
             val entitiesCountersToUse = entitiesCounters[phase]!!
             entitiesCountersToUse.sizeInBytes = commands.size * java.lang.Integer.BYTES
             with(appendProgram) {

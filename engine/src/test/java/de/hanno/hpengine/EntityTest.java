@@ -3,6 +3,7 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.instacing.ClustersComponent;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -61,7 +62,7 @@ public class EntityTest extends TestWithEngine {
 
         Transform instanceTransform = new SimpleTransform();
         instanceTransform.setTranslation(new Vector3f(15,15,15));
-        parentEntity.addInstance(instanceTransform);
+        parentEntity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(parentEntity)).addInstance(instanceTransform);
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
 

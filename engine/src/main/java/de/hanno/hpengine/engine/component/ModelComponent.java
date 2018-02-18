@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.instacing.ClustersComponent;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
@@ -22,6 +23,10 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getClusters;
+import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstanceCount;
+import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstances;
 
 
 public class ModelComponent extends BaseComponent implements Serializable, Bufferable {
@@ -339,7 +344,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                 putValues(buffer, entity.getTransformation(), meshIndex, materialIndex, getAnimationFrame0(), getMinMax(entity, mesh));
             }
 
-            for(Cluster cluster : entity.getClusters()) {
+            for(Cluster cluster : getClusters(entity)) {
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
@@ -350,7 +355,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
 
             // TODO: This has to be the outer loop i think?
             if(entity.hasParent()) {
-                for(Instance instance : entity.getParent().getInstances()) {
+                for(Instance instance : getInstances(entity)) {
                     Matrix4f instanceMatrix = instance.getTransformation();
                     putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex(), entity.getMinMaxWorld());
                 }
@@ -410,6 +415,10 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
 
     @Override
     public int getBytesPerObject() {
-        return entity.getBytesPerInstance() * getMeshes().size() * entity.getInstanceCount();
+        return getBytesPerInstance() * getMeshes().size() * getInstanceCount(entity);
+    }
+
+    public static int getBytesPerInstance() {
+        return 16 * Float.BYTES + 16 * Integer.BYTES + 8 * Float.BYTES;
     }
 }

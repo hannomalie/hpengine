@@ -18,9 +18,11 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.graphics.light.LightManager
+import de.hanno.hpengine.engine.instacing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.SystemsRegistry
 import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
@@ -41,6 +43,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     val systems: SystemsRegistry = SimpleSystemsRegistry()
     val entityManager = EntityManager(engine, engine.eventBus)
     val environmentProbeManager = EnvironmentProbeManager(engine)
+    val clusterComponentSystem = systems.register(ClustersComponentSystem(engine))
     val cameraComponentSystem = systems.register(CameraComponentSystem(engine))
     val inputComponentSystem = systems.register(InputComponentSystem(engine))
     val modelComponentSystem = systems.register(ModelComponentSystem(engine))
@@ -221,7 +224,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentSystem.components)
+        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentSystem.getComponents())
 
     }
 

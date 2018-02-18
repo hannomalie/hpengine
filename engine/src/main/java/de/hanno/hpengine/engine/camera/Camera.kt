@@ -233,8 +233,9 @@ open class Camera: Component {
 }
 
 class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {
-    override fun update(deltaSeconds: Float) { components.forEach { it.update(engine, deltaSeconds) } }
-    override val components = mutableListOf<Camera>()
+    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(engine, deltaSeconds) } }
+    private val components = mutableListOf<Camera>()
+    override fun getComponents(): List<Camera> = components
 
     override fun create(entity: Entity) = Camera(entity).also { components.add(it); }
     fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean) = Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { components.add(it); }

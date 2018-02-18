@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
@@ -34,7 +35,7 @@ public class CommandOrganization {
     Map<CullingPhase, IndexBuffer> commandOffsets = new HashMap<>();
     Map<CullingPhase, IndexBuffer> currentCompactedPointers = new HashMap<>();
     Map<CullingPhase, IndexBuffer> entityOffsetBuffersCulled = new HashMap<>();
-    Map<CullingPhase, GPUBuffer<Entity>> entitiesBuffersCompacted = new HashMap<>();
+    Map<CullingPhase, GPUBuffer<ModelComponent>> entitiesBuffersCompacted = new HashMap<>();
     Map<CullingPhase, AtomicCounterBuffer> entitiesCompactedCounter = new HashMap<>();
     Map<CullingPhase, IndexBuffer> entitiesCounters = new HashMap<>();
 

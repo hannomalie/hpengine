@@ -91,8 +91,9 @@ class MovableInputComponent(entity: Entity) : InputControllerComponent(entity) {
 }
 
 class InputComponentSystem(val engine: Engine): ComponentSystem<InputControllerComponent> {
-    override fun update(deltaSeconds: Float) { components.forEach { it.update(engine, deltaSeconds) } }
-    override val components = mutableListOf<InputControllerComponent>()
+    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(engine, deltaSeconds) } }
+    private val components = mutableListOf<InputControllerComponent>()
+    override fun getComponents(): List<InputControllerComponent> = components
 
     override fun create(entity: Entity) = MovableInputComponent(entity).also { components.add(it); }
     override fun addComponent(component: InputControllerComponent) {

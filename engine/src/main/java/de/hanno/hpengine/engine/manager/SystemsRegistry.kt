@@ -38,7 +38,7 @@ interface SystemsRegistry {
 
 interface ComponentSystem<T : Component> {
     fun update(deltaSeconds: Float)
-    val components: List<T>
+    fun getComponents(): List<T>
     fun create(entity: Entity): T
     fun addComponent(component: T)
     fun clear()

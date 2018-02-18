@@ -59,6 +59,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
+import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstanceCount;
 
 public class LightManager {
 
@@ -481,7 +482,7 @@ public class LightManager {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(materialManager).hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(materialManager).getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex(), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex(), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, getInstanceCount(e), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
                     DrawStrategy.draw(gpuContext, renderState, batch);
 				});
 			}
@@ -496,7 +497,7 @@ public class LightManager {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(materialManager).hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(materialManager).getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex(), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex(), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), cameraEntity.getPosition(), true, getInstanceCount(e), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
                     DrawStrategy.draw(gpuContext, renderState, batch);
 				});
 			}

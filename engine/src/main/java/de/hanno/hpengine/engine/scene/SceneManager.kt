@@ -29,9 +29,10 @@ class SceneManager(val engine: Engine): Manager {
         engine.sceneManager.scene.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
         engine.renderManager.clear()
-        engine.getScene().modelComponentSystem.components.clear()
+        engine.getScene().modelComponentSystem.clear()
         nextScene.init(engine)
         restoreWorldCamera()
+        activeCamera = nextScene.camera.getComponent(Camera::class.java)
         engine.renderManager.renderState.addCommand { renderState1 ->
             renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
             renderState1.setVertexIndexBufferAnimated(engine.renderManager.vertexIndexBufferAnimated)

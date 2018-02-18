@@ -20,6 +20,7 @@ import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.instacing.ClustersComponent;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Update;
@@ -37,6 +38,8 @@ import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstances;
 
 public class EntityView extends WebPanel {
 
@@ -122,8 +125,8 @@ public class EntityView extends WebPanel {
 
     private void addInstancesPanel(Entity entity, WebTabbedPane tabbedPane) {
         List<Component> instancesPanels = new ArrayList<>();
-        for(int instanceIndex = 0; instanceIndex < entity.getInstances().size(); instanceIndex++) {
-            Instance currentInstance = entity.getInstances().get(instanceIndex);
+        for(int instanceIndex = 0; instanceIndex < getInstances(entity).size(); instanceIndex++) {
+            Instance currentInstance = getInstances(entity).get(instanceIndex);
 
             TransformablePanel transformablePanel = new TransformablePanel(currentInstance);
             WebComponentPanel materialSelectionPanel = new WebComponentPanel();
@@ -154,7 +157,8 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            Entity.addInstance(entity, new SimpleTransform());
+            ClustersComponent clusters = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(entity));
+            clusters.addInstance(new SimpleTransform());
 //            TODO: Make this possible
 //            init(entity);
         });
