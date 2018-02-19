@@ -83,10 +83,6 @@ public class MD5Mesh implements Mesh {
             vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex +1];
             vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex +2];
 
-            vertexBufferValuesArray[counter++] = 0;
-            vertexBufferValuesArray[counter++] = 0;
-            vertexBufferValuesArray[counter++] = 0;
-
         }
         compiledVertices = null;
     }

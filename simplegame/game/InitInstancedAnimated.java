@@ -1,21 +1,24 @@
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.Cluster;
+import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.transform.*;
+import de.hanno.hpengine.engine.transform.AnimatedInstanceSpatial;
+import de.hanno.hpengine.engine.transform.InstanceSpatial;
+import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 
 public class InitInstancedAnimated implements LifeCycle {
 
@@ -43,7 +46,7 @@ public class InitInstancedAnimated implements LifeCycle {
 
     }
 
-    protected void loadLotsOfInstances(Engine engine, String assetPath, int scale, String name) {
+    protected void loadLotsOfInstances(final Engine engine, String assetPath, final int scale, String name) {
         LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name).execute(engine);
         System.out.println("loaded entities : " + loaded.entities.size());
         for (final Entity current : loaded.entities) {
@@ -74,7 +77,12 @@ public class InitInstancedAnimated implements LifeCycle {
                         }
                     }
                 }
-                current.getComponent(ClustersComponent.class, ClustersComponent.Companion.getClustersComponentType()).addCluster(cluster);
+                Callable<ClustersComponent> callable = new Callable<ClustersComponent>() {
+                    public ClustersComponent call() {
+                        return engine.getScene().getClusterComponentSystem().create(current);
+                    }
+                };
+                current.getOrAddComponentLegacy(ClustersComponent.class, callable).addCluster(cluster);
                 System.out.println("Added " + cluster.size());
             }
         }

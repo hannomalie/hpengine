@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public class Entity extends Transform<Entity> implements LifeCycle {
@@ -83,14 +84,28 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 		return getComponent(type, type.getSimpleName());
 	}
 
-	public <T extends Component> T getOrAddComponent(Class<T> type, Supplier<T> supplier) {
-		if(!hasComponent(type)) {
-			T component = supplier.get();
-			addComponent(component);
-			return component;
-		}
-		return getComponent(type, type.getSimpleName());
-	}
+    public <T extends Component> T getOrAddComponent(Class<T> type, Supplier<T> supplier) {
+        if(!hasComponent(type)) {
+            T component = supplier.get();
+            addComponent(component);
+            return component;
+        }
+        return getComponent(type, type.getSimpleName());
+    }
+    public <T extends Component> T getOrAddComponentLegacy(Class<T> type, Callable<T> supplier) {
+        if(!hasComponent(type)) {
+            T component = null;
+            try {
+                component = supplier.call();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+            addComponent(component);
+            return component;
+        }
+        return getComponent(type, type.getSimpleName());
+    }
 
 	public <T extends Component> T getComponent(Class<T> type, String key) {
 		Component component = getComponents().get(key);
