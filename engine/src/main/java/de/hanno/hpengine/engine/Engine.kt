@@ -33,6 +33,8 @@ import java.util.logging.Logger
 
 class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
 
+    private val bufferEntitiesActionIndex = 0
+
     val eventBus: EventBus = MBassadorEventBus()
     val gpuContext: GpuContext = GpuContext.create()
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
@@ -91,14 +93,13 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     private fun updateRenderState() {
         val scene = sceneManager.scene
         if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
-            val bufferEntitiesActionIndex = 0
             renderManager.renderState.requestSingletonAction(bufferEntitiesActionIndex)
         }
 
         if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLight = getScene().lightManager.directionalLight
             renderManager.renderState.currentWriteState.init(renderManager.vertexIndexBufferStatic, renderManager.vertexIndexBufferAnimated, getScene().modelComponentSystem.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), getScene().lightManager.directionalLightMovedInCycle, scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderManager.drawCycle.get(), getScene().lightManager.directionalLight.getEntity().viewMatrixAsBuffer, directionalLight.projectionMatrixAsBuffer, directionalLight.viewProjectionMatrixAsBuffer, directionalLight.scatterFactor, directionalLight.direction, directionalLight.color, scene.entityAddedInCycle)
-            scene.addRenderBatches(this, sceneManager.activeCamera, renderManager.renderState.currentWriteState)
+            scene.extract(renderManager.renderState.currentWriteState)
             renderManager.renderState.update()
             renderManager.renderState.currentWriteState.cycle = renderManager.drawCycle.get()
         }

@@ -162,17 +162,8 @@ public class Material implements Serializable, Bufferable {
 //        GPUProfiler.end();
     }
 
-    List<Texture> tempTextures = new ArrayList<>(100);
-
     public void setTexturesUsed() {
-        if (tempTextures == null) {
-            tempTextures = new ArrayList<>(100); // TODO: Remove when materials are not serialized anymore
-        }
-        tempTextures.clear();
-        tempTextures.addAll(materialInfo.maps.getTextures().values());
-        for (int i = 0; i < tempTextures.size(); i++) {
-            tempTextures.get(i).setUsedNow();
-        }
+        materialInfo.maps.getTextures().values().forEach(Texture::setUsedNow);
     }
 
     public String getName() {

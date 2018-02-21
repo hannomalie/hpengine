@@ -10,7 +10,6 @@ import java.util.logging.Logger
 
 class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
     private val entityContainer: EntityContainer = SimpleContainer()
-    val entities = entityContainer.entities
 
     init {
         eventBus.register(this)
@@ -39,6 +38,8 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             add(entity)
         }
     }
+
+    fun getEntities() = entityContainer.entities
 
     override fun clear() {
         entityContainer.clear()

@@ -1,55 +1,60 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
+import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.graphics.renderer.*;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
-import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.*;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.PixelPerfectPickingExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.scene.AABB;
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
+import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.engine.scene.AABB;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import org.lwjgl.opengl.*;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.opengl.*;
 
 import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
-import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.LESS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
+import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
+import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
-public class SimpleDrawStrategy extends BaseDrawStrategy {
+public class SimpleDrawStrategy implements DrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
     private final Entity skyBoxEntity;
@@ -130,9 +135,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
-
-        engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.camera.getEntity());
-        engine.getRenderer().executeRenderProbeCommands(renderState);
 
         if (!Config.getInstance().isUseDirectTextureOutput()) {
             GPUProfiler.start("Shadowmap pass");

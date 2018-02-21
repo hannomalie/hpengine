@@ -34,8 +34,6 @@ import static org.lwjgl.opengl.GL11.glFinish;
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
 
-	private volatile boolean initialized = false;
-
 	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
 
 	private ArrayList<VertexBuffer> sixDebugBuffers;
@@ -48,8 +46,7 @@ public class DeferredRenderer implements Renderer {
     private FPSCounter fpsCounter = new FPSCounter();
 	private Engine engine;
 
-	public DeferredRenderer() {
-    }
+	public DeferredRenderer() { }
 
 	@Override
 	public void init(Engine engine) {
@@ -58,26 +55,21 @@ public class DeferredRenderer implements Renderer {
 		}
 		this.engine = engine;
 
-		Renderer.super.init(engine);
+		setupBuffers();
+		GpuContext.exitOnGLError("After TextureManager");
+		try {
+			setupShaders();
+			setUpGBuffer();
+			simpleDrawStrategy = new SimpleDrawStrategy(engine);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Cannot init DeferredRenderer");
+			System.exit(-1);
+		}
 
-        if (!initialized) {
-            setupBuffers();
-            GpuContext.exitOnGLError("After TextureManager");
-            try {
-                setupShaders();
-                setUpGBuffer();
-                simpleDrawStrategy = new SimpleDrawStrategy(engine);
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("Cannot init DeferredRenderer");
-                System.exit(-1);
-            }
-
-            float[] points = {0f, 0f, 0f, 0f};
-            buffer = new VertexBuffer(engine.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
-			buffer.upload();
-			initialized = true;
-        }
+		float[] points = {0f, 0f, 0f, 0f};
+		buffer = new VertexBuffer(engine.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
+		buffer.upload();
 	}
 
 	private void setupBuffers() {
@@ -123,6 +115,9 @@ public class DeferredRenderer implements Renderer {
 //		if(renderState.directionalLightNeedsShadowMapRender) {
 //			EnvironmentProbeManager.getInstance().draw(true);
 //		}
+
+		engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.camera.getEntity());
+		executeRenderProbeCommands(renderState);
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
@@ -187,7 +182,7 @@ public class DeferredRenderer implements Renderer {
 		buffer.draw();
 	}
 
-	private static long lastFrameTime = 0l;
+	private static long lastFrameTime = 0L;
 
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
@@ -204,10 +199,6 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public double getDeltaInS() {
 		return (getDeltaInMS() / 1000d);
-	}
-
-	public boolean isInitialized() {
-		return initialized;
 	}
 
 	public int drawLines(Program program) {

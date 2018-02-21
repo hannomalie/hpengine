@@ -17,11 +17,17 @@ import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
+typealias Action = Consumer<RenderState>
+
 class RenderManager(val engine: Engine) : Manager {
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
     var renderThread: RenderThread = RenderThread(engine, "Render")
 
-    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(engine.gpuContext), RenderState(engine.gpuContext), RenderState(engine.gpuContext), Consumer { renderState -> renderState.bufferEntities(engine.getScene().modelComponentSystem.getComponents()) })
+    private val bufferEntityAction = Action { renderState -> renderState.bufferEntities(engine.getScene().modelComponentSystem.getComponents()) }
+    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(engine.gpuContext),
+                                                              RenderState(engine.gpuContext),
+                                                              RenderState(engine.gpuContext),
+                                                              bufferEntityAction)
 
     val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
     val vertexIndexBufferAnimated = VertexIndexBuffer<AnimatedVertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)

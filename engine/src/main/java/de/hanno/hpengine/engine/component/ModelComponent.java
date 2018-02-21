@@ -64,7 +64,6 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
             DataChannels.POSITION3);
     private VertexIndexOffsets vertexIndexOffsets;
     private int jointsOffset = 0;
-    private Engine engine;
     public transient int componentIndex = -1;
     private int entityBufferIndex;
 
@@ -123,7 +122,6 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     @Override
     public void init(Engine engine) {
         super.init(engine);
-        this.engine = engine;
     }
 
     public VertexIndexOffsets putToBuffer(GpuContext gpuContext, VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {

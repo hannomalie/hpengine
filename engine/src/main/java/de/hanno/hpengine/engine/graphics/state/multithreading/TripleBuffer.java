@@ -28,13 +28,13 @@ public class TripleBuffer<T extends RenderState> {
     private QueueStatePair<T> tempB;
 
     @SuppressWarnings("unchecked")
-    public TripleBuffer(T instanceA, T instanceB, T instanceC, Consumer<T> ... singletonAction) {
+    public TripleBuffer(T instanceA, T instanceB, T instanceC, Consumer<T> ... actions) {
         if(instanceA == null || instanceB == null || instanceC == null) {
             throw new IllegalArgumentException("Don't pass null to constructor!");
         }
-        currentReadState = new QueueStatePair<>(instanceA, singletonAction);
-        currentWriteState = new QueueStatePair<>(instanceB, singletonAction);
-        currentStagingState = new QueueStatePair<>(instanceC, singletonAction);
+        currentReadState = new QueueStatePair<>(instanceA, actions);
+        currentWriteState = new QueueStatePair<>(instanceB, actions);
+        currentStagingState = new QueueStatePair<>(instanceC, actions);
         this.instanceA = currentReadState;
         this.instanceB = currentWriteState;
         this.instanceC = currentStagingState;
@@ -73,9 +73,9 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     public boolean update() {
-        for(int i = 0; i < currentWriteState.singletonActions.length; i++) {
-            if(currentWriteState.singletonActionsRequested[i].compareAndSet(true, false)) {
-                currentWriteState.singletonActions[i].accept(currentWriteState.state);
+        for(int i = 0; i < currentWriteState.actions.length; i++) {
+            if(currentWriteState.actionRequested[i].compareAndSet(true, false)) {
+                currentWriteState.actions[i].accept(currentWriteState.state);
             }
         }
         currentWriteState.queue.executeCommands();
@@ -135,24 +135,24 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     public void requestSingletonAction(int i) {
-        instanceA.singletonActionsRequested[i].getAndSet(true);
-        instanceB.singletonActionsRequested[i].getAndSet(true);
-        instanceC.singletonActionsRequested[i].getAndSet(true);
+        instanceA.actionRequested[i].getAndSet(true);
+        instanceB.actionRequested[i].getAndSet(true);
+        instanceC.actionRequested[i].getAndSet(true);
     }
 
     private static class QueueStatePair<T> {
         private final CommandQueue queue = new CommandQueue();
         private final T state;
 
-        private final Consumer<T>[] singletonActions;
-        private final AtomicBoolean[] singletonActionsRequested;
+        private final Consumer<T>[] actions;
+        private final AtomicBoolean[] actionRequested;
 
         public QueueStatePair(T state, Consumer<T>[] singletonAction) {
             this.state = state;
-            this.singletonActions = singletonAction;
-            this.singletonActionsRequested = new AtomicBoolean[singletonAction.length];
+            this.actions = singletonAction;
+            this.actionRequested = new AtomicBoolean[singletonAction.length];
             for(int i = 0; i < singletonAction.length; i++) {
-                this.singletonActionsRequested[i] = new AtomicBoolean(false);
+                this.actionRequested[i] = new AtomicBoolean(false);
             }
         }
 

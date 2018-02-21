@@ -7,23 +7,23 @@ import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.EntityManager
+import de.hanno.hpengine.engine.entity.SimpleEntitySystem
+import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.graphics.light.AreaLight
+import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.light.PointLight
 import de.hanno.hpengine.engine.graphics.light.TubeLight
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.lifecycle.LifeCycle
-import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.EntityManager
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
-import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
-import de.hanno.hpengine.engine.manager.SystemsRegistry
+import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
+import de.hanno.hpengine.engine.manager.SystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.util.script.ScriptManager
@@ -31,10 +31,12 @@ import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.nustaq.serialization.FSTConfiguration
-import java.io.*
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.ObjectOutputStream
+import java.io.Serializable
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.function.Consumer
 import java.util.logging.Logger
 
 class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine, sceneManager: SceneManager = engine.sceneManager) : LifeCycle, Serializable {
@@ -91,7 +93,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     private val tempDistVector = Vector3f()
 
     override fun init(engine: Engine) {
-        super.init(engine)
         engine.eventBus.register(this)
         engine.eventBus.post(SceneInitEvent())
     }
@@ -131,7 +132,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun calculateMinMax() {
-        calculateMinMax(entityManager.entities)
+        calculateMinMax(entityManager.getEntities())
     }
 
     private fun calculateMinMax(entities: List<Entity>) {
@@ -185,11 +186,11 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun getEntities(): List<Entity> {
-        return entityManager.entities
+        return entityManager.getEntities()
     }
 
     fun getEntity(name: String): Optional<Entity> {
-        val candidates = entityManager.entities.filter { e -> e.name == name }
+        val candidates = entityManager.getEntities().filter { e -> e.name == name }
         return if (candidates.isNotEmpty()) Optional.of(candidates[0]) else Optional.ofNullable(null)
     }
 
@@ -211,26 +212,16 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         engine.getScene().lightManager.tubeLights.add(tubeLight)
     }
 
-    fun addRenderBatches(engine: Engine, camera: Camera, currentWriteState: RenderState) {
-        val cameraWorldPosition = camera.entity.position
+    private fun addRenderBatches(currentWriteState: RenderState) {
+        val camera = activeCamera
+        val cameraWorldPosition = camera.position
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentSystem.getComponents())
-
+        addBatches(camera.getComponent(Camera::class.java), currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentSystem.getComponents())
     }
 
-    fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, program: Program, modelComponents: List<ModelComponent>) {
-        addBatches(camera, currentWriteState, cameraWorldPosition, program, modelComponents, Consumer{ batch ->
-            if (batch.isStatic) {
-                currentWriteState.addStatic(batch)
-            } else {
-                currentWriteState.addAnimated(batch)
-            }
-        })
-    }
-
-    fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>, addToRenderStateRunnable: Consumer<RenderBatch>) {
+    private fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>) {
         for (modelComponent in modelComponents) {
             val entity = modelComponent.entity
             val distanceToCamera = tempDistVector.length()
@@ -252,7 +243,11 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (mesh1, clusterIndex) -> RenderBatch() }
                 batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible, entity.isSelected, Config.getInstance().isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.update, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds)
-                addToRenderStateRunnable.accept(batch)
+                if (batch.isStatic) {
+                    currentWriteState.addStatic(batch)
+                } else {
+                    currentWriteState.addAnimated(batch)
+                }
             }
         }
     }
@@ -283,5 +278,9 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun setEntityMovedInCycleToCurrentCycle() {
         entityMovedInCycle = currentCycle
+    }
+
+    fun extract(currentWriteState: RenderState) {
+        addRenderBatches(currentWriteState)
     }
 }
