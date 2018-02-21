@@ -153,29 +153,6 @@ public class SimpleTextureRenderer implements Renderer {
 		buffer.draw();
 	}
 
-	private static long lastFrameTime = 0l;
-
-	private void setLastFrameTime() {
-		lastFrameTime = getTime();
-        fpsCounter.update();
-//		OpenGLContext.getInstance().execute(() -> {
-//			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-//                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), engine.getFPSCounter().getFPS(), engine.getFPSCounter().getMsPerFrame()));
-//		});
-	}
-	private long getTime() {
-		return System.currentTimeMillis();
-	}
-	public double getDeltainMS() {
-		long currentTime = getTime();
-		double delta = (double) currentTime - (double) lastFrameTime;
-		return delta;
-	}
-	@Override
-	public double getDeltaInS() {
-		return (getDeltainMS() / 1000d);
-	}
-
 	public int drawLines(Program program) {
 		return 0;
 	}
@@ -195,11 +172,6 @@ public class SimpleTextureRenderer implements Renderer {
 	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
 	}
 
-    @Override
-    public FPSCounter getFPSCounter() {
-        return fpsCounter;
-    }
-
 	private void setCurrentState(String newState) {
 	}
 
@@ -215,7 +187,6 @@ public class SimpleTextureRenderer implements Renderer {
     @Override
     public void endFrame() {
         GPUProfiler.endFrame();
-		setLastFrameTime();
     }
 
 	@Override

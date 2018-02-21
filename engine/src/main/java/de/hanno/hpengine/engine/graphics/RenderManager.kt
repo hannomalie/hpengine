@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.threads.RenderThread
+import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
@@ -20,6 +21,9 @@ import java.util.function.Consumer
 typealias Action = Consumer<RenderState>
 
 class RenderManager(val engine: Engine) : Manager {
+    private var lastFrameTime = 0L
+    private val fpsCounter = FPSCounter()
+
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
     var renderThread: RenderThread = RenderThread(engine, "Render")
 
@@ -54,6 +58,8 @@ class RenderManager(val engine: Engine) : Manager {
                 engine.renderer.draw(latestDrawResult, renderState.currentReadState)
                 latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings()
                 engine.renderer.endFrame()
+                lastFrameTime = System.currentTimeMillis()
+                fpsCounter.update()
                 engine.sceneManager.scene.isInitiallyDrawn = true
 
                 engine.eventBus.post(FrameFinishedEvent(latestDrawResult))
@@ -61,6 +67,14 @@ class RenderManager(val engine: Engine) : Manager {
             lastTimeSwapped = renderState.stopRead()
         }
     }
+
+    fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
+
+    fun getDeltaInS() = getDeltaInMS() / 1000.0
+
+    fun getCurrentFPS() = fpsCounter.fps
+
+    fun getMsPerFrame() = fpsCounter.msPerFrame
 
     fun resetAllocations() {
         engine.gpuContext.execute({

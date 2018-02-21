@@ -16,7 +16,6 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
 
@@ -43,7 +42,6 @@ public class DeferredRenderer implements Renderer {
 
     VertexBuffer buffer;
 
-    private FPSCounter fpsCounter = new FPSCounter();
 	private Engine engine;
 
 	public DeferredRenderer() { }
@@ -58,7 +56,7 @@ public class DeferredRenderer implements Renderer {
 		setupBuffers();
 		GpuContext.exitOnGLError("After TextureManager");
 		try {
-			setupShaders();
+			GpuContext.exitOnGLError("Before setupShaders");
 			setUpGBuffer();
 			simpleDrawStrategy = new SimpleDrawStrategy(engine);
 		} catch (Exception e) {
@@ -98,10 +96,6 @@ public class DeferredRenderer implements Renderer {
 
 			GpuContext.exitOnGLError("setupGBuffer");
 		});
-	}
-	
-	private void setupShaders() throws Exception {
-		GpuContext.exitOnGLError("Before setupShaders");
 	}
 
 	public void update(Engine engine, float seconds) {
@@ -182,25 +176,6 @@ public class DeferredRenderer implements Renderer {
 		buffer.draw();
 	}
 
-	private static long lastFrameTime = 0L;
-
-	private void setLastFrameTime() {
-		lastFrameTime = getTime();
-        fpsCounter.update();
-	}
-	private long getTime() {
-		return System.currentTimeMillis();
-	}
-	public double getDeltaInMS() {
-		long currentTime = getTime();
-		double delta = (double) currentTime - (double) lastFrameTime;
-		return delta;
-	}
-	@Override
-	public double getDeltaInS() {
-		return (getDeltaInMS() / 1000d);
-	}
-
 	public int drawLines(Program program) {
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
@@ -247,15 +222,6 @@ public class DeferredRenderer implements Renderer {
 		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);
 	}
 
-    @Override
-    public FPSCounter getFPSCounter() {
-        return fpsCounter;
-    }
-
-	public float getCurrentFPS() {
-        return fpsCounter.getFPS();
-	}
-
 	protected void finalize() throws Throwable {
 		destroy();
 	}
@@ -268,7 +234,6 @@ public class DeferredRenderer implements Renderer {
     @Override
     public void endFrame() {
         GPUProfiler.endFrame();
-		setLastFrameTime();
     }
 
     @Override

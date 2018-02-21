@@ -52,11 +52,6 @@ public class MockedRendererEngineTest {
         }
 
         @Override
-        public FPSCounter getFPSCounter() {
-            return null;
-        }
-
-        @Override
         public void startFrame() {
 
         }

@@ -17,6 +17,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public interface GpuContext {
+    boolean CHECKERRORS = false;
+
     Logger LOGGER = Logger.getLogger(GpuContext.class.getName());
 
 
@@ -54,7 +56,7 @@ public interface GpuContext {
     }
 
     static void exitOnGLError(String errorMessage) {
-        if (!Renderer.CHECKERRORS) {
+        if (!CHECKERRORS) {
             return;
         }
 

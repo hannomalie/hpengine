@@ -16,6 +16,7 @@ import javax.swing.JFrame;
 import javax.swing.Timer;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.RenderManager;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
@@ -47,7 +48,7 @@ import org.jfree.ui.RectangleInsets;
 
 public class PerformanceMonitor {
 
-	private Renderer myRenderer;
+	private RenderManager renderManager;
 
 	private TimeSeries thirtyFPS;
 	private TimeSeries sixtyFPS;
@@ -61,9 +62,9 @@ public class PerformanceMonitor {
 	private Engine engine;
 
 	@SuppressWarnings("deprecation")
-	public PerformanceMonitor(Engine engine, Renderer myRenderer) {
-		this.myRenderer = myRenderer;
+	public PerformanceMonitor(Engine engine) {
 		this.engine = engine;
+		this.renderManager = engine.getRenderManager();
 	}
 
 	public void init() {
@@ -83,10 +84,10 @@ public class PerformanceMonitor {
 			this.actualCycleMS.setMaximumItemAge(maxAge);
 			this.actualSyncTimeMS = new TimeSeries("Gpu Sync", Millisecond.class);
 			this.actualSyncTimeMS.setMaximumItemAge(maxAge);
-			ChartPanel chartPanel = addFPSChart(myRenderer);
+			ChartPanel chartPanel = addFPSChart(renderManager);
 			rows++;
 			
-//			ChartPanel waterfallChartPanel = addBreakdownChart(myRenderer);
+//			ChartPanel waterfallChartPanel = addBreakdownChart(renderManager);
 //			rows++;
 
 			frame.setLayout(new GridLayout(rows, 1));
@@ -101,7 +102,7 @@ public class PerformanceMonitor {
 		frame.setVisible(!frame.isVisible());
 	}
 
-	private ChartPanel addFPSChart(Renderer myRenderer) {
+	private ChartPanel addFPSChart(RenderManager myRenderer) {
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
 		dataset.addSeries(this.actualSyncTimeMS);
 		dataset.addSeries(this.actualMS);
@@ -141,7 +142,7 @@ public class PerformanceMonitor {
 		return chartPanel;
 	}
 
-	private ChartPanel addBreakdownChart(Renderer myRenderer) {
+	private ChartPanel addBreakdownChart() {
 		// Code from https://code.google.com/p/swing-ui-hxzon/source/browse/trunk/jfreechart/org/jfree/chart/demo/WaterfallChartDemo1.java?spec=svn65&r=62
 		breakdownDataset = new DefaultCategoryDataset();
         JFreeChart jfreechart = ChartFactory.createWaterfallChart("Frame Breakdown", "part", "ms", breakdownDataset, PlotOrientation.VERTICAL, false, true, false);
@@ -172,7 +173,7 @@ public class PerformanceMonitor {
         barrenderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator("{1}", decimalformat1));
         barrenderer.setBaseItemLabelsVisible(true);
         ChartPanel waterfallChartPanel = new ChartPanel(jfreechart);
-		new BreakdownDataGenerator(100, myRenderer).start();
+		new BreakdownDataGenerator(100).start();
 		return waterfallChartPanel;
 	}
 
@@ -194,9 +195,9 @@ public class PerformanceMonitor {
 	}
 
 	class DataGenerator extends Timer implements ActionListener {
-		private Renderer renderer;
+		private RenderManager renderer;
 
-		DataGenerator(int interval, Renderer renderer) {
+		DataGenerator(int interval, RenderManager renderer) {
 			super(interval, null);
 			addActionListener(this);
 			this.renderer = renderer;
@@ -216,12 +217,10 @@ public class PerformanceMonitor {
 	}
 	
 	class BreakdownDataGenerator extends Timer implements ActionListener {
-		private Renderer renderer;
 
-		BreakdownDataGenerator(int interval, Renderer renderer) {
+		BreakdownDataGenerator(int interval) {
 			super(interval, null);
 			addActionListener(this);
-			this.renderer = renderer;
 		}
 
 		public void actionPerformed(ActionEvent event) {

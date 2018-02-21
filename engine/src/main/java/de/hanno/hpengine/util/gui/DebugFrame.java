@@ -189,7 +189,7 @@ public class DebugFrame implements HostComponent {
     private Runnable setTitleRunnable = () -> {
         try {
             String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-					engine.getRenderer().getCurrentFPS(), engine.getRenderer().getMsPerFrame(), engine.getFpsCounter().getFPS(), engine.getFpsCounter().getMsPerFrame());
+					engine.getRenderManager().getCurrentFPS(), engine.getRenderManager().getMsPerFrame(), engine.getFpsCounter().getFPS(), engine.getFpsCounter().getMsPerFrame());
             frame.setTitle(titleString);
         } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
             frame.setTitle("HPEngine Renderer initializing...");
@@ -1112,7 +1112,7 @@ public class DebugFrame implements HostComponent {
 
 	private void initPerformanceChart() {
 		if(performanceMonitor == null) {
-            performanceMonitor = new PerformanceMonitor(engine, engine.getRenderer());
+            performanceMonitor = new PerformanceMonitor(engine);
 		}
 		performanceMonitor.init();
 	}

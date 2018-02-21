@@ -9,11 +9,9 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.util.fps.FPSCounter;
 import org.joml.Vector3f;
 
 public interface Renderer extends LifeCycle {
-    boolean CHECKERRORS = false;
 
     default void destroy() {
     }
@@ -37,20 +35,6 @@ public interface Renderer extends LifeCycle {
     }
 
     void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent);
-
-    FPSCounter getFPSCounter();
-
-    default float getCurrentFPS() {
-        return getFPSCounter().getFPS();
-    }
-
-    default double getDeltaInS() {
-        return getFPSCounter().getDeltaInS();
-    }
-
-    default float getMsPerFrame() {
-        return getFPSCounter().getMsPerFrame();
-    }
 
     void startFrame();
 

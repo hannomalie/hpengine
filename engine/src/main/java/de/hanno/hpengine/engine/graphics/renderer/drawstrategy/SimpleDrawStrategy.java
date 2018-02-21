@@ -649,7 +649,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         } catch (IllegalStateException e) {
             // Normalizing zero length vector
         }
-        postProcessProgram.setUniform("seconds", (float) engine.getRenderer().getDeltaInS());
+        postProcessProgram.setUniform("seconds", (float) engine.getRenderManager().getDeltaInS());
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 //        postProcessProgram.bindShaderStorageBuffer(1, engine.getRenderer().getMaterialManager().getMaterialBuffer());
         engine.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
