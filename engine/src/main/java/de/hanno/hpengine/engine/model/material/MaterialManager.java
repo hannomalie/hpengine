@@ -13,16 +13,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.model.material.Material.getDirectory;
 import static de.hanno.hpengine.engine.model.material.Material.write;
+import static java.util.Comparator.comparingInt;
 
 public class MaterialManager implements Manager {
     private static final Logger LOGGER = Logger.getLogger(MaterialManager.class.getName());
@@ -31,7 +29,8 @@ public class MaterialManager implements Manager {
 	private final Material skyboxMaterial;
 	private final EventBus eventBus;
 
-	public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
+	public Map<String, Material> MATERIALS = new LinkedHashMap<>();
+	private static int materialIndexCounter = 0;
 
 	private Material defaultMaterial;
 	private TextureManager textureManager;
@@ -40,6 +39,7 @@ public class MaterialManager implements Manager {
 		this.textureManager = textureManager;
 		this.eventBus = engine.getEventBus();
 		MaterialInfo defaultTemp = new MaterialInfo();
+		defaultTemp.setName("default");
 		defaultTemp.diffuse.x = (1.0f);
         defaultMaterial = getMaterial(defaultTemp, false);
 		skyboxMaterial = getMaterial(new MaterialInfo().setName("skybox").setMaterialType(Material.MaterialType.UNLIT));
@@ -91,7 +91,7 @@ public class MaterialManager implements Manager {
 
 	public Material getMaterial(MaterialInfo materialInfo, boolean readFromHdd) {
 		if (materialInfo.name == null || "".equals(materialInfo.name)) {
-			materialInfo.name = "Material_" + count++;
+			throw new IllegalArgumentException("Don't pass a material with null or empty name");
 		}
 		Supplier<Material> supplier = () -> {
 			if (readFromHdd) {
@@ -186,7 +186,9 @@ public class MaterialManager implements Manager {
 	}
 
 	public List<Material> getMaterials() {
-		return new ArrayList<>(MATERIALS.values());
+		ArrayList<Material> materials = new ArrayList<>(MATERIALS.values());
+//		materials.sort(comparingInt(Material::getMaterialIndex));
+		return materials;
 	}
 
 	public Material getSkyboxMaterial() {

@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 import java.io.Serializable;
@@ -410,6 +411,60 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         buffer.putFloat(minMaxWorld.getMax().y);
         buffer.putFloat(minMaxWorld.getMax().z);
         buffer.putFloat(1);
+    }
+
+    @Override
+    public String debugPrintFromBuffer(ByteBuffer buffer) {
+        return debugPrintFromBufferStatic(buffer);
+    }
+
+    @NotNull
+    public static String debugPrintFromBufferStatic(ByteBuffer buffer) {
+        StringBuilder builder = new StringBuilder()
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append("\n")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append("\n")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append("\n")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append(" ")
+                .append(buffer.getFloat()).append("\n")
+                .append("Selected ").append(buffer.getInt()).append("\n")
+                .append("Material Index ").append(buffer.getInt()).append("\n")
+                .append("Update ").append(buffer.getInt() == 0 ? "Dynamic" : "Static").append("\n")
+                .append("Mesh Buffer Index ").append(buffer.getInt()).append("\n")
+                .append("Entity Index ").append(buffer.getInt()).append("\n")
+                .append("Mesh Index ").append(buffer.getInt()).append("\n")
+                .append("Base Vertex ").append(buffer.getInt()).append("\n")
+                .append("Joint Base Index ").append(buffer.getInt()).append("\n")
+                .append("Animationframe 0 ").append(buffer.getInt()).append("\n")
+                .append("Animationframe 1 ").append(buffer.getInt()).append("\n")
+                .append("Animationframe 2 ").append(buffer.getInt()).append("\n")
+                .append("Animationframe 3 ").append(buffer.getInt()).append("\n")
+                .append("InvertTexCoordY ").append(buffer.getInt()).append("\n")
+                .append("Placeholder ").append(buffer.getInt()).append("\n")
+                .append("Placeholder ").append(buffer.getInt()).append("\n")
+                .append("Placeholder ").append(buffer.getInt()).append("\n")
+                .append("MinX ").append(buffer.getInt()).append("\n")
+                .append("MinY ").append(buffer.getInt()).append("\n")
+                .append("MinZ ").append(buffer.getInt()).append("\n")
+                .append("Placeholder ").append(buffer.getInt()).append("\n")
+                .append("MaxX ").append(buffer.getInt()).append("\n")
+                .append("MaxY ").append(buffer.getInt()).append("\n")
+                .append("MaxZ ").append(buffer.getInt()).append("\n")
+                .append("Placeholder ").append(buffer.getInt()).append("\n");
+
+        String resultString = builder.toString();
+        System.out.println(resultString);
+        return resultString;
     }
 
     @Override

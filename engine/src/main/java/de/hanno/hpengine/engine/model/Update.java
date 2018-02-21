@@ -12,4 +12,5 @@ public enum Update {
     public double getAsDouble() {
         return d;
     }
+
 }

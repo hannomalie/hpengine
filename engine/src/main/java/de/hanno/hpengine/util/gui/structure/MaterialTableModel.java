@@ -22,7 +22,7 @@ public class MaterialTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         try {
-            return engine.getMaterialManager().MATERIALS.size();
+            return engine.getMaterialManager().getMaterials().size();
         } catch (IllegalStateException e) {
             return 0;
         }

@@ -12,6 +12,11 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
+import de.hanno.hpengine.engine.instancing.ClustersComponent;
+import de.hanno.hpengine.engine.instancing.ClustersComponentSystem;
+import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.ModelComponentSystem;
+import de.hanno.hpengine.engine.model.ModelComponentSystemKt;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.Vertex;
@@ -24,7 +29,6 @@ import org.joml.Vector4f;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RenderState {
     private GpuContext gpuContext;
@@ -115,6 +119,18 @@ public class RenderState {
 
     public void bufferEntities(List<ModelComponent> modelComponents) {
         entitiesState.entitiesBuffer.put(Util.toArray(modelComponents, ModelComponent.class));
+        entitiesState.entitiesBuffer.getBuffer().position(0);
+
+        for(ModelComponent modelComponent: modelComponents) {
+            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
+                for(Mesh mesh: modelComponent.getMeshes()) {
+                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
+                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
+                }
+            }
+        }
+        entitiesState.entitiesBuffer.getBuffer().position(0);
+
     }
     public void bufferJoints(List<BufferableMatrix4f> joints) {
         entitiesState.jointsBuffer.put(Util.toArray(joints, BufferableMatrix4f.class));
@@ -134,6 +150,11 @@ public class RenderState {
         engine.getGpuContext().execute(() -> {
             List<Material> materials = engine.getMaterialManager().getMaterials();
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
+            entitiesState.materialBuffer.getBuffer().position(0);
+//            for(Material material: materials) {
+//                System.out.println("Material: " + material.getName() + "(" + material.getMaterialIndex() + ")");
+//                Material.debugPrintFromBufferStatic(entitiesState.materialBuffer.getBuffer());
+//            }
         });
     }
 

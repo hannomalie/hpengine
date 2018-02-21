@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.event.EntityAddedEvent
+import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.manager.Manager
 
 class SceneManager(val engine: Engine): Manager {

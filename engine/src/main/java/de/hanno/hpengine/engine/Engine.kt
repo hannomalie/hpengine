@@ -111,6 +111,10 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     @Subscribe
     @Handler
     fun handle(e: EntityAddedEvent) {
+        bufferEntities()
+    }
+
+    fun bufferEntities() {
         getScene().modelComponentSystem.updateCache = true
         renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(getScene().modelComponentSystem.getComponents()) }
     }

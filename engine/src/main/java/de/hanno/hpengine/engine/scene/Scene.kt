@@ -191,9 +191,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             pointLight.isHasMoved = false
         }
 
-        for (i in 0 until entityManager.entities.size) {
-            val entity = entityManager.entities[i]
-            if (!entity.hasMoved()) {
+        for(entity in entityManager.entities.filter { it != activeCamera }) {
+            if(!entity.hasMoved()) {
                 continue
             }
             calculateMinMax()

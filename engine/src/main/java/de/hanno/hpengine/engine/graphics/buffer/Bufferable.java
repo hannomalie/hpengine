@@ -8,6 +8,9 @@ public interface Bufferable {
     default void getFromBuffer(ByteBuffer buffer) {
         throw new IllegalStateException("Not yet implemented");
     }
+    default String debugPrintFromBuffer(ByteBuffer buffer) {
+        throw new IllegalStateException("Not yet implemented");
+    }
 
     int getBytesPerObject();
 

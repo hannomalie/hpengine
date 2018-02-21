@@ -102,27 +102,27 @@ public class DebugFrame implements HostComponent {
 	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
 	
     JTable materialTable;
-    private final ReloadableScrollPane materialPane;
+    private ReloadableScrollPane materialPane;
     JTable textureTable;
-    private final ReloadableScrollPane texturePane;
-	private final ReloadableScrollPane mainLightPane;
+    private ReloadableScrollPane texturePane;
+	private ReloadableScrollPane mainLightPane;
     JTable pointsLightsTable;
-	private final ReloadableScrollPane pointLightsPane;
+	private ReloadableScrollPane pointLightsPane;
     JTable tubeLightsTable;
-	private final ReloadableScrollPane tubeLightsPane;
+	private ReloadableScrollPane tubeLightsPane;
     JTable areaLightsTable;
-    private final ReloadableScrollPane areaLightsPane;
+    private ReloadableScrollPane areaLightsPane;
 
     private SceneTree sceneTree;
 	private ReloadableScrollPane scenePane;
     private ProbesTree probesTree;
     private ReloadableScrollPane probesPane;
     private final JTextPane output = new JTextPane();
-    private final ReloadableScrollPane outputPane = new ReloadableScrollPane(output);
+    private ReloadableScrollPane outputPane;
     private final JTextPane infoLeft = new JTextPane();
     private final JTextPane infoRight = new JTextPane();
-    WebSplitPane infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
-	private final ReloadableScrollPane infoPane = new ReloadableScrollPane(infoSplitPane);
+    WebSplitPane infoSplitPane;
+	private ReloadableScrollPane infoPane;
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
@@ -130,7 +130,7 @@ public class DebugFrame implements HostComponent {
 	"for each(var probe in renderer.getEnvironmentProbeManager().getProbes()) {" +
 	"	probe.move(new temp(0,-10,0));" +
 	"}");
-	private RTextScrollPane consolePane = new RTextScrollPane(console);
+	private RTextScrollPane consolePane;
 
 	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
 	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
@@ -215,6 +215,7 @@ public class DebugFrame implements HostComponent {
         initConsole();
         createPointLightsTab();
 
+        infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
         infoSplitPane.setOneTouchExpandable ( true );
         infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
         infoSplitPane.setDividerLocation(125);
@@ -227,12 +228,6 @@ public class DebugFrame implements HostComponent {
                 SwingUtilities.invokeLater(getSetTitleRunnable());
             }
         }.start();
-        materialPane = new ReloadableScrollPane(materialTable);
-        texturePane = new ReloadableScrollPane(textureTable);
-        mainLightPane = new ReloadableScrollPane(new MainLightView(this.engine));
-        pointLightsPane = new ReloadableScrollPane(pointsLightsTable);
-        tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
-        areaLightsPane = new ReloadableScrollPane(areaLightsTable);
     }
 
     private void init() {
@@ -275,6 +270,18 @@ public class DebugFrame implements HostComponent {
         };
         pointsLightsTable = new JTable(new PointLightsTableModel(this.engine));
         tubeLightsTable = new JTable(new TubeLightsTableModel(this.engine));
+
+
+        materialPane = new ReloadableScrollPane(materialTable);
+        texturePane = new ReloadableScrollPane(textureTable);
+        mainLightPane = new ReloadableScrollPane(new MainLightView(this.engine));
+        pointLightsPane = new ReloadableScrollPane(pointsLightsTable);
+        tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
+        areaLightsPane = new ReloadableScrollPane(areaLightsTable);
+        outputPane = new ReloadableScrollPane(output);
+        infoPane = new ReloadableScrollPane(infoSplitPane);
+        consolePane = new RTextScrollPane(console);
+
         directTextureOutputTextureIndexBoxGBuffer = new WebComboBox(Arrays.stream(engine.getRenderer().getGBuffer().getgBuffer().getRenderedTextures()).mapToObj(integer -> "GBuffer " + integer).collect(Collectors.toList()).toArray());
         directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(engine.getRenderer().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
         sceneTree = new SceneTree(this.engine);

@@ -13,9 +13,9 @@ public class InitCornellBox implements LifeCycle {
 
         try {
             {
-                LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"), "cornell").execute(Engine.getInstance());
+                LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"), "cornell").execute(engine);
                 System.out.println("loaded entities : " + loaded.entities.size());
-                Engine.getInstance().getSceneManager().getScene().addAll(loaded.entities);
+                engine.getSceneManager().getScene().addAll(loaded.entities);
             }
 
             Thread.sleep(500);
