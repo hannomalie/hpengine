@@ -170,16 +170,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     override fun update(engine: Engine, deltaSeconds: Float) {
         systems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
-        val entities = entityManager.entities
-
-        for (i in entities.indices) {
-            try {
-                entities[i].update(engine, deltaSeconds)
-            } catch (e: Exception) {
-                LOGGER.warning(e.message)
-            }
-
-        }
 
         for (i in 0 until getPointLights().size) {
             val pointLight = getPointLights()[i]
@@ -191,14 +181,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             pointLight.isHasMoved = false
         }
 
-        for(entity in entityManager.entities.filter { it != activeCamera }) {
-            if(!entity.hasMoved()) {
-                continue
-            }
-            calculateMinMax()
-            entity.isHasMoved = false
-            entityMovedInCycle = currentCycle
-        }
+        entityManager.update(deltaSeconds)
     }
 
     fun getEntities(): List<Entity> {
@@ -296,5 +279,9 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
         @JvmStatic val directory: String
             get() = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"
+    }
+
+    fun setEntityMovedInCycleToCurrentCycle() {
+        entityMovedInCycle = currentCycle
     }
 }

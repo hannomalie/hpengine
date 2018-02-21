@@ -121,14 +121,14 @@ public class RenderState {
         entitiesState.entitiesBuffer.put(Util.toArray(modelComponents, ModelComponent.class));
         entitiesState.entitiesBuffer.getBuffer().position(0);
 
-        for(ModelComponent modelComponent: modelComponents) {
-            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
-                for(Mesh mesh: modelComponent.getMeshes()) {
-                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
-                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
-                }
-            }
-        }
+//        for(ModelComponent modelComponent: modelComponents) {
+//            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
+//                for(Mesh mesh: modelComponent.getMeshes()) {
+//                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
+//                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
+//                }
+//            }
+//        }
         entitiesState.entitiesBuffer.getBuffer().position(0);
 
     }
