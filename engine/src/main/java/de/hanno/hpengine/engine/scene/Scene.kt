@@ -268,10 +268,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         private val absoluteMaximum = Vector4f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
         private val absoluteMinimum = Vector4f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
 
-        internal var conf = FSTConfiguration.createDefaultConfiguration()
-
-        private fun handleEvolution(scene: Scene) {}
-
         @JvmStatic val directory: String
             get() = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"
     }

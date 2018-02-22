@@ -33,8 +33,6 @@ import static org.lwjgl.opengl.GL11.glFinish;
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
 
-	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
-
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
 	private GBuffer gBuffer;
@@ -111,7 +109,6 @@ public class DeferredRenderer implements Renderer {
 //		}
 
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.camera.getEntity());
-		executeRenderProbeCommands(renderState);
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
@@ -200,50 +197,15 @@ public class DeferredRenderer implements Renderer {
 
 	private List<Vector3f> linePoints = new ArrayList<>();
 
-	@Override
-	public void executeRenderProbeCommands(RenderState extract) {
-		int counter = 0;
-		
-		renderProbeCommandQueue.takeNearest(extract.camera.getEntity()).ifPresent(command -> {
-			command.getProbe().draw(command.isUrgent(), extract);
-		});
-		counter++;
-		
-		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
-			renderProbeCommandQueue.take().ifPresent(command -> {
-                command.getProbe().draw(command.isUrgent(), extract);
-            });
-			counter++;
-		}
-	}
-
-	@Override
-	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
-		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);
-	}
-
-	protected void finalize() throws Throwable {
-		destroy();
-	}
-
     @Override
 	public GBuffer getGBuffer() {
 		return gBuffer;
 	}
 
     @Override
-    public void endFrame() {
-        GPUProfiler.endFrame();
-    }
-
-    @Override
-	public void startFrame() {
-        GPUProfiler.startFrame();
-	}
-
-    @Override
 	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-        simpleDrawStrategy.setMainPipelineRef(renderState.registerPipeline(() -> new GPUCulledMainPipeline(engine)));
+		TripleBuffer.PipelineRef<GPUCulledMainPipeline> mainPipelineRef = renderState.registerPipeline(() -> new GPUCulledMainPipeline(engine));
+		simpleDrawStrategy.setMainPipelineRef(mainPipelineRef);
 	}
 
 }

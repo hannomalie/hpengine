@@ -26,6 +26,7 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
@@ -399,17 +400,17 @@ public class DebugFrame implements HostComponent {
                 new SwingWorkerWithProgress<Result>(this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-                        CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
-                            @Override
-                            public Result execute() throws Exception {
-                                // TODO: Remove this f***
-                                EnvironmentProbe probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Vector3f(), 50);
-                                engine.getRenderer().addRenderProbeCommand(probe, true);
-                                return new Result(true);
+                        engine.getGpuContext().execute(() -> {
+                            try {
+                                EnvironmentProbe probe = null;
+                                probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Vector3f(), 50);
+                                engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
+                            } catch (Exception e1) {
+                                e1.printStackTrace();
                             }
-                        });
 
-						return future.get(5, TimeUnit.MINUTES);
+                        });
+                        return new Result(true);
 					}
 
 					@Override

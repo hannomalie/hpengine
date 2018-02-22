@@ -161,17 +161,6 @@ public class SimpleTextureRenderer implements Renderer {
 	public void batchLine(Vector3f from, Vector3f to) {
 	}
 
-	@Override
-	public void executeRenderProbeCommands(RenderState extract) {
-	}
-
-	@Override
-	public void addRenderProbeCommand(EnvironmentProbe probe) {
-	}
-	@Override
-	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
-	}
-
 	private void setCurrentState(String newState) {
 	}
 

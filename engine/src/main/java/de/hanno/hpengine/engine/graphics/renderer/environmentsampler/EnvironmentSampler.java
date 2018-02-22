@@ -250,9 +250,9 @@ public class EnvironmentSampler extends Entity {
 	@Subscribe
 	public void handle(MaterialChangedEvent e) {
 		resetDrawing();
-		renderer.addRenderProbeCommand(probe, true);
-		renderer.addRenderProbeCommand(probe, true);
-		renderer.addRenderProbeCommand(probe, true);
+		engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
+		engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
+		engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
 	}
 
 	private void bindProgramSpecificsPerCubeMap() {

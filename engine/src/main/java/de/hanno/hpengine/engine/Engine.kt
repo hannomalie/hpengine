@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -44,7 +45,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     val managers = SimpleManagerRegistry()
 
     val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
-    val renderManager = managers.register(RenderManager(this))
+    val renderManager = managers.register(RenderManager(this, { RenderState(gpuContext) }))
     val input = Input(this, gpuContext)
     val programManager = managers.register(ProgramManager(this))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))

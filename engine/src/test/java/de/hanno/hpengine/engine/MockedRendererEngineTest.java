@@ -47,11 +47,6 @@ public class MockedRendererEngineTest {
         }
 
         @Override
-        public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
-
-        }
-
-        @Override
         public void startFrame() {
 
         }
@@ -64,11 +59,6 @@ public class MockedRendererEngineTest {
         @Override
         public GBuffer getGBuffer() {
             return null;
-        }
-
-        @Override
-        public void executeRenderProbeCommands(RenderState extract) {
-
         }
 
         @Override

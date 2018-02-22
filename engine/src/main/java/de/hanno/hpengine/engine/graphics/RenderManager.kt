@@ -18,19 +18,17 @@ import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
-typealias Action = Consumer<RenderState>
-
-class RenderManager(val engine: Engine) : Manager {
+class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -> T) : Manager {
     private var lastFrameTime = 0L
     private val fpsCounter = FPSCounter()
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
     var renderThread: RenderThread = RenderThread(engine, "Render")
 
-    private val bufferEntityAction = Action { renderState -> renderState.bufferEntities(engine.getScene().modelComponentSystem.getComponents()) }
-    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(engine.gpuContext),
-                                                              RenderState(engine.gpuContext),
-                                                              RenderState(engine.gpuContext),
+    private val bufferEntityAction = Consumer<T> { renderState -> renderState.bufferEntities(engine.getScene().modelComponentSystem.getComponents()) }
+    val renderState: TripleBuffer<T> = TripleBuffer(renderStateFactory(),
+                                                              renderStateFactory(),
+                                                              renderStateFactory(),
                                                               bufferEntityAction)
 
     val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
@@ -49,20 +47,17 @@ class RenderManager(val engine: Engine) : Manager {
 
             if (lastTimeSwapped) {
                 engine.input.update()
-                engine.renderer.startFrame()
-                GPUProfiler.start("Prepare state")
-                recorder.add(renderState.currentReadState)
-                val latestDrawResult = renderState.currentReadState.latestDrawResult
-                latestDrawResult.reset()
-                GPUProfiler.end()
-                engine.renderer.draw(latestDrawResult, renderState.currentReadState)
-                latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings()
-                engine.renderer.endFrame()
+                val drawResult = profilingFramed {
+                    recorder.add(renderState.currentReadState)
+                    val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                    engine.renderer.draw(drawResult, renderState.currentReadState)
+                    drawResult.apply { GPUProfilingResult = GPUProfiler.dumpTimings() }
+                }
                 lastFrameTime = System.currentTimeMillis()
                 fpsCounter.update()
                 engine.sceneManager.scene.isInitiallyDrawn = true
 
-                engine.eventBus.post(FrameFinishedEvent(latestDrawResult))
+                engine.eventBus.post(FrameFinishedEvent(drawResult))
             }
             lastTimeSwapped = renderState.stopRead()
         }
@@ -85,4 +80,17 @@ class RenderManager(val engine: Engine) : Manager {
         }, true)
     }
     override fun clear() = resetAllocations()
+
+    inline fun <T> profiled(name: String, action: () -> T): T {
+        GPUProfiler.start(name)
+        val result = action()
+        GPUProfiler.end()
+        return result
+    }
+    inline fun <T> profilingFramed(action: () -> T): T {
+        GPUProfiler.startFrame()
+        val result: T = action()
+        GPUProfiler.end()
+        return result
+    }
 }

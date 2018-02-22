@@ -1,21 +1,23 @@
 package de.hanno.hpengine.engine.scene;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.joml.Vector3f;
+import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
+import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 
 import java.nio.FloatBuffer;
 import java.util.*;
@@ -34,6 +36,8 @@ public class EnvironmentProbeManager {
 
 	private List<EnvironmentProbe> probes = new ArrayList<>();
 
+	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
+
 	private CubeMapArray environmentMapsArray;
 	private CubeMapArray environmentMapsArray1;
 	private CubeMapArray environmentMapsArray2;
@@ -44,7 +48,7 @@ public class EnvironmentProbeManager {
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
 
-    public EnvironmentProbeManager(Engine engine) {
+	public EnvironmentProbeManager(Engine engine) {
     	this.engine = engine;
 		this.environmentMapsArray = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, RESOLUTION);
 		this.environmentMapsArray1 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
@@ -131,7 +135,7 @@ public class EnvironmentProbeManager {
 		
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
-            engine.getRenderer().addRenderProbeCommand(environmentProbe, urgent);
+            addRenderProbeCommand(environmentProbe, urgent);
 		}
 	}
 	
@@ -161,7 +165,7 @@ public class EnvironmentProbeManager {
 //			if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 //			environmentProbe.draw(octree, lights);
-            engine.getRenderer().addRenderProbeCommand(environmentProbe);
+            addRenderProbeCommand(environmentProbe);
 		}
 	}
 
@@ -276,6 +280,33 @@ public class EnvironmentProbeManager {
 //			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
 //			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
 //		});
+	}
+
+	public void executeRenderProbeCommands(RenderState extract) {
+		int counter = 0;
+
+		renderProbeCommandQueue.takeNearest(extract.camera.getEntity()).ifPresent(command -> {
+			command.getProbe().draw(command.isUrgent(), extract);
+		});
+		counter++;
+
+		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
+			renderProbeCommandQueue.take().ifPresent(command -> {
+				command.getProbe().draw(command.isUrgent(), extract);
+			});
+			counter++;
+		}
+	}
+
+	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
+		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);
+	}
+	void addRenderProbeCommand(EnvironmentProbe probe) {
+		addRenderProbeCommand(probe, false);
+	}
+	
+	public void update(Float deltaSeconds) {
+//		TODO: Render Probes here
 	}
 
 	public void clearProbes() {

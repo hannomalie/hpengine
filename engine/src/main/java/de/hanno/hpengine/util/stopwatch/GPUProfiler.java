@@ -236,12 +236,15 @@ public class GPUProfiler {
 
 
 	public static String dumpTimings() {
-		ProfilingTask tp;
-		StringBuilder builder = new StringBuilder();
-		while((tp = GPUProfiler.getFrameResults()) != null){
-			tp.dump(builder); //Dumps the frame to System.out.
+		if (PROFILING_ENABLED) {
+			ProfilingTask tp;
+			StringBuilder builder = new StringBuilder();
+			while((tp = GPUProfiler.getFrameResults()) != null){
+				tp.dump(builder); //Dumps the frame to System.out.
+			}
+			GPUProfiler.dumpAverages();
+			return builder.toString();
 		}
-		GPUProfiler.dumpAverages();
-		return builder.toString();
+		return "";
 	}
 }

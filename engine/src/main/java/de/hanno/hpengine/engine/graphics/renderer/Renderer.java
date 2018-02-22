@@ -30,19 +30,11 @@ public interface Renderer extends LifeCycle {
 
     int drawLines(Program firstPassProgram);
 
-    default void addRenderProbeCommand(EnvironmentProbe probe) {
-        addRenderProbeCommand(probe, false);
-    }
+    default void startFrame() {}
 
-    void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent);
-
-    void startFrame();
-
-    void endFrame();
+    default void endFrame() {}
 
     GBuffer getGBuffer();
-
-    void executeRenderProbeCommands(RenderState extract);
 
     void drawToQuad(int texture);
 
