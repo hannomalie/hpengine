@@ -406,7 +406,7 @@ public class LightManager {
 
 	private long pointlightShadowMapsRenderedInCycle;
 	public void renderPointLightShadowMaps(RenderState renderState) {
-        boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle;
+        boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.getEntitiesState().entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.getPointlightMovedInCycle();
         if(!needToRedraw) { return; }
 
 		GPUProfiler.start("PointLight shadowmaps");
@@ -444,9 +444,9 @@ public class LightManager {
                 pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[" + floatBufferIndex + "]", projectionMatrices[floatBufferIndex]);
 //				floatBuffers[floatBufferIndex] = null;
 			}
-//			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-//			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
-//			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
+//			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
+//			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
+//			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.getCamera().getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (RenderBatch e : renderState.getRenderBatchesStatic()) {

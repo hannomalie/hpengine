@@ -44,8 +44,8 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.use();
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-            linesProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
-            linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+            linesProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
+            linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
         }
 
         if(Config.getInstance().isDrawBoundingVolumes()) {
@@ -55,7 +55,7 @@ public class DrawLinesExtension implements RenderExtension {
             firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
 
 //            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            engine.getSceneManager().getScene().getEntityManager().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
+//            engine.getSceneManager().getScene().getEntityManager().drawDebug(Renderer.getInstance(), renderState.getCamera(), linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;
@@ -74,9 +74,9 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
             int linesDrawn = engine.getRenderer().drawLines(linesProgram);
 
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getRightDirection().mul(15));
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getUpDirection().mul(15));
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.camera.getViewDirection().mul(15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.getCamera().getRightDirection().mul(15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.getCamera().getUpDirection().mul(15));
+            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.getCamera().getViewDirection().mul(15));
             linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
             linesDrawn += engine.getRenderer().drawLines(linesProgram);
 //            firstPassResult.linesDrawn += linesDrawn;

@@ -108,7 +108,7 @@ public class DeferredRenderer implements Renderer {
 //			EnvironmentProbeManager.getInstance().draw(true);
 //		}
 
-		engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.camera.getEntity());
+		engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());

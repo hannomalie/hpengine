@@ -8,13 +8,11 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import org.joml.Vector3f;
 
 public interface Renderer extends LifeCycle {
 
-    default void destroy() {
-    }
+    default void destroy() { }
 
     void draw(DrawResult result, RenderState renderState);
 

@@ -42,7 +42,7 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 
         Camera camera = getRenderCam();
         if (camera == null) {
-            camera = renderState.camera;
+            camera = renderState.getCamera();
         }
 
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
@@ -59,7 +59,7 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
         program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
         program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
         program.setUniform("eyePosition", camera.getPosition());
-        program.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
+        program.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
         program.setUniform("near", camera.getNear());
         program.setUniform("far", camera.getFar());
         program.setUniform("time", (int) System.currentTimeMillis());

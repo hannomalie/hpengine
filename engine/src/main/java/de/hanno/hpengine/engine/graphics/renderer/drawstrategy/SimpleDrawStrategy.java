@@ -148,7 +148,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
             GPUProfiler.end();
 
             GPUProfiler.start("Second pass");
-            drawSecondPass(result.getSecondPassResult(), renderState.camera, engine.getSceneManager().getScene().getTubeLights(), engine.getSceneManager().getScene().getAreaLights(), renderState);
+            drawSecondPass(result.getSecondPassResult(), renderState.getCamera(), engine.getSceneManager().getScene().getTubeLights(), engine.getSceneManager().getScene().getAreaLights(), renderState);
             GPUProfiler.end();
             GPUProfiler.start("Combine pass");
             combinePass(target, renderState);
@@ -197,7 +197,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
         GPUCulledMainPipeline pipeline = renderState.get(mainPipelineRef);
 
-        Camera camera = renderState.camera;
+        Camera camera = renderState.getCamera();
 
         gpuContext.depthMask(true);
         engine.getRenderer().getGBuffer().use(true);
@@ -247,7 +247,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         skyBoxEntity.setTranslation(camera.getPosition());
         program.use();
         program.setUniform("eyeVec", camera.getViewDirection());
-        program.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
+        program.setUniform("directionalLightColor", renderState.getDirectionalLightState().directionalLightColor);
         Vector3f translation = new Vector3f();
         program.setUniform("eyePos_world", camera.getTranslation(translation));
         program.setUniform("materialIndex", engine.getMaterialManager().getSkyboxMaterial().getMaterialIndex());
@@ -299,8 +299,8 @@ public class SimpleDrawStrategy implements DrawStrategy {
         secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-        secondPassDirectionalProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-        secondPassDirectionalProgram.setUniform("lightDiffuse", renderState.directionalLightState.directionalLightColor);
+        secondPassDirectionalProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
+        secondPassDirectionalProgram.setUniform("lightDiffuse", renderState.getDirectionalLightState().directionalLightColor);
         engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(secondPassDirectionalProgram);
         GPUProfiler.start("Draw fullscreen buffer");
         engine.getGpuContext().getFullscreenBuffer().draw();
@@ -508,18 +508,18 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
         aoScatteringProgram.use();
-        aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition());
+        aoScatteringProgram.setUniform("eyePosition", renderState.getCamera().getPosition());
         aoScatteringProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
         aoScatteringProgram.setUniform("ambientOcclusionRadius", Config.getInstance().getAmbientocclusionRadius());
         aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
         aoScatteringProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth() / 2);
         aoScatteringProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight() / 2);
-        aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
-        aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+        aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
+        aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
         aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-        aoScatteringProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-        aoScatteringProgram.setUniform("lightDiffuse", renderState.directionalLightState.directionalLightColor);
-        aoScatteringProgram.setUniform("scatterFactor", renderState.directionalLightState.directionalLightScatterFactor);
+        aoScatteringProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
+        aoScatteringProgram.setUniform("lightDiffuse", renderState.getDirectionalLightState().directionalLightColor);
+        aoScatteringProgram.setUniform("scatterFactor", renderState.getDirectionalLightState().directionalLightScatterFactor);
 
         engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(aoScatteringProgram);
         gpuContext.getFullscreenBuffer().draw();
@@ -599,11 +599,11 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getTextureManager().generateMipMaps(finalBuffer.getRenderedTexture(0));
 
         combineProgram.use();
-        combineProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-        combineProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+        combineProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
+        combineProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
         combineProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
         combineProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
-        combineProgram.setUniform("camPosition", renderState.camera.getPosition());
+        combineProgram.setUniform("camPosition", renderState.getCamera().getPosition());
         combineProgram.setUniform("ambientColor", Config.getInstance().getAmbientLight());
         combineProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
         combineProgram.setUniform("worldExposure", Config.getInstance().getExposure());
@@ -644,8 +644,8 @@ public class SimpleDrawStrategy implements DrawStrategy {
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled());
         postProcessProgram.setUniform("usePostProcessing", Config.getInstance().isEnablePostprocessing());
         try {
-            postProcessProgram.setUniform("cameraRightDirection", renderState.camera.getRightDirection());
-            postProcessProgram.setUniform("cameraViewDirection", renderState.camera.getViewDirection());
+            postProcessProgram.setUniform("cameraRightDirection", renderState.getCamera().getRightDirection());
+            postProcessProgram.setUniform("cameraViewDirection", renderState.getCamera().getViewDirection());
         } catch (IllegalStateException e) {
             // Normalizing zero length vector
         }

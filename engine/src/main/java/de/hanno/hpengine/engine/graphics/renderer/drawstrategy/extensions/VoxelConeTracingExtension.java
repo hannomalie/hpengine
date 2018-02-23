@@ -130,9 +130,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
     @Override
     public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("VCT first pass");
-        boolean entityMoved = renderState.entitiesState.entityMovedInCycle > entityMovedLastInCycle;
-        boolean directionalLightMoved = renderState.directionalLightHasMovedInCycle > directionalLightMovedLastInCycle;
-        boolean pointlightMoved = renderState.pointlightMovedInCycle > pointLightMovedLastInCycle;
+        boolean entityMoved = renderState.getEntitiesState().entityMovedInCycle > entityMovedLastInCycle;
+        boolean directionalLightMoved = renderState.getDirectionalLightHasMovedInCycle() > directionalLightMovedLastInCycle;
+        boolean pointlightMoved = renderState.getPointlightMovedInCycle() > pointLightMovedLastInCycle;
         if(entityMoved) {
             entityMovedLastInCycle = renderState.getCycle();
         }
@@ -148,7 +148,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC)));
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.getSceneInitiallyDrawn() || Config.getInstance().isForceRevoxelization() || renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC)));
         if(entityMoved || needsRevoxelization) {
             lightInjectedCounter = 0;
         }
@@ -179,8 +179,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("gridSize", gridSize);
                 injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-                injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-                injectLightComputeProgram.setUniform("lightColor", renderState.directionalLightState.directionalLightColor);
+                injectLightComputeProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
+                injectLightComputeProgram.setUniform("lightColor", renderState.getDirectionalLightState().directionalLightColor);
 
                 injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
             }
@@ -207,7 +207,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     public void voxelizeScene(RenderState renderState, boolean clearVoxels, boolean needsRevoxelization) {
         if(needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels");
-            if(Config.getInstance().isForceRevoxelization() || !renderState.sceneInitiallyDrawn) {
+            if(Config.getInstance().isForceRevoxelization() || !renderState.getSceneInitiallyDrawn()) {
                 ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
                 ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
                 ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
@@ -232,8 +232,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             voxelizer.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-            voxelizer.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-            voxelizer.setUniform("lightColor", renderState.directionalLightState.directionalLightColor);
+            voxelizer.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
+            voxelizer.setUniform("lightColor", renderState.getDirectionalLightState().directionalLightColor);
             voxelizer.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
             voxelizer.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
@@ -263,7 +263,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             } else {
                 for (RenderBatch entity : renderState.getRenderBatchesStatic()) {
                     boolean isStatic = entity.getUpdate().equals(Update.STATIC);
-                    if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
+                    if (renderState.getSceneInitiallyDrawn() && !Config.getInstance().isForceRevoxelization() && isStatic) {
                         continue;
                     }
                     int currentVerticesCount = DrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), entity, voxelizer, false);
@@ -338,9 +338,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
         voxelConeTraceProgram.use();
         Vector3f camTranslation = new Vector3f();
-        voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.getEntity().getTranslation(camTranslation));
-        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getEntity().getViewMatrixAsBuffer());
-        voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+        voxelConeTraceProgram.setUniform("eyePosition", renderState.getCamera().getEntity().getTranslation(camTranslation));
+        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getEntity().getViewMatrixAsBuffer());
+        voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
         voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.getRenderer().getGBuffer().getStorageBuffer());
         voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderState));
         voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
@@ -360,9 +360,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     Vector4f maxExtents = new Vector4f();
     public float getSceneScale(RenderState renderState) {
-        maxExtents.x = (Math.max(Math.abs(renderState.sceneMin.x), Math.abs(renderState.sceneMax.x)));
-        maxExtents.y = (Math.max(Math.abs(renderState.sceneMin.y), Math.abs(renderState.sceneMax.y)));
-        maxExtents.z = (Math.max(Math.abs(renderState.sceneMin.z), Math.abs(renderState.sceneMax.z)));
+        maxExtents.x = (Math.max(Math.abs(renderState.getSceneMin().x), Math.abs(renderState.getSceneMax().x)));
+        maxExtents.y = (Math.max(Math.abs(renderState.getSceneMin().y), Math.abs(renderState.getSceneMax().y)));
+        maxExtents.z = (Math.max(Math.abs(renderState.getSceneMin().z), Math.abs(renderState.getSceneMax().z)));
         float max = Math.max(Math.max(maxExtents.x, maxExtents.y), maxExtents.z);
         float sceneScale = max / (float) gridSizeHalf;
         sceneScale = Math.max(sceneScale, 2.0f);

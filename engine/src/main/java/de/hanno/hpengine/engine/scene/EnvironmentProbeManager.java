@@ -285,7 +285,7 @@ public class EnvironmentProbeManager {
 	public void executeRenderProbeCommands(RenderState extract) {
 		int counter = 0;
 
-		renderProbeCommandQueue.takeNearest(extract.camera.getEntity()).ifPresent(command -> {
+		renderProbeCommandQueue.takeNearest(extract.getCamera().getEntity()).ifPresent(command -> {
 			command.getProbe().draw(command.isUrgent(), extract);
 		});
 		counter++;
@@ -304,7 +304,7 @@ public class EnvironmentProbeManager {
 	void addRenderProbeCommand(EnvironmentProbe probe) {
 		addRenderProbeCommand(probe, false);
 	}
-	
+
 	public void update(Float deltaSeconds) {
 //		TODO: Render Probes here
 	}
