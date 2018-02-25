@@ -34,8 +34,6 @@ import java.util.logging.Logger
 
 class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
 
-    private val bufferEntitiesActionIndex = 0
-
     val eventBus: EventBus = MBassadorEventBus()
     val gpuContext: GpuContext = GpuContext.create()
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
@@ -94,7 +92,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     private fun updateRenderState() {
         val scene = sceneManager.scene
         if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
-            renderManager.renderState.requestSingletonAction(bufferEntitiesActionIndex)
+            renderManager.bufferEntityActionRef.request()
         }
 
         if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
@@ -118,13 +116,13 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
     fun bufferEntities() {
         getScene().modelComponentSystem.updateCache = true
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(getScene().modelComponentSystem.getComponents()) }
+        renderManager.bufferEntityActionRef.request()
     }
 
     @Subscribe
     @Handler
     fun handle(e: SceneInitEvent) {
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(getScene().modelComponentSystem.getComponents()) }
+        bufferEntities()
     }
 
     @Subscribe
@@ -132,13 +130,13 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     fun handle(event: EntityChangedMaterialEvent) {
         val entity = event.entity
         //            buffer(entity);
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(getScene().modelComponentSystem.getComponents()) }
+        bufferEntities()
     }
 
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
-        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferMaterials(this@Engine) }
+        renderManager.bufferMaterialsActionRef.request()
     }
 
     @Subscribe
@@ -147,9 +145,9 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         renderManager.renderState.addCommand { renderStateX ->
             if (event.material.isPresent) {
                 //                renderStateX.bufferMaterial(event.getMaterials().get());
-                renderStateX.bufferMaterials(this@Engine)
+                renderManager.bufferMaterialsActionRef.request()
             } else {
-                renderStateX.bufferMaterials(this@Engine)
+                renderManager.bufferMaterialsActionRef.request()
             }
         }
     }

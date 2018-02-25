@@ -5,6 +5,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -33,12 +35,38 @@ public class TripleBuffer<T extends RenderState> {
         if(instanceA == null || instanceB == null || instanceC == null) {
             throw new IllegalArgumentException("Don't pass null to constructor!");
         }
-        currentReadState = new QueueStatePair<>(instanceA, actions);
-        currentWriteState = new QueueStatePair<>(instanceB, actions);
-        currentStagingState = new QueueStatePair<>(instanceC, actions);
+        currentReadState = new QueueStatePair<>(instanceA);
+        currentWriteState = new QueueStatePair<>(instanceB);
+        currentStagingState = new QueueStatePair<>(instanceC);
         this.instanceA = currentReadState;
         this.instanceB = currentWriteState;
         this.instanceC = currentStagingState;
+    }
+
+//    TODO: This must probably happen on the render thread
+    public ActionReference registerAction(Consumer<T> action) {
+        int actionIndex = currentReadState.addAction(action);
+        currentWriteState.addAction(action);
+        currentStagingState.addAction(action);
+        return new ActionReference(this, actionIndex);
+    }
+
+    public static class ActionReference {
+        private TripleBuffer buffer;
+        private int index;
+
+        public ActionReference(TripleBuffer buffer, int index) {
+            this.buffer = buffer;
+            this.index = index;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void request() {
+            buffer.requestSingletonAction(index);
+        }
     }
 
     protected boolean swap() {
@@ -117,25 +145,30 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     public void requestSingletonAction(int i) {
-        instanceA.actionRequested[i].getAndSet(true);
-        instanceB.actionRequested[i].getAndSet(true);
-        instanceC.actionRequested[i].getAndSet(true);
+        instanceA.actions.get(i).request();
+        instanceB.actions.get(i).request();
+        instanceC.actions.get(i).request();
     }
 
     private static class QueueStatePair<T extends RenderState> {
         private final CommandQueue queue = new CommandQueue();
         private final T state;
 
-        private final Consumer<T>[] actions;
-        private final AtomicBoolean[] actionRequested;
+        private final List<Action> actions = new ArrayList<>();
 
-        public QueueStatePair(T state, Consumer<T>[] singletonAction) {
+        public QueueStatePair(T state) {
             this.state = state;
-            this.actions = singletonAction;
-            this.actionRequested = new AtomicBoolean[singletonAction.length];
+        }
+
+        public void addActions(Consumer<T>[] singletonAction) {
             for(int i = 0; i < singletonAction.length; i++) {
-                this.actionRequested[i] = new AtomicBoolean(false);
+                addAction(singletonAction[i]);
             }
+        }
+
+        private int addAction(Consumer<T> tConsumer) {
+            this.actions.add(new Action(tConsumer));
+            return actions.size() -1;
         }
 
         public void addCommand(Consumer<T> command) {
@@ -143,14 +176,35 @@ public class TripleBuffer<T extends RenderState> {
         }
 
         public void update(T writeState) {
-            for(int i = 0; i < actions.length; i++) {
-                if(actionRequested[i].compareAndSet(true, false)) {
-                    actions[i].accept(state);
+            for(int i = 0; i < actions.size(); i++) {
+                if(actions.get(i).reset()) {
+                    actions.get(i).execute(state);
                 }
             }
             queue.executeCommands();
             this.state.getCustomState().update(writeState);
         }
+
     }
 
+    private static class Action<T extends RenderState> {
+        AtomicBoolean requested = new AtomicBoolean(false);
+        private Consumer<T> consumer;
+
+        public Action(Consumer<T> consumer) {
+            this.consumer = consumer;
+        }
+
+        public void request() {
+            requested.getAndSet(true);
+        }
+
+        public boolean reset() {
+            return requested.compareAndSet(true, false);
+        }
+
+        public void execute(T state) {
+            consumer.accept(state);
+        }
+    }
 }
