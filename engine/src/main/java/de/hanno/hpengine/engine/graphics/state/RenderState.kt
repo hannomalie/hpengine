@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine.graphics.state
 
 import de.hanno.hpengine.engine.BufferableMatrix4f
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext
@@ -12,11 +10,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
-import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.util.Util
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.nio.FloatBuffer
@@ -88,7 +84,6 @@ class RenderState(gpuContext: GpuContext) {
     fun init(vertexIndexBufferStatic: VertexIndexBuffer<Vertex>, vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector4f, sceneMax: Vector4f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
-        bufferJoints(joints)
         this.entitiesState.joints = joints // TODO: Fixme
         this.camera.init(camera)
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer
@@ -111,40 +106,7 @@ class RenderState(gpuContext: GpuContext) {
         this.entitiesState.renderBatchesStatic.clear()
         this.entitiesState.renderBatchesAnimated.clear()
         this.latestDrawResult.set(latestDrawResult)
-        //        this.cycle = cycle;
     }
-
-    fun bufferEntities(engine: Engine, modelComponents: List<ModelComponent>) {
-        engine.gpuContext.execute {
-            entitiesState.entitiesBuffer.put(*Util.toArray(modelComponents, ModelComponent::class.java))
-            entitiesState.entitiesBuffer.buffer.position(0)
-
-            //        for(ModelComponent modelComponent: modelComponents) {
-            //            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
-            //                for(Mesh mesh: modelComponent.getMeshes()) {
-            //                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
-            //                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
-            //                }
-            //            }
-            //        }
-            entitiesState.entitiesBuffer.buffer.position(0)
-        }
-
-    }
-
-    fun bufferJoints(joints: List<BufferableMatrix4f>) {
-        entitiesState.jointsBuffer.put(*Util.toArray(joints, BufferableMatrix4f::class.java))
-    }
-
-    //    TODO: Reimplement this
-    //    public void bufferMaterial(Material materials) {
-    //        GpuContext.getInstance().execute(() -> {
-    //            ArrayList<Material> materials = new ArrayList<>(MaterialManager.getInstance().getMaterials());
-    //
-    //            int offset = materials.getElementsPerObject() * materials.indexOf(materials);
-    //            entitiesState.materialBuffer.put(offset, materials);
-    //        });
-    //    }
 
     fun addStatic(batch: RenderBatch) {
         entitiesState.renderBatchesStatic.add(batch)

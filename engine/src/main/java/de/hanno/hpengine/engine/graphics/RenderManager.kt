@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
+import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.event.FrameFinishedEvent
@@ -55,6 +56,11 @@ class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -
             //                Material.debugPrintFromBufferStatic(entitiesState.materialBuffer.getBuffer());
             //            }
         }
+    })
+
+    val bufferJointsActionRef = renderState.registerAction({ renderState ->
+        val array = Util.toArray(engine.getScene().modelComponentSystem.joints, BufferableMatrix4f::class.java)
+        renderState.entitiesState.jointsBuffer.put(*array)
     })
 
 

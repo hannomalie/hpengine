@@ -117,6 +117,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     fun bufferEntities() {
         getScene().modelComponentSystem.updateCache = true
         renderManager.bufferEntityActionRef.request()
+        renderManager.bufferJointsActionRef.request()
     }
 
     @Subscribe
