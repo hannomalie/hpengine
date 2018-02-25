@@ -26,6 +26,7 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
@@ -82,7 +83,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
     GpuContext gpuContext;
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
-    private TripleBuffer.PipelineRef<GPUCulledMainPipeline> mainPipelineRef;
+    private StateRef<GPUCulledMainPipeline> mainPipelineRef;
 
     private final RenderBatch skyBoxRenderBatch;
 
@@ -195,7 +196,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
     public FirstPassResult drawFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
-        GPUCulledMainPipeline pipeline = renderState.get(mainPipelineRef);
+        GPUCulledMainPipeline pipeline = renderState.getState(mainPipelineRef);
 
         Camera camera = renderState.getCamera();
 
@@ -700,12 +701,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         return directionalLightShadowMapExtension;
     }
 
-    public void setMainPipelineRef(TripleBuffer.PipelineRef<GPUCulledMainPipeline> mainPipelineRef) {
+    public void setMainPipelineRef(StateRef<GPUCulledMainPipeline> mainPipelineRef) {
         this.mainPipelineRef = mainPipelineRef;
     }
-
-    public TripleBuffer.PipelineRef getMainPipelineRef() {
-        return mainPipelineRef;
-    }
-
 }

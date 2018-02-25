@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -11,11 +10,11 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrateg
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
 
@@ -41,6 +40,7 @@ public class DeferredRenderer implements Renderer {
     VertexBuffer buffer;
 
 	private Engine engine;
+	private StateRef<GPUCulledMainPipeline> mainPipelineRef;
 
 	public DeferredRenderer() { }
 
@@ -204,7 +204,7 @@ public class DeferredRenderer implements Renderer {
 
     @Override
 	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-		TripleBuffer.PipelineRef<GPUCulledMainPipeline> mainPipelineRef = renderState.registerPipeline(() -> new GPUCulledMainPipeline(engine));
+		this.mainPipelineRef = renderState.registerState(() -> new GPUCulledMainPipeline(engine));
 		simpleDrawStrategy.setMainPipelineRef(mainPipelineRef);
 	}
 

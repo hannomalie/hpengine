@@ -27,6 +27,8 @@ import java.util.*
 class RenderState(gpuContext: GpuContext) {
     private val gpuContext: GpuContext = gpuContext
 
+    val customState = CustomStateHolder()
+
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
     val directionalLightState = DirectionalLightState()
@@ -41,7 +43,6 @@ class RenderState(gpuContext: GpuContext) {
     var sceneInitiallyDrawn: Boolean = false
     var sceneMin = Vector4f()
     var sceneMax = Vector4f()
-    private var pipelines: MutableList<Pipeline> = ArrayList()
 
     var cycle: Long = 0
     @Volatile //        glFlush();
@@ -170,22 +171,6 @@ class RenderState(gpuContext: GpuContext) {
         return currentStaging.cycle < currentRead.cycle
     }
 
-    fun addPipeline(pipeline: Pipeline): Int {
-        return if (pipelines.add(pipeline)) {
-            pipelines.indexOf(pipeline)
-        } else {
-            throw IllegalArgumentException("GPUFrustumCulledPipeline could somehow not be added to state")
-        }
-    }
-
-    operator fun <T : Pipeline> get(index: TripleBuffer.PipelineRef<T>): T {
-        return pipelines[index.index] as T
-    }
-
-    fun getPipelines(): List<Pipeline> {
-        return pipelines
-    }
-
     fun setVertexIndexBufferStatic(vertexIndexBuffer: VertexIndexBuffer<Vertex>) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBuffer
     }
@@ -193,4 +178,27 @@ class RenderState(gpuContext: GpuContext) {
     fun setVertexIndexBufferAnimated(vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>) {
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
     }
+
+    fun add(state: CustomState) = customState.add(state)
+
+    fun <T> getState(stateRef: StateRef<T>) = customState.get(stateRef.index) as T
 }
+
+class CustomStateHolder {
+    private val states = mutableListOf<CustomState>()
+    fun add(state: CustomState) {
+        states.add(state)
+    }
+
+    fun get(index: Int) = states[index]
+
+    fun update(writeState: RenderState) = states.forEach { it.update(writeState) }
+
+    fun clear() = states.clear()
+}
+
+interface CustomState {
+    fun update(writeState: RenderState) {}
+}
+
+class StateRef<out T>(val index: Int)

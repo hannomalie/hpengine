@@ -1,7 +1,8 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading;
 
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
+import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,15 +74,18 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     public boolean update() {
-        for(int i = 0; i < currentWriteState.actions.length; i++) {
-            if(currentWriteState.actionRequested[i].compareAndSet(true, false)) {
-                currentWriteState.actions[i].accept(currentWriteState.state);
-            }
-        }
-        currentWriteState.queue.executeCommands();
-        preparePipelines();
+        currentWriteState.update(currentWriteState.state);
         swapStaging();
         return true;
+    }
+
+    private int customStateCounter = 0;
+    public <TYPE extends CustomState> StateRef<TYPE> registerState(Supplier<TYPE> factory) {
+        int newIndex = customStateCounter++;
+        instanceA.state.add(factory.get());
+        instanceB.state.add(factory.get());
+        instanceC.state.add(factory.get());
+        return new StateRef<>(newIndex);
     }
 
     public T getCurrentReadState() {
@@ -112,35 +116,13 @@ public class TripleBuffer<T extends RenderState> {
         System.out.println("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)) + " with cycle " + currentWriteState.state.getCycle());
     }
 
-    public <T extends Pipeline> PipelineRef<T> registerPipeline(Supplier<T> factory) {
-        Pipeline a = factory.get();
-        Pipeline b = factory.get();
-        Pipeline c = factory.get();
-        if(a == b || a == c || b == c) {
-            throw new IllegalArgumentException("Supplier has to provide new instances each time it is called!");
-        }
-        int aInt = instanceA.state.addPipeline(a);
-        int bInt = instanceB.state.addPipeline(b);
-        int cInt = instanceC.state.addPipeline(c);
-        if(aInt != bInt || aInt != cInt || bInt != cInt) {
-            throw new IllegalStateException("Should get the same index for all three states for a single pipeline!");
-        }
-        return new PipelineRef(aInt);
-    }
-
-    public void preparePipelines() {
-        for(Pipeline currentPipeline : currentWriteState.state.getPipelines()) {
-            currentPipeline.prepare(currentWriteState.state);
-        }
-    }
-
     public void requestSingletonAction(int i) {
         instanceA.actionRequested[i].getAndSet(true);
         instanceB.actionRequested[i].getAndSet(true);
         instanceC.actionRequested[i].getAndSet(true);
     }
 
-    private static class QueueStatePair<T> {
+    private static class QueueStatePair<T extends RenderState> {
         private final CommandQueue queue = new CommandQueue();
         private final T state;
 
@@ -160,17 +142,15 @@ public class TripleBuffer<T extends RenderState> {
             queue.addCommand(() -> command.accept(state));
         }
 
-    }
-
-    public static class PipelineRef<T extends Pipeline> {
-        private final int index;
-
-        public PipelineRef(int index) {
-            this.index = index;
-        }
-
-        public int getIndex() {
-            return index;
+        public void update(T writeState) {
+            for(int i = 0; i < actions.length; i++) {
+                if(actionRequested[i].compareAndSet(true, false)) {
+                    actions[i].accept(state);
+                }
+            }
+            queue.executeCommands();
+            this.state.getCustomState().update(writeState);
         }
     }
+
 }

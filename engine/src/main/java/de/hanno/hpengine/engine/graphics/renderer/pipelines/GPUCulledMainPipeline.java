@@ -4,11 +4,13 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.FloatBuffer;
 
-public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
+public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements CustomState {
 
     public GPUCulledMainPipeline(Engine engine) {
         super(engine, true, true, true, null, null);
@@ -65,5 +67,10 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
         program.setUniform("time", (int) System.currentTimeMillis());
         program.setUniform("useParallax", Config.getInstance().isUseParallax());
         program.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
+    }
+
+    @Override
+    public void update(@NotNull RenderState writeState) {
+        prepare(writeState);
     }
 }
