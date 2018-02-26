@@ -30,22 +30,6 @@ class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -
     val renderState: TripleBuffer<T> = TripleBuffer(renderStateFactory(),
                                                               renderStateFactory(),
                                                               renderStateFactory())
-    val bufferEntityActionRef = renderState.registerAction({ renderState ->
-        engine.gpuContext.execute {
-            renderState.entitiesState.entitiesBuffer.put(*Util.toArray(engine.getScene().modelComponentSystem.getComponents(), ModelComponent::class.java))
-            renderState.entitiesState.entitiesBuffer.buffer.position(0)
-
-            //        for(ModelComponent modelComponent: modelComponents) {
-            //            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
-            //                for(Mesh mesh: modelComponent.getMeshes()) {
-            //                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
-            //                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
-            //                }
-            //            }
-            //        }
-            renderState.entitiesState.entitiesBuffer.buffer.position(0)
-        }
-    })
     val bufferMaterialsActionRef = renderState.registerAction({ renderState ->
         engine.gpuContext.execute {
             val materials = engine.materialManager.materials
@@ -57,12 +41,6 @@ class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -
             //            }
         }
     })
-
-    val bufferJointsActionRef = renderState.registerAction({ renderState ->
-        val array = Util.toArray(engine.getScene().modelComponentSystem.joints, BufferableMatrix4f::class.java)
-        renderState.entitiesState.jointsBuffer.put(*array)
-    })
-
 
     val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
     val vertexIndexBufferAnimated = VertexIndexBuffer<AnimatedVertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)

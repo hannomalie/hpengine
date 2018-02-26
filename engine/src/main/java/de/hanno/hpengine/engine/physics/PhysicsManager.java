@@ -39,14 +39,12 @@ public class PhysicsManager {
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
     private final CommandQueue commandQueue = new CommandQueue();
-    private Renderer renderer;
 
     public PhysicsManager(Renderer renderer) {
 		this(new Vector3f(0,-20,0), renderer);
 	}
 	public PhysicsManager(Vector3f gravity, Renderer renderer) {
-        this.renderer = renderer;
-        setupBullet(gravity);
+        setupBullet(renderer, gravity);
         new TimeStepThread("Physics", 0.001f) {
 
             @Override
@@ -180,7 +178,7 @@ public class PhysicsManager {
 	}
 	
 
-	private void setupBullet(Vector3f gravity) {
+	private void setupBullet(Renderer renderer, Vector3f gravity) {
 		BroadphaseInterface broadphase = new DbvtBroadphase();
 		CollisionConfiguration collisionConfiguration = new DefaultCollisionConfiguration();
 		CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);

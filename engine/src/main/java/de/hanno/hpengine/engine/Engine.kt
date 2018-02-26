@@ -86,13 +86,12 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
     }
 
     private fun updateRenderState() {
         val scene = sceneManager.scene
         if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
-            renderManager.bufferEntityActionRef.request()
+            eventBus.post(EntityAddedEvent()) // TODO: Create EntityMovedEvent
         }
 
         if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
@@ -106,32 +105,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
     fun actuallyDraw() {
         drawCounter.compareAndSet(1,0)
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(e: EntityAddedEvent) {
-        bufferEntities()
-    }
-
-    fun bufferEntities() {
-        getScene().modelComponentSystem.updateCache = true
-        renderManager.bufferEntityActionRef.request()
-        renderManager.bufferJointsActionRef.request()
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(e: SceneInitEvent) {
-        bufferEntities()
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(event: EntityChangedMaterialEvent) {
-        val entity = event.entity
-        //            buffer(entity);
-        bufferEntities()
     }
 
     @Subscribe

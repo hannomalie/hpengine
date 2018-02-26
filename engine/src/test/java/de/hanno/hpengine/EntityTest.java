@@ -93,8 +93,7 @@ public class EntityTest extends TestWithEngine {
 //            Assert.assertTrue(childValues[34] == 15);
 //        }
 
-
-        engine.getRenderManager().getBufferEntityActionRef().request();
+        engine.getScene().getModelComponentSystem().getBufferEntityActionRef().request();
         FloatBuffer floatValues = engine.getRenderManager().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);

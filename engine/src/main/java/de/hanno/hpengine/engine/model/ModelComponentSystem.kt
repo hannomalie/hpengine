@@ -1,14 +1,20 @@
 package de.hanno.hpengine.engine.model
 
 import com.carrotsearch.hppc.IntArrayList
+import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.event.EntityAddedEvent
+import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent
+import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
+import de.hanno.hpengine.util.Util
+import net.engio.mbassy.listener.Handler
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent> {
@@ -20,6 +26,32 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     private val components = mutableListOf<ModelComponent>()
 
     override fun getComponents(): List<ModelComponent> = components
+
+    val bufferEntityActionRef = engine.renderManager.renderState.registerAction({ renderState ->
+        engine.gpuContext.execute {
+            renderState.entitiesState.entitiesBuffer.put(*Util.toArray(engine.getScene().modelComponentSystem.getComponents(), ModelComponent::class.java))
+            renderState.entitiesState.entitiesBuffer.buffer.position(0)
+
+            //        for(ModelComponent modelComponent: modelComponents) {
+            //            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
+            //                for(Mesh mesh: modelComponent.getMeshes()) {
+            //                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
+            //                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
+            //                }
+            //            }
+            //        }
+            renderState.entitiesState.entitiesBuffer.buffer.position(0)
+        }
+    })
+
+    val bufferJointsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
+        val array = Util.toArray(engine.getScene().modelComponentSystem.joints, BufferableMatrix4f::class.java)
+        renderState.entitiesState.jointsBuffer.put(*array)
+    })
+
+    init {
+        engine.eventBus.register(this)
+    }
 
     override fun create(entity: Entity) = ModelComponent(entity)
 
@@ -79,6 +111,31 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
     override fun clear() = components.clear()
 
+    @Subscribe
+    @Handler
+    fun handle(e: EntityAddedEvent) {
+        bufferEntities()
+    }
+
+    fun bufferEntities() {
+        updateCache = true
+        bufferEntityActionRef.request()
+        bufferJointsActionRef.request()
+    }
+
+    @Subscribe
+    @Handler
+    fun handle(e: SceneInitEvent) {
+        bufferEntities()
+    }
+
+    @Subscribe
+    @Handler
+    fun handle(event: EntityChangedMaterialEvent) {
+        val entity = event.entity
+        //            buffer(entity);
+        bufferEntities()
+    }
 }
 
 val Entity.instances: List<Instance>
