@@ -107,25 +107,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         drawCounter.compareAndSet(1,0)
     }
 
-    @Subscribe
-    @Handler
-    fun handle(event: MaterialAddedEvent) {
-        renderManager.bufferMaterialsActionRef.request()
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(event: MaterialChangedEvent) {
-        renderManager.renderState.addCommand { renderStateX ->
-            if (event.material.isPresent) {
-                //                renderStateX.bufferMaterial(event.getMaterials().get());
-                renderManager.bufferMaterialsActionRef.request()
-            } else {
-                renderManager.bufferMaterialsActionRef.request()
-            }
-        }
-    }
-
     private fun destroyOpenGL() {
         gpuContext.gpuThread.stopRequested = true
     }

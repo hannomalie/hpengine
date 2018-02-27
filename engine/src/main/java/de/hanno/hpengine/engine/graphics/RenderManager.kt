@@ -30,17 +30,6 @@ class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -
     val renderState: TripleBuffer<T> = TripleBuffer(renderStateFactory(),
                                                               renderStateFactory(),
                                                               renderStateFactory())
-    val bufferMaterialsActionRef = renderState.registerAction({ renderState ->
-        engine.gpuContext.execute {
-            val materials = engine.materialManager.materials
-            renderState.entitiesState.materialBuffer.put(*Util.toArray(materials, Material::class.java))
-            renderState.entitiesState.materialBuffer.buffer.position(0)
-            //            for(Material material: materials) {
-            //                System.out.println("Material: " + material.getName() + "(" + material.getMaterialIndex() + ")");
-            //                Material.debugPrintFromBufferStatic(entitiesState.materialBuffer.getBuffer());
-            //            }
-        }
-    })
 
     val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
     val vertexIndexBufferAnimated = VertexIndexBuffer<AnimatedVertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
