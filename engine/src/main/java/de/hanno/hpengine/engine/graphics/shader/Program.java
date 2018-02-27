@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.shader;
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GLU;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;

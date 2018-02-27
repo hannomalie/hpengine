@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine
 
 import com.alee.laf.WebLookAndFeel
 import com.alee.utils.SwingUtils
-import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
@@ -10,7 +9,7 @@ import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -24,7 +23,6 @@ import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
-import net.engio.mbassy.listener.Handler
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files

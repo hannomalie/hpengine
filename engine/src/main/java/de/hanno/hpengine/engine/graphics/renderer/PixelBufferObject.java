@@ -6,6 +6,7 @@ import static org.lwjgl.opengl.GL21.*;
 
 import java.nio.ByteBuffer;
 
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;

@@ -1,7 +1,8 @@
-package de.hanno.hpengine.engine.graphics.renderer;
+package de.hanno.hpengine.engine.graphics;
 
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -155,5 +156,6 @@ public interface GpuContext {
 
     VertexBuffer getFullscreenBuffer();
     VertexBuffer getDebugBuffer();
+
 
 }

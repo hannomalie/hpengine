@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.EXTTextureSRGB;

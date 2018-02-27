@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.renderer;
+package de.hanno.hpengine.engine.graphics;
 
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;

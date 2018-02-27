@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
 import de.hanno.hpengine.engine.event.bus.EventBus;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;

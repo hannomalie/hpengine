@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;

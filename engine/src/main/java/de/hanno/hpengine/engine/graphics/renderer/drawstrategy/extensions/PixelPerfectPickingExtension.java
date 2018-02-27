@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
-import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.EntitySelectedEvent;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -14,7 +13,6 @@ import org.joml.Vector2f;
 
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class PixelPerfectPickingExtension implements RenderExtension {
 

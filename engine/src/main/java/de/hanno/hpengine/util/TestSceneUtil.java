@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;

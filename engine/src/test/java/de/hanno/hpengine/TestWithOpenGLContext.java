@@ -1,6 +1,6 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.lwjgl.LWJGLException;

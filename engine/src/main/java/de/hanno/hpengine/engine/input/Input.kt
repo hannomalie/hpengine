@@ -4,7 +4,7 @@ import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.ClickEvent
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext
+import de.hanno.hpengine.engine.graphics.GpuContext
 
 import org.lwjgl.glfw.GLFW.*
 

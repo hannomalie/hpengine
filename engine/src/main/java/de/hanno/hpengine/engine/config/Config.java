@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.config;
 
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
-import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
-import de.hanno.hpengine.engine.graphics.renderer.OpenGLContext;
+import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
