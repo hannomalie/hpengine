@@ -116,7 +116,7 @@ public final class OpenGLContext implements GpuContext {
     }
 
     @Override
-    public long waitForGpuSync(long gpuCommandSync) {
+    public long waitForGpuSync(GpuCommandSync gpuCommandSync) {
         long start = System.nanoTime();
         while(true) {
             if (isSignaled(gpuCommandSync)) break;
@@ -125,26 +125,15 @@ public final class OpenGLContext implements GpuContext {
     }
 
     @Override
-    public boolean isSignaled(long gpuCommandSync) {
-        return calculate(() -> {
-            if(gpuCommandSync > 0) {
-                int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
-                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
-                    return true;
-                }
-                return false;
-            }
-            return true;
-        });
+    public boolean isSignaled(GpuCommandSync gpuCommandSync) {
+        return calculate(() -> gpuCommandSync.isSignaled());
     }
 
     @Override
     public void createNewGPUFenceForReadState(RenderState currentReadState) {
-        long readStateSync = currentReadState.getGpuCommandSync();
-        if(readStateSync > 0) {
-            glDeleteSync(readStateSync);
-        }
-        currentReadState.setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+        GpuCommandSync readStateSync = currentReadState.getGpuCommandSync();
+        readStateSync.delete();
+        currentReadState.setGpuCommandSync(new OpenGlCommandSync());
     }
 
     @Override
@@ -584,5 +573,33 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public VertexBuffer getDebugBuffer() {
         return debugBuffer;
+    }
+
+    static class OpenGlCommandSync implements GpuCommandSync {
+
+        private long gpuCommandSync;
+
+        OpenGlCommandSync() {
+            gpuCommandSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        }
+
+        @Override
+        public boolean isSignaled() {
+            if(gpuCommandSync > 0) {
+                int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public void delete() {
+            if(gpuCommandSync > 0) {
+                glDeleteSync(gpuCommandSync);
+            }
+        }
     }
 }

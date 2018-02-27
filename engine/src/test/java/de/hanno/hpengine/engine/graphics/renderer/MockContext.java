@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
+import de.hanno.hpengine.engine.graphics.GpuCommandSync;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -47,12 +48,12 @@ public class MockContext implements GpuContext {
     }
 
     @Override
-    public long waitForGpuSync(long gpuCommandSync) {
+    public long waitForGpuSync(GpuCommandSync gpuCommandSync) {
         return 0;
     }
 
     @Override
-    public boolean isSignaled(long gpuCommandSync) {
+    public boolean isSignaled(GpuCommandSync gpuCommandSync) {
         return false;
     }
 

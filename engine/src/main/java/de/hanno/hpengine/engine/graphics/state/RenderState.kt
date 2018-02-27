@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.state
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
@@ -38,7 +39,7 @@ class RenderState(gpuContext: GpuContext) {
     var sceneMax = Vector4f()
 
     var cycle: Long = 0
-    var gpuCommandSync: Long = 0
+    var gpuCommandSync: GpuCommandSync = object: GpuCommandSync {}
 
     val renderBatchesStatic: List<RenderBatch>
         get() = entitiesState.renderBatchesStatic
