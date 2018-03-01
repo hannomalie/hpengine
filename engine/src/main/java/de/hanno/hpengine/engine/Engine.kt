@@ -10,6 +10,8 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.PerFrameCommandProvider
+import de.hanno.hpengine.engine.graphics.SimpleProvider
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -30,18 +32,18 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 
-class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
+class Engine private constructor(gameDirName: String) {
 
     val eventBus: EventBus = MBassadorEventBus()
     val gpuContext: GpuContext = GpuContext.create()
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
-    private val drawCounter = AtomicInteger(-1)
     val commandQueue = CommandQueue()
 
     val managers = SimpleManagerRegistry()
 
     val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
     val renderManager = managers.register(RenderManager(this, { RenderState(gpuContext) }))
+    private val perFrameCommand = SimpleProvider(renderManager.drawRunnable)
     val input = Input(this, gpuContext)
     val programManager = managers.register(ProgramManager(this))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
@@ -57,10 +59,9 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
     init {
         eventBus.register(this)
-        gpuContext.registerPerFrameCommand(this)
+        gpuContext.registerPerFrameCommand(perFrameCommand)
         renderer.registerPipelines(renderManager.renderState)
         startSimulation()
-        drawCounter.set(0)
         eventBus.post(EngineInitializedEvent())
     }
 
@@ -102,7 +103,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     }
 
     fun actuallyDraw() {
-        drawCounter.compareAndSet(1,0)
+        perFrameCommand.setReadyForExecution()
     }
 
     private fun destroyOpenGL() {
@@ -114,11 +115,6 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         destroyOpenGL()
         System.exit(0)
     }
-
-    override fun getDrawCommand() = renderManager.drawRunnable
-    override fun isReadyForExecution() = drawCounter.get() == 0
-    override fun postRun() { drawCounter.getAndIncrement() }
-
 
     companion object {
 

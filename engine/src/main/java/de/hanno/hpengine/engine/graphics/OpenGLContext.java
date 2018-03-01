@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics;
 
-import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -212,8 +211,7 @@ public final class OpenGLContext implements GpuContext {
 
     private void executePerFrameCommand(PerFrameCommandProvider perFrameCommandProvider) {
         if(perFrameCommandProvider.isReadyForExecution()) {
-            perFrameCommandProvider.getDrawCommand().run();
-            perFrameCommandProvider.postRun();
+            perFrameCommandProvider.execute();
         }
     }
 

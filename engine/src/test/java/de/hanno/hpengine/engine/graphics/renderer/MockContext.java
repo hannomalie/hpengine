@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.PerFrameCommandProvider;
+import de.hanno.hpengine.engine.graphics.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.graphics.GpuCommandSync;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;

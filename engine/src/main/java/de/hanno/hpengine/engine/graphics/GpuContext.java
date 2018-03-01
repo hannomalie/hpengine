@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics;
 
-import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
@@ -21,7 +20,6 @@ public interface GpuContext {
     boolean CHECKERRORS = false;
 
     Logger LOGGER = Logger.getLogger(GpuContext.class.getName());
-
 
     RenderTarget getFrontBuffer();
 
