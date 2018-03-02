@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent
+import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 
@@ -21,8 +23,17 @@ class SceneManager(val engine: Engine): Manager {
 
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
-        scene.currentRenderCycle = engine.renderManager.drawCycle.get()
+        val newDrawCycle = engine.renderManager.drawCycle.get()
+        scene.currentRenderCycle = newDrawCycle
         scene.update(deltaSeconds)
+
+
+        if (scene.entityMovedInCycle() == newDrawCycle) {
+            engine.eventBus.post(EntityAddedEvent()) // TODO: Create EntityMovedEvent
+        }
+        if (scene.lightManager.directionalLight.entity.hasMoved()) {
+            engine.eventBus.post(DirectionalLightHasMovedEvent())
+        }
     }
 
     private fun onSetScene(nextScene: Scene) {

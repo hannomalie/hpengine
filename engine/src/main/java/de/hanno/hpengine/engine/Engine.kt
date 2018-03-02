@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.SimpleProvider
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -62,7 +61,6 @@ class Engine private constructor(gameDirName: String) {
 
     fun startSimulation() {
         updateThread.start()
-
         renderManager.renderThread.start()
     }
 
@@ -78,23 +76,20 @@ class Engine private constructor(gameDirName: String) {
 
     private fun updateRenderState() {
         val scene = sceneManager.scene
-        if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
-            eventBus.post(EntityAddedEvent()) // TODO: Create EntityMovedEvent
-        }
 
-//        TODO: Move this to somewhere else
-        if (getScene().lightManager.directionalLight.entity.hasMoved()) {
-            eventBus.post(DirectionalLightHasMovedEvent())
+        with(renderManager) {
+            if (gpuContext.isSignaled(renderState.currentWriteState.gpuCommandSync)) {
+                with(scene) {
+                    with(getScene().lightManager.directionalLight) {
+                        renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, modelComponentSystem.joints, sceneManager.activeCamera, entityMovedInCycle(), lightManager.directionalLightMovedInCycle, pointLightMovedInCycle(), isInitiallyDrawn, minMax[0], minMax[1], drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityAddedInCycle)
+                    }
+                }
+                scene.extract(renderState.currentWriteState)
+                renderState.update()
+                renderState.currentWriteState.cycle = drawCycle.get()
+            }
+            drawCycle.getAndIncrement()
         }
-
-        if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
-            val directionalLight = getScene().lightManager.directionalLight
-            renderManager.renderState.currentWriteState.init(renderManager.vertexIndexBufferStatic, renderManager.vertexIndexBufferAnimated, getScene().modelComponentSystem.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), getScene().lightManager.directionalLightMovedInCycle, scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderManager.drawCycle.get(), getScene().lightManager.directionalLight.getEntity().viewMatrixAsBuffer, directionalLight.projectionMatrixAsBuffer, directionalLight.viewProjectionMatrixAsBuffer, directionalLight.scatterFactor, directionalLight.direction, directionalLight.color, scene.entityAddedInCycle)
-            scene.extract(renderManager.renderState.currentWriteState)
-            renderManager.renderState.update()
-            renderManager.renderState.currentWriteState.cycle = renderManager.drawCycle.get()
-        }
-        renderManager.drawCycle.getAndIncrement()
     }
 
     fun actuallyDraw() {
@@ -158,7 +153,8 @@ class Engine private constructor(gameDirName: String) {
         }
 
         @JvmOverloads
-        @JvmStatic fun create(gameDirName: String = GAMEDIR_NAME) = Engine(gameDirName)
+        @JvmStatic
+        fun create(gameDirName: String = GAMEDIR_NAME) = Engine(gameDirName)
     }
 
     fun getScene() = sceneManager.scene

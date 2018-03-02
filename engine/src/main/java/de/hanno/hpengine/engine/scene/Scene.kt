@@ -81,8 +81,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     var entityAddedInCycle: Long = 0
         private set
     @Volatile
-    @Transient private var directionalLightMovedInCycle: Long = 0
-    @Volatile
     @Transient private var pointLightMovedInCycle: Long = 0
     @Volatile
     @Transient
