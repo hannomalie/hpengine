@@ -2,8 +2,8 @@ package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
@@ -24,9 +24,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getClusters;
-import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstanceCount;
-import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstances;
+import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.*;
 
 
 public class ModelComponent extends BaseComponent implements Serializable, Bufferable {
@@ -86,13 +84,13 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     public ModelComponent(Entity entity) {
         this.entity = entity;
     }
-    public ModelComponent(Entity entity, Model model) {
+    public ModelComponent(Engine engine, Entity entity, Model model) {
         super();
         this.entity = entity;
         this.model = model;
         if(!model.isStatic()) {
             AnimatedModel animatedModel = (AnimatedModel) model;
-            animationController = new AnimationController(animatedModel.getFrames().size(), animatedModel.getHeader().getFrameRate());
+            animationController = new AnimationController(engine, animatedModel.getFrames().size(), animatedModel.getHeader().getFrameRate());
         }
         indicesCounts = new int[model.getMeshes().size()];
         baseVertices = new int[model.getMeshes().size()];
@@ -285,9 +283,9 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
 
 
     @Override
-    public void update(Engine engine, float seconds) {
+    public void update(float seconds) {
         if(model instanceof AnimatedModel) {
-            animationController.update(engine, seconds);
+            animationController.update(seconds);
         }
     }
 

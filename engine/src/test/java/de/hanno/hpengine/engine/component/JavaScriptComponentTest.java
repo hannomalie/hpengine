@@ -49,7 +49,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
         JavaScriptComponent component = new JavaScriptComponent(script);
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create().addComponent(component);
 
-        entity.update(engine, 0.1f);
+        entity.update(0.1f);
 
 //        try {
 //            world.getScriptManager().eval("marker = true;");
@@ -57,7 +57,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
 //            e.printStackTrace();
 //        }
 
-        component.update(engine, 0.1f);
+        component.update(0.1f);
         Assert.assertEquals(true, engine.getScene().getScriptManager().getGlobalContext().get("initCalled"));
         Assert.assertEquals(true, engine.getScene().getScriptManager().getGlobalContext().get("updateCalled"));
     }

@@ -69,9 +69,9 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public void update(Engine engine, float seconds) {
+    public void update(float seconds) {
         if(isLifeCycle) {
-            ((LifeCycle) instance).update(engine, seconds);
+            ((LifeCycle) instance).update(seconds);
         }
     }
 

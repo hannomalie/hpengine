@@ -70,6 +70,7 @@ public class LightManager {
     private final MaterialManager materialManager;
     private final ProgramManager programManager;
 	private final ModelComponentSystem modelComponentSystem;
+	private final Engine engine;
 
 	private int pointLightDepthMapsArrayCube;
 	private int pointLightDepthMapsArrayFront;
@@ -110,8 +111,9 @@ public class LightManager {
 
     private DirectionalLight directionalLightComponent;
 	
-	public LightManager(EventBus eventBus, MaterialManager materialManager, SceneManager sceneManager, GpuContext gpuContext, ProgramManager programManager, InputComponentSystem inputControllerSystem, ModelComponentSystem modelComponentSystem) {
-        this.materialManager = materialManager;
+	public LightManager(Engine engine, EventBus eventBus, MaterialManager materialManager, SceneManager sceneManager, GpuContext gpuContext, ProgramManager programManager, InputComponentSystem inputControllerSystem, ModelComponentSystem modelComponentSystem) {
+		this.engine = engine;
+		this.materialManager = materialManager;
 		this.sceneManager = sceneManager;
 		this.gpuContext = gpuContext;
         this.programManager = programManager;
@@ -189,7 +191,7 @@ public class LightManager {
 		eventBus.register(this);
         directionalLightComponent = createDirectionalLight(directionalLight.getEntity());
         directionalLight.getEntity().addComponent(directionalLightComponent);
-        inputControllerSystem.addComponent(directionalLight.addInputController());
+        inputControllerSystem.addComponent(directionalLight.addInputController(this.engine));
         initLights();
     }
 
@@ -508,13 +510,13 @@ public class LightManager {
 
         Iterator<PointLight> pointLightsIterator = pointLights.iterator();
         while (pointLightsIterator.hasNext()) {
-            pointLightsIterator.next().update(engine, deltaSeconds);
+            pointLightsIterator.next().update(deltaSeconds);
         }
 
         for (int i = 0; i < areaLights.size(); i++) {
-            areaLights.get(i).update(engine, deltaSeconds);
+            areaLights.get(i).update(deltaSeconds);
         }
-        directionalLight.update(engine, deltaSeconds);
+        directionalLight.update(deltaSeconds);
 
         if (directionalLight.getEntity().hasMoved()) {
             directionalLightMovedInCycle = currentCycle;

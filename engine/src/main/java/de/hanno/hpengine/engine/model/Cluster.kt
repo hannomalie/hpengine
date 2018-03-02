@@ -1,23 +1,24 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
-import de.hanno.hpengine.engine.transform.*
+import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.Spatial
 import org.joml.Vector3f
 import java.util.*
 
 
 class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), LifeCycle, Spatial by spatial {
 
-    override fun update(engine: Engine, seconds: Float) {
-        for (i in 0..size - 1) {
-            get(i).update(engine, seconds)
+    override fun update(seconds: Float) {
+        for (i in 0 until size) {
+            get(i).update(seconds)
         }
     }
 
     var isHasMoved: Boolean
         get() {
-            for (i in 0..size - 1) {
+            for (i in 0 until size) {
                 if (get(i).isHasMoved) {
                     return true
                 }
@@ -25,7 +26,7 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             return false
         }
         set(value) {
-            for (i in 0..size - 1) {
+            for (i in 0 until size) {
                 get(i).isHasMoved = value
             }
         }
@@ -45,7 +46,7 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
         minMaxProperty.min.set(Spatial.MIN)
         minMaxProperty.max.set(Spatial.MAX)
 
-        for (i in 0..size - 1) {
+        for (i in 0 until size) {
             val currentMinMax = get(i).getMinMaxWorld(get(i))
             val currentMin = currentMinMax.min
             val currentMax = currentMinMax.max

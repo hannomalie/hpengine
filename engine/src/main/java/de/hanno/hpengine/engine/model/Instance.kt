@@ -13,10 +13,11 @@ import de.hanno.hpengine.engine.transform.Transform
 import java.util.*
 
 open class Instance
-    @JvmOverloads constructor(val entity: Entity, transform: Transform<out Transform<*>> = Transform(),
+    @JvmOverloads constructor(val engine: Engine, val entity: Entity,
+                              transform: Transform<out Transform<*>> = Transform(),
                               var materials: List<Material> = listOf(),
-                              val animationController: AnimationController = AnimationController(0, 0f),
-                              open val spatial: Spatial = object : SimpleSpatial(){
+                              val animationController: AnimationController = AnimationController(engine, 0, 0f),
+                              open val spatial: Spatial = object : SimpleSpatial() {
                                   override fun getMinMaxWorld(): AABB {
                                       recalculate(transform)
                                       return super.getMinMaxWorld()
@@ -40,8 +41,8 @@ open class Instance
         return children
     }
 
-    override fun update(engine: Engine, seconds: Float) {
-        animationController.update(engine, seconds)
+    override fun update(seconds: Float) {
+        animationController.update(seconds)
     }
 
     override fun getMinMax(): AABB {

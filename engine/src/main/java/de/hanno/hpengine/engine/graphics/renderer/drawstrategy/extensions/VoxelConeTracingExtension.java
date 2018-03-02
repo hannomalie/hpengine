@@ -421,6 +421,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
         orthoCam.setWidth(getGridSizeScaled());
         orthoCam.setHeight(getGridSizeScaled());
         orthoCam.setFar(-2000);
-        orthoCam.update(engine, 0.000001f);
+        orthoCam.update(0.000001f);
     }
 }

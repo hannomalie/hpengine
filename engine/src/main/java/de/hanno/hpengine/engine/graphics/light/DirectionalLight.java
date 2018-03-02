@@ -3,9 +3,8 @@ package de.hanno.hpengine.engine.graphics.light;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
-import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.graphics.shader.Program;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -33,11 +32,8 @@ public class DirectionalLight extends Camera {
 	}
 
 	@Override
-	public void update(Engine engine, float seconds) {
-		if(entity.hasMoved()) {
-            engine.getEventBus().post(new DirectionalLightHasMovedEvent());
-        }
-        super.update(engine, seconds);
+	public void update(float seconds) {
+        super.update(seconds);
 	}
 
 	public void drawDebug(Program program) {
@@ -65,12 +61,12 @@ public class DirectionalLight extends Camera {
 		this.scatterFactor = scatterFactor;
 	}
 
-	public InputControllerComponent addInputController() {
+	public InputControllerComponent addInputController(Engine engine) {
 		InputControllerComponent component = new InputControllerComponent(entity) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public void update(Engine engine, float seconds) {
+			public void update(float seconds) {
 
 				float moveAmount = 100 * seconds;
 				float degreesPerSecond = 45;

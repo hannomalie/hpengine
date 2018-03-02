@@ -9,7 +9,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent(entity: Entity) : InputControllerComponent(entity) {
+class MovableInputComponent(val engine: Engine, entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -32,7 +32,7 @@ class MovableInputComponent(entity: Entity) : InputControllerComponent(entity) {
         this.entity = entity
     }
 
-    override fun update(engine: Engine, seconds: Float) {
+    override fun update(seconds: Float) {
         //                             linearVel.fma(seconds, linearAcc);
         //                             // update angular velocity based on angular acceleration
         //                             angularVel.fma(seconds, angularAcc);
@@ -91,11 +91,11 @@ class MovableInputComponent(entity: Entity) : InputControllerComponent(entity) {
 }
 
 class InputComponentSystem(val engine: Engine): ComponentSystem<InputControllerComponent> {
-    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(engine, deltaSeconds) } }
+    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<InputControllerComponent>()
     override fun getComponents(): List<InputControllerComponent> = components
 
-    override fun create(entity: Entity) = MovableInputComponent(entity).also { components.add(it); }
+    override fun create(entity: Entity) = MovableInputComponent(engine, entity).also { components.add(it); }
     override fun addComponent(component: InputControllerComponent) {
         components.add(component)
     }

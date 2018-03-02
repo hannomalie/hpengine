@@ -181,7 +181,7 @@ public class OctreeTest extends TestWithEngine {
 		Assert.assertFalse(entityTopRightFront.isInFrustum(camera));
 
 		camera.translateLocal(new Vector3f(0, 0, -2));
-		camera.update(engine, 1);
+		camera.update(1);
 		Helpers.assertEpsilonEqual(new Vector3f(0,0,-2), camera.getPosition(), 0.001f);
 		Helpers.assertEpsilonEqual(new Vector3f(0,0,-1), camera.getViewDirection(), 0.001f);
 		camera.getFrustum().calculate(camera);

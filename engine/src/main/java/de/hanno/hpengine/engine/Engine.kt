@@ -10,14 +10,12 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.PerFrameCommandProvider
 import de.hanno.hpengine.engine.graphics.SimpleProvider
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
@@ -30,13 +28,13 @@ import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 
 class Engine private constructor(gameDirName: String) {
 
     val eventBus: EventBus = MBassadorEventBus()
     val gpuContext: GpuContext = GpuContext.create()
+    val input = Input(this, gpuContext)
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
     val commandQueue = CommandQueue()
 
@@ -45,7 +43,6 @@ class Engine private constructor(gameDirName: String) {
     val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
     val renderManager = managers.register(RenderManager(this, { RenderState(gpuContext) }))
     private val perFrameCommand = SimpleProvider(renderManager.drawRunnable)
-    val input = Input(this, gpuContext)
     val programManager = managers.register(ProgramManager(this))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
     val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
@@ -74,7 +71,7 @@ class Engine private constructor(gameDirName: String) {
     fun update(deltaSeconds: Float) {
         try {
             commandQueue.executeCommands()
-            getScene().lightManager.update(this, deltaSeconds, sceneManager.scene.currentCycle)
+            getScene().lightManager.update(this, deltaSeconds, sceneManager.scene.currentRenderCycle)
             getScene().systems.update(deltaSeconds)
             sceneManager.update(deltaSeconds)
             updateRenderState()
@@ -91,6 +88,11 @@ class Engine private constructor(gameDirName: String) {
         val scene = sceneManager.scene
         if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
             eventBus.post(EntityAddedEvent()) // TODO: Create EntityMovedEvent
+        }
+
+//        TODO: Move this to somewhere else
+        if (getScene().lightManager.directionalLight.entity.hasMoved()) {
+            eventBus.post(DirectionalLightHasMovedEvent())
         }
 
         if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
@@ -167,5 +169,6 @@ class Engine private constructor(gameDirName: String) {
     }
 
     fun getScene() = sceneManager.scene
+
 }
 

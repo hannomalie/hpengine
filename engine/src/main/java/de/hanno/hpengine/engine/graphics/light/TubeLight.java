@@ -49,7 +49,7 @@ public class TubeLight extends Entity {
 	}
 	
 	@Override
-	public void update(Engine engine, float seconds) {
+	public void update(float seconds) {
 	}
 
     public void draw(Program program) {

@@ -58,12 +58,12 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     override fun update(deltaSeconds: Float) {
         cacheEntityIndices()
         for (component in getComponents()) {
-            component.update(engine, deltaSeconds)
+            component.update(deltaSeconds)
         }
     }
 
     fun <T: Bufferable> create(entity: Entity, model: Model<T>): ModelComponent {
-        val component = ModelComponent(entity, model)
+        val component = ModelComponent(engine, entity, model)
         components.add(component)
         return component
     }

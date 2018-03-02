@@ -60,7 +60,7 @@ public class PhysicsComponent extends BaseComponent {
         }
     }
 
-    public void update(Engine engine, float seconds) {
+    public void update(float seconds) {
 		com.bulletphysics.linearmath.Transform out = new com.bulletphysics.linearmath.Transform();
 		rigidBody.getWorldTransform(out);
 		Matrix4f temp = new Matrix4f();

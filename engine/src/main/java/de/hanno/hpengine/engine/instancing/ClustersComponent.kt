@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.*
 import java.util.*
 
-class ClustersComponent(private val eventBus: EventBus, private val entity: Entity): Component {
+class ClustersComponent(val engine: Engine, private val eventBus: EventBus, private val entity: Entity): Component {
 
     private val instances = mutableListOf<Instance>()
     private val clusters = mutableListOf<Cluster>()
@@ -24,9 +24,9 @@ class ClustersComponent(private val eventBus: EventBus, private val entity: Enti
 
     override fun getEntity() = entity
     override fun getIdentifier(): String = ClustersComponent::class.java.simpleName
-    override fun update(engine: Engine, seconds: Float) {
+    override fun update(seconds: Float) {
         for (cluster in clusters) {
-            cluster.update(engine, seconds)
+            cluster.update(seconds)
         }
     }
 
@@ -36,8 +36,8 @@ class ClustersComponent(private val eventBus: EventBus, private val entity: Enti
         if (componentOption.isPresent) {
             val materials = componentOption.get().meshes.map( { it.material })
             val spatial = if (componentOption.get().isStatic) InstanceSpatial() else AnimatedInstanceSpatial()
-            val animationController = if (componentOption.get().isStatic) AnimationController(0, 0f) else AnimationController(120, 24f)
-            instance = Instance(entity, transform, materials, animationController, spatial)
+            val animationController = if (componentOption.get().isStatic) AnimationController(engine, 0, 0f) else AnimationController(engine, 120, 24f)
+            instance = Instance(engine, entity, transform, materials, animationController, spatial)
             spatial.instance = instance
             addExistingInstance(instance)
         } else {
@@ -49,7 +49,7 @@ class ClustersComponent(private val eventBus: EventBus, private val entity: Enti
                     return entity.spatial.minMax
                 }
             }
-            instance = Instance(entity, transform, materials, AnimationController(0, 0f), spatial)
+            instance = Instance(engine, entity, transform, materials, AnimationController(engine, 0, 0f), spatial)
             spatial.instance = instance
             addExistingInstance(instance)
         }
@@ -90,7 +90,7 @@ class ClustersComponent(private val eventBus: EventBus, private val entity: Enti
         val materials = if (modelComponent == null) ArrayList<Material>() else modelComponent.materials
         val collect = instances.map { trafo ->
             val spatial = InstanceSpatial()
-            val instance = Instance(entity, trafo, materials, AnimationController(0, 0f), spatial)
+            val instance = Instance(engine, entity, trafo, materials, AnimationController(engine, 0, 0f), spatial)
             spatial.instance = instance
             instance
         }
@@ -143,12 +143,12 @@ class ClustersComponentSystem(val engine: Engine) : ComponentSystem<ClustersComp
 
     override fun update(deltaSeconds: Float) {
         getComponents().forEach{
-            it.update(engine, deltaSeconds)
+            it.update(deltaSeconds)
         }
     }
 
     override fun create(entity: Entity): ClustersComponent {
-        return ClustersComponent(engine.eventBus, entity).also { addComponent(it) }
+        return ClustersComponent(engine, engine.eventBus, entity).also { addComponent(it) }
     }
 
     override fun addComponent(component: ClustersComponent) {

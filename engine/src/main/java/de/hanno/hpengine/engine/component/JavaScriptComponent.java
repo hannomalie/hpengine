@@ -35,7 +35,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     @Override
-    public void update(Engine engine, float seconds) {
+    public void update(float seconds) {
         engine.getScene().getScriptManager().evalUpdate(this, seconds);
     }
 

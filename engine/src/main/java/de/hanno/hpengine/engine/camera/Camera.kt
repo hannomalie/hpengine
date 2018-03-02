@@ -120,7 +120,7 @@ open class Camera: Component {
         storeMatrices()
     }
 
-    override fun update(engine: Engine, seconds: Float) {
+    override fun update(seconds: Float) {
         saveViewMatrixAsLastViewMatrix()
         if (entity.hasMoved()) {
             transform()
@@ -233,7 +233,7 @@ open class Camera: Component {
 }
 
 class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {
-    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(engine, deltaSeconds) } }
+    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<Camera>()
     override fun getComponents(): List<Camera> = components
 

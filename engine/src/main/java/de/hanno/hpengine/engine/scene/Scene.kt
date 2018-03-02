@@ -11,7 +11,10 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
-import de.hanno.hpengine.engine.event.*
+import de.hanno.hpengine.engine.event.EntityAddedEvent
+import de.hanno.hpengine.engine.event.LightChangedEvent
+import de.hanno.hpengine.engine.event.MaterialAddedEvent
+import de.hanno.hpengine.engine.event.PointLightMovedEvent
 import de.hanno.hpengine.engine.graphics.light.AreaLight
 import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.light.PointLight
@@ -53,7 +56,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     val inputComponentSystem = systems.register(InputComponentSystem(engine))
     val modelComponentSystem = systems.register(ModelComponentSystem(engine))
     val materialManager = MaterialManager(engine, engine.textureManager)
-    val lightManager = LightManager(engine.eventBus, materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
+    val lightManager = LightManager(engine, engine.eventBus, materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
     val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) }
 
     val entitySystems = SimpleEntitySystemRegistry()
@@ -83,7 +86,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     @Transient private var pointLightMovedInCycle: Long = 0
     @Volatile
     @Transient
-    var currentCycle: Long = 0
+    var currentRenderCycle: Long = 0
     @Volatile
     @Transient
     var isInitiallyDrawn: Boolean = false
@@ -161,14 +164,14 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         entityManager.add(entities)
         modelComponentSystem.allocateVertexIndexBufferSpace(entities)
         calculateMinMax(entities)
-        entityAddedInCycle = currentCycle
+        entityAddedInCycle = currentRenderCycle
         engine.eventBus.post(MaterialAddedEvent())
         engine.eventBus.post(EntityAddedEvent())
     }
 
     fun add(entity: Entity) = addAll(listOf(entity))
 
-    override fun update(engine: Engine, deltaSeconds: Float) {
+    override fun update(deltaSeconds: Float) {
         materialManager.update(deltaSeconds)
         systems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
@@ -178,7 +181,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
             if (!pointLight.hasMoved()) {
                 continue
             }
-            pointLightMovedInCycle = currentCycle
+            pointLightMovedInCycle = currentRenderCycle
             engine.eventBus.post(PointLightMovedEvent())
             pointLight.isHasMoved = false
         }
@@ -274,7 +277,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun setEntityMovedInCycleToCurrentCycle() {
-        entityMovedInCycle = currentCycle
+        entityMovedInCycle = currentRenderCycle
     }
 
     fun extract(currentWriteState: RenderState) {

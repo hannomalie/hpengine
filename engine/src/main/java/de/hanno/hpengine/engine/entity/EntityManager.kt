@@ -49,7 +49,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
 
         for (i in entityContainer.entities.indices) {
             try {
-                entityContainer.entities[i].update(engine, deltaSeconds)
+                entityContainer.entities[i].update(deltaSeconds)
             } catch (e: Exception) {
                 LOGGER.warning(e.message)
             }

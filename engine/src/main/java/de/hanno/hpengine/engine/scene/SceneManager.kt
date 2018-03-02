@@ -2,8 +2,6 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.event.EntityAddedEvent
-import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 
@@ -24,8 +22,8 @@ class SceneManager(val engine: Engine): Manager {
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
 //        activeCamera.update(engine, deltaSeconds)
-        scene.currentCycle = engine.renderManager.drawCycle.get()
-        scene.update(engine, deltaSeconds)
+        scene.currentRenderCycle = engine.renderManager.drawCycle.get()
+        scene.update(deltaSeconds)
     }
 
     private fun onSetScene(nextScene: Scene) {

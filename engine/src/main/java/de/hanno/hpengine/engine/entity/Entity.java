@@ -142,13 +142,13 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	}
 
 	@Override
-	public void update(Engine engine, float seconds) {
+	public void update(float seconds) {
 		if(hasParent()) {
 			return;
 		}
 		recalculateIfDirty();
 		for(int i = 0; i < getChildren().size(); i++) {
-			getChildren().get(i).update(engine, seconds);
+			getChildren().get(i).update(seconds);
 		}
 	}
 

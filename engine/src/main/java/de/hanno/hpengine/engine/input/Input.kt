@@ -176,4 +176,5 @@ class Input(val engine: Engine, private val gpuContext: GpuContext) {
     fun getMouseY(): Int {
         return Config.getInstance().height - mouseY[0].toInt()
     }
+
 }

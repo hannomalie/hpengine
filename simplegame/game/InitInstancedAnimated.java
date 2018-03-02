@@ -70,7 +70,7 @@ public class InitInstancedAnimated implements LifeCycle {
                             final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                             List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
                             InstanceSpatial spatial = modelComponent.isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
-                            Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24 + 10 * randomFloat), spatial);
+                            Instance instance = new Instance(, current, trafo, materials, new AnimationController(engine, 120, 24 + 10 * randomFloat), spatial);
                             spatial.setInstance(instance);
 
                             cluster.add(instance);
