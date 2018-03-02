@@ -14,7 +14,7 @@ public class InitMaterialCommand implements Command<MaterialResult> {
 
 	@Override
 	public MaterialResult execute(Engine engine) {
-		material.init(engine.getMaterialManager());
+		material.init(engine.getScene().getMaterialManager());
 		MaterialResult result = new MaterialResult(material);
 		return result;
 	}

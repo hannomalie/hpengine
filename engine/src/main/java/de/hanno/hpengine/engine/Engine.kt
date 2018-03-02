@@ -47,7 +47,6 @@ class Engine private constructor(gameDirName: String) {
     val input = Input(this, gpuContext)
     val programManager = managers.register(ProgramManager(this))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
-    val materialManager = managers.register(MaterialManager(this, textureManager))
 
     val sceneManager = SceneManager(this)
 

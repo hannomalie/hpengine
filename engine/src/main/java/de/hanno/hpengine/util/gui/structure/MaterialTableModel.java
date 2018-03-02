@@ -5,8 +5,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.material.Material;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.Comparator;
-import java.util.stream.Collectors;
 
 public class MaterialTableModel extends AbstractTableModel {
 
@@ -22,7 +20,7 @@ public class MaterialTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         try {
-            return engine.getMaterialManager().getMaterials().size();
+            return engine.getScene().getMaterialManager().getMaterials().size();
         } catch (IllegalStateException e) {
             return 0;
         }
@@ -36,7 +34,7 @@ public class MaterialTableModel extends AbstractTableModel {
     }
 
     private Material getMaterial(int row) {
-        return engine.getMaterialManager().getMaterials()
+        return engine.getScene().getMaterialManager().getMaterials()
                 .get(row);
     }
 

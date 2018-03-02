@@ -19,7 +19,7 @@ public class EntityTest extends TestWithEngine {
 
     @Test
     public void loadParented() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create("xxx");
         engine.getSceneManager().getScene().add(entity);
 
@@ -39,7 +39,7 @@ public class EntityTest extends TestWithEngine {
 
     @Test
     public void testInstanceBuffering() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
         Entity parentEntity = engine.getSceneManager().getScene().getEntityManager().create("parent");
         parentEntity.setSelected(true);
         parentEntity.setTranslation(new Vector3f(2,2,2));

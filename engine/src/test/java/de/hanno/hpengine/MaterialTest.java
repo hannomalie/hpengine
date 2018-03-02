@@ -11,13 +11,13 @@ public class MaterialTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws IOException, ClassNotFoundException {
-        Material material = engine.getMaterialManager().getDefaultMaterial();
+        Material material = engine.getScene().getMaterialManager().getDefaultMaterial();
 		
 		String filename = "default.hpmaterial";
 
 		Assert.assertTrue(Material.write(material, filename));
 
-        Material loadedMaterial = engine.getMaterialManager().read(filename);
+        Material loadedMaterial = engine.getScene().getMaterialManager().read(filename);
 	    
 		StopWatch.ACTIVE = false;
 	    Assert.assertTrue(material.equals(loadedMaterial));

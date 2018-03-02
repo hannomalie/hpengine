@@ -37,7 +37,7 @@ class MaterialManager(engine: Engine, val textureManager: TextureManager) : Mana
 
     val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
         engine.gpuContext.execute {
-            val materials = engine.materialManager.materials
+            val materials = engine.getScene().materialManager.materials
             renderState.entitiesState.materialBuffer.put(*Util.toArray(materials, Material::class.java))
             renderState.entitiesState.materialBuffer.buffer.position(0)
             //            for(Material material: materials) {

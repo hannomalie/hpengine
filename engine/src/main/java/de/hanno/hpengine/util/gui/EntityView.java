@@ -142,7 +142,7 @@ public class EntityView extends WebPanel {
                     int finalI = i;
                     addMaterialSelect(materialSelectionPanel, e -> {
                         WebComboBox cb = (WebComboBox) e.getSource();
-                        Material selectedMaterial = engine.getMaterialManager().getMaterials().get(cb.getSelectedIndex());
+                        Material selectedMaterial = engine.getScene().getMaterialManager().getMaterials().get(cb.getSelectedIndex());
                         materials.remove(materials.get(finalI));
                         materials.add(finalI, selectedMaterial);
                         currentInstance.setMaterials(materials);
@@ -181,7 +181,7 @@ public class EntityView extends WebPanel {
             materialSelectionPanel.addElement(meshName);
             addMaterialSelect(materialSelectionPanel, e -> {
                 WebComboBox cb = (WebComboBox) e.getSource();
-                Material selectedMaterial = engine.getMaterialManager().getMaterials().get(cb.getSelectedIndex());
+                Material selectedMaterial = engine.getScene().getMaterialManager().getMaterials().get(cb.getSelectedIndex());
                 mesh.setMaterial(selectedMaterial);
                 engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
             }, mesh.getMaterial());
@@ -232,15 +232,15 @@ public class EntityView extends WebPanel {
         });
         webComponentPanel.addElement(updateComboBox);
 
-        Material material = engine.getMaterialManager().getDefaultMaterial();
+        Material material = engine.getScene().getMaterialManager().getDefaultMaterial();
         if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
-            material = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(engine.getMaterialManager());
+            material = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(engine.getScene().getMaterialManager());
         }
 
         addMaterialSelect(webComponentPanel, e -> {
             WebComboBox cb = (WebComboBox) e.getSource();
-            Material selectedMaterial = engine.getMaterialManager().getMaterials().get(cb.getSelectedIndex());
-            entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(engine.getMaterialManager(), selectedMaterial.getName()));
+            Material selectedMaterial = engine.getScene().getMaterialManager().getMaterials().get(cb.getSelectedIndex());
+            entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(engine.getScene().getMaterialManager(), selectedMaterial.getName()));
             engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         }, material);
 
@@ -292,9 +292,9 @@ public class EntityView extends WebPanel {
 
     private void addMaterialSelect(WebComponentPanel webComponentPanel, ActionListener actionListener, Material initialSelection) {
         try {
-            WebComboBox materialSelect = new WebComboBox(new Vector<>(engine.getMaterialManager().getMaterials()));
+            WebComboBox materialSelect = new WebComboBox(new Vector<>(engine.getScene().getMaterialManager().getMaterials()));
 
-            materialSelect.setSelectedIndex(engine.getMaterialManager().getMaterials().indexOf(initialSelection));
+            materialSelect.setSelectedIndex(engine.getScene().getMaterialManager().getMaterials().indexOf(initialSelection));
             materialSelect.addActionListener(actionListener);
             webComponentPanel.addElement(materialSelect);
 

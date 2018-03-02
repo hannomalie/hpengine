@@ -113,7 +113,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
         gpuContext = this.engine.getGpuContext();
 
-        StaticModel skyBox = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
+        StaticModel skyBox = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
         skyBoxEntity = this.engine.getSceneManager().getScene().getEntityManager().create();
         skyBoxEntity.addComponent(new ModelComponent(skyBoxEntity, skyBox));
         skyBoxEntity.init(engine);
@@ -250,7 +250,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         program.setUniform("directionalLightColor", renderState.getDirectionalLightState().directionalLightColor);
         Vector3f translation = new Vector3f();
         program.setUniform("eyePos_world", camera.getTranslation(translation));
-        program.setUniform("materialIndex", engine.getMaterialManager().getSkyboxMaterial().getMaterialIndex());
+        program.setUniform("materialIndex", engine.getScene().getMaterialManager().getSkyboxMaterial().getMaterialIndex());
         program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
         program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());

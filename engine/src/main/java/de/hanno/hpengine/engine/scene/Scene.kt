@@ -26,11 +26,11 @@ import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
 import de.hanno.hpengine.engine.manager.SystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.nustaq.serialization.FSTConfiguration
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
@@ -52,8 +52,9 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     val cameraComponentSystem = systems.register(CameraComponentSystem(engine))
     val inputComponentSystem = systems.register(InputComponentSystem(engine))
     val modelComponentSystem = systems.register(ModelComponentSystem(engine))
-    val lightManager = LightManager(engine.eventBus, engine.materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
-    val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager) }
+    val materialManager = MaterialManager(engine, engine.textureManager)
+    val lightManager = LightManager(engine.eventBus, materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
+    val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) }
 
     val entitySystems = SimpleEntitySystemRegistry()
     val bla = entitySystems.register(object: SimpleEntitySystem(engine, this, listOf(ModelComponent::class.java, ClustersComponent::class.java)) {
@@ -169,6 +170,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     fun add(entity: Entity) = addAll(listOf(entity))
 
     override fun update(engine: Engine, deltaSeconds: Float) {
+        materialManager.update(deltaSeconds)
         systems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
 

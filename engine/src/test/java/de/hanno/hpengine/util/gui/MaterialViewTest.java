@@ -8,7 +8,7 @@ public class MaterialViewTest extends ViewTest {
     @Ignore
     @Test
     public void showMaterialView() {
-        openViewInFrame(new MaterialView(engine, engine.getMaterialManager().getDefaultMaterial()));
+        openViewInFrame(new MaterialView(engine, engine.getScene().getMaterialManager().getDefaultMaterial()));
     }
 
 }

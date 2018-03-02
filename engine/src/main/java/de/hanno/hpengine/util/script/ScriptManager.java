@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.component.JavaScriptComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
@@ -35,11 +36,11 @@ public class ScriptManager {
 		LOGGER.info("Script executed...");
 	}
 
-	public void defineGlobals(Engine engine, EntityManager entityManager) {
+	public void defineGlobals(Engine engine, EntityManager entityManager, MaterialManager materialManager) {
 		define("world", scriptEngine);
         define("renderer", engine.getRenderer());
         define("entityManager", entityManager);
-		define("materialManager", engine.getMaterialManager());
+		define("materialManager", materialManager);
         define("textureManager", engine.getTextureManager());
 		define("objLoader", new OBJLoader());
 	}

@@ -26,7 +26,6 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
@@ -352,7 +351,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getScene().getLightManager(), engine.getSceneManager().getScene(), engine.getSceneManager().getScene().getModelComponentSystem()));
+                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getScene().getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getScene().getLightManager(), engine.getSceneManager().getScene(), engine.getSceneManager().getScene().getModelComponentSystem()));
                         engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(engine.getSceneManager().getScene());
@@ -577,7 +576,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getMaterialManager().getMaterial(chosenFile.getName());
+                        engine.getScene().getMaterialManager().getMaterial(chosenFile.getName());
                         return new Result(true);
                     }
                 });
