@@ -506,7 +506,7 @@ public class LightManager {
 		GPUProfiler.end();
 	}
 
-	public void update(Engine engine, float deltaSeconds, long currentCycle) {
+	public void update(float deltaSeconds, long currentCycle) {
 
         Iterator<PointLight> pointLightsIterator = pointLights.iterator();
         while (pointLightsIterator.hasNext()) {

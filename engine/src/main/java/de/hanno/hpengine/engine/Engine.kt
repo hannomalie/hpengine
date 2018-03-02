@@ -71,8 +71,6 @@ class Engine private constructor(gameDirName: String) {
     fun update(deltaSeconds: Float) {
         try {
             commandQueue.executeCommands()
-            getScene().lightManager.update(this, deltaSeconds, sceneManager.scene.currentRenderCycle)
-            getScene().systems.update(deltaSeconds)
             sceneManager.update(deltaSeconds)
             updateRenderState()
             renderManager.drawCycle.getAndIncrement()

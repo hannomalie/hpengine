@@ -173,6 +173,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     override fun update(deltaSeconds: Float) {
         materialManager.update(deltaSeconds)
+        lightManager.update(deltaSeconds, currentRenderCycle)
         systems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
 
