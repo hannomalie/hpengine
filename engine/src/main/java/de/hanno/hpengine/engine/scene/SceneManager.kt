@@ -21,7 +21,6 @@ class SceneManager(val engine: Engine): Manager {
 
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
-//        activeCamera.update(engine, deltaSeconds)
         scene.currentRenderCycle = engine.renderManager.drawCycle.get()
         scene.update(deltaSeconds)
     }

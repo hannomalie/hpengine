@@ -41,13 +41,12 @@ class Engine private constructor(gameDirName: String) {
     val managers = SimpleManagerRegistry()
 
     val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
-    val renderManager = managers.register(RenderManager(this, { RenderState(gpuContext) }))
-    private val perFrameCommand = SimpleProvider(renderManager.drawRunnable)
+    val renderManager = managers.register(RenderManager(this, gpuContext, { RenderState(gpuContext) }))
     val programManager = managers.register(ProgramManager(this))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
     val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
 
-    val sceneManager = SceneManager(this)
+    val sceneManager = managers.register(SceneManager(this))
 
     val renderer: Renderer = Renderer.create(this)
     val physicsManager = PhysicsManager(renderer)
@@ -57,7 +56,6 @@ class Engine private constructor(gameDirName: String) {
 
     init {
         eventBus.register(this)
-        gpuContext.registerPerFrameCommand(perFrameCommand)
         startSimulation()
         eventBus.post(EngineInitializedEvent())
     }
@@ -71,12 +69,8 @@ class Engine private constructor(gameDirName: String) {
     fun update(deltaSeconds: Float) {
         try {
             commandQueue.executeCommands()
-            sceneManager.update(deltaSeconds)
+            managers.update(deltaSeconds)
             updateRenderState()
-            renderManager.drawCycle.getAndIncrement()
-            if (!Config.getInstance().isMultithreadedRendering) {
-                actuallyDraw()
-            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -100,10 +94,11 @@ class Engine private constructor(gameDirName: String) {
             renderManager.renderState.update()
             renderManager.renderState.currentWriteState.cycle = renderManager.drawCycle.get()
         }
+        renderManager.drawCycle.getAndIncrement()
     }
 
     fun actuallyDraw() {
-        perFrameCommand.setReadyForExecution()
+        renderManager.perFrameCommand.setReadyForExecution()
     }
 
     private fun destroyOpenGL() {

@@ -14,13 +14,7 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public void update(float seconds) {
-        if (Config.getInstance().isMultithreadedRendering()) {
-            try {
-                engine.actuallyDraw();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        engine.actuallyDraw();
     }
 
     @Override

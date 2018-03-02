@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics
 
-import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.event.FrameFinishedEvent
@@ -9,18 +8,16 @@ import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.threads.RenderThread
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 
-class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -> T) : Manager {
+class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, renderStateFactory: () -> T) : Manager {
     private var lastFrameTime = 0L
     private val fpsCounter = FPSCounter()
 
@@ -62,6 +59,7 @@ class RenderManager<T: RenderState>(val engine: Engine, renderStateFactory: () -
             lastTimeSwapped = renderState.stopRead()
         }
     }
+    val perFrameCommand = SimpleProvider(drawRunnable).also { gpuContext.registerPerFrameCommand(it) }
 
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
 

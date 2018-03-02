@@ -17,9 +17,9 @@ interface ManagerRegistry {
 
 class SimpleManagerRegistry: ManagerRegistry {
     private val managers = mutableMapOf<Class<*>, Manager>()
-    override fun getManagers() = managers.values as List<Manager>
+    override fun getManagers(): Collection<Manager> = managers.values
     override fun <T : Manager> register(manager: T): T {
-        managers.put(manager::class.java, manager)
+        managers[manager::class.java] = manager
         return manager
     }
     override fun <T : Manager> get(managerClass: Class<T>) = managerClass.cast(managers.get(managerClass))

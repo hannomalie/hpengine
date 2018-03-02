@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.config;
 
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
@@ -142,8 +142,6 @@ public final class Config {
 	@Toggable(group = "Quality settings")
 	private volatile boolean useDpsm = false;
 
-	@Toggable(group = "Performance")
-	private boolean multithreadedRendering = true;
 	@Toggable(group = "Performance")
 	private boolean indirectRendering = true;
 	@Toggable(group = "Performance")
@@ -492,14 +490,6 @@ public final class Config {
 
 	public void setUseDpsm(boolean useDpsm) {
 		this.useDpsm = useDpsm;
-	}
-
-	public boolean isMultithreadedRendering() {
-		return multithreadedRendering;
-	}
-
-	public void setMultithreadedRendering(boolean multithreadedRendering) {
-		this.multithreadedRendering = multithreadedRendering;
 	}
 
 	public boolean isIndirectRendering() {
