@@ -61,7 +61,6 @@ class Engine private constructor(gameDirName: String) {
     init {
         eventBus.register(this)
         gpuContext.registerPerFrameCommand(perFrameCommand)
-        renderer.registerPipelines(renderManager.renderState)
         startSimulation()
         eventBus.post(EngineInitializedEvent())
     }

@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrateg
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
@@ -39,10 +38,9 @@ public class DeferredRenderer implements Renderer {
 	private GBuffer gBuffer;
 	private SimpleDrawStrategy simpleDrawStrategy;
 
-    VertexBuffer buffer;
+    private VertexBuffer buffer;
 
 	private Engine engine;
-	private StateRef<GPUCulledMainPipeline> mainPipelineRef;
 
 	public DeferredRenderer() { }
 
@@ -68,6 +66,9 @@ public class DeferredRenderer implements Renderer {
 		float[] points = {0f, 0f, 0f, 0f};
 		buffer = new VertexBuffer(engine.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
 		buffer.upload();
+
+		TripleBuffer<RenderState> renderState = engine.getRenderManager().getRenderState();
+		simpleDrawStrategy.setMainPipelineRef(renderState.registerState(() -> new GPUCulledMainPipeline(engine, DeferredRenderer.this)));
 	}
 
 	private void setupBuffers() {
@@ -202,12 +203,6 @@ public class DeferredRenderer implements Renderer {
     @Override
 	public GBuffer getGBuffer() {
 		return gBuffer;
-	}
-
-    @Override
-	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-		this.mainPipelineRef = renderState.registerState(() -> new GPUCulledMainPipeline(engine));
-		simpleDrawStrategy.setMainPipelineRef(mainPipelineRef);
 	}
 
 }

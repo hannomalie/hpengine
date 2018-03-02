@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -12,8 +13,8 @@ import java.nio.FloatBuffer;
 
 public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements CustomState {
 
-    public GPUCulledMainPipeline(Engine engine) {
-        super(engine, true, true, true, null, null);
+    public GPUCulledMainPipeline(Engine engine, Renderer renderer) {
+        super(engine, renderer, true, true, true, null, null);
     }
 
 //    This can be used for debug drawing

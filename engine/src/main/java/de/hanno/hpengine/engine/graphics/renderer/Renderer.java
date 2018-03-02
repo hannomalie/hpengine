@@ -302,7 +302,5 @@ public interface Renderer extends LifeCycle {
         return null;
     }
 
-    default void registerPipelines(TripleBuffer<RenderState> renderState) {
-    }
 
 }

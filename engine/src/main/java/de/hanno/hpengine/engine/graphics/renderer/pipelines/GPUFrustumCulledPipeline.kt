@@ -27,6 +27,7 @@ import org.lwjgl.opengl.*
 import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: Engine,
+                                                              renderer: Renderer,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
                                                               useLineDrawing: Boolean = true,
@@ -66,7 +67,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         SimpleDrawStrategy.renderHighZMap(engine.gpuContext, depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
     }
 
-    open var depthMap = engine.renderer.gBuffer.visibilityMap
+    open var depthMap = renderer.gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
         if (Config.getInstance().isPrintPipelineDebugOutput) {
