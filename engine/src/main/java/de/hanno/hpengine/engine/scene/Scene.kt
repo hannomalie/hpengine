@@ -74,23 +74,14 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     private val probes = CopyOnWriteArrayList<ProbeData>()
 
-    @Volatile
     @Transient private var entityMovedInCycle: Long = 0
-    @Volatile
-    @Transient
-    var entityAddedInCycle: Long = 0
+    @Transient var entityAddedInCycle: Long = 0
         private set
-    @Volatile
     @Transient private var pointLightMovedInCycle: Long = 0
-    @Volatile
     @Transient
     var currentRenderCycle: Long = 0
-    @Volatile
-    @Transient
-    var isInitiallyDrawn: Boolean = false
-    private val min = Vector4f()
-    private val max = Vector4f()
-    val minMax = arrayOf(min, max)
+    @Transient var isInitiallyDrawn: Boolean = false
+    val minMax = AABB(Vector3f(), 100f)
 
     private val tempDistVector = Vector3f()
 
@@ -138,23 +129,23 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     private fun calculateMinMax(entities: List<Entity>) {
         if (entities.isEmpty()) {
-            min.set(-1f, -1f, -1f, -1f)
-            max.set(1f, 1f, 1f, 1f)
+            minMax.min.set(-1f, -1f, -1f)
+            minMax.max.set(1f, 1f, 1f)
             return
         }
 
-        min.set(absoluteMaximum)
-        max.set(absoluteMinimum)
+        minMax.min.set(absoluteMaximum)
+        minMax.max.set(absoluteMinimum)
 
         for (entity in entities) {
             val (currentMin, currentMax) = entity.minMaxWorld
-            min.x = if (currentMin.x < min.x) currentMin.x else min.x
-            min.y = if (currentMin.y < min.y) currentMin.y else min.y
-            min.z = if (currentMin.z < min.z) currentMin.z else min.z
+            minMax.min.x = if (currentMin.x < minMax.min.x) currentMin.x else minMax.min.x
+            minMax.min.y = if (currentMin.y < minMax.min.y) currentMin.y else minMax.min.y
+            minMax.min.z = if (currentMin.z < minMax.min.z) currentMin.z else minMax.min.z
 
-            max.x = if (currentMax.x > max.x) currentMax.x else max.x
-            max.y = if (currentMax.y > max.y) currentMax.y else max.y
-            max.z = if (currentMax.z > max.z) currentMax.z else max.z
+            minMax.max.x = if (currentMax.x > minMax.max.x) currentMax.x else minMax.max.x
+            minMax.max.y = if (currentMax.y > minMax.max.y) currentMax.y else minMax.max.y
+            minMax.max.z = if (currentMax.z > minMax.max.z) currentMax.z else minMax.max.z
         }
     }
 
@@ -268,8 +259,8 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
         private val LOGGER = Logger.getLogger(Scene::class.java.name)
 
-        private val absoluteMaximum = Vector4f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
-        private val absoluteMinimum = Vector4f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
+        private val absoluteMaximum = Vector3f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
+        private val absoluteMinimum = Vector3f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
 
         @JvmStatic val directory: String
             get() = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"

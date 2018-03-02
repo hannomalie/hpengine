@@ -13,8 +13,6 @@ class SceneManager(val engine: Engine): Manager {
         set(value) {
             onSetScene(value)
             engine.commandQueue.execute({
-//                TODO: Make this possible with moving systems to scene
-//                engine.systems.clearSystems()
                 field = value
             }, true)
             engine.eventBus.post(SceneInitEvent())
@@ -43,7 +41,6 @@ class SceneManager(val engine: Engine): Manager {
         engine.renderManager.clear()
         engine.getScene().modelComponentSystem.clear()
         nextScene.init(engine)
-        restoreWorldCamera()
         activeCamera = nextScene.camera.getComponent(Camera::class.java)
         engine.renderManager.renderState.addCommand { renderState1 ->
             renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
@@ -52,17 +49,14 @@ class SceneManager(val engine: Engine): Manager {
         nextScene.entitySystems.gatherEntities()
     }
 
+    fun restoreWorldCamera() {
+        activeCamera = scene.camera.getComponent(Camera::class.java)
+    }
 
     init {
-//        camera.initialize()
-//        camera.setTranslation(Vector3f(0f, 20f, 0f))
-//        activeCamera = camera
         scene.init(engine)
     }
 
-    fun restoreWorldCamera() {
-//        activeCamera = camera
-    }
     override fun clear() {
     }
 }

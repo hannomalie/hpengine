@@ -106,10 +106,6 @@ public class DeferredRenderer implements Renderer {
     @Override
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-//		TODO: Reimplement this with a custom field for probes
-//		if(renderState.directionalLightNeedsShadowMapRender) {
-//			EnvironmentProbeManager.getInstance().draw(true);
-//		}
 
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
         simpleDrawStrategy.draw(result, renderState);
@@ -180,7 +176,7 @@ public class DeferredRenderer implements Renderer {
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
-			points[3*i + 0] = point.x;
+			points[3 * i] = point.x;
 			points[3*i + 1] = point.y;
 			points[3*i + 2] = point.z;
 		}

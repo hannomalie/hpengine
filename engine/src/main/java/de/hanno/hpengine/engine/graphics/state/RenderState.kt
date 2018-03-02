@@ -35,8 +35,8 @@ class RenderState(gpuContext: GpuContext) {
     var pointlightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
     var sceneInitiallyDrawn: Boolean = false
-    var sceneMin = Vector4f()
-    var sceneMax = Vector4f()
+    var sceneMin = Vector3f()
+    var sceneMax = Vector3f()
 
     var cycle: Long = 0
     var gpuCommandSync: GpuCommandSync = object: GpuCommandSync {}
@@ -81,7 +81,7 @@ class RenderState(gpuContext: GpuContext) {
         //        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
     }
 
-    fun init(vertexIndexBufferStatic: VertexIndexBuffer<Vertex>, vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector4f, sceneMax: Vector4f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
+    fun init(vertexIndexBufferStatic: VertexIndexBuffer<Vertex>, vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector3f, sceneMax: Vector3f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
         this.entitiesState.joints = joints // TODO: Fixme

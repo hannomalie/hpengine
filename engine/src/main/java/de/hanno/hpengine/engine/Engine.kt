@@ -81,7 +81,7 @@ class Engine private constructor(gameDirName: String) {
             if (gpuContext.isSignaled(renderState.currentWriteState.gpuCommandSync)) {
                 with(scene) {
                     with(getScene().lightManager.directionalLight) {
-                        renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, modelComponentSystem.joints, sceneManager.activeCamera, entityMovedInCycle(), lightManager.directionalLightMovedInCycle, pointLightMovedInCycle(), isInitiallyDrawn, minMax[0], minMax[1], drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityAddedInCycle)
+                        renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, modelComponentSystem.joints, sceneManager.activeCamera, entityMovedInCycle(), lightManager.directionalLightMovedInCycle, pointLightMovedInCycle(), isInitiallyDrawn, minMax.min, minMax.max, drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityAddedInCycle)
                     }
                 }
                 scene.extract(renderState.currentWriteState)
