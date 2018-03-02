@@ -172,7 +172,7 @@ class MaterialManager(engine: Engine, val textureManager: TextureManager) : Mana
     }
 
     private fun addMaterial(key: String, material: Material) {
-        (MATERIALS as java.util.Map<String, Material>).putIfAbsent(key, material)
+        MATERIALS.putIfAbsent(key, material)
         eventBus.post(MaterialAddedEvent())
     }
 

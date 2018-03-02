@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 
-public class EnvironmentProbeManager {
+public class EnvironmentProbeManager implements Manager{
 	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
@@ -314,4 +315,13 @@ public class EnvironmentProbeManager {
 		probes.clear();
 	}
 
+	@Override
+	public void clear() {
+		clearProbes();
+	}
+
+	@Override
+	public void update(float deltaSeconds) {
+		probes.forEach(p -> p.update(engine, deltaSeconds));
+	}
 }

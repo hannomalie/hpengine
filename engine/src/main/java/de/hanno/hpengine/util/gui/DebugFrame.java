@@ -238,6 +238,11 @@ public class DebugFrame implements HostComponent {
             public void handle(TexturesChangedEvent e) {
                 revalidate();
             }
+            @Subscribe
+            @Handler
+            public void handle(SceneInitEvent e) {
+                revalidate();
+            }
         };
 
         areaLightsTable = new JTable(new AreaLightsTableModel(engine)) {
@@ -267,6 +272,7 @@ public class DebugFrame implements HostComponent {
             public void handle(SceneInitEvent e) {
                 revalidate();
             }
+
         };
         pointsLightsTable = new JTable(new PointLightsTableModel(this.engine));
         tubeLightsTable = new JTable(new TubeLightsTableModel(this.engine));

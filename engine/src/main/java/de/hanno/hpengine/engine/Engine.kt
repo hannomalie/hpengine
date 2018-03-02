@@ -20,6 +20,7 @@ import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
@@ -47,6 +48,7 @@ class Engine private constructor(gameDirName: String) {
     val input = Input(this, gpuContext)
     val programManager = managers.register(ProgramManager(this))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
+    val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
 
     val sceneManager = SceneManager(this)
 

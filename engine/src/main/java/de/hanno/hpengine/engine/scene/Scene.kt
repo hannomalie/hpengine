@@ -47,7 +47,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     val systems: SystemsRegistry = SimpleSystemsRegistry()
     val entityManager = EntityManager(engine, engine.eventBus)
-    val environmentProbeManager = EnvironmentProbeManager(engine)
+    val environmentProbeManager = engine.environmentProbeManager
     val clusterComponentSystem = systems.register(ClustersComponentSystem(engine))
     val cameraComponentSystem = systems.register(CameraComponentSystem(engine))
     val inputComponentSystem = systems.register(InputComponentSystem(engine))
@@ -95,7 +95,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     override fun init(engine: Engine) {
         engine.eventBus.register(this)
-        engine.eventBus.post(SceneInitEvent())
     }
 
     fun write() {

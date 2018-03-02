@@ -23,7 +23,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     @Transient
     var updateCache = true
 
-    private val components = mutableListOf<ModelComponent>()
+    private val components = CopyOnWriteArrayList<ModelComponent>()
 
     override fun getComponents(): List<ModelComponent> = components
 

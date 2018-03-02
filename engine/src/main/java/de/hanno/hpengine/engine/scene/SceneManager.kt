@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
+import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 
 class SceneManager(val engine: Engine): Manager {
@@ -16,6 +17,7 @@ class SceneManager(val engine: Engine): Manager {
 //                engine.systems.clearSystems()
                 field = value
             }, true)
+            engine.eventBus.post(SceneInitEvent())
         }
     var activeCamera: Camera = scene.activeCamera.getComponent(Camera::class.java)
 
