@@ -2,17 +2,14 @@ package de.hanno.hpengine.engine.container;
 
 import de.hanno.hpengine.engine.entity.Entity;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class SimpleContainer implements EntityContainer {
 
-    private Set<Entity> entities = new CopyOnWriteArraySet<>();
-    List<Entity> result = new CopyOnWriteArrayList<>();
+    private Set<Entity> entities = new LinkedHashSet<>();//new CopyOnWriteArraySet<>();
+    List<Entity> result = new ArrayList<>();//new CopyOnWriteArrayList<>();
 
     @Override
     public void add(Entity entity) {

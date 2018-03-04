@@ -32,14 +32,24 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
             renderState.entitiesState.entitiesBuffer.put(*Util.toArray(engine.getScene().modelComponentSystem.getComponents(), ModelComponent::class.java))
             renderState.entitiesState.entitiesBuffer.buffer.position(0)
 
-            //        for(ModelComponent modelComponent: modelComponents) {
-            //            for(int i = 0; i < ModelComponentSystemKt.getInstanceCount(modelComponent.getEntity()); i++) {
-            //                for(Mesh mesh: modelComponent.getMeshes()) {
-            //                    System.out.println("Entity " + modelComponent.getEntity().getName() + " - Mesh " + mesh.getName() + " - Instance " + i);
-            //                    ModelComponent.debugPrintFromBufferStatic(entitiesState.entitiesBuffer.getBuffer());
-            //                }
-            //            }
-            //        }
+            for(entity in engine.getScene().getEntities().filter { it.hasComponent(ModelComponent.COMPONENT_KEY) }) {
+                val modelComponent = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)
+                for(mesh in modelComponent.meshes) {
+                    for(i in 0 .. entity.instanceCount) {
+                        System.out.println("Entity " + entity.name + " - Mesh " + mesh.name + " - Instance " + i)
+                        ModelComponent.debugPrintFromBufferStatic(renderState.entitiesState.entitiesBuffer.buffer)
+                    }
+                }
+            }
+//                    for(modelComponent in components) {
+//                        for(i in 0..modelComponent.entity.instanceCount) {
+//                            for(mesh in modelComponent.meshes) {
+//                                System.out.println("Entity " + modelComponent.entity.name + " - Mesh " + mesh.name + " - Instance " + i)
+//                                ModelComponent.debugPrintFromBufferStatic(renderState.entitiesState.entitiesBuffer.getBuffer())
+//                            }
+//                        }
+//                    }
+
             renderState.entitiesState.entitiesBuffer.buffer.position(0)
         }
     })
