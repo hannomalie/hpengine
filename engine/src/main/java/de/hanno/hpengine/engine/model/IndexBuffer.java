@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import org.lwjgl.system.libc.LibCStdlib;
 
 import java.nio.*;
 
@@ -79,8 +80,8 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
     }
 
     @Override
-    protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
-        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
+    protected ByteBuffer mapBuffer(long capacityInBytes, int flags) {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
             buffer.rewind();
             byteBuffer.put(buffer);

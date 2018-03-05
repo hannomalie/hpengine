@@ -16,10 +16,10 @@ import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.Mesh;
@@ -157,10 +157,8 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            ClustersComponent clusters = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(entity));
-            clusters.addInstance(new SimpleTransform());
-//            TODO: Make this possible
-//            init(entity);
+            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(entity));
+            ClustersComponent.addInstance(clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.spatial);
         });
         buttonPanel.addElement(addInstanceButton);
         instancesPanels.add(buttonPanel);

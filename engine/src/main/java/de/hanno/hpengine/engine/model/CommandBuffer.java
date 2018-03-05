@@ -5,6 +5,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL40;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import org.lwjgl.system.libc.LibCStdlib;
 
 import java.nio.*;
 
@@ -20,8 +21,8 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.
     }
 
     @Override
-    protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
-        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes * Integer.BYTES));
+    protected ByteBuffer mapBuffer(long capacityInBytes, int flags) {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes * Integer.BYTES));
 
         if(buffer != null) {
             byteBuffer.put(buffer);

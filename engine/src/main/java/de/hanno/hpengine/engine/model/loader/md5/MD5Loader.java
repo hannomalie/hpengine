@@ -261,6 +261,7 @@ public class MD5Loader {
             try {
 
                 MaterialInfo materialInfo = new MaterialInfo();
+                materialInfo.setName(texturePath);
                 materialInfo.put(Material.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath));
 
                 // Handle normal Maps;

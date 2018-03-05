@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.graphics.buffer;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.system.libc.LibCStdlib;
 
 import java.nio.ByteBuffer;
 
@@ -20,8 +20,8 @@ public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersis
     }
 
     @Override
-    protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
-        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
+    protected ByteBuffer mapBuffer(long capacityInBytes, int flags) {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
             byteBuffer.put(buffer);
             byteBuffer.rewind();

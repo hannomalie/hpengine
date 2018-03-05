@@ -90,7 +90,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         this.model = model;
         if(!model.isStatic()) {
             AnimatedModel animatedModel = (AnimatedModel) model;
-            animationController = new AnimationController(engine, animatedModel.getFrames().size(), animatedModel.getHeader().getFrameRate());
+            animationController = new AnimationController(animatedModel.getFrames().size(), animatedModel.getHeader().getFrameRate());
         }
         indicesCounts = new int[model.getMeshes().size()];
         baseVertices = new int[model.getMeshes().size()];

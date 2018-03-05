@@ -32,23 +32,15 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
             renderState.entitiesState.entitiesBuffer.put(*Util.toArray(engine.getScene().modelComponentSystem.getComponents(), ModelComponent::class.java))
             renderState.entitiesState.entitiesBuffer.buffer.position(0)
 
-            for(entity in engine.getScene().getEntities().filter { it.hasComponent(ModelComponent.COMPONENT_KEY) }) {
-                val modelComponent = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)
-                for(mesh in modelComponent.meshes) {
-                    for(i in 0 .. entity.instanceCount) {
-                        System.out.println("Entity " + entity.name + " - Mesh " + mesh.name + " - Instance " + i)
-                        ModelComponent.debugPrintFromBufferStatic(renderState.entitiesState.entitiesBuffer.buffer)
-                    }
-                }
-            }
-//                    for(modelComponent in components) {
-//                        for(i in 0..modelComponent.entity.instanceCount) {
-//                            for(mesh in modelComponent.meshes) {
-//                                System.out.println("Entity " + modelComponent.entity.name + " - Mesh " + mesh.name + " - Instance " + i)
-//                                ModelComponent.debugPrintFromBufferStatic(renderState.entitiesState.entitiesBuffer.getBuffer())
-//                            }
-//                        }
+//            for(entity in engine.getScene().getEntities().filter { it.hasComponent(ModelComponent.COMPONENT_KEY) }) {
+//                val modelComponent = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)
+//                for(mesh in modelComponent.meshes) {
+//                    for(i in 0 .. entity.instanceCount) {
+//                        System.out.println("Entity " + entity.name + " - Mesh " + mesh.name + " - Instance " + i)
+//                        ModelComponent.debugPrintFromBufferStatic(renderState.entitiesState.entitiesBuffer.buffer)
 //                    }
+//                }
+//            }
 
             renderState.entitiesState.entitiesBuffer.buffer.position(0)
         }
@@ -69,6 +61,9 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         cacheEntityIndices()
         for (component in getComponents()) {
             component.update(deltaSeconds)
+        }
+        if(engine.getScene().entityManager.entityHasMoved) {
+            bufferEntities()
         }
     }
 

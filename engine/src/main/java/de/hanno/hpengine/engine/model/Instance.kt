@@ -1,8 +1,5 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
@@ -13,10 +10,9 @@ import de.hanno.hpengine.engine.transform.Transform
 import java.util.*
 
 open class Instance
-    @JvmOverloads constructor(val engine: Engine, val entity: Entity,
-                              transform: Transform<out Transform<*>> = Transform(),
+    @JvmOverloads constructor(transform: Transform<out Transform<*>> = Transform(),
                               var materials: List<Material> = listOf(),
-                              val animationController: AnimationController = AnimationController(engine, 0, 0f),
+                              val animationController: AnimationController = AnimationController(0, 0f),
                               open val spatial: Spatial = object : SimpleSpatial() {
                                   override fun getMinMaxWorld(): AABB {
                                       recalculate(transform)
@@ -46,10 +42,7 @@ open class Instance
     }
 
     override fun getMinMax(): AABB {
-        return if (animationController.fps > 0)
-            entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).model.getMinMax(null, animationController)
-        else
-            spatial.minMax
+        return spatial.minMax
     }
 
     override fun getMinMaxWorld(): AABB {

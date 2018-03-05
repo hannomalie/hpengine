@@ -70,7 +70,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
         }
     }
 
-    abstract protected ByteBuffer mapBuffer(int capacityInBytes, int flags);
+    abstract protected ByteBuffer mapBuffer(long capacityInBytes, int flags);
 
     @Override
     public void bind() {

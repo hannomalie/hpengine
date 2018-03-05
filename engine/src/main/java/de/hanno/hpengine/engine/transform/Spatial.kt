@@ -1,18 +1,16 @@
 package de.hanno.hpengine.engine.transform
 
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.Serializable
-import java.util.concurrent.atomic.AtomicReference
 
 abstract class AbstractSpatial : Serializable, Spatial {
     protected val centerWorldProperty = Vector3f()
 
-    abstract protected val minMaxProperty : AABB
+    protected abstract val minMaxProperty : AABB
     open val minMaxWorldProperty = AABB(Vector3f(Spatial.MIN),Vector3f(Spatial.MAX))
 
     protected var boundingSphereRadiusProperty = -1f
@@ -84,25 +82,18 @@ open class SimpleSpatial : AbstractSpatial() {
     override val minMaxProperty = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))
 }
 
-
-open class InstanceSpatial : SimpleSpatial() {
-
-    lateinit var instance: Instance
+open class TransformSpatial(val transform: Transform<*>, val modelComponent: ModelComponent) : SimpleSpatial() {
 
     override fun getMinMax(): AABB {
-        return instance.entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).minMax
+        return modelComponent.minMax
     }
 
-    override fun getMinMaxWorld(): AABB = super.getMinMaxWorld(instance)
+    override fun getMinMaxWorld(): AABB = super.getMinMaxWorld(transform)
 }
-open class AnimatedInstanceSpatial : InstanceSpatial() {
-
-    override fun getMinMax(): AABB {
-        return instance.entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).getMinMax(instance.animationController)
-    }
+open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent) {
 
     override fun getMinMaxWorld(): AABB {
-        recalculate(instance)
+        recalculate(transform)
         return super.getMinMaxWorld()
     }
 }

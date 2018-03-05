@@ -53,7 +53,7 @@ public class InitCubeClusters implements LifeCycle {
 
                                 ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                                 List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
-                                cluster.add(new Instance(, trafo, materials, new AnimationController(engine, 0,0), new SimpleSpatial(){
+                                cluster.add(new Instance(, trafo, materials, new AnimationController(0,0), new SimpleSpatial(){
                                     @Override
                                     public Vector3f[] getMinMax() {
                                         return current.getMinMax();

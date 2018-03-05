@@ -1,15 +1,10 @@
 package de.hanno.hpengine.engine.model.loader.md5
 
-import de.hanno.hpengine.engine.Engine
-import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
-
-data class AnimationController(val engine: Engine, val maxFrames: Int, val fps: Float) {
+data class AnimationController(val maxFrames: Int, val fps: Float) {
     val animationState : AnimationState = AnimationState(maxFrames, fps)
 
     fun update(seconds: Float) {
-        if (engine.input.isKeyPressed(GLFW_KEY_SPACE)) {
-            animationState.update(seconds)
-        }
+        animationState.update(seconds)
     }
 
     var isHasUpdated: Boolean

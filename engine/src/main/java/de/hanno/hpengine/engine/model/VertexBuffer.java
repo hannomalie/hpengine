@@ -8,6 +8,7 @@ import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
+import org.lwjgl.system.libc.LibCStdlib;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -164,8 +165,8 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         });
     }
 
-    protected ByteBuffer mapBuffer(int capacityInBytes, int flags)  {
-        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
+    protected ByteBuffer mapBuffer(long capacityInBytes, int flags)  {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
             buffer.rewind();
             byteBuffer.put(buffer);

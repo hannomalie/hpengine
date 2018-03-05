@@ -26,9 +26,9 @@ class SceneManager(val engine: Engine): Manager {
         scene.update(deltaSeconds)
 
 
-        if (scene.entityMovedInCycle() == newDrawCycle) {
-            engine.eventBus.post(EntityAddedEvent()) // TODO: Create EntityMovedEvent
-        }
+//        if (scene.entityMovedInCycle() == newDrawCycle) {
+//            engine.eventBus.post(EntityMovedEvent()) TODO: Check if this is still necessary
+//        }
         if (scene.lightManager.directionalLight.entity.hasMoved()) {
             engine.eventBus.post(DirectionalLightHasMovedEvent())
         }

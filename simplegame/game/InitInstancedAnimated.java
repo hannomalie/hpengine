@@ -6,11 +6,9 @@ import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
-import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.transform.AnimatedInstanceSpatial;
-import de.hanno.hpengine.engine.transform.InstanceSpatial;
+import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
@@ -49,10 +47,11 @@ public class InitInstancedAnimated implements LifeCycle {
     protected void loadLotsOfInstances(final Engine engine, String assetPath, final int scale, String name) {
         LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name).execute(engine);
         System.out.println("loaded entities : " + loaded.entities.size());
-        for (final Entity current : loaded.entities) {
+        for (final Entity entity : loaded.entities) {
 //                File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
-//                current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
-
+//                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
+            List<Cluster> clusters = new ArrayList<Cluster>();
+            ClustersComponent clustersComponent = new ClustersComponent(engine, engine.getEventBus(), entity);
             for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                 Cluster cluster = new Cluster();
                 Random random = new Random();
@@ -67,27 +66,21 @@ public class InitInstancedAnimated implements LifeCycle {
                             trafo.rotate(new Vector3f(0, 0, 1), (int) (random.nextFloat() * 360f));
                             trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex % clusterLocations.length])).add(new Vector3f(randomFloat * maxDistance * x, 0.001f * randomFloat, randomFloat * maxDistance * z)));
 
-                            final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-                            List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
-                            InstanceSpatial spatial = modelComponent.isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
-                            Instance instance = new Instance(, current, trafo, materials, new AnimationController(engine, 120, 24 + 10 * randomFloat), spatial);
-                            spatial.setInstance(instance);
-
-                            cluster.add(instance);
+                            final ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+                            List<Material> materials = modelComponent.getMaterials();
+                            ClustersComponent.addInstance(cluster, trafo, modelComponent, materials, new AnimationController(120, 24f), new AnimatedTransformSpatial(trafo, modelComponent));
                         }
                     }
                 }
-                Callable<ClustersComponent> callable = new Callable<ClustersComponent>() {
-                    public ClustersComponent call() {
-                        return engine.getScene().getClusterComponentSystem().create(current);
-                    }
-                };
-                current.getOrAddComponentLegacy(ClustersComponent.class, callable).addCluster(cluster);
+                clusters.add(cluster);
                 System.out.println("Added " + cluster.size());
             }
+            clustersComponent.addClusters(clusters);
+            entity.addComponent(clustersComponent, ClustersComponent.Companion.getClustersComponentType());
+            engine.getScene().getClusterComponentSystem().addComponent(clustersComponent);
         }
 
-        engine.getSceneManager().getScene().addAll(loaded.entities);
+        engine.getScene().addAll(loaded.entities);
     }
 
     public boolean isInitialized() {
