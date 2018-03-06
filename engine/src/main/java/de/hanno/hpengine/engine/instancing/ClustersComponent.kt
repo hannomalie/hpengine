@@ -93,31 +93,34 @@ class ClustersComponent(val engine: Engine, private val eventBus: EventBus, priv
         val clustersComponentType = ClustersComponent::class.java.simpleName
 
 
-        @JvmStatic fun addInstance(clustersComponent: ClustersComponent, transform: Transform<*>, spatial: Spatial) {
-            addInstance(clustersComponent.getOrCreateFirstCluster(), transform, spatial)
+        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform<*>, spatial: Spatial) {
+            addInstance(entity, clustersComponent.getOrCreateFirstCluster(), transform, spatial)
         }
-        @JvmStatic fun addInstance(cluster: Cluster, transform: Transform<*>, spatial: Spatial) {
-            cluster.add(Instance(transform, animationController = AnimationController(0, 0f), spatial = spatial))
+        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform<*>, spatial: Spatial) {
+            cluster.add(Instance(entity, transform, animationController = AnimationController(0, 0f), spatial = spatial))
 //            eventBus.post(EntityAddedEvent()) TODO: Move this to call site
         }
-        @JvmStatic fun addInstance(cluster: Cluster,
+        @JvmStatic fun addInstance(entity: Entity,
+                                   cluster: Cluster,
                                    transform: Transform<*>,
                                    modelComponent: ModelComponent,
                                    materials: List<Material> = modelComponent.materials,
                                    animationController: AnimationController = if (modelComponent.isStatic) AnimationController(0, 0f) else AnimationController(120, 24f),
                                    spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else TransformSpatial(transform, modelComponent)) {
 
-            val instance = Instance(transform, materials, animationController, spatial)
+            val instance = Instance(entity, transform, materials, animationController, spatial)
             cluster.add(instance)
 //            eventBus.post(EntityAddedEvent()) TODO: Move this to call site
         }
     }
+
 }
 
 class ClustersComponentSystem(val engine: Engine) : ComponentSystem<ClustersComponent> {
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()
     val entityInstances = mutableMapOf<Entity, MutableList<Instance>>()
+
 
     override fun getComponents() = components
 

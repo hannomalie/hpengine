@@ -158,7 +158,7 @@ public class EntityView extends WebPanel {
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
             ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(entity));
-            ClustersComponent.addInstance(clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.spatial);
+            ClustersComponent.addInstance(entity, clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.spatial);
         });
         buttonPanel.addElement(addInstanceButton);
         instancesPanels.add(buttonPanel);

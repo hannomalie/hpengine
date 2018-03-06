@@ -19,6 +19,7 @@ import org.joml.Matrix4f;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
@@ -409,6 +410,74 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         buffer.putFloat(1);
     }
 
+    public List<GpuEntity> toEntities() {
+
+        List<GpuEntity> result = new ArrayList<>();
+
+        int meshIndex = 0;
+        List<Mesh> meshes = getMeshes();
+        for(Mesh mesh : meshes) {
+            int materialIndex = mesh.getMaterial().getMaterialIndex();
+            {
+                result.add(new GpuEntity(entity.getTransformation(),
+                                         entity.isSelected(),
+                                         materialIndex,
+                                         entity.getUpdate(),
+                                         entityBufferIndex + meshIndex,
+                                         entity.getIndex(),
+                                         meshIndex,
+                                         baseVertices[meshIndex],
+                                         getBaseJointIndex(),
+                                         getAnimationFrame0(),
+                                        isInvertTexCoordY(),
+                                        getMinMax(entity, mesh)));
+            }
+
+            for(Cluster cluster : getClusters(entity)) {
+                for(int i = 0; i < cluster.size(); i++) {
+                    Instance instance = cluster.get(i);
+                    Matrix4f instanceMatrix = instance.getTransformation();
+                    int instanceMaterialIndex = instance.getMaterials().get(meshIndex).getMaterialIndex();
+
+                    result.add(new GpuEntity(instanceMatrix,
+                            entity.isSelected(),
+                            instanceMaterialIndex,
+                            entity.getUpdate(),
+                            entityBufferIndex + meshIndex,
+                            entity.getIndex(),
+                            meshIndex,
+                            baseVertices[meshIndex],
+                            getBaseJointIndex(),
+                            instance.getAnimationController().getCurrentFrameIndex(),
+                            isInvertTexCoordY(),
+                            instance.getMinMaxWorld()));
+                }
+            }
+
+            // TODO: This has to be the outer loop i think?
+            if(entity.hasParent()) {
+                for(Instance instance : getInstances(entity)) {
+                    Matrix4f instanceMatrix = instance.getTransformation();
+
+                    result.add(new GpuEntity(instanceMatrix,
+                            entity.isSelected(),
+                            materialIndex,
+                            entity.getUpdate(),
+                            entityBufferIndex + meshIndex,
+                            entity.getIndex(),
+                            meshIndex,
+                            baseVertices[meshIndex],
+                            getBaseJointIndex(),
+                            instance.getAnimationController().getCurrentFrameIndex(),
+                            isInvertTexCoordY(),
+                            instance.getMinMaxWorld()));
+                }
+            }
+            meshIndex++;
+        }
+
+        return result;
+    }
     @Override
     public String debugPrintFromBuffer(ByteBuffer buffer) {
         return debugPrintFromBufferStatic(buffer);

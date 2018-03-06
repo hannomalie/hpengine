@@ -88,7 +88,7 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
     inline fun <T> profilingFramed(action: () -> T): T {
         GPUProfiler.startFrame()
         val result: T = action()
-        GPUProfiler.end()
+        GPUProfiler.endFrame()
         return result
     }
 }

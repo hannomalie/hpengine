@@ -215,11 +215,6 @@ public class DebugFrame implements HostComponent {
         initConsole();
         createPointLightsTab();
 
-        infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
-        infoSplitPane.setOneTouchExpandable ( true );
-        infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
-        infoSplitPane.setDividerLocation(125);
-        infoSplitPane.setContinuousLayout(true);
 		engine.getEventBus().register(this);
 
         new TimeStepThread("DisplayTitleUpdate", 1.0f) {
@@ -231,6 +226,13 @@ public class DebugFrame implements HostComponent {
     }
 
     private void init() {
+
+        infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
+        infoSplitPane.setOneTouchExpandable ( true );
+        infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
+        infoSplitPane.setDividerLocation(125);
+        infoSplitPane.setContinuousLayout(true);
+
         textureTable = new JTable(new TextureTableModel(engine)) {
             { engine.getEventBus().register(this); }
             @Subscribe

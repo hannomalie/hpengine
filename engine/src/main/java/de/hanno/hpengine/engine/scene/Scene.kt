@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.PointLightMovedEvent
+import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.AreaLight
 import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.light.PointLight
@@ -60,10 +61,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) }
 
     val entitySystems = SimpleEntitySystemRegistry()
-    val bla = entitySystems.register(object: SimpleEntitySystem(engine, this, listOf(ModelComponent::class.java, ClustersComponent::class.java)) {
-        override fun update(deltaSeconds: Float) {
-        }
-    })
+    val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
 
     val camera = entityManager.create()
             .apply { addComponent(inputComponentSystem.create(this)) }

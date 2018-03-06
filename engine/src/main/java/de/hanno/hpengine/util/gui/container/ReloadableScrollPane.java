@@ -9,6 +9,9 @@ public class ReloadableScrollPane extends JScrollPane {
 
     public <TYPE extends Component> ReloadableScrollPane(TYPE component) {
         super(component);
+        if(component == null) {
+            throw new IllegalArgumentException("Don't pass null child");
+        }
         this.child = component;
     }
 

@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
@@ -7,10 +9,11 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import java.nio.ByteBuffer
 import java.util.*
 
 open class Instance
-    @JvmOverloads constructor(transform: Transform<out Transform<*>> = Transform(),
+    @JvmOverloads constructor(val entity: Entity, transform: Transform<out Transform<*>> = Transform(),
                               var materials: List<Material> = listOf(),
                               val animationController: AnimationController = AnimationController(0, 0f),
                               open val spatial: Spatial = object : SimpleSpatial() {
@@ -20,7 +23,6 @@ open class Instance
                                   }
                               })
     : Transform<Transform<*>>(), LifeCycle, Spatial by spatial {
-
 
     private val children = ArrayList<Instance>()
 
