@@ -68,7 +68,7 @@ public class InitInstancedAnimated implements LifeCycle {
 
                             final ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                             List<Material> materials = modelComponent.getMaterials();
-                            ClustersComponent.addInstance(cluster, trafo, modelComponent, materials, new AnimationController(120, 24f), new AnimatedTransformSpatial(trafo, modelComponent));
+                            ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, new AnimationController(120, 24f), new AnimatedTransformSpatial(trafo, modelComponent));
                         }
                     }
                 }

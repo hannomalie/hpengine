@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Update;
+import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Spatial;
@@ -256,7 +257,8 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	}
 
 	public Update getUpdate() {
-        if(hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class, "PhysicsComponent").isDynamic()) {
+        if((hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class, "PhysicsComponent").isDynamic())
+				|| (hasComponent(ModelComponent.COMPONENT_KEY) && !getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getModel().isStatic())) {
             return Update.DYNAMIC;
         }
 		return update;

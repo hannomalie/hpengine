@@ -23,7 +23,7 @@ import de.hanno.hpengine.engine.model.material.Material.write
 import de.hanno.hpengine.util.Util
 import net.engio.mbassy.listener.Handler
 
-class MaterialManager(engine: Engine, val textureManager: TextureManager) : Manager {
+class MaterialManager(private val engine: Engine, val textureManager: TextureManager) : Manager {
     val skyboxMaterial: Material
     private val eventBus: EventBus
 
@@ -216,7 +216,7 @@ class MaterialManager(engine: Engine, val textureManager: TextureManager) : Mana
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
-        bufferMaterialsActionRef.request()
+        bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
     }
 
     @Subscribe
@@ -224,9 +224,9 @@ class MaterialManager(engine: Engine, val textureManager: TextureManager) : Mana
     fun handle(event: MaterialChangedEvent) {
         if (event.material.isPresent) {
             //                renderStateX.bufferMaterial(event.getMaterials().get());
-            bufferMaterialsActionRef.request()
+            bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
         } else {
-            bufferMaterialsActionRef.request()
+            bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
         }
     }
 

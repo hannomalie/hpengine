@@ -8,6 +8,7 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -64,8 +65,8 @@ public class TripleBuffer<T extends RenderState> {
             return index;
         }
 
-        public void request() {
-            buffer.requestSingletonAction(index);
+        public void request(long cycle) {
+            buffer.requestSingletonAction(index, cycle);
         }
     }
 
@@ -144,10 +145,10 @@ public class TripleBuffer<T extends RenderState> {
         System.out.println("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)) + " with cycle " + currentWriteState.state.getCycle());
     }
 
-    public void requestSingletonAction(int i) {
-        instanceA.actions.get(i).request();
-        instanceB.actions.get(i).request();
-        instanceC.actions.get(i).request();
+    public void requestSingletonAction(int i, long cycle) {
+        instanceA.actions.get(i).request(cycle);
+        instanceB.actions.get(i).request(cycle);
+        instanceC.actions.get(i).request(cycle);
     }
 
     private static class QueueStatePair<T extends RenderState> {
@@ -177,7 +178,7 @@ public class TripleBuffer<T extends RenderState> {
 
         public void update(T writeState) {
             for(int i = 0; i < actions.size(); i++) {
-                if(actions.get(i).reset()) {
+                if(actions.get(i).shouldExecute()) {
                     actions.get(i).execute(state);
                 }
             }
@@ -188,23 +189,25 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     private static class Action<T extends RenderState> {
-        AtomicBoolean requested = new AtomicBoolean(false);
+        AtomicLong requestedInCycle = new AtomicLong(-1);
+        AtomicLong executedInCycle = new AtomicLong(0);
         private Consumer<T> consumer;
 
         public Action(Consumer<T> consumer) {
             this.consumer = consumer;
         }
 
-        public void request() {
-            requested.getAndSet(true);
+        public boolean shouldExecute() {
+            return requestedInCycle.get() > executedInCycle.get();
         }
 
-        public boolean reset() {
-            return requested.compareAndSet(true, false);
+        public void request(long cycle) {
+            requestedInCycle.getAndSet(cycle);
         }
 
         public void execute(T state) {
             consumer.accept(state);
+            executedInCycle.getAndSet(state.getCycle());
         }
     }
 }

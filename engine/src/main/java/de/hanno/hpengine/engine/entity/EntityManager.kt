@@ -6,11 +6,13 @@ import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.model.Update
 import org.joml.Vector3f
 import java.util.logging.Logger
 class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
     private val entityContainer: EntityContainer = SimpleContainer()
     var entityHasMoved = false
+    var staticEntityHasMoved = false
 
     init {
         eventBus.register(this)
@@ -49,6 +51,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
     override fun update(deltaSeconds: Float) {
 
         entityHasMoved = false
+        staticEntityHasMoved = false
 
         for (i in entityContainer.entities.indices) {
             try {
@@ -69,6 +72,9 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             entity.isHasMoved = false
             currentScene.setEntityMovedInCycleToCurrentCycle()
             entityHasMoved = true
+            if(entity.update == Update.STATIC) {
+                staticEntityHasMoved = true
+            }
             break
         }
     }

@@ -105,9 +105,8 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     override fun getComponents(): List<ModelComponent> = components
 
-    val bufferEntityActionRef = engine.renderManager.renderState.registerAction({ renderState ->
+    val bufferEntitiesActionRef = engine.renderManager.renderState.registerAction({ renderState ->
 //        engine.gpuContext.execute {
-            println("" + gpuEntities.size + " entities - " + System.currentTimeMillis() + " " + renderState.toString())
             renderState.entitiesState.entitiesBuffer.put(*Util.toArray(gpuEntities, GpuEntity::class.java))
             renderState.entitiesState.entitiesBuffer.buffer.position(0)
 
@@ -125,6 +124,13 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 //        }
     })
 
+    val bufferDynamicEntitiesActionRef = engine.renderManager.renderState.registerAction{ renderState ->
+        for(entity in gpuEntities.filter { it.update == Update.DYNAMIC }) {
+            renderState.entitiesState.entitiesBuffer.put(gpuEntities.indexOf(entity), entity)
+        }
+        renderState.entitiesState.entitiesBuffer.buffer.position(0)
+    }
+
     val bufferJointsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
         val array = Util.toArray(engine.getScene().modelComponentSystem.joints, BufferableMatrix4f::class.java)
         renderState.entitiesState.jointsBuffer.put(*array)
@@ -141,8 +147,10 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         for (component in getComponents()) {
             component.update(deltaSeconds)
         }
-        if(engine.getScene().entityManager.entityHasMoved) {
+        if(engine.getScene().entityManager.staticEntityHasMoved) {
             bufferEntities()
+        } else {//if(engine.getScene().entityManager.entityHasMoved) {
+            bufferDynamicEntities()
         }
     }
 
@@ -205,8 +213,14 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     fun bufferEntities() {
         updateCache = true
-        bufferEntityActionRef.request()
-        bufferJointsActionRef.request()
+        bufferEntitiesActionRef.request(engine.renderManager.drawCycle.get())
+        bufferJointsActionRef.request(engine.renderManager.drawCycle.get())
+    }
+
+    fun bufferDynamicEntities() {
+        updateCache = true
+        bufferDynamicEntitiesActionRef.request(engine.renderManager.drawCycle.get())
+        bufferJointsActionRef.request(engine.renderManager.drawCycle.get())
     }
 
     @Subscribe
