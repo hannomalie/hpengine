@@ -106,8 +106,8 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     override fun getComponents(): List<ModelComponent> = components
 
     val bufferEntitiesActionRef = engine.renderManager.renderState.registerAction({ renderState ->
-//        engine.gpuContext.execute {
             renderState.entitiesState.entitiesBuffer.put(*Util.toArray(gpuEntities, GpuEntity::class.java))
+            renderState.entitiesState.entitiesBuffer.buffer.position(0)
             renderState.entitiesState.entitiesBuffer.buffer.position(0)
 
 //            for(entity in engine.getScene().getEntities().filter { it.hasComponent(ModelComponent.COMPONENT_KEY) }) {
@@ -120,8 +120,6 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 //                }
 //            }
 
-            renderState.entitiesState.entitiesBuffer.buffer.position(0)
-//        }
     })
 
     val bufferDynamicEntitiesActionRef = engine.renderManager.renderState.registerAction{ renderState ->
@@ -132,8 +130,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
 
     val bufferJointsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
-        val array = Util.toArray(engine.getScene().modelComponentSystem.joints, BufferableMatrix4f::class.java)
-        renderState.entitiesState.jointsBuffer.put(*array)
+        renderState.entitiesState.jointsBuffer.put(0, engine.getScene().modelComponentSystem.joints)
     })
 
     init {

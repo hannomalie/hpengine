@@ -31,19 +31,14 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
 
     val defaultMaterial: Material
 
-    //		materials.sort(comparingInt(Material::getMaterialIndex));
     val materials: List<Material>
         get() = ArrayList(MATERIALS.values)
 
     val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
         engine.gpuContext.execute {
             val materials = engine.getScene().materialManager.materials
-            renderState.entitiesState.materialBuffer.put(*Util.toArray(materials, Material::class.java))
+            renderState.entitiesState.materialBuffer.put(0, materials)
             renderState.entitiesState.materialBuffer.buffer.position(0)
-            //            for(Material material: materials) {
-            //                System.out.println("Material: " + material.getName() + "(" + material.getMaterialIndex() + ")");
-            //                Material.debugPrintFromBufferStatic(entitiesState.materialBuffer.getBuffer());
-            //            }
         }
     })
 

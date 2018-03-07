@@ -59,7 +59,6 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             } catch (e: Exception) {
                 LOGGER.warning(e.message)
             }
-
         }
 
         val currentScene = engine.getScene()
