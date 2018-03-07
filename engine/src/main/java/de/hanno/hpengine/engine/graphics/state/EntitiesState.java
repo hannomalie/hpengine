@@ -2,12 +2,11 @@ package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
-import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.model.GpuEntity;
-import de.hanno.hpengine.engine.model.Instance;
+import de.hanno.hpengine.engine.graphics.GpuEntity;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.BatchKey;

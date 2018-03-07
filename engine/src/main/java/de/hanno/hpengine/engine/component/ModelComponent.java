@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.component;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.GpuEntity;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;

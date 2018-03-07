@@ -44,7 +44,11 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, componen
 
     override fun gatherEntities() {
         entities.clear()
-        entities.addAll(scene.getEntities().filter { it.components.keys.containsAll(componentKeys) })
+        if(componentKeys.isEmpty()) {
+            entities.addAll(scene.getEntities())
+        } else {
+            entities.addAll(scene.getEntities().filter { it.components.keys.containsAll(componentKeys) })
+        }
     }
 
     @Subscribe
