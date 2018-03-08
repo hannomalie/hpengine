@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.entity
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.scene.Scene
 import net.engio.mbassy.listener.Handler
@@ -33,10 +34,15 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
     }
 }
 
-abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, componentClasses: List<Class<out Component>>,
+abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val componentClasses: List<Class<out Component>>,
                                   private val componentKeys: List<String> = componentClasses.map { it.simpleName }) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
+    protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {
+        componentClasses.forEach {
+            this[it] = emptyList()
+        }
+    }
 
     init {
         engine.eventBus.register(this)
@@ -51,11 +57,19 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, componen
         }
     }
 
+    fun gatherComponents() {
+        components.clear()
+        componentClasses.forEach {
+            components[it] = entities.map { entity ->  entity.getComponent(it) }
+        }
+    }
+
     @Subscribe
     @Handler
     fun handle(e: EntityAddedEvent) {
         engine.commandQueue.execute({
             gatherEntities()
+            gatherComponents()
         }, false)
     }
 }

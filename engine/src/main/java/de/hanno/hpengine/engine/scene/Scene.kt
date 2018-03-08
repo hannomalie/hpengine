@@ -204,46 +204,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         engine.getScene().lightManager.tubeLights.add(tubeLight)
     }
 
-    private fun addRenderBatches(currentWriteState: RenderState) {
-        val camera = activeCamera
-        val cameraWorldPosition = camera.position
-
-        val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
-
-        addBatches(camera.getComponent(Camera::class.java), currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentSystem.getComponents())
-    }
-
-    private fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>) {
-        for (modelComponent in modelComponents) {
-            val entity = modelComponent.entity
-            val distanceToCamera = tempDistVector.length()
-            val isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.boundingSphereRadius
-
-            val entityIndexOf = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).entityBufferIndex
-
-            val meshes = modelComponent.meshes
-            for (i in meshes.indices) {
-                val mesh = meshes[i]
-                val meshCenter = mesh.getCenter(entity)
-                val boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh)
-                val meshIsInFrustum = camera.frustum.sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, boundingSphereRadius)//TODO: Fix this
-                val visibleForCamera = meshIsInFrustum || entity.instanceCount > 1 // TODO: Better culling for instances
-
-                mesh.material.setTexturesUsed()
-                val (min1, max1) = modelComponent.getMinMax(entity, mesh)
-                val meshBufferIndex = entityIndexOf + i * entity.instanceCount
-
-                val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (mesh1, clusterIndex) -> RenderBatch() }
-                batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible, entity.isSelected, Config.getInstance().isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.update, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds)
-                if (batch.isStatic) {
-                    currentWriteState.addStatic(batch)
-                } else {
-                    currentWriteState.addAnimated(batch)
-                }
-            }
-        }
-    }
-
     fun entityMovedInCycle(): Long {
         return entityMovedInCycle
     }
@@ -269,6 +229,6 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     }
 
     fun extract(currentWriteState: RenderState) {
-        addRenderBatches(currentWriteState)
+        batchingSystem.addRenderBatches(currentWriteState)
     }
 }
