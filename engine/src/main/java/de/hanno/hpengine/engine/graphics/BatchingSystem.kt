@@ -2,21 +2,21 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.ComponentMapper
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.Scene
-import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
 
 class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(ModelComponent::class.java)) {
 
+    private val cameraMapper = ComponentMapper.forClass(Camera::class.java)
     private val tempDistVector = Vector3f()
 
     override fun update(deltaSeconds: Float) {
@@ -29,7 +29,7 @@ class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, s
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        addBatches(camera.getComponent(Camera::class.java), currentWriteState, cameraWorldPosition, firstpassDefaultProgram, components[ModelComponent::class.java] as List<ModelComponent>)
+        addBatches(cameraMapper.getComponent(camera), currentWriteState, cameraWorldPosition, firstpassDefaultProgram, components[ModelComponent::class.java] as List<ModelComponent>)
     }
 
     private fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>) {
@@ -52,7 +52,7 @@ class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, s
                 val (min1, max1) = modelComponent.getMinMax(entity, mesh)
                 val meshBufferIndex = entityIndexOf + i * entity.instanceCount
 
-                val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (mesh1, clusterIndex) -> RenderBatch() }
+                val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
                 batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible, entity.isSelected, Config.getInstance().isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.update, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds)
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)
