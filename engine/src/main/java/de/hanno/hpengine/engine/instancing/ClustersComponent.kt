@@ -117,6 +117,7 @@ class ClustersComponent(val engine: Engine, private val eventBus: EventBus, priv
 }
 
 class ClustersComponentSystem(val engine: Engine) : ComponentSystem<ClustersComponent> {
+    override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()
     val entityInstances = mutableMapOf<Entity, MutableList<Instance>>()

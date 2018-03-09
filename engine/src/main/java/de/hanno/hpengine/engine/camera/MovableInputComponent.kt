@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.InputControllerComponent
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.entity.Entity
@@ -91,6 +92,7 @@ class MovableInputComponent(val engine: Engine, entity: Entity) : InputControlle
 }
 
 class InputComponentSystem(val engine: Engine): ComponentSystem<InputControllerComponent> {
+    override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
     override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<InputControllerComponent>()
     override fun getComponents(): List<InputControllerComponent> = components

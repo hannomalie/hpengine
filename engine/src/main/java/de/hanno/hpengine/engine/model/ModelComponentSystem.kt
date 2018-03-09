@@ -18,6 +18,8 @@ import net.engio.mbassy.listener.Handler
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent> {
+    override val componentClass: Class<ModelComponent> = ModelComponent::class.java
+
     private val entityIndices = IntArrayList()
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
     @Transient

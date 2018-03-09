@@ -164,7 +164,7 @@ public class EnvironmentSampler extends Entity {
 		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();
 
-		DirectionalLight light = engine.getScene().getLightManager().directionalLight;
+		DirectionalLight light = engine.getScene().getLightManager().getDirectionalLight();
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 8);
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
 
@@ -183,7 +183,7 @@ public class EnvironmentSampler extends Entity {
 			}).filter(e -> {
 				return e.hasMoved();
 			}).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !engine.getScene().getLightManager().areaLights.stream().filter(e -> {
+			boolean areaLightHasMoved = !engine.getScene().getLightManager().getAreaLights().stream().filter(e -> {
 				return e.hasMoved();
 			}).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
@@ -320,7 +320,7 @@ public class EnvironmentSampler extends Entity {
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstpassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getLightManager().directionalLight.getViewDirection());
+        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getLightManager().getDirectionalLight().getViewDirection());
         firstpassDefaultProgram.setUniform("near", camera.getNear());
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
@@ -430,7 +430,7 @@ public class EnvironmentSampler extends Entity {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = engine.getScene().getLightManager().directionalLight;
+		DirectionalLight light = engine.getScene().getLightManager().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getEntity().getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", Config.getInstance().getAmbientLight());

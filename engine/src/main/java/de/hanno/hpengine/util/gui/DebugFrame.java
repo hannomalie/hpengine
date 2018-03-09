@@ -674,7 +674,7 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable() {
+                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable<TextureResult>() {
                         @Override
                         public TextureResult execute() throws Exception {
                             return new AddCubeMapCommand(chosenFile.getPath()).execute(engine);
@@ -1006,7 +1006,7 @@ public class DebugFrame implements HostComponent {
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
-                    engine.getScene().getLightManager().directionalLight.setScatterFactor((float)value);
+                    engine.getScene().getLightManager().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getRainEffect())) {

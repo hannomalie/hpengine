@@ -2,39 +2,29 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
-import de.hanno.hpengine.engine.event.PointLightMovedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.AreaLight
 import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.light.PointLight
 import de.hanno.hpengine.engine.graphics.light.TubeLight
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
 import de.hanno.hpengine.engine.manager.SystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
-import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
-import org.joml.Vector4f
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
@@ -43,11 +33,7 @@ import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.logging.Logger
 
-class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine, sceneManager: SceneManager = engine.sceneManager) : LifeCycle, Serializable {
-    var name = ""
-    init {
-        this.name = name
-    }
+class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine, sceneManager: SceneManager = engine.sceneManager) : LifeCycle, Serializable {
 
     val systems: SystemsRegistry = SimpleSystemsRegistry()
     val entityManager = EntityManager(engine, engine.eventBus)
@@ -75,13 +61,10 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     @Transient private var entityMovedInCycle: Long = 0
     @Transient var entityAddedInCycle: Long = 0
         private set
-    @Transient private var pointLightMovedInCycle: Long = 0
     @Transient
     var currentRenderCycle: Long = 0
     @Transient var isInitiallyDrawn: Boolean = false
     val minMax = AABB(Vector3f(), 100f)
-
-    private val tempDistVector = Vector3f()
 
     override fun init(engine: Engine) {
         engine.eventBus.register(this)
@@ -93,11 +76,10 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
 
     fun write(name: String): Boolean {
         val fileName = FilenameUtils.getBaseName(name)
-        this.name = fileName
         var fos: FileOutputStream? = null
         var out: ObjectOutputStream? = null
         try {
-            fos = FileOutputStream(directory + fileName + ".hpscene")
+            fos = FileOutputStream("$directory$fileName.hpscene")
             out = ObjectOutputStream(fos)
             probes.clear()
             out.writeObject(this)
@@ -161,18 +143,9 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
     override fun update(deltaSeconds: Float) {
         materialManager.update(deltaSeconds)
         lightManager.update(deltaSeconds, currentRenderCycle)
+
         systems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
-
-        for (i in 0 until getPointLights().size) {
-            val pointLight = getPointLights()[i]
-            if (!pointLight.hasMoved()) {
-                continue
-            }
-            pointLightMovedInCycle = currentRenderCycle
-            engine.eventBus.post(PointLightMovedEvent())
-            pointLight.isHasMoved = false
-        }
 
         entityManager.update(deltaSeconds)
     }
@@ -208,9 +181,7 @@ class Scene @JvmOverloads constructor(name: String = "new-scene-" + System.curre
         return entityMovedInCycle
     }
 
-    fun pointLightMovedInCycle(): Long {
-        return pointLightMovedInCycle
-    }
+    fun pointLightMovedInCycle() = lightManager.pointLightMovedInCycle
 
     companion object {
         private const val serialVersionUID = 1L

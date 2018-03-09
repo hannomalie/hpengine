@@ -3,8 +3,8 @@ package de.hanno.hpengine.engine.camera
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import org.joml.*
@@ -233,6 +233,7 @@ open class Camera: Component {
 }
 
 class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {
+    override val componentClass: Class<Camera> = Camera::class.java
     override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<Camera>()
     override fun getComponents(): List<Camera> = components

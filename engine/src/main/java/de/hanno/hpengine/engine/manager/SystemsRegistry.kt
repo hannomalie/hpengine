@@ -28,6 +28,8 @@ class SimpleManagerRegistry: ManagerRegistry {
 
 interface SystemsRegistry {
     fun <T : ComponentSystem<*>> get(systemClass: Class<T>): T
+    fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T>
+
     fun getSystems(): List<ComponentSystem<*>>
     fun update(deltaSeconds: Float)
     fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
@@ -45,16 +47,17 @@ interface ComponentSystem<T : Component> {
     fun onSceneSet() {
         clear()
     }
+
+    val componentClass: Class<T>
 }
 
 class SimpleSystemsRegistry : SystemsRegistry {
-
     override fun getSystems(): List<ComponentSystem<*>> = systems.values.toList()
 
     private val systems = mutableMapOf<Class<*>, ComponentSystem<*>>()
 
     override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(system: T): T {
-        systems.put(system::class.java, system)
+        systems[system.componentClass] = system
         return system
     }
 
@@ -63,6 +66,10 @@ class SimpleSystemsRegistry : SystemsRegistry {
             throw IllegalStateException("Requested system of class $systemClass, but no system registered.")
         }
         return (systems[systemClass] as T)
+    }
+
+    override fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T> {
+        return systems[componentClass] as ComponentSystem<T>
     }
 
     override fun update(deltaSeconds: Float) {
