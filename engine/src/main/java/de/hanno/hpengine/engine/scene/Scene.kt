@@ -25,6 +25,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
+import org.lwjgl.system.windows.POINTL
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
@@ -155,32 +156,16 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     fun getEntity(name: String): Optional<Entity> {
-        val candidates = entityManager.getEntities().filter { e -> e.name == name }
-        return if (candidates.isNotEmpty()) Optional.of(candidates[0]) else Optional.ofNullable(null)
+        val candidate = entityManager.getEntities().find { e -> e.name == name }
+        return Optional.ofNullable(candidate)
     }
 
-    fun getPointLights(): List<PointLight> {
-        return engine.getScene().lightManager.pointLights
-    }
-
-    fun getTubeLights(): List<TubeLight> {
-        return engine.getScene().lightManager.tubeLights
-    }
-    fun getAreaLights(): List<AreaLight> = engine.getScene().lightManager.areaLights
-
-    fun addPointLight(pointLight: PointLight) {
-        engine.getScene().lightManager.pointLights.add(pointLight)
-        engine.eventBus.post(LightChangedEvent())
-    }
-
-    fun addTubeLight(tubeLight: TubeLight) {
-        engine.getScene().lightManager.tubeLights.add(tubeLight)
-    }
-
-    fun entityMovedInCycle(): Long {
-        return entityMovedInCycle
-    }
-
+    fun getPointLights(): List<PointLight> = lightManager.pointLights
+    fun getTubeLights(): List<TubeLight> = lightManager.tubeLights
+    fun getAreaLights(): List<AreaLight> = lightManager.areaLights
+    fun addPointLight(pointLight: PointLight) = lightManager.addLight(pointLight)
+    fun addTubeLight(tubeLight: TubeLight) = lightManager.addLight(tubeLight)
+    fun entityMovedInCycle() = entityMovedInCycle
     fun pointLightMovedInCycle() = lightManager.pointLightMovedInCycle
 
     companion object {

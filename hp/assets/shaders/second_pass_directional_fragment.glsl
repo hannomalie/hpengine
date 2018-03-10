@@ -210,7 +210,7 @@ void main(void) {
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	
 	float ambient = normalAmbient.a;
-	ambient += 0.001;
+	ambient += 0.05;  // Boost ambient here
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 

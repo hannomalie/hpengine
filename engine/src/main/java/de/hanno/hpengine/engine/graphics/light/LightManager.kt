@@ -53,7 +53,7 @@ import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-class LightManager(private val engine: Engine, eventBus: EventBus, private val materialManager: MaterialManager, private val sceneManager: SceneManager, private val gpuContext: GpuContext, private val programManager: ProgramManager, inputControllerSystem: InputComponentSystem, private val modelComponentSystem: ModelComponentSystem) {
+class LightManager(private val engine: Engine, val eventBus: EventBus, private val materialManager: MaterialManager, private val sceneManager: SceneManager, private val gpuContext: GpuContext, private val programManager: ProgramManager, inputControllerSystem: InputComponentSystem, private val modelComponentSystem: ModelComponentSystem) {
 
     var pointLightMovedInCycle: Long = 0
 
@@ -564,6 +564,15 @@ class LightManager(private val engine: Engine, eventBus: EventBus, private val m
 
     fun createDirectionalLight(entity: Entity): DirectionalLight {
         return DirectionalLight(entity)
+    }
+
+    inline fun <reified T> addLight(light: T) {
+        if(light is PointLight) {
+            this.pointLights.add(light)
+        } else if(light is TubeLight) {
+            tubeLights.add(light)
+        }
+        eventBus.post(LightChangedEvent())
     }
 
     companion object {
