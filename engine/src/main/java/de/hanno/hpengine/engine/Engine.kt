@@ -96,13 +96,8 @@ class Engine private constructor(gameDirName: String) {
         renderManager.perFrameCommand.setReadyForExecution()
     }
 
-    private fun destroyOpenGL() {
-        gpuContext.gpuThread.stopRequested = true
-    }
-
     fun destroy() {
-        LOGGER.info("Finalize renderer")
-        destroyOpenGL()
+        gpuContext.gpuThread.stopRequested = true
         System.exit(0)
     }
 
@@ -113,20 +108,16 @@ class Engine private constructor(gameDirName: String) {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            var sceneName: String? = null
             var gameDir = GAMEDIR_NAME
             var debug = true
             for (string in args) {
-                if ("debug=false" == string) {
-                    debug = false
-                } else if (string.startsWith("gameDir=")) {
-                    gameDir = string.replace("gameDir=", "")
-                } else if ("fullhd" == string) {
-                    Config.getInstance().width = 1920
-                    Config.getInstance().height = 1080
-                } else {
-                    sceneName = string
-                    break
+                when {
+                    "debug=false" == string -> debug = false
+                    string.startsWith("gameDir=") -> gameDir = string.replace("gameDir=", "")
+                    "fullhd" == string -> {
+                        Config.getInstance().width = 1920
+                        Config.getInstance().height = 1080
+                    }
                 }
             }
             try {

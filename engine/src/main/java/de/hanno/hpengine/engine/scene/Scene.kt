@@ -32,9 +32,8 @@ import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.logging.Logger
 
-class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine, sceneManager: SceneManager = engine.sceneManager) : LifeCycle, Serializable {
+class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
 
     val systems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
@@ -178,8 +177,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     companion object {
         private const val serialVersionUID = 1L
-
-        private val LOGGER = Logger.getLogger(Scene::class.java.name)
 
         private val absoluteMaximum = Vector3f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
         private val absoluteMinimum = Vector3f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
