@@ -4,9 +4,10 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
-import de.hanno.hpengine.engine.graphics.light.*;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.light.*;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
@@ -21,7 +22,6 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
@@ -178,14 +178,10 @@ public class EnvironmentSampler extends Entity {
 		for (int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
 			boolean fullRerenderRequired = urgent || !drawnOnce;
-			boolean aPointLightHasMoved = !scene.getPointLights().stream().filter(e -> {
-				return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius());
-			}).filter(e -> {
-				return e.hasMoved();
-			}).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !engine.getScene().getLightManager().getAreaLights().stream().filter(e -> {
-				return e.hasMoved();
-			}).collect(Collectors.toList()).isEmpty();
+			boolean aPointLightHasMoved = !scene.getPointLights().stream()
+					.filter(e -> probe.getBox().containsOrIntersectsSphere(e.getEntity().getPosition(), e.getRadius()))
+					.filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !engine.getScene().getLightManager().getAreaLights().stream().filter(e -> e.hasMoved()).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
@@ -586,7 +582,7 @@ public class EnvironmentSampler extends Entity {
 			}
 			
 			Vector3f distance = new Vector3f();
-			light.getPosition().sub(camPosition, distance);
+			light.getEntity().getPosition().sub(camPosition, distance);
 			float lightRadius = light.getRadius();
 			
 			// de.hanno.hpengine.camera is inside lights
@@ -600,7 +596,7 @@ public class EnvironmentSampler extends Entity {
 			}
 
 //			secondPassPointProgram.setUniform("currentLightIndex", i);
-			secondPassPointProgram.setUniform("lightPosition", light.getPosition());
+			secondPassPointProgram.setUniform("lightPosition", light.getEntity().getPosition());
 			secondPassPointProgram.setUniform("lightRadius", lightRadius);
 			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
 

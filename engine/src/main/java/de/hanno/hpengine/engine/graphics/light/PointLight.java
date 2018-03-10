@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -14,23 +15,25 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 
-public class PointLight extends Entity implements Serializable, Bufferable
-{
+public class PointLight implements Component, Serializable, Bufferable {
+	public static String COMPONENT_KEY = PointLight.class.getSimpleName();
 	private static final long serialVersionUID = 1L;
 	
 	public static float DEFAULT_RANGE = 1f;
 	private Vector4f color;
-	
-	protected PointLight(Vector3f position, Vector4f colorIntensity, float range) {
-		super(generateName(), position);
-		setColor(colorIntensity);
-		scale(range);
-	}
-	
-	private static String generateName() {
-		return String.format("PointLight_%d", System.currentTimeMillis());
-	}
+	private Entity entity;
+	private float radius;
 
+	protected PointLight(Entity entity, Vector4f colorIntensity, float radius) {
+//		TODO: Move position to entity somehow, where it was used
+		if(entity == null) {
+			throw new IllegalArgumentException("Don't pass a null entity");
+		}
+		this.entity = entity;
+		setColor(colorIntensity);
+		setRadius(radius);
+	}
+	
 	public void setColor(Vector4f color) {
 		this.color  = color;
 	}
@@ -74,12 +77,12 @@ public class PointLight extends Entity implements Serializable, Bufferable
 //	}
 	
 	public float getRadius() {
-        return this.getScale().x;
+		return radius;
 	}
 	
-	@Override
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z, getRadius())) {
+		Vector3f position = entity.getPosition();
+		if (camera.getFrustum().sphereInFrustum(position.x, position.y, position.z, getRadius())) {
 //		if (de.hanno.hpengine.camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
 			return true;
 		}
@@ -89,7 +92,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	@Override
 	public void putToBuffer(ByteBuffer buffer) {
 
-		Vector3f worldPosition = getPosition();
+		Vector3f worldPosition = entity.getPosition();
 		buffer.putDouble(worldPosition.x);
 		buffer.putDouble(worldPosition.y);
 		buffer.putDouble(worldPosition.z);
@@ -105,4 +108,19 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	public int getBytesPerObject() {
 		return Double.BYTES * 8;
 	}
+
+	@Override
+	public Entity getEntity() {
+		return entity;
+	}
+
+	@Override
+	public String getIdentifier() {
+		return COMPONENT_KEY;
+	}
+
+	public void setRadius(float radius) {
+		this.radius = radius;
+	}
+
 }

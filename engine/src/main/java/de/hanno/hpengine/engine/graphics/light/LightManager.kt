@@ -107,11 +107,6 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
 
     private val directionalLightComponent: DirectionalLight
 
-    val pointLight: PointLight
-        get() = getPointLight(Vector3f())
-    val tubeLight: TubeLight
-        get() = getTubeLight(200.0f, 50.0f)
-
     private var pointlightShadowMapsRenderedInCycle: Long = 0
     @Transient
     var directionalLightMovedInCycle: Long = 0
@@ -203,15 +198,14 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
 
     }
 
-    fun getPointLight(range: Float): PointLight {
-        return getPointLight(Vector3f(), Vector4f(1f, 1f, 1f, 1f), range)
+    fun getPointLight(entity: Entity, range: Float): PointLight {
+        return getPointLight(entity, Vector4f(1f, 1f, 1f, 1f), range)
     }
 
     @JvmOverloads
-    fun getPointLight(position: Vector3f, colorIntensity: Vector4f = Vector4f(1f, 1f, 1f, 1f), range: Float = PointLight.DEFAULT_RANGE): PointLight {
-        val material = materialManager.defaultMaterial
-
-        val light = PointLight(position, colorIntensity, range)
+    fun getPointLight(entity: Entity, colorIntensity: Vector4f = Vector4f(1f, 1f, 1f, 1f), range: Float = PointLight.DEFAULT_RANGE): PointLight {
+        val light = PointLight(entity, colorIntensity, range)
+        entity.addComponent(light)
         updatePointLightArrays()
         return light
     }
@@ -223,9 +217,9 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
 
         for (i in 0 until Math.min(pointLightsForwardMaxCount, this.pointLights.size)) {
             val light = this.pointLights[i]
-            positions[3 * i] = light.position.x
-            positions[3 * i + 1] = light.position.y
-            positions[3 * i + 2] = light.position.z
+            positions[3 * i] = light.entity.position.x
+            positions[3 * i + 1] = light.entity.position.y
+            positions[3 * i + 2] = light.entity.position.z
 
             colors[3 * i] = light.color.x
             colors[3 * i + 1] = light.color.y
@@ -391,10 +385,10 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
             pointCubeShadowPassProgram!!.use()
             pointCubeShadowPassProgram!!.bindShaderStorageBuffer(1, renderState.materialBuffer)
             pointCubeShadowPassProgram!!.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-            pointCubeShadowPassProgram!!.setUniform("pointLightPositionWorld", light.position)
+            pointCubeShadowPassProgram!!.setUniform("pointLightPositionWorld", light.entity.position)
             pointCubeShadowPassProgram!!.setUniform("pointLightRadius", light.radius)
             pointCubeShadowPassProgram!!.setUniform("lightIndex", i)
-            val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(light.position)
+            val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(light.entity.position)
             val viewMatrices = arrayOfNulls<FloatBuffer>(6)
             val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
             for (floatBufferIndex in 0..5) {
@@ -437,7 +431,7 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
 
             gpuContext.clearDepthAndColorBuffer()
             val light = this.pointLights[i]
-            pointShadowPassProgram!!.setUniform("pointLightPositionWorld", light.position)
+            pointShadowPassProgram!!.setUniform("pointLightPositionWorld", light.entity.position)
             pointShadowPassProgram!!.setUniform("pointLightRadius", light.radius)
             pointShadowPassProgram!!.setUniform("isBack", false)
 
@@ -475,12 +469,12 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
 
         for (i in 0 until pointLights.size) {
             val pointLight = pointLights[i]
-            if (!pointLight.hasMoved()) {
+            if (!pointLight.entity.hasMoved()) {
                 continue
             }
             pointLightMovedInCycle = currentCycle
             engine.eventBus.post(PointLightMovedEvent())
-            pointLight.isHasMoved = false
+            pointLight.entity.isHasMoved = false
         }
 
         val pointLightsIterator = pointLights.iterator()

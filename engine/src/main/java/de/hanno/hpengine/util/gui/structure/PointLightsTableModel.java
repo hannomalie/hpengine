@@ -1,6 +1,7 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.component.ComponentMapper;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.Util;
@@ -9,6 +10,7 @@ import javax.swing.table.AbstractTableModel;
 
 public class PointLightsTableModel extends AbstractTableModel {
 
+    ComponentMapper<PointLight> mapper = ComponentMapper.Companion.forClass(PointLight.class);
     private Engine engine;
 
     public PointLightsTableModel(Engine engine) {
@@ -21,22 +23,19 @@ public class PointLightsTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         Scene scene = engine.getSceneManager().getScene();
-        if(scene != null) {
-            return scene.getPointLights().size();
-        }
-        return 0;
+        return scene.getPointLights().size();
     }
 
     public Object getValueAt(int row, int col) {
+        PointLight light = engine.getSceneManager().getScene().getPointLights().get(row);
         if (col == 0) {
-            PointLight light = engine.getSceneManager().getScene().getPointLights().get(row);
-            return String.format("%s (Range %f)", light.getName(), light.getScale().x);
+            return String.format("%s (Range %f)", light.getEntity().getName(), light.getEntity().getScale().x);
 
         } else if (col == 1) {
-            return Util.vectorToString(engine.getSceneManager().getScene().getPointLights().get(row).getPosition());
+            return Util.vectorToString(light.getEntity().getPosition());
 
         } else if (col == 2) {
-            return Util.vectorToString(engine.getSceneManager().getScene().getPointLights().get(row).getColor());
+            return Util.vectorToString(light.getColor());
 
         }
         return "";

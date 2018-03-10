@@ -11,6 +11,8 @@ import javax.swing.event.ChangeListener;
 
 import de.hanno.hpengine.engine.Engine;
 
+import de.hanno.hpengine.engine.component.ComponentMapper;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import org.joml.Vector4f;
@@ -19,10 +21,11 @@ import com.alee.laf.colorchooser.WebColorChooserPanel;
 
 public class PointLightView extends EntityView {
 	private PointLight light;
+	ComponentMapper<PointLight> mapper = ComponentMapper.Companion.forClass(PointLight.class);
 
-	public PointLightView(Engine engine, DebugFrame debugFrame, PointLight light) {
-		super(engine, light);
-		this.light = light;
+	public PointLightView(Engine engine, Entity lightEntity) {
+		super(engine, lightEntity);
+		this.light = mapper.getComponent(lightEntity);
 	}
 
 	@Override

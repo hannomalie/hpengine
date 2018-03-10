@@ -29,6 +29,7 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
@@ -437,7 +438,8 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().addPointLight(engine.getScene().getLightManager().getPointLight(50));
+                        Entity pointLightEntity = new Entity();
+                        engine.getSceneManager().getScene().addPointLight(engine.getScene().getLightManager().getPointLight(pointLightEntity, 50));
                         return new Result(true);
                     }
                 });
@@ -466,7 +468,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight());
+                        engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight(100, 50));
                         return new Result(true);
                     }
                 });
@@ -492,7 +494,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
+                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
                         engine.getSceneManager().getScene().getAreaLights().add(engine.getScene().getLightManager().getAreaLight(50, 50, 20));
@@ -1246,7 +1248,7 @@ public class DebugFrame implements HostComponent {
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
                         entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new PointLightView(engine, debugFrame, (PointLight) selectedLight));
+                        entityViewFrame.add(new PointLightView(engine, selectedLight.getEntity()));
                         entityViewFrame.setVisible(true);
                     }
                 }
