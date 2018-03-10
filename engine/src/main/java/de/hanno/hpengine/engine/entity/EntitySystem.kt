@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.entity
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.scene.Scene
 import net.engio.mbassy.listener.Handler
@@ -11,6 +10,9 @@ import net.engio.mbassy.listener.Handler
 interface EntitySystem {
     fun update(deltaSeconds: Float)
     fun gatherEntities()
+    fun onEntityAdded() {
+        gatherEntities()
+    }
 }
 
 interface EntitySystemRegistry {
@@ -31,6 +33,12 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
     override fun <T : EntitySystem> register(system: T): T {
         systems.add(system)
         return system
+    }
+
+    fun onEntityAdded() {
+        systems.forEach {
+            it.onEntityAdded()
+        }
     }
 }
 

@@ -889,4 +889,9 @@ public class TextureManager implements Manager {
     public void update(float deltaSeconds) {
 
     }
+
+    @Override
+    public void onEntityAdded() {
+
+    }
 }

@@ -183,4 +183,9 @@ public class ProgramManager implements Manager {
     public void clear() {
 
     }
+
+    @Override
+    public void onEntityAdded() {
+
+    }
 }

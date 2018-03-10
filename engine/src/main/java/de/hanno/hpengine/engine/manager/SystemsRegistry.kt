@@ -36,6 +36,12 @@ interface SystemsRegistry {
     fun clearSystems() {
         getSystems().forEach { it.clear() }
     }
+
+    fun onEntityAdded() {
+        getSystems().forEach {
+            it.onEntityAdded()
+        }
+    }
 }
 
 interface ComponentSystem<T : Component> {
@@ -47,6 +53,7 @@ interface ComponentSystem<T : Component> {
     fun onSceneSet() {
         clear()
     }
+    fun onEntityAdded() {}
 
     val componentClass: Class<T>
 }

@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.EntityAddedEvent
-import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.AreaLight
@@ -18,6 +17,8 @@ import de.hanno.hpengine.engine.graphics.light.TubeLight
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
+import de.hanno.hpengine.engine.manager.ManagerRegistry
+import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleSystemsRegistry
 import de.hanno.hpengine.engine.manager.SystemsRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
@@ -25,7 +26,6 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
-import org.lwjgl.system.windows.POINTL
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
@@ -37,15 +37,17 @@ import java.util.logging.Logger
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine, sceneManager: SceneManager = engine.sceneManager) : LifeCycle, Serializable {
 
     val systems: SystemsRegistry = SimpleSystemsRegistry()
-    val entityManager = EntityManager(engine, engine.eventBus)
-    val environmentProbeManager = engine.environmentProbeManager
+    val managers: ManagerRegistry = SimpleManagerRegistry()
+
+    val entityManager = managers.register(EntityManager(engine, engine.eventBus))
+    val environmentProbeManager = managers.register(engine.environmentProbeManager)
     val clusterComponentSystem = systems.register(ClustersComponentSystem(engine))
     val cameraComponentSystem = systems.register(CameraComponentSystem(engine))
     val inputComponentSystem = systems.register(InputComponentSystem(engine))
     val modelComponentSystem = systems.register(ModelComponentSystem(engine))
-    val materialManager = MaterialManager(engine, engine.textureManager)
-    val lightManager = LightManager(engine, engine.eventBus, materialManager, sceneManager, engine.gpuContext, engine.programManager, inputComponentSystem, modelComponentSystem)
-    val scriptManager = ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) }
+    val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
+    val lightManager = managers.register(LightManager(engine, engine.eventBus, materialManager, engine.gpuContext, engine.programManager, inputComponentSystem))
+    val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
     val entitySystems = SimpleEntitySystemRegistry()
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
@@ -132,7 +134,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     fun addAll(entities: List<Entity>) {
         entityManager.add(entities)
+
         modelComponentSystem.allocateVertexIndexBufferSpace(entities)
+
+        entitySystems.onEntityAdded()
+        systems.onEntityAdded()
+        entitySystems.onEntityAdded()
+
         calculateMinMax(entities)
         entityAddedInCycle = currentRenderCycle
         engine.eventBus.post(MaterialAddedEvent())

@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.GpuEntity
@@ -126,12 +125,6 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
     override fun clear() = components.clear()
 
-    @Subscribe
-    @Handler
-    fun handle(e: EntityAddedEvent) {
-        bufferEntities()
-    }
-
     fun bufferEntities() {
         updateCache = true
         bufferEntitiesActionRef.request(engine.renderManager.drawCycle.get())
@@ -155,6 +148,10 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     fun handle(event: EntityChangedMaterialEvent) {
         val entity = event.entity
         //            buffer(entity);
+        bufferEntities()
+    }
+
+    override fun onEntityAdded() {
         bufferEntities()
     }
 }

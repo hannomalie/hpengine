@@ -29,13 +29,12 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
-import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import net.engio.mbassy.listener.Handler
@@ -52,8 +51,7 @@ import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-class LightManager(private val engine: Engine, val eventBus: EventBus, private val materialManager: MaterialManager, private val sceneManager: SceneManager, private val gpuContext: GpuContext, private val programManager: ProgramManager, inputControllerSystem: InputComponentSystem, private val modelComponentSystem: ModelComponentSystem) {
-
+class LightManager(private val engine: Engine, val eventBus: EventBus, private val materialManager: MaterialManager, private val gpuContext: GpuContext, private val programManager: ProgramManager, inputControllerSystem: InputComponentSystem): Manager {
     var pointLightMovedInCycle: Long = 0
 
     var pointLightDepthMapsArrayCube: Int = 0
@@ -251,7 +249,8 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
     fun getTubeLight(entity: Entity, length: Float, radius: Float): TubeLight {
         return TubeLight(entity, Vector3f(1f, 1f, 1f), length, radius)
     }
-    fun getAreaLight(entity: Entity, color: Vector3f = Vector3f(1f,1f,1f), width: Int = 100, height: Int = 20, range: Int = 20): AreaLight {
+
+    fun getAreaLight(entity: Entity, color: Vector3f = Vector3f(1f, 1f, 1f), width: Int = 100, height: Int = 20, range: Int = 20): AreaLight {
         return AreaLight(entity, color, Vector3f(width.toFloat(), height.toFloat(), range.toFloat()))
     }
 
@@ -541,18 +540,23 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
     }
 
     inline fun <reified T> addLight(light: T) {
-        if(light is PointLight) {
+        if (light is PointLight) {
             this.pointLights.add(light)
-        } else if(light is TubeLight) {
+        } else if (light is TubeLight) {
             tubeLights.add(light)
         }
         eventBus.post(LightChangedEvent())
     }
-
+    override fun clear() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
     companion object {
 
-        @JvmField var MAX_AREALIGHT_SHADOWMAPS = 2
-        @JvmField var MAX_POINTLIGHT_SHADOWMAPS = 5
-        @JvmField var AREALIGHT_SHADOWMAP_RESOLUTION = 512
+        @JvmField
+        var MAX_AREALIGHT_SHADOWMAPS = 2
+        @JvmField
+        var MAX_POINTLIGHT_SHADOWMAPS = 5
+        @JvmField
+        var AREALIGHT_SHADOWMAP_RESOLUTION = 512
     }
 }

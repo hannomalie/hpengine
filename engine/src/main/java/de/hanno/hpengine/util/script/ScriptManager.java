@@ -3,6 +3,7 @@ package de.hanno.hpengine.util.script;
 import de.hanno.hpengine.engine.component.JavaScriptComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.EntityManager;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -12,12 +13,11 @@ import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import javax.script.*;
 import java.util.logging.Logger;
 
-public class ScriptManager {
+public class ScriptManager implements Manager {
 
     private static final Logger LOGGER = Logger.getLogger(ScriptManager.class.getName());
 
-    private static volatile ScriptManager instance;
-    private final ScriptContext globalContext;
+	private final ScriptContext globalContext;
 	private ScriptEngine scriptEngine;
 	private DefaultCompletionProvider provider;
 	private Bindings globalBindings;
@@ -105,4 +105,18 @@ public class ScriptManager {
 		}
 	}
 
+	@Override
+	public void clear() {
+
+	}
+
+	@Override
+	public void update(float deltaSeconds) {
+
+	}
+
+	@Override
+	public void onEntityAdded() {
+
+	}
 }

@@ -324,4 +324,9 @@ public class EnvironmentProbeManager implements Manager{
 	public void update(float deltaSeconds) {
 		probes.forEach(p -> p.update(deltaSeconds));
 	}
+
+	@Override
+	public void onEntityAdded() {
+
+	}
 }
