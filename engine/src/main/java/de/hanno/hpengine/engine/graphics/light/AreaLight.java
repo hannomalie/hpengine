@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
+import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.util.Util;
 import org.joml.Vector3f;
@@ -11,18 +11,20 @@ import java.nio.FloatBuffer;
 import java.util.List;
 
 
-public class AreaLight extends Entity {
+public class AreaLight implements Component {
+	public static String COMPONENT_KEY = AreaLight.class.getSimpleName();
 
 	Camera camera;
 	public static float DEFAULT_RANGE = 1f;
 	private Vector3f color;
-	transient private RenderTarget renderTarget;
+	private Entity entity;
+	private Vector3f scale;
 
-	protected AreaLight(Vector3f position, Vector3f color, Vector3f scale) {
-		scale(scale);
-		setTranslation(position);
+	protected AreaLight(Entity entity, Vector3f color, Vector3f scale) {
+		this.entity = entity;
+		setScale(scale);
 		setColor(color);
-		camera = new Camera(this, Util.createPerspective(180, 1, 1f, 5000f), 1f, 5000f, 180f, 1);
+		camera = new Camera(entity, Util.createPerspective(180, 1, 1f, 5000f), 1f, 5000f, 180f, 1);
 	}
 	
 	public void setColor(Vector3f color) {
@@ -73,9 +75,9 @@ public class AreaLight extends Entity {
 		
 		for(int i = 0; i < list.size(); i++) {
 			AreaLight light = list.get(i);
-			result[i] = light.getPosition().x;
-			result[i+1] = light.getPosition().y;
-			result[i+2] = light.getPosition().z;
+			result[i] = light.getEntity().getPosition().x;
+			result[i+1] = light.getEntity().getPosition().y;
+			result[i+2] = light.getEntity().getPosition().z;
 			
 			result[i+3] = light.getScale().x;
 			
@@ -98,9 +100,8 @@ public class AreaLight extends Entity {
 		getScale().z = range;
 	}
 	
-	@Override
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z,getRange()*2)) {
+		if (camera.getFrustum().sphereInFrustum(getEntity().getPosition().x, getEntity().getPosition().y, getEntity().getPosition().z,getRange()*2)) {
 			return true;
 		}
 		return false;
@@ -115,5 +116,23 @@ public class AreaLight extends Entity {
 
 	public FloatBuffer getViewProjectionMatrixAsBuffer() {
 		return camera.getViewMatrixAsBuffer();
+	}
+
+	@Override
+	public Entity getEntity() {
+		return entity;
+	}
+
+	@Override
+	public String getIdentifier() {
+		return COMPONENT_KEY;
+	}
+
+	public void setScale(Vector3f scale) {
+		this.scale = scale;
+	}
+
+	public Vector3f getScale() {
+		return scale;
 	}
 }

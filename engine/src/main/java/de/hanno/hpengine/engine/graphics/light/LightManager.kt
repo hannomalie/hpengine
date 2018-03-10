@@ -39,7 +39,6 @@ import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import net.engio.mbassy.listener.Handler
-import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
@@ -252,27 +251,8 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
     fun getTubeLight(entity: Entity, length: Float, radius: Float): TubeLight {
         return TubeLight(entity, Vector3f(1f, 1f, 1f), length, radius)
     }
-
-    fun getAreaLight(width: Int, height: Int, range: Int): AreaLight {
-        return getAreaLight(Vector3f(), Vector3f(1f, 1f, 1f), width, height, range)
-    }
-
-    fun getAreaLight(position: Vector3f, color: Vector3f, width: Int, height: Int, range: Int): AreaLight {
-        return getAreaLight(position, Quaternionf(), color, width, height, range)
-    }
-
-    fun getAreaLight(position: Vector3f, width: Int, height: Int, range: Int): AreaLight {
-        return getAreaLight(position, Quaternionf(), Vector3f(1f, 1f, 1f), width, height, range)
-    }
-
-    fun getAreaLight(position: Vector3f, orientation: Quaternionf, color: Vector3f, width: Float, height: Float, range: Float): AreaLight {
-        return getAreaLight(position, orientation, color, width.toInt(), height.toInt(), range.toInt())
-    }
-
-    fun getAreaLight(position: Vector3f, orientation: Quaternionf, color: Vector3f, width: Int, height: Int, range: Int): AreaLight {
-        val areaLight = AreaLight(position, color, Vector3f(width.toFloat(), height.toFloat(), range.toFloat()))
-        areaLight.orientation = orientation
-        return areaLight
+    fun getAreaLight(entity: Entity, color: Vector3f = Vector3f(1f,1f,1f), width: Int = 100, height: Int = 20, range: Int = 20): AreaLight {
+        return AreaLight(entity, color, Vector3f(width.toFloat(), height.toFloat(), range.toFloat()))
     }
 
     private fun updateAreaLightArrays() {
@@ -285,9 +265,9 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
 
         for (i in 0 until Math.min(areaLightsForwardMaxCount, areaLights.size)) {
             val light = areaLights[i]
-            positions[3 * i] = light.position.x
-            positions[3 * i + 1] = light.position.y
-            positions[3 * i + 2] = light.position.z
+            positions[3 * i] = light.entity.position.x
+            positions[3 * i + 1] = light.entity.position.y
+            positions[3 * i + 2] = light.entity.position.z
 
             colors[3 * i] = light.color.x
             colors[3 * i + 1] = light.color.y
@@ -297,17 +277,17 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
             widthHeightRanges[3 * i + 1] = light.height
             widthHeightRanges[3 * i + 2] = light.range
 
-            viewDirections[3 * i] = light.viewDirection.x
-            viewDirections[3 * i + 1] = light.viewDirection.y
-            viewDirections[3 * i + 2] = light.viewDirection.z
+            viewDirections[3 * i] = light.entity.viewDirection.x
+            viewDirections[3 * i + 1] = light.entity.viewDirection.y
+            viewDirections[3 * i + 2] = light.entity.viewDirection.z
 
-            upDirections[3 * i] = light.upDirection.x
-            upDirections[3 * i + 1] = light.upDirection.y
-            upDirections[3 * i + 2] = light.upDirection.z
+            upDirections[3 * i] = light.entity.upDirection.x
+            upDirections[3 * i + 1] = light.entity.upDirection.y
+            upDirections[3 * i + 2] = light.entity.upDirection.z
 
-            rightDirections[3 * i] = light.rightDirection.x
-            rightDirections[3 * i + 1] = light.rightDirection.y
-            rightDirections[3 * i + 2] = light.rightDirection.z
+            rightDirections[3 * i] = light.entity.rightDirection.x
+            rightDirections[3 * i + 1] = light.entity.rightDirection.y
+            rightDirections[3 * i + 2] = light.entity.rightDirection.z
         }
 
         areaLightPositions = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
@@ -346,8 +326,8 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
             val light = areaLights[i]
 
             areaShadowPassProgram.use()
-            areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.viewMatrixAsBuffer)
-            areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.getComponent(Camera::class.java).projectionMatrixAsBuffer)
+            areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.entity.viewMatrixAsBuffer)
+            areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
             //			directionalShadowPassProgram.setUniform("near", de.hanno.hpengine.camera.getNear());
             //			directionalShadowPassProgram.setUniform("far", de.hanno.hpengine.camera.getFar());
 
@@ -502,7 +482,7 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
     }
 
     fun getCameraForAreaLight(light: AreaLight): Camera {
-        cameraEntity.setTranslation(light.position.negate(null!!))
+        cameraEntity.setTranslation(light.entity.position.negate(null!!))
         //		de.hanno.hpengine.camera.getOrientation().x = -lights.getOrientation().x;
         //		de.hanno.hpengine.camera.getOrientation().y = -lights.getOrientation().y;
         //		de.hanno.hpengine.camera.getOrientation().z = -lights.getOrientation().z;
@@ -524,7 +504,7 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
         //		c.setPosition(newPosition);
         //		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
         //		c.updateShadow();
-        return light.getComponent(Camera::class.java).viewProjectionMatrixAsBuffer
+        return light.camera.viewProjectionMatrixAsBuffer
     }
 
     private fun bufferLights() {

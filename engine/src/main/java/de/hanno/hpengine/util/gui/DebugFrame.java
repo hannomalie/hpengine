@@ -465,7 +465,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable() {
+                CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable<Result<Boolean>>() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
                         Entity tubeLightEntity = new Entity();
@@ -498,7 +498,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().getAreaLights().add(engine.getScene().getLightManager().getAreaLight(50, 50, 20));
+                        engine.getSceneManager().getScene().getAreaLights().add(engine.getScene().getLightManager().getAreaLight(new Entity(), new Vector3f(1,1,1), 50, 50, 20));
                         return new Result(true);
                     }
                 });

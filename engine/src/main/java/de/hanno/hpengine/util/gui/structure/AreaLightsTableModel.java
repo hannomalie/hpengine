@@ -28,10 +28,10 @@ public class AreaLightsTableModel extends AbstractTableModel {
     public Object getValueAt(int row, int col) {
         if (col == 0) {
             AreaLight light = engine.getSceneManager().getScene().getAreaLights().get(row);
-            return String.format("%s (Range %f)", light.getName(), light.getScale().z);
+            return String.format("%s (Range %f)", light.getEntity().getName(), light.getScale().z);
 
         } else if (col == 1) {
-            return Util.vectorToString(engine.getSceneManager().getScene().getAreaLights().get(row).getPosition());
+            return Util.vectorToString(engine.getSceneManager().getScene().getAreaLights().get(row).getEntity().getPosition());
 
         } else if (col == 2) {
             return Util.vectorToString(engine.getSceneManager().getScene().getAreaLights().get(row).getColor());

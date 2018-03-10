@@ -464,10 +464,10 @@ public class SimpleDrawStrategy implements DrawStrategy {
 //				GL11.glCullFace(GL11.GL_BACK);
 //				GL11.glDepthFunc(GL11.GL_LEQUAL);
 //			}
-            secondPassAreaProgram.setUniform("lightPosition", areaLight.getPosition());
-            secondPassAreaProgram.setUniform("lightRightDirection", areaLight.getRightDirection());
-            secondPassAreaProgram.setUniform("lightViewDirection", areaLight.getViewDirection());
-            secondPassAreaProgram.setUniform("lightUpDirection", areaLight.getUpDirection());
+            secondPassAreaProgram.setUniform("lightPosition", areaLight.getEntity().getPosition());
+            secondPassAreaProgram.setUniform("lightRightDirection", areaLight.getEntity().getRightDirection());
+            secondPassAreaProgram.setUniform("lightViewDirection", areaLight.getEntity().getViewDirection());
+            secondPassAreaProgram.setUniform("lightUpDirection", areaLight.getEntity().getUpDirection());
             secondPassAreaProgram.setUniform("lightWidth", areaLight.getWidth());
             secondPassAreaProgram.setUniform("lightHeight", areaLight.getHeight());
             secondPassAreaProgram.setUniform("lightRange", areaLight.getRange());

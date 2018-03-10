@@ -181,7 +181,7 @@ public class EnvironmentSampler extends Entity {
 			boolean aPointLightHasMoved = !scene.getPointLights().stream()
 					.filter(e -> probe.getBox().containsOrIntersectsSphere(e.getEntity().getPosition(), e.getRadius()))
 					.filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !engine.getScene().getLightManager().getAreaLights().stream().filter(e -> e.hasMoved()).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !engine.getScene().getLightManager().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
@@ -669,10 +669,10 @@ public class EnvironmentSampler extends Entity {
 //				GL11.glCullFace(GL11.GL_BACK);
 //				GL11.glDepthFunc(GL11.GL_LEQUAL);
 //			}
-			secondPassAreaProgram.setUniform("lightPosition", areaLight.getPosition());
-			secondPassAreaProgram.setUniform("lightRightDirection", areaLight.getRightDirection());
-			secondPassAreaProgram.setUniform("lightViewDirection", areaLight.getViewDirection());
-			secondPassAreaProgram.setUniform("lightUpDirection", areaLight.getUpDirection());
+			secondPassAreaProgram.setUniform("lightPosition", areaLight.getEntity().getPosition());
+			secondPassAreaProgram.setUniform("lightRightDirection", areaLight.getEntity().getRightDirection());
+			secondPassAreaProgram.setUniform("lightViewDirection", areaLight.getEntity().getViewDirection());
+			secondPassAreaProgram.setUniform("lightUpDirection", areaLight.getEntity().getUpDirection());
 			secondPassAreaProgram.setUniform("lightWidth", areaLight.getWidth());
 			secondPassAreaProgram.setUniform("lightHeight", areaLight.getHeight());
 			secondPassAreaProgram.setUniform("lightRange", areaLight.getRange());

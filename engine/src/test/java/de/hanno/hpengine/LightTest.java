@@ -31,9 +31,9 @@ public class LightTest extends TestWithEngine {
 	
 	@Test
 	public void areaLightHasCorrectProportions() {
-        AreaLight areaLight = engine.getScene().getLightManager().getAreaLight(100,100,200);
+        AreaLight areaLight = engine.getScene().getLightManager().getAreaLight(new Entity(), new Vector3f(1,1,1), 100,100,200);
 		
-		Assert.assertEquals(new Vector3f(), areaLight.getPosition());
+		Assert.assertEquals(new Vector3f(), areaLight.getEntity().getPosition());
 		Assert.assertEquals(100, areaLight.getWidth(), 1.0f);
 		Assert.assertEquals(100, areaLight.getHeight(), 1.0f);
 		Assert.assertEquals(200, areaLight.getRange(), 1.0f);

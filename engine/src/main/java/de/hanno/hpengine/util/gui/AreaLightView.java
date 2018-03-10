@@ -24,7 +24,7 @@ public class AreaLightView extends EntityView {
 	private AreaLight light;
 
 	public AreaLightView(Engine engine, DebugFrame debugFrame, AreaLight light) {
-		super(engine, light);
+		super(engine, light.getEntity());
 		this.light = light;
 	}
 
