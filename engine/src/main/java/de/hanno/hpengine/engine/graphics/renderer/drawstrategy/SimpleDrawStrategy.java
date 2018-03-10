@@ -6,10 +6,10 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
-import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -29,7 +29,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
-import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.util.Util;
@@ -421,7 +420,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         for (TubeLight tubeLight : tubeLights) {
-            boolean camInsideLightVolume = new AABB(tubeLight.getPosition(), tubeLight.getScale().x, tubeLight.getScale().y, tubeLight.getScale().z).contains(camPositionV4);
+            boolean camInsideLightVolume = tubeLight.getMinMaxWorld().contains(camPositionV4);
             if (camInsideLightVolume) {
                 GL11.glCullFace(GL11.GL_FRONT);
                 GL11.glDepthFunc(GL11.GL_GEQUAL);
@@ -429,7 +428,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
                 GL11.glCullFace(GL11.GL_BACK);
                 GL11.glDepthFunc(GL11.GL_LEQUAL);
             }
-            secondPassTubeProgram.setUniform("lightPosition", tubeLight.getPosition());
+            secondPassTubeProgram.setUniform("lightPosition", tubeLight.getEntity().getPosition());
             secondPassTubeProgram.setUniform("lightStart", tubeLight.getStart());
             secondPassTubeProgram.setUniform("lightEnd", tubeLight.getEnd());
             secondPassTubeProgram.setUniform("lightOuterLeft", tubeLight.getOuterLeft());

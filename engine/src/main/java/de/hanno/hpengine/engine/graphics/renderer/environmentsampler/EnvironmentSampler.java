@@ -626,7 +626,7 @@ public class EnvironmentSampler extends Entity {
 		secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		for (TubeLight tubeLight : tubeLights) {
-			boolean camInsideLightVolume = new AABB(tubeLight.getPosition(), tubeLight.getScale().x, tubeLight.getScale().y, tubeLight.getScale().z).contains(camPositionV4);
+			boolean camInsideLightVolume = new AABB(tubeLight.getEntity().getPosition(), tubeLight.getLength(), tubeLight.getRadius(), tubeLight.getRadius()).contains(camPositionV4);
 			if (camInsideLightVolume) {
 				GL11.glCullFace(GL11.GL_FRONT);
 				GL11.glDepthFunc(GL11.GL_GEQUAL);
@@ -634,7 +634,7 @@ public class EnvironmentSampler extends Entity {
 				GL11.glCullFace(GL11.GL_BACK);
 				GL11.glDepthFunc(GL11.GL_LEQUAL);
 			}
-			secondPassTubeProgram.setUniform("lightPosition", tubeLight.getPosition());
+			secondPassTubeProgram.setUniform("lightPosition", tubeLight.getEntity().getPosition());
 			secondPassTubeProgram.setUniform("lightStart", tubeLight.getStart());
 			secondPassTubeProgram.setUniform("lightEnd", tubeLight.getEnd());
 			secondPassTubeProgram.setUniform("lightOuterLeft", tubeLight.getOuterLeft());

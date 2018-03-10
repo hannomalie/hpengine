@@ -468,7 +468,8 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight(100, 50));
+                        Entity tubeLightEntity = new Entity();
+                        engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50));
                         return new Result(true);
                     }
                 });
@@ -1274,7 +1275,7 @@ public class DebugFrame implements HostComponent {
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
                         entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new TubeLightView(engine, debugFrame, (TubeLight) selectedLight));
+                        entityViewFrame.add(new TubeLightView(engine, (TubeLight) selectedLight));
                         entityViewFrame.setVisible(true);
                     }
                 }

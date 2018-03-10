@@ -1,6 +1,7 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.util.Util;
 
@@ -19,19 +20,17 @@ public class TubeLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        if(engine.getSceneManager().getScene() != null) {
-            return engine.getSceneManager().getScene().getTubeLights().size();
-        }
-        return 0;
+        return engine.getSceneManager().getScene().getTubeLights().size();
     }
 
     public Object getValueAt(int row, int col) {
+        TubeLight light = engine.getSceneManager().getScene().getTubeLights().get(row);
+        Entity entity = light.getEntity();
         if (col == 0) {
-            TubeLight light = engine.getSceneManager().getScene().getTubeLights().get(row);
-            return String.format("%s (Range %f)", light.getName(), light.getScale().x);
+            return String.format("%s (Range %f)", light.getEntity().getName(), light.getLength());
 
         } else if (col == 1) {
-            return Util.vectorToString(engine.getSceneManager().getScene().getTubeLights().get(row).getPosition());
+            return Util.vectorToString(entity.getPosition());
 
         } else if (col == 2) {
             return Util.vectorToString(engine.getSceneManager().getScene().getTubeLights().get(row).getColor());

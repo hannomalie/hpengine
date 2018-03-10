@@ -1,36 +1,31 @@
 package de.hanno.hpengine.engine.graphics.light;
 
-import java.util.List;
-
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-
+import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.List;
 
-public class TubeLight extends Entity {
+
+public class TubeLight implements Component {
+	public static String COMPONENT_KEY = TubeLight.class.getSimpleName();
 	
 	public static float DEFAULT_RANGE = 1f;
 	private Vector3f color;
+	private Entity entity;
+	private float radius;
+	private float length;
 
-	protected TubeLight(Vector3f position, StaticModel model, Vector3f colorIntensity, float length, float radius, String materialName) {
-		super(generateName(), position);
+	protected TubeLight(Entity entity, Vector3f colorIntensity, float length, float radius) {
+		this.entity = entity;
 		setColor(colorIntensity);
-		scale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...m�h
-	}
-	public TubeLight(Vector3f position, StaticModel model, Vector3f color, float length, float radius) {
-		super(generateName(), position);
-		setColor(color);
-		scale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...m�h
-	}
-	
-	private static String generateName() {
-		return String.format("TubeLight_%d", System.currentTimeMillis());
+		setLength(length);
+		setRadius(radius);
 	}
 
 	public void setColor(Vector3f color) {
@@ -47,12 +42,22 @@ public class TubeLight extends Entity {
 	@Override
 	public void destroy() {
 	}
-	
+
+	@Override
+	public Entity getEntity() {
+		return entity;
+	}
+
 	@Override
 	public void update(float seconds) {
 	}
 
-    public void draw(Program program) {
+	@Override
+	public String getIdentifier() {
+		return COMPONENT_KEY;
+	}
+
+	public void draw(Program program) {
         throw new IllegalStateException("Currently not implemented");
 //		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 //			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
@@ -70,7 +75,7 @@ public class TubeLight extends Entity {
 //	}
 	
 	public float getRadius() {
-        return this.getScale().y/2;
+        return radius;
 	}
 	
 	public static float[] convert(List<TubeLight> list) {
@@ -80,11 +85,11 @@ public class TubeLight extends Entity {
 		
 		for(int i = 0; i < list.size(); i++) {
 			TubeLight light = list.get(i);
-			result[i] = light.getPosition().x;
-			result[i+1] = light.getPosition().y;
-			result[i+2] = light.getPosition().z;
+			result[i] = light.getEntity().getPosition().x;
+			result[i+1] = light.getEntity().getPosition().y;
+			result[i+2] = light.getEntity().getPosition().z;
 			
-			result[i+3] = light.getScale().x;
+			result[i+3] = light.getEntity().getScale().x;
 			
 			result[i+4] = light.getColor().x;
 			result[i+5] = light.getColor().y;
@@ -97,9 +102,8 @@ public class TubeLight extends Entity {
 		return result;
 	}
 
-	@Override
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z, getLength()/2)) {
+		if (camera.getFrustum().sphereInFrustum(getEntity().getPosition().x, getEntity().getPosition().y, getEntity().getPosition().z, getLength()/2)) {
 			return true;
 		}
 		return false;
@@ -109,22 +113,36 @@ public class TubeLight extends Entity {
 		return (getLength()/2) - getRadius();
 	}
 	public Vector3f getStart() {
-		return new Vector3f(getPosition()).sub(new Vector3f(getRightDirection()).mul(getOffset()));
+		return new Vector3f(getEntity().getPosition()).sub(new Vector3f(entity.getRightDirection()).mul(getOffset()));
 	}
 	public Vector3f getEnd() {
-		return new Vector3f(getPosition()).add( new Vector3f(getRightDirection()).mul(getOffset()));
+		return new Vector3f(getEntity().getPosition()).add( new Vector3f(entity.getRightDirection()).mul(getOffset()));
 	}
 	public Vector3f getOuterLeft() {
-		return new Vector3f(getPosition()).sub(new Vector3f(getRightDirection()).mul((getLength()/2)));
+		return new Vector3f(entity.getPosition()).sub(new Vector3f(entity.getRightDirection()).mul((getLength()/2)));
 	}
 	public Vector3f getOuterRight() {
-		return new Vector3f(getPosition()).add(new Vector3f(getRightDirection()).mul((getLength()/2)));
+		return new Vector3f(entity.getPosition()).add(new Vector3f(entity.getRightDirection()).mul((getLength()/2)));
 	}
 
 	public float getLength() {
-		return getScale().x;
+		return length;
 	}
-	public float setLength(float length) {
-		return getScale().x = length;
+	public void setLength(float length) {
+		this.length = length;
 	}
+
+	public void setRadius(float radius) {
+		this.radius = radius;
+	}
+
+//	TODO do this properly
+	AABB aabb = new AABB();
+	public AABB getMinMaxWorld() {
+		aabb.setMin(new Vector3f(-length));
+		aabb.setMax(new Vector3f(length));
+		aabb.transform(getEntity(), aabb);
+		return aabb;
+	}
+
 }

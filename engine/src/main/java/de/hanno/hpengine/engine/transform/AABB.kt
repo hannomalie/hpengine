@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.transform
 
 import de.hanno.hpengine.engine.model.StaticMesh
 import org.joml.Vector3f
+import org.joml.Vector4f
 
 data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) {
     private val  corners = Array(8, { Vector3f() })
@@ -32,6 +33,11 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
     private fun clear() {
         min.set(0f,0f,0f)
         max.set(0f,0f,0f)
+    }
 
+    fun contains(position: Vector4f): Boolean {
+        return min.x < position.x && max.x > position.x &&
+                min.y < position.y && max.y > position.y &&
+                min.z < position.z && max.z > position.z
     }
 }

@@ -249,8 +249,8 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
         return areaLightPositions
     }
 
-    fun getTubeLight(length: Float, radius: Float): TubeLight {
-        return TubeLight(Vector3f(), cubeMesh, Vector3f(1f, 1f, 1f), length, radius)
+    fun getTubeLight(entity: Entity, length: Float, radius: Float): TubeLight {
+        return TubeLight(entity, Vector3f(1f, 1f, 1f), length, radius)
     }
 
     fun getAreaLight(width: Int, height: Int, range: Int): AreaLight {

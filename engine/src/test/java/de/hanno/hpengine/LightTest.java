@@ -1,5 +1,6 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -11,15 +12,17 @@ public class LightTest extends TestWithEngine {
 
 	@Test
 	public void tubeLightHasCorrectProportions() {
-		TubeLight tubeLight = engine.getScene().getLightManager().getTubeLight(100, 50);
+		Entity tubeLightEntity = new Entity();
+		TubeLight tubeLight = engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50);
 		
-		Assert.assertEquals(new Vector3f(), tubeLight.getPosition());
+		Assert.assertEquals(new Vector3f(), tubeLight.getEntity().getPosition());
 		Assert.assertEquals(200, tubeLight.getLength(), 1.0f);
 		Assert.assertEquals(50, tubeLight.getRadius(), 1.0f);
 		
 		Assert.assertEquals(new Vector3f(-50,0,0), tubeLight.getStart());
 		Assert.assertEquals(new Vector3f(50,0,0), tubeLight.getEnd());
-		Assert.assertEquals(new Vector3f(200,100,100), tubeLight.getScale());
+		Assert.assertEquals(200, tubeLight.getLength());
+		Assert.assertEquals(50, tubeLight.getRadius());
 		
 		AABB minMaxWorld = tubeLight.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(-100,-50,-50), minMaxWorld.getMin());
