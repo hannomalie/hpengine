@@ -10,10 +10,7 @@ import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
-import de.hanno.hpengine.engine.graphics.light.AreaLight
-import de.hanno.hpengine.engine.graphics.light.LightManager
-import de.hanno.hpengine.engine.graphics.light.PointLight
-import de.hanno.hpengine.engine.graphics.light.TubeLight
+import de.hanno.hpengine.engine.graphics.light.*
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
@@ -35,21 +32,24 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
 
-    val systems: SystemsRegistry = SimpleSystemsRegistry()
+    val componentSystems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
 
     val entityManager = managers.register(EntityManager(engine, engine.eventBus))
     val environmentProbeManager = managers.register(engine.environmentProbeManager)
-    val clusterComponentSystem = systems.register(ClustersComponentSystem(engine))
-    val cameraComponentSystem = systems.register(CameraComponentSystem(engine))
-    val inputComponentSystem = systems.register(InputComponentSystem(engine))
-    val modelComponentSystem = systems.register(ModelComponentSystem(engine))
+    val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
+    val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine))
+    val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
+    val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
+    val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem(engine))
+
     val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
     val lightManager = managers.register(LightManager(engine, engine.eventBus, materialManager, engine.gpuContext, engine.programManager, inputComponentSystem))
     val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
     val entitySystems = SimpleEntitySystemRegistry()
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
+    val pointlightSystem = entitySystems.register(PointLightSystem(engine, this))
 
     val camera = entityManager.create()
             .apply { addComponent(inputComponentSystem.create(this)) }
@@ -137,8 +137,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         modelComponentSystem.allocateVertexIndexBufferSpace(entities)
 
         entitySystems.onEntityAdded()
-        systems.onEntityAdded()
-        entitySystems.onEntityAdded()
+        componentSystems.onEntityAdded()
+        managers.onEntityAdded()
 
         calculateMinMax(entities)
         entityAddedInCycle = currentRenderCycle
@@ -152,7 +152,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         materialManager.update(deltaSeconds)
         lightManager.update(deltaSeconds, currentRenderCycle)
 
-        systems.update(deltaSeconds)
+        componentSystems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
 
         entityManager.update(deltaSeconds)
@@ -167,13 +167,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         return Optional.ofNullable(candidate)
     }
 
-    fun getPointLights(): List<PointLight> = lightManager.pointLights
+    fun getPointLights(): List<PointLight> = pointlightSystem.getPointLights()
     fun getTubeLights(): List<TubeLight> = lightManager.tubeLights
     fun getAreaLights(): List<AreaLight> = lightManager.areaLights
-    fun addPointLight(pointLight: PointLight) = lightManager.addLight(pointLight)
+    fun addPointLight(pointLight: PointLight) = pointLightComponentSystem.addComponent(pointLight)
     fun addTubeLight(tubeLight: TubeLight) = lightManager.addLight(tubeLight)
     fun entityMovedInCycle() = entityMovedInCycle
-    fun pointLightMovedInCycle() = lightManager.pointLightMovedInCycle
+    fun pointLightMovedInCycle() = pointlightSystem.pointLightMovedInCycle
 
     companion object {
         private const val serialVersionUID = 1L

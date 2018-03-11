@@ -258,9 +258,9 @@ public class EnvironmentSampler extends Entity {
 		cubeMapProgram.setUniform("probePosition", probe.getEntity().getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
 		cubeMapProgram.setUniform("activePointLightCount", engine.getSceneManager().getScene().getPointLights().size());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", engine.getScene().getLightManager().getPointLightPositions());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", engine.getScene().getLightManager().getPointLightColors());
-        cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", engine.getScene().getLightManager().getPointLightRadiuses());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", engine.getScene().getPointlightSystem().getPointLightPositions());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", engine.getScene().getPointlightSystem().getPointLightColors());
+        cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", engine.getScene().getPointlightSystem().getPointLightRadiuses());
 		
 		cubeMapProgram.setUniform("activeAreaLightCount", engine.getSceneManager().getScene().getAreaLights().size());
         cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", engine.getScene().getLightManager().getAreaLightPositions());

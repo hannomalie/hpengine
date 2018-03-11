@@ -140,9 +140,9 @@ public class SimpleDrawStrategy implements DrawStrategy {
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
             engine.getScene().getLightManager().renderAreaLightShadowMaps(renderState);
             if (Config.getInstance().isUseDpsm()) {
-                engine.getScene().getLightManager().renderPointLightShadowMaps_dpsm(renderState, entities);
+                engine.getScene().getPointlightSystem().renderPointLightShadowMaps_dpsm(renderState, entities);
             } else {
-                engine.getScene().getLightManager().renderPointLightShadowMaps(renderState);
+                engine.getScene().getPointlightSystem().renderPointLightShadowMaps(renderState);
             }
             GPUProfiler.end();
 
@@ -385,10 +385,10 @@ public class SimpleDrawStrategy implements DrawStrategy {
         gpuContext.bindTexture(4, TEXTURE_2D, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId());
         gpuContext.bindTexture(5, TEXTURE_2D, engine.getRenderer().getGBuffer().getVisibilityMap());
         if (Config.getInstance().isUseDpsm()) {
-            gpuContext.bindTexture(6, TEXTURE_2D_ARRAY, engine.getScene().getLightManager().getPointLightDepthMapsArrayFront());
-            gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, engine.getScene().getLightManager().getPointLightDepthMapsArrayBack());
+            gpuContext.bindTexture(6, TEXTURE_2D_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayFront());
+            gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayBack());
         } else {
-            gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, engine.getScene().getLightManager().getPointLightDepthMapsArrayCube());
+            gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayCube());
         }
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
@@ -400,7 +400,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", LightManager.MAX_POINTLIGHT_SHADOWMAPS);
         secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-        secondPassPointComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getLightManager().getLightBuffer());
+        secondPassPointComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointlightSystem().getLightBuffer());
         secondPassPointComputeProgram.dispatchCompute(Config.getInstance().getWidth() / 16, Config.getInstance().getHeight() / 16, 1);
         GPUProfiler.end();
     }
@@ -625,7 +625,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
         engine.getGpuContext().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
         engine.getGpuContext().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
-        engine.getGpuContext().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, engine.getScene().getLightManager().getPointLightDepthMapsArrayCube());
+        engine.getGpuContext().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayCube());
 
         gpuContext.getFullscreenBuffer().draw();
 

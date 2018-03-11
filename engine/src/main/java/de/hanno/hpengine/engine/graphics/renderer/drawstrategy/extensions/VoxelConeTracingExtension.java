@@ -174,7 +174,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectLightComputeProgram.use();
 
                 injectLightComputeProgram.setUniform("pointLightCount", engine.getSceneManager().getScene().getPointLights().size());
-                injectLightComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getLightManager().getLightBuffer());
+                injectLightComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointlightSystem().getLightBuffer());
                 injectLightComputeProgram.setUniform("bounces", bounces);
                 injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));

@@ -438,7 +438,9 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result execute() throws Exception {
                         Entity pointLightEntity = new Entity();
-                        engine.getSceneManager().getScene().addPointLight(engine.getScene().getLightManager().getPointLight(pointLightEntity, 50));
+                        PointLight pointLight = engine.getScene().getLightManager().getPointLight(pointLightEntity, 50);
+                        pointLightEntity.addComponent(pointLight);
+                        engine.getSceneManager().getScene().add(pointLightEntity);
                         return new Result(true);
                     }
                 });

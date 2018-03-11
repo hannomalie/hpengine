@@ -13,6 +13,12 @@ interface ManagerRegistry {
     fun clearManager() {
         getManagers().forEach { it.clear() }
     }
+
+    fun onEntityAdded() {
+        getManagers().forEach {
+            it.onEntityAdded()
+        }
+    }
 }
 
 class SimpleManagerRegistry: ManagerRegistry {
