@@ -18,6 +18,9 @@ import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL43;
 
 import javax.vecmath.Vector2f;
 import java.util.ArrayList;
@@ -29,6 +32,7 @@ import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.glFinish;
+import static org.lwjgl.opengl.GL30.GL_RGBA16F;
 
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
@@ -112,7 +116,7 @@ public class DeferredRenderer implements Renderer {
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
-			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer());
+			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 			for(int i = 0; i < 6; i++) {
 //                drawToQuad(EnvironmentProbeManager.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 			}
@@ -127,16 +131,17 @@ public class DeferredRenderer implements Renderer {
 //			drawToQuad(faceView, sixDebugBuffers.get(1));
 //			GL11.glDeleteTextures(faceView);
 
-//            int[] faceViews = new int[6];
-//            for(int i = 0; i < 6; i++) {
-//                faceViews[i] = OpenGLContext.getInstance().genTextures();
-//                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightManager.getCubemapArrayRenderTarget().getDepthBufferTexture(),
-//						GL14.GL_DEPTH_COMPONENT24, 0, 1, 6+i, 1);
-//				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
-//			}
-//            for(int i = 0; i < 6; i++) {
-//                GL11.glDeleteTextures(faceViews[i]);
-//            }
+            int[] faceViews = new int[6];
+			int index = 0;
+            for(int i = 0; i < 6; i++) {
+                faceViews[i] = engine.getGpuContext().genTextures();
+                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, engine.getScene().getLightManager().getPointLightDepthMapsArrayCube(),
+						GL_RGBA16F, 0, 1, (index*6)+i, 1);
+				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());
+			}
+            for(int i = 0; i < 6; i++) {
+                GL11.glDeleteTextures(faceViews[i]);
+            }
 		}
 
 		GPUProfiler.start("Create new fence");

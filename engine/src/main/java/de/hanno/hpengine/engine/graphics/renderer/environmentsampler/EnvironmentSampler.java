@@ -86,6 +86,7 @@ public class EnvironmentSampler extends Entity {
 		entity.addComponent(camera);
         camera.setWidth(width);
 		camera.setWidth(height);
+		this.camera = camera;
         translate(position);
         this.engine = engine;
         this.renderer = engine.getRenderer();
@@ -99,7 +100,7 @@ public class EnvironmentSampler extends Entity {
 		camera.setFov(fov);
 		camera.setRatio(1f);
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
-		setParent(probe);
+		setParent(probe.getEntity());
 		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
 		rotate(cubeMapCamInitialOrientation);
 //		rotate(new Vector4f(0, 1, 0, 90));
@@ -254,7 +255,7 @@ public class EnvironmentSampler extends Entity {
 	private void bindProgramSpecificsPerCubeMap() {
 		cubeMapProgram.use();
 		cubeMapProgram.setUniform("firstBounceForProbe", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
-		cubeMapProgram.setUniform("probePosition", probe.getCenter());
+		cubeMapProgram.setUniform("probePosition", probe.getEntity().getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
 		cubeMapProgram.setUniform("activePointLightCount", engine.getSceneManager().getScene().getPointLights().size());
         cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", engine.getScene().getLightManager().getPointLightPositions());

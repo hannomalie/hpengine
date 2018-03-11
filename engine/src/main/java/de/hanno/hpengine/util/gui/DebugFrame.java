@@ -410,8 +410,7 @@ public class DebugFrame implements HostComponent {
 					public Result doInBackground() throws Exception {
                         engine.getGpuContext().execute(() -> {
                             try {
-                                EnvironmentProbe probe = null;
-                                probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Vector3f(), 50);
+                                EnvironmentProbe probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Entity(), new Vector3f(), 50);
                                 engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
                             } catch (Exception e1) {
                                 e1.printStackTrace();

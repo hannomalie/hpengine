@@ -33,16 +33,13 @@ public class PointLightView extends EntityView {
 		List<Component> panels = new ArrayList<>();
 		
 		WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
-		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				Color color = lightColorChooserPanel.getColor();
-				light.setColor(new Vector4f(color.getRed()/255.f,
-						color.getGreen()/255.f,
-						color.getBlue()/255.f, 1f));
-				engine.getEventBus().post(new PointLightMovedEvent());
-			}
-		});
+		lightColorChooserPanel.addChangeListener(e -> {
+            Color color = lightColorChooserPanel.getColor();
+            light.setColor(new Vector4f(color.getRed()/255.f,
+                    color.getGreen()/255.f,
+                    color.getBlue()/255.f, 1f));
+            engine.getEventBus().post(new PointLightMovedEvent());
+        });
 		JScrollPane lightColorChooserScrollPanel = new JScrollPane(lightColorChooserPanel);
 		panels.add(lightColorChooserScrollPanel);
 		

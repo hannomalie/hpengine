@@ -93,7 +93,7 @@ public class ProbeView extends WebPanel {
         	engine.getSceneManager().restoreWorldCamera();
         });}});
 
-        webComponentPanel.addElement(new MovablePanel<Entity>(probe));
+        webComponentPanel.addElement(new MovablePanel<>(probe.getEntity()));
 
         webComponentPanel.addElement(new WebFormattedVec3Field("Size", probe.getSize()) {
 			@Override
@@ -117,7 +117,7 @@ public class ProbeView extends WebPanel {
             	Update selected = (Update) updateSelection.getSelectedItem();
             	probe.setUpdate(selected);
             });
-            updateSelection.setSelectedItem(probe.getUpdate());
+            updateSelection.setSelectedItem(probe.getEntity().getUpdate());
             GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Update type"), updateSelection );
             webComponentPanel.addElement(groupPanelEnironmentMapType);
         }
@@ -128,7 +128,7 @@ public class ProbeView extends WebPanel {
 	private void addNamePanel(WebComponentPanel webComponentPanel) {
 		WebLabel labelName = new WebLabel("Name");
 		nameField = new WebFormattedTextField();
-		nameField.setValue(probe.getName());
+		nameField.setValue(probe.getEntity().getName());
 		
 		WebLabel colorPanel = new WebLabel(" ");
 		try {

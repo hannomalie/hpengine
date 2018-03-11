@@ -355,8 +355,7 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, private v
         gpuContext.enable(CULL_FACE)
         cubemapArrayRenderTarget!!.use(false)
         gpuContext.clearDepthAndColorBuffer()
-        gpuContext.viewPort(0, 0, 2 * 128, 2 * 128)
-        //TODO: WTF is with the 256...
+        gpuContext.viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION,AREALIGHT_SHADOWMAP_RESOLUTION)
 
         for (i in 0 until Math.min(MAX_POINTLIGHT_SHADOWMAPS, this.pointLights.size)) {
 

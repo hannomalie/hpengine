@@ -462,43 +462,57 @@ public class Util {
 	public static TypedTuple<Matrix4f[],Matrix4f[]> getCubeViewProjectionMatricesForPosition(Vector3f position) {
 		Camera camera = new Camera(new Entity());
 		camera.setProjectionMatrix(Util.createPerspective(90, 1, 0.1f, 250f));
-		camera.getEntity().translation(position);
 		Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
 		Matrix4f[] resultViewMatrices = new Matrix4f[6];
 		Matrix4f[] resultProjectionMatrices = new Matrix4f[6];
 
 			camera.getEntity().rotation(new Quaternionf().identity());
-			camera.getEntity().rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.getEntity().rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-90)));
-		resultViewMatrices[0] = camera.getEntity().getViewMatrix();
-		resultProjectionMatrices[0] = projectionMatrix;
+			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
+			camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), -90);
+			camera.getEntity().translateLocal(position);
+			camera.getEntity().recalculate();
+		resultViewMatrices[0] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[0] = new Matrix4f(projectionMatrix);
+
 			camera.getEntity().rotation(new Quaternionf().identity());
-			camera.getEntity().rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.getEntity().rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(90)));
-		resultViewMatrices[1] = camera.getViewMatrix();
-		resultProjectionMatrices[1] = projectionMatrix;
-			camera.rotation(new Quaternionf().identity());
-			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90)));
-			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
-		resultViewMatrices[2] = camera.getViewMatrix();
-		resultProjectionMatrices[2] = projectionMatrix;
-			camera.rotation(new Quaternionf().identity());
-			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(-90)));
-            camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
-		resultViewMatrices[3] = camera.getViewMatrix();
-		resultProjectionMatrices[3] = projectionMatrix;
-			camera.rotation(new Quaternionf().identity());
-			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-180)));
-		resultViewMatrices[4] = camera.getViewMatrix();
-		resultProjectionMatrices[4] = projectionMatrix;
-			camera.rotation(new Quaternionf().identity());
-			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
-		resultViewMatrices[5] = camera.getViewMatrix();
-		resultProjectionMatrices[5] = projectionMatrix;
+			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
+			camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), 90);
+			camera.getEntity().translateLocal(position);
+			camera.getEntity().recalculate();
+		resultViewMatrices[1] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[1] = new Matrix4f(projectionMatrix);
+
+			camera.getEntity().rotation(new Quaternionf().identity());
+			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
+			camera.getEntity().rotate(new Vector3f(1f, 0f, 0f), 90);
+			camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), 180);
+			camera.getEntity().translateLocal(position);
+			camera.getEntity().recalculate();
+		resultViewMatrices[2] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[2] = new Matrix4f(projectionMatrix);
+
+			camera.getEntity().rotation(new Quaternionf().identity());
+			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
+			camera.getEntity().rotate(new Vector3f(1f, 0f, 0f), -90);
+            camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), 180);
+			camera.getEntity().translateLocal(position);
+			camera.getEntity().recalculate();
+		resultViewMatrices[3] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[3] = new Matrix4f(projectionMatrix);
+
+			camera.getEntity().rotation(new Quaternionf().identity());
+			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
+			camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), -180);
+			camera.getEntity().translateLocal(position);
+		resultViewMatrices[4] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[4] = new Matrix4f(projectionMatrix);
+
+			camera.getEntity().rotation(new Quaternionf().identity());
+			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
+			camera.getEntity().translateLocal(position);
+		resultViewMatrices[5] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[5] = new Matrix4f(projectionMatrix);
 
 		return new TypedTuple<>(resultViewMatrices, resultProjectionMatrices);
 	}

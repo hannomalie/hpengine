@@ -29,7 +29,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 
 	@Override
 	public Transform getTransform() {
-        return probe;
+        return probe.getEntity();
     }
 
 	@Override

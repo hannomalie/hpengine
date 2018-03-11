@@ -1,28 +1,30 @@
 package de.hanno.hpengine.engine.scene;
 
-import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
-import org.joml.Vector3f;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import org.joml.Vector3f;
 
 import java.util.List;
 import java.util.Random;
 
-public class EnvironmentProbe extends Entity {
+public class EnvironmentProbe implements Component {
+	public static String COMPONENT_KEY = EnvironmentProbe.class.getSimpleName();
 
 	private final EnvironmentProbeManager environmentProbeManager;
+	private Entity entity;
 
 	public enum Update {
 		STATIC,
 		DYNAMIC
 	}
 	
-	private String name = "Probe_" + System.currentTimeMillis();
 	private Renderer renderer;
 	private AABB box;
 	private EnvironmentSampler sampler;
@@ -30,14 +32,15 @@ public class EnvironmentProbe extends Entity {
 	private float weight;
 	
 
-	protected EnvironmentProbe(Engine engine, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
+	protected EnvironmentProbe(Engine engine, Entity entity, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
         this.renderer = engine.getRenderer();
         this.environmentProbeManager = engine.getSceneManager().getScene().getEnvironmentProbeManager();
+		this.entity = entity;
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		Entity entity = new Entity();
 		sampler = new EnvironmentSampler(entity, engine, this, center, resolution, resolution, probeIndex);
         this.setWeight(weight);
+        engine.getEventBus().register(this);
     }
 
 	public void draw(RenderState extract) {
@@ -73,7 +76,6 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	public void move(Vector3f amount) {
-		super.translate(amount);
 		resetAllProbes();
         environmentProbeManager.updateBuffers();
 		box.move(amount);
@@ -83,20 +85,6 @@ public class EnvironmentProbe extends Entity {
         environmentProbeManager.getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
-	}
-
-	@Override
-	public String getName() {
-		return name ;
-	}
-
-	@Override
-	public boolean isSelected() {
-		return false;
-	}
-
-	@Override
-	public void setSelected(boolean selected) {
 	}
 
 	public boolean contains(Vector3f min, Vector3f max) {
@@ -165,5 +153,15 @@ public class EnvironmentProbe extends Entity {
 
 	public void setWeight(float weight) {
 		this.weight = weight;
+	}
+
+	@Override
+	public Entity getEntity() {
+		return entity;
+	}
+
+	@Override
+	public String getIdentifier() {
+		return COMPONENT_KEY;
 	}
 }

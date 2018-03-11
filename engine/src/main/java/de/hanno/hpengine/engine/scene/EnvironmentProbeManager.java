@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 
-public class EnvironmentProbeManager implements Manager{
+public class EnvironmentProbeManager implements Manager {
 	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
@@ -60,18 +60,18 @@ public class EnvironmentProbeManager implements Manager{
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
 	}
 
-	public EnvironmentProbe getProbe(Vector3f center, float size) throws Exception {
-		return getProbe(center, size, DEFAULT_PROBE_UPDATE, 1.0f);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {
+		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f);
 	}
-	public EnvironmentProbe getProbe(Vector3f center, float size, float weight) throws Exception {
-		return getProbe(center, size, DEFAULT_PROBE_UPDATE, weight);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, float weight) throws Exception {
+		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, weight);
 	}
 
-	public EnvironmentProbe getProbe(Vector3f center, float size, Update update, float weight) throws Exception {
-		return getProbe(center, new Vector3f(size, size, size), update, weight);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Update update, float weight) throws Exception {
+		return getProbe(entity, center, new Vector3f(size, size, size), update, weight);
 	}
-	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update, float weight) throws Exception {
-		EnvironmentProbe probe = new EnvironmentProbe(engine, center, size, RESOLUTION, update, getProbes().size(), weight);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, Vector3f size, Update update, float weight) throws Exception {
+		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();
         engine.getEventBus().post(new ProbeAddedEvent(probe));
@@ -156,7 +156,7 @@ public class EnvironmentProbeManager implements Manager{
 //						Vector4f center1InView = new Matrix4f().(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
 //						Vector4f center2InView = new Matrix4f().(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
 //						return Float.compare(-center1InView.z, -center2InView.z);
-						return Float.compare(new Vector3f(o1.getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getCenter()).sub(camera.getPosition().negate()).lengthSquared());
+						return Float.compare(new Vector3f(o1.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared());
 					}
 				}).
 				collect(Collectors.toList());
@@ -207,7 +207,7 @@ public class EnvironmentProbeManager implements Manager{
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-                engine.getRenderer().batchLine(probe.getCenter(), e.getPosition());
+                engine.getRenderer().batchLine(probe.getEntity().getCenter(), e.getPosition());
 			});
 		});
 		buffer.delete();
@@ -219,7 +219,7 @@ public class EnvironmentProbeManager implements Manager{
 		}).sorted(new Comparator<EnvironmentProbe>() {
 			@Override
 			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(entity.getCenter().distance(o1.getCenter()), entity.getCenter().distance(o2.getCenter())));
+				return (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())));
 			}
 		}).findFirst();
 		
@@ -227,10 +227,6 @@ public class EnvironmentProbeManager implements Manager{
 	
 	public List<EnvironmentProbe> getProbes() {
 		return probes;
-	}
-
-	public void drawInitial(Octree octree) {
-		draw();
 	}
 
 	public CubeMapArray getEnvironmentMapsArray() {
@@ -257,7 +253,7 @@ public class EnvironmentProbeManager implements Manager{
 		}).sorted(new Comparator<EnvironmentProbe>() {
 			@Override
 			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(entity.getCenter().distance(o1.getCenter()), entity.getCenter().distance(o2.getCenter())));
+				return (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())));
 			}
 		}).collect(Collectors.toList());
 	}
