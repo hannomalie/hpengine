@@ -176,13 +176,13 @@ float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight 
     float bias = 0.2;
     float shadow = currentDepth - bias < closestDepth ? 1.0 : 0.0;
 
-	const float SHADOW_EPSILON = 0.001;
-	float E_x2 = moments.y;
-	float Ex_2 = moments.x * moments.x;
-	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
-	float m_d = (moments.x - currentDepth);
-	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
-	shadow = max(shadow, p + 0.05f);
+//	const float SHADOW_EPSILON = 0.001;
+//	float E_x2 = moments.y;
+//	float Ex_2 = moments.x * moments.x;
+//	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
+//	float m_d = (moments.x - currentDepth);
+//	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
+//	shadow = max(shadow, p + 0.05f);
 
     return shadow;
 }
@@ -298,21 +298,22 @@ void main(void) {
 		int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 		Material material = materials[materialIndex];
 
+        vec3 temp;
 		if(int(material.materialtype) == 1) {
-			finalColor += cookTorrance(lightDirectionView, lightDiffuse,
+			temp = cookTorrance(lightDirectionView, lightDiffuse,
 											attenuation, V, positionView, normalView,
 											roughness, 0, diffuseColor, specularColor);
-			finalColor += attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
+			temp = attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
 		} else
 		{
-			finalColor += cookTorrance(lightDirectionView, lightDiffuse,
+			temp = cookTorrance(lightDirectionView, lightDiffuse,
 											attenuation, V, positionView, normalView,
 											roughness, metallic, diffuseColor, specularColor);
 		}
 
 		float visibility = getVisibility(positionWorld, lightIndex, pointLight);
 
-		finalColor *= visibility;
+		finalColor += temp*visibility;
 	}
 	barrier();
 //	if (gl_LocalInvocationID.x == 0 || gl_LocalInvocationID.y == 0 ||

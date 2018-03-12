@@ -4,6 +4,8 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
+import de.hanno.hpengine.engine.graphics.light.CubeShadowMapStrategy;
+import de.hanno.hpengine.engine.graphics.light.PointLightShadowMapStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -116,7 +118,9 @@ public class DeferredRenderer implements Renderer {
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
-			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+
+//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+
 			for(int i = 0; i < 6; i++) {
 //                drawToQuad(EnvironmentProbeManager.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 			}
@@ -135,7 +139,8 @@ public class DeferredRenderer implements Renderer {
 			int index = 0;
             for(int i = 0; i < 6; i++) {
                 faceViews[i] = engine.getGpuContext().genTextures();
-                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayCube(),
+				CubeShadowMapStrategy shadowMapStrategy = (CubeShadowMapStrategy) engine.getScene().getPointlightSystem().getShadowMapStrategy();
+				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, shadowMapStrategy.getPointLightDepthMapsArrayCube(),
 						GL_RGBA16F, 0, 1, (index*6)+i, 1);
 				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());
 			}

@@ -139,11 +139,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
             GPUProfiler.start("Shadowmap pass");
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
             engine.getScene().getLightManager().renderAreaLightShadowMaps(renderState);
-            if (Config.getInstance().isUseDpsm()) {
-                engine.getScene().getPointlightSystem().renderPointLightShadowMaps_dpsm(renderState, entities);
-            } else {
-                engine.getScene().getPointlightSystem().renderPointLightShadowMaps(renderState);
-            }
+            engine.getScene().getPointlightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
             GPUProfiler.end();
 
             GPUProfiler.start("Second pass");
@@ -384,12 +380,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         gpuContext.bindTexture(3, TEXTURE_2D, engine.getRenderer().getGBuffer().getMotionMap());
         gpuContext.bindTexture(4, TEXTURE_2D, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId());
         gpuContext.bindTexture(5, TEXTURE_2D, engine.getRenderer().getGBuffer().getVisibilityMap());
-        if (Config.getInstance().isUseDpsm()) {
-            gpuContext.bindTexture(6, TEXTURE_2D_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayFront());
-            gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayBack());
-        } else {
-            gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayCube());
-        }
+        engine.getScene().getPointlightSystem().getShadowMapStrategy().bindTextures();
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
@@ -625,7 +616,6 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
         engine.getGpuContext().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
         engine.getGpuContext().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
-        engine.getGpuContext().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, engine.getScene().getPointlightSystem().getPointLightDepthMapsArrayCube());
 
         gpuContext.getFullscreenBuffer().draw();
 

@@ -472,16 +472,16 @@ public class Util {
 			camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), -90);
 			camera.getEntity().translateLocal(position);
 			camera.getEntity().recalculate();
-		resultViewMatrices[0] = new Matrix4f(camera.getEntity().getViewMatrix());
-		resultProjectionMatrices[0] = new Matrix4f(projectionMatrix);
+		resultViewMatrices[1] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[1] = new Matrix4f(projectionMatrix);
 
 			camera.getEntity().rotation(new Quaternionf().identity());
 			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);
 			camera.getEntity().rotate(new Vector3f(0f, 1f, 0f), 90);
 			camera.getEntity().translateLocal(position);
 			camera.getEntity().recalculate();
-		resultViewMatrices[1] = new Matrix4f(camera.getEntity().getViewMatrix());
-		resultProjectionMatrices[1] = new Matrix4f(projectionMatrix);
+		resultViewMatrices[0] = new Matrix4f(camera.getEntity().getViewMatrix());
+		resultProjectionMatrices[0] = new Matrix4f(projectionMatrix);
 
 			camera.getEntity().rotation(new Quaternionf().identity());
 			camera.getEntity().rotate(new Vector3f(0f,0f,1f), 180);

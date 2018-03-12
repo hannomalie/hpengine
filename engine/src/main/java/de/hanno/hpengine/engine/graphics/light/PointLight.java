@@ -91,7 +91,6 @@ public class PointLight implements Component, Serializable, Bufferable {
 
 	@Override
 	public void putToBuffer(ByteBuffer buffer) {
-
 		Vector3f worldPosition = entity.getPosition();
 		buffer.putDouble(worldPosition.x);
 		buffer.putDouble(worldPosition.y);
