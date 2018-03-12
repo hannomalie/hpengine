@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light;
+package de.hanno.hpengine.engine.graphics.light.arealight;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
@@ -14,13 +14,13 @@ import java.util.List;
 public class AreaLight implements Component {
 	public static String COMPONENT_KEY = AreaLight.class.getSimpleName();
 
-	Camera camera;
+	public Camera camera;
 	public static float DEFAULT_RANGE = 1f;
 	private Vector3f color;
 	private Entity entity;
 	private Vector3f scale;
 
-	protected AreaLight(Entity entity, Vector3f color, Vector3f scale) {
+	public AreaLight(Entity entity, Vector3f color, Vector3f scale) {
 		this.entity = entity;
 		setScale(scale);
 		setColor(color);

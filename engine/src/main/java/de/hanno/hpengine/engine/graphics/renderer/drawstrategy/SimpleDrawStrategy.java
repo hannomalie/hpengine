@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
@@ -136,7 +136,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         if (!Config.getInstance().isUseDirectTextureOutput()) {
             GPUProfiler.start("Shadowmap pass");
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
-            engine.getScene().getLightManager().renderAreaLightShadowMaps(renderState);
+//            engine.getScene().getArealightSystem().renderAreaLightShadowMaps(renderState);
 //            engine.getScene().getPointlightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
             GPUProfiler.end();
 
@@ -471,7 +471,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 //			} catch (IOException e) {
 //				e.printStackTrace();
 //			}
-            engine.getGpuContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, engine.getScene().getLightManager().getDepthMapForAreaLight(areaLight));
+            engine.getGpuContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, engine.getScene().getArealightSystem().getDepthMapForAreaLight(areaLight));
             gpuContext.getFullscreenBuffer().draw();
 //			areaLight.getVertexBuffer().drawDebug();
         }

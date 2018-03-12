@@ -7,7 +7,10 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.light.*;
+import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
+import de.hanno.hpengine.engine.graphics.light.LightManager;
+import de.hanno.hpengine.engine.graphics.light.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -183,7 +186,7 @@ public class EnvironmentSampler extends Entity {
 			boolean aPointLightHasMoved = !scene.getPointLights().stream()
 					.filter(e -> probe.getBox().containsOrIntersectsSphere(e.getEntity().getPosition(), e.getRadius()))
 					.filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !engine.getScene().getLightManager().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !engine.getScene().getArealightSystem().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
@@ -264,17 +267,17 @@ public class EnvironmentSampler extends Entity {
         cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", engine.getScene().getPointlightSystem().getPointLightRadiuses());
 		
 		cubeMapProgram.setUniform("activeAreaLightCount", engine.getSceneManager().getScene().getAreaLights().size());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", engine.getScene().getLightManager().getAreaLightPositions());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", engine.getScene().getLightManager().getAreaLightColors());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", engine.getScene().getLightManager().getAreaLightWidthHeightRanges());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", engine.getScene().getLightManager().getAreaLightViewDirections());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", engine.getScene().getLightManager().getAreaLightUpDirections());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", engine.getScene().getLightManager().getAreaLightRightDirections());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", engine.getScene().getArealightSystem().getAreaLightPositions());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", engine.getScene().getArealightSystem().getAreaLightColors());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", engine.getScene().getArealightSystem().getAreaLightWidthHeightRanges());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", engine.getScene().getArealightSystem().getAreaLightViewDirections());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", engine.getScene().getArealightSystem().getAreaLightUpDirections());
+        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", engine.getScene().getArealightSystem().getAreaLightRightDirections());
 		
 		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), LightManager.MAX_AREALIGHT_SHADOWMAPS); i++) {
 			AreaLight areaLight = engine.getSceneManager().getScene().getAreaLights().get(i);
-            engine.getGpuContext().bindTexture(9 + i, TEXTURE_2D, engine.getScene().getLightManager().getDepthMapForAreaLight(areaLight));
-            cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", engine.getScene().getLightManager().getShadowMatrixForAreaLight(areaLight));
+            engine.getGpuContext().bindTexture(9 + i, TEXTURE_2D, engine.getScene().getArealightSystem().getDepthMapForAreaLight(areaLight));
+            cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", engine.getScene().getArealightSystem().getShadowMatrixForAreaLight(areaLight));
 		}
 		
 		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
@@ -679,7 +682,7 @@ public class EnvironmentSampler extends Entity {
 			secondPassAreaProgram.setUniform("lightHeight", areaLight.getHeight());
 			secondPassAreaProgram.setUniform("lightRange", areaLight.getRange());
 			secondPassAreaProgram.setUniform("lightDiffuse", areaLight.getColor());
-            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", engine.getScene().getLightManager().getShadowMatrixForAreaLight(areaLight));
+            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", engine.getScene().getArealightSystem().getShadowMatrixForAreaLight(areaLight));
 
 			// TODO: Add textures to arealights
 //			try {
@@ -690,7 +693,7 @@ public class EnvironmentSampler extends Entity {
 //				e.printStackTrace();
 //			}
 
-            engine.getGpuContext().bindTexture(9, TEXTURE_2D, engine.getScene().getLightManager().getDepthMapForAreaLight(areaLight));
+            engine.getGpuContext().bindTexture(9, TEXTURE_2D, engine.getScene().getArealightSystem().getDepthMapForAreaLight(areaLight));
 			fullscreenBuffer.draw();
 //			areaLight.getVertexBuffer().drawDebug();
 		}

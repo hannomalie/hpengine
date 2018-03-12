@@ -11,6 +11,9 @@ import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.*
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLightSystem
@@ -47,14 +50,16 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
     val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
     val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem(engine))
+    val areaLightComponentSystem = componentSystems.register(AreaLightComponentSystem(engine))
 
     val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
-    val lightManager = managers.register(LightManager(engine, engine.eventBus, materialManager, engine.gpuContext, engine.programManager, inputComponentSystem))
+    val lightManager = managers.register(LightManager(engine, engine.eventBus, inputComponentSystem))
     val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
     val entitySystems = SimpleEntitySystemRegistry()
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
     val pointlightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
+    val arealightSystem = entitySystems.register(AreaLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
 
     val camera = entityManager.create()
             .apply { addComponent(inputComponentSystem.create(this)) }
@@ -174,8 +179,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     fun getPointLights(): List<PointLight> = pointlightSystem.getPointLights()
     fun getTubeLights(): List<TubeLight> = lightManager.tubeLights
-    fun getAreaLights(): List<AreaLight> = lightManager.areaLights
-    fun addPointLight(pointLight: PointLight) = pointLightComponentSystem.addComponent(pointLight)
+    fun getAreaLights(): List<AreaLight> = arealightSystem.getAreaLights()
+
     fun addTubeLight(tubeLight: TubeLight) = lightManager.addLight(tubeLight)
     fun entityMovedInCycle() = entityMovedInCycle
     fun pointLightMovedInCycle() = pointlightSystem.pointLightMovedInCycle

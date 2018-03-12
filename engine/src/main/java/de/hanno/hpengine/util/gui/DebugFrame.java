@@ -31,7 +31,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.*;
-import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
@@ -215,6 +215,7 @@ public class DebugFrame implements HostComponent {
 
         initConsole();
         createPointLightsTab();
+        createAreaLightsTab();
 
 		engine.getEventBus().register(this);
 
@@ -471,6 +472,7 @@ public class DebugFrame implements HostComponent {
                     public Result<Boolean> execute() throws Exception {
                         Entity tubeLightEntity = new Entity();
                         engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50));
+                        engine.getSceneManager().getScene().add(tubeLightEntity);
                         return new Result(true);
                     }
                 });
@@ -499,7 +501,9 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().getAreaLights().add(engine.getScene().getLightManager().getAreaLight(new Entity(), new Vector3f(1,1,1), 50, 50, 20));
+                        Entity entity = new Entity();
+                        AreaLight areaLight = engine.getScene().getLightManager().getAreaLight(entity, new Vector3f(1, 1, 1), 50, 50, 20);
+                        engine.getSceneManager().getScene().add(entity);
                         return new Result(true);
                     }
                 });
@@ -1231,81 +1235,69 @@ public class DebugFrame implements HostComponent {
 		}
 
     private void createPointLightsTab() {
-        DebugFrame debugFrame = this;
-
         ListSelectionModel pointLightsCellSelectionModel = pointsLightsTable.getSelectionModel();
         pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
+        pointLightsCellSelectionModel.addListSelectionListener(e -> {
 
-                int[] selectedRow = pointsLightsTable.getSelectedRows();
-                int[] selectedColumns = pointsLightsTable
-                        .getSelectedColumns();
+            int[] selectedRow = pointsLightsTable.getSelectedRows();
+            int[] selectedColumns = pointsLightsTable
+                    .getSelectedColumns();
 
-                for (int i = 0; i < selectedRow.length; i++) {
-                    for (int j = 0; j < selectedColumns.length; j++) {
-                        PointLight selectedLight = engine.getSceneManager().getScene().getPointLights().get(selectedRow[i]);
-                        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-                        entityViewFrame.getContentPane().removeAll();
-                        entityViewFrame.pack();
-                        entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new PointLightView(engine, selectedLight.getEntity()));
-                        entityViewFrame.setVisible(true);
-                    }
+            for (int i = 0; i < selectedRow.length; i++) {
+                for (int j = 0; j < selectedColumns.length; j++) {
+                    PointLight selectedLight = engine.getSceneManager().getScene().getPointLights().get(selectedRow[i]);
+                    entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                    entityViewFrame.getContentPane().removeAll();
+                    entityViewFrame.pack();
+                    entityViewFrame.setSize(1000, 600);
+                    entityViewFrame.add(new PointLightView(engine, selectedLight.getEntity()));
+                    entityViewFrame.setVisible(true);
                 }
             }
         });
     }
 
 	private void createTubeLightsTab() {
-		DebugFrame debugFrame = this;
 		ListSelectionModel tubeLightsCellSelectionModel = tubeLightsTable.getSelectionModel();
 		tubeLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		tubeLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
+		tubeLightsCellSelectionModel.addListSelectionListener(e -> {
 
-                int[] selectedRow = tubeLightsTable.getSelectedRows();
-                int[] selectedColumns = tubeLightsTable.getSelectedColumns();
+            int[] selectedRow = tubeLightsTable.getSelectedRows();
+            int[] selectedColumns = tubeLightsTable.getSelectedColumns();
 
-                for (int i = 0; i < selectedRow.length; i++) {
-                    for (int j = 0; j < selectedColumns.length; j++) {
-                        TubeLight selectedLight = engine.getSceneManager().getScene().getTubeLights().get(selectedRow[i]);
-                        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-                        entityViewFrame.getContentPane().removeAll();
-                        entityViewFrame.pack();
-                        entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new TubeLightView(engine, (TubeLight) selectedLight));
-                        entityViewFrame.setVisible(true);
-                    }
+            for (int i = 0; i < selectedRow.length; i++) {
+                for (int j = 0; j < selectedColumns.length; j++) {
+                    TubeLight selectedLight = engine.getSceneManager().getScene().getTubeLights().get(selectedRow[i]);
+                    entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                    entityViewFrame.getContentPane().removeAll();
+                    entityViewFrame.pack();
+                    entityViewFrame.setSize(1000, 600);
+                    entityViewFrame.add(new TubeLightView(engine, selectedLight));
+                    entityViewFrame.setVisible(true);
                 }
             }
         });
 	}
 
 	private void createAreaLightsTab() {
-		DebugFrame debugFrame = this;
-
 		ListSelectionModel areaLightsCellSelectionModel = areaLightsTable.getSelectionModel();
 		areaLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		areaLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
+		areaLightsCellSelectionModel.addListSelectionListener(e -> {
+            int[] selectedRow = areaLightsTable.getSelectedRows();
+            int[] selectedColumns = areaLightsTable.getSelectedColumns();
 
-                int[] selectedRow = areaLightsTable.getSelectedRows();
-                int[] selectedColumns = areaLightsTable.getSelectedColumns();
-
-                for (int i = 0; i < selectedRow.length; i++) {
-                    for (int j = 0; j < selectedColumns.length; j++) {
-                        AreaLight selectedLight = engine.getSceneManager().getScene().getAreaLights().get(selectedRow[i]);
-                        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-                        entityViewFrame.getContentPane().removeAll();
-                        entityViewFrame.pack();
-                        entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new AreaLightView(engine, debugFrame, selectedLight));
-                        entityViewFrame.setVisible(true);
-                    }
+            for (int i = 0; i < selectedRow.length; i++) {
+                for (int j = 0; j < selectedColumns.length; j++) {
+                    AreaLight selectedLight = engine.getSceneManager().getScene().getAreaLights().get(selectedRow[i]);
+                    entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                    entityViewFrame.getContentPane().removeAll();
+                    entityViewFrame.pack();
+                    entityViewFrame.setSize(1000, 600);
+                    entityViewFrame.add(new AreaLightView(engine, selectedLight));
+                    entityViewFrame.setVisible(true);
                 }
             }
         });

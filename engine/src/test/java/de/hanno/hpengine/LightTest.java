@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.transform.AABB;
 import junit.framework.Assert;

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.util.Util;
 
 import javax.swing.table.AbstractTableModel;

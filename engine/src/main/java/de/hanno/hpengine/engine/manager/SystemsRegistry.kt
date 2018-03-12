@@ -51,7 +51,11 @@ interface SystemsRegistry {
 }
 
 interface ComponentSystem<T : Component> {
-    fun update(deltaSeconds: Float)
+    fun update(deltaSeconds: Float) {
+        getComponents().forEach {
+            it.update(deltaSeconds)
+        }
+    }
     fun getComponents(): List<T>
     fun create(entity: Entity): T
     fun addComponent(component: T)

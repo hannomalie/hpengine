@@ -8,7 +8,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector4f;
 
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class AreaLightView extends EntityView {
 	private AreaLight light;
 
-	public AreaLightView(Engine engine, DebugFrame debugFrame, AreaLight light) {
+	public AreaLightView(Engine engine, AreaLight light) {
 		super(engine, light.getEntity());
 		this.light = light;
 	}
@@ -33,22 +33,18 @@ public class AreaLightView extends EntityView {
 		List<Component> panels = new ArrayList<>();
 		
 		WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
-		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				Color color = lightColorChooserPanel.getColor();
-				light.setColor(new Vector4f(color.getRed()/255.f,
-						color.getGreen()/255.f,
-						color.getBlue()/255.f, 1f));
-			}
-		});
+		lightColorChooserPanel.addChangeListener(e -> {
+            Color color = lightColorChooserPanel.getColor();
+            light.setColor(new Vector4f(color.getRed()/255.f,
+                    color.getGreen()/255.f,
+                    color.getBlue()/255.f, 1f));
+        });
 		panels.add(lightColorChooserPanel);
 		
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-            engine.getSceneManager().setActiveCamera(engine.getScene().getLightManager().getCameraForAreaLight(light));
+            engine.getSceneManager().setActiveCamera(engine.getScene().getArealightSystem().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			engine.getSceneManager().restoreWorldCamera();

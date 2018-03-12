@@ -59,7 +59,7 @@ public class TestSceneUtil {
                             Entity pointLightEntity = new Entity();
                             PointLight pointLight = lightManager.getPointLight(pointLightEntity, 10);
                             pointLightEntity.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
-                            scene.addPointLight(pointLight);
+                            scene.add(pointLightEntity);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 //							scale.scale(new Random().nextFloat()*14);
 //							entity.setScale(scale);
