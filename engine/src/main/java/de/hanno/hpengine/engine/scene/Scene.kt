@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.*
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.StateConsumer
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.manager.ManagerRegistry
@@ -32,6 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
 
+    val renderStateConsumers = mutableListOf<StateConsumer>()
     val componentSystems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
 
@@ -49,7 +51,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     val entitySystems = SimpleEntitySystemRegistry()
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
-    val pointlightSystem = entitySystems.register(PointLightSystem(engine, this))
+    val pointlightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
 
     val camera = entityManager.create()
             .apply { addComponent(inputComponentSystem.create(this)) }

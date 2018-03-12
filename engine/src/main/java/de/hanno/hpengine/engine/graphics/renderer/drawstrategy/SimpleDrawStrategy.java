@@ -129,8 +129,6 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        List<Entity> entities = engine.getSceneManager().getScene().getEntityManager().getEntities();
-
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
@@ -139,7 +137,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
             GPUProfiler.start("Shadowmap pass");
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
             engine.getScene().getLightManager().renderAreaLightShadowMaps(renderState);
-            engine.getScene().getPointlightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
+//            engine.getScene().getPointlightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
             GPUProfiler.end();
 
             GPUProfiler.start("Second pass");

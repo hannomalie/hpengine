@@ -34,12 +34,11 @@ interface PointLightShadowMapStrategy {
 }
 
 class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSystem: PointLightSystem, val cameraEntity: Entity): PointLightShadowMapStrategy {
-    private var pointLightShadowMapsRenderedInCycle: Long = 0
+    var pointLightShadowMapsRenderedInCycle: Long = 0
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget? = null
     private var pointCubeShadowPassProgram: Program? = null
     var pointLightDepthMapsArrayCube: Int = 0
     init {
-
         this.pointCubeShadowPassProgram = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cube_fragment.glsl")), Defines())
 
         val cubeMapArray = CubeMapArray(engine.gpuContext, LightManager.MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, LightManager.AREALIGHT_SHADOWMAP_RESOLUTION)

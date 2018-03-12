@@ -47,6 +47,10 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
                 val drawResult = profilingFramed {
                     recorder.add(renderState.currentReadState)
                     val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+
+                    engine.getScene().renderStateConsumers.forEach {
+                        it.consume(renderState.currentReadState)
+                    }
                     engine.renderer.draw(drawResult, renderState.currentReadState)
                     drawResult.apply { GPUProfilingResult = GPUProfiler.dumpTimings() }
                 }

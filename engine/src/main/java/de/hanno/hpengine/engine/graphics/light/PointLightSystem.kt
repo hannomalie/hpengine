@@ -11,15 +11,17 @@ import de.hanno.hpengine.engine.event.PointLightMovedEvent
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.StateConsumer
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import net.engio.mbassy.listener.Handler
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
-class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(PointLight::class.java)) {
-    var pointLightMovedInCycle: Long = 0
+class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(PointLight::class.java)), StateConsumer {
 
+    var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity()
     val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
@@ -118,4 +120,10 @@ class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine,
     }
 
     fun getPointLights(): List<PointLight> = getComponents(PointLight::class.java)
+
+    override fun consume(state: RenderState) {
+        if(state.entityWasAdded() || state.pointLightHasMoved()) {
+            shadowMapStrategy.renderPointLightShadowMaps(state)
+        }
+    }
 }

@@ -131,6 +131,9 @@ class RenderState(gpuContext: GpuContext) {
     fun add(state: CustomState) = customState.add(state)
 
     fun <T> getState(stateRef: StateRef<T>) = customState.get(stateRef.index) as T
+    fun pointLightHasMoved() = pointlightMovedInCycle > cycle
+    fun entityHasMoved() = entitiesState.entityMovedInCycle > cycle
+    fun entityWasAdded() = entitiesState.entityAddedInCycle > cycle
 }
 
 class CustomStateHolder {
@@ -151,3 +154,7 @@ interface CustomState {
 }
 
 class StateRef<out T>(val index: Int)
+
+interface StateConsumer {
+    fun consume(state: RenderState)
+}
