@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light
+package de.hanno.hpengine.engine.graphics.light.pointlight
 
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
@@ -33,9 +33,9 @@ class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine,
     val lightBuffer: GPUBuffer<PointLight> = engine.gpuContext.calculate { PersistentMappedBuffer<PointLight>(engine.gpuContext, 1000) }
 
     val shadowMapStrategy = if (Config.getInstance().isUseDpsm) {
-            DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
+        DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
         } else {
-            CubeShadowMapStrategy(engine, this, cameraEntity)
+        CubeShadowMapStrategy(engine, this, cameraEntity)
         }
 
     private fun bufferLights() {

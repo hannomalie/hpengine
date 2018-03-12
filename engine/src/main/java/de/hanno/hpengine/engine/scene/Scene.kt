@@ -11,6 +11,9 @@ import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.*
+import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
+import de.hanno.hpengine.engine.graphics.light.pointlight.PointLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.pointlight.PointLightSystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.StateConsumer
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem

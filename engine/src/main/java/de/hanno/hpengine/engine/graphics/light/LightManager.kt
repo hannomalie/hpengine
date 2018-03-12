@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget

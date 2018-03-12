@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light;
+package de.hanno.hpengine.engine.graphics.light.pointlight;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -24,7 +24,7 @@ public class PointLight implements Component, Serializable, Bufferable {
 	private Entity entity;
 	private float radius;
 
-	protected PointLight(Entity entity, Vector4f colorIntensity, float radius) {
+	public PointLight(Entity entity, Vector4f colorIntensity, float radius) {
 //		TODO: Move position to entity somehow, where it was used
 		if(entity == null) {
 			throw new IllegalArgumentException("Don't pass a null entity");

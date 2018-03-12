@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light
+package de.hanno.hpengine.engine.graphics.light.pointlight
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.Entity

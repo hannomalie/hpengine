@@ -32,7 +32,7 @@ import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.PointLight;
+import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;

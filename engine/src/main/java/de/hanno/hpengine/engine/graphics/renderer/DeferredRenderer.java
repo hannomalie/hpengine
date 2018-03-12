@@ -4,8 +4,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
-import de.hanno.hpengine.engine.graphics.light.CubeShadowMapStrategy;
-import de.hanno.hpengine.engine.graphics.light.PointLightShadowMapStrategy;
+import de.hanno.hpengine.engine.graphics.light.pointlight.CubeShadowMapStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -21,7 +20,6 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL43;
 
 import javax.vecmath.Vector2f;

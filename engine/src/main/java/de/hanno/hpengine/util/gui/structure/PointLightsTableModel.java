@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ComponentMapper;
-import de.hanno.hpengine.engine.graphics.light.PointLight;
+import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.Util;
 
