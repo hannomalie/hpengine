@@ -2,6 +2,7 @@ package de.hanno.hpengine.util.script;
 
 import de.hanno.hpengine.engine.component.JavaScriptComponent;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.OBJLoader;
@@ -9,8 +10,10 @@ import de.hanno.hpengine.engine.model.material.MaterialManager;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
+import org.jetbrains.annotations.NotNull;
 
 import javax.script.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class ScriptManager implements Manager {
@@ -116,7 +119,7 @@ public class ScriptManager implements Manager {
 	}
 
 	@Override
-	public void onEntityAdded() {
+	public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
 	}
 }

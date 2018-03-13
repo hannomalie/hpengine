@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.graphics.light.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight;
 import de.hanno.hpengine.util.Util;
 
 import javax.swing.table.AbstractTableModel;

@@ -38,7 +38,7 @@ class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, s
             val distanceToCamera = tempDistVector.length()
             val isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.boundingSphereRadius
 
-            val entityIndexOf = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).entityBufferIndex
+            val entityIndexOf = entity.getComponent(ModelComponent::class.java).entityBufferIndex
 
             val meshes = modelComponent.meshes
             for (i in meshes.indices) {

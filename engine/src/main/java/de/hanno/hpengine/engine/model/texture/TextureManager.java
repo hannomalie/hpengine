@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
 import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.graphics.GpuContext;
@@ -16,6 +17,7 @@ import jogl.DDSImage;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.*;
 
@@ -891,7 +893,7 @@ public class TextureManager implements Manager {
     }
 
     @Override
-    public void onEntityAdded() {
+    public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
     }
 }

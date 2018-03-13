@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.manager.Manager;
@@ -185,7 +186,7 @@ public class ProgramManager implements Manager {
     }
 
     @Override
-    public void onEntityAdded() {
+    public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
     }
 }

@@ -115,7 +115,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         this.materialName = materialName;
         model.setMaterial(materialManager.getMaterial(materialName));
         for(Entity child : entity.getChildren()) {
-            child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialManager, materialName));
+            child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(materialManager, materialName));
         }
     }
 

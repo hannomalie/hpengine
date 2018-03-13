@@ -3,20 +3,17 @@ package de.hanno.hpengine.engine.graphics.light
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
+import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight
 import de.hanno.hpengine.engine.manager.Manager
 import org.joml.Vector3f
 import org.joml.Vector4f
-import java.util.concurrent.CopyOnWriteArrayList
 
 class LightManager(private val engine: Engine, val eventBus: EventBus, inputControllerSystem: InputComponentSystem): Manager {
 
-    var tubeLights: MutableList<TubeLight> = CopyOnWriteArrayList()
     var directionalLight = DirectionalLight(Entity())
-    //                    .apply { addComponent(cameraComponentSystem.create(this, Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f), -2500f, 2500f, 60f, 16f / 9f)) }
 
     private val directionalLightComponent: DirectionalLight
 
@@ -65,17 +62,10 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, inputCont
     fun createDirectionalLight(entity: Entity): DirectionalLight {
         return DirectionalLight(entity)
     }
-    inline fun <reified T> addLight(light: T) {
-        if (light is TubeLight) {
-            tubeLights.add(light)
-        }
-        eventBus.post(LightChangedEvent())
-    }
     override fun clear() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
     companion object {
-
         @JvmField
         var MAX_AREALIGHT_SHADOWMAPS = 2
         @JvmField

@@ -33,7 +33,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
-import de.hanno.hpengine.engine.graphics.light.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
@@ -69,8 +69,6 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -435,7 +433,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
+                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
                         Entity pointLightEntity = new Entity();
@@ -471,7 +469,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Boolean> execute() throws Exception {
                         Entity tubeLightEntity = new Entity();
-                        engine.getSceneManager().getScene().addTubeLight(engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50));
+                        engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50);
                         engine.getSceneManager().getScene().add(tubeLightEntity);
                         return new Result(true);
                     }

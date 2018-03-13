@@ -70,8 +70,8 @@ public class EntityTest extends TestWithEngine {
 
         Entity secondEntity = engine.getSceneManager().getScene().getEntityManager().create("second");
         engine.getSceneManager().getScene().add(secondEntity);
-        Assert.assertEquals(0, parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex());
-        Assert.assertEquals(4, secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getEntityBufferIndex());
+        Assert.assertEquals(0, parentEntity.getComponent(ModelComponent.class).getEntityBufferIndex());
+        Assert.assertEquals(4, secondEntity.getComponent(ModelComponent.class).getEntityBufferIndex());
 
 //        TODO: Reimplement this
 //        {

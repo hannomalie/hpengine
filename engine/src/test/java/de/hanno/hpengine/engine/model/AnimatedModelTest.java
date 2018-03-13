@@ -21,7 +21,7 @@ public class AnimatedModelTest extends TestWithEngine {
     public void testBufferValues() {
         LoadModelCommand command = new LoadModelCommand(new File("C:\\workspace\\hpengine/hp/assets/models/bob_lamp_update/bob_lamp_update.md5mesh"), "bob");
         LoadModelCommand.EntityListResult result = command.execute(engine);
-        ModelComponent component = result.entities.get(0).getComponent(ModelComponent.class, ModelComponent.class.getSimpleName());
+        ModelComponent component = result.entities.get(0).getComponent(ModelComponent.class);
         AnimatedModel animatedModel = (AnimatedModel) component.getModel();
 
 //        Entity entity = EntityContainer.getInstance().getEntity("bla", animatedModel);

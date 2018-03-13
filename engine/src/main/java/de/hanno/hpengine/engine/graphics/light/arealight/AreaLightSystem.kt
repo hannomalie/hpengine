@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.light.LightManager
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
@@ -17,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.StateConsumer
+import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
@@ -27,6 +27,8 @@ import org.lwjgl.opengl.GL30
 import java.io.File
 import java.nio.FloatBuffer
 import java.util.ArrayList
+
+class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentClass = AreaLight::class.java, factory = { TODO("not implemented") })
 
 class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine, scene, listOf(AreaLight::class.java)), StateConsumer {
     private val cameraEntity: Entity = Entity()

@@ -12,8 +12,6 @@ import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector4f;
 
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +42,7 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-            engine.getSceneManager().setActiveCamera(engine.getScene().getArealightSystem().getCameraForAreaLight(light));
+            engine.getSceneManager().setActiveCamera(engine.getScene().getAreaLightSystem().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			engine.getSceneManager().restoreWorldCamera();

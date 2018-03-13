@@ -10,7 +10,7 @@ import net.engio.mbassy.listener.Handler
 interface EntitySystem {
     fun update(deltaSeconds: Float)
     fun gatherEntities()
-    fun onEntityAdded() {
+    fun onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
 }
@@ -35,15 +35,14 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
         return system
     }
 
-    fun onEntityAdded() {
+    fun onEntityAdded(entities: List<Entity>) {
         systems.forEach {
-            it.onEntityAdded()
+            it.onEntityAdded(entities)
         }
     }
 }
 
-abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val componentClasses: List<Class<out Component>>,
-                                  private val componentKeys: List<String> = componentClasses.map { it.simpleName }) : EntitySystem {
+abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
     protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {
@@ -58,10 +57,10 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
 
     override fun gatherEntities() {
         entities.clear()
-        if(componentKeys.isEmpty()) {
+        if(componentClasses.isEmpty()) {
             entities.addAll(scene.getEntities())
         } else {
-            entities.addAll(scene.getEntities().filter { it.components.keys.containsAll(componentKeys) })
+            entities.addAll(scene.getEntities().filter { it.components.keys.containsAll(componentClasses) })
         }
     }
 

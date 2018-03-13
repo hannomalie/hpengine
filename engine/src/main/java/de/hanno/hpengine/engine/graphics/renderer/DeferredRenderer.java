@@ -137,7 +137,7 @@ public class DeferredRenderer implements Renderer {
 			int index = 0;
             for(int i = 0; i < 6; i++) {
                 faceViews[i] = engine.getGpuContext().genTextures();
-				CubeShadowMapStrategy shadowMapStrategy = (CubeShadowMapStrategy) engine.getScene().getPointlightSystem().getShadowMapStrategy();
+				CubeShadowMapStrategy shadowMapStrategy = (CubeShadowMapStrategy) engine.getScene().getPointLightSystem().getShadowMapStrategy();
 				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, shadowMapStrategy.getPointLightDepthMapsArrayCube(),
 						GL_RGBA16F, 0, 1, (index*6)+i, 1);
 				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());

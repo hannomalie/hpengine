@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light;
+package de.hanno.hpengine.engine.graphics.light.tubelight;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
@@ -21,7 +21,7 @@ public class TubeLight implements Component {
 	private float radius;
 	private float length;
 
-	protected TubeLight(Entity entity, Vector3f colorIntensity, float length, float radius) {
+	public TubeLight(Entity entity, Vector3f colorIntensity, float length, float radius) {
 		this.entity = entity;
 		setColor(colorIntensity);
 		setLength(length);

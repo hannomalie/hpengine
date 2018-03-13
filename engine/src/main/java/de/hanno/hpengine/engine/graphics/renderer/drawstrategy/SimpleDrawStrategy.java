@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightManager;
-import de.hanno.hpengine.engine.graphics.light.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -117,7 +117,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         skyBoxEntity.addComponent(new ModelComponent(engine, skyBoxEntity, skyBox));
         skyBoxEntity.init(engine);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);
-        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(engine.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
+        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(engine.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
         skyBoxRenderBatch = new RenderBatch().init(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(), 1000, skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.getInstanceMinMaxWorlds());
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engine);
@@ -136,8 +136,8 @@ public class SimpleDrawStrategy implements DrawStrategy {
         if (!Config.getInstance().isUseDirectTextureOutput()) {
             GPUProfiler.start("Shadowmap pass");
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
-//            engine.getScene().getArealightSystem().renderAreaLightShadowMaps(renderState);
-//            engine.getScene().getPointlightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
+//            engine.getScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
+//            engine.getScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
             GPUProfiler.end();
 
             GPUProfiler.start("Second pass");
@@ -378,7 +378,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         gpuContext.bindTexture(3, TEXTURE_2D, engine.getRenderer().getGBuffer().getMotionMap());
         gpuContext.bindTexture(4, TEXTURE_2D, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId());
         gpuContext.bindTexture(5, TEXTURE_2D, engine.getRenderer().getGBuffer().getVisibilityMap());
-        engine.getScene().getPointlightSystem().getShadowMapStrategy().bindTextures();
+        engine.getScene().getPointLightSystem().getShadowMapStrategy().bindTextures();
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
@@ -389,7 +389,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", LightManager.MAX_POINTLIGHT_SHADOWMAPS);
         secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-        secondPassPointComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointlightSystem().getLightBuffer());
+        secondPassPointComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().getLightBuffer());
         secondPassPointComputeProgram.dispatchCompute(Config.getInstance().getWidth() / 16, Config.getInstance().getHeight() / 16, 1);
         GPUProfiler.end();
     }
@@ -471,7 +471,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 //			} catch (IOException e) {
 //				e.printStackTrace();
 //			}
-            engine.getGpuContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, engine.getScene().getArealightSystem().getDepthMapForAreaLight(areaLight));
+            engine.getGpuContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
             gpuContext.getFullscreenBuffer().draw();
 //			areaLight.getVertexBuffer().drawDebug();
         }

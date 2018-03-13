@@ -14,9 +14,9 @@ interface ManagerRegistry {
         getManagers().forEach { it.clear() }
     }
 
-    fun onEntityAdded() {
+    fun onEntityAdded(entities: List<Entity>) {
         getManagers().forEach {
-            it.onEntityAdded()
+            it.onEntityAdded(entities)
         }
     }
 }
@@ -43,29 +43,11 @@ interface SystemsRegistry {
         getSystems().forEach { it.clear() }
     }
 
-    fun onEntityAdded() {
+    fun onEntityAdded(entities: List<Entity>) {
         getSystems().forEach {
-            it.onEntityAdded()
+            it.onEntityAdded(entities)
         }
     }
-}
-
-interface ComponentSystem<T : Component> {
-    fun update(deltaSeconds: Float) {
-        getComponents().forEach {
-            it.update(deltaSeconds)
-        }
-    }
-    fun getComponents(): List<T>
-    fun create(entity: Entity): T
-    fun addComponent(component: T)
-    fun clear()
-    fun onSceneSet() {
-        clear()
-    }
-    fun onEntityAdded() {}
-
-    val componentClass: Class<T>
 }
 
 class SimpleSystemsRegistry : SystemsRegistry {

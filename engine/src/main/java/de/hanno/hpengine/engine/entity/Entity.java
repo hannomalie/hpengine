@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Update;
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Spatial;
@@ -28,7 +27,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 		@Override
 		public AABB getMinMax() {
 			if (hasComponent(ModelComponent.COMPONENT_KEY)) {
-				ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+				ModelComponent modelComponent = getComponent(ModelComponent.class);
 				return modelComponent.getMinMax(modelComponent.getAnimationController());
 			} else {
 				return super.getMinMax();
@@ -44,7 +43,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	private boolean selected = false;
 	private boolean visible = true;
 	
-	public Map<String, Component> components = new HashMap<>();
+	public Map<Class<Component>, Component> components = new HashMap<>();
 
 	public Entity() {
 	    this("Entity"  +String.valueOf(System.currentTimeMillis()));
@@ -67,10 +66,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
     }
 
 	public Entity addComponent(Component component) {
-		return addComponent(component, component.getIdentifier());
-	}
-	public Entity addComponent(Component component , String key) {
-		getComponents().put(key, component);
+		getComponents().put((Class<Component>) component.getClass(), component);
 		return this;
 	}
 
@@ -81,17 +77,13 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 		getComponents().remove(key);
 	}
 
-	public <T extends Component> T getComponent(Class<T> type) {
-		return getComponent(type, type.getSimpleName());
-	}
-
     public <T extends Component> T getOrAddComponent(Class<T> type, Supplier<T> supplier) {
         if(!hasComponent(type)) {
             T component = supplier.get();
             addComponent(component);
             return component;
         }
-        return getComponent(type, type.getSimpleName());
+        return getComponent(type);
     }
     public <T extends Component> T getOrAddComponentLegacy(Class<T> type, Callable<T> supplier) {
         if(!hasComponent(type)) {
@@ -105,16 +97,16 @@ public class Entity extends Transform<Entity> implements LifeCycle {
             addComponent(component);
             return component;
         }
-        return getComponent(type, type.getSimpleName());
+        return getComponent(type);
     }
 
-	public <T extends Component> T getComponent(Class<T> type, String key) {
-		Component component = getComponents().get(key);
+	public <T extends Component> T getComponent(Class<T> type) {
+		Component component = getComponents().get(type);
 		return type.cast(component);
 	}
 
-	public <T extends Component> Optional<T> getComponentOption(Class<T> type, String key) {
-		Component component = getComponents().get(key);
+	public <T extends Component> Optional<T> getComponentOption(Class<T> type) {
+		Component component = getComponents().get(type);
 		return Optional.ofNullable(type.cast(component));
 	}
 
@@ -153,7 +145,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 		}
 	}
 
-    public Map<String,Component> getComponents() {
+    public Map<Class<Component>,Component> getComponents() {
 		return components;
 	}
 
@@ -223,7 +215,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	@Override
 	public void setHasMoved(boolean value) {
         super.setHasMoved(value);
-		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class);
 		modelComponentOption.ifPresent(modelComponent -> modelComponent.setHasUpdated(value));
 
 		ClustersComponent clusters = getComponent(ClustersComponent.class);
@@ -235,7 +227,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
     }
 
 	public boolean hasMoved() {
-		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class);
 		if(modelComponentOption.isPresent()) {
 			if(modelComponentOption.get().isHasUpdated()) {
 				return true;
@@ -257,8 +249,8 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	}
 
 	public Update getUpdate() {
-        if((hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class, "PhysicsComponent").isDynamic())
-				|| (hasComponent(ModelComponent.COMPONENT_KEY) && !getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getModel().isStatic())) {
+        if((hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class).isDynamic())
+				|| (hasComponent(ModelComponent.COMPONENT_KEY) && !getComponent(ModelComponent.class).getModel().isStatic())) {
             return Update.DYNAMIC;
         }
 		return update;
@@ -275,7 +267,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 
 	private List<AABB> emptyList = new ArrayList<>();
 	public List<AABB> getInstanceMinMaxWorlds() {
-		ClustersComponent clusters = getComponent(ClustersComponent.class, ClustersComponent.Companion.getClustersComponentType());
+		ClustersComponent clusters = getComponent(ClustersComponent.class);
 		if(clusters == null) { return emptyList; }
 		return clusters.getInstancesMinMaxWorlds();
 	}

@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -322,7 +323,7 @@ public class EnvironmentProbeManager implements Manager {
 	}
 
 	@Override
-	public void onEntityAdded() {
+	public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
 	}
 }

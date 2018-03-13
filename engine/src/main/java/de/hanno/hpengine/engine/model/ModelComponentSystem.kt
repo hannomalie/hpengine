@@ -151,16 +151,16 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         bufferEntities()
     }
 
-    override fun onEntityAdded() {
+    override fun onEntityAdded(entities: List<Entity>) {
         bufferEntities()
     }
 }
 
 val Entity.instances: List<Instance>
-    get() = this.getComponent(ClustersComponent::class.java, ClustersComponent.clustersComponentType)?.getInstances() ?: kotlin.collections.emptyList()
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: kotlin.collections.emptyList()
 
 val Entity.clusters: List<Cluster>
-    get() = this.getComponent(ClustersComponent::class.java, ClustersComponent.clustersComponentType)?.getClusters() ?: kotlin.collections.emptyList()
+    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: kotlin.collections.emptyList()
 
 val Entity.instanceCount: Int
-    get() = this.getComponent(ClustersComponent::class.java, ClustersComponent.clustersComponentType)?.getInstanceCount() ?: 1
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstanceCount() ?: 1
