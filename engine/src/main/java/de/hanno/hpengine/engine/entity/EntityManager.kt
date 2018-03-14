@@ -68,13 +68,17 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
                 continue
             }
             currentScene.minMax.calculateMinMax(currentScene.entityManager.getEntities())
-            entity.isHasMoved = false
             currentScene.setEntityMovedInCycleToCurrentCycle()
             entityHasMoved = true
             if(entity.update == Update.STATIC) {
                 staticEntityHasMoved = true
             }
             break
+        }
+    }
+    fun afterUpdate() {
+        entityContainer.entities.forEach {
+            it.isHasMoved = false
         }
     }
     companion object {

@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.scene.EnvironmentProbeManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
@@ -117,11 +118,13 @@ public class DeferredRenderer implements Renderer {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 
-//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 
-			for(int i = 0; i < 6; i++) {
-//                drawToQuad(EnvironmentProbeManager.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
-			}
+//			for(int i = 0; i < 6; i++) {
+//                drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+//			}
+
+
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, directionalLightSystem.getPointLightDepthMapsArrayBack(),
@@ -133,18 +136,20 @@ public class DeferredRenderer implements Renderer {
 //			drawToQuad(faceView, sixDebugBuffers.get(1));
 //			GL11.glDeleteTextures(faceView);
 
-            int[] faceViews = new int[6];
-			int index = 0;
-            for(int i = 0; i < 6; i++) {
-                faceViews[i] = engine.getGpuContext().genTextures();
-				CubeShadowMapStrategy shadowMapStrategy = (CubeShadowMapStrategy) engine.getScene().getPointLightSystem().getShadowMapStrategy();
-				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, shadowMapStrategy.getPointLightDepthMapsArrayCube(),
-						GL_RGBA16F, 0, 1, (index*6)+i, 1);
-				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());
-			}
-            for(int i = 0; i < 6; i++) {
-                GL11.glDeleteTextures(faceViews[i]);
-            }
+
+
+//            int[] faceViews = new int[6];
+//			int index = 0;
+//            for(int i = 0; i < 6; i++) {
+//                faceViews[i] = engine.getGpuContext().genTextures();
+//				CubeShadowMapStrategy shadowMapStrategy = (CubeShadowMapStrategy) engine.getScene().getPointLightSystem().getShadowMapStrategy();
+//				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, shadowMapStrategy.getPointLightDepthMapsArrayCube(),
+//						GL_RGBA16F, 0, 1, (index*6)+i, 1);
+//				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());
+//			}
+//            for(int i = 0; i < 6; i++) {
+//                GL11.glDeleteTextures(faceViews[i]);
+//            }
 		}
 
 		GPUProfiler.start("Create new fence");

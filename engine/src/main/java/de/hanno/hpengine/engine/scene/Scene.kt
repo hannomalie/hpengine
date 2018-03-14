@@ -51,7 +51,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val componentSystems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
 
-    val entityManager = managers.register(EntityManager(engine, engine.eventBus))
+    val entityManager = (EntityManager(engine, engine.eventBus))
     val environmentProbeManager = managers.register(engine.environmentProbeManager)
 
     val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
@@ -144,6 +144,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         entitySystems.update(deltaSeconds)
 
         entityManager.update(deltaSeconds)
+        entityManager.afterUpdate()
     }
 
     fun getEntities(): List<Entity> {

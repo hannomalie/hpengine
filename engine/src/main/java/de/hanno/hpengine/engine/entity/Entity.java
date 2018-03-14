@@ -66,7 +66,12 @@ public class Entity extends Transform<Entity> implements LifeCycle {
     }
 
 	public Entity addComponent(Component component) {
-		getComponents().put((Class<Component>) component.getClass(), component);
+		Class<Component> clazz = (Class<Component>) component.getClass();
+		boolean isAnonymous = clazz.getEnclosingClass() != null;
+		if(isAnonymous) {
+			clazz = (Class<Component>) clazz.getSuperclass();
+		}
+		getComponents().put(clazz, component);
 		return this;
 	}
 

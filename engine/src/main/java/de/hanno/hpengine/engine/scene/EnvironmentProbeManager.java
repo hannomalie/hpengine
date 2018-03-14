@@ -31,7 +31,7 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_T
 public class EnvironmentProbeManager implements Manager {
 	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
-	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
+	public static final int CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION);
 	
 	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
 	private final Engine engine;
@@ -147,26 +147,12 @@ public class EnvironmentProbeManager implements Manager {
 		prepareProbeRendering();
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().
-				filter(probe -> { return probe.update == Update.DYNAMIC; }).
-				sorted(new Comparator<EnvironmentProbe>() {
-
-					@Override
-					public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-//						Vector3f center1 = o1.getCenter();
-//						Vector3f center2 = o2.getCenter();
-//						Vector4f center1InView = new Matrix4f().(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
-//						Vector4f center2InView = new Matrix4f().(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
-//						return Float.compare(-center1InView.z, -center2InView.z);
-						return Float.compare(new Vector3f(o1.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared());
-					}
-				}).
+				filter(probe -> probe.update == Update.DYNAMIC).
+				sorted((o1, o2) -> Float.compare(new Vector3f(o1.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared())).
 				collect(Collectors.toList());
 		
-//		int counter = 0;
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
-//			if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
-//			environmentProbe.draw(octree, lights);
             addRenderProbeCommand(environmentProbe);
 		}
 	}
@@ -215,15 +201,7 @@ public class EnvironmentProbeManager implements Manager {
 	}
 	
 	public<T extends Entity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
-		return probes.stream().filter(probe -> {
-			return probe.contains(entity.getMinMaxWorld());
-		}).sorted(new Comparator<EnvironmentProbe>() {
-			@Override
-			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())));
-			}
-		}).findFirst();
-		
+		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())))).findFirst();
 	}
 	
 	public List<EnvironmentProbe> getProbes() {
@@ -249,14 +227,7 @@ public class EnvironmentProbeManager implements Manager {
 	}
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
-		return probes.stream().filter(probe -> {
-			return probe.contains(entity.getMinMaxWorld());
-		}).sorted(new Comparator<EnvironmentProbe>() {
-			@Override
-			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())));
-			}
-		}).collect(Collectors.toList());
+		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())))).collect(Collectors.toList());
 	}
 
 	public boolean remove(EnvironmentProbe probe) {
@@ -272,12 +243,6 @@ public class EnvironmentProbeManager implements Manager {
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", engine.getSceneManager().getScene().getEnvironmentProbeManager().getMinPositions());
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", engine.getSceneManager().getScene().getEnvironmentProbeManager().getMaxPositions());
 		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", engine.getSceneManager().getScene().getEnvironmentProbeManager().getWeights());
-
-//		EnvironmentProbeManager.getInstance().getProbes().forEach(probe -> {
-//			int probeIndex = probe.getIndex();
-//			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
-//			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
-//		});
 	}
 
 	public void executeRenderProbeCommands(RenderState extract) {
@@ -301,10 +266,6 @@ public class EnvironmentProbeManager implements Manager {
 	}
 	void addRenderProbeCommand(EnvironmentProbe probe) {
 		addRenderProbeCommand(probe, false);
-	}
-
-	public void update(Float deltaSeconds) {
-//		TODO: Render Probes here
 	}
 
 	public void clearProbes() {

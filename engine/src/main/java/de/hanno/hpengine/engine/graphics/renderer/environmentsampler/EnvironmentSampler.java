@@ -7,9 +7,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
@@ -140,9 +138,9 @@ public class EnvironmentSampler extends Entity {
             GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
             GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
 		}
-        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
-        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
-        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
+        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
+        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
+        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
 
 
 		renderTarget = new RenderTargetBuilder(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
@@ -457,7 +455,7 @@ public class EnvironmentSampler extends Entity {
 				int cubeMapView = GL11.glGenTextures();
 
                 GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(),
-						cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAPMIPMAPCOUNT,
+						cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT,
 						6 * probe.getIndex(), 6);
 
 				int cubemapCopy = cubeMapView;//TextureManager.copyCubeMap(cubeMapView, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, internalFormat);
@@ -496,7 +494,7 @@ public class EnvironmentSampler extends Entity {
 			
 			int indexOfFace = 6 * probe.getIndex() + i;
 
-			for (int z = 0; z < EnvironmentProbeManager.CUBEMAPMIPMAPCOUNT; z++) {
+			for (int z = 0; z < EnvironmentProbeManager.CUBEMAP_MIPMAP_COUNT; z++) {
 				//cubeMapArrayRenderTarget.setCubeMapFace(0, probe.getIndex(), indexOfFace);
 				renderTarget.setCubeMapFace(0, cubeMapView, i, z);
 				width /= 2;
@@ -525,7 +523,7 @@ public class EnvironmentSampler extends Entity {
 
 			int indexOfFace = 6 * probe.getIndex() + i;
 
-			for (int z = 0; z < EnvironmentProbeManager.CUBEMAPMIPMAPCOUNT; z++) {
+			for (int z = 0; z < EnvironmentProbeManager.CUBEMAP_MIPMAP_COUNT; z++) {
 				GL42.glBindImageTexture(z, cubemapArrayColorTextureId, z + 1, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
 			}
 
@@ -548,14 +546,14 @@ public class EnvironmentSampler extends Entity {
 		if (use2DMipMapping ) {
 			for (int i = 0; i < 6; i++) {
 				int cubeMapFaceView = GL11.glGenTextures();
-                GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAPMIPMAPCOUNT, 6 * probe.getIndex() + i, 1);
+                GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6 * probe.getIndex() + i, 1);
                 engine.getTextureManager().generateMipMaps(cubeMapFaceView, GL11.GL_NEAREST, GL11.GL_NEAREST);
 				GL11.glDeleteTextures(cubeMapFaceView);
 			}
 			
 		} else {
 			int cubeMapView = GL11.glGenTextures();
-            GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
+            GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probe.getIndex(), 6);
             engine.getTextureManager().generateMipMapsCubeMap(cubeMapView);
 			GL11.glDeleteTextures(cubeMapView);
 		}
