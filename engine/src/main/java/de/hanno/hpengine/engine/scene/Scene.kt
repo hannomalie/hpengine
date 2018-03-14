@@ -38,15 +38,12 @@ import java.io.IOException
 import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
 
-    private val probes = CopyOnWriteArrayList<ProbeData>()
-
     @Transient private var entityMovedInCycle: Long = 0
     @Transient var entityAddedInCycle: Long = 0
-    @Transient var currentRenderCycle: Long = 0
+    @Transient var currentCycle: Long = 0
     @Transient var isInitiallyDrawn: Boolean = false
     val minMax = AABB(Vector3f(), 100f)
 
@@ -101,7 +98,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         try {
             fos = FileOutputStream("$directory$fileName.hpscene")
             out = ObjectOutputStream(fos)
-            probes.clear()
             out.writeObject(this)
             //			FSTObjectOutput newOut = new FSTObjectOutput(out);
             //			newOut.writeObject(this);
@@ -133,8 +129,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         managers.onEntityAdded(entities)
 
         minMax.calculateMinMax(entityManager.getEntities())
-        
-        entityAddedInCycle = currentRenderCycle
+
+        entityAddedInCycle = currentCycle
         engine.eventBus.post(MaterialAddedEvent())
         engine.eventBus.post(EntityAddedEvent())
     }
@@ -166,18 +162,16 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     fun entityMovedInCycle() = entityMovedInCycle
     fun pointLightMovedInCycle() = pointLightSystem.pointLightMovedInCycle
 
-    companion object {
-        private const val serialVersionUID = 1L
-
-        @JvmStatic val directory: String
-            get() = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"
-    }
-
     fun setEntityMovedInCycleToCurrentCycle() {
-        entityMovedInCycle = currentRenderCycle
+        entityMovedInCycle = currentCycle
     }
 
     fun extract(currentWriteState: RenderState) {
         batchingSystem.addRenderBatches(currentWriteState)
+    }
+
+    companion object {
+        private const val serialVersionUID = 1L
+        @JvmStatic val directory = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"
     }
 }

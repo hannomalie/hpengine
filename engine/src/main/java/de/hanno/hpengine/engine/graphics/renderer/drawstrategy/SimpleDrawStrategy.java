@@ -8,7 +8,9 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
+import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
@@ -42,6 +44,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK;
@@ -387,7 +390,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-        secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS);
+        secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS);
         secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
         secondPassPointComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().getLightBuffer());
         secondPassPointComputeProgram.dispatchCompute(Config.getInstance().getWidth() / 16, Config.getInstance().getHeight() / 16, 1);

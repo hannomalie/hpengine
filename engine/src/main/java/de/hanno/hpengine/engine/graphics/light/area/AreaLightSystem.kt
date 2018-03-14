@@ -26,7 +26,7 @@ import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
 import java.io.File
 import java.nio.FloatBuffer
-import java.util.ArrayList
+import java.util.*
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentClass = AreaLight::class.java, factory = { TODO("not implemented") })
 
@@ -35,8 +35,8 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
     private val renderTarget: RenderTarget = RenderTargetBuilder(engine.gpuContext)
-            .setWidth(DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)
-            .setHeight(DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)
+            .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
+            .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
             .add(ColorAttachmentDefinition()
                     .setInternalFormat(GL30.GL_RGBA32F)
                     .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
@@ -45,10 +45,10 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "mvp_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "shadowmap_fragment.glsl")), Defines())
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         engine.gpuContext.execute {
-            for (i in 0 until DirectionalLightSystem.MAX_AREALIGHT_SHADOWMAPS) {
+            for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = engine.gpuContext.genTextures()
                 engine.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)
-                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION / 2, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION / 2, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION / 2, AREALIGHT_SHADOWMAP_RESOLUTION / 2, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
@@ -137,7 +137,7 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
         engine.gpuContext.disable(GlCap.CULL_FACE)
         renderTarget.use(true)
 
-        for (i in 0 until Math.min(DirectionalLightSystem.MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
+        for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 
             renderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
 
@@ -166,7 +166,7 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
 
     fun getDepthMapForAreaLight(light: AreaLight): Int {
         val index = getAreaLights().indexOf(light)
-        return if (index >= DirectionalLightSystem.MAX_AREALIGHT_SHADOWMAPS) {
+        return if (index >= MAX_AREALIGHT_SHADOWMAPS) {
             -1
         } else areaLightDepthMaps[index]
     }
@@ -206,4 +206,8 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
         renderAreaLightShadowMaps(state)
     }
 
+    companion object {
+        @JvmField val MAX_AREALIGHT_SHADOWMAPS = 2
+        @JvmField val AREALIGHT_SHADOWMAP_RESOLUTION = 512
+    }
 }

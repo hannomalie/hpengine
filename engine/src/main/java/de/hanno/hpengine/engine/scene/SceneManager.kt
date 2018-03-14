@@ -21,7 +21,7 @@ class SceneManager(val engine: Engine): Manager {
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
         val newDrawCycle = engine.renderManager.drawCycle.get()
-        scene.currentRenderCycle = newDrawCycle
+        scene.currentCycle = newDrawCycle
         scene.update(deltaSeconds)
 
 

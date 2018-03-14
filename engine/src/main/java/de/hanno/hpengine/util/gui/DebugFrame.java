@@ -63,6 +63,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import javax.script.ScriptException;
 import javax.swing.*;
@@ -437,8 +438,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result execute() throws Exception {
                         Entity pointLightEntity = new Entity();
-                        PointLight pointLight = engine.getScene().getDirectionalLightSystem().getPointLight(pointLightEntity, 50);
-                        pointLightEntity.addComponent(pointLight);
+                        pointLightEntity.addComponent(new PointLight(pointLightEntity, new Vector4f(1,1,1,1), 50));
                         engine.getSceneManager().getScene().add(pointLightEntity);
                         return new Result(true);
                     }
@@ -469,7 +469,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Boolean> execute() throws Exception {
                         Entity tubeLightEntity = new Entity();
-                        engine.getScene().getDirectionalLightSystem().getTubeLight(tubeLightEntity, 100, 50);
+                        tubeLightEntity.addComponent(new TubeLight(tubeLightEntity, new Vector3f(1,1,1), 100, 50));
                         engine.getSceneManager().getScene().add(tubeLightEntity);
                         return new Result(true);
                     }
@@ -500,7 +500,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result execute() throws Exception {
                         Entity entity = new Entity();
-                        AreaLight areaLight = engine.getScene().getDirectionalLightSystem().getAreaLight(entity, new Vector3f(1, 1, 1), 50, 50, 20);
+                        entity.addComponent(new AreaLight(entity, new Vector3f(1, 1, 1), new Vector3f(50, 50, 20)));
                         engine.getSceneManager().getScene().add(entity);
                         return new Result(true);
                     }

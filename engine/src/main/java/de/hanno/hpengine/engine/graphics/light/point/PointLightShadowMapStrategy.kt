@@ -4,7 +4,10 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D_ARRAY
@@ -42,10 +45,10 @@ class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSy
     init {
         this.pointCubeShadowPassProgram = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cube_fragment.glsl")), Defines())
 
-        val cubeMapArray = CubeMapArray(engine.gpuContext, DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)
+        val cubeMapArray = CubeMapArray(engine.gpuContext, MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION)
         pointLightDepthMapsArrayCube = cubeMapArray.textureID
         this.cubemapArrayRenderTarget = CubeMapArrayRenderTarget(
-                engine.gpuContext, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray)
+                engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray)
     }
 
     override fun bindTextures() {
@@ -66,9 +69,9 @@ class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSy
         gpuContext.enable(GlCap.CULL_FACE)
         cubemapArrayRenderTarget!!.use(false)
         gpuContext.clearDepthAndColorBuffer()
-        gpuContext.viewPort(0, 0, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)
+        gpuContext.viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
 
-        for (i in 0 until Math.min(DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
+        for (i in 0 until Math.min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
 
             val light = pointLights[i]
             pointCubeShadowPassProgram!!.use()
@@ -111,8 +114,8 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
     var pointLightDepthMapsArrayBack: Int = 0
 
     private val renderTarget = RenderTargetBuilder(engine.gpuContext)
-            .setWidth(DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)
-            .setHeight(DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)
+            .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
+            .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
             .add(ColorAttachmentDefinition()
                     .setInternalFormat(GL30.GL_RGBA32F)
                     .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
@@ -123,7 +126,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
 
         pointLightDepthMapsArrayFront = GL11.glGenTextures()
         engine.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
-        GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
+        GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
@@ -131,7 +134,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
 
         pointLightDepthMapsArrayBack = GL11.glGenTextures()
         engine.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
-        GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
+        GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
@@ -156,7 +159,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
         val pointLights = pointLightSystem.getPointLights()
 
         pointShadowPassProgram!!.use()
-        for (i in 0 until Math.min(DirectionalLightSystem.MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
+        for (i in 0 until Math.min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
             renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i)
 
             gpuContext.clearDepthAndColorBuffer()

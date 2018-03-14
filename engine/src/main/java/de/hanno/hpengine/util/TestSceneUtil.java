@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.scene.Scene;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -57,8 +58,8 @@ public class TestSceneUtil {
                             Entity entity = entityManager.create(position, "Entity_" + System.currentTimeMillis());
                             entity.addComponent(modelComponentSystem.create(entity, sphere));
                             Entity pointLightEntity = new Entity();
-                            PointLight pointLight = directionalLightSystem.getPointLight(pointLightEntity, 10);
                             pointLightEntity.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
+                            pointLightEntity.addComponent(new PointLight(pointLightEntity, new Vector4f(1,1,1,1), 10));
                             scene.add(pointLightEntity);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 //							scale.scale(new Random().nextFloat()*14);

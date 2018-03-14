@@ -130,4 +130,8 @@ class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine,
             shadowMapStrategy.renderPointLightShadowMaps(state)
         }
     }
+
+    companion object {
+        @JvmField val MAX_POINTLIGHT_SHADOWMAPS = 5
+    }
 }

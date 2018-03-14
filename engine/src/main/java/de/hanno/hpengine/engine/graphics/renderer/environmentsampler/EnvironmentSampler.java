@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.MAX_AREALIGHT_SHADOWMAPS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK;
@@ -274,7 +276,7 @@ public class EnvironmentSampler extends Entity {
         cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", engine.getScene().getAreaLightSystem().getAreaLightUpDirections());
         cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", engine.getScene().getAreaLightSystem().getAreaLightRightDirections());
 		
-		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), DirectionalLightSystem.MAX_AREALIGHT_SHADOWMAPS); i++) {
+		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), MAX_AREALIGHT_SHADOWMAPS); i++) {
 			AreaLight areaLight = engine.getSceneManager().getScene().getAreaLights().get(i);
             engine.getGpuContext().bindTexture(9 + i, TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
             cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", engine.getScene().getAreaLightSystem().getShadowMatrixForAreaLight(areaLight));
