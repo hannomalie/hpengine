@@ -121,27 +121,9 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
     }
 
     fun getCameraForAreaLight(light: AreaLight): Camera {
-        cameraEntity.setTranslation(light.entity.position.negate(null!!))
-        //        de.hanno.hpengine.camera.getOrientation().x = -lights.getOrientation().x;
-        //        de.hanno.hpengine.camera.getOrientation().y = -lights.getOrientation().y;
-        //        de.hanno.hpengine.camera.getOrientation().z = -lights.getOrientation().z;
-        //        de.hanno.hpengine.camera.getOrientation().w = -lights.getOrientation().w;
-        //        de.hanno.hpengine.camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
-        //return de.hanno.hpengine.camera.getComponent(CameraComponent.class).getCamera();
-        return camera
+        return light.camera
     }
     fun getShadowMatrixForAreaLight(light: AreaLight): FloatBuffer {
-        //        c.getOrientation().x = lights.getOrientation().negate(null).x;
-        //        c.getOrientation().y = lights.getOrientation().negate(null).y;
-        //        c.getOrientation().z = lights.getOrientation().negate(null).z;
-        //        c.getOrientation().w = lights.getOrientation().negate(null).w;
-        //        c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
-
-        //        Vector3f newPosition = new Vector3f(-lights.getPosition().x, -lights.getPosition().y, -lights.getPosition().y);
-        //        newPosition = new Vector3f(0, 0, 10);
-        //        c.setPosition(newPosition);
-        //        c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
-        //        c.updateShadow();
         return light.camera.viewProjectionMatrixAsBuffer
     }
 

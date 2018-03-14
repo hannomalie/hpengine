@@ -26,9 +26,13 @@ public class AreaLight implements Component, Bufferable {
 		this.entity = entity;
 		setScale(scale);
 		setColor(color);
-		camera = new Camera(entity, Util.createPerspective(180, 1, 1f, 5000f), 1f, 5000f, 180f, 1);
+		camera = new Camera(entity, Util.createPerspective(180, 1f, 1f, 250f), 1f, 250f, 180f, 1f);
 	}
-	
+
+	@Override
+	public void update(float deltaSeconds) {
+		camera.update(deltaSeconds);
+	}
 	public void setColor(Vector3f color) {
 		this.color = color;
 	}
