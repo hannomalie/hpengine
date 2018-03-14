@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light.tubelight;
+package de.hanno.hpengine.engine.graphics.light.tube;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;

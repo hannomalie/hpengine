@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ComponentMapper;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
+import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import org.joml.Vector4f;
 
 import com.alee.laf.colorchooser.WebColorChooserPanel;

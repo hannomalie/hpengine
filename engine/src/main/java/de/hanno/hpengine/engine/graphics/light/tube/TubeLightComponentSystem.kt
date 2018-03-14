@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light.tubelight
+package de.hanno.hpengine.engine.graphics.light.tube
 
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import org.joml.Vector3f

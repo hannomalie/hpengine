@@ -23,7 +23,10 @@ interface ComponentSystem<T : Component> {
     }
 
     fun addCorrespondingComponents(components: Map<Class<Component>, Component>) {
-        components.filter { componentClass == it.key }.forEach { addComponent(it.value as T) }
+        components.map {
+            val isAnonymousCLass = it.key.enclosingClass != null
+            if (isAnonymousCLass) Pair(it.key.superclass, it.value) else Pair(it.key::class.java, it.value)
+        }.filter { componentClass == it.first }.forEach { addComponent(it.second as T) }
     }
 
     val componentClass: Class<T>

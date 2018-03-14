@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
-import de.hanno.hpengine.engine.graphics.light.pointlight.CubeShadowMapStrategy;
+import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -124,11 +124,11 @@ public class DeferredRenderer implements Renderer {
 			}
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
-//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightManager.getPointLightDepthMapsArrayBack(),
+//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, directionalLightSystem.getPointLightDepthMapsArrayBack(),
 //					GL30.GL_RGBA16F, 0, 1, 0, 1);
 //			drawToQuad(faceView, sixDebugBuffers.get(0));
 //			faceView = OpenGLContext.getInstance().genTextures();
-//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightManager.getPointLightDepthMapsArrayFront(),
+//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, directionalLightSystem.getPointLightDepthMapsArrayFront(),
 //					GL30.GL_RGBA16F, 0, 1, 0, 1);
 //			drawToQuad(faceView, sixDebugBuffers.get(1));
 //			GL11.glDeleteTextures(faceView);

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light.pointlight;
+package de.hanno.hpengine.engine.graphics.light.point;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;

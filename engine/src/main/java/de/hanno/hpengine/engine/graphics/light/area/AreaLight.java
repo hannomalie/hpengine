@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light.arealight;
+package de.hanno.hpengine.engine.graphics.light.area;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;

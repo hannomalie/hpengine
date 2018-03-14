@@ -8,7 +8,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector4f;
 

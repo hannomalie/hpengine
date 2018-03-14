@@ -7,12 +7,17 @@ import java.util.logging.Logger;
 
 import de.hanno.hpengine.engine.camera.Camera;
 
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.log.ConsoleLogger;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 public class AABB implements Serializable {
 	private static Logger LOGGER = ConsoleLogger.getLogger();
+
+	private Vector3f absoluteMaximum = new Vector3f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE);
+	private Vector3f absoluteMinimum = new Vector3f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE);
+
 	// this is the point -x, y, z if you look in -z with opengl coords
 	private Vector3f topRightForeCorner;
 	private Vector3f bottomLeftBackCorner;
@@ -215,5 +220,29 @@ public class AABB implements Serializable {
 	public void setCenter(Vector3f center) {
 		this.center = center;
 		calculateCorners();
+	}
+
+	public void calculateMinMax(List<Entity> entities) {
+		if (entities.isEmpty()) {
+			getMin().set(-1f, -1f, -1f);
+			getMax().set(1f, 1f, 1f);
+			return;
+		}
+
+		getMin().set(absoluteMaximum);
+		getMax().set(absoluteMinimum);
+
+		for (Entity entity : entities) {
+			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getMinMaxWorld();
+			Vector3f currentMin = minMaxWorld.getMin();
+			Vector3f currentMax = minMaxWorld.getMax();
+			getMin().x = (currentMin.x < getMin().x) ? currentMin.x : getMin().x;
+			getMin().y = (currentMin.y < getMin().y) ? currentMin.y : getMin().y;
+			getMin().z = (currentMin.z < getMin().z) ? currentMin.z : getMin().z;
+
+			getMax().x = (currentMax.x > getMax().x) ? currentMax.x : getMax().x;
+			getMax().y = (currentMax.y > getMax().y) ? currentMax.y : getMax().y;
+			getMax().z = (currentMax.z > getMax().z) ? currentMax.z : getMax().z;
+		}
 	}
 }

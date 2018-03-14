@@ -31,9 +31,9 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.*;
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
-import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.point.PointLight;
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
@@ -359,7 +359,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getScene().getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getScene().getLightManager(), engine.getSceneManager().getScene(), engine.getSceneManager().getScene().getModelComponentSystem()));
+                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getScene().getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getScene().getDirectionalLightSystem(), engine.getSceneManager().getScene(), engine.getSceneManager().getScene().getModelComponentSystem()));
                         engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(engine.getSceneManager().getScene());
@@ -437,7 +437,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result execute() throws Exception {
                         Entity pointLightEntity = new Entity();
-                        PointLight pointLight = engine.getScene().getLightManager().getPointLight(pointLightEntity, 50);
+                        PointLight pointLight = engine.getScene().getDirectionalLightSystem().getPointLight(pointLightEntity, 50);
                         pointLightEntity.addComponent(pointLight);
                         engine.getSceneManager().getScene().add(pointLightEntity);
                         return new Result(true);
@@ -469,7 +469,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Boolean> execute() throws Exception {
                         Entity tubeLightEntity = new Entity();
-                        engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50);
+                        engine.getScene().getDirectionalLightSystem().getTubeLight(tubeLightEntity, 100, 50);
                         engine.getSceneManager().getScene().add(tubeLightEntity);
                         return new Result(true);
                     }
@@ -500,7 +500,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result execute() throws Exception {
                         Entity entity = new Entity();
-                        AreaLight areaLight = engine.getScene().getLightManager().getAreaLight(entity, new Vector3f(1, 1, 1), 50, 50, 20);
+                        AreaLight areaLight = engine.getScene().getDirectionalLightSystem().getAreaLight(entity, new Vector3f(1, 1, 1), 50, 50, 20);
                         engine.getSceneManager().getScene().add(entity);
                         return new Result(true);
                     }
@@ -1012,7 +1012,7 @@ public class DebugFrame implements HostComponent {
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
-                    engine.getScene().getLightManager().getDirectionalLight().setScatterFactor((float)value);
+                    engine.getScene().getDirectionalLightSystem().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getRainEffect())) {

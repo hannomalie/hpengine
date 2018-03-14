@@ -7,11 +7,11 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
-import de.hanno.hpengine.engine.graphics.light.LightManager;
-import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight;
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
@@ -169,7 +169,7 @@ public class EnvironmentSampler extends Entity {
 		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();
 
-		DirectionalLight light = engine.getScene().getLightManager().getDirectionalLight();
+		DirectionalLight light = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 8);
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
 
@@ -274,7 +274,7 @@ public class EnvironmentSampler extends Entity {
         cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", engine.getScene().getAreaLightSystem().getAreaLightUpDirections());
         cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", engine.getScene().getAreaLightSystem().getAreaLightRightDirections());
 		
-		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), LightManager.MAX_AREALIGHT_SHADOWMAPS); i++) {
+		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), DirectionalLightSystem.MAX_AREALIGHT_SHADOWMAPS); i++) {
 			AreaLight areaLight = engine.getSceneManager().getScene().getAreaLights().get(i);
             engine.getGpuContext().bindTexture(9 + i, TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
             cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", engine.getScene().getAreaLightSystem().getShadowMatrixForAreaLight(areaLight));
@@ -321,7 +321,7 @@ public class EnvironmentSampler extends Entity {
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstpassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getLightManager().getDirectionalLight().getViewDirection());
+        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getDirectionalLightSystem().getDirectionalLight().getViewDirection());
         firstpassDefaultProgram.setUniform("near", camera.getNear());
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
@@ -431,7 +431,7 @@ public class EnvironmentSampler extends Entity {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = engine.getScene().getLightManager().getDirectionalLight();
+		DirectionalLight light = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getEntity().getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", Config.getInstance().getAmbientLight());

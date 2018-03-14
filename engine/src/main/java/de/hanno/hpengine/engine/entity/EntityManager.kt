@@ -67,7 +67,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             if (!entity.hasMoved()) {
                 continue
             }
-            currentScene.calculateMinMax()
+            currentScene.minMax.calculateMinMax(currentScene.entityManager.getEntities())
             entity.isHasMoved = false
             currentScene.setEntityMovedInCycleToCurrentCycle()
             entityHasMoved = true

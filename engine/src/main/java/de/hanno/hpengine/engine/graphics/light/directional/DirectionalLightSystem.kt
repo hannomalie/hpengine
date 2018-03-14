@@ -1,29 +1,22 @@
-package de.hanno.hpengine.engine.graphics.light
+package de.hanno.hpengine.engine.graphics.light.directional
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
-import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight
-import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
+import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import org.joml.Vector4f
 
-class LightManager(private val engine: Engine, val eventBus: EventBus, inputControllerSystem: InputComponentSystem): Manager {
-
-    var directionalLight = DirectionalLight(Entity())
-
-    private val directionalLightComponent: DirectionalLight
+class DirectionalLightSystem(engine: Engine, scene: Scene, val eventBus: EventBus): SimpleEntitySystem(engine, scene, listOf(DirectionalLight::class.java)) {
 
     var directionalLightMovedInCycle: Long = 0
 
     init {
         eventBus.register(this)
-        directionalLightComponent = createDirectionalLight(directionalLight.getEntity())
-        directionalLight.getEntity().addComponent(directionalLightComponent)
-        inputControllerSystem.addComponent(directionalLight.addInputController(this.engine))
     }
 
     fun getPointLight(entity: Entity, range: Float): PointLight {
@@ -49,22 +42,16 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, inputCont
         return areaLight
     }
 
-    fun update(deltaSeconds: Float, currentCycle: Long) {
+    override fun update(deltaSeconds: Float) {
 
-        directionalLight.update(deltaSeconds)
+        getDirectionalLight().update(deltaSeconds)
 
-        if (directionalLight.getEntity().hasMoved()) {
-            directionalLightMovedInCycle = currentCycle
-            directionalLight.entity.isHasMoved = false
+        if (getDirectionalLight().getEntity().hasMoved()) {
+            directionalLightMovedInCycle = engine.getScene().currentRenderCycle
+            getDirectionalLight().entity.isHasMoved = false
         }
     }
 
-    fun createDirectionalLight(entity: Entity): DirectionalLight {
-        return DirectionalLight(entity)
-    }
-    override fun clear() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
     companion object {
         @JvmField
         var MAX_AREALIGHT_SHADOWMAPS = 2
@@ -73,4 +60,6 @@ class LightManager(private val engine: Engine, val eventBus: EventBus, inputCont
         @JvmField
         var AREALIGHT_SHADOWMAP_RESOLUTION = 512
     }
+
+    fun getDirectionalLight() = getComponents(DirectionalLight::class.java).first()
 }

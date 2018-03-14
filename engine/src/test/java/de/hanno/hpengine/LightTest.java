@@ -1,8 +1,8 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.transform.AABB;
 import junit.framework.Assert;
 import org.joml.Vector3f;
@@ -13,7 +13,7 @@ public class LightTest extends TestWithEngine {
 	@Test
 	public void tubeLightHasCorrectProportions() {
 		Entity tubeLightEntity = new Entity();
-		TubeLight tubeLight = engine.getScene().getLightManager().getTubeLight(tubeLightEntity, 100, 50);
+		TubeLight tubeLight = engine.getScene().getDirectionalLightSystem().getTubeLight(tubeLightEntity, 100, 50);
 		
 		Assert.assertEquals(new Vector3f(), tubeLight.getEntity().getPosition());
 		Assert.assertEquals(200, tubeLight.getLength(), 1.0f);
@@ -31,7 +31,7 @@ public class LightTest extends TestWithEngine {
 	
 	@Test
 	public void areaLightHasCorrectProportions() {
-        AreaLight areaLight = engine.getScene().getLightManager().getAreaLight(new Entity(), new Vector3f(1,1,1), 100,100,200);
+        AreaLight areaLight = engine.getScene().getDirectionalLightSystem().getAreaLight(new Entity(), new Vector3f(1,1,1), 100,100,200);
 		
 		Assert.assertEquals(new Vector3f(), areaLight.getEntity().getPosition());
 		Assert.assertEquals(100, areaLight.getWidth(), 1.0f);

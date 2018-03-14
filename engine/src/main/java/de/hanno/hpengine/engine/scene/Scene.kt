@@ -10,15 +10,16 @@ import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
-import de.hanno.hpengine.engine.graphics.light.*
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLight
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLightComponentSystem
-import de.hanno.hpengine.engine.graphics.light.arealight.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLightComponentSystem
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLightSystem
-import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLight
-import de.hanno.hpengine.engine.graphics.light.tubelight.TubeLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.StateConsumer
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
@@ -41,6 +42,14 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
 
+    private val probes = CopyOnWriteArrayList<ProbeData>()
+
+    @Transient private var entityMovedInCycle: Long = 0
+    @Transient var entityAddedInCycle: Long = 0
+    @Transient var currentRenderCycle: Long = 0
+    @Transient var isInitiallyDrawn: Boolean = false
+    val minMax = AABB(Vector3f(), 100f)
+
     val renderStateConsumers = mutableListOf<StateConsumer>()
     val componentSystems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
@@ -57,29 +66,25 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
 
     val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
-    val lightManager = managers.register(LightManager(engine, engine.eventBus, inputComponentSystem))
     val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
     val entitySystems = SimpleEntitySystemRegistry()
+    val directionalLightSystem = entitySystems.register(DirectionalLightSystem(engine, this, engine.eventBus))
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
     val pointLightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
     val areaLightSystem = entitySystems.register(AreaLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
 
+    val directionalLight = Entity()
+            .apply { addComponent(DirectionalLight(this)) }
+            .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
+            .apply { this@Scene.add(this) }
+
     val camera = entityManager.create()
             .apply { addComponent(inputComponentSystem.create(this)) }
             .apply { addComponent(cameraComponentSystem.create(this)) }
-            .apply { entityManager.add(this) }
+            .apply { this@Scene.add(this) }
 
     var activeCamera = camera
-
-    private val probes = CopyOnWriteArrayList<ProbeData>()
-
-    @Transient private var entityMovedInCycle: Long = 0
-    @Transient var entityAddedInCycle: Long = 0
-    @Transient
-    var currentRenderCycle: Long = 0
-    @Transient var isInitiallyDrawn: Boolean = false
-    val minMax = AABB(Vector3f(), 100f)
 
     override fun init(engine: Engine) {
         engine.eventBus.register(this)
@@ -118,32 +123,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         return false
     }
 
-    fun calculateMinMax() {
-        calculateMinMax(entityManager.getEntities())
-    }
-
-    private fun calculateMinMax(entities: List<Entity>) {
-        if (entities.isEmpty()) {
-            minMax.min.set(-1f, -1f, -1f)
-            minMax.max.set(1f, 1f, 1f)
-            return
-        }
-
-        minMax.min.set(absoluteMaximum)
-        minMax.max.set(absoluteMinimum)
-
-        for (entity in entities) {
-            val (currentMin, currentMax) = entity.minMaxWorld
-            minMax.min.x = if (currentMin.x < minMax.min.x) currentMin.x else minMax.min.x
-            minMax.min.y = if (currentMin.y < minMax.min.y) currentMin.y else minMax.min.y
-            minMax.min.z = if (currentMin.z < minMax.min.z) currentMin.z else minMax.min.z
-
-            minMax.max.x = if (currentMax.x > minMax.max.x) currentMax.x else minMax.max.x
-            minMax.max.y = if (currentMax.y > minMax.max.y) currentMax.y else minMax.max.y
-            minMax.max.z = if (currentMax.z > minMax.max.z) currentMax.z else minMax.max.z
-        }
-    }
-
     fun addAll(entities: List<Entity>) {
         entityManager.add(entities)
 
@@ -153,7 +132,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         componentSystems.onEntityAdded(entities)
         managers.onEntityAdded(entities)
 
-        calculateMinMax(entities)
+        minMax.calculateMinMax(entityManager.getEntities())
+        
         entityAddedInCycle = currentRenderCycle
         engine.eventBus.post(MaterialAddedEvent())
         engine.eventBus.post(EntityAddedEvent())
@@ -162,8 +142,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     fun add(entity: Entity) = addAll(listOf(entity))
 
     override fun update(deltaSeconds: Float) {
-        materialManager.update(deltaSeconds)
-        lightManager.update(deltaSeconds, currentRenderCycle)
+        managers.update(deltaSeconds)
 
         componentSystems.update(deltaSeconds)
         entitySystems.update(deltaSeconds)
@@ -189,9 +168,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     companion object {
         private const val serialVersionUID = 1L
-
-        private val absoluteMaximum = Vector3f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
-        private val absoluteMinimum = Vector3f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
 
         @JvmStatic val directory: String
             get() = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"

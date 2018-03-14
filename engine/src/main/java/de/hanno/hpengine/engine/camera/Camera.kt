@@ -37,7 +37,7 @@ open class Camera: Component {
 
     override fun getIdentifier() = this.javaClass.simpleName
 
-    private lateinit var entity: Entity
+    private var entity: Entity
 
     override fun getEntity(): Entity {
         return entity

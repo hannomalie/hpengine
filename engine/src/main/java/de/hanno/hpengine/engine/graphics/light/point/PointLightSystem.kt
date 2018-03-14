@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.graphics.light.pointlight
+package de.hanno.hpengine.engine.graphics.light.point
 
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine

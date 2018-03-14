@@ -2,8 +2,8 @@ package de.hanno.hpengine.util;
 
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.graphics.light.LightManager;
-import de.hanno.hpengine.engine.graphics.light.pointlight.PointLight;
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
+import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestSceneUtil {
-    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, LightManager lightManager, Scene scene, ModelComponentSystem modelComponentSystem) {
+    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, DirectionalLightSystem directionalLightSystem, Scene scene, ModelComponentSystem modelComponentSystem) {
         List<Entity> entities = new ArrayList<>();
         int entityCount = 3;
 
@@ -57,7 +57,7 @@ public class TestSceneUtil {
                             Entity entity = entityManager.create(position, "Entity_" + System.currentTimeMillis());
                             entity.addComponent(modelComponentSystem.create(entity, sphere));
                             Entity pointLightEntity = new Entity();
-                            PointLight pointLight = lightManager.getPointLight(pointLightEntity, 10);
+                            PointLight pointLight = directionalLightSystem.getPointLight(pointLightEntity, 10);
                             pointLightEntity.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.add(pointLightEntity);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);

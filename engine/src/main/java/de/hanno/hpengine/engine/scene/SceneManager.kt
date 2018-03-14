@@ -28,7 +28,7 @@ class SceneManager(val engine: Engine): Manager {
 //        if (scene.entityMovedInCycle() == newDrawCycle) {
 //            engine.eventBus.post(EntityMovedEvent()) TODO: Check if this is still necessary
 //        }
-        if (scene.lightManager.directionalLight.entity.hasMoved()) {
+        if (scene.directionalLightSystem.getDirectionalLight().entity.hasMoved()) {
             engine.eventBus.post(DirectionalLightHasMovedEvent())
         }
     }
