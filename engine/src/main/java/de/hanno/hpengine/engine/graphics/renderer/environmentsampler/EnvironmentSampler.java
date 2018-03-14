@@ -161,9 +161,6 @@ public class EnvironmentSampler extends Entity {
 
 	private void drawCubeMapSides(boolean urgent, RenderState extract) {
 		Scene scene = engine.getSceneManager().getScene();
-		if (scene == null) {
-			return;
-		}
 
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternionf initialOrientation = getRotation();
@@ -182,19 +179,19 @@ public class EnvironmentSampler extends Entity {
 		boolean filteringRequired = false;
 		for (int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
-			boolean fullRerenderRequired = urgent || !drawnOnce;
+			boolean fullReRenderRequired = urgent || !drawnOnce;
 			boolean aPointLightHasMoved = !scene.getPointLights().stream()
 					.filter(e -> probe.getBox().containsOrIntersectsSphere(e.getEntity().getPosition(), e.getRadius()))
 					.filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !engine.getScene().getAreaLightSystem().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
-			boolean rerenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
-			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
+			boolean reRenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
+			boolean noNeedToRedraw = !urgent && !fullReRenderRequired && !reRenderLightingRequired;
 
 			if (noNeedToRedraw) {  // early exit if only static objects visible and lights didn't change
 //				continue;
-			} else if (rerenderLightingRequired) {
+			} else if (reRenderLightingRequired) {
 //				cubeMapLightingProgram.use();
-			} else if (fullRerenderRequired) {
+			} else if (fullReRenderRequired) {
 //				cubeMapProgram.use();
 			}
 			filteringRequired = true;
@@ -262,18 +259,11 @@ public class EnvironmentSampler extends Entity {
 		cubeMapProgram.setUniform("probePosition", probe.getEntity().getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
 		cubeMapProgram.setUniform("activePointLightCount", engine.getSceneManager().getScene().getPointLights().size());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", engine.getScene().getPointLightSystem().getPointLightPositions());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", engine.getScene().getPointLightSystem().getPointLightColors());
-        cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", engine.getScene().getPointLightSystem().getPointLightRadiuses());
-		
+		cubeMapProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().getLightBuffer());
+
 		cubeMapProgram.setUniform("activeAreaLightCount", engine.getSceneManager().getScene().getAreaLights().size());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", engine.getScene().getAreaLightSystem().getAreaLightPositions());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", engine.getScene().getAreaLightSystem().getAreaLightColors());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", engine.getScene().getAreaLightSystem().getAreaLightWidthHeightRanges());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", engine.getScene().getAreaLightSystem().getAreaLightViewDirections());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", engine.getScene().getAreaLightSystem().getAreaLightUpDirections());
-        cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", engine.getScene().getAreaLightSystem().getAreaLightRightDirections());
-		
+		cubeMapProgram.bindShaderStorageBuffer(3, engine.getScene().getAreaLightSystem().getLightBuffer());
+
 		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), MAX_AREALIGHT_SHADOWMAPS); i++) {
 			AreaLight areaLight = engine.getSceneManager().getScene().getAreaLights().get(i);
             engine.getGpuContext().bindTexture(9 + i, TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));

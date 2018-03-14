@@ -37,18 +37,17 @@ uniform float roughness = 1;
 
 const int pointLightMaxCount = 40;
 uniform int activePointLightCount = 0;
-uniform vec3[pointLightMaxCount] pointLightPositions;
-uniform vec3[pointLightMaxCount] pointLightColors;
-uniform float[pointLightMaxCount] pointLightRadiuses;
+
+//include(globals_structs.glsl)
+layout(std430, binding=2) buffer _pointLights {
+	PointLight pointLights[100];
+};
+layout(std430, binding=3) buffer _areaLights {
+	AreaLight areaLights[100];
+};
 
 const int areaLightMaxCount = 2;
 uniform int activeAreaLightCount = 0;
-uniform vec3[areaLightMaxCount] areaLightPositions;
-uniform vec3[areaLightMaxCount] areaLightColors;
-uniform vec3[areaLightMaxCount] areaLightWidthHeightRanges;
-uniform vec3[areaLightMaxCount] areaLightViewDirections;
-uniform vec3[areaLightMaxCount] areaLightUpDirections;
-uniform vec3[areaLightMaxCount] areaLightRightDirections;
 uniform mat4[areaLightMaxCount] areaLightShadowMatrices;
 
 uniform vec3 probePosition;
@@ -246,16 +245,16 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, int index)
 vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDiffuse,
 							   vec3 lightPosition, int index, vec3 diffuseColor, vec3 specularColor) {
 
+    AreaLight light = areaLights[index];
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
 	V = ViewVector;
-	vec3 lightViewDirection = areaLightViewDirections[index];
-	vec3 lightUpDirection = areaLightUpDirections[index];
-	vec3 lightRightDirection = areaLightRightDirections[index];
-	vec3 lightWidhtHeightRange = areaLightWidthHeightRanges[index];
-	float lightWidth = lightWidhtHeightRange.x;
-	float lightHeight = lightWidhtHeightRange.y;
-	float lightRange = lightWidhtHeightRange.z;
+	vec3 lightViewDirection = light.modelMatrix * vec4(0,0,1,0);
+	vec3 lightUpDirection = light.modelMatrix * vec4(0,1,0,0);
+	vec3 lightRightDirection = light.modelMatrix * vec4(1,0,0,0);
+	float lightWidth = light.width;
+	float lightHeight = light.height;
+	float lightRange = light.range;
 	
 	vec3 lVector[ 4 ];
 	vec3 leftUpper = lightPosition + (lightWidth/2)*(-lightRightDirection) + (lightHeight/2)*(lightUpDirection);
@@ -690,12 +689,14 @@ void main()
 	for(int i = 0; i < min(pointLightMaxCount, activePointLightCount); i++) {
 		float dist = distance(position_world.xyz, pointLightPositions[i]);
 		if(dist > pointLightRadiuses[i]) { continue; }
-		
-		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, pointLightColors[i], pointLightPositions[i], pointLightRadiuses[i], dist, diffuseColor, specularColor);
+
+		PointLight light = pointLights[i];
+		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, vec3(light.colorR, light.colorG, light.colorB), vec3(light.postionX, light.positionY, light.positionZ), light.radius, dist, diffuseColor, specularColor);
 	}
 	
 	for(int i = 0; i < min(areaLightMaxCount, activeAreaLightCount); i++) {
-		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, areaLightColors[i], areaLightPositions[i], i, diffuseColor, specularColor);
+	    AreaLight light = areaLights[i];
+		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, light.color, light.modelMatrix * vec4(0,0,0,1), i, diffuseColor, specularColor);
 	}
 	
 	if(firstBounceForProbe) {

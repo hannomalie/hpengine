@@ -3,15 +3,17 @@ package de.hanno.hpengine.engine.graphics.light.area;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.util.Util;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.List;
 
 
-public class AreaLight implements Component {
+public class AreaLight implements Component, Bufferable {
 	public static String COMPONENT_KEY = AreaLight.class.getSimpleName();
 
 	public Camera camera;
@@ -134,5 +136,40 @@ public class AreaLight implements Component {
 
 	public Vector3f getScale() {
 		return scale;
+	}
+
+	@Override
+	public void putToBuffer(ByteBuffer buffer) {
+		buffer.putFloat(getEntity().m00());
+		buffer.putFloat(getEntity().m01());
+		buffer.putFloat(getEntity().m02());
+		buffer.putFloat(getEntity().m03());
+		buffer.putFloat(getEntity().m10());
+		buffer.putFloat(getEntity().m11());
+		buffer.putFloat(getEntity().m12());
+		buffer.putFloat(getEntity().m13());
+		buffer.putFloat(getEntity().m20());
+		buffer.putFloat(getEntity().m21());
+		buffer.putFloat(getEntity().m22());
+		buffer.putFloat(getEntity().m23());
+		buffer.putFloat(getEntity().m30());
+		buffer.putFloat(getEntity().m31());
+		buffer.putFloat(getEntity().m32());
+		buffer.putFloat(getEntity().m33());
+
+		buffer.putFloat(getColor().x);
+		buffer.putFloat(getColor().y);
+		buffer.putFloat(getColor().z);
+		buffer.putFloat(-1);
+
+		buffer.putFloat(getWidth());
+		buffer.putFloat(getHeight());
+		buffer.putFloat(getRange());
+		buffer.putFloat(-1);
+	}
+
+	@Override
+	public int getBytesPerObject() {
+		return Float.BYTES * 24;
 	}
 }

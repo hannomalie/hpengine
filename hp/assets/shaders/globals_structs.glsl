@@ -42,6 +42,18 @@ struct PointLight {
 	double xxx;
 };
 
+struct AreaLight {
+    mat4 modelMatrix;
+
+    vec3 color;
+    float xxx;
+
+    float width;
+    float height;
+    float range;
+    float yyy;
+};
+
 struct Entity {
     mat4 modelMatrix;
 

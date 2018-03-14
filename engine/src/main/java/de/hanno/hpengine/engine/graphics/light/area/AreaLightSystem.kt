@@ -1,10 +1,12 @@
 package de.hanno.hpengine.engine.graphics.light.area
 
+import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.event.LightChangedEvent
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
@@ -20,7 +22,7 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import org.lwjgl.BufferUtils
+import net.engio.mbassy.listener.Handler
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
@@ -33,6 +35,8 @@ class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentCla
 class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine, scene, listOf(AreaLight::class.java)), StateConsumer {
     private val cameraEntity: Entity = Entity()
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
+
+    val lightBuffer: PersistentMappedBuffer<AreaLight> = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     private val renderTarget: RenderTarget = RenderTargetBuilder(engine.gpuContext)
             .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
@@ -58,74 +62,19 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
         }
     }
 
-    private val areaLightsForwardMaxCount = 5
-    private var areaLightPositions = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-    var areaLightColors = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-    var areaLightWidthHeightRanges = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-    var areaLightViewDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-    var areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-    var areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-
-
-    fun getAreaLightPositions(): FloatBuffer {
-        updateAreaLightArrays()
-        return areaLightPositions
+    @Subscribe
+    @Handler
+    fun handleLightChange(event: LightChangedEvent) {
+        bufferLights()
     }
 
-    private fun updateAreaLightArrays() {
-        val positions = FloatArray(areaLightsForwardMaxCount * 3)
-        val colors = FloatArray(areaLightsForwardMaxCount * 3)
-        val widthHeightRanges = FloatArray(areaLightsForwardMaxCount * 3)
-        val viewDirections = FloatArray(areaLightsForwardMaxCount * 3)
-        val upDirections = FloatArray(areaLightsForwardMaxCount * 3)
-        val rightDirections = FloatArray(areaLightsForwardMaxCount * 3)
-
+    private fun bufferLights() {
         val areaLights = getComponents(AreaLight::class.java)
-        for (i in 0 until Math.min(areaLightsForwardMaxCount, areaLights.size)) {
-            val light = areaLights[i]
-            positions[3 * i] = light.entity.position.x
-            positions[3 * i + 1] = light.entity.position.y
-            positions[3 * i + 2] = light.entity.position.z
-
-            colors[3 * i] = light.color.x
-            colors[3 * i + 1] = light.color.y
-            colors[3 * i + 2] = light.color.z
-
-            widthHeightRanges[3 * i] = light.width
-            widthHeightRanges[3 * i + 1] = light.height
-            widthHeightRanges[3 * i + 2] = light.range
-
-            viewDirections[3 * i] = light.entity.viewDirection.x
-            viewDirections[3 * i + 1] = light.entity.viewDirection.y
-            viewDirections[3 * i + 2] = light.entity.viewDirection.z
-
-            upDirections[3 * i] = light.entity.upDirection.x
-            upDirections[3 * i + 1] = light.entity.upDirection.y
-            upDirections[3 * i + 2] = light.entity.upDirection.z
-
-            rightDirections[3 * i] = light.entity.rightDirection.x
-            rightDirections[3 * i + 1] = light.entity.rightDirection.y
-            rightDirections[3 * i + 2] = light.entity.rightDirection.z
+        engine.gpuContext.execute {
+            if (areaLights.isNotEmpty()) {
+                lightBuffer.put(0, areaLights)
+            }
         }
-
-        areaLightPositions = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-        areaLightPositions.put(positions)
-        areaLightPositions.rewind()
-        areaLightColors = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-        areaLightColors.put(colors)
-        areaLightColors.rewind()
-        areaLightWidthHeightRanges = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-        areaLightWidthHeightRanges.put(widthHeightRanges)
-        areaLightWidthHeightRanges.rewind()
-        areaLightViewDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-        areaLightViewDirections.put(viewDirections)
-        areaLightViewDirections.rewind()
-        areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-        areaLightUpDirections.put(upDirections)
-        areaLightUpDirections.rewind()
-        areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3)
-        areaLightRightDirections.put(rightDirections)
-        areaLightRightDirections.rewind()
     }
 
     fun renderAreaLightShadowMaps(renderState: RenderState) {

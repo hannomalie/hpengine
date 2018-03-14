@@ -62,12 +62,25 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
         } else {
             entities.addAll(scene.getEntities().filter { it.components.keys.containsAll(componentClasses) })
         }
+        gatherComponents()
     }
 
     fun gatherComponents() {
         components.clear()
-        componentClasses.forEach {
-            components[it] = entities.map { entity ->  entity.getComponent(it) }
+        if(componentClasses.isEmpty()) {
+            entities.forEach {
+                it.components.forEach {
+                    val list: MutableList<Component> = mutableListOf(it.value)
+                    if(components[it.key] != null) {
+                        list.addAll(components[it.key]!!)
+                    }
+                    components[it.key] = list
+                }
+            }
+        } else {
+            componentClasses.forEach {
+                components[it] = entities.map { entity ->  entity.getComponent(it) }
+            }
         }
     }
 

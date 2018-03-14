@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.libc.LibCStdlib;
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.List;
 
