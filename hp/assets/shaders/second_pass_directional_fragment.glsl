@@ -207,11 +207,11 @@ void main(void) {
 	}
 
 
-	out_DiffuseSpecular.rgb = 4 * finalColor;
+	out_DiffuseSpecular.rgb = 4 * finalColor; // TODO: Extract value 4 as global HDR scaler
 	
 	float ambient = normalAmbient.a;
 	ambient += 0.05;  // Boost ambient here
-	out_DiffuseSpecular.rgb += ambient * color.rgb;
+//	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 
 //	out_DiffuseSpecular = vec4(1,0.1,0, 1);

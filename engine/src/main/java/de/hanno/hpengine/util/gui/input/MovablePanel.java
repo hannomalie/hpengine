@@ -44,7 +44,7 @@ public class MovablePanel<T extends Transform> extends WebComponentPanel {
         this.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				Vector3f axis = new Vector3f(transformable.getViewDirection().negate(null));
+				Vector3f axis = new Vector3f(transformable.getViewDirection());
                 transformable.translateLocal(axis.mul(delta));
                 positionField.setValue(transformable.getPosition());
 			}

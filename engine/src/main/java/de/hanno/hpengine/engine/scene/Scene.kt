@@ -52,7 +52,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val managers: ManagerRegistry = SimpleManagerRegistry()
 
     val entityManager = (EntityManager(engine, engine.eventBus))
-    val environmentProbeManager = managers.register(engine.environmentProbeManager)
+    val environmentProbeManager = engine.environmentProbeManager.apply { renderStateConsumers.add(this) }
 
     val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
     val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine))

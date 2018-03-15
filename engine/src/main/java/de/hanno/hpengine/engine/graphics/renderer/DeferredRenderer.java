@@ -112,19 +112,18 @@ public class DeferredRenderer implements Renderer {
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
 
-		engine.getSceneManager().getScene().getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
+		engine.getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
-			drawToQuad(engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+//			drawToQuad(engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 
-//			for(int i = 0; i < 6; i++) {
-//                drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
-//			}
-
+			for(int i = 0; i < 6; i++) {
+                drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+			}
 
 
 //			int faceView = OpenGLContext.getInstance().genTextures();

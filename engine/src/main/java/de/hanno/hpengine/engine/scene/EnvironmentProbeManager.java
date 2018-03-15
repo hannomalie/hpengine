@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.StateConsumer;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 
-public class EnvironmentProbeManager implements Manager {
+public class EnvironmentProbeManager implements Manager, StateConsumer {
 	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
 	public static final int CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION);
@@ -46,9 +47,9 @@ public class EnvironmentProbeManager implements Manager {
 	private CubeMapArray environmentMapsArray3;
     private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
 
-	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(0);
-	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
-	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
+	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(100*3);
+	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(100*3);
+	private FloatBuffer weights = BufferUtils.createFloatBuffer(100*3);
 
 	public EnvironmentProbeManager(Engine engine) {
     	this.engine = engine;
@@ -80,15 +81,14 @@ public class EnvironmentProbeManager implements Manager {
 	}
 	
 	public void updateBuffers() {
-		minPositions = BufferUtils.createFloatBuffer(100*3);
-		maxPositions = BufferUtils.createFloatBuffer(100*3);
-		weights = BufferUtils.createFloatBuffer(100);
 		float[] srcMinPositions = new float[100*3];
 		float[] srcMaxPositions = new float[100*3];
 		float[] srcWeights = new float[100];
 		
 		for(int i = 0; i < probes.size(); i++) {
 			AABB box = probes.get(i).getBox();
+			box.setCenter(new Vector3f());
+			box.move(probes.get(i).getEntity().getPosition());
 			Vector3f min = box.getBottomLeftBackCorner();
 			Vector3f max = box.getTopRightForeCorner();
 			float weight = probes.get(i).getWeight();
@@ -281,10 +281,16 @@ public class EnvironmentProbeManager implements Manager {
 	@Override
 	public void update(float deltaSeconds) {
 		probes.forEach(p -> p.update(deltaSeconds));
+		probes.stream().filter(probe -> probe.getEntity().hasMoved()).findFirst().ifPresent(first -> updateBuffers());
 	}
 
 	@Override
 	public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
+	}
+
+	@Override
+	public void consume(@NotNull RenderState state) {
+		executeRenderProbeCommands(state);
 	}
 }

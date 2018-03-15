@@ -24,6 +24,7 @@ public interface DrawStrategy {
             return 0;
         }
         Program currentProgram = program;
+        currentProgram.setUniform("entityBaseIndex", 0);
         currentProgram.setUniform("entityIndex", renderBatch.getEntityBufferIndex());
         currentProgram.setUniform("indirect", false);
 
