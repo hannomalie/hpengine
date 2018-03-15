@@ -23,7 +23,7 @@ class PointLightComponentSystem: SimpleComponentSystem<PointLight>(theComponentC
 class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(PointLight::class.java)), StateConsumer {
 
     var pointLightMovedInCycle: Long = 0
-    private val cameraEntity = Entity()
+    private val cameraEntity = Entity("PointLightSystemCameraDummy")
     val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
     val lightBuffer: PersistentMappedBuffer<PointLight> = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }

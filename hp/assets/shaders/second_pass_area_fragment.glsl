@@ -181,8 +181,8 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, float Ndot
 	vec2 momentsUnblurred = moments;
 	
 	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
-	
-//	float bias = 0.0053;
+
+//	float bias = 0.0003;
 //	if (momentsUnblurred.x + bias < dist) {
 //		return vec3(0.0,0.0,0.0);
 //	} else {
@@ -209,18 +209,18 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, float Ndot
 vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = -normalize(-position);
+	vec3 V = ViewVector;
 	//V = ViewVector;
-	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
-	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
-	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;
-	vec3 light_right_direction_eye = (viewMatrix * vec4(lightRightDirection, 0)).xyz;
+	vec3 light_position = (vec4(lightPosition, 1)).xyz;
+	vec3 light_view_direction = (vec4(lightViewDirection, 0)).xyz;
+	vec3 light_up_direction = (vec4(lightUpDirection, 0)).xyz;
+	vec3 light_right_direction = (vec4(lightRightDirection, 0)).xyz;
 	
 	vec3 lVector[ 4 ];
-	vec3 leftUpper = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
-	vec3 rightUpper = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
-	vec3 leftBottom = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
-	vec3 rightBottom = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
+	vec3 leftUpper = light_position + (lightWidth/2)*(-light_right_direction) + (lightHeight/2)*(light_up_direction);
+	vec3 rightUpper = light_position + (lightWidth/2)*(light_right_direction) + (lightHeight/2)*(light_up_direction);
+	vec3 leftBottom = light_position + (lightWidth/2)*(-light_right_direction) + (lightHeight/2)*(-light_up_direction);
+	vec3 rightBottom = light_position + (lightWidth/2)*(light_right_direction) + (lightHeight/2)*(-light_up_direction);
 	
 	lVector[0] = normalize(leftUpper - position);
 	lVector[1] = normalize(rightUpper - position);
@@ -244,13 +244,13 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     	vec3 N = normal;
 	    vec3 P = position;
         vec3 R = reflect(V, N);
-        vec3 E = linePlaneIntersect(position, R, light_position_eye, light_view_direction_eye);
+        vec3 E = linePlaneIntersect(position, R, light_position, light_view_direction);
 
 		float width = lightWidth;
 	    float height = lightHeight;
-	    vec3 projection = projectOnPlane(position, light_position_eye, light_view_direction_eye);
-	    vec3 dir = projection-light_position_eye;
-	    vec2 diagonal = vec2(dot(dir,light_right_direction_eye),dot(dir,light_up_direction_eye));
+	    vec3 projection = projectOnPlane(position, light_position, light_view_direction);
+	    vec3 dir = projection-light_position;
+	    vec2 diagonal = vec2(dot(dir,light_right_direction),dot(dir,light_up_direction));
 	    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width),clamp(diagonal.y, -height, height));
 	    
 	    // this is the amount of space the projected point is away from the border of the area light.
@@ -259,7 +259,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	    vec2 overheadVec2 = (vec2(abs(diagonal.x)-width, abs(diagonal.y)-height) / 5);
 	    float overhead = clamp(max(overheadVec2.x, overheadVec2.y), 0.0, 1.0);
 	    
-	    vec3 nearestPointInside = light_position_eye + (light_right_direction_eye * nearest2D.x + light_up_direction_eye * nearest2D.y);
+	    vec3 nearestPointInside = light_position + (light_right_direction * nearest2D.x + light_up_direction * nearest2D.y);
 	    //if(distance(P, nearestPointInside) > lightRange) { discard; }
 	    vec2 texCoords = nearest2D / vec2(width, height);
         texCoords += 1;
@@ -306,7 +306,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
         }
         
         
-    	vec3 positionWorld = (inverse(viewMatrix) * vec4(position.xyz, 1)).xyz;
+    	vec3 positionWorld = (vec4(position.xyz, 1)).xyz;
 		vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
 	  	positionShadow.xyz /= positionShadow.w;
 	  	float depthInLightSpace = positionShadow.z;
@@ -314,7 +314,10 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	    vec2 shadowMapTexCoords = nearest2D / vec2(512, 512); // TODO: NO HARDCODED VALUES, DAMMIT
         shadowMapTexCoords += 1;
 	    shadowMapTexCoords /=2;
+
 		vec3 visibility = getVisibility(depthInLightSpace, positionShadow, texCoords, NdotL);
+
+//        return visibility;
 
         float specular = clamp(F*D*G/(4*(NdotL*NdotV)), 0.0, 1.0);
         
@@ -328,7 +331,7 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
 
-	vec3 positionView = texture2D(positionMap, st).xyz;
+	vec3 positionWorld = (inverse(viewMatrix) * vec4(texture2D(positionMap, st).xyz, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
@@ -337,25 +340,25 @@ void main(void) {
   	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 	
-  	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
+  	vec4 position_clip_post_w = (projectionMatrix * viewMatrix * vec4(positionWorld,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	vec3 V = (inverse(viewMatrix) * dir).xyz;
 	
 	//skip background
-	if (positionView.z > -0.0001) {
-	  discard;
-	}
+//	if (positionWorld.z > -0.0001) {
+//	  discard;
+//	}
 	
-	vec3 normalView = texture2D(normalMap, st).xyz;
+	vec3 normalWorld = texture2D(normalMap, st).xyz;
     //normalView = decodeNormal(normalView.xy);
 	
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
-	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
+	vec3 finalColor = cookTorrance(V, positionWorld, normalWorld, roughness, metallic, diffuseColor, specularColor);
 	
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	out_AOReflection = vec4(0,0,0,0);

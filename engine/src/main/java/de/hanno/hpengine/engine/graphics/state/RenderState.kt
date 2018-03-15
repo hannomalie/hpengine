@@ -31,7 +31,7 @@ class RenderState(gpuContext: GpuContext) {
     val commandOrganizationStatic: CommandOrganization = CommandOrganization(gpuContext)
     val commandOrganizationAnimated: CommandOrganization = CommandOrganization(gpuContext)
 
-    var camera = Camera(Entity())
+    var camera = Camera(Entity("RenderStateCameraEntity"))
     var pointlightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
     var sceneInitiallyDrawn: Boolean = false

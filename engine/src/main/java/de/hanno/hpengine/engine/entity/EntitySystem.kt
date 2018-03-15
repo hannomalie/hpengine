@@ -85,7 +85,8 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
     }
 
     inline fun <reified T: Component> getComponents(type: Class<T>): List<T> {
-        return components[type] as List<T>
+        val list = components[type] ?: emptyList()
+        return list as List<T>
     }
 
     @Subscribe

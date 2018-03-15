@@ -33,7 +33,7 @@ import java.util.*
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentClass = AreaLight::class.java, factory = { TODO("not implemented") })
 
 class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine, scene, listOf(AreaLight::class.java)), StateConsumer {
-    private val cameraEntity: Entity = Entity()
+    private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
     val lightBuffer: PersistentMappedBuffer<AreaLight> = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
@@ -46,13 +46,13 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
                     .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
             .build()
 
-    private val areaShadowPassProgram: Program = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "mvp_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "shadowmap_fragment.glsl")), Defines())
+    private val areaShadowPassProgram: Program = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "mvp_entitybuffer_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "shadowmap_fragment.glsl")), Defines())
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         engine.gpuContext.execute {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = engine.gpuContext.genTextures()
                 engine.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)
-                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION / 2, AREALIGHT_SHADOWMAP_RESOLUTION / 2, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
@@ -95,19 +95,12 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
             val light = areaLights[i]
 
             areaShadowPassProgram.use()
+            areaShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
             areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.entity.viewMatrixAsBuffer)
             areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
-            //			directionalShadowPassProgram.setUniform("near", de.hanno.hpengine.camera.getNear());
-            //			directionalShadowPassProgram.setUniform("far", de.hanno.hpengine.camera.getFar());
 
             for (e in renderState.renderBatchesStatic) {
-                //				TODO: Use model component index here
-                //				areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-                //				modelComponent.getMaterials().setTexturesActive(areaShadowPassProgram);
-                //				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterials().hasDiffuseMap());
-                //				areaShadowPassProgram.setUniform("color", modelComponent.getMaterials().getDiffuse());
-
-                DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, e.isVisible)
+                DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible)
             }
         }
         GPUProfiler.end()

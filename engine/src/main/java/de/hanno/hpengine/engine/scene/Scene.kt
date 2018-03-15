@@ -71,12 +71,12 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val pointLightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
     val areaLightSystem = entitySystems.register(AreaLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
 
-    val directionalLight = Entity()
+    val directionalLight = Entity("DirectionalLight")
             .apply { addComponent(DirectionalLight(this)) }
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
             .apply { this@Scene.add(this) }
 
-    val camera = entityManager.create()
+    val camera = Entity("MainCamera")
             .apply { addComponent(inputComponentSystem.create(this)) }
             .apply { addComponent(cameraComponentSystem.create(this)) }
             .apply { this@Scene.add(this) }

@@ -410,7 +410,7 @@ public class DebugFrame implements HostComponent {
 					public Result doInBackground() throws Exception {
                         engine.getGpuContext().execute(() -> {
                             try {
-                                EnvironmentProbe probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Entity(), new Vector3f(), 50);
+                                EnvironmentProbe probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50);
                                 engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
                             } catch (Exception e1) {
                                 e1.printStackTrace();
@@ -437,7 +437,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
-                        Entity pointLightEntity = new Entity();
+                        Entity pointLightEntity = new Entity("PointLight" + System.currentTimeMillis());
                         pointLightEntity.addComponent(new PointLight(pointLightEntity, new Vector4f(1,1,1,1), 50));
                         engine.getSceneManager().getScene().add(pointLightEntity);
                         return new Result(true);
@@ -468,7 +468,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable<Result<Boolean>>() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        Entity tubeLightEntity = new Entity();
+                        Entity tubeLightEntity = new Entity("TubeLight" + System.currentTimeMillis());
                         tubeLightEntity.addComponent(new TubeLight(tubeLightEntity, new Vector3f(1,1,1), 100, 50));
                         engine.getSceneManager().getScene().add(tubeLightEntity);
                         return new Result(true);
@@ -499,7 +499,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
-                        Entity entity = new Entity();
+                        Entity entity = new Entity("AreaLight" + System.currentTimeMillis());
                         entity.addComponent(new AreaLight(entity, new Vector3f(1, 1, 1), new Vector3f(50, 50, 20)));
                         engine.getSceneManager().getScene().add(entity);
                         return new Result(true);
