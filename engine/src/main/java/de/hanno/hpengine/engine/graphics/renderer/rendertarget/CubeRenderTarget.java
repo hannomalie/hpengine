@@ -22,8 +22,8 @@ public class CubeRenderTarget extends RenderTarget {
 		int colorBufferCount = builder.colorAttachments.size();
 		renderedTextures = new int[colorBufferCount];
 
-		framebufferLocation = GL30.glGenFramebuffers();
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+		frameBuffer = GL30.glGenFramebuffers();
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
 
 		scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 

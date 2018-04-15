@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.light.probe.ProbeSystem
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -20,6 +21,7 @@ import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
+import de.hanno.hpengine.engine.threads.UpdateThread.isUpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
@@ -35,7 +37,9 @@ class Engine private constructor(gameDirName: String) {
     val gpuContext: GpuContext = GpuContext.create()
     val input = Input(this, gpuContext)
     val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
-    val commandQueue = CommandQueue()
+    val commandQueue = object: CommandQueue() {
+        override fun executeDirectly() = isUpdateThread()
+    }
 
     val managers = SimpleManagerRegistry()
 

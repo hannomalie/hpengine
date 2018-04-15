@@ -156,4 +156,9 @@ public interface GpuContext {
     VertexBuffer getDebugBuffer();
 
 
+    int genFrameBuffer();
+
+    void clearCubeMap(int i, int textureFormat);
+
+    void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex);
 }

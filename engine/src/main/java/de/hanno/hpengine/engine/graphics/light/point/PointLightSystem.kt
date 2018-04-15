@@ -31,7 +31,7 @@ class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine,
     val shadowMapStrategy = if (Config.getInstance().isUseDpsm) {
         DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
         } else {
-        CubeShadowMapStrategy(engine, this, cameraEntity)
+        CubeShadowMapStrategy(engine, this)
         }
 
     private fun bufferLights() {

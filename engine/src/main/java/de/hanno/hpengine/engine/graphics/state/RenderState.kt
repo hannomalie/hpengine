@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -51,7 +52,7 @@ class RenderState(gpuContext: GpuContext) {
     val vertexIndexBufferAnimated: VertexIndexBuffer<*>
         get() = entitiesState.vertexIndexBufferAnimated
 
-    val entitiesBuffer: GPUBuffer<*>
+    val entitiesBuffer: GPUBuffer<GpuEntity>
         get() = entitiesState.entitiesBuffer
 
     val materialBuffer: GPUBuffer<*>

@@ -10,11 +10,14 @@ import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
+import de.hanno.hpengine.util.commandqueue.FutureCallable
 import net.engio.mbassy.listener.Handler
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.function.Consumer
 
 class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
@@ -29,9 +32,15 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     override fun getComponents(): List<ModelComponent> = components
 
-    val bufferEntitiesActionRef = engine.renderManager.renderState.registerAction({ renderState ->
-            renderState.entitiesState.entitiesBuffer.put(0, gpuEntities)
-            renderState.entitiesState.entitiesBuffer.buffer.position(0)
+    val bufferEntitiesActionRef = engine.renderManager.renderState.registerAction({ _ ->
+        val currentEntities = engine.commandQueue.addCommand(object: FutureCallable<List<GpuEntity>>() {
+            override fun execute() = getCurrentGpuEntities()
+        }).get()
+//        val currentEntities = getCurrentGpuEntities()
+        engine.renderManager.renderState.addCommand({ it.entitiesBuffer.put(0, currentEntities) })
+
+//        renderState.entitiesState.entitiesBuffer.put(0, gpuEntities)
+//        renderState.entitiesState.entitiesBuffer.buffer.position(0)
 
 //            for(entity in engine.getScene().getEntities().filter { it.hasComponent(ModelComponent.COMPONENT_KEY) }) {
 //                val modelComponent = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)
@@ -99,6 +108,8 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
             }
         }
     }
+
+    private fun getCurrentGpuEntities() = getComponents().flatMap { it.toEntities() }
 
     fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
 

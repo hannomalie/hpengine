@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+import static de.hanno.hpengine.engine.threads.UpdateThread.isUpdateThread;
+
 public class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
@@ -34,14 +36,29 @@ public class CommandQueue {
 
     public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(Runnable runnable) {
         FutureCallable command = new RunnableCallable(runnable);
-        workQueue.offer(command);
-        return command.getFuture();
+//        workQueue.offer(command);
+//        return command.getFuture();
+        return addCommand(command);
     }
     public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(FutureCallable<RESULT_TYPE> command) {
+        if(executeDirectly()) {
+            try {
+                command.getFuture().complete(command.execute());
+                return command.getFuture();
+            } catch (Exception e) {
+                e.printStackTrace();
+                command.getFuture().completeExceptionally(e);
+                return command.getFuture();
+            }
+        }
         workQueue.offer(command);
         return command.getFuture();
     }
     public Exception execute(Runnable runnable, boolean andBlock) {
+        if(executeDirectly()) {
+            runnable.run();
+            return null;
+        }
         CompletableFuture<Object> future = addCommand(new RunnableCallable(runnable));
 
         if(andBlock) {
@@ -61,7 +78,7 @@ public class CommandQueue {
         return workQueue;
     }
 
-    private static class RunnableCallable extends FutureCallable {
+    private static class RunnableCallable extends FutureCallable<Object> {
 
         private final Runnable runnable;
 
@@ -75,4 +92,6 @@ public class CommandQueue {
             return null;
         }
     }
+
+    protected boolean executeDirectly() { return false; }
 }

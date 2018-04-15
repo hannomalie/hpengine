@@ -282,4 +282,19 @@ public class MockContext implements GpuContext {
     public VertexBuffer getDebugBuffer() {
         return null;
     }
+
+    @Override
+    public int genFrameBuffer() {
+        return 0;
+    }
+
+    @Override
+    public void clearCubeMap(int i, int textureFormat) {
+
+    }
+
+    @Override
+    public void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex) {
+
+    }
 }

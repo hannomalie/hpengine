@@ -19,7 +19,7 @@ void main()
 //    float finalTemp = temp;
 //	in_color = vec4(in_color.r+finalTemp,in_color.g+finalTemp,in_color.b+finalTemp,1);
 //	in_color = vec4(temp,temp,temp,1);
-    in_color = vec4(in_color.r/200f);
+//    in_color = vec4(in_color.r/200f);
 
     out_color = vec4(in_color.rgb,1);
 }

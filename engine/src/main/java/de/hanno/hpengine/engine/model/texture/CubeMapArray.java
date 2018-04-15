@@ -4,6 +4,8 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 
+import static org.lwjgl.opengl.GL43.GL_MAX_FRAMEBUFFER_LAYERS;
+
 public class CubeMapArray {
 
     private final int resolution;
@@ -83,7 +85,14 @@ public class CubeMapArray {
 		return internalFormat;
 	}
 
-    public int getCubemapCount() {
+    public int getCubeMapCount() {
         return cubemapCount;
     }
+
+	public int getWidth() {
+		return resolution;
+	}
+	public int getHeight() {
+		return resolution;
+	}
 }

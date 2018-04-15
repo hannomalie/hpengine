@@ -99,17 +99,13 @@ public class EnvironmentSampler extends Entity {
 		float far = 5000f;
 		float near = 0.1f;
 		float fov = 90f;
-		Matrix4f projectionMatrix = Util.createPerspective(fov, 1, near, far);
 		camera.setFar(far);
 		camera.setNear(near);
 		camera.setFov(fov);
 		camera.setRatio(1f);
-//		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
 		setParent(probe.getEntity());
 		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
 		rotate(cubeMapCamInitialOrientation);
-//		rotate(new Vector4f(0, 1, 0, 90));
-//		setPosition(position);
 
         ProgramManager programManager = engine.getProgramManager();
 		cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl", new Defines());

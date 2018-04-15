@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem;
+import de.hanno.hpengine.engine.graphics.light.probe.EvaluateProbeRenderExtension;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
@@ -127,6 +128,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
         registerRenderExtension(new DrawLinesExtension(engine));
 //        registerRenderExtension(new VoxelConeTracingExtension());
+        registerRenderExtension(new EvaluateProbeRenderExtension(engine));
         registerRenderExtension(new PixelPerfectPickingExtension());
     }
 

@@ -23,7 +23,7 @@ public class RenderTarget {
     private static final Logger LOGGER = Logger.getLogger(RenderTarget.class.getName());
 
     private boolean useDepthBuffer;
-    public int framebufferLocation = -1;
+    public int frameBuffer = -1;
     protected int depthbufferLocation = -1;
     protected int[] renderedTextures;
     protected int width;
@@ -50,9 +50,9 @@ public class RenderTarget {
             useDepthBuffer = renderTargetBuilder.useDepthBuffer;
 
             renderedTextures = new int[colorAttachments.size()];
-            framebufferLocation = GL30.glGenFramebuffers();
+            frameBuffer = GL30.glGenFramebuffers();
 
-            gpuContext.bindFrameBuffer(framebufferLocation);
+            gpuContext.bindFrameBuffer(frameBuffer);
 
             scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
 
@@ -117,7 +117,7 @@ public class RenderTarget {
     }
 
     public void resizeTextures() {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
 
         for (int i = 0; i < colorAttachments.size(); i++) {
             ColorAttachmentDefinition currentAttachment = colorAttachments.get(i);
@@ -149,7 +149,7 @@ public class RenderTarget {
     }
 
     public void use(boolean clear) {
-        gpuContext.bindFrameBuffer(framebufferLocation);
+        gpuContext.bindFrameBuffer(frameBuffer);
         gpuContext.viewPort(0, 0, getWidth(), getHeight());
         if (clear) {
             gpuContext.clearDepthAndColorBuffer();
@@ -247,8 +247,8 @@ public class RenderTarget {
         return getRenderedTexture(0);
     }
 
-    public int getFrameBufferLocation() {
-        return framebufferLocation;
+    public int getFrameBuffer() {
+        return frameBuffer;
     }
 
     public void setTargetTextureArrayIndex(int textureArray, int textureIndex) {

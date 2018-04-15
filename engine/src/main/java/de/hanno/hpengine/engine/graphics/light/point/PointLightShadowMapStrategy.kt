@@ -4,9 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -37,7 +35,7 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSystem: PointLightSystem, val cameraEntity: Entity): PointLightShadowMapStrategy {
+class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget? = null
     private var pointCubeShadowPassProgram: Program? = null

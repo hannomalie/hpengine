@@ -9,12 +9,14 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWWindowCloseCallbackI;
 import org.lwjgl.opengl.*;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +25,10 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.ARBClearTexture.glClearTexImage;
+import static org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
+import static org.lwjgl.opengl.GL30.glGenFramebuffers;
 import static org.lwjgl.opengl.GL32.*;
 
 public final class OpenGLContext implements GpuContext {
@@ -32,6 +37,15 @@ public final class OpenGLContext implements GpuContext {
     private static long OPENGL_THREAD_ID = -1;
 
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
+
+    public static FloatBuffer ZERO_BUFFER = BufferUtils.createFloatBuffer(4);
+    static {
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.rewind();
+    }
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private RenderTarget frontBuffer;
@@ -54,7 +68,7 @@ public final class OpenGLContext implements GpuContext {
                 super.use(false);
             }
         };
-        frontBuffer.framebufferLocation = 0;
+        frontBuffer.frameBuffer = 0;
         return frontBuffer;
     }
 
@@ -311,10 +325,12 @@ public final class OpenGLContext implements GpuContext {
     private int currentFrameBuffer = -1;
     @Override
     public void bindFrameBuffer(int frameBuffer) {
-        if(currentFrameBuffer != frameBuffer) {
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
-            currentFrameBuffer = frameBuffer;
-        }
+//        if(currentFrameBuffer != frameBuffer) {
+            execute(() -> {
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
+                currentFrameBuffer = frameBuffer;
+            });
+//        }
     }
 
     private boolean depthMask = false;
@@ -411,7 +427,10 @@ public final class OpenGLContext implements GpuContext {
         }
 
         if(andBlock) {
-            commandQueue.execute(runnable, andBlock);
+            final Exception exception = commandQueue.execute(runnable, andBlock);
+            if(exception != null) {
+                exception.printStackTrace();
+            }
         } else {
             calculate(() -> {
                 runnable.run();
@@ -571,6 +590,21 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public VertexBuffer getDebugBuffer() {
         return debugBuffer;
+    }
+
+    @Override
+    public int genFrameBuffer() {
+        return calculate(() -> glGenFramebuffers());
+    }
+
+    @Override
+    public void clearCubeMap(int textureId, int textureFormat) {
+        glClearTexImage(textureId, 0, textureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
+    }
+
+    @Override
+    public void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex) {
+        glClearTexSubImage(textureID, 0, 0, 0, 6*cubeMapIndex, width, height, 6, internalFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
     }
 
     static class OpenGlCommandSync implements GpuCommandSync {

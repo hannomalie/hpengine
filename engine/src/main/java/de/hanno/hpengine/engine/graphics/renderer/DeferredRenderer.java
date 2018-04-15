@@ -116,14 +116,14 @@ public class DeferredRenderer implements Renderer {
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
-//			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
+			drawToQuad(gBuffer.getlaBuffer().getRenderedTexture(0), engine.getGpuContext().getDebugBuffer());
 
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 //			drawToQuad(engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 
-			for(int i = 0; i < 6; i++) {
-                drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
-			}
+//			for(int i = 0; i < 6; i++) {
+//				drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+//			}
 
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
@@ -142,9 +142,8 @@ public class DeferredRenderer implements Renderer {
 //			int index = 0;
 //            for(int i = 0; i < 6; i++) {
 //                faceViews[i] = engine.getGpuContext().genTextures();
-//				CubeShadowMapStrategy shadowMapStrategy = (CubeShadowMapStrategy) engine.getScene().getPointLightSystem().getShadowMapStrategy();
-//				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, shadowMapStrategy.getPointLightDepthMapsArrayCube(),
-//						GL_RGBA16F, 0, 1, (index*6)+i, 1);
+//				int cubeMapArray = engine.getScene().getProbeSystem().getStrategy().getCubemapArrayRenderTarget().getCubeMapArray().getTextureID();
+//				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, cubeMapArray, GL_RGBA16F, 0, 10, (6*index)+i, 1);
 //				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());
 //			}
 //            for(int i = 0; i < 6; i++) {

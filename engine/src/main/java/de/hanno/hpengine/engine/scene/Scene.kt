@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSyste
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.engine.graphics.light.probe.ProbeSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -70,6 +71,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
     val pointLightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
     val areaLightSystem = entitySystems.register(AreaLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
+
+    val probeSystem = entitySystems.register(ProbeSystem(engine, this))
 
     val directionalLight = Entity("DirectionalLight")
             .apply { addComponent(DirectionalLight(this)) }
