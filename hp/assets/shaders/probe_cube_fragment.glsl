@@ -70,7 +70,7 @@ void main()
          materialDiffuseColor.rgb = color.rgb;
     }
     out_Color.rgb = materialDiffuseColor+materialAmbient*materialDiffuseColor;
-    out_Color.a = lightDistance/1000f;
+    out_Color.a = lightDistance/100f;
 
 //	if(gl_Layer == 0) {
 //	    out_Color.r = 1;

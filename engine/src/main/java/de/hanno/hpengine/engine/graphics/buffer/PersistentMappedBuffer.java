@@ -98,6 +98,7 @@ public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersis
             setCapacityInBytes(firstPosition + currentByteOffset);
             currentBufferable.putToBuffer(buffer);
         }
+        buffer.position(0);
     }
 
 }

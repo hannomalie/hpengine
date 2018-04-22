@@ -89,3 +89,10 @@ struct DrawCommand {
     int  baseInstance;
 //    uint  baseIndex;
 };
+
+struct AmbientCube {
+    vec3 position;
+    float filler;
+    double handle;
+    double filler2;
+};

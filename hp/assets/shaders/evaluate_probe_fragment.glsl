@@ -1,3 +1,5 @@
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
 
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
@@ -14,6 +16,10 @@ layout(binding=11) uniform sampler2D aoScattering;
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
+};
+
+layout(std430, binding=4) buffer _ambientCubes {
+	AmbientCube ambientCubes[1000];
 };
 
 uniform float sceneScale = 1;
@@ -62,18 +68,38 @@ const float kernel3[3][3] = {{ 1.0/16.0, 2.0/16.0, 1.0/16.0},
 				{ 2.0/16.0, 4.0/16.0, 2.0/16.0 },
 				{ 1.0/16.0, 2.0/16.0, 1.0/16.0 } };
 
+
 vec3 getSampleForProbeInPosition(vec3 probePositionGrid, vec3 normalWorld, int dimension, vec3 positionWorld) {
         vec3 probeInGridClamped = clamp(probePositionGrid, vec3(0), vec3(dimension));
         ivec3 probeAsInt = ivec3(probeInGridClamped);
         int probeIndex = to1D(probeAsInt.x, probeAsInt.y, probeAsInt.z);
 
-        const float mipLevel = 3f;
+        const float mipLevel = 4f;
 
-        vec4 probeValue = textureLod(probes, vec4(normalWorld, probeIndex), mipLevel);
+        samplerCube cube = samplerCube(uint64_t(ambientCubes[probeIndex].handle));
+//        vec4 probeValue = textureLod(probes, vec4(normalWorld, probeIndex), mipLevel);
+        vec4 probeValue = textureLod(cube, normalWorld, 0);
+
+//        float visiblitySample = textureLod(probes, vec4(normalWorld, probeIndex), 0).a;
+        float visiblitySample = textureLod(cube, normalWorld, 0).a;
 
         vec3 probeWorld = (probeInGridClamped - dimension/2)*extent;
         float NdotL = 1;//clamp(dot(normalize(probeWorld - positionWorld.xyz), normalWorld.xyz), 0.0f, 1.0f);
-        float visibility = 1;//probeValue.a > (distance(positionWorld.xyz, probeWorld))*1000f ? 0.f : 1.f;
+        float distPositionToProbe = distance(positionWorld.xyz, probeWorld);
+        float distanceMapSample = (visiblitySample*100f);
+        float visibility = 1;//distanceMapSample < distPositionToProbe ? 0.f : 1.f;
+
+        const bool VARIANCE_SHADOWS = false;
+        if(VARIANCE_SHADOWS) {
+            float variance = 0.1;//moments.y - (moments.x*moments.x);
+
+            float d = (distPositionToProbe - distanceMapSample)/100f;
+            //float p_max = (variance / (variance + d*d));
+            // thanks, for lights bleeding reduction, FOOGYWOO! http://dontnormalize.me/
+            float p_max = smoothstep(0.0, 1.0, variance / (variance + d*d));
+
+            visibility = p_max;
+        }
 
         return probeValue.rgb * NdotL * visibility;
 }
@@ -130,85 +156,38 @@ void main(void) {
     ivec3 positionInGrid = ivec3(positionInGridClamped);
     int probeIndex = to1D(positionInGrid.x,positionInGrid.y,positionInGrid.z);
 
-    const int RADIUS_BASED = 0;
-    const int TRILINEAR = 1;
-    const int mode = TRILINEAR;
-    if(mode == RADIUS_BASED) {
-        const float ambient = 0.1f;
-        int radius = 1;
-        float visibilitySum = 0;
+    const float offset = 1f;
+    float x = positionInGridClamped.x;
+    float y = positionInGridClamped.y;
+    float z = positionInGridClamped.z;
+
+    vec3 c000 = floor(vec3(x,y,z));
+    vec3 c100 = floor(vec3(x+offset, y, z));
+    vec3 c010 = floor(vec3(x, y, z+offset));
+    vec3 c110 = floor(vec3(x+offset, y, z+offset));
+
+    y = y+offset;
+    vec3 c001 = floor(vec3(x,y,z));
+    vec3 c101 = floor(vec3(x+offset, y, z));
+    vec3 c011 = floor(vec3(x, y, z+offset));
+    vec3 c111 = floor(vec3(x+offset, y, z+offset));
 
 
-        for(int xOffset = -radius; xOffset < radius; xOffset++) {
-            for(int yOffset = -radius; yOffset < radius; yOffset++) {
-                for(int zOffset = -radius; zOffset < radius; zOffset++) {
+    vec3 d = (positionInGridClamped.xyz - c000) / (c111 - c000);
+    vec3 c00 = getSampleForProbeInPosition(c000,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c100,normalWorld, dimension, positionWorld.xyz)*d.x;
+    vec3 c01 = getSampleForProbeInPosition(c001,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c101,normalWorld, dimension, positionWorld.xyz)*d.x;
+    vec3 c10 = getSampleForProbeInPosition(c010,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c110,normalWorld, dimension, positionWorld.xyz)*d.x;
+    vec3 c11 = getSampleForProbeInPosition(c011,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c111,normalWorld, dimension, positionWorld.xyz)*d.x;
 
-                    ivec3 neighborPositionWorld = ivec3(round(positionWorld.xyz) + extent*vec3(xOffset, yOffset, zOffset));
-                    ivec3 neighborPositionInGrid = ivec3(clamp((neighborPositionWorld/extent) + vec3(dimensionHalf), 0, dimension));
-                    int probeIndexNeighbor = to1D(neighborPositionInGrid.x, neighborPositionInGrid.y, neighborPositionInGrid.z);
-                    vec3 probePosition = neighborPositionWorld;
+    vec3 c0 = c00 * (1 - d.z) + c10*d.z;
+    vec3 c1 = c01 * (1 - d.z) + c11*d.z;
 
-                    const float maxDist = length(vec3(5f));
-                    float actualDist = clamp(distance(vec3(neighborPositionWorld), positionWorld.xyz), 0, maxDist);
-                    float interpolator = actualDist/maxDist;
+    vec3 c = c0 * (1 - d.y) + c1*d.y;
 
-                    const float mipLevel = 4f;
-                    vec4 probeValue = textureLod(probes, vec4(normalWorld, probeIndex), mipLevel);
-                    float NdotL = 1;//clamp(dot(normalWorld, -vec3(probePosition - positionWorld.xyz)), 0, 1);
-                    float shadowMapSample = textureLod(probes, vec4(normalWorld, probeIndex), 0).a*1000f;
-                    float visibility = 1;//distance(positionWorld.xyz, probePosition) > shadowMapSample ? ambient : 1;
-                    vec3 light = NdotL * probeValue.rgb * visibility;
+    out_DiffuseSpecular.rgb += c;
 
-                    vec4 probeValueNeightbor = textureLod(probes, vec4(normalWorld, probeIndexNeighbor), mipLevel);
-                    float NdotLNeighbor = 1;//clamp(dot(normalWorld, -vec3(neighborPosition - positionWorld.xyz)), 0, 1);
-                    float shadowMapSampleNeighbor = textureLod(probes, vec4(normalWorld, probeIndexNeighbor), 0).a*1000f;
-                    float visibilityNeighbor = 1;//distance(positionWorld.xyz, neighborPosition) > shadowMapSampleNeighbor ? ambient : 1;
-                    vec3 lightNeighbor = NdotLNeighbor * probeValueNeightbor.rgb * visibilityNeighbor;
-
-                    out_DiffuseSpecular.rgb += mix(light, lightNeighbor, interpolator);
-                    visibilitySum += mix(visibility, visibilityNeighbor, interpolator);
-
-
-                }
-            }
-        }
-        out_DiffuseSpecular.rgb *= color.rgb;
-    } else if(mode == TRILINEAR) {
-
-        const float offset = 1f;
-        float x = positionInGridClamped.x;
-        float y = positionInGridClamped.y;
-        float z = positionInGridClamped.z;
-
-        vec3 c000 = floor(vec3(x,y,z));
-        vec3 c100 = floor(vec3(x+offset, y, z));
-        vec3 c010 = floor(vec3(x, y, z+offset));
-        vec3 c110 = floor(vec3(x+offset, y, z+offset));
-
-        y = y+offset;
-        vec3 c001 = floor(vec3(x,y,z));
-        vec3 c101 = floor(vec3(x+offset, y, z));
-        vec3 c011 = floor(vec3(x, y, z+offset));
-        vec3 c111 = floor(vec3(x+offset, y, z+offset));
-
-
-        vec3 d = (positionInGridClamped.xyz - c000) / (c111 - c000);
-        vec3 c00 = getSampleForProbeInPosition(c000,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c100,normalWorld, dimension, positionWorld.xyz)*d.x;
-        vec3 c01 = getSampleForProbeInPosition(c001,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c101,normalWorld, dimension, positionWorld.xyz)*d.x;
-        vec3 c10 = getSampleForProbeInPosition(c010,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c110,normalWorld, dimension, positionWorld.xyz)*d.x;
-        vec3 c11 = getSampleForProbeInPosition(c011,normalWorld, dimension, positionWorld.xyz) * (1 - d.x) + getSampleForProbeInPosition(c111,normalWorld, dimension, positionWorld.xyz)*d.x;
-
-        vec3 c0 = c00 * (1 - d.z) + c10*d.z;
-        vec3 c1 = c01 * (1 - d.z) + c11*d.z;
-
-        vec3 c = c0 * (1 - d.y) + c1*d.y;
-
-        out_DiffuseSpecular.rgb += c;
-
-    }
-
-        out_DiffuseSpecular.rgb *= color.rgb;
-        out_DiffuseSpecular.rgb += (0.1+normalAmbient.a)*color.rgb;
+    out_DiffuseSpecular.rgb *= color.rgb;
+    out_DiffuseSpecular.rgb += (0.1+normalAmbient.a)*color.rgb;
 //        out_DiffuseSpecular.rgb += 0.25*color.rgb;
 //        out_DiffuseSpecular.rgb /= interpolatorSum;
 

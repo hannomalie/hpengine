@@ -116,7 +116,7 @@ public class DeferredRenderer implements Renderer {
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 //			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
-			drawToQuad(gBuffer.getlaBuffer().getRenderedTexture(0), engine.getGpuContext().getDebugBuffer());
+//			drawToQuad(gBuffer.getlaBuffer().getRenderedTexture(0), engine.getGpuContext().getDebugBuffer());
 
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 //			drawToQuad(engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
@@ -125,6 +125,8 @@ public class DeferredRenderer implements Renderer {
 //				drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 //			}
 
+
+//			DEBUG POINT LIGHT SHADOWS
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, directionalLightSystem.getPointLightDepthMapsArrayBack(),
@@ -137,6 +139,7 @@ public class DeferredRenderer implements Renderer {
 //			GL11.glDeleteTextures(faceView);
 
 
+//			DEBUG PROBES
 
 //            int[] faceViews = new int[6];
 //			int index = 0;
@@ -149,6 +152,7 @@ public class DeferredRenderer implements Renderer {
 //            for(int i = 0; i < 6; i++) {
 //                GL11.glDeleteTextures(faceViews[i]);
 //            }
+
 		}
 
 		GPUProfiler.start("Create new fence");

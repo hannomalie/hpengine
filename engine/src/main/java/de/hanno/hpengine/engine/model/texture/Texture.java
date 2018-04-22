@@ -126,11 +126,12 @@ public class Texture implements Serializable, Reloadable {
         genHandle(textureManager);
     }
 
-    private void genHandle(TextureManager textureManager) {
+    protected void genHandle(TextureManager textureManager) {
         textureManager.getGpuContext().execute(() -> {
             if(handle <= 0) {
                 bind(15);
                 handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 unbind(15);
             }
         });
