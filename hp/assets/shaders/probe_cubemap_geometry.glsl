@@ -5,6 +5,7 @@ layout(triangle_strip, max_vertices = 18) out; // 6 faces * 3 vertices per cubem
 
 in vec4 vs_pass_WorldPosition[3];
 in vec4 vs_pass_ProjectedPosition[3];
+in vec3 vs_pass_normal_world[3];
 in float vs_clip[3];
 in vec2 vs_pass_texCoord[3];
 flat in int vs_entityIndex[3];
@@ -15,15 +16,14 @@ uniform mat4[6] viewProjectionMatrices;
 uniform mat4[6] viewMatrices;
 uniform mat4[6] projectionMatrices;
 
-uniform int lightIndex = 0;
-
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 viewProjectionMatrix;
-uniform vec3 pointLightPositionWorld;
+uniform vec3 probePositionWorld;
 
 out vec4 pass_WorldPosition;
 out vec4 pass_ProjectedPosition;
+out vec3 pass_normal_world;
 out float clip;
 out vec2 texCoord;
 flat out int pass_entityIndex;
@@ -33,7 +33,7 @@ flat out int pass_entityIndex;
 void main() {
 
   for(int layer = 0; layer < 6; layer++) {
-    gl_Layer = 6*lightIndex + layer;
+    gl_Layer = layer;
     /////////////// FRUSTUM AND BACKFACE CULLING
     vec4 vertex[3];
     int outOfBound[6] = {0, 0, 0, 0, 0, 0};
@@ -52,7 +52,7 @@ void main() {
     }
 
     vec3 normal = cross(vs_pass_WorldPosition[2].xyz - vs_pass_WorldPosition[0].xyz, vs_pass_WorldPosition[0].xyz - vs_pass_WorldPosition[1].xyz);
-    vec3 view = pointLightPositionWorld - vs_pass_WorldPosition[0].xyz;
+    vec3 view = probePositionWorld - vs_pass_WorldPosition[0].xyz;
     bool frontFace = dot(normal, view) > 0.f;
     ////////////////////
 
@@ -65,6 +65,7 @@ void main() {
               vec4 projectedPosition = projectionMatrices[layer] * viewMatrices[layer] * vec4(positionWorld,1);
               pass_WorldPosition = vec4(positionWorld,1);
               pass_ProjectedPosition = projectedPosition;
+              pass_normal_world = vs_pass_normal_world[i];
               pass_entityIndex = vs_entityIndex[i];
 //              pass_entity = vs_entity[i];
 //              pass_material = vs_material[i];

@@ -38,7 +38,7 @@ class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine,
 
     val lightBuffer: PersistentMappedBuffer<AreaLight> = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
-    private val renderTarget: RenderTarget = RenderTargetBuilder(engine.gpuContext)
+    private val renderTarget: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
             .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
             .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
             .add(ColorAttachmentDefinition()

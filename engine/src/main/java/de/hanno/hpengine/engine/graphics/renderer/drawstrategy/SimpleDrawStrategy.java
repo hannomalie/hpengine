@@ -128,7 +128,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
         registerRenderExtension(new DrawLinesExtension(engine));
 //        registerRenderExtension(new VoxelConeTracingExtension());
-        registerRenderExtension(new EvaluateProbeRenderExtension(engine));
+//        registerRenderExtension(new EvaluateProbeRenderExtension(engine));
         registerRenderExtension(new PixelPerfectPickingExtension());
     }
 

@@ -36,7 +36,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         this.engine = engine;
         directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
-        renderTarget = new RenderTargetBuilder(engine.getGpuContext())
+        renderTarget = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(engine.getGpuContext())
                 .setWidth(SHADOWMAP_RESOLUTION)
                 .setHeight(SHADOWMAP_RESOLUTION)
                 .setClearRGBA(1f, 1f, 1f, 1f)

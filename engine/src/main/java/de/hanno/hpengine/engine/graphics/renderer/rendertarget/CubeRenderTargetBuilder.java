@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.Engine;
 
-public class CubeRenderTargetBuilder extends RenderTargetBuilder {
+public class CubeRenderTargetBuilder extends RenderTargetBuilder<CubeRenderTargetBuilder, RenderTarget> {
 
     private Engine engine;
 
@@ -13,6 +13,7 @@ public class CubeRenderTargetBuilder extends RenderTargetBuilder {
 
     @Override
     public CubeRenderTarget build() {
-        return new CubeRenderTarget(engine, this);
+        return engine.getGpuContext().calculate(() -> new CubeRenderTarget(engine, this));
     }
+
 }

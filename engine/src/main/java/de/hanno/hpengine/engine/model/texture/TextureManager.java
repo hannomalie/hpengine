@@ -39,6 +39,7 @@ import java.util.logging.Logger;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
 import static de.hanno.hpengine.engine.model.texture.Texture.DDSConversionState.CONVERTED;
 import static de.hanno.hpengine.engine.model.texture.Texture.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -668,7 +669,7 @@ public class TextureManager implements Manager {
         generateMipMaps(textureId, textureMinFilter, GL11.GL_LINEAR);
     }
     public void generateMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        gpuContext.activeTexture(0);
+        gpuContext.activeTexture(GL_TEXTURE0);
         gpuContext.bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
@@ -682,6 +683,7 @@ public class TextureManager implements Manager {
     
     public void generateMipMapsCubeMap(int textureId) {
         gpuContext.execute(() -> {
+            gpuContext.activeTexture(GL_TEXTURE0);
             gpuContext.bindTexture(TEXTURE_CUBE_MAP, textureId);
             GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
         });
@@ -741,13 +743,15 @@ public class TextureManager implements Manager {
         int textureId = createTextureID();
         gpuContext.bindTexture(target, textureId);
 
-        setupTextureParameters(target);
 
-        if(target == TEXTURE_CUBE_MAP_ARRAY) {
-            GL42.glTexStorage3D(target.glTarget, 1, format, width, height, 6*depth);
-        } else {
-            GL42.glTexStorage2D(target.glTarget, 1, format, width, height);
-        }
+        gpuContext.execute(() -> {
+            setupTextureParameters(target);
+            if(target == TEXTURE_CUBE_MAP_ARRAY) {
+                GL42.glTexStorage3D(target.glTarget, 1, format, width, height, 6*depth);
+            } else {
+                GL42.glTexStorage2D(target.glTarget, 1, format, width, height);
+            }
+        });
 
         return textureId;
     }

@@ -9,7 +9,6 @@ layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
 layout(binding=7) uniform sampler2D visibilityMap;
-layout(binding=8) uniform samplerCubeArray probes;
 
 layout(binding=11) uniform sampler2D aoScattering;
 
@@ -26,9 +25,8 @@ uniform float sceneScale = 1;
 uniform float inverseSceneScale = 1;
 uniform int gridSize;
 
-uniform float extent = 5f;
-//uniform int dimension = 6;
-//uniform int dimensionHalf = dimension/2;
+uniform float extent = 20f;
+uniform int dimension = 6;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -61,39 +59,56 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 int to1D( int x, int y, int z ) {
-    return (z * 6 * 6) + (y * 6) + x;
+    return (z * dimension * dimension) + (y * dimension) + x;
 }
 
 const float kernel3[3][3] = {{ 1.0/16.0, 2.0/16.0, 1.0/16.0},
 				{ 2.0/16.0, 4.0/16.0, 2.0/16.0 },
 				{ 1.0/16.0, 2.0/16.0, 1.0/16.0 } };
 
+float raySphereIntersect(vec3 r0, vec3 rd, vec3 s0, float sr) {
+    float a = dot(rd,rd);
+    vec3 s0_r0 = r0 - s0;
+    float b = 2.0f * dot(rd, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sr * sr);
+    float b2 = (b * b);
+    float a2 = (2.0f * a);
+    float ac4 = (4.0f * a * c);
+    if(b2 - ac4 < 0f) {
+        return -1.0f;
+    }
+    return (-b - sqrt(b2 - ac4))/a2;
+}
 
 vec3 getSampleForProbeInPosition(vec3 probePositionGrid, vec3 normalWorld, int dimension, vec3 positionWorld) {
         vec3 probeInGridClamped = clamp(probePositionGrid, vec3(0), vec3(dimension));
         ivec3 probeAsInt = ivec3(probeInGridClamped);
         int probeIndex = to1D(probeAsInt.x, probeAsInt.y, probeAsInt.z);
-
-        const float mipLevel = 4f;
+        vec3 probeWorld = (probeInGridClamped - dimension/2)*extent;
 
         samplerCube cube = samplerCube(uint64_t(ambientCubes[probeIndex].handle));
-//        vec4 probeValue = textureLod(probes, vec4(normalWorld, probeIndex), mipLevel);
+
+        vec3 sphereProjectedNormal = normalWorld;
+        float intersection = 1;//TODO: Use this shit! raySphereIntersect(positionWorld, normalize(normalWorld), probeWorld, extent);
+        vec3 intersectionPoint = (positionWorld + intersection * normalize(normalWorld));
+        if(intersection != -1 ) {
+            sphereProjectedNormal = intersectionPoint - positionWorld;
+        }
+
         vec4 probeValue = textureLod(cube, normalWorld, 0);
+        samplerCube cubeDistance = samplerCube(uint64_t(ambientCubes[probeIndex].distanceMapHandle));
+        float distanceSample = textureLod(cubeDistance, sphereProjectedNormal, 0).r * 100f;
 
-//        float visiblitySample = textureLod(probes, vec4(normalWorld, probeIndex), 0).a;
-        float visiblitySample = textureLod(cube, normalWorld, 0).a;
-
-        vec3 probeWorld = (probeInGridClamped - dimension/2)*extent;
-        float NdotL = 1;//clamp(dot(normalize(probeWorld - positionWorld.xyz), normalWorld.xyz), 0.0f, 1.0f);
-        float distPositionToProbe = distance(positionWorld.xyz, probeWorld);
-        float distanceMapSample = (visiblitySample*100f);
-        float visibility = 1;//distanceMapSample < distPositionToProbe ? 0.f : 1.f;
+        float distPositionToProbe = distance(positionWorld, probeWorld);
+        float visibility = distanceSample < distPositionToProbe ? 1.f : 0.f;
+        visibility = 1;
+//visibility = distPositionToProbe < extent ? 1.f : 0.f;
 
         const bool VARIANCE_SHADOWS = false;
         if(VARIANCE_SHADOWS) {
             float variance = 0.1;//moments.y - (moments.x*moments.x);
 
-            float d = (distPositionToProbe - distanceMapSample)/100f;
+            float d = (distPositionToProbe - distanceSample)/100f;
             //float p_max = (variance / (variance + d*d));
             // thanks, for lights bleeding reduction, FOOGYWOO! http://dontnormalize.me/
             float p_max = smoothstep(0.0, 1.0, variance / (variance + d*d));
@@ -101,7 +116,7 @@ vec3 getSampleForProbeInPosition(vec3 probePositionGrid, vec3 normalWorld, int d
             visibility = p_max;
         }
 
-        return probeValue.rgb * NdotL * visibility;
+        return probeValue.rgb * visibility;
 }
 void main(void) {
 
@@ -149,7 +164,6 @@ void main(void) {
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
 
-    const int dimension = 6;
     const int dimensionHalf = dimension/2;
     vec3 positionGridScaled = positionWorld.xyz/extent;
     vec3 positionInGridClamped = clamp(positionGridScaled + vec3(dimensionHalf), vec3(0), vec3(dimension));
@@ -184,10 +198,9 @@ void main(void) {
 
     vec3 c = c0 * (1 - d.y) + c1*d.y;
 
-    out_DiffuseSpecular.rgb += c;
+    out_DiffuseSpecular.rgb += c * color.rgb;
 
-    out_DiffuseSpecular.rgb *= color.rgb;
-    out_DiffuseSpecular.rgb += (0.1+normalAmbient.a)*color.rgb;
+    out_DiffuseSpecular.rgb += (0.0125+normalAmbient.a)*color.rgb;
 //        out_DiffuseSpecular.rgb += 0.25*color.rgb;
 //        out_DiffuseSpecular.rgb /= interpolatorSum;
 

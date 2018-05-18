@@ -6,7 +6,7 @@ import org.joml.Vector3f
 import org.lwjgl.opengl.GL13
 import java.nio.ByteBuffer
 
-class AmbientCube(val position: Vector3f, val cubeMap: CubeMap, val index: Int): Bufferable, Comparable<AmbientCube> {
+class AmbientCube(val position: Vector3f, val cubeMap: CubeMap, val distanceMap: CubeMap, val index: Int): Bufferable, Comparable<AmbientCube> {
     override fun compareTo(other: AmbientCube) = index.compareTo(other.index)
 
     override fun putToBuffer(buffer: ByteBuffer) {
@@ -15,7 +15,7 @@ class AmbientCube(val position: Vector3f, val cubeMap: CubeMap, val index: Int):
         buffer.putFloat(position.z)
         buffer.putFloat(-1f)
         buffer.putDouble(java.lang.Double.longBitsToDouble(cubeMap.handle))
-        buffer.putDouble(1.toDouble())
+        buffer.putDouble(java.lang.Double.longBitsToDouble(distanceMap.handle))
     }
 
     override fun getBytesPerObject() = sizeInBytes

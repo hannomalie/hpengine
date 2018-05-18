@@ -52,28 +52,28 @@ public class GBuffer {
 
     public GBuffer(GpuContext gpuContext) {
 
-		gBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+		gBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 				.add(4, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 				.add(1, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA32F))
 				.add(1, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 				.build();
-		reflectionBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+		reflectionBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
 								.setTextureFilter(GL11.GL_LINEAR))
 						.setClearRGBA(0, 0, 0, 0)
 						.build();
-		laBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth())
+		laBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth())
 						.setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
                                 .setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR))
 						.build();
-		finalBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+		finalBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL11.GL_RGBA8))
 						.build();
-		halfScreenBuffer = new RenderTargetBuilder(gpuContext).setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
+		halfScreenBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))

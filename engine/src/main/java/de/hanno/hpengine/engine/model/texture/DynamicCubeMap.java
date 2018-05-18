@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
@@ -12,13 +11,13 @@ public class DynamicCubeMap extends CubeMap {
 
     private Engine engine;
 
-    public DynamicCubeMap(Engine engine, int width, int height, int internalFormat, int type) {
+    public DynamicCubeMap(Engine engine, int resolution, int internalFormat, int type, int minFilter, int format, FloatBuffer[] values) {
         super(engine.getTextureManager());
+        if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;
-		this.width = width;
-		this.height = height;
+		this.width = resolution;
+		this.height = resolution;
 		this.textureID = createTextureID();
-		FloatBuffer dummy = BufferUtils.createFloatBuffer(width*height * 4 * 6);
 
         engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
 
@@ -28,15 +27,15 @@ public class DynamicCubeMap extends CubeMap {
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_NEAREST);
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
         GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
 
-        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+0, 0, internalFormat, width, height, 0, GL11.GL_RGBA, type, dummy);
-        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+1, 0, internalFormat, width, height, 0, GL11.GL_RGBA, type, dummy);
-        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+2, 0, internalFormat, width, height, 0, GL11.GL_RGBA, type, dummy);
-        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+3, 0, internalFormat, width, height, 0, GL11.GL_RGBA, type, dummy);
-        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+4, 0, internalFormat, width, height, 0, GL11.GL_RGBA, type, dummy);
-        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+5, 0, internalFormat, width, height, 0, GL11.GL_RGBA, type, dummy);
+        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalFormat, resolution, resolution, 0, format, type, values[0]);
+        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+1, 0, internalFormat, resolution, resolution, 0, format, type, values[1]);
+        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+2, 0, internalFormat, resolution, resolution, 0, format, type, values[2]);
+        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+3, 0, internalFormat, resolution, resolution, 0, format, type, values[3]);
+        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+4, 0, internalFormat, resolution, resolution, 0, format, type, values[4]);
+        GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+5, 0, internalFormat, resolution, resolution, 0, format, type, values[5]);
 
         genHandle(engine.getTextureManager());
     }

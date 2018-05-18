@@ -7,7 +7,7 @@ import de.hanno.hpengine.util.AbstractBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, RenderTarget> {
+public class RenderTargetBuilder<BUILDER_TYPE extends RenderTargetBuilder, TARGET_TYPE extends RenderTarget> extends AbstractBuilder<TARGET_TYPE> {
     int width = Config.getInstance().getWidth();
     int height = Config.getInstance().getHeight();
     float clearR = 0.0f;
@@ -22,62 +22,58 @@ public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, Re
         this.gpuContext = gpuContext;
     }
 
-    public RenderTargetBuilder setWidth(int width) {
+    public BUILDER_TYPE setWidth(int width) {
         this.width = width;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder setHeight(int height) {
+    public BUILDER_TYPE setHeight(int height) {
         this.height = height;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder setClearR(float clearR) {
+    public BUILDER_TYPE setClearR(float clearR) {
         this.clearR = clearR;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder setClearG(float clearG) {
+    public BUILDER_TYPE setClearG(float clearG) {
         this.clearG = clearG;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder setClearB(float clearB) {
+    public BUILDER_TYPE setClearB(float clearB) {
         this.clearB = clearB;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder setClearA(float clearA) {
+    public BUILDER_TYPE setClearA(float clearA) {
         this.clearA = clearA;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder setClearRGBA(float r, float g, float b, float a) {
-        return setClearR(r).setClearG(g).setClearB(b).setClearA(a);
+    public BUILDER_TYPE setClearRGBA(float r, float g, float b, float a) {
+        return (BUILDER_TYPE) setClearR(r).setClearG(g).setClearB(b).setClearA(a);
     }
 
-    public RenderTargetBuilder removeDepthAttachment() {
+    public BUILDER_TYPE removeDepthAttachment() {
         useDepthBuffer = false;
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
-    public RenderTargetBuilder add(ColorAttachmentDefinition attachmentDefinition) {
+    public BUILDER_TYPE add(ColorAttachmentDefinition attachmentDefinition) {
         return add(1, attachmentDefinition);
     }
-    public RenderTargetBuilder add(int times, ColorAttachmentDefinition attachmentDefinition) {
+    public BUILDER_TYPE add(int times, ColorAttachmentDefinition attachmentDefinition) {
         for(int i = 0; i < times; i++) {
             this.colorAttachments.add(attachmentDefinition);
         }
-        return me();
+        return (BUILDER_TYPE) this;
     }
 
     @Override
-    public RenderTarget build() {
-        return new RenderTarget(gpuContext, this);
+    public TARGET_TYPE build() {
+        return (TARGET_TYPE) new RenderTarget(gpuContext, this);
     }
 
-    @Override
-    protected RenderTargetBuilder me() {
-        return this;
-    }
 }

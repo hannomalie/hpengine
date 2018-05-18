@@ -94,5 +94,5 @@ struct AmbientCube {
     vec3 position;
     float filler;
     double handle;
-    double filler2;
+    double distanceMapHandle;
 };

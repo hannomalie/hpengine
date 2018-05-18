@@ -14,11 +14,18 @@ layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 
-uniform vec3 pointLightPositionWorld;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+
+uniform vec3 probePositionWorld;
 uniform int entityIndex = 0;
+
+uniform vec3 directionalLightDirection;
+uniform vec3 directionalLightColor;
 
 in vec4 pass_WorldPosition;
 in vec4 pass_ProjectedPosition;
+in vec3 pass_normal_world;
 in float clip;
 in vec2 texCoord;
 flat in int pass_entityIndex;
@@ -26,8 +33,30 @@ flat in int pass_entityIndex;
 //flat in Material pass_material;
 
 layout(location=0)out vec4 out_Color;
-layout(location=1)out vec4 out_Diffuse;
-layout(location=2)out vec4 out_Position;
+layout(location=1)out vec4 out_Distance;
+
+mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
+{
+	vec3 dp1 = dFdx( p );
+	vec3 dp2 = dFdy( p );
+	vec2 duv1 = dFdx( uv );
+	vec2 duv2 = dFdy( uv );
+
+	vec3 dp2perp = cross( dp2, N );
+	vec3 dp1perp = cross( N, dp1 );
+	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+
+	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+	return mat3( T * invmax, B * invmax, N );
+}
+vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
+{
+	vec3 map = (texture(normalMap, texcoord)).xyz;
+	map = map * 2 - 1;
+	mat3 TBN = cotangent_frame( N, V, texcoord );
+	return normalize( TBN * map );
+}
 
 void main()
 {
@@ -38,7 +67,7 @@ void main()
     vec2 UV = texCoord;
 	float depth = pass_ProjectedPosition.z/pass_ProjectedPosition.w;
 
-    float lightDistance = distance(pass_WorldPosition.xyz, pointLightPositionWorld);
+    float lightDistance = distance(pass_WorldPosition.xyz, probePositionWorld);
 //    lightDistance = lightDistance / 250.0;
     depth = lightDistance;
 //    gl_FragDepth = 0;
@@ -47,7 +76,6 @@ void main()
 	float moment2 = moment1 * moment1;
 	vec4 result;
 	result = vec4(moment1, moment2,0,0);
-	out_Color = result;
 
     int entityIndex = pass_entityIndex;
     Entity entity = entities[entityIndex];
@@ -69,8 +97,18 @@ void main()
          }
          materialDiffuseColor.rgb = color.rgb;
     }
-    out_Color.rgb = materialDiffuseColor+materialAmbient*materialDiffuseColor;
+
+
+	vec3 PN_world = normalize(pass_normal_world);
+//	if(material.hasNormalMap != 0) {
+//        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+//        PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
+//    }
+
+    vec3 directionalLightIntensity = materialDiffuseColor.rgb * directionalLightColor * clamp(dot(PN_world, directionalLightDirection), 0, 1);
+    out_Color.rgb = directionalLightIntensity + materialAmbient*materialDiffuseColor;
     out_Color.a = lightDistance/100f;
+    out_Distance.r = lightDistance/100f;
 
 //	if(gl_Layer == 0) {
 //	    out_Color.r = 1;

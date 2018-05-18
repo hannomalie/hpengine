@@ -4,10 +4,16 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.util.Util;
 
 import org.lwjgl.BufferUtils;
+
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+import static org.lwjgl.opengl.GL45.glTextureStorage2D;
 
 public class CubeRenderTarget extends RenderTarget {
 
@@ -22,31 +28,51 @@ public class CubeRenderTarget extends RenderTarget {
 		int colorBufferCount = builder.colorAttachments.size();
 		renderedTextures = new int[colorBufferCount];
 
-		frameBuffer = GL30.glGenFramebuffers();
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
+		frameBuffer = engine.getGpuContext().genFrameBuffer();
+		engine.getGpuContext().bindFrameBuffer(frameBuffer);
 
 		scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 
-		for (int i = 0; i < colorBufferCount; i++) {
-			int internalFormat = builder.colorAttachments.get(i).internalFormat;
-            int cubeMap = engine.getTextureManager().getCubeMap(width, height, internalFormat);
-			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, cubeMap, 0);
-			renderedTextures[i] = cubeMap;
-			scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
-		}
+		engine.getGpuContext().execute(() -> {
+			for (int i = 0; i < colorBufferCount; i++) {
+				ColorAttachmentDefinition currentAttachment = builder.colorAttachments.get(i);
+				int internalFormat = currentAttachment.internalFormat;
+				int maxMipMap = Util.calculateMipMapCount(Math.max(width, height));
+				int cubeMap = GL11.glGenTextures();
+				gpuContext.activeTexture(0);
+				gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, cubeMap);
 
-		if(builder.useDepthBuffer) {
-            int depthCubeMap = engine.getTextureManager().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
-			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
-		}
-		GL20.glDrawBuffers(scratchBuffer);
+				glTextureStorage2D(cubeMap, maxMipMap, internalFormat, width, height);
 
-		//TODO: Make this more pretty
-		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
-		if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
-			System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
-			System.exit(0);
-		}
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_MAX_LEVEL, maxMipMap);
+
+//				TODO: Only if mipmap filter...
+				GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_CUBE_MAP.glTarget);
+
+//            TODO: Eliminate direct opengl calls
+				GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, cubeMap, 0);
+				renderedTextures[i] = cubeMap;
+				scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
+			}
+
+			if(builder.useDepthBuffer) {
+				int depthCubeMap = engine.getTextureManager().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
+				GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
+			}
+			GL20.glDrawBuffers(scratchBuffer);
+
+			//TODO: Make this more pretty
+			int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
+			if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
+				System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
+				System.exit(0);
+			}
+		});
 	}
 //
 //	public void setCubeMapFace(int index) {

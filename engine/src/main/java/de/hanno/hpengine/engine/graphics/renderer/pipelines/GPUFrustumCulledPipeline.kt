@@ -40,7 +40,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
 
 
-    var highZBuffer: RenderTarget = RenderTargetBuilder(engine.gpuContext)
+    var highZBuffer: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
                 .setWidth(Config.getInstance().width / 2).setHeight(Config.getInstance().height / 2)
                 .add(ColorAttachmentDefinition().setInternalFormat(Pipeline.HIGHZ_FORMAT)
                         .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
@@ -168,15 +168,17 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.setUniform("entityIndex", 0)
         program.setUniform("entityBaseIndex", 0)
         program.setUniform("indirect", true)
-        var drawCountBufferToUse = if(Config.getInstance().isUseGpuOcclusionCulling) {
+        var drawCountBufferToUse = drawCountBuffer
+        if(Config.getInstance().isUseGpuOcclusionCulling) {
             program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted[phase]!!)
             program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled[phase]!!)
-            drawCountBuffer
         } else {
             program.bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
             program.bindShaderStorageBuffer(4, offsetBuffer)
-            drawCountBuffer
         }
+//        Check out why this is necessary to be bound
+        program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted[phase]!!)
+        program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled[phase]!!)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
         drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commands.size, drawCountBufferToUse)
         GPUProfiler.end()

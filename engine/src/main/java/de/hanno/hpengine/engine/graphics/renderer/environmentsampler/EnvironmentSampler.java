@@ -140,7 +140,7 @@ public class EnvironmentSampler extends Entity {
         GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
 
 
-		renderTarget = new RenderTargetBuilder(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
+		renderTarget = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
 								.setHeight(EnvironmentProbeManager.RESOLUTION )
 								.add(new ColorAttachmentDefinition()
 										.setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat()))
