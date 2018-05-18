@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.entity.Entity
+import org.joml.AxisAngle4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
@@ -25,6 +26,9 @@ class MovableInputComponent(val engine: Engine, entity: Entity) : InputControlle
 
     var position = Vector3f(0f, 0f, 10f)
     var rotation = Quaternionf()
+
+    private var pitch = 0f;
+    private var yaw = 0f;
 
     private var pitchAccel = 0f
     private var yawAccel = 0f
@@ -57,11 +61,14 @@ class MovableInputComponent(val engine: Engine, entity: Entity) : InputControlle
             yawAccel = Math.max(2 * Math.PI, yawAccel + yawAmount).toFloat()
             yawAccel = Math.max(0f, yawAccel * 0.9f)
 
-            rotation.rotateY(yawAmount.toFloat())
-            rotation.rotateX((-pitchAmount).toFloat())
+            yaw += yawAmount.toFloat()
+            pitch += pitchAmount.toFloat()
 
-            getEntity().rotateY((-yawAmount).toFloat())
+            val oldTranslation = getEntity().getTranslation(Vector3f())
+            getEntity().setTranslation(Vector3f(0f,0f,0f))
+            getEntity().rotateLocalY((-yawAmount).toFloat())
             getEntity().rotateX(pitchAmount.toFloat())
+            getEntity().translateLocal(oldTranslation)
         }
 
         val moveAmount = turbo * posDelta * seconds * Config.getInstance().cameraSpeed
