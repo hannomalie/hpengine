@@ -127,14 +127,15 @@ public class Texture implements Serializable, Reloadable {
     }
 
     protected void genHandle(TextureManager textureManager) {
-        textureManager.getGpuContext().execute(() -> {
-            if(handle <= 0) {
+        if(handle <= 0) {
+            handle = textureManager.getGpuContext().calculate(() -> {
                 bind(15);
-                handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
-                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                long theHandle = ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                ARBBindlessTexture.glMakeTextureHandleResidentARB(theHandle);
                 unbind(15);
-            }
-        });
+                return theHandle;
+            });
+        }
     }
 
     /**
@@ -281,9 +282,9 @@ public class Texture implements Serializable, Reloadable {
                 }
             });
             genHandle(textureManager);
-            textureManager.getGpuContext().execute(() -> {
-                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-            });
+//            textureManager.getGpuContext().execute(() -> {
+//                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+//            });
             setUploaded();
             textureManager.postTextureChangedEvent();
         };

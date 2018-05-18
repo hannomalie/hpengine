@@ -28,7 +28,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     var updateCache = true
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
-    private val gpuEntities = mutableListOf<GpuEntity>()
+    val gpuEntities = mutableListOf<GpuEntity>()
 
     override fun getComponents(): List<ModelComponent> = components
 

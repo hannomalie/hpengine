@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
+import de.hanno.hpengine.engine.event.TexturesChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.Material.MAP
@@ -211,6 +212,12 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
+        bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
+    }
+
+    @Subscribe
+    @Handler
+    fun handle(event: TexturesChangedEvent) {
         bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
     }
 
