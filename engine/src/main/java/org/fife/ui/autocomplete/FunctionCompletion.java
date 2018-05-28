@@ -17,7 +17,7 @@ import javax.swing.text.Position;
 
 
 /**
- * A completion choice representing a function.
+ * A completion choice representing a bufferMaterialsExtractor.
  *
  * @author Robert Futrell
  * @version 1.0
@@ -26,12 +26,12 @@ public class FunctionCompletion extends VariableCompletion
 								implements ParameterizedCompletion {
 
 	/**
-	 * Parameters to the function.
+	 * Parameters to the bufferMaterialsExtractor.
 	 */
 	private List params;
 
 	/**
-	 * A description of the return value of this function.
+	 * A description of the return value of this bufferMaterialsExtractor.
 	 */
 	private String returnValDesc;
 
@@ -40,8 +40,8 @@ public class FunctionCompletion extends VariableCompletion
 	 * Constructor.
 	 *
 	 * @param provider The parent provider.
-	 * @param name The name of this function.
-	 * @param returnType The return type of this function.
+	 * @param name The name of this bufferMaterialsExtractor.
+	 * @param returnType The return type of this bufferMaterialsExtractor.
 	 */
 	public FunctionCompletion(CompletionProvider provider, String name,
 								String returnType) {
@@ -57,7 +57,7 @@ public class FunctionCompletion extends VariableCompletion
 
 
 	/**
-	 * Adds HTML describing the parameters to this function to a buffer.
+	 * Adds HTML describing the parameters to this bufferMaterialsExtractor to a buffer.
 	 *
 	 * @param sb The buffer to append to.
 	 */
@@ -94,8 +94,8 @@ public class FunctionCompletion extends VariableCompletion
 
 
 	/**
-	 * Returns the "definition string" for this function completion.  For
-	 * example, for the C "<code>printf</code>" function, this would return
+	 * Returns the "definition string" for this bufferMaterialsExtractor completion.  For
+	 * example, for the C "<code>printf</code>" bufferMaterialsExtractor, this would return
 	 * "<code>int printf(const char *, ...)</code>".
 	 * 
 	 * @return The definition string.
@@ -195,7 +195,7 @@ public class FunctionCompletion extends VariableCompletion
 		sb.append(getProvider().getParameterListEnd());
 		int endOffs = dot + sb.length();
 		endOffs -= 1;//getProvider().getParameterListStart().length();
-		info.addReplacementLocation(endOffs, endOffs); // offset after function
+		info.addReplacementLocation(endOffs, endOffs); // offset after bufferMaterialsExtractor
 		info.setDefaultEndOffs(endOffs);
 		
 		int selectionEnd = paramCount>0 ? (dot+firstParamLen) : dot;
@@ -215,9 +215,9 @@ public class FunctionCompletion extends VariableCompletion
 
 
 	/**
-	 * Returns the number of parameters to this function.
+	 * Returns the number of parameters to this bufferMaterialsExtractor.
 	 *
-	 * @return The number of parameters to this function.
+	 * @return The number of parameters to this bufferMaterialsExtractor.
 	 * @see #getParam(int)
 	 */
 	public int getParamCount() {
@@ -252,7 +252,7 @@ public class FunctionCompletion extends VariableCompletion
 
 
 	/**
-	 * Returns the description of the return value of this function.
+	 * Returns the description of the return value of this bufferMaterialsExtractor.
 	 *
 	 * @return The description, or <code>null</code> if there is none.
 	 * @see #setReturnValueDescription(String)
@@ -290,7 +290,7 @@ public class FunctionCompletion extends VariableCompletion
 
 
 	/**
-	 * Sets the parameters to this function.
+	 * Sets the parameters to this bufferMaterialsExtractor.
 	 *
 	 * @param params The parameters.  This should be a list of
 	 *        {@link ParameterizedCompletion.Parameter}s.
@@ -306,7 +306,7 @@ public class FunctionCompletion extends VariableCompletion
 
 
 	/**
-	 * Sets the description of the return value of this function.
+	 * Sets the description of the return value of this bufferMaterialsExtractor.
 	 *
 	 * @param desc The description.
 	 * @see #getReturnValueDescription()

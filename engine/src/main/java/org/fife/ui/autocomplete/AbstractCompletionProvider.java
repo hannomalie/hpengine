@@ -170,7 +170,7 @@ public abstract class AbstractCompletionProvider
 				index = -index - 1;
 			}
 			else {
-				// If there are several overloads for the function being
+				// If there are several overloads for the bufferMaterialsExtractor being
 				// completed, Collections.binarySearch() will return the index
 				// of one of those overloads, but we must return all of them,
 				// so search backward until we find the first one.

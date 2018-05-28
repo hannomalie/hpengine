@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
@@ -40,7 +41,9 @@ import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.util.*
 
-class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : LifeCycle, Serializable {
+interface IScene : LifeCycle, Serializable
+
+class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : IScene {
 
     @Transient private var entityMovedInCycle: Long = 0
     @Transient var entityAddedInCycle: Long = 0

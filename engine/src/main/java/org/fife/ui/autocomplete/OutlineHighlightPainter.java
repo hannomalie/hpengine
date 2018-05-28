@@ -22,7 +22,7 @@ import javax.swing.text.View;
 
 /**
  * Highlight painter that draws an outline around the text.  This is used to
- * draw bounds around function/method parameters.
+ * draw bounds around bufferMaterialsExtractor/method parameters.
  *
  * @author Robert Futrell
  * @version 1.0

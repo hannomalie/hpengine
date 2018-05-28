@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.TexturesChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
+import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.Material.MAP
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -21,8 +23,9 @@ import java.util.logging.Logger
 
 import de.hanno.hpengine.engine.model.material.Material.getDirectory
 import de.hanno.hpengine.engine.model.material.Material.write
-import de.hanno.hpengine.util.Util
 import net.engio.mbassy.listener.Handler
+import java.util.function.BiConsumer
+import java.util.function.Supplier
 
 class MaterialManager(private val engine: Engine, val textureManager: TextureManager) : Manager {
     val skyboxMaterial: Material
@@ -35,13 +38,11 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     val materials: List<Material>
         get() = ArrayList(MATERIALS.values)
 
-    val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
-        engine.gpuContext.execute {
-            val materials = engine.getScene().materialManager.materials
-            renderState.entitiesState.materialBuffer.put(0, materials)
-            renderState.entitiesState.materialBuffer.buffer.position(0)
-        }
-    })
+    val bufferMaterialsExtractor = Supplier { engine.getScene().materialManager.materials }
+    val bufferMaterialsConsumer = BiConsumer<RenderState, List<Material>> { renderState, materials ->
+        renderState.entitiesState.materialBuffer.put(0, materials)
+    }
+    val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.Action(bufferMaterialsExtractor, bufferMaterialsConsumer))
 
     init {
         this.eventBus = engine.eventBus

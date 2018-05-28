@@ -23,7 +23,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
 
 
 /**
- * A "tool tip" that displays information on the function or method currently
+ * A "tool tip" that displays information on the bufferMaterialsExtractor or method currently
  * being entered.
  *
  * @author Robert Futrell

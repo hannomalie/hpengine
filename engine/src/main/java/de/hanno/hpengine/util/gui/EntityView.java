@@ -128,7 +128,7 @@ public class EntityView extends WebPanel {
         for(int instanceIndex = 0; instanceIndex < getInstances(entity).size(); instanceIndex++) {
             Instance currentInstance = getInstances(entity).get(instanceIndex);
 
-            TransformablePanel transformablePanel = new TransformablePanel(currentInstance);
+            TransformablePanel transformablePanel = new TransformablePanel(engine, currentInstance);
             WebComponentPanel materialSelectionPanel = new WebComponentPanel();
             materialSelectionPanel.setElementMargin(4);
             WebLabel meshName = new WebLabel("Instance"+instanceIndex);
@@ -220,7 +220,7 @@ public class EntityView extends WebPanel {
 
         addNamePanel(webComponentPanel);
 
-        webComponentPanel.addElement(new TransformablePanel(entity));
+        webComponentPanel.addElement(new TransformablePanel<>(engine, entity));
 
         WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Update.class).toArray(), entity.getUpdate());
         updateComboBox.addActionListener(e -> {

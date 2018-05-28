@@ -11,13 +11,16 @@ import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import net.engio.mbassy.listener.Handler
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.function.Consumer
+import java.util.function.BiConsumer
+import java.util.function.Function
+import java.util.function.Supplier
 
 class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
@@ -32,38 +35,29 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     override fun getComponents(): List<ModelComponent> = components
 
-    val bufferEntitiesActionRef = engine.renderManager.renderState.registerAction({ _ ->
-        val currentEntities = engine.commandQueue.addCommand(object: FutureCallable<List<GpuEntity>>() {
+    private val entitiesExtractor: Supplier<List<GpuEntity>> = Supplier {
+        engine.commandQueue.addCommand(object: FutureCallable<List<GpuEntity>>() {
             override fun execute() = getCurrentGpuEntities()
         }).get()
-//        val currentEntities = getCurrentGpuEntities()
-        engine.renderManager.renderState.addCommand({ it.entitiesBuffer.put(0, currentEntities) })
-
-//        renderState.entitiesState.entitiesBuffer.put(0, gpuEntities)
-//        renderState.entitiesState.entitiesBuffer.buffer.position(0)
-
-//            for(entity in engine.getScene().getEntities().filter { it.hasComponent(ModelComponent.COMPONENT_KEY) }) {
-//                val modelComponent = entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)
-//                for(mesh in modelComponent.meshes) {
-//                    for(i in 0 .. entity.instanceCount) {
-//                        System.out.println("Entity " + entity.name + " - Mesh " + mesh.name + " - Instance " + i)
-//                        ModelComponent.debugPrintFromBufferStatic(renderState.entitiesState.entitiesBuffer.buffer)
-//                    }
-//                }
-//            }
-
-    })
-
-    val bufferDynamicEntitiesActionRef = engine.renderManager.renderState.registerAction{ renderState ->
-        for(entity in gpuEntities.filter { it.update == Update.DYNAMIC }) {
-            renderState.entitiesState.entitiesBuffer.put(gpuEntities.indexOf(entity), entity)
-        }
-        renderState.entitiesState.entitiesBuffer.buffer.position(0)
     }
+    private val entitiesConsumer: BiConsumer<RenderState, List<GpuEntity>> = BiConsumer { _, entities -> engine.renderManager.renderState.addCommand({ it.entitiesBuffer.put(0, entities) }) }
+    val bufferEntitiesActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.RareAction<List<GpuEntity>>( entitiesExtractor, entitiesConsumer, engine))
 
-    val bufferJointsActionRef = engine.renderManager.renderState.registerAction({ renderState ->
-        renderState.entitiesState.jointsBuffer.put(0, engine.getScene().modelComponentSystem.joints)
-    })
+    private val dynamicEntitiesExtractor: Supplier<List<GpuEntity>> = Supplier {
+        engine.commandQueue.addCommand(object: FutureCallable<List<GpuEntity>>() {
+            override fun execute() = getCurrentGpuEntities().filter { it.update == Update.DYNAMIC }
+        }).get()
+    }
+    private val dynamicEntitiesConsumer: BiConsumer<RenderState, List<GpuEntity>> = BiConsumer { renderState, entities ->
+        for(entity in entities.filter { it.update == Update.DYNAMIC }) {
+            renderState.entitiesState.entitiesBuffer.put(entities.indexOf(entity), entity)
+        }
+    }
+    val bufferDynamicEntitiesActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.Action<List<GpuEntity>>(dynamicEntitiesExtractor, dynamicEntitiesConsumer))
+
+    private val bufferJointsExtractor: Supplier<List<BufferableMatrix4f>> = Supplier { engine.getScene().modelComponentSystem.joints }
+    private val bufferJointsConsumer = BiConsumer<RenderState, List<BufferableMatrix4f>> { renderState, joints -> renderState.entitiesState.jointsBuffer.put(0, joints) }
+    val bufferJointsActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.Action<List<BufferableMatrix4f>>(bufferJointsExtractor, bufferJointsConsumer))
 
     init {
         engine.eventBus.register(this)

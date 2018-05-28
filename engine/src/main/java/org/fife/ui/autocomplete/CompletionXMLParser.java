@@ -231,7 +231,7 @@ public class CompletionXMLParser extends DefaultHandler {
 
 			if ("keyword".equals(qName)) {
 				Completion c = null;
-				if ("function".equals(type)) {
+				if ("bufferMaterialsExtractor".equals(type)) {
 					c = createFunctionCompletion();
 				}
 				else if ("constant".equals(type)) {

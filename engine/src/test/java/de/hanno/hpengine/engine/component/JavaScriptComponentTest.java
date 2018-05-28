@@ -44,8 +44,8 @@ public class JavaScriptComponentTest extends TestWithEngine {
         Assert.assertEquals(false, engine.getScene().getScriptManager().getGlobalContext().get("initCalled"));
         Assert.assertEquals(false, engine.getScene().getScriptManager().getGlobalContext().get("updateCalled"));
 
-        String script = "var init = function(world) { initCalled = true; };" +
-                "var update = function(seconds) { updateCalled = true; };";
+        String script = "var init = bufferMaterialsExtractor(world) { initCalled = true; };" +
+                "var update = bufferMaterialsExtractor(seconds) { updateCalled = true; };";
         JavaScriptComponent component = new JavaScriptComponent(script);
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create().addComponent(component);
 

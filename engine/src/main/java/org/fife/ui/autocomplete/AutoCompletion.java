@@ -34,7 +34,7 @@ import javax.swing.text.*;
  *        provides documentation on the currently selected completion choice
  *        (as seen in Eclipse and NetBeans).</li>
  *    <li>Parameter assistance.  If this is enabled, if the user enters a
- *        "parameterized" completion, such as a method or a function, then
+ *        "parameterized" completion, such as a method or a bufferMaterialsExtractor, then
  *        they will receive a tool tip describing the arguments they have to
  *        enter to the completion.  Also, the arguments can be navigated via
  *        tab and shift+tab (a la Eclipse and NetBeans).</li>
@@ -573,9 +573,9 @@ public class AutoCompletion {
 		this.textComponent = c;
 		installTriggerKey(getTriggerKey());
 
-		// Install the function completion key, if there is one.
+		// Install the bufferMaterialsExtractor completion key, if there is one.
 		// NOTE: We cannot do this if the start char is ' ' (e.g. just a space
-		// between the function name and parameters) because it overrides
+		// between the bufferMaterialsExtractor name and parameters) because it overrides
 		// RSTA's special space action.  It seems KeyStorke.getKeyStroke(' ')
 		// hoses ctrl+space, shift+space, etc., even though I think it
 		// shouldn't...
@@ -937,7 +937,7 @@ public class AutoCompletion {
 
 	/**
 	 * Sets whether parameter assistance is enabled.  If parameter assistance
-	 * is enabled, and a "parameterized" completion (such as a function or
+	 * is enabled, and a "parameterized" completion (such as a bufferMaterialsExtractor or
 	 * method) is inserted, the user will get "assistance" in inserting the
 	 * parameters in the form of a popup window with documentation and easy
 	 * tabbing through the arguments (as seen in Eclipse and NetBeans).
@@ -988,7 +988,7 @@ public class AutoCompletion {
 
 
 	/**
-	 * Displays a "tool tip" detailing the inputs to the function just entered.
+	 * Displays a "tool tip" detailing the inputs to the bufferMaterialsExtractor just entered.
 	 *
 	 * @param pc The completion.
 	 * @param typedParamListStartChar Whether the parameterized completion list
@@ -1039,7 +1039,7 @@ public class AutoCompletion {
 
 			uninstallTriggerKey();
 
-			// Uninstall the function completion key.
+			// Uninstall the bufferMaterialsExtractor completion key.
 			char start = provider.getParameterListStart();
 			if (start!=0) {
 				KeyStroke ks = KeyStroke.getKeyStroke(start);

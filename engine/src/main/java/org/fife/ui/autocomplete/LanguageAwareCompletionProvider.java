@@ -42,7 +42,7 @@ import org.fife.ui.rtextarea.ToolTipSupplier;
  * <tt>org.fife.ui.rtextarea.ToolTipSupplier</tt> interface, which allows it
  * to display tooltips for completion choices.  Thus the standard
  * {@link VariableCompletion} and {@link FunctionCompletion} completions should
- * be able to display tooltips with the variable declaration or function
+ * be able to display tooltips with the variable declaration or bufferMaterialsExtractor
  * definition (provided the <tt>RSyntaxTextArea</tt> was registered with the
  * <tt>javax.swing.ToolTipManager</tt>).
  *
@@ -186,7 +186,7 @@ public class LanguageAwareCompletionProvider extends CompletionProviderBase
 	 */
 	public List getParameterizedCompletions(JTextComponent tc) {
 		// Parameterized completions can only come from the "code" completion
-		// provider.  We do not do function/method completions while editing
+		// provider.  We do not do bufferMaterialsExtractor/method completions while editing
 		// strings or comments.
 		CompletionProvider provider = getProviderFor(tc);
 		return provider==defaultProvider ?

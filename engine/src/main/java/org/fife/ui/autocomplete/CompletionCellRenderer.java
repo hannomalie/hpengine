@@ -75,7 +75,7 @@ public class CompletionCellRenderer extends DefaultListCellRenderer {
 	private Color realBG;
 
 	/**
-	 * The color to use for function arguments.
+	 * The color to use for bufferMaterialsExtractor arguments.
 	 */
 	private String paramColor;
 
@@ -327,7 +327,7 @@ public class CompletionCellRenderer extends DefaultListCellRenderer {
 
 
 	/**
-	 * Prepares this renderer to display a function completion. 
+	 * Prepares this renderer to display a bufferMaterialsExtractor completion.
 	 *
 	 * @param list The list of choices being rendered.
 	 * @param fc The completion to render.
@@ -566,7 +566,7 @@ public class CompletionCellRenderer extends DefaultListCellRenderer {
 
 
 	/**
-	 * Sets the color to use for function arguments.
+	 * Sets the color to use for bufferMaterialsExtractor arguments.
 	 *
 	 * @param color The color to use.  This is ignored if <code>null</code>.
 	 * @see #setTypeColor(Color)
@@ -591,7 +591,7 @@ public class CompletionCellRenderer extends DefaultListCellRenderer {
 
 
 	/**
-	 * Sets the color to use for function/field types.  Note that if
+	 * Sets the color to use for bufferMaterialsExtractor/field types.  Note that if
 	 * {@link #getShowTypes()} returns <code>false</code>, this property
 	 * effectively does nothing.
 	 *

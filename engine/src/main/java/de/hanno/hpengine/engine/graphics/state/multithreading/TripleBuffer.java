@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
@@ -7,9 +8,9 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -45,7 +46,7 @@ public class TripleBuffer<T extends RenderState> {
     }
 
 //    TODO: This must probably happen on the render thread
-    public ActionReference registerAction(Consumer<T> action) {
+    public ActionReference registerAction(Action action) {
         int actionIndex = currentReadState.addAction(action);
         currentWriteState.addAction(action);
         currentStagingState.addAction(action);
@@ -161,14 +162,8 @@ public class TripleBuffer<T extends RenderState> {
             this.state = state;
         }
 
-        public void addActions(Consumer<T>[] singletonAction) {
-            for(int i = 0; i < singletonAction.length; i++) {
-                addAction(singletonAction[i]);
-            }
-        }
-
-        private int addAction(Consumer<T> tConsumer) {
-            this.actions.add(new Action(tConsumer));
+        private int addAction(Action action) {
+            this.actions.add(action);
             return actions.size() -1;
         }
 
@@ -179,7 +174,7 @@ public class TripleBuffer<T extends RenderState> {
         public void update(T writeState) {
             for(int i = 0; i < actions.size(); i++) {
                 if(actions.get(i).shouldExecute()) {
-                    actions.get(i).execute(state);
+                    actions.get(i).consume(state);
                 }
             }
             queue.executeCommands();
@@ -188,12 +183,14 @@ public class TripleBuffer<T extends RenderState> {
 
     }
 
-    private static class Action<T extends RenderState> {
+    public static class Action<EXTRACT> {
         AtomicLong requestedInCycle = new AtomicLong(-1);
         AtomicLong executedInCycle = new AtomicLong(0);
-        private Consumer<T> consumer;
+        protected Supplier<EXTRACT> extractor;
+        protected BiConsumer<RenderState, EXTRACT> consumer;
 
-        public Action(Consumer<T> consumer) {
+        public Action(Supplier<EXTRACT> extractor, BiConsumer<RenderState, EXTRACT> consumer) {
+            this.extractor = extractor;
             this.consumer = consumer;
         }
 
@@ -205,8 +202,32 @@ public class TripleBuffer<T extends RenderState> {
             requestedInCycle.getAndSet(cycle);
         }
 
-        public void execute(T state) {
-            consumer.accept(state);
+        public void consume(RenderState state) {
+            consumer.accept(state, extractor.get());
+            executedInCycle.getAndSet(state.getCycle());
+        }
+    }
+
+    public static class RareAction<EXTRACT> extends Action<EXTRACT> {
+        private Engine engine;
+
+        public RareAction(Supplier<EXTRACT> extractor, BiConsumer<RenderState, EXTRACT> consumer, Engine engine) {
+            super(extractor, consumer);
+            this.engine = engine;
+        }
+        @Override
+        public boolean shouldExecute() {
+            return false;
+        }
+        @Override
+        public void request(long cycle) {
+            EXTRACT extract = extractor.get();
+            engine.getRenderManager().getRenderState().addCommand(state -> consumer.accept(state, extract));
+        }
+
+        @Override
+        public void consume(RenderState state) {
+            consumer.accept(state, extractor.get());
             executedInCycle.getAndSet(state.getCycle());
         }
     }

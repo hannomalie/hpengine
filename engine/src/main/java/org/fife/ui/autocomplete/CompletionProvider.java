@@ -88,8 +88,8 @@ public interface CompletionProvider {
 	/**
 	 * Returns an object that can return a list of completion choices for
 	 * parameters.  This is used when a user code-completes a parameterized
-	 * completion, such as a function or method.  For any parameter to the
-	 * function/method, this object can return possible completions.
+	 * completion, such as a bufferMaterialsExtractor or method.  For any parameter to the
+	 * bufferMaterialsExtractor/method, this object can return possible completions.
 	 *
 	 * @return The parameter choices provider, or <code>null</code> if
 	 *         none is installed.
@@ -111,7 +111,7 @@ public interface CompletionProvider {
 
 	/**
 	 * Returns the text that marks the end of a list of parameters to a
-	 * function or method.
+	 * bufferMaterialsExtractor or method.
 	 *
 	 * @return The text for a parameter list end, for example,
 	 *         '<code>)</code>'.
@@ -123,7 +123,7 @@ public interface CompletionProvider {
 
 
 	/**
-	 * Returns the text that separates parameters to a function or method.
+	 * Returns the text that separates parameters to a bufferMaterialsExtractor or method.
 	 *
 	 * @return The text that separates parameters, for example,
 	 *         "<code>, </code>".
@@ -136,7 +136,7 @@ public interface CompletionProvider {
 
 	/**
 	 * Returns the text that marks the start of a list of parameters to a
-	 * function or method.
+	 * bufferMaterialsExtractor or method.
 	 *
 	 * @return The text for a parameter list start, for example,
 	 *         "<code>(</code>".

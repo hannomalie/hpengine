@@ -314,7 +314,7 @@ class AutoCompleteDescWindow extends JWindow implements HyperlinkListener,
 				ioe.printStackTrace();
 			}
 		}
-		else { // Assume simple function name text, like in c.xml
+		else { // Assume simple bufferMaterialsExtractor name text, like in c.xml
 			// FIXME: This is really a hack, and we assume we can find the
 			// linked-to item in the same CompletionProvider.
 			AutoCompletePopupWindow parent =

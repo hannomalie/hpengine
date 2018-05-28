@@ -12,7 +12,7 @@ import javax.swing.text.JTextComponent;
 
 
 /**
- * A completion option that takes parameters, such as a function or method.
+ * A completion option that takes parameters, such as a bufferMaterialsExtractor or method.
  *
  * @author Robert Futrell
  * @version 1.0
@@ -22,7 +22,7 @@ public interface ParameterizedCompletion extends Completion {
 
 	/**
 	 * Returns the "definition string" for this completion.  For example,
-	 * for the C "<code>printf</code>" function, this would return
+	 * for the C "<code>printf</code>" bufferMaterialsExtractor, this would return
 	 * "<code>int printf(const char *, ...)</code>".
 	 * 
 	 * @return The definition string.
@@ -102,7 +102,7 @@ public interface ParameterizedCompletion extends Completion {
 		 *        point" in the completion text.  If the user types in a
 		 *        parameter that is an ending point, parameter completion mode
 		 *        terminates.  Set this to <code>true</code> for a trailing
-		 *        parameter after a function call's closing ')', for example.
+		 *        parameter after a bufferMaterialsExtractor call's closing ')', for example.
 		 */
 		public Parameter(Object type, String name, boolean endParam) {
 			this.name = name;

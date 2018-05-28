@@ -209,8 +209,8 @@ public abstract class CompletionProviderBase implements CompletionProvider {
 
 	/**
 	 * Sets the param choices provider.  This is used when a user
-	 * code-completes a parameterized completion, such as a function or method.
-	 * For any parameter to the function/method, this object can return
+	 * code-completes a parameterized completion, such as a bufferMaterialsExtractor or method.
+	 * For any parameter to the bufferMaterialsExtractor/method, this object can return
 	 * possible completions.
 	 *
 	 * @param pcp The parameter choices provider, or <code>null</code> for

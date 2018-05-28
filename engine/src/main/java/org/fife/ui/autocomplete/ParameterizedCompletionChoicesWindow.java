@@ -33,7 +33,7 @@ import org.fife.ui.rsyntaxtextarea.PopupWindowDecorator;
 /**
  * A small popup window offering a list of likely choices for a parameter
  * when the user has code-completed a parameterized completion.  For example,
- * if they have just code-completed the C function "<code>fprintf</code>",
+ * if they have just code-completed the C bufferMaterialsExtractor "<code>fprintf</code>",
  * when entering the file name, this popup might display all local variables
  * of type "<code>char *</code>".
  *

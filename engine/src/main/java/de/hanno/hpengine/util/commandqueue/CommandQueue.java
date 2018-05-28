@@ -34,13 +34,11 @@ public class CommandQueue {
         }
     }
 
-    public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(Runnable runnable) {
+    public <RESULT_TYPE> CompletableFuture<RESULT_TYPE> addCommand(Runnable runnable) {
         FutureCallable command = new RunnableCallable(runnable);
-//        workQueue.offer(command);
-//        return command.getFuture();
         return addCommand(command);
     }
-    public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(FutureCallable<RESULT_TYPE> command) {
+    public <RESULT_TYPE> CompletableFuture<RESULT_TYPE> addCommand(FutureCallable<RESULT_TYPE> command) {
         if(executeDirectly()) {
             try {
                 command.getFuture().complete(command.execute());
