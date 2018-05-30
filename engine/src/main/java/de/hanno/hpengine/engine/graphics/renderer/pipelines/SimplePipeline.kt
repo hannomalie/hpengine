@@ -112,7 +112,8 @@ open class SimplePipeline(private val engine: Engine,
             if (useBackfaceCulling) {
                 engine.gpuContext.enable(GlCap.CULL_FACE)
             }
-            VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount)
+//            VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount)
+            VertexBuffer.multiDrawElementsIndirectCount(vertexBuffer, indexBuffer, commandBuffer, drawCountBuffer, commandCount)
         }
     }
 

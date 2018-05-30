@@ -57,7 +57,7 @@ class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSy
     override fun renderPointLightShadowMaps(renderState: RenderState) {
         val pointLights = pointLightSystem.getComponents(PointLight::class.java)
         val gpuContext = engine.gpuContext
-        val needToRedraw = pointLightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointLightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle
+        val needToRedraw = pointLightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointLightShadowMapsRenderedInCycle < renderState.pointLightMovedInCycle
         if (!needToRedraw) {
             return
         }

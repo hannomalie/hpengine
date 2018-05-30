@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhas
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.IndexBuffer;
+import de.hanno.hpengine.engine.model.Model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,30 +28,29 @@ public class CommandOrganization {
     IndexBuffer entityOffsetBuffer;
     AtomicCounterBuffer drawCountBuffer;
 
-    Map<CullingPhase, AtomicCounterBuffer> drawCountBuffers = new HashMap<>();
-    Map<CullingPhase, CommandBuffer> commandBuffers = new HashMap<>();
-    Map<CullingPhase, IndexBuffer> visibilityBuffers = new HashMap<>();
-    Map<CullingPhase, IndexBuffer> entityOffsetBuffers = new HashMap<>();
-    Map<CullingPhase, IndexBuffer> commandOffsets = new HashMap<>();
-    Map<CullingPhase, IndexBuffer> currentCompactedPointers = new HashMap<>();
-    Map<CullingPhase, IndexBuffer> entityOffsetBuffersCulled = new HashMap<>();
-    Map<CullingPhase, GPUBuffer<ModelComponent>> entitiesBuffersCompacted = new HashMap<>();
-    Map<CullingPhase, AtomicCounterBuffer> entitiesCompactedCounter = new HashMap<>();
-    Map<CullingPhase, IndexBuffer> entitiesCounters = new HashMap<>();
+    AtomicCounterBuffer drawCountBuffers;
+    CommandBuffer commandBuffers;
+    IndexBuffer visibilityBuffers;
+    IndexBuffer entityOffsetBuffers;
+    IndexBuffer commandOffsets;
+    IndexBuffer currentCompactedPointers;
+    IndexBuffer entityOffsetBuffersCulled;
+    GPUBuffer<ModelComponent> entitiesBuffersCompacted;
+    AtomicCounterBuffer entitiesCompactedCounter;
+    IndexBuffer entitiesCounters;
 
     public CommandOrganization(GpuContext gpuContext) {
-        for (CullingPhase phase : CullingPhase.values()) {
-            drawCountBuffers.put(phase, new AtomicCounterBuffer(gpuContext, 1));
-            commandBuffers.put(phase, new CommandBuffer(gpuContext, commandBufferCapacityInBytes));
-            visibilityBuffers.put(phase, new IndexBuffer(gpuContext, createIntBuffer(10000)));
-            entityOffsetBuffers.put(phase, new IndexBuffer(gpuContext, createIntBuffer(10000)));
-            commandOffsets.put(phase, new IndexBuffer(gpuContext, createIntBuffer(10000)));
-            currentCompactedPointers.put(phase, new IndexBuffer(gpuContext, createIntBuffer(10000)));
-            entityOffsetBuffersCulled.put(phase, new IndexBuffer(gpuContext, createIntBuffer(10000)));
-            entitiesBuffersCompacted.put(phase, new PersistentMappedBuffer(gpuContext, 8000));
-            entitiesCompactedCounter.put(phase, new AtomicCounterBuffer(gpuContext, 1));
-            entitiesCounters.put(phase, new IndexBuffer(gpuContext));
-        }
+        drawCountBuffers = new AtomicCounterBuffer(gpuContext, 1);
+        commandBuffers = new CommandBuffer(gpuContext, commandBufferCapacityInBytes);
+        visibilityBuffers = new IndexBuffer(gpuContext, createIntBuffer(10000));
+        entityOffsetBuffers = new IndexBuffer(gpuContext, createIntBuffer(10000));
+        commandOffsets = new IndexBuffer(gpuContext, createIntBuffer(10000));
+        currentCompactedPointers = new IndexBuffer(gpuContext, createIntBuffer(10000));
+        entityOffsetBuffersCulled = new IndexBuffer(gpuContext, createIntBuffer(10000));
+        entitiesBuffersCompacted = new PersistentMappedBuffer<>(gpuContext, 8000);
+        entitiesCompactedCounter = new AtomicCounterBuffer(gpuContext, 1);
+        entitiesCounters = new IndexBuffer(gpuContext);
+
         commandBuffer = new CommandBuffer(gpuContext, commandBufferCapacityInBytes);
         entityOffsetBuffer = new IndexBuffer(gpuContext, createIntBuffer(10000));
         drawCountBuffer = new AtomicCounterBuffer(gpuContext, 1);

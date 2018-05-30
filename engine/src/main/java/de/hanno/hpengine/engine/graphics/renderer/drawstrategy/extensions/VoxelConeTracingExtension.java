@@ -133,7 +133,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         GPUProfiler.start("VCT first pass");
         boolean entityMoved = renderState.getEntitiesState().entityMovedInCycle > entityMovedLastInCycle;
         boolean directionalLightMoved = renderState.getDirectionalLightHasMovedInCycle() > directionalLightMovedLastInCycle;
-        boolean pointlightMoved = renderState.getPointlightMovedInCycle() > pointLightMovedLastInCycle;
+        boolean pointlightMoved = renderState.getPointLightMovedInCycle() > pointLightMovedLastInCycle;
         if(entityMoved) {
             entityMovedLastInCycle = renderState.getCycle();
         }

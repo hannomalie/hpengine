@@ -16,7 +16,6 @@ import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import org.joml.Vector3f
-import org.joml.Vector4f
 import java.nio.FloatBuffer
 
 class RenderState(gpuContext: GpuContext) {
@@ -33,7 +32,7 @@ class RenderState(gpuContext: GpuContext) {
     val commandOrganizationAnimated: CommandOrganization = CommandOrganization(gpuContext)
 
     var camera = Camera(Entity("RenderStateCameraEntity"))
-    var pointlightMovedInCycle: Long = 0
+    var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
     var sceneInitiallyDrawn: Boolean = false
     var sceneMin = Vector3f()
@@ -72,7 +71,7 @@ class RenderState(gpuContext: GpuContext) {
      * @param source
      */
     constructor(source: RenderState) : this(source.gpuContext) {
-        init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.cycle, source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle)
+        init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointLightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.cycle, source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle)
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
         //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
@@ -100,7 +99,7 @@ class RenderState(gpuContext: GpuContext) {
         this.entitiesState.entityMovedInCycle = entityMovedInCycle
         this.entitiesState.entityAddedInCycle = entityAddedInCycle
         this.directionalLightHasMovedInCycle = directionalLightHasMovedInCycle
-        this.pointlightMovedInCycle = pointLightMovedInCycle
+        this.pointLightMovedInCycle = pointLightMovedInCycle
         this.sceneInitiallyDrawn = sceneInitiallyDrawn
         this.sceneMin = sceneMin
         this.sceneMax = sceneMax
@@ -132,7 +131,7 @@ class RenderState(gpuContext: GpuContext) {
     fun add(state: CustomState) = customState.add(state)
 
     fun <T> getState(stateRef: StateRef<T>) = customState.get(stateRef.index) as T
-    fun pointLightHasMoved() = pointlightMovedInCycle > cycle
+    fun pointLightHasMoved() = pointLightMovedInCycle > cycle
     fun entityHasMoved() = entitiesState.entityMovedInCycle > cycle
     fun entityWasAdded() = entitiesState.entityAddedInCycle > cycle
 }
