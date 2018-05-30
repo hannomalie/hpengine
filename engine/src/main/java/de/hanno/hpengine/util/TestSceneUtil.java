@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
+import de.hanno.hpengine.engine.scene.IScene;
 import de.hanno.hpengine.engine.scene.Scene;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestSceneUtil {
-    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, DirectionalLightSystem directionalLightSystem, Scene scene, ModelComponentSystem modelComponentSystem) {
+    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, DirectionalLightSystem directionalLightSystem, IScene scene, ModelComponentSystem modelComponentSystem) {
         List<Entity> entities = new ArrayList<>();
         int entityCount = 3;
 

@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.manager.Manager
 
 class SceneManager(val engine: Engine): Manager {
 
-    var scene: Scene = Scene(engine = engine)
+    var scene: IScene = Scene(engine = engine)
         set(value) {
             onSetScene(value)
             engine.commandQueue.execute({
@@ -24,23 +24,16 @@ class SceneManager(val engine: Engine): Manager {
         scene.currentCycle = newDrawCycle
         scene.update(deltaSeconds)
 
-
-//        if (scene.entityMovedInCycle() == newDrawCycle) {
-//            engine.eventBus.post(EntityMovedEvent()) TODO: Check if this is still necessary
-//        }
-        if (scene.directionalLightSystem.getDirectionalLight().entity.hasMoved()) {
-            engine.eventBus.post(DirectionalLightHasMovedEvent())
-        }
     }
 
-    private fun onSetScene(nextScene: Scene) {
+    private fun onSetScene(nextScene: IScene) {
         engine.sceneManager.scene.entityManager.clear()
         engine.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
         engine.renderManager.clear()
-        engine.getScene().modelComponentSystem.clear()
+        engine.getScene().clear()
         nextScene.init(engine)
-        activeCamera = nextScene.camera.getComponent(Camera::class.java)
+        activeCamera = nextScene.activeCamera.getComponent(Camera::class.java)
         engine.renderManager.renderState.addCommand { renderState1 ->
             renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
             renderState1.setVertexIndexBufferAnimated(engine.renderManager.vertexIndexBufferAnimated)

@@ -481,11 +481,11 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     }
     @Override
     public String debugPrintFromBuffer(ByteBuffer buffer) {
-        return debugPrintFromBufferStatic(buffer);
+        return getDebugStringFromBuffer(buffer);
     }
 
     @NotNull
-    public static String debugPrintFromBufferStatic(ByteBuffer buffer) {
+    public static String getDebugStringFromBuffer(ByteBuffer buffer) {
         StringBuilder builder = new StringBuilder()
                 .append(buffer.getFloat()).append(" ")
                 .append(buffer.getFloat()).append(" ")
@@ -502,34 +502,34 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                 .append(buffer.getFloat()).append(" ")
                 .append(buffer.getFloat()).append(" ")
                 .append(buffer.getFloat()).append(" ")
-                .append(buffer.getFloat()).append("\n")
-                .append("Selected ").append(buffer.getInt()).append("\n")
-                .append("Material Index ").append(buffer.getInt()).append("\n")
-                .append("Update ").append(buffer.getInt() == 0 ? "Dynamic" : "Static").append("\n")
-                .append("Mesh Buffer Index ").append(buffer.getInt()).append("\n")
-                .append("Entity Index ").append(buffer.getInt()).append("\n")
-                .append("Mesh Index ").append(buffer.getInt()).append("\n")
-                .append("Base Vertex ").append(buffer.getInt()).append("\n")
-                .append("Joint Base Index ").append(buffer.getInt()).append("\n")
-                .append("Animationframe 0 ").append(buffer.getInt()).append("\n")
-                .append("Animationframe 1 ").append(buffer.getInt()).append("\n")
-                .append("Animationframe 2 ").append(buffer.getInt()).append("\n")
-                .append("Animationframe 3 ").append(buffer.getInt()).append("\n")
-                .append("InvertTexCoordY ").append(buffer.getInt()).append("\n")
-                .append("Placeholder ").append(buffer.getInt()).append("\n")
-                .append("Placeholder ").append(buffer.getInt()).append("\n")
-                .append("Placeholder ").append(buffer.getInt()).append("\n")
-                .append("MinX ").append(buffer.getInt()).append("\n")
-                .append("MinY ").append(buffer.getInt()).append("\n")
-                .append("MinZ ").append(buffer.getInt()).append("\n")
-                .append("Placeholder ").append(buffer.getInt()).append("\n")
-                .append("MaxX ").append(buffer.getInt()).append("\n")
-                .append("MaxY ").append(buffer.getInt()).append("\n")
-                .append("MaxZ ").append(buffer.getInt()).append("\n")
-                .append("Placeholder ").append(buffer.getInt()).append("\n");
+                .append(buffer.getFloat()).append("\n");
+//                .append("Selected ").append(buffer.getInt()).append("\n")
+//                .append("Material Index ").append(buffer.getInt()).append("\n")
+//                .append("Update ").append(buffer.getInt() == 0 ? "Dynamic" : "Static").append("\n")
+//                .append("Mesh Buffer Index ").append(buffer.getInt()).append("\n")
+//                .append("Entity Index ").append(buffer.getInt()).append("\n")
+//                .append("Mesh Index ").append(buffer.getInt()).append("\n")
+//                .append("Base Vertex ").append(buffer.getInt()).append("\n")
+//                .append("Joint Base Index ").append(buffer.getInt()).append("\n")
+//                .append("Animationframe 0 ").append(buffer.getInt()).append("\n")
+//                .append("Animationframe 1 ").append(buffer.getInt()).append("\n")
+//                .append("Animationframe 2 ").append(buffer.getInt()).append("\n")
+//                .append("Animationframe 3 ").append(buffer.getInt()).append("\n")
+//                .append("InvertTexCoordY ").append(buffer.getInt()).append("\n")
+//                .append("Placeholder ").append(buffer.getInt()).append("\n")
+//                .append("Placeholder ").append(buffer.getInt()).append("\n")
+//                .append("Placeholder ").append(buffer.getInt()).append("\n")
+//                .append("MinX ").append(buffer.getInt()).append("\n")
+//                .append("MinY ").append(buffer.getInt()).append("\n")
+//                .append("MinZ ").append(buffer.getInt()).append("\n")
+//                .append("Placeholder ").append(buffer.getInt()).append("\n")
+//                .append("MaxX ").append(buffer.getInt()).append("\n")
+//                .append("MaxY ").append(buffer.getInt()).append("\n")
+//                .append("MaxZ ").append(buffer.getInt()).append("\n")
+//                .append("Placeholder ").append(buffer.getInt()).append("\n");
 
         String resultString = builder.toString();
-        System.out.println(resultString);
+//        System.out.println(resultString);
         return resultString;
     }
 

@@ -3,6 +3,7 @@ package de.hanno.hpengine.util.gui.structure;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ComponentMapper;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
+import de.hanno.hpengine.engine.scene.IScene;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.Util;
 
@@ -22,7 +23,7 @@ public class PointLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        Scene scene = engine.getSceneManager().getScene();
+        IScene scene = engine.getSceneManager().getScene();
         return scene.getPointLights().size();
     }
 

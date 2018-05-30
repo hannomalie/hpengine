@@ -93,8 +93,10 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                     if(!commands.isEmpty()) {
                         println("Commands")
                         Util.printIntBuffer(commandBuffers[phase]!!.intBufferView, 5, drawCountBuffers[phase]!!.intBufferView.get(0))
+                        println("Entities")
+                        Util.printModelComponents(drawDescription.renderState.entitiesBuffer.buffer, 10)
                         println("Entities compacted")
-                        Util.printFloatBuffer(entitiesBuffersCompacted[phase]!!.buffer.asFloatBuffer(), 40, 10)
+                        Util.printModelComponents(entitiesBuffersCompacted[phase]!!.buffer, 10)
                     }
                 }
             }

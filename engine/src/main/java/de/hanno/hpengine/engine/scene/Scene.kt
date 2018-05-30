@@ -4,10 +4,11 @@ import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
+import de.hanno.hpengine.engine.entity.EntitySystemRegistry
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
+import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
@@ -41,39 +42,76 @@ import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.util.*
 
-interface IScene : LifeCycle, Serializable
+interface IScene : LifeCycle, Serializable {
+    var activeCamera: Entity
+    var currentCycle: Long
+    val entityManager: EntityManager
+    val entitySystems: EntitySystemRegistry
+    val modelComponentSystem: ModelComponentSystem
+    val camera: Entity
+    fun clear()
+    val directionalLightSystem: DirectionalLightSystem
+    fun extract(currentWriteState: RenderState)
+    fun entityMovedInCycle(): Long
+    var entityAddedInCycle: Long
+    fun pointLightMovedInCycle(): Long
+    var isInitiallyDrawn: Boolean
+    val minMax: AABB
+    fun setEntityMovedInCycleToCurrentCycle()
+    val renderStateConsumers: List<StateConsumer>
+    fun getEntities(): List<Entity>
+    val materialManager: MaterialManager
+    fun addAll(entities: List<Entity>)
+    val cameraComponentSystem: CameraComponentSystem
+    val clusterComponentSystem: ClustersComponentSystem
+    val environmentProbeManager: EnvironmentProbeManager
+    fun getPointLights(): List<PointLight>
+    fun getTubeLights(): List<TubeLight>
+    fun getAreaLights(): List<AreaLight>
+    val areaLightSystem: AreaLightSystem
+    val pointLightSystem: PointLightSystem
+    val name: String
+    fun write(): Unit
+    fun write(name: String): Boolean
+    fun add(entity: Entity)
+    val scriptManager: ScriptManager
+    fun getEntity(name: String): Optional<Entity>
+}
 
-class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : IScene {
+class Scene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : IScene {
+    override fun clear() {
+        modelComponentSystem.clear()
+    }
 
     @Transient private var entityMovedInCycle: Long = 0
-    @Transient var entityAddedInCycle: Long = 0
-    @Transient var currentCycle: Long = 0
-    @Transient var isInitiallyDrawn: Boolean = false
-    val minMax = AABB(Vector3f(), 100f)
+    @Transient override var entityAddedInCycle: Long = 0
+    @Transient override var currentCycle: Long = 0
+    @Transient override var isInitiallyDrawn: Boolean = false
+    override val minMax = AABB(Vector3f(), 100f)
 
-    val renderStateConsumers = mutableListOf<StateConsumer>()
+    override val renderStateConsumers = mutableListOf<StateConsumer>()
     val componentSystems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
 
-    val entityManager = (EntityManager(engine, engine.eventBus))
-    val environmentProbeManager = engine.environmentProbeManager.apply { renderStateConsumers.add(this) }
+    override val entityManager = (EntityManager(engine, engine.eventBus))
+    override val environmentProbeManager = engine.environmentProbeManager.apply { renderStateConsumers.add(this) }
 
-    val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
-    val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine))
+    override val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
+    override val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine))
     val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
-    val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
+    override val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
     val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem())
     val areaLightComponentSystem = componentSystems.register(AreaLightComponentSystem())
     val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
 
-    val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
-    val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
+    override val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
+    override val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
-    val entitySystems = SimpleEntitySystemRegistry()
-    val directionalLightSystem = entitySystems.register(DirectionalLightSystem(engine, this, engine.eventBus))
+    override val entitySystems = SimpleEntitySystemRegistry()
+    override val directionalLightSystem = entitySystems.register(DirectionalLightSystem(engine, this, engine.eventBus))
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
-    val pointLightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
-    val areaLightSystem = entitySystems.register(AreaLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
+    override val pointLightSystem = entitySystems.register(PointLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
+    override val areaLightSystem = entitySystems.register(AreaLightSystem(engine, this)).apply { renderStateConsumers.add(this) }
 
     val probeSystem = entitySystems.register(ProbeSystem(engine, this))
 
@@ -82,22 +120,22 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
             .apply { this@Scene.add(this) }
 
-    val camera = Entity("MainCamera")
+    override val camera = Entity("MainCamera")
             .apply { addComponent(inputComponentSystem.create(this)) }
             .apply { addComponent(cameraComponentSystem.create(this)) }
             .apply { this@Scene.add(this) }
 
-    var activeCamera = camera
+    override var activeCamera: Entity = camera
 
     override fun init(engine: Engine) {
         engine.eventBus.register(this)
     }
 
-    fun write() {
+    override fun write() {
         write(name)
     }
 
-    fun write(name: String): Boolean {
+    override fun write(name: String): Boolean {
         val fileName = FilenameUtils.getBaseName(name)
         var fos: FileOutputStream? = null
         var out: ObjectOutputStream? = null
@@ -125,7 +163,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         return false
     }
 
-    fun addAll(entities: List<Entity>) {
+    override fun addAll(entities: List<Entity>) {
         entityManager.add(entities)
 
         modelComponentSystem.allocateVertexIndexBufferSpace(entities)
@@ -141,7 +179,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         engine.eventBus.post(EntityAddedEvent())
     }
 
-    fun add(entity: Entity) = addAll(listOf(entity))
+    override fun add(entity: Entity) = addAll(listOf(entity))
 
     override fun update(deltaSeconds: Float) {
         managers.update(deltaSeconds)
@@ -151,29 +189,36 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
         entityManager.update(deltaSeconds)
         entityManager.afterUpdate()
+
+//        if (scene.entityMovedInCycle() == newDrawCycle) {
+//            engine.eventBus.post(EntityMovedEvent()) TODO: Check if this is still necessary
+//        }
+        if (directionalLightSystem.getDirectionalLight().entity.hasMoved()) {
+            engine.eventBus.post(DirectionalLightHasMovedEvent())
+        }
     }
 
-    fun getEntities(): List<Entity> {
+    override fun getEntities(): List<Entity> {
         return entityManager.getEntities()
     }
 
-    fun getEntity(name: String): Optional<Entity> {
+    override fun getEntity(name: String): Optional<Entity> {
         val candidate = entityManager.getEntities().find { e -> e.name == name }
         return Optional.ofNullable(candidate)
     }
 
-    fun getPointLights(): List<PointLight> = pointLightComponentSystem.getComponents()
-    fun getTubeLights(): List<TubeLight> = tubeLightComponentSystem.getComponents()
-    fun getAreaLights(): List<AreaLight> = areaLightComponentSystem.getComponents()
+    override fun getPointLights(): List<PointLight> = pointLightComponentSystem.getComponents()
+    override fun getTubeLights(): List<TubeLight> = tubeLightComponentSystem.getComponents()
+    override fun getAreaLights(): List<AreaLight> = areaLightComponentSystem.getComponents()
 
-    fun entityMovedInCycle() = entityMovedInCycle
-    fun pointLightMovedInCycle() = pointLightSystem.pointLightMovedInCycle
+    override fun entityMovedInCycle() = entityMovedInCycle
+    override fun pointLightMovedInCycle() = pointLightSystem.pointLightMovedInCycle
 
-    fun setEntityMovedInCycleToCurrentCycle() {
+    override fun setEntityMovedInCycleToCurrentCycle() {
         entityMovedInCycle = currentCycle
     }
 
-    fun extract(currentWriteState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
         batchingSystem.addRenderBatches(currentWriteState)
     }
 

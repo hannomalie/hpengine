@@ -1,5 +1,6 @@
 package de.hanno.hpengine.util;
 
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -374,22 +375,33 @@ public class Util {
 	public static String printFloatBuffer(FloatBuffer buffer, int columns) {
 		return printFloatBuffer(buffer, columns, 1000);
 	}
-    public static String printFloatBuffer(FloatBuffer buffer, int columns, int rows) {
-        buffer.rewind();
-        StringBuilder builder = new StringBuilder();
-        int columnCounter = 1;
+	public static String printFloatBuffer(FloatBuffer buffer, int columns, int rows) {
+		buffer.rewind();
+		StringBuilder builder = new StringBuilder();
+		int columnCounter = 1;
 		int rowCounter = 0;
-        while (buffer.hasRemaining() && rowCounter < rows) {
-            builder.append(buffer.get());
-            builder.append(" ");
-            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); rowCounter++; }
-            columnCounter++;
-        }
-        buffer.rewind();
+		while (buffer.hasRemaining() && rowCounter < rows) {
+			builder.append(buffer.get());
+			builder.append(" ");
+			if(columnCounter%columns==0) { builder.append(System.lineSeparator()); rowCounter++; }
+			columnCounter++;
+		}
+		buffer.rewind();
 		String result = builder.toString();
 		System.out.println(result);
 		return result;
-    }
+	}
+	public static String printModelComponents(ByteBuffer buffer, int count) {
+		buffer.rewind();
+		StringBuilder builder = new StringBuilder();
+		for(int i = 0; i < count; i++) {
+			builder.append(ModelComponent.getDebugStringFromBuffer(buffer));
+		}
+		buffer.rewind();
+		String result = builder.toString();
+		System.out.println(result);
+		return result;
+	}
 	public static String printIntBuffer(IntBuffer buffer, int columns) {
 		return printIntBuffer(buffer, columns, 1000);
 	}

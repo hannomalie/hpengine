@@ -5,12 +5,11 @@ import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.event.*
+import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
-import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.light.probe.ProbeSystem
+import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -54,14 +53,14 @@ class Engine private constructor(gameDirName: String) {
     val renderer: Renderer = Renderer.create(this)
     val physicsManager = PhysicsManager(renderer)
 
-    val fpsCounter: FPSCounter
-        get() = updateThread.fpsCounter
-
     init {
         eventBus.register(this)
         startSimulation()
         eventBus.post(EngineInitializedEvent())
     }
+
+    val fpsCounter: FPSCounter
+        get() = updateThread.fpsCounter
 
     fun startSimulation() {
         updateThread.start()
@@ -84,11 +83,11 @@ class Engine private constructor(gameDirName: String) {
         with(renderManager) {
             if (gpuContext.isSignaled(renderState.currentWriteState.gpuCommandSync)) {
                 with(scene) {
-                    with(getScene().directionalLightSystem.getDirectionalLight()) {
+                    with(directionalLightSystem.getDirectionalLight()) {
                         renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, modelComponentSystem.joints, sceneManager.activeCamera, entityMovedInCycle(), directionalLightSystem.directionalLightMovedInCycle, pointLightMovedInCycle(), isInitiallyDrawn, minMax.min, minMax.max, drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityAddedInCycle)
                     }
+                    extract(renderState.currentWriteState)
                 }
-                scene.extract(renderState.currentWriteState)
                 renderState.update()
                 renderState.currentWriteState.cycle = drawCycle.get()
             }

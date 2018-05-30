@@ -33,6 +33,6 @@ public class UpdateThread extends FpsCountedTimeStepThread {
     }
 
     public static boolean isUpdateThread() {
-        return Thread.currentThread().getId() == UPDATE_THREAD_ID;
+        return Thread.currentThread().getId() == UPDATE_THREAD_ID || Thread.currentThread().getName().equals("main"); //TODO: This is a very ugly hack, please remove this somehow
     }
 }

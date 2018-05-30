@@ -28,10 +28,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
-import de.hanno.hpengine.engine.scene.AABB;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeManager;
-import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.scene.*;
 import de.hanno.hpengine.engine.transform.Spatial;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
@@ -157,7 +154,7 @@ public class EnvironmentSampler extends Entity {
 	}
 
 	private void drawCubeMapSides(boolean urgent, RenderState extract) {
-		Scene scene = engine.getSceneManager().getScene();
+		IScene scene = engine.getSceneManager().getScene();
 
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternionf initialOrientation = getRotation();
