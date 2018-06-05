@@ -30,13 +30,14 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     transient private RenderTarget renderTarget;
     transient private Program directionalShadowPassProgram;
     private final GpuContext gpuContext;
+    private VoxelConeTracingExtension voxelConeTracingExtension;
 
     public DirectionalLightShadowMapExtension(Engine engine) {
         gpuContext = engine.getGpuContext();
         this.engine = engine;
         directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
-        renderTarget = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(engine.getGpuContext())
+        renderTarget = new RenderTargetBuilder<>(engine.getGpuContext())
                 .setWidth(SHADOWMAP_RESOLUTION)
                 .setHeight(SHADOWMAP_RESOLUTION)
                 .setClearRGBA(1f, 1f, 1f, 1f)
@@ -99,4 +100,11 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         return renderTarget.getRenderedTexture(1);
     }
 
+    public void setVoxelConeTracingExtension(VoxelConeTracingExtension voxelConeTracingExtension) {
+        this.voxelConeTracingExtension = voxelConeTracingExtension;
+    }
+
+    public VoxelConeTracingExtension getVoxelConeTracingExtension() {
+        return voxelConeTracingExtension;
+    }
 }

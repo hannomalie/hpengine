@@ -14,7 +14,7 @@ layout(std430, binding=1) buffer _materials {
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
-layout(std430, binding=4) buffer entityOffsets {
+layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 

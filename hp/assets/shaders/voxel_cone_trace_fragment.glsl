@@ -57,13 +57,13 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 }
 
 vec3 scatter(vec3 worldPos, vec3 startPosition) {
-	const int NB_STEPS = 2530;
+	const int NB_STEPS = 1530;
 
 	vec3 rayVector = worldPos.xyz - startPosition;
 
 	vec3 rayDirection = normalize(rayVector);
 
-	float stepLength = 0.125;
+	float stepLength = .35;
 
 	vec3 step = rayDirection * stepLength;
 
@@ -75,7 +75,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	vec3 isStaticValue = vec3(0,0,0);
 	float alpha = 0;
 
-	int mipLevel = 3;
+	int mipLevel = 0;
 	for (int i = 0; i < NB_STEPS; i++) {
 		if(alpha >= 0.01)
 		{
@@ -161,7 +161,7 @@ void main(void) {
 
         const int SAMPLE_COUNT = 4;
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld+normalWorld);
-		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 2*sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
+		vec4 voxelSpecular = 4*voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), roughness, 370); // 0.05
 
         vct += boost*(NdotL*specularColor.rgb*voxelSpecular.rgb + diffuseColor*voxelDiffuse.rgb);
 
@@ -174,7 +174,7 @@ void main(void) {
         }
     }
 
-	if(useAmbientOcclusion) {
+	if(useAmbientOcclusion){
 	    vec4 AOscattering = textureLod(aoScattering, st, 0);
 		vct *= clamp(AOscattering.r,0.0,1.0);
 	}

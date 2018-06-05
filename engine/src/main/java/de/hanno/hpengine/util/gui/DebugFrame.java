@@ -434,7 +434,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
+                CompletableFuture<Result> future = engine.getCommandQueue().addCommand(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
                         Entity pointLightEntity = new Entity("PointLight" + System.currentTimeMillis());

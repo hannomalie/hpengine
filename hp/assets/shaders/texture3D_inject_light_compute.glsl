@@ -46,7 +46,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	if (dist <= moments.x + 0.01) {
 		return vec3(1.0,1.0,1.0);
 	}
-	else { return vec3(0); }
+	else { return vec3(0.); }
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
@@ -109,9 +109,9 @@ void main(void) {
 	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0, 1.0).r;
 
 	vec3 lightDirectionTemp = lightDirection;
-    float NdotL = max(0.0, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
+    float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
-    vec3 finalVoxelColor = voxelColorAmbient+(10*NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
+    vec3 finalVoxelColor = voxelColorAmbient+(1*NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
 
     for(int i = 0; i < pointLightCount; i++) {
         PointLight pointLight = pointLights[i];
@@ -120,7 +120,7 @@ void main(void) {
         vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
         float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
 
-        finalVoxelColor += 40*attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
+        finalVoxelColor += 4*attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
     }
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));

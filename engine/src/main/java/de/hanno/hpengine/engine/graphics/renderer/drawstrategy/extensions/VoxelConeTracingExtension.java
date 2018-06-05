@@ -1,31 +1,31 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
-import com.carrotsearch.hppc.ObjectLongHashMap;
-import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.renderer.*;
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.engine.transform.SimpleTransform;
-import de.hanno.hpengine.engine.transform.Transform;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.Update;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.AxisAngle4f;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
 
 import java.io.File;
 import java.nio.FloatBuffer;
@@ -40,20 +40,17 @@ public class VoxelConeTracingExtension implements RenderExtension {
     public static final int gridTextureFormat = GL11.GL_RGBA;//GL11.GL_R;
     public static final int gridTextureFormatSized = GL11.GL_RGBA8;//GL30.GL_R32UI;
     private final Engine engine;
-    private Transform viewXTransform;
-    private Transform viewYTransform;
-    private Transform viewZTransform;
+    private Transform viewXTransform = new SimpleTransform();
+    private Transform viewYTransform = new SimpleTransform();
+    private Transform viewZTransform = new SimpleTransform();
 
     public float sceneScale = 2;
 
     private Matrix4f ortho = de.hanno.hpengine.util.Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
     private Camera orthoCam;
-    private Matrix4f viewX;
-    public FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
-    private Matrix4f viewY;
-    public FloatBuffer viewYBuffer = BufferUtils.createFloatBuffer(16);
-    private Matrix4f viewZ;
-    public FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
+    public final FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
+    public final FloatBuffer viewYBuffer = BufferUtils.createFloatBuffer(16);
+    public final FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
 
     public static FloatBuffer ZERO_BUFFER = BufferUtils.createFloatBuffer(4);
     static {
@@ -85,7 +82,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private FirstPassResult firstPassResult = new FirstPassResult();
     private boolean useIndirectDrawing = false;
 
-    public VoxelConeTracingExtension(Engine engine) throws Exception {
+    public VoxelConeTracingExtension(Engine engine, DirectionalLightShadowMapExtension directionalLightShadowMapExtension) throws Exception {
         this.engine = engine;
         initOrthoCam();
         initViewXBuffer();
@@ -121,12 +118,16 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram = this.engine.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", new Defines());
         Config.getInstance().setUseAmbientOcclusion(false);
         pipeline = new SimplePipeline(engine, false, false, false);
-        orthoCam = new Camera(engine.getSceneManager().getScene().getEntityManager().create(), ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+        directionalLightShadowMapExtension.setVoxelConeTracingExtension(this);
     }
 
     private long entityMovedLastInCycle;
     private long directionalLightMovedLastInCycle;
     private long pointLightMovedLastInCycle;
+
+    public int getGridSize() {
+        return gridSize;
+    }
 
     @Override
     public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
@@ -257,7 +258,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
             engine.getGpuContext().disable(CULL_FACE);
             GL11.glColorMask(false, false, false, false);
 
-
             if(useIndirectDrawing && Config.getInstance().isIndirectRendering()) {
                 firstPassResult.reset();
                 pipeline.prepareAndDraw(renderState, voxelizer, voxelizer, firstPassResult);
@@ -279,8 +279,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GPUProfiler.end();
         }
     }
-    private ObjectLongHashMap movedInCycleCash = new ObjectLongHashMap();
-
     private void mipmapGrid() {
         boolean generatevoxelsMipmap = true;
         if(generatevoxelsMipmap){
@@ -388,39 +386,43 @@ public class VoxelConeTracingExtension implements RenderExtension {
     }
 
     private void initViewZBuffer() {
-        viewZTransform = new SimpleTransform();
-        viewZTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(180f)));
-        viewZ = new Matrix4f(ortho).mul(viewZTransform.getViewMatrix());
         viewZBuffer.rewind();
-        viewZ.get(viewZBuffer);
+        viewZTransform.getViewMatrix().get(viewZBuffer);
         viewZBuffer.rewind();
     }
 
     private void initViewYBuffer() {
-        viewYTransform = new SimpleTransform();
         viewYTransform.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90f)));
-        viewY = new Matrix4f(ortho).mul(viewYTransform.getViewMatrix());
+        viewYTransform.recalculate();
         viewYBuffer.rewind();
-        viewY.get(viewYBuffer);
+        viewYTransform.getViewMatrix().get(viewYBuffer);
         viewYBuffer.rewind();
     }
 
     private void initViewXBuffer() {
-        viewXTransform = new SimpleTransform();
         viewXTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(90f)));
-        viewX = new Matrix4f(ortho).mul(viewXTransform.getViewMatrix());
+        viewXTransform.recalculate();
         viewXBuffer.rewind();
-        viewX.get(viewXBuffer);
+        viewXTransform.getViewMatrix().get(viewXBuffer);
         viewXBuffer.rewind();
     }
 
     private void initOrthoCam() {
         ortho = Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
 
+        orthoCam = new Camera(new Entity("VCTCam"), ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
         orthoCam.setPerspective(false);
-        orthoCam.setWidth(getGridSizeScaled());
-        orthoCam.setHeight(getGridSizeScaled());
+        orthoCam.setWidth(getGridSizeHalfScaled());
+        orthoCam.setHeight(getGridSizeHalfScaled());
         orthoCam.setFar(-2000);
         orthoCam.update(0.000001f);
+    }
+
+    public int getLitGrid() {
+        return this.currentVoxelSource;
+    }
+
+    public float getSceneScale() {
+        return sceneScale;
     }
 }

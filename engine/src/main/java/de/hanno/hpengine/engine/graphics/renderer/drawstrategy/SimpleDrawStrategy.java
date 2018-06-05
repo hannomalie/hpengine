@@ -16,10 +16,7 @@ import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.PixelPerfectPickingExtension;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.*;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -127,7 +124,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engine);
 
         registerRenderExtension(new DrawLinesExtension(engine));
-//        registerRenderExtension(new VoxelConeTracingExtension());
+        registerRenderExtension(new VoxelConeTracingExtension(engine, directionalLightShadowMapExtension));
 //        registerRenderExtension(new EvaluateProbeRenderExtension(engine));
         registerRenderExtension(new PixelPerfectPickingExtension());
     }
@@ -499,6 +496,10 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
 
+        if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
+            gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getLitGrid());
+        }
+
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
         aoScatteringProgram.use();
         aoScatteringProgram.setUniform("eyePosition", renderState.getCamera().getPosition());
@@ -513,6 +514,13 @@ public class SimpleDrawStrategy implements DrawStrategy {
         aoScatteringProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
         aoScatteringProgram.setUniform("lightDiffuse", renderState.getDirectionalLightState().directionalLightColor);
         aoScatteringProgram.setUniform("scatterFactor", renderState.getDirectionalLightState().directionalLightScatterFactor);
+        aoScatteringProgram.setUniform("time", (int) System.currentTimeMillis());
+        aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
+        if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
+            aoScatteringProgram.setUniform("sceneScale", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getSceneScale());
+            aoScatteringProgram.setUniform("inverseSceneScale", 1f/directionalLightShadowMapExtension.getVoxelConeTracingExtension().getSceneScale());
+            aoScatteringProgram.setUniform("gridSize", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGridSize());
+        }
 
         engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(aoScatteringProgram);
         gpuContext.getFullscreenBuffer().draw();

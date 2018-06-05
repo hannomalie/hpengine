@@ -190,6 +190,9 @@ void main(void) {
         out_position.w = materialRoughness*r;
     }
 
+//    out_color.w = 1;
+//    out_position.w = 0.01;
+
 	if(material.hasSpecularMap != 0) {
 //	UV.x = texCoord.x * specular;
 //	UV.y = texCoord.y * specular;
