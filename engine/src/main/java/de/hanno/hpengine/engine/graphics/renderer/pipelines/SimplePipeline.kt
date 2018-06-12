@@ -14,10 +14,9 @@ import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-
 open class SimplePipeline(private val engine: Engine,
                           private val useFrustumCulling: Boolean = true,
-                          private val useBackfaceCulling: Boolean = true,
+                          private val useBackFaceCulling: Boolean = true,
                           private val useLineDrawingIfActivated: Boolean = true) : Pipeline {
 
     private var verticesCount = 0
@@ -109,7 +108,7 @@ open class SimplePipeline(private val engine: Engine,
             engine.gpuContext.disable(GlCap.CULL_FACE)
             VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commandCount)
         } else {
-            if (useBackfaceCulling) {
+            if (useBackFaceCulling) {
                 engine.gpuContext.enable(GlCap.CULL_FACE)
             }
 //            VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount)
@@ -134,5 +133,7 @@ open class SimplePipeline(private val engine: Engine,
 
         entityOffsetBuffer.put(0, offsets.toArray())
         commandBuffer.put(*Util.toArray(commands, CommandBuffer.DrawElementsIndirectCommand::class.java))
+//        println("Commands after frustum culling ${commands.size}")
     }
 }
+

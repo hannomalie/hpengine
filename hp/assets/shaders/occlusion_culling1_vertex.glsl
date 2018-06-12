@@ -52,63 +52,12 @@ uniform vec3 camPosition;
 bool pointInBox(vec3 p, vec3 min, vec3 max) {
     return all(lessThanEqual(p, max)) && all(greaterThanEqual(p, min));
 }
-bool in_frustum(mat4 M, vec3 min, vec3 max) {
-        if(pointInBox(camPosition, min, max)) {
-            return true;
-        }
-        vec3[8] aabb;
-        aabb[0] = max.xyz;
-        aabb[1] = min.xyz;
-        aabb[2] = vec3(min.xy, max.z);
-        aabb[3] = vec3(min.x, max.y, min.z);
-        aabb[4] = vec3(max.x, min.yz);
-
-        aabb[5] = vec3(max.xy, min.z);
-        aabb[6] = vec3(max.x, min.y, max.z);
-        aabb[7] = vec3(min.x, max.yz);
-
-        int counter = 0;
-        for(int i = 0; i < 8; i++) {
-            vec4 pClip = M * vec4(aabb[i], 1.);
-
-            bool xInFrustum = abs(pClip.x) < pClip.w;
-            bool yInFrustum = abs(pClip.y) < pClip.w;
-            bool zInFrustum = 0 < pClip.z && pClip.z < pClip.w;
-
-            if(xInFrustum &&
-               yInFrustum &&
-               zInFrustum) {
-                  counter++;
-            }
-        }
-//        if(counter > 0) {
-//            return true;
-//        }
-//
-//        vec4 minClip = M * vec4(aabb[0], 1.);
-//        vec4 maxClip = M * vec4(aabb[1], 1.);
-//        if(minClip.y < -minClip.w && maxClip.y > maxClip.w ||
-//           minClip.y > minClip.w && maxClip.y < -maxClip.w ) {
-//            counter++;
-//        }
-//        if(minClip.x < -minClip.w && maxClip.x > maxClip.w ||
-//           minClip.x > minClip.w && maxClip.x < -maxClip.w) {
-//            counter++;
-//        }
-        return counter > 0;
-    }
-//bool in_frustum(mat4 M, vec3 p) {
-//        vec4 Pclip = M * vec4(p, 1.);
-//        return abs(Pclip.x) < Pclip.w &&
-//               abs(Pclip.y) < Pclip.w &&
-//               0 < Pclip.z &&
-//               Pclip.z < Pclip.w;
-//    }
 
 struct Plane {
     vec3 n;
     float d;
 };
+
 Plane[6] extractPlanes(mat4 comboMatrix)
 {
     Plane[6] planes;
@@ -154,9 +103,96 @@ Plane[6] extractPlanes(mat4 comboMatrix)
         planes[i].n.y *= invl;
         planes[i].n.z *= invl;
         planes[i].d *= invl;
+        planes[i].n = normalize(planes[i].n);
     }
     return planes;
 }
+
+float distanceToPlane(Plane plane, vec3 point) {
+    return dot(vec4(plane.n, plane.d), vec4(point,1.0));
+}
+bool in_frustum(mat4 M, vec3 min, vec3 max) {
+        if(pointInBox(camPosition, min, max)) {
+            return true;
+        }
+//        vec3[8] aabb;
+//        aabb[0] = max.xyz;
+//        aabb[1] = min.xyz;
+//        aabb[2] = vec3(min.xy, max.z);
+//        aabb[3] = vec3(min.x, max.y, min.z);
+//        aabb[4] = vec3(max.x, min.yz);
+//
+//        aabb[5] = vec3(max.xy, min.z);
+//        aabb[6] = vec3(max.x, min.y, max.z);
+//        aabb[7] = vec3(min.x, max.yz);
+
+//        int counter = 0;
+//        for(int i = 0; i < 8; i++) {
+//            vec4 pClip = M * vec4(aabb[i], 1.);
+//
+//            bool xInFrustum = abs(pClip.x) < pClip.w;
+//            bool yInFrustum = abs(pClip.y) < pClip.w;
+//            bool zInFrustum = 0 < pClip.z && pClip.z < pClip.w;
+//
+//            if(xInFrustum &&
+//               yInFrustum &&
+//               zInFrustum) {
+//                  counter++;
+//            }
+//        }
+//        return counter > 0;
+
+        const int INSIDE = 0;
+        const int OUTSIDE = 1;
+        const int INTERSECT = 2;
+
+        Plane[6] pl = extractPlanes(M);
+        int ret = INSIDE;
+        vec3 vmin, vmax;
+
+       for(int i = 0; i < 6; ++i) {
+         Plane plane = pl[i];
+
+          // X axis
+          if(plane.n.x > 0) {
+             vmin.x = min.x;
+             vmax.x = max.x;
+          } else {
+             vmin.x = max.x;
+             vmax.x = min.x;
+          }
+          // Y axis
+          if(plane.n.y > 0) {
+             vmin.y = min.y;
+             vmax.y = max.y;
+          } else {
+             vmin.y = max.y;
+             vmax.y = min.y;
+          }
+          // Z axis
+          if(plane.n.z > 0) {
+             vmin.z = min.z;
+             vmax.z = max.z;
+          } else {
+             vmin.z = max.z;
+             vmax.z = min.z;
+          }
+          if(dot(plane.n, vmin) + plane.d > 0)
+             return false;
+          if(dot(plane.n, vmax) + plane.d >= 0)
+             ret = INTERSECT;
+       }
+
+        return ret == INSIDE || ret == INTERSECT;
+    }
+//bool in_frustum(mat4 M, vec3 p) {
+//        vec4 Pclip = M * vec4(p, 1.);
+//        return abs(Pclip.x) < Pclip.w &&
+//               abs(Pclip.y) < Pclip.w &&
+//               0 < Pclip.z &&
+//               Pclip.z < Pclip.w;
+//    }
+
 bool testPoint(Plane plane, vec3 point)
 {
     float d = plane.n.x * point.x + plane.n.y * point.y + plane.n.z * point.z + plane.d;
@@ -182,10 +218,6 @@ bool testPoint(mat4 comboMatrix, vec3 point) {
     }
 
     return counter == 6;
-}
-
-float distanceToPlane(Plane plane, vec3 point) {
-    return dot(vec4(plane.n, plane.d), vec4(point,1.0));
 }
 
 bool sphereVisible(mat4 comboMatrix, vec4 centerRadius) {
@@ -246,10 +278,10 @@ void main(){
         Entity entity = entities[offset+invocationIndex];
         mat4 mvp = projectionMatrix*viewMatrix*entity.modelMatrix;
 
-        bool inFrustum = in_frustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
+//        bool inFrustum = in_frustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
 
         vec3 span = (entity.max.xyz - entity.min.xyz);
-//        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, 0.5 * span.x));
+        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, 0.5 * span.x));
 //        bool inFrustum = boxInFrustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
 //        bool inFrustum = (testPoint(viewProjectionMatrix, entity.min.xyz) && testPoint(viewProjectionMatrix, entity.max.xyz));
 
@@ -292,15 +324,14 @@ void main(){
 
         bool isVisible = true;
 
-#ifdef FRUSTUM_CULLING
-        isVisible = isVisible && inFrustum;
-#endif
+        if(FRUSTUM_CULLING) {
+            isVisible = isVisible && inFrustum;
+        }
 
-#ifdef OCCLUSION_CULLING
-        isVisible = isVisible && !allOccluded;
-#endif
+        if(OCCLUSION_CULLING) {
+            isVisible = isVisible && !allOccluded;
+        }
 
-//        isVisible = true;
         visibility[instancesBaseOffset+invocationIndex] = isVisible ? 1 : 0;
         if(isVisible) {
             atomicAdd(entityCounts[commandIndex], 1);

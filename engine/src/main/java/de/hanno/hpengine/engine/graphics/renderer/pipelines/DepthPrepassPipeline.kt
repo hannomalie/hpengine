@@ -16,11 +16,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: Engine,
                                                           renderer: Renderer,
                                                           useFrustumCulling: Boolean = true,
-                                                          useBackfaceCulling: Boolean = true,
+                                                          useBackFaceCulling: Boolean = true,
                                                           useLineDrawing: Boolean = true,
                                                           renderCam: Camera? = null,
-                                                          cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
-    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", true))
+                                                          cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackFaceCulling, useLineDrawing, renderCam, cullCam) {
+    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false), Define.getDefine("OCCLUSION_CULLING", true))
     val depthTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext).add(ColorAttachmentDefinition().setInternalFormat(Pipeline.HIGHZ_FORMAT)).build()
     private val depthPrepassProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "simple_depth.glsl", Defines())
     private val depthPrepassProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_animated_vertex.glsl", "simple_depth.glsl", Defines())

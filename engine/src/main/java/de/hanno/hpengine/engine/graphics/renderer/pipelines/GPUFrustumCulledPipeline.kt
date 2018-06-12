@@ -34,7 +34,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                                                               open val renderCam: Camera? = null,
                                                               open val cullCam: Camera? = renderCam) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
-    protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
+    protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false))
 
     private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
     private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())

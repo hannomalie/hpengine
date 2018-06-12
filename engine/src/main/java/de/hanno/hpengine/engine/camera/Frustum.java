@@ -10,6 +10,8 @@ import java.util.logging.Logger;
 
 import de.hanno.hpengine.engine.scene.AABB;
 
+import org.joml.FrustumIntersection;
+import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.joml.Vector3f;
 
@@ -56,6 +58,9 @@ public class Frustum implements Serializable {
 	}
 
     private transient FloatBuffer buf = BufferUtils.createFloatBuffer(16);
+
+    private final Matrix4f temp = new Matrix4f();
+    private final FrustumIntersection frustumIntersection = new FrustumIntersection();
 
     public Frustum() {
     }
@@ -148,6 +153,8 @@ public class Frustum implements Serializable {
 
         // Normalize the FRONT side
         normalizePlane(values, FRONT);
+
+        frustumIntersection.set(camera.getProjectionMatrix().mul(camera.getViewMatrix(), temp));
 	}
 
 	public void normalizePlane(float[][] frustum, int side) {
@@ -280,6 +287,9 @@ public class Frustum implements Serializable {
 //				pointInFrustum(aabb.getTopRightForeCorner().x, aabb.getTopRightForeCorner().y, aabb.getTopRightForeCorner().z));
 	}
 
+    public FrustumIntersection getFrustumIntersection() {
+        return frustumIntersection;
+    }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
