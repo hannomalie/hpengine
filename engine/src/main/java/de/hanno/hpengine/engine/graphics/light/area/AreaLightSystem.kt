@@ -20,7 +20,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import net.engio.mbassy.listener.Handler
@@ -33,7 +33,7 @@ import java.util.*
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentClass = AreaLight::class.java, factory = { TODO("not implemented") })
 
-class AreaLightSystem(engine: Engine, scene: Scene) : SimpleEntitySystem(engine, scene, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 

@@ -72,7 +72,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         }
         if(engine.getScene().entityManager.staticEntityHasMoved) {
             bufferEntities()
-        } else {//if(engine.getScene().entityManager.entityHasMoved) {
+        } else {//if(engine.getSimpleScene().entityManager.entityHasMoved) {
             bufferDynamicEntities()
         }
     }
@@ -156,6 +156,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
 
     override fun onEntityAdded(entities: List<Entity>) {
+        allocateVertexIndexBufferSpace(entities)
         bufferEntities()
     }
 }

@@ -12,7 +12,6 @@ import com.alee.laf.label.WebLabel;
 import com.alee.laf.menu.WebMenu;
 import com.alee.laf.menu.WebMenuBar;
 import com.alee.laf.menu.WebMenuItem;
-import com.alee.laf.optionpane.WebOptionPane;
 import com.alee.laf.progressbar.WebProgressBar;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
@@ -48,6 +47,7 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem;
 import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.scene.SimpleScene;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.TestSceneUtil;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -339,30 +339,13 @@ public class DebugFrame implements HostComponent {
         WebMenu menuScene = new WebMenu("Scene");
         menuBar.setUndecorated ( true );
         {
-	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
-	        sceneSaveMenuItem.addActionListener(e -> {
-	        	String initialSelectionValue = engine.getSceneManager().getScene().getName() != "" ? engine.getSceneManager().getScene().getName() : "default";
-				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
-	        	if(selection != null) {
-	        		boolean success = engine.getSceneManager().getScene().write(selection.toString());
-	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
-	                notificationPopup.setIcon(NotificationIcon.clock);
-	                notificationPopup.setDisplayTime( 2000 );
-	                notificationPopup.setContent(new WebLabel(success + ": Saved scene as " + selection));
-	                NotificationManager.showNotification(notificationPopup);
-	        	}
-	        });
-
-	        menuScene.add(sceneSaveMenuItem);
-        }
-        {
             WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load Testscene" );
 
             sceneLoadMenuItem.addActionListener(e -> {
-                new SwingWorkerWithProgress<Result<Scene>>(this, "Load de.hanno.hpengine.scene...", "Unable to load test de.hanno.hpengine.scene"){
+                new SwingWorkerWithProgress<Result<SimpleScene>>(this, "Load scene...", "Unable to load test scene"){
                     @Override
-                    public Result<Scene> doInBackground() throws Exception {
-						startProgress("Loading test de.hanno.hpengine.scene");
+                    public Result<SimpleScene> doInBackground() throws Exception {
+						startProgress("Loading test scene");
                         engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getScene().getMaterialManager(), engine.getPhysicsManager(), engine.getSceneManager().getScene().getEntityManager(), engine.getScene().getEntitySystems().get(DirectionalLightSystem.class), engine.getSceneManager().getScene(), engine.getSceneManager().getScene().getComponentSystems().get(ModelComponentSystem.class)));
                         engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
@@ -370,7 +353,7 @@ public class DebugFrame implements HostComponent {
                     }
 
                     @Override
-                    public void done(Result<Scene> result) {
+                    public void done(Result<SimpleScene> result) {
                         init(new EngineInitializedEvent());
                     }
                 }.execute();
@@ -381,7 +364,7 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
-	    			Scene newScene = new Scene(System.currentTimeMillis() + "", engine);
+	    			Scene newScene = new SimpleScene(engine);
 	    			engine.getSceneManager().setScene(newScene);
 	    			init(new EngineInitializedEvent());
         	});
@@ -772,8 +755,8 @@ public class DebugFrame implements HostComponent {
                 }
             }
         });
-//        AutoCompletion ac = new AutoCompletion(engine.getManagers().get(ScriptManager.class).getProvider());
-//        ac.install(console);
+        AutoCompletion ac = new AutoCompletion(engine.getScene().getManagers().get(ScriptManager.class).getProvider());
+        ac.install(console);
     }
 
     public void startProgress(String label) {

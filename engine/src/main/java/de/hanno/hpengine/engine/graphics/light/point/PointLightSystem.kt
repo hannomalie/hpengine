@@ -14,14 +14,14 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import net.engio.mbassy.listener.Handler
 import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(theComponentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
 
-class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(PointLight::class.java)), RenderSystem {
+class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 
     var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity("PointLightSystemCameraDummy")

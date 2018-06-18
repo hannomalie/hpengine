@@ -155,7 +155,7 @@ public class EnvironmentSampler extends Entity {
 	}
 
 	private void drawCubeMapSides(boolean urgent, RenderState extract) {
-		IScene scene = engine.getSceneManager().getScene();
+		Scene scene = engine.getSceneManager().getScene();
 
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternionf initialOrientation = getRotation();

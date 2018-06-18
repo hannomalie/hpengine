@@ -134,8 +134,8 @@ public class SimpleDrawStrategy implements DrawStrategy {
         if (!Config.getInstance().isUseDirectTextureOutput()) {
             GPUProfiler.start("Shadowmap pass");
             directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
-//            engine.getScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
-//            engine.getScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
+//            engine.getSimpleScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
+//            engine.getSimpleScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
             GPUProfiler.end();
 
             GPUProfiler.start("Second pass");

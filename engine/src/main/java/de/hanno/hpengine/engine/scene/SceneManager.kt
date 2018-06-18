@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.manager.Manager
 
 class SceneManager(val engine: Engine): Manager {
 
-    var scene: IScene = Scene(engine = engine)
+    var scene: Scene = SimpleScene("InitScene", engine)
         set(value) {
             onSetScene(value)
             engine.commandQueue.execute({
@@ -24,7 +24,7 @@ class SceneManager(val engine: Engine): Manager {
 
     }
 
-    private fun onSetScene(nextScene: IScene) {
+    private fun onSetScene(nextScene: Scene) {
         engine.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
         engine.renderManager.clear()

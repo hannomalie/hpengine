@@ -39,7 +39,7 @@ public class SceneTree extends WebCheckBoxTree {
         model.reload();
         revalidate();
         repaint();
-        LOGGER.info("Reloaded de.hanno.hpengine.scene tree");
+        LOGGER.info("Reload scene tree");
     }
 
     private DefaultMutableTreeNode addOctreeSceneObjects() {

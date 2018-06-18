@@ -11,11 +11,10 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
-import de.hanno.hpengine.engine.scene.Scene
-import org.joml.FrustumIntersection
+import de.hanno.hpengine.engine.scene.SimpleScene
 import org.joml.Vector3f
 
-class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(ModelComponent::class.java)) {
+class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(ModelComponent::class.java)) {
 
     private val cameraMapper = ComponentMapper.forClass(Camera::class.java)
     private val tempDistVector = Vector3f()

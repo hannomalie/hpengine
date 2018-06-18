@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.event.EntityAddedEvent
-import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SimpleScene
 import net.engio.mbassy.listener.Handler
 
 interface EntitySystem {
@@ -34,6 +34,12 @@ interface EntitySystemRegistry {
         } else return clazz.cast(firstOrNull)
     }
 
+    fun onEntityAdded(entities: List<Entity>) {
+        getSystems().forEach {
+            it.onEntityAdded(entities)
+        }
+    }
+
     fun clearSystems() {
         getSystems().forEach { it.clear() }
     }
@@ -47,15 +53,9 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
         systems.add(system)
         return system
     }
-
-    fun onEntityAdded(entities: List<Entity>) {
-        systems.forEach {
-            it.onEntityAdded(entities)
-        }
-    }
 }
 
-abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
+abstract class SimpleEntitySystem(val engine: Engine, val simpleScene: SimpleScene, val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
     protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {
@@ -71,9 +71,9 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
     override fun gatherEntities() {
         entities.clear()
         if(componentClasses.isEmpty()) {
-            entities.addAll(scene.entityManager.getEntities())
+            entities.addAll(simpleScene.entityManager.getEntities())
         } else {
-            entities.addAll(scene.entityManager.getEntities().filter { it.components.keys.containsAll(componentClasses) })
+            entities.addAll(simpleScene.entityManager.getEntities().filter { it.components.keys.containsAll(componentClasses) })
         }
         gatherComponents()
     }
