@@ -7,4 +7,5 @@ public interface LifeCycle {
     default void init(Engine engine) { }
     default void update(float seconds) { }
     default void destroy() { }
+
 }

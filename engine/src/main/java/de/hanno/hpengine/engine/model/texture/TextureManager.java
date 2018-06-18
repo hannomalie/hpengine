@@ -900,4 +900,9 @@ public class TextureManager implements Manager {
     public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
     }
+
+    @Override
+    public void afterUpdate() {
+
+    }
 }

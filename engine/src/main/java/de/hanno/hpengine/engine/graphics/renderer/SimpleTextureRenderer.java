@@ -111,7 +111,7 @@ public class SimpleTextureRenderer implements Renderer {
 
 
 	@Override
-	public void draw(DrawResult result, RenderState renderState) {
+	public void render(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
 		drawToQuad(engine.getTextureManager().getDefaultTexture().getTextureID(), engine.getGpuContext().getFullscreenBuffer());
 		GPUProfiler.end();

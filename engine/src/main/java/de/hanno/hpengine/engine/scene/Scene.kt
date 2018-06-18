@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystemRegistry
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
-import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
@@ -24,7 +23,7 @@ import de.hanno.hpengine.engine.graphics.light.probe.ProbeSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.StateConsumer
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.manager.ManagerRegistry
@@ -58,7 +57,7 @@ interface IScene : LifeCycle, Serializable {
     var isInitiallyDrawn: Boolean
     val minMax: AABB
     fun setEntityMovedInCycleToCurrentCycle()
-    val renderStateConsumers: List<StateConsumer>
+    val renderStateConsumers: List<RenderSystem>
     fun getEntities(): List<Entity>
     val materialManager: MaterialManager
     fun addAll(entities: List<Entity>)
@@ -89,7 +88,7 @@ class Scene @JvmOverloads constructor(override val name: String = "new-scene-" +
     @Transient override var isInitiallyDrawn: Boolean = false
     override val minMax = AABB(Vector3f(), 100f)
 
-    override val renderStateConsumers = mutableListOf<StateConsumer>()
+    override val renderStateConsumers = mutableListOf<RenderSystem>()
     val componentSystems: SystemsRegistry = SimpleSystemsRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
 
@@ -193,9 +192,9 @@ class Scene @JvmOverloads constructor(override val name: String = "new-scene-" +
 //        if (scene.entityMovedInCycle() == newDrawCycle) {
 //            engine.eventBus.post(EntityMovedEvent()) TODO: Check if this is still necessary
 //        }
-        if (directionalLightSystem.getDirectionalLight().entity.hasMoved()) {
-            engine.eventBus.post(DirectionalLightHasMovedEvent())
-        }
+//        if (directionalLightSystem.getDirectionalLight().entity.hasMoved()) {
+//            engine.eventBus.post(DirectionalLightHasMovedEvent())
+//        }
     }
 
     override fun getEntities(): List<Entity> {

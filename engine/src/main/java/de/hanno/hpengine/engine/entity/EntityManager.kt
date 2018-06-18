@@ -76,7 +76,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             break
         }
     }
-    fun afterUpdate() {
+    override fun afterUpdate() {
         entityContainer.entities.forEach {
             it.isHasMoved = false
         }

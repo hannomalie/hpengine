@@ -109,7 +109,7 @@ public class DeferredRenderer implements Renderer {
 
 
     @Override
-	public void draw(DrawResult result, RenderState renderState) {
+	public void render(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
 
 		engine.getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());

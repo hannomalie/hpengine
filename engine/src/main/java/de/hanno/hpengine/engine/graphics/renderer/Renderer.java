@@ -6,15 +6,14 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import org.joml.Vector3f;
 
-public interface Renderer extends LifeCycle {
+public interface Renderer extends LifeCycle, RenderSystem {
 
     default void destroy() { }
-
-    void draw(DrawResult result, RenderState renderState);
 
     void update(Engine engine, float seconds);
 

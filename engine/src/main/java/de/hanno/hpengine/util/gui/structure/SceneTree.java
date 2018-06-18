@@ -2,7 +2,6 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
-import de.hanno.hpengine.engine.container.EntityContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.util.Parentable;

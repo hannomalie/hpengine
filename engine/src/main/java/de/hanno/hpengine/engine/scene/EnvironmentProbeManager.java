@@ -6,11 +6,12 @@ import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.graphics.state.StateConsumer;
+import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 
-public class EnvironmentProbeManager implements Manager, StateConsumer {
+public class EnvironmentProbeManager implements Manager, RenderSystem {
 	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
 	public static final int CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION);
@@ -290,7 +291,12 @@ public class EnvironmentProbeManager implements Manager, StateConsumer {
 	}
 
 	@Override
-	public void consume(@NotNull RenderState state) {
+	public void render(DrawResult result, @NotNull RenderState state) {
 		executeRenderProbeCommands(state);
+	}
+
+	@Override
+	public void afterUpdate() {
+
 	}
 }

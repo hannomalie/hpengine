@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.util.fps.FPSCounter;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -25,11 +26,6 @@ public class MockedRendererEngineTest {
     }
 
     public static class MockRenderer implements Renderer {
-
-        @Override
-        public void draw(DrawResult result, RenderState renderState) {
-
-        }
 
         @Override
         public void update(Engine engine, float seconds) {
@@ -63,6 +59,11 @@ public class MockedRendererEngineTest {
 
         @Override
         public void drawToQuad(int texture) {
+
+        }
+
+        @Override
+        public void render(@NotNull DrawResult result, @NotNull RenderState state) {
 
         }
     }

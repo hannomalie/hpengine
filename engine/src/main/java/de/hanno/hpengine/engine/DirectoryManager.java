@@ -73,4 +73,9 @@ public class DirectoryManager implements Manager {
     public void onEntityAdded(@NotNull List<? extends Entity> entities) {
 
     }
+
+    @Override
+    public void afterUpdate() {
+
+    }
 }

@@ -49,9 +49,9 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
                     val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
                     engine.getScene().renderStateConsumers.forEach {
-                        it.consume(renderState.currentReadState)
+                        it.render(drawResult, renderState.currentReadState)
                     }
-                    engine.renderer.draw(drawResult, renderState.currentReadState)
+                    engine.renderer.render(drawResult, renderState.currentReadState)
                     drawResult.apply { GPUProfilingResult = GPUProfiler.dumpTimings() }
                 }
                 lastFrameTime = System.currentTimeMillis()

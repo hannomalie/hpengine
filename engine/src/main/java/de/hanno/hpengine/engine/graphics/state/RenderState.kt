@@ -155,6 +155,6 @@ interface CustomState {
 
 class StateRef<out T>(val index: Int)
 
-interface StateConsumer {
-    fun consume(state: RenderState)
+interface RenderSystem {
+    fun render(result: DrawResult, state: RenderState)
 }

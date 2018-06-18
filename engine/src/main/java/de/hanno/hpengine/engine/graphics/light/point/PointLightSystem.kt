@@ -10,8 +10,9 @@ import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.PointLightMovedEvent
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.StateConsumer
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
@@ -20,7 +21,7 @@ import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(theComponentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
 
-class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(PointLight::class.java)), StateConsumer {
+class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(PointLight::class.java)), RenderSystem {
 
     var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
@@ -82,7 +83,7 @@ class PointLightSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine,
 
     fun getPointLights(): List<PointLight> = getComponents(PointLight::class.java)
 
-    override fun consume(state: RenderState) {
+    override fun render(result: DrawResult, state: RenderState) {
         if(state.entityWasAdded() || state.pointLightHasMoved()) {
             shadowMapStrategy.renderPointLightShadowMaps(state)
         }
