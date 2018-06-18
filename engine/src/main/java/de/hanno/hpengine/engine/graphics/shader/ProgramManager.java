@@ -193,6 +193,5 @@ public class ProgramManager implements Manager {
     @Override
     public void afterUpdate() {
 
-        
     }
 }

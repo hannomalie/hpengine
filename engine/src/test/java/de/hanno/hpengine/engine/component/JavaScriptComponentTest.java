@@ -2,16 +2,19 @@ package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.TestWithEngine;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.util.script.ScriptManager;
 import junit.framework.Assert;
 import org.junit.Test;
 
 public class JavaScriptComponentTest extends TestWithEngine {
 
+    private ScriptManager scriptManager = engine.getManagers().get(ScriptManager.class);
+
     @Test
     public void globalDefines() {
-        engine.getScene().getScriptManager().getGlobalContext().put("myInt", 2);
+        scriptManager.getGlobalContext().put("myInt", 2);
 
-        Assert.assertEquals(2, engine.getScene().getScriptManager().getGlobalContext().get("myInt"));
+        Assert.assertEquals(2, scriptManager.getGlobalContext().get("myInt"));
     }
 
     @Test
@@ -25,12 +28,12 @@ public class JavaScriptComponentTest extends TestWithEngine {
 
     @Test
     public void globalScopeFromLocalScope() {
-        engine.getScene().getScriptManager().getGlobalContext().put("myInt", 242);
+        scriptManager.getGlobalContext().put("myInt", 242);
 
-        Assert.assertEquals(242, engine.getScene().getScriptManager().getGlobalContext().get("myInt"));
+        Assert.assertEquals(242, scriptManager.getGlobalContext().get("myInt"));
 
         String script = "var myInt = myInt;";
-        JavaScriptComponent component = new JavaScriptComponent(script);
+        JavaScriptComponent component = new JavaScriptComponent(script, scriptManager);
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create().addComponent(component);
 
         Assert.assertEquals(242, component.getContext().getAttribute("myInt"));
@@ -38,15 +41,15 @@ public class JavaScriptComponentTest extends TestWithEngine {
 
     @Test
     public void scriptUpdateFunctionCall() {
-        engine.getScene().getScriptManager().getGlobalContext().put("initCalled", false);
-        engine.getScene().getScriptManager().getGlobalContext().put("updateCalled", false);
+        scriptManager.getGlobalContext().put("initCalled", false);
+        scriptManager.getGlobalContext().put("updateCalled", false);
 
-        Assert.assertEquals(false, engine.getScene().getScriptManager().getGlobalContext().get("initCalled"));
-        Assert.assertEquals(false, engine.getScene().getScriptManager().getGlobalContext().get("updateCalled"));
+        Assert.assertEquals(false, scriptManager.getGlobalContext().get("initCalled"));
+        Assert.assertEquals(false, scriptManager.getGlobalContext().get("updateCalled"));
 
         String script = "var init = bufferMaterialsExtractor(world) { initCalled = true; };" +
                 "var update = bufferMaterialsExtractor(seconds) { updateCalled = true; };";
-        JavaScriptComponent component = new JavaScriptComponent(script);
+        JavaScriptComponent component = new JavaScriptComponent(script, scriptManager);
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create().addComponent(component);
 
         entity.update(0.1f);
@@ -58,7 +61,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
 //        }
 
         component.update(0.1f);
-        Assert.assertEquals(true, engine.getScene().getScriptManager().getGlobalContext().get("initCalled"));
-        Assert.assertEquals(true, engine.getScene().getScriptManager().getGlobalContext().get("updateCalled"));
+        Assert.assertEquals(true, scriptManager.getGlobalContext().get("initCalled"));
+        Assert.assertEquals(true, scriptManager.getGlobalContext().get("updateCalled"));
     }
 }

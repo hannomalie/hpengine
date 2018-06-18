@@ -56,6 +56,7 @@ import de.hanno.hpengine.util.gui.container.ReloadableTabbedPane;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.TitledPanel;
 import de.hanno.hpengine.util.gui.structure.*;
+import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FileUtils;
@@ -530,7 +531,7 @@ public class DebugFrame implements HostComponent {
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
 			try {
-				engine.getSceneManager().getScene().getScriptManager().eval(console.getText());
+				engine.getManagers().get(ScriptManager.class).eval(console.getText());
 			} catch (ScriptException e1) {
 				showError("Line " + e1.getLineNumber() + " contains errors.");
 				e1.printStackTrace();
@@ -771,8 +772,8 @@ public class DebugFrame implements HostComponent {
                 }
             }
         });
-        AutoCompletion ac = new AutoCompletion(engine.getScene().getScriptManager().getProvider());
-        ac.install(console);
+//        AutoCompletion ac = new AutoCompletion(engine.getManagers().get(ScriptManager.class).getProvider());
+//        ac.install(console);
     }
 
     public void startProgress(String label) {

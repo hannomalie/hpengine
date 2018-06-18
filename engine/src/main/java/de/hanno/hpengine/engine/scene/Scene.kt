@@ -75,7 +75,6 @@ interface IScene : LifeCycle, Serializable {
     fun write()
     fun write(name: String): Boolean
     fun add(entity: Entity) = addAll(listOf(entity))
-    val scriptManager: ScriptManager
     fun getEntity(name: String): Optional<Entity> {
         val candidate = entityManager.getEntities().find { e -> e.name == name }
         return Optional.ofNullable(candidate)
@@ -98,9 +97,7 @@ class Scene @JvmOverloads constructor(override val name: String = "new-scene-" +
     override val renderSystems = mutableListOf<RenderSystem>()
     override val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     override val managers: ManagerRegistry = SimpleManagerRegistry()
-
-    override val entityManager = EntityManager(engine, engine.eventBus).apply { managers.register(this) }
-    override val environmentProbeManager = engine.environmentProbeManager.apply { renderSystems.add(this) }
+    override val entitySystems = SimpleEntitySystemRegistry()
 
     private val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
     private val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine))
@@ -110,10 +107,11 @@ class Scene @JvmOverloads constructor(override val name: String = "new-scene-" +
     private val areaLightComponentSystem = componentSystems.register(AreaLightComponentSystem())
     private val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
 
+    override val entityManager = EntityManager(engine, engine.eventBus).apply { managers.register(this) }
+    override val environmentProbeManager = engine.environmentProbeManager.apply { renderSystems.add(this) }
     override val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
-    override val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
+    val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
-    override val entitySystems = SimpleEntitySystemRegistry()
     val directionalLightSystem = entitySystems.register(DirectionalLightSystem(engine, this, engine.eventBus))
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
     val pointLightSystemX = entitySystems.register(PointLightSystem(engine, this)).apply { renderSystems.add(this) }
@@ -135,7 +133,6 @@ class Scene @JvmOverloads constructor(override val name: String = "new-scene-" +
 
 
     override fun init(engine: Engine) {
-//        renderSystems.add(engine.renderer)
         engine.eventBus.register(this)
     }
 
