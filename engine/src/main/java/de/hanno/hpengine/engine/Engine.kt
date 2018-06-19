@@ -10,11 +10,14 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
@@ -49,8 +52,8 @@ class Engine private constructor(gameDirName: String) {
     val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
 
     val sceneManager = managers.register(SceneManager(this))
-
     val renderer: Renderer = Renderer.create(this)
+
     val physicsManager = PhysicsManager(renderer)
 
     init {
@@ -83,8 +86,8 @@ class Engine private constructor(gameDirName: String) {
         with(renderManager) {
             if (gpuContext.isSignaled(renderState.currentWriteState.gpuCommandSync)) {
                 with(scene) {
-                    with(directionalLightSystem.getDirectionalLight()) {
-                        renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, modelComponentSystem.joints, sceneManager.activeCamera, entityMovedInCycle(), directionalLightSystem.directionalLightMovedInCycle, pointLightMovedInCycle(), isInitiallyDrawn, minMax.min, minMax.max, drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityAddedInCycle)
+                    with(entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()) {
+                        renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, componentSystems.get(ModelComponentSystem::class.java).joints, sceneManager.scene.activeCamera, entityManager.entityMovedInCycle, entitySystems.get(DirectionalLightSystem::class.java).directionalLightMovedInCycle, entitySystems.get(PointLightSystem::class.java).pointLightMovedInCycle, isInitiallyDrawn, minMax.min, minMax.max, drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityManager.entityAddedInCycle)
                     }
                     extract(renderState.currentWriteState)
                 }

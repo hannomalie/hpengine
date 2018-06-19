@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.Scene
 import org.joml.FrustumIntersection
-import org.joml.Matrix4f
 import org.joml.Vector3f
 
 class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, scene, listOf(ModelComponent::class.java)) {
@@ -27,11 +26,11 @@ class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, s
 
     fun addRenderBatches(currentWriteState: RenderState) {
         val camera = engine.getScene().activeCamera
-        val cameraWorldPosition = camera.position
+        val cameraWorldPosition = camera.entity.position
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        addBatches(cameraMapper.getComponent(camera), currentWriteState, cameraWorldPosition, firstpassDefaultProgram, components[ModelComponent::class.java] as List<ModelComponent>)
+        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, components[ModelComponent::class.java] as List<ModelComponent>)
     }
 
     private fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>) {
@@ -50,9 +49,9 @@ class BatchingSystem(engine: Engine, scene: Scene): SimpleEntitySystem(engine, s
                 mesh.material.setTexturesUsed()
 
                 val (min1, max1) = modelComponent.getMinMax(entity, mesh)
-//                val meshIsInFrustum = camera.frustum.sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, boundingSphereRadius)//TODO: Fix this
-                val intersectAab = camera.frustum.frustumIntersection.intersectAab(min1.x, min1.y, min1.z, max1.x, max1.y, max1.z)
-                val meshIsInFrustum = intersectAab == FrustumIntersection.INTERSECT || intersectAab == FrustumIntersection.INSIDE
+//                val intersectAab = camera.frustum.frustumIntersection.intersectAab(min1.x, min1.y, min1.z, max1.x, max1.y, max1.z)
+//                val meshIsInFrustum = intersectAab == FrustumIntersection.INTERSECT || intersectAab == FrustumIntersection.INSIDE
+                val meshIsInFrustum = camera.frustum.sphereInFrustum(entity.position.x, entity.position.y, entity.position.z, boundingSphereRadius)
 
                 val visibleForCamera = meshIsInFrustum || entity.instanceCount > 1 // TODO: Better culling for instances
                 val meshBufferIndex = entityIndexOf + i * entity.instanceCount

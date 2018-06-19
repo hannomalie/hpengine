@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.camera.CameraComponentSystem;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
@@ -86,10 +87,10 @@ public class DrawLinesExtension implements RenderExtension {
         }
         if(Config.getInstance().isDrawCameras()) {
 //            TODO: Use renderstate somehow?
-            List<Camera> components = engine.getScene().getCameraComponentSystem().getComponents();
+            List<Camera> components = engine.getScene().getComponentSystems().get(CameraComponentSystem.class).getComponents();
             for(int i = 0; i < components.size(); i++) {
                 Camera camera = components.get(i);
-                if(camera.equals(engine.getSceneManager().getActiveCamera())) { continue; }
+                if(camera.equals(engine.getSceneManager().getScene().getActiveCamera())) { continue; }
                 Vector3f[] corners = camera.getFrustumCorners();
                 engine.getRenderer().batchLine(corners[0], corners[1]);
                 engine.getRenderer().batchLine(corners[1], corners[2]);

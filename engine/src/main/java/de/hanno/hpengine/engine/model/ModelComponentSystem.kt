@@ -55,7 +55,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
     val bufferDynamicEntitiesActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.Action<List<GpuEntity>>(dynamicEntitiesExtractor, dynamicEntitiesConsumer))
 
-    private val bufferJointsExtractor: Supplier<List<BufferableMatrix4f>> = Supplier { engine.getScene().modelComponentSystem.joints }
+    private val bufferJointsExtractor: Supplier<List<BufferableMatrix4f>> = Supplier { joints }
     private val bufferJointsConsumer = BiConsumer<RenderState, List<BufferableMatrix4f>> { renderState, joints -> renderState.entitiesState.jointsBuffer.put(0, joints) }
     val bufferJointsActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.Action<List<BufferableMatrix4f>>(bufferJointsExtractor, bufferJointsConsumer))
 
@@ -110,7 +110,6 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         entities.forEach { e ->
             e.getComponents().values.forEach { c ->
                 if(c is ModelComponent) {
-
                     if (c.model.isStatic) {
                         val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
                         c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTCHANNELS)

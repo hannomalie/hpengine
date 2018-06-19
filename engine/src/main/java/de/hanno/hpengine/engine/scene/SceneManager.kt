@@ -15,7 +15,6 @@ class SceneManager(val engine: Engine): Manager {
             }, true)
             engine.eventBus.post(SceneInitEvent())
         }
-    var activeCamera: Camera = scene.activeCamera.getComponent(Camera::class.java)
 
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
@@ -26,22 +25,16 @@ class SceneManager(val engine: Engine): Manager {
     }
 
     private fun onSetScene(nextScene: IScene) {
-        engine.sceneManager.scene.entityManager.clear()
         engine.environmentProbeManager.clearProbes()
         engine.physicsManager.clearWorld()
         engine.renderManager.clear()
         engine.getScene().clear()
         nextScene.init(engine)
-        activeCamera = nextScene.activeCamera.getComponent(Camera::class.java)
         engine.renderManager.renderState.addCommand { renderState1 ->
             renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
             renderState1.setVertexIndexBufferAnimated(engine.renderManager.vertexIndexBufferAnimated)
         }
         nextScene.entitySystems.gatherEntities()
-    }
-
-    fun restoreWorldCamera() {
-        activeCamera = scene.camera.getComponent(Camera::class.java)
     }
 
     init {

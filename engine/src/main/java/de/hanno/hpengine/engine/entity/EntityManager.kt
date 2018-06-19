@@ -11,6 +11,10 @@ import org.joml.Vector3f
 import java.util.logging.Logger
 class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
     private val entityContainer: EntityContainer = SimpleContainer()
+
+    var entityMovedInCycle: Long = 0
+    var entityAddedInCycle: Long = 0
+
     var entityHasMoved = false
     var staticEntityHasMoved = false
 
@@ -68,7 +72,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
                 continue
             }
             currentScene.minMax.calculateMinMax(currentScene.entityManager.getEntities())
-            currentScene.setEntityMovedInCycleToCurrentCycle()
+            entityMovedInCycle = currentScene.currentCycle
             entityHasMoved = true
             if(entity.update == Update.STATIC) {
                 staticEntityHasMoved = true
@@ -81,7 +85,13 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             it.isHasMoved = false
         }
     }
+
+    fun setEntityMovedInCycleToCycle(currentCycle: Long) {
+        entityMovedInCycle = currentCycle
+    }
+
     companion object {
         private val LOGGER = Logger.getLogger(EntityManager::class.java.name)
     }
+
 }

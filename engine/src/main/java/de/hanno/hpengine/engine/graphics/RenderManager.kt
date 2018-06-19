@@ -48,7 +48,7 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
                     recorder.add(renderState.currentReadState)
                     val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                    engine.getScene().renderStateConsumers.forEach {
+                    engine.getScene().renderSystems.forEach {
                         it.render(drawResult, renderState.currentReadState)
                     }
                     engine.renderer.render(drawResult, renderState.currentReadState)

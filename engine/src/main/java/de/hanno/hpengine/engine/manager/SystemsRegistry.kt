@@ -19,6 +19,12 @@ interface ManagerRegistry {
             it.onEntityAdded(entities)
         }
     }
+
+    fun afterUpdate() {
+        getManagers().forEach {
+            it.afterUpdate()
+        }
+    }
 }
 
 class SimpleManagerRegistry: ManagerRegistry {
@@ -50,7 +56,7 @@ interface SystemsRegistry {
     }
 }
 
-class SimpleSystemsRegistry : SystemsRegistry {
+class ComponentSystemRegistry : SystemsRegistry {
     override fun getSystems(): List<ComponentSystem<*>> = systems.values.toList()
 
     private val systems = mutableMapOf<Class<*>, ComponentSystem<*>>()
@@ -61,10 +67,10 @@ class SimpleSystemsRegistry : SystemsRegistry {
     }
 
     override fun <T : ComponentSystem<*>> get(systemClass: Class<T>): T {
-        if (!systems.contains(systemClass)) {
+        val systemOrNull = systems.map { it.value }.firstOrNull { it::class.java == systemClass }
+        if (systemOrNull == null) {
             throw IllegalStateException("Requested system of class $systemClass, but no system registered.")
-        }
-        return (systems[systemClass] as T)
+        } else  return systemClass.cast(systemOrNull)
     }
 
     override fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T> {

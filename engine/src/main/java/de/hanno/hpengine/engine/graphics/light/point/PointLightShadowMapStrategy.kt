@@ -146,7 +146,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
     }
 
     override fun renderPointLightShadowMaps(renderState: RenderState) {
-        val entities = engine.getScene().getEntities()
+        val entities = engine.getScene().entityManager.getEntities()
         val gpuContext = engine.gpuContext
 
         GPUProfiler.start("PointLight shadowmaps")

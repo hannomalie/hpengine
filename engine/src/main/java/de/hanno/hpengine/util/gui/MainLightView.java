@@ -13,6 +13,7 @@ import com.alee.laf.text.WebFormattedTextField;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
 import org.joml.AxisAngle4f;
@@ -48,7 +49,7 @@ public class MainLightView extends WebPanel {
         lightColorChooserPanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                DirectionalLight light = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+                DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
                 Color color = lightColorChooserPanel.getColor();
                 light.setColor(new Vector3f(color.getRed() / 255.f,
                         color.getGreen() / 255.f,
@@ -91,7 +92,7 @@ public class MainLightView extends WebPanel {
         WebFormattedVec3Field positionField = new WebFormattedVec3Field("Position", new Vector3f()) {
             @Override
             public void onValueChange(Vector3f current) {
-                engine.getScene().getDirectionalLightSystem().getDirectionalLight().setTranslation(current);
+                engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().setTranslation(current);
             }
         };
         movablePanel.addElement(positionField);
@@ -99,26 +100,26 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 3600, 0) {
             @Override
             public void onValueChange(int value, int delta) {
-                engine.getScene().getDirectionalLightSystem().getDirectionalLight().rotate(new AxisAngle4f(1, 0, 0, 0.01f * delta));
+                engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().rotate(new AxisAngle4f(1, 0, 0, 0.01f * delta));
             }
         });
         movablePanel.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 3600, 0) {
             @Override
             public void onValueChange(int value, int delta) {
-                engine.getScene().getDirectionalLightSystem().getDirectionalLight().rotate(new AxisAngle4f(0, 1, 0, 0.01f * delta));
+                engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().rotate(new AxisAngle4f(0, 1, 0, 0.01f * delta));
             }
         });
         movablePanel.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 3600, 0) {
             @Override
             public void onValueChange(int value, int delta) {
-                engine.getScene().getDirectionalLightSystem().getDirectionalLight().rotate(new AxisAngle4f(0, 0, 1, 0.01f * delta));
+                engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().rotate(new AxisAngle4f(0, 0, 1, 0.01f * delta));
             }
         });
 
         movablePanel.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
             @Override
             public void onValueChange(int value, int delta) {
-                DirectionalLight directionalLight = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
                 Vector3f axis = directionalLight.getRightDirection();
                 axis = new Vector3f(1, 0, 0);
                 directionalLight.translate(axis.mul(delta));
@@ -128,7 +129,7 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
             @Override
             public void onValueChange(int value, int delta) {
-                DirectionalLight directionalLight = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
                 Vector3f axis = directionalLight.getUpDirection();
                 axis = new Vector3f(0, 1, 0);
                 directionalLight.translate(axis.mul(delta));
@@ -138,7 +139,7 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
             @Override
             public void onValueChange(int value, int delta) {
-                DirectionalLight directionalLight = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
                 Vector3f axis = directionalLight.getViewDirection().negate(null);
                 axis = new Vector3f(0, 0, -1);
                 directionalLight.translate(axis.mul(delta));
@@ -149,7 +150,7 @@ public class MainLightView extends WebPanel {
         movablePanel.addElement(new WebFormattedVec3Field("View Direction", new Vector3f(0, 0, -1)) {
             @Override
             public void onValueChange(Vector3f current) {
-                DirectionalLight directionalLight = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+                DirectionalLight directionalLight = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
                 Quaternionf temp = new Quaternionf();
                 temp.fromAxisAngleRad(current.x, current.y, current.z, 0);
                 directionalLight.rotation(temp);
@@ -161,7 +162,7 @@ public class MainLightView extends WebPanel {
         webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(0, 0, 0)) {
             @Override
             public void onValueChange(Vector3f current) {
-                DirectionalLight light = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+                DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
                 light.setWidth(current.x);
                 light.setHeight(current.y);
                 light.setFar(current.z);
@@ -170,18 +171,18 @@ public class MainLightView extends WebPanel {
         webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", new Vector3f()) {
             @Override
             public void onValueChange(Vector3f current) {
-                engine.getScene().getDirectionalLightSystem().getDirectionalLight().setTranslation(current);
+                engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().setTranslation(current);
             }
         });
 
         webComponentPanel.addElement(new WebButton("Use Light Cam") {{
             addActionListener(e -> {
-                engine.getSceneManager().setActiveCamera(engine.getScene().getDirectionalLightSystem().getDirectionalLight());
+                engine.getSceneManager().getScene().setActiveCamera(engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight());
             });
         }});
         webComponentPanel.addElement(new WebButton("Use World Cam") {{
             addActionListener(e -> {
-                engine.getSceneManager().restoreWorldCamera();
+                engine.getSceneManager().getScene().restoreWorldCamera();
             });
         }});
 

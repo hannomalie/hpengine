@@ -35,7 +35,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
             List<Entity> allChildrenAndSelf = engine.getSceneManager().getScene().getEntityManager().create(name).getAllChildrenAndSelf();
             if(!allChildrenAndSelf.isEmpty()) {
                 Entity entity = allChildrenAndSelf.get(0);
-                ModelComponent modelComponent = engine.getSceneManager().getScene().getModelComponentSystem().create(entity, model);
+                ModelComponent modelComponent = engine.getSceneManager().getScene().getComponentSystems().get(ModelComponentSystem.class).create(entity, model);
                 entity.addComponent(modelComponent);
             }
 

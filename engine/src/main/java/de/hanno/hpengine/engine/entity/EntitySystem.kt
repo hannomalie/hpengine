@@ -13,6 +13,8 @@ interface EntitySystem {
     fun onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
+
+    fun clear()
 }
 
 interface EntitySystemRegistry {
@@ -23,6 +25,17 @@ interface EntitySystemRegistry {
     fun <T : EntitySystem> register(manager: T): T
     fun gatherEntities() {
         getSystems().forEach { it.gatherEntities()}
+    }
+
+    fun <T: EntitySystem> get(clazz: Class<T>):T  {
+        val firstOrNull = getSystems().firstOrNull { it::class.java == clazz }
+        if(firstOrNull == null) {
+            throw IllegalStateException("Requested entity system of class $clazz, but no system registered.")
+        } else return clazz.cast(firstOrNull)
+    }
+
+    fun clearSystems() {
+        getSystems().forEach { it.clear() }
     }
 }
 
@@ -58,9 +71,9 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
     override fun gatherEntities() {
         entities.clear()
         if(componentClasses.isEmpty()) {
-            entities.addAll(scene.getEntities())
+            entities.addAll(scene.entityManager.getEntities())
         } else {
-            entities.addAll(scene.getEntities().filter { it.components.keys.containsAll(componentClasses) })
+            entities.addAll(scene.entityManager.getEntities().filter { it.components.keys.containsAll(componentClasses) })
         }
         gatherComponents()
     }
@@ -96,5 +109,10 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
             gatherEntities()
             gatherComponents()
         }, false)
+    }
+
+    override fun clear() {
+        components.clear()
+        entities.clear()
     }
 }

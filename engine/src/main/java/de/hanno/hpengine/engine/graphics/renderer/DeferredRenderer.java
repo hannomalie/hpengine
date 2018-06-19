@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
-import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -17,11 +16,9 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import kotlin.Unit;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL43;
 
 import javax.vecmath.Vector2f;
 import java.util.ArrayList;
@@ -33,7 +30,6 @@ import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.glFinish;
-import static org.lwjgl.opengl.GL30.GL_RGBA16F;
 
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
@@ -167,6 +163,7 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.end();
 		GPUProfiler.end();
 		GPUProfiler.end();
+
 	}
 
 	@Override

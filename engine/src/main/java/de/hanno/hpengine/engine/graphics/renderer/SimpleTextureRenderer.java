@@ -18,6 +18,7 @@ import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.ProfilingTask;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
@@ -120,16 +121,6 @@ public class SimpleTextureRenderer implements Renderer {
 		glfwPollEvents();
         glfwSwapBuffers(engine.getGpuContext().getWindowHandle());
         GPUProfiler.end();
-	}
-
-	private String dumpTimings() {
-		ProfilingTask tp;
-        StringBuilder builder = new StringBuilder();
-		while((tp = GPUProfiler.getFrameResults()) != null){
-            tp.dump(builder); //Dumps the frame to System.out.
-		}
-        GPUProfiler.dumpAverages();
-        return builder.toString();
 	}
 
 	@Override

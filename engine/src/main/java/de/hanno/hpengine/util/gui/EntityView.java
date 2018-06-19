@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
+import de.hanno.hpengine.engine.instancing.ClustersComponentSystem;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Update;
@@ -157,7 +158,7 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(entity));
+            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getComponentSystems().get(ClustersComponentSystem.class).create(entity));
             ClustersComponent.addInstance(entity, clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.spatial);
         });
         buttonPanel.addElement(addInstanceButton);

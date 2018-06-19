@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
+import de.hanno.hpengine.engine.instancing.ClustersComponentSystem;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -62,7 +63,7 @@ public class EntityTest extends TestWithEngine {
 
         Transform instanceTransform = new SimpleTransform();
         instanceTransform.setTranslation(new Vector3f(15,15,15));
-        ClustersComponent clustersComponent = parentEntity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getClusterComponentSystem().create(parentEntity));
+        ClustersComponent clustersComponent = parentEntity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getComponentSystems().get(ClustersComponentSystem.class).create(parentEntity));
 
         ClustersComponent.addInstance(parentEntity, clustersComponent, instanceTransform, parentEntity.spatial);
 
@@ -95,7 +96,7 @@ public class EntityTest extends TestWithEngine {
 //            Assert.assertTrue(childValues[34] == 15);
 //        }
 
-        engine.getScene().getModelComponentSystem().getBufferEntitiesActionRef().request(engine.getRenderManager().getDrawCycle().get());
+        engine.getScene().getComponentSystems().get(ModelComponentSystem.class).getBufferEntitiesActionRef().request(engine.getRenderManager().getDrawCycle().get());
         FloatBuffer floatValues = engine.getRenderManager().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);

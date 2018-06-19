@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
@@ -160,7 +161,7 @@ public class EnvironmentSampler extends Entity {
 		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();
 
-		DirectionalLight light = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+		DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 8);
 		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
 
@@ -320,7 +321,7 @@ public class EnvironmentSampler extends Entity {
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstpassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getDirectionalLightSystem().getDirectionalLight().getViewDirection());
+        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().getViewDirection());
         firstpassDefaultProgram.setUniform("near", camera.getNear());
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
@@ -430,7 +431,7 @@ public class EnvironmentSampler extends Entity {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer, FloatBuffer viewProjectionMatrixAsBuffer, Program program) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = engine.getScene().getDirectionalLightSystem().getDirectionalLight();
+		DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
 		program.setUniform("lightDirection", light.getEntity().getViewDirection());
 		program.setUniform("lightDiffuse", light.getColor());
 		program.setUniform("lightAmbient", Config.getInstance().getAmbientLight());
