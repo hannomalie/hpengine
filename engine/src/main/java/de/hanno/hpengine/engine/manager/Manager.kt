@@ -6,5 +6,5 @@ interface Manager {
     fun update(deltaSeconds: Float) {}
     fun clear()
     fun onEntityAdded(entities: List<Entity>) {}
-    fun afterUpdate() {}
+    fun afterUpdate(deltaSeconds: Float) {}
 }

@@ -296,7 +296,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void afterUpdate() {
+	public void afterUpdate(float deltaSeconds) {
 
 	}
 }

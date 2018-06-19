@@ -902,7 +902,7 @@ public class TextureManager implements Manager {
     }
 
     @Override
-    public void afterUpdate() {
+    public void afterUpdate(float deltaSeconds) {
 
     }
 }

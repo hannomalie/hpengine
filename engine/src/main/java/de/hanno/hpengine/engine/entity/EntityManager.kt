@@ -52,8 +52,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
         entityContainer.clear()
     }
 
-    override fun update(deltaSeconds: Float) {
-
+    private fun onUpdate(deltaSeconds: Float) {
         entityHasMoved = false
         staticEntityHasMoved = false
 
@@ -74,13 +73,15 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             currentScene.minMax.calculateMinMax(currentScene.entityManager.getEntities())
             entityMovedInCycle = currentScene.currentCycle
             entityHasMoved = true
-            if(entity.update == Update.STATIC) {
+            if (entity.update == Update.STATIC) {
                 staticEntityHasMoved = true
             }
             break
         }
     }
-    override fun afterUpdate() {
+
+    override fun afterUpdate(deltaSeconds: Float) {
+        onUpdate(deltaSeconds)
         entityContainer.entities.forEach {
             it.isHasMoved = false
         }

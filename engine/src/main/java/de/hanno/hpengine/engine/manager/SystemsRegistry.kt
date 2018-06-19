@@ -20,9 +20,9 @@ interface ManagerRegistry {
         }
     }
 
-    fun afterUpdate() {
+    fun afterUpdate(deltaSeconds: Float) {
         getManagers().forEach {
-            it.afterUpdate()
+            it.afterUpdate(deltaSeconds)
         }
     }
 }
