@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.entity.EntitySystemRegistry
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem

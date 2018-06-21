@@ -6,18 +6,18 @@ import de.hanno.hpengine.engine.transform.AABB
 import org.joml.Matrix4f
 import java.nio.ByteBuffer
 
-data class GpuEntity(val trafo: Matrix4f,
-                     val selected: Boolean,
-                     val materialIndex: Int,
-                     val update: Update,
-                     val meshBufferIndex: Int,
-                     val entityIndex: Int,
-                     val meshIndex: Int,
-                     val baseVertex: Int,
-                     val baseJointIndex: Int,
-                     val animationFrame0: Int,
-                     val isInvertedTexCoordY: Boolean,
-                     val aabb: AABB) : Bufferable {
+data class GpuEntity(var trafo: Matrix4f,
+                     var selected: Boolean,
+                     var materialIndex: Int,
+                     var update: Update,
+                     var meshBufferIndex: Int,
+                     var entityIndex: Int,
+                     var meshIndex: Int,
+                     var baseVertex: Int,
+                     var baseJointIndex: Int,
+                     var animationFrame0: Int,
+                     var isInvertedTexCoordY: Boolean,
+                     var aabb: AABB) : Bufferable {
     override fun getBytesPerObject(): Int {
         return getBytesPerInstance()
     }

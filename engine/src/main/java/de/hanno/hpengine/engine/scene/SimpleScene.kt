@@ -88,6 +88,9 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
         activeCamera = camera.getComponent(Camera::class.java)
     }
     override fun extract(currentWriteState: RenderState) {
+        with(entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()) {
+            currentWriteState.init(engine.renderManager.vertexIndexBufferStatic, engine.renderManager.vertexIndexBufferAnimated, componentSystems.get(de.hanno.hpengine.engine.model.ModelComponentSystem::class.java).joints, activeCamera, entityManager.entityMovedInCycle, entitySystems.get(de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem::class.java).directionalLightMovedInCycle, entitySystems.get(de.hanno.hpengine.engine.graphics.light.point.PointLightSystem::class.java).pointLightMovedInCycle, isInitiallyDrawn, minMax.min, minMax.max, currentWriteState.cycle, getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityManager.entityAddedInCycle)
+        }
         batchingSystem.addRenderBatches(currentWriteState)
     }
 

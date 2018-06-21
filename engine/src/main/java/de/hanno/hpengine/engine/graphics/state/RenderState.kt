@@ -46,9 +46,9 @@ class RenderState(gpuContext: GpuContext) {
     val renderBatchesAnimated: List<RenderBatch>
         get() = entitiesState.renderBatchesAnimated
 
-    val vertexIndexBufferStatic: VertexIndexBuffer<*>
+    val vertexIndexBufferStatic: VertexIndexBuffer<Vertex>
         get() = entitiesState.vertexIndexBufferStatic
-    val vertexIndexBufferAnimated: VertexIndexBuffer<*>
+    val vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>
         get() = entitiesState.vertexIndexBufferAnimated
 
     val entitiesBuffer: GPUBuffer<GpuEntity>

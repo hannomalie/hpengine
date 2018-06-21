@@ -163,7 +163,7 @@ public class Material implements Serializable, Bufferable {
     }
 
     public void setTexturesUsed() {
-        materialInfo.maps.getTextures().values().forEach(Texture::setUsedNow);
+        materialInfo.maps.getTextures().forEach((key, value) -> value.setUsedNow());
     }
 
     public String getName() {

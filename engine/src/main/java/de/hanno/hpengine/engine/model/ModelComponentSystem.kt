@@ -19,7 +19,6 @@ import de.hanno.hpengine.util.commandqueue.FutureCallable
 import net.engio.mbassy.listener.Handler
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.BiConsumer
-import java.util.function.Function
 import java.util.function.Supplier
 
 class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent> {
@@ -32,6 +31,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
     val gpuEntities = mutableListOf<GpuEntity>()
+    val gpuEntitiesPool = mutableListOf<GpuEntity>()
 
     override fun getComponents(): List<ModelComponent> = components
 
@@ -49,8 +49,9 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         }).get()
     }
     private val dynamicEntitiesConsumer: BiConsumer<RenderState, List<GpuEntity>> = BiConsumer { renderState, entities ->
-        for(entity in entities.filter { it.update == Update.DYNAMIC }) {
-            renderState.entitiesState.entitiesBuffer.put(entities.indexOf(entity), entity)
+        for((index, entity) in entities.withIndex()) {
+            if(entity.update != Update.DYNAMIC) { continue }
+            renderState.entitiesState.entitiesBuffer.put(index, entity)
         }
     }
     val bufferDynamicEntitiesActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.Action<List<GpuEntity>>(dynamicEntitiesExtractor, dynamicEntitiesConsumer))
@@ -92,10 +93,11 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         if (updateCache) {
             updateCache = false
             entityIndices.clear()
+            gpuEntitiesPool.addAll(gpuEntities)
             gpuEntities.clear()
             var index = 0
             for (current in getComponents()) {
-                gpuEntities.addAll(current.toEntities())
+                gpuEntities.addAll(current.toEntities(gpuEntitiesPool))
                 entityIndices.add(index)
                 current.entityBufferIndex = index
                 index += current.entity.instanceCount * current.meshes.size
@@ -103,7 +105,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         }
     }
 
-    private fun getCurrentGpuEntities() = getComponents().flatMap { it.toEntities() }
+    private fun getCurrentGpuEntities() = gpuEntities
 
     fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
 

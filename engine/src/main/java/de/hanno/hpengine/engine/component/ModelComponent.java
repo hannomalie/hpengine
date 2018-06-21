@@ -411,7 +411,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         buffer.putFloat(1);
     }
 
-    public List<GpuEntity> toEntities() {
+    public List<GpuEntity> toEntities(List<GpuEntity> gpuEntitiesPool) {
 
         List<GpuEntity> result = new ArrayList<>();
 
@@ -420,18 +420,37 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         for(Mesh mesh : meshes) {
             int materialIndex = mesh.getMaterial().getMaterialIndex();
             {
-                result.add(new GpuEntity(entity.getTransformation(),
-                                         entity.isSelected(),
-                                         materialIndex,
-                                         entity.getUpdate(),
-                                         entityBufferIndex + meshIndex,
-                                         entity.getIndex(),
-                                         meshIndex,
-                                         baseVertices[meshIndex],
-                                         getBaseJointIndex(),
-                                         getAnimationFrame0(),
-                                        isInvertTexCoordY(),
-                                        getMinMax(entity, mesh)));
+                GpuEntity target;
+                if(!gpuEntitiesPool.isEmpty()) {
+                    target = gpuEntitiesPool.get(gpuEntitiesPool.size() - 1);
+                    gpuEntitiesPool.remove(gpuEntitiesPool.size() - 1);
+                    target.setTrafo(entity.getTransformation());
+                    target.setSelected(entity.isSelected());
+                    target.setMaterialIndex(materialIndex);
+                    target.setUpdate(entity.getUpdate());
+                    target.setMeshBufferIndex(entityBufferIndex + meshIndex);
+                    target.setEntityIndex(entity.getIndex());
+                    target.setMeshIndex(meshIndex);
+                    target.setBaseVertex(baseVertices[meshIndex]);
+                    target.setBaseJointIndex(getBaseJointIndex());
+                    target.setAnimationFrame0(getAnimationFrame0());
+                    target.setInvertedTexCoordY(isInvertTexCoordY());
+                    target.setAabb(getMinMax(entity, mesh));
+                } else {
+                    target = new GpuEntity(entity.getTransformation(),
+                            entity.isSelected(),
+                            materialIndex,
+                            entity.getUpdate(),
+                            entityBufferIndex + meshIndex,
+                            entity.getIndex(),
+                            meshIndex,
+                            baseVertices[meshIndex],
+                            getBaseJointIndex(),
+                            getAnimationFrame0(),
+                            isInvertTexCoordY(),
+                            getMinMax(entity, mesh));
+                }
+                result.add(target);
             }
 
             for(Cluster cluster : getClusters(entity)) {
@@ -440,18 +459,38 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                     Matrix4f instanceMatrix = instance.getTransformation();
                     int instanceMaterialIndex = instance.getMaterials().get(meshIndex).getMaterialIndex();
 
-                    result.add(new GpuEntity(instanceMatrix,
-                            entity.isSelected(),
-                            instanceMaterialIndex,
-                            entity.getUpdate(),
-                            entityBufferIndex + meshIndex,
-                            entity.getIndex(),
-                            meshIndex,
-                            baseVertices[meshIndex],
-                            getBaseJointIndex(),
-                            instance.getAnimationController().getCurrentFrameIndex(),
-                            isInvertTexCoordY(),
-                            instance.getMinMaxWorld()));
+                    GpuEntity target;
+                    if(!gpuEntitiesPool.isEmpty()) {
+                        target = gpuEntitiesPool.get(gpuEntitiesPool.size() - 1);
+                        gpuEntitiesPool.remove(gpuEntitiesPool.size() - 1);
+                        target.setTrafo(instanceMatrix);
+                        target.setSelected(entity.isSelected());
+                        target.setMaterialIndex(instanceMaterialIndex);
+                        target.setUpdate(entity.getUpdate());
+                        target.setMeshBufferIndex(entityBufferIndex + meshIndex);
+                        target.setEntityIndex(entity.getIndex());
+                        target.setMeshIndex(meshIndex);
+                        target.setBaseVertex(baseVertices[meshIndex]);
+                        target.setBaseJointIndex(getBaseJointIndex());
+                        target.setAnimationFrame0(instance.getAnimationController().getCurrentFrameIndex());
+                        target.setInvertedTexCoordY(isInvertTexCoordY());
+                        target.setAabb(instance.getMinMaxWorld());
+                    } else {
+                        target = new GpuEntity(instanceMatrix,
+                                entity.isSelected(),
+                                instanceMaterialIndex,
+                                entity.getUpdate(),
+                                entityBufferIndex + meshIndex,
+                                entity.getIndex(),
+                                meshIndex,
+                                baseVertices[meshIndex],
+                                getBaseJointIndex(),
+                                instance.getAnimationController().getCurrentFrameIndex(),
+                                isInvertTexCoordY(),
+                                instance.getMinMaxWorld());
+                    }
+
+                    result.add(target);
                 }
             }
 
