@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -18,9 +19,7 @@ import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -29,7 +28,6 @@ import static org.lwjgl.opengl.ARBClearTexture.glClearTexImage;
 import static org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.opengl.GL30.glGenFramebuffers;
-import static org.lwjgl.opengl.GL32.*;
 
 public final class OpenGLContext implements GpuContext {
     private static final Logger LOGGER = Logger.getLogger(OpenGLContext.class.getName());
@@ -49,6 +47,7 @@ public final class OpenGLContext implements GpuContext {
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private RenderTarget frontBuffer;
+    private List<OpenGlCommandSync> commandSyncs = new ArrayList<>(10);
 
 
     public RenderTarget createFrontBuffer() {
@@ -129,24 +128,15 @@ public final class OpenGLContext implements GpuContext {
     }
 
     @Override
-    public long waitForGpuSync(GpuCommandSync gpuCommandSync) {
-        long start = System.nanoTime();
-        while(true) {
-            if (isSignaled(gpuCommandSync)) break;
-        }
-        return System.nanoTime() - start;
-    }
-
-    @Override
-    public boolean isSignaled(GpuCommandSync gpuCommandSync) {
-        return calculate(() -> gpuCommandSync.isSignaled());
-    }
-
-    @Override
     public void createNewGPUFenceForReadState(RenderState currentReadState) {
-        GpuCommandSync readStateSync = currentReadState.getGpuCommandSync();
-        readStateSync.delete();
-        currentReadState.setGpuCommandSync(new OpenGlCommandSync());
+        currentReadState.setGpuCommandSync(createCommandSync());
+    }
+
+    @NotNull
+    private OpenGlCommandSync createCommandSync() {
+        OpenGlCommandSync openGlCommandSync = new OpenGlCommandSync();
+        commandSyncs.add(openGlCommandSync);
+        return openGlCommandSync;
     }
 
     @Override
@@ -208,11 +198,24 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public void update(float seconds) {
+        checkCommandSyncs();
         try {
             executePerFrameCommands();
             commandQueue.executeCommands();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void checkCommandSyncs() {
+        Iterator<OpenGlCommandSync> iterator = commandSyncs.iterator();
+        while(iterator.hasNext()) {
+            OpenGlCommandSync sync = iterator.next();
+            sync.checkSignal();
+            if(sync.isSignaled()) {
+                sync.delete();
+                iterator.remove();
+            }
         }
     }
 
@@ -605,33 +608,5 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex) {
         glClearTexSubImage(textureID, 0, 0, 0, 6*cubeMapIndex, width, height, 6, internalFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
-    }
-
-    static class OpenGlCommandSync implements GpuCommandSync {
-
-        private long gpuCommandSync;
-
-        OpenGlCommandSync() {
-            gpuCommandSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-        }
-
-        @Override
-        public boolean isSignaled() {
-            if(gpuCommandSync > 0) {
-                int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
-                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
-                    return true;
-                }
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public void delete() {
-            if(gpuCommandSync > 0) {
-                glDeleteSync(gpuCommandSync);
-            }
-        }
     }
 }

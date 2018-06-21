@@ -33,10 +33,6 @@ public interface GpuContext {
 
     void setCanvasHeight(int height);
 
-    long waitForGpuSync(GpuCommandSync gpuCommandSync);
-
-    boolean isSignaled(GpuCommandSync gpuCommandSync);
-
     void createNewGPUFenceForReadState(RenderState currentReadState);
 
     void registerPerFrameCommand(PerFrameCommandProvider perFrameCommandProvider);

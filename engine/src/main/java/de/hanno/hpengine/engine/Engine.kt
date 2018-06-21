@@ -84,7 +84,7 @@ class Engine private constructor(gameDirName: String) {
         val scene = sceneManager.scene
 
         with(renderManager) {
-            if (gpuContext.isSignaled(renderState.currentWriteState.gpuCommandSync)) {
+            if (renderState.currentWriteState.gpuCommandSync.isSignaled) {
                 with(scene) {
                     with(entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()) {
                         renderState.currentWriteState.init(vertexIndexBufferStatic, vertexIndexBufferAnimated, componentSystems.get(ModelComponentSystem::class.java).joints, sceneManager.scene.activeCamera, entityManager.entityMovedInCycle, entitySystems.get(DirectionalLightSystem::class.java).directionalLightMovedInCycle, entitySystems.get(PointLightSystem::class.java).pointLightMovedInCycle, isInitiallyDrawn, minMax.min, minMax.max, drawCycle.get(), getEntity().viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, scatterFactor, direction, color, entityManager.entityAddedInCycle)

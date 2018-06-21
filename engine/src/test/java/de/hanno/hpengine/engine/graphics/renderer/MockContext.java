@@ -48,17 +48,6 @@ public class MockContext implements GpuContext {
     }
 
     @Override
-    public long waitForGpuSync(GpuCommandSync gpuCommandSync) {
-        return 0;
-    }
-
-    @Override
-    public boolean isSignaled(GpuCommandSync gpuCommandSync) {
-        return false;
-    }
-
-
-    @Override
     public void createNewGPUFenceForReadState(RenderState currentReadState) {
 
     }
