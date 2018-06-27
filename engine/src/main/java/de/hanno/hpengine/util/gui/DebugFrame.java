@@ -39,9 +39,10 @@ import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;
 import de.hanno.hpengine.engine.model.texture.TextureManager;
@@ -152,22 +153,21 @@ public class DebugFrame implements HostComponent {
 	private WebButton forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
 	private WebToggleButton toggleUseGI = new WebToggleButton("GI", Config.getInstance().isUseGi());
 	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", Config.getInstance().isUseSSR());
-	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
-	private WebToggleButton toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
-	private WebToggleButton toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
+	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", DeferredRenderingBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
+	private WebToggleButton toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
+	private WebToggleButton toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
 
-	private WebToggleButton toggleSampleCount2 = new WebToggleButton("2", GBuffer.IMPORTANCE_SAMPLE_COUNT == 2);
-	private WebToggleButton toggleSampleCount4 = new WebToggleButton("4", GBuffer.IMPORTANCE_SAMPLE_COUNT == 4);
-	private WebToggleButton toggleSampleCount8 = new WebToggleButton("8", GBuffer.IMPORTANCE_SAMPLE_COUNT == 8);
-	private WebToggleButton toggleSampleCount16 = new WebToggleButton("16", GBuffer.IMPORTANCE_SAMPLE_COUNT == 16);
-	private WebToggleButton toggleSampleCount32 = new WebToggleButton("32", GBuffer.IMPORTANCE_SAMPLE_COUNT == 32);
-	private WebToggleButton toggleSampleCount64 = new WebToggleButton("64", GBuffer.IMPORTANCE_SAMPLE_COUNT == 64);
+	private WebToggleButton toggleSampleCount2 = new WebToggleButton("2", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 2);
+	private WebToggleButton toggleSampleCount4 = new WebToggleButton("4", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 4);
+	private WebToggleButton toggleSampleCount8 = new WebToggleButton("8", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 8);
+	private WebToggleButton toggleSampleCount16 = new WebToggleButton("16", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 16);
+	private WebToggleButton toggleSampleCount32 = new WebToggleButton("32", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 32);
+	private WebToggleButton toggleSampleCount64 = new WebToggleButton("64", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 64);
 	private WebButtonGroup sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
 	
 	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
 	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.getInstance().isUseDirectTextureOutput());
-    private WebComboBox directTextureOutputTextureIndexBoxGBuffer;
-    private WebComboBox directTextureOutputTextureIndexBoxLABuffer;
+    private WebComboBox directTextureOutputTextureIndexSelection;
     private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.getInstance().isDebugframeEnabled());
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.getInstance().isDrawlightsEnabled());
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.getInstance().isVsync());
@@ -198,6 +198,7 @@ public class DebugFrame implements HostComponent {
             frame.setTitle("HPEngine Renderer initializing...");
         }
     };
+    private List<DirectTextureOutputItem> renderTargetTextures = new ArrayList<>();
 
     public DebugFrame(Engine engine) {
         this.engine = engine;
@@ -294,8 +295,16 @@ public class DebugFrame implements HostComponent {
         infoPane = new ReloadableScrollPane(infoSplitPane);
         consolePane = new RTextScrollPane(console);
 
-        directTextureOutputTextureIndexBoxGBuffer = new WebComboBox(Arrays.stream(engine.getRenderer().getGBuffer().getgBuffer().getRenderedTextures()).mapToObj(integer -> "GBuffer " + integer).collect(Collectors.toList()).toArray());
-        directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(engine.getRenderer().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
+        for(RenderTarget target: engine.getGpuContext().getRegisteredRenderTargets()) {
+            for(int i = 0; i < target.getColorAttachments().size(); i++) {
+                ColorAttachmentDefinition attachmentDefinition = target.getColorAttachments().get(i);
+                String name = target.getName() + " - " + attachmentDefinition.getName();
+                renderTargetTextures.add(new DirectTextureOutputItem(target, name, target.getRenderedTexture(i)));
+            }
+        }
+        directTextureOutputTextureIndexSelection = new WebComboBox(renderTargetTextures.toArray(new DirectTextureOutputItem[0]));
+
+
         sceneTree = new SceneTree(this.engine);
         scenePane = new ReloadableScrollPane(sceneTree) {
             { engine.getEventBus().register(this); }
@@ -894,28 +903,23 @@ public class DebugFrame implements HostComponent {
 			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
 		});
 		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
-			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
+			DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
 			engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
 		});
 		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
-			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
+			DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
 			engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
 		});
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
-			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
+			DeferredRenderingBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !DeferredRenderingBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
 		});
 		toggleDirectTextureOutput.addActionListener(e -> {
 			Config.getInstance().setUseDirectTextureOutput(!Config.getInstance().isUseDirectTextureOutput());
 		});
-        directTextureOutputTextureIndexBoxGBuffer.addActionListener(e -> {
-            int selectedIndex = directTextureOutputTextureIndexBoxGBuffer.getSelectedIndex();
-            RenderTarget renderTarget = engine.getRenderer().getGBuffer().getgBuffer();
-            Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
-        });
-        directTextureOutputTextureIndexBoxLABuffer.addActionListener(e -> {
-            int selectedIndex = directTextureOutputTextureIndexBoxLABuffer.getSelectedIndex();
-            RenderTarget renderTarget = engine.getRenderer().getGBuffer().getlaBuffer();
-            Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
+        directTextureOutputTextureIndexSelection.addActionListener(e -> {
+            int selectedIndex = directTextureOutputTextureIndexSelection.getSelectedIndex();
+            DirectTextureOutputItem selected = renderTargetTextures.get(selectedIndex);
+            Config.getInstance().setDirectTextureOutputTextureIndex(selected.getTextureId());
         });
 
 		toggleDebugFrame.addActionListener(e -> {
@@ -977,19 +981,19 @@ public class DebugFrame implements HostComponent {
 
 ////////////////
 	    
-	    toggleSampleCount2.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount2.getLabel()); });
-	    toggleSampleCount4.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount4.getLabel()); });
-	    toggleSampleCount8.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount8.getLabel()); });
-	    toggleSampleCount16.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount16.getLabel()); });
-	    toggleSampleCount32.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount32.getLabel()); });
-	    toggleSampleCount64.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount64.getLabel()); });
+	    toggleSampleCount2.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount2.getLabel()); });
+	    toggleSampleCount4.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount4.getLabel()); });
+	    toggleSampleCount8.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount8.getLabel()); });
+	    toggleSampleCount16.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount16.getLabel()); });
+	    toggleSampleCount32.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount32.getLabel()); });
+	    toggleSampleCount64.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount64.getLabel()); });
 		
 	    toggleProbeDrawCountOne.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountOne.getLabel()); });
 	    toggleProbeDrawCountTwo.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountTwo.getLabel()); });
 	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
 	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexBoxGBuffer, directTextureOutputTextureIndexBoxLABuffer));
+		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexSelection));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
 		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleOcclusionCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.getInstance().getExposure()) {

@@ -24,7 +24,7 @@ public class RenderTarget {
 
     private boolean useDepthBuffer;
     public int frameBuffer = -1;
-    protected int depthbufferLocation = -1;
+    protected int depthBufferLocation = -1;
     protected int[] renderedTextures;
     protected int width;
     protected int height;
@@ -35,6 +35,8 @@ public class RenderTarget {
     protected List<ColorAttachmentDefinition> colorAttachments;
     protected IntBuffer scratchBuffer;
     protected GpuContext gpuContext;
+    protected int mipMapCount = -1;
+    private String name;
 
     protected RenderTarget(GpuContext gpuContext) {
         this.gpuContext = gpuContext;
@@ -43,6 +45,7 @@ public class RenderTarget {
     public RenderTarget(GpuContext gpuContext, RenderTargetBuilder renderTargetBuilder) {
         this(gpuContext);
 
+        setName(renderTargetBuilder.name);
         gpuContext.execute(() -> {
             width = renderTargetBuilder.width;
             height = renderTargetBuilder.height;
@@ -56,21 +59,22 @@ public class RenderTarget {
 
             scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
 
+            mipMapCount = Util.calculateMipMapCount(Math.max(width, height));
+
             for (int i = 0; i < colorAttachments.size(); i++) {
                 ColorAttachmentDefinition currentAttachment = colorAttachments.get(i);
 
                 int renderedTextureTemp = GL11.glGenTextures();
 
                 gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
-                GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, getComponentsForFormat(currentAttachment.internalFormat), GL11.GL_FLOAT, (FloatBuffer) null);
+                GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.getInternalFormat(), width, height, 0, getComponentsForFormat(currentAttachment.getInternalFormat()), GL11.GL_FLOAT, (FloatBuffer) null);
 
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width,height)));
-
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
                 GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
 
                 FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
@@ -85,10 +89,10 @@ public class RenderTarget {
             GL20.glDrawBuffers(scratchBuffer);
 
             if (renderTargetBuilder.useDepthBuffer) {
-                depthbufferLocation = GL30.glGenRenderbuffers();
-                GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
+                depthBufferLocation = GL30.glGenRenderbuffers();
+                GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthBufferLocation);
                 GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-                GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
+                GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthBufferLocation);
             }
 
             if (GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
@@ -125,10 +129,10 @@ public class RenderTarget {
             int renderedTextureTemp = renderedTextures[i];
 
             gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
-            GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
+            GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.getInternalFormat(), width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
             GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
+            GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
 
             GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
             GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
@@ -183,7 +187,7 @@ public class RenderTarget {
     }
 
     public int getDepthBufferTexture() {
-        return depthbufferLocation;
+        return depthBufferLocation;
     }
 
     public void setRenderedTexture(int renderedTexture, int index) {
@@ -257,5 +261,17 @@ public class RenderTarget {
 
     public int[] getRenderedTextures() {
         return renderedTextures;
+    }
+
+    public List<ColorAttachmentDefinition> getColorAttachments() {
+        return colorAttachments;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

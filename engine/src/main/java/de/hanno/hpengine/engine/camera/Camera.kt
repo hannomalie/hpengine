@@ -54,6 +54,7 @@ open class Camera: Component {
         internal set
 
     var projectionMatrix = Matrix4f()
+    var viewProjectionMatrix = Matrix4f()
 
     var frustum = Frustum()
         protected set
@@ -76,8 +77,6 @@ open class Camera: Component {
         }
 
     var perspective = true
-
-    private val tempViewProjectionMatrix = Matrix4f()
 
     val frustumCorners: Array<Vector3f>
         get() {
@@ -122,6 +121,8 @@ open class Camera: Component {
 
     override fun update(seconds: Float) {
         saveViewMatrixAsLastViewMatrix()
+        projectionMatrix.mul(getViewMatrix(), viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
+        frustum.frustumIntersection.set(viewProjectionMatrix)
         if (entity.hasMoved()) {
             transform()
             storeMatrices()
@@ -136,7 +137,7 @@ open class Camera: Component {
         }
         synchronized(viewProjectionMatrixAsBuffer) {
             viewProjectionMatrixAsBuffer.rewind()
-            tempViewProjectionMatrix.set(projectionMatrix).mul(entity.viewMatrix).get(viewProjectionMatrixAsBuffer)
+            viewProjectionMatrix.set(projectionMatrix).mul(entity.viewMatrix).get(viewProjectionMatrixAsBuffer)
             viewProjectionMatrixAsBuffer.rewind()
         }
     }
@@ -230,6 +231,7 @@ open class Camera: Component {
     companion object {
         private val LOGGER = ConsoleLogger.getLogger()
     }
+
 }
 
 class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {

@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.buffer.StorageBuffer;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.PixelBufferObject;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.util.Util;
@@ -19,71 +20,61 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-public class GBuffer {
+public class DeferredRenderingBuffer {
 
 	public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
 	public static volatile boolean RENDER_PROBES_WITH_FIRST_BOUNCE = true;
 	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
+	private static FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-    private RenderTarget gBuffer;
+	private RenderTarget gBuffer;
 	private RenderTarget reflectionBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
 	private RenderTarget halfScreenBuffer;
 
-	public RenderTarget getgBuffer() {
+
+	public RenderTarget getGBuffer() {
 		return gBuffer;
 	}
 
-	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
-
 	private int fullScreenMipmapCount;
 
-	private ByteBuffer vec4Buffer = BufferUtils.createByteBuffer(4*4).order(ByteOrder.nativeOrder());
-	private FloatBuffer fBuffer = vec4Buffer.asFloatBuffer();
-	private float[] onePixel = new float[4];
-
-	private PixelBufferObject pixelBufferObject;
-	
 	private GPUBuffer storageBuffer;
 
-	private final int exposureIndex = 0;
+    public DeferredRenderingBuffer(GpuContext gpuContext) {
 
-    public GBuffer(GpuContext gpuContext) {
-
-		gBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-				.add(4, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
-				.add(1, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA32F))
-				.add(1, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+		gBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+				.setName("GBuffer")
+				.add(new ColorAttachmentDefinitions(new String[]{"PositionView/Roughness","Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"}, GL30.GL_RGBA16F, GL11.GL_LINEAR))
+				.add(new ColorAttachmentDefinition("Depth/Indices", GL30.GL_RGBA32F))
+//				.add(1, new ColorAttachmentDefinition("ColorReflectiveness").setInternalFormat(GL30.GL_RGBA16F))
 				.build();
-		reflectionBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-						.add(2, new ColorAttachmentDefinition()
-								.setInternalFormat(GL30.GL_RGBA16F)
-								.setTextureFilter(GL11.GL_LINEAR))
+
+		reflectionBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+						.setName("Reflection")
+						.add(new ColorAttachmentDefinitions(new String[]{"Diffuse", "Specular"}, GL30.GL_RGBA16F))
 						.setClearRGBA(0, 0, 0, 0)
 						.build();
-		laBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth())
+		laBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth())
+						.setName("LightAccum")
 						.setHeight(Config.getInstance().getHeight())
-						.add(2, new ColorAttachmentDefinition()
-                                .setInternalFormat(GL30.GL_RGBA16F)
-                                .setTextureFilter(GL11.GL_LINEAR))
+						.add(new ColorAttachmentDefinitions(new String[]{"Diffuse", "Specular"}, GL30.GL_RGBA16F))
 						.build();
-		finalBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-						.add(new ColorAttachmentDefinition()
-								.setInternalFormat(GL11.GL_RGBA8))
+		finalBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+						.setName("Final Image")
+						.add(new ColorAttachmentDefinition("Color", GL11.GL_RGBA8))
 						.build();
-		halfScreenBuffer = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(gpuContext).setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
-						.add(new ColorAttachmentDefinition()
-								.setInternalFormat(GL30.GL_RGBA16F)
-                                .setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
+		halfScreenBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
+						.setName("Half Screen")
+						.add(new ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F))
 						.build();
 		new Matrix4f().get(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
-		pixelBufferObject = new PixelBufferObject(gpuContext, 1, 1);
-		
+
          storageBuffer = new PersistentMappedBuffer(gpuContext, 4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 

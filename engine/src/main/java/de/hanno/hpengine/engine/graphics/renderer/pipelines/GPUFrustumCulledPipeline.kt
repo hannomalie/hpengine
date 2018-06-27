@@ -41,10 +41,11 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
 
     var highZBuffer: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
-                .setWidth(Config.getInstance().width / 2).setHeight(Config.getInstance().height / 2)
-                .add(ColorAttachmentDefinition().setInternalFormat(Pipeline.HIGHZ_FORMAT)
-                        .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
-                .build()
+            .setName("GPUCulledPipeline")
+            .setWidth(Config.getInstance().width / 2).setHeight(Config.getInstance().height / 2)
+            .add(ColorAttachmentDefinition("HighZ").setInternalFormat(Pipeline.HIGHZ_FORMAT)
+                    .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
+            .build()
 
     override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
         ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, VoxelConeTracingExtension.ZERO_BUFFER)

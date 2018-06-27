@@ -15,7 +15,7 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -138,9 +138,10 @@ public class EnvironmentSampler extends Entity {
         GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
 
 
-		renderTarget = new RenderTargetBuilder<RenderTargetBuilder, RenderTarget>(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
+		renderTarget = new RenderTargetBuilder<>(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
+								.setName("Environment Sampler")
 								.setHeight(EnvironmentProbeManager.RESOLUTION )
-								.add(new ColorAttachmentDefinition()
+								.add(new ColorAttachmentDefinition("Environment Diffuse")
 										.setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat()))
 								.build();
 
@@ -211,7 +212,7 @@ public class EnvironmentSampler extends Entity {
 					engine.getGpuContext().clearDepthAndColorBuffer();
 					GPUProfiler.end();
 
-					GPUProfiler.start("Fill GBuffer");
+					GPUProfiler.start("Fill DeferredRenderingBuffer");
 					drawFirstPass(i, this.getCamera(), scene.getEntities(), extract);
 					engine.getSceneManager().getScene().getEnvironmentProbeManager().getCubeMapArrayRenderTarget().resetAttachments();
 
@@ -263,7 +264,7 @@ public class EnvironmentSampler extends Entity {
 
 	private void bindProgramSpecificsPerCubeMap(Program program) {
 		program.use();
-		program.setUniform("firstBounceForProbe", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
+		program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		program.setUniform("probePosition", probe.getEntity().getCenter());
 		program.setUniform("probeSize", probe.getSize());
 		program.setUniform("activePointLightCount", engine.getSceneManager().getScene().getPointLights().size());
@@ -350,7 +351,7 @@ public class EnvironmentSampler extends Entity {
         engine.getGpuContext().blendEquation(FUNC_ADD);
         engine.getGpuContext().blendFunc(ONE, ONE);
 
-		GPUProfiler.start("Activate GBuffer textures");
+		GPUProfiler.start("Activate DeferredRenderingBuffer textures");
         engine.getGpuContext().bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
         engine.getGpuContext().bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
@@ -390,7 +391,7 @@ public class EnvironmentSampler extends Entity {
 
         engine.getGpuContext().disable(BLEND);
 
-		if (GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE) {
+		if (DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE) {
 			renderReflectionsSecondBounce(viewMatrix, projectionMatrix,
 					cubeMapFaceViews[0][sideIndex],
 					cubeMapFaceViews[1][sideIndex],
@@ -416,7 +417,7 @@ public class EnvironmentSampler extends Entity {
 
         engine.getGpuContext().bindImageTexture(6, engine.getSceneManager().getScene().getEnvironmentProbeManager().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();
-		tiledProbeLightingProgram.setUniform("secondBounce", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
+		tiledProbeLightingProgram.setUniform("secondBounce", DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
 		tiledProbeLightingProgram.setUniform("screenWidth", (float) EnvironmentProbeManager.RESOLUTION);
 		tiledProbeLightingProgram.setUniform("screenHeight", (float) EnvironmentProbeManager.RESOLUTION);
 		tiledProbeLightingProgram.setUniform("currentProbe", probe.getIndex());

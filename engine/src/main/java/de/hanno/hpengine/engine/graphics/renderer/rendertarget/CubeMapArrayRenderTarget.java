@@ -74,7 +74,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
             CubeMapArray depthCubeMapArray = new CubeMapArray(gpuContext, this.depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
-			depthbufferLocation = depthCubeMapArray.getTextureID();
+			depthBufferLocation = depthCubeMapArray.getTextureID();
 
 			//TODO: Make this more pretty
 			int framebufferCheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);

@@ -12,6 +12,7 @@ import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.IntBuffer;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -157,4 +158,8 @@ public interface GpuContext {
     void clearCubeMap(int i, int textureFormat);
 
     void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex);
+
+    void register(RenderTarget target);
+
+    List<RenderTarget> getRegisteredRenderTargets();
 }

@@ -4,8 +4,8 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
@@ -17,8 +17,6 @@ import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
-import de.hanno.hpengine.util.stopwatch.ProfilingTask;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
@@ -160,7 +158,7 @@ public class SimpleTextureRenderer implements Renderer {
 	}
 
     @Override
-	public GBuffer getGBuffer() {
+	public DeferredRenderingBuffer getGBuffer() {
 		return null;
 	}
 

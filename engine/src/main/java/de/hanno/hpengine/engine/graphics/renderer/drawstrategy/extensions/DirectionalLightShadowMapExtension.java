@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
@@ -38,13 +39,11 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
         renderTarget = new RenderTargetBuilder<>(engine.getGpuContext())
+                .setName("DirectionalLight Shadow")
                 .setWidth(SHADOWMAP_RESOLUTION)
                 .setHeight(SHADOWMAP_RESOLUTION)
                 .setClearRGBA(1f, 1f, 1f, 1f)
-                .add(3, new ColorAttachmentDefinition()
-                        .setInternalFormat(GL30.GL_RGBA32F)
-//                        .setTextureFilter(GL11.GL_NEAREST))
-                        .setTextureFilter(GL11.GL_LINEAR))
+                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
                 .build();
 
         engine.getEventBus().register(this);

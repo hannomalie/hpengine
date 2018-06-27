@@ -48,6 +48,7 @@ public final class OpenGLContext implements GpuContext {
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private RenderTarget frontBuffer;
     private List<OpenGlCommandSync> commandSyncs = new ArrayList<>(10);
+    private List<RenderTarget> registeredRenderTargets = new ArrayList<>();
 
 
     public RenderTarget createFrontBuffer() {
@@ -608,5 +609,15 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex) {
         glClearTexSubImage(textureID, 0, 0, 0, 6*cubeMapIndex, width, height, 6, internalFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
+    }
+
+    @Override
+    public void register(RenderTarget target) {
+        registeredRenderTargets.add(target);
+    }
+
+    @Override
+    public List<RenderTarget> getRegisteredRenderTargets() {
+        return registeredRenderTargets;
     }
 }

@@ -6,8 +6,8 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -17,7 +17,6 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import kotlin.Unit;
 import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
@@ -36,7 +35,7 @@ public class DeferredRenderer implements Renderer {
 
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
-	private GBuffer gBuffer;
+	private DeferredRenderingBuffer gBuffer;
 	private SimpleDrawStrategy simpleDrawStrategy;
 
     private VertexBuffer buffer;
@@ -91,7 +90,7 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		GpuContext.exitOnGLError("Before setupGBuffer");
 
-        gBuffer = engine.getGpuContext().calculate(() -> new GBuffer(engine.getGpuContext()));
+        gBuffer = engine.getGpuContext().calculate(() -> new DeferredRenderingBuffer(engine.getGpuContext()));
 
         engine.getGpuContext().execute(() -> {
             engine.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
@@ -210,7 +209,7 @@ public class DeferredRenderer implements Renderer {
 	private List<Vector3f> linePoints = new ArrayList<>();
 
     @Override
-	public GBuffer getGBuffer() {
+	public DeferredRenderingBuffer getGBuffer() {
 		return gBuffer;
 	}
 

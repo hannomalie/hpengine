@@ -263,13 +263,13 @@ public class SimpleDrawStrategy implements DrawStrategy {
         gpuContext.blendEquation(FUNC_ADD);
         gpuContext.blendFunc(ONE, ONE);
 
-        GBuffer gBuffer = engine.getRenderer().getGBuffer();
+        DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
         gBuffer.getLightAccumulationBuffer().use(true);
         GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
         engine.getGpuContext().clearColor(0, 0, 0, 0);
         engine.getGpuContext().clearColorBuffer();
 
-        GPUProfiler.start("Activate GBuffer textures");
+        GPUProfiler.start("Activate DeferredRenderingBuffer textures");
         gpuContext.bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
         gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
@@ -482,7 +482,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
             return;
         }
         GPUProfiler.start("Scattering and AO");
-        GBuffer gBuffer = engine.getRenderer().getGBuffer();
+        DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
         gBuffer.getHalfScreenBuffer().use(true);
         engine.getGpuContext().disable(DEPTH_TEST);
         engine.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
@@ -527,7 +527,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
     private void renderReflections(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
         GPUProfiler.start("Reflections and AO");
-        GBuffer gBuffer = engine.getRenderer().getGBuffer();
+        DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
         RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();
 
         engine.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
@@ -591,7 +591,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
 
     public void combinePass(RenderTarget target, RenderState renderState) {
-        GBuffer gBuffer = engine.getRenderer().getGBuffer();
+        DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
         RenderTarget finalBuffer = gBuffer.getFinalBuffer();
         engine.getTextureManager().generateMipMaps(finalBuffer.getRenderedTexture(0));
 

@@ -7,8 +7,6 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -92,7 +90,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		for (int i = 0; i < getChildren().size(); i++) {
 			getChildren().get(i).recalculate();
 		}
-		bufferMatrixes();
+		bufferMatrices();
 	}
 
 	public boolean isHasMoved() {
@@ -142,7 +140,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		return this.getTransformationWithoutRecalculation().invert(viewMatrix);
 	}
 
-	protected void bufferMatrixes() {
+	protected void bufferMatrices() {
 		synchronized(modelMatrixBuffer) {
 			modelMatrixBuffer.rewind();
 			this.getTransformationWithoutRecalculation().get(modelMatrixBuffer);

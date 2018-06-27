@@ -113,9 +113,10 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
     var pointLightDepthMapsArrayBack: Int = 0
 
     private val renderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
+            .setName("PointLight Shadow")
             .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
             .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
-            .add(ColorAttachmentDefinition()
+            .add(ColorAttachmentDefinition("Shadow")
                     .setInternalFormat(GL30.GL_RGBA32F)
                     .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
             .build()

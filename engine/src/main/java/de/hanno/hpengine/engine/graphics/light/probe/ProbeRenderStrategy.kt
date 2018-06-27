@@ -45,10 +45,10 @@ class ProbeRenderStrategy(private val engine: Engine) {
     val cubeMapRenderTarget = CubeRenderTarget(engine, CubeRenderTargetBuilder(engine)
             .setWidth(resolution)
             .setHeight(resolution)
-            .add(ColorAttachmentDefinition()
+            .add(ColorAttachmentDefinition("Diffuse")
                     .setInternalFormat(GL_RGBA16F)
                     .setTextureFilter(GL_LINEAR_MIPMAP_LINEAR))
-            .add(ColorAttachmentDefinition()
+            .add(ColorAttachmentDefinition("Radial Distance")
                     .setInternalFormat(GL_RG16F)
                     .setTextureFilter(GL_LINEAR)))
 

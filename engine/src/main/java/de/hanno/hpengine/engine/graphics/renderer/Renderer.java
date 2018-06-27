@@ -2,12 +2,9 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
-import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import org.joml.Vector3f;
 
@@ -31,7 +28,7 @@ public interface Renderer extends LifeCycle, RenderSystem {
 
     default void endFrame() {}
 
-    GBuffer getGBuffer();
+    DeferredRenderingBuffer getGBuffer();
 
     void drawToQuad(int texture);
 

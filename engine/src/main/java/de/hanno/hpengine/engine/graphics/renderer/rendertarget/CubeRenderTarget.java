@@ -36,7 +36,7 @@ public class CubeRenderTarget extends RenderTarget {
 		engine.getGpuContext().execute(() -> {
 			for (int i = 0; i < colorBufferCount; i++) {
 				ColorAttachmentDefinition currentAttachment = builder.colorAttachments.get(i);
-				int internalFormat = currentAttachment.internalFormat;
+				int internalFormat = currentAttachment.getInternalFormat();
 				int maxMipMap = Util.calculateMipMapCount(Math.max(width, height));
 				int cubeMap = GL11.glGenTextures();
 				gpuContext.activeTexture(0);
@@ -45,7 +45,7 @@ public class CubeRenderTarget extends RenderTarget {
 				glTextureStorage2D(cubeMap, maxMipMap, internalFormat, width, height);
 
 				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
+				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
 				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 				GL11.glTexParameteri(GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_BASE_LEVEL, 0);

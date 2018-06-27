@@ -12,6 +12,7 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
 import java.nio.IntBuffer;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
@@ -285,5 +286,15 @@ public class MockContext implements GpuContext {
     @Override
     public void clearCubeMapInCubeMapArray(int textureID, int internalFormat, int width, int height, int cubeMapIndex) {
 
+    }
+
+    @Override
+    public void register(RenderTarget target) {
+
+    }
+
+    @Override
+    public List<RenderTarget> getRegisteredRenderTargets() {
+        return null;
     }
 }

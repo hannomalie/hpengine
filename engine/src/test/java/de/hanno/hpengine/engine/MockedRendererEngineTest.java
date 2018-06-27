@@ -4,11 +4,9 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.MockContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.util.fps.FPSCounter;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.junit.Ignore;
@@ -53,7 +51,7 @@ public class MockedRendererEngineTest {
         }
 
         @Override
-        public GBuffer getGBuffer() {
+        public DeferredRenderingBuffer getGBuffer() {
             return null;
         }
 

@@ -54,11 +54,11 @@ flat in int outMaterialIndex;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
-layout(location=0)out vec4 out_position; // position, roughness
-layout(location=1)out vec4 out_normal; // normal, depth
-layout(location=2)out vec4 out_color; // color, metallic
-layout(location=3)out vec4 out_motion; // motion, probeIndices
-layout(location=4)out vec4 out_visibility; // visibility
+layout(location=0)out vec4 out_positionRoughness; // position, roughness
+layout(location=1)out vec4 out_normalAmbient; // normal, depth
+layout(location=2)out vec4 out_colorMetallic; // color, metallic
+layout(location=3)out vec4 out_motionDepthTransparency; // motion, probeIndices
+layout(location=4)out vec4 out_depthAndIndices; // visibility
 
 //include(globals.glsl)
 
@@ -118,7 +118,7 @@ void main(void) {
 
 	vec2 positionTextureSpace = position_clip_post_w.xy * 0.5 + 0.5;
 
-	out_position = viewMatrix * position_world;
+	out_positionRoughness = viewMatrix * position_world;
 
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
@@ -159,7 +159,7 @@ void main(void) {
 
 	float depth = (position_clip.z / position_clip.w);
 
-	out_normal = vec4(PN_view, materialAmbient);
+	out_normalAmbient = vec4(PN_view, materialAmbient);
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 
@@ -176,18 +176,18 @@ void main(void) {
             discard;
         }
 	}
-  	out_color = color;
-  	out_color.w = float(materialMetallic);
+  	out_colorMetallic = color;
+  	out_colorMetallic.w = float(materialMetallic);
 
 	if(material.hasOcclusionMap != 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
 	}
 
-	out_position.w = materialRoughness;
+	out_positionRoughness.w = materialRoughness;
 	if(material.hasRoughnessMap != 0) {
         sampler2D _roughnessMap = sampler2D(uint64_t(material.handleRoughness));
         float r = texture(_roughnessMap, UV).x;
-        out_position.w = materialRoughness*r;
+        out_positionRoughness.w = materialRoughness*r;
     }
 
 //    out_color.w = 1;
@@ -203,22 +203,22 @@ void main(void) {
 //	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
     }
 
-  	out_motion = vec4(motionVec,depth,materialTransparency);
-  	out_visibility = vec4(1,depth,outMaterialIndex, float(outEntity.entityIndexWithoutMeshIndex));
+  	out_motionDepthTransparency = vec4(motionVec,depth,materialTransparency);
+  	out_depthAndIndices = vec4(1,depth,outMaterialIndex, float(outEntity.entityIndexWithoutMeshIndex));
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
 		float n2 = surface3(vec3(UV, 0.1), 2);
 		float waterEffect = rainEffect * clamp(3 * n2 * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0)*clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
 		float waterEffect2 = rainEffect * clamp(3 * n * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
-		out_position.w *= 1-waterEffect2;
-		out_color.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
-		out_color.w = waterEffect2;
+		out_positionRoughness.w *= 1-waterEffect2;
+		out_colorMetallic.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
+		out_colorMetallic.w = waterEffect2;
   	}
 
 	if(isSelected)
 	{
-		out_color.rgb = vec3(1,0,0);
+		out_colorMetallic.rgb = vec3(1,0,0);
 	}
 	//out_color.rgb = vec3(1,0,0);
 //	out_color.rgb = position_world.rgb/100.0;

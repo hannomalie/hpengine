@@ -12,6 +12,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.SimpleScene
+import org.joml.FrustumIntersection
+import org.joml.Matrix4f
 import org.joml.Vector3f
 
 class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(ModelComponent::class.java)) {
@@ -48,9 +50,9 @@ class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySyst
                 mesh.material.setTexturesUsed()
 
                 val (min1, max1) = modelComponent.getMinMax(entity, mesh)
-//                val intersectAab = camera.frustum.frustumIntersection.intersectAab(min1.x, min1.y, min1.z, max1.x, max1.y, max1.z)
-//                val meshIsInFrustum = intersectAab == FrustumIntersection.INTERSECT || intersectAab == FrustumIntersection.INSIDE
-                val meshIsInFrustum = camera.frustum.sphereInFrustum(entity.position.x, entity.position.y, entity.position.z, boundingSphereRadius)
+                val intersectAABB = camera.frustum.frustumIntersection.intersectAab(min1, max1)
+                val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
+
 
                 val visibleForCamera = meshIsInFrustum || entity.instanceCount > 1 // TODO: Better culling for instances
                 val meshBufferIndex = entityIndexOf + i * entity.instanceCount

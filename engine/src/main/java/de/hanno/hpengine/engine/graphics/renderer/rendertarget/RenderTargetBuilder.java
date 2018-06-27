@@ -1,13 +1,18 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
+import com.google.common.collect.Lists;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.util.AbstractBuilder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
 public class RenderTargetBuilder<BUILDER_TYPE extends RenderTargetBuilder, TARGET_TYPE extends RenderTarget> extends AbstractBuilder<TARGET_TYPE> {
+    String name = "Unnamed";
     int width = Config.getInstance().getWidth();
     int height = Config.getInstance().getHeight();
     float clearR = 0.0f;
@@ -61,19 +66,28 @@ public class RenderTargetBuilder<BUILDER_TYPE extends RenderTargetBuilder, TARGE
         return (BUILDER_TYPE) this;
     }
 
-    public BUILDER_TYPE add(ColorAttachmentDefinition attachmentDefinition) {
-        return add(1, attachmentDefinition);
-    }
-    public BUILDER_TYPE add(int times, ColorAttachmentDefinition attachmentDefinition) {
-        for(int i = 0; i < times; i++) {
-            this.colorAttachments.add(attachmentDefinition);
+    public BUILDER_TYPE add(ColorAttachmentDefinitions attachmentDefinitions) {
+        for(int i = 0; i < attachmentDefinitions.getNames().length; i++) {
+            String name = attachmentDefinitions.getNames()[i];
+            add(new ColorAttachmentDefinition(name, attachmentDefinitions.getInternalFormat(), attachmentDefinitions.getTextureFilter()));
         }
+        return (BUILDER_TYPE) this;
+    }
+    public BUILDER_TYPE add(ColorAttachmentDefinition attachmentDefinition) {
+        colorAttachments.add(attachmentDefinition);
+        return (BUILDER_TYPE) this;
+    }
+
+    public BUILDER_TYPE setName(String name) {
+        this.name = name;
         return (BUILDER_TYPE) this;
     }
 
     @Override
     public TARGET_TYPE build() {
-        return (TARGET_TYPE) new RenderTarget(gpuContext, this);
+        TARGET_TYPE target = (TARGET_TYPE) new RenderTarget(gpuContext, this);
+        gpuContext.register(target);
+        return target;
     }
 
 }
