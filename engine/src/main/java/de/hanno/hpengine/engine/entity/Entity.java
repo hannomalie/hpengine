@@ -22,7 +22,6 @@ import java.util.function.Supplier;
 
 public class Entity extends Transform<Entity> implements LifeCycle {
 	private static final long serialVersionUID = 1;
-	public static int count = 0;
 	public final SimpleSpatial spatial = new SimpleSpatial() {
 		@Override
 		public AABB getMinMax() {

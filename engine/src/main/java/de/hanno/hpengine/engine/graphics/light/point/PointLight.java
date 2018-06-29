@@ -22,7 +22,6 @@ public class PointLight implements Component, Serializable, Bufferable {
 	public static float DEFAULT_RANGE = 1f;
 	private Vector4f color;
 	private Entity entity;
-	private float radius;
 
 	public PointLight(Entity entity, Vector4f colorIntensity, float radius) {
 //		TODO: Move position to entity somehow, where it was used
@@ -77,7 +76,7 @@ public class PointLight implements Component, Serializable, Bufferable {
 //	}
 	
 	public float getRadius() {
-		return radius;
+		return entity.getScale().x;
 	}
 	
 	public boolean isInFrustum(Camera camera) {
@@ -119,7 +118,8 @@ public class PointLight implements Component, Serializable, Bufferable {
 	}
 
 	public void setRadius(float radius) {
-		this.radius = radius;
+		Vector3f position = entity.getPosition();
+		this.entity.identity().scale(radius).transformPosition(position);
 	}
 
 }

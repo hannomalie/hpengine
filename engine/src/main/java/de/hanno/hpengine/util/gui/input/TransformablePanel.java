@@ -109,7 +109,7 @@ public class TransformablePanel<T extends Matrix4f> extends WebComponentPanel {
 			@Override
 			public void onValueChange(Vector3f current) {
 				engine.getCommandQueue().addCommand(() -> {
-					transformable.scaling(current);
+					transformable.scaleAroundLocal(current.x, current.y, current.z, 0, 0, 0);
 				});
 			}
 		});

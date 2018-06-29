@@ -7,8 +7,10 @@ layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
 
-layout(binding=8) uniform samplerCubeArray probes;
+layout(binding=8) uniform samplerCubeArray pointLightShadowMapsCube;
 layout(binding=13) uniform sampler3D grid;
+
+//include(globals_structs.glsl)
 
 uniform float screenWidth = 1280/2;
 uniform float screenHeight = 720/2;
@@ -37,9 +39,42 @@ uniform int gridSize;
 
 uniform int useVoxelGrid = 0;
 
+uniform int maxPointLightShadowmaps;
+uniform int pointLightCount;
+layout(std430, binding=2) buffer _lights {
+	PointLight pointLights[100];
+};
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_AOScattering;
 
+
+bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
+	return all(distance(positionSphere, positionToTest) < radius);
+}
+
+float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
+	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+
+	vec3 fragToLight = positionWorld - pointLightPositionWorld;
+    vec4 textureSample = textureLod(pointLightShadowMapsCube, vec4(fragToLight, pointLightIndex), 0);
+    float closestDepth = textureSample.r;
+    vec2 moments = textureSample.xy;
+//    closestDepth *= 250.0;
+    float currentDepth = length(fragToLight);
+    float bias = 0.2;
+    float shadow = currentDepth - bias < closestDepth ? 1.0 : 0.0;
+
+//	const float SHADOW_EPSILON = 0.001;
+//	float E_x2 = moments.y;
+//	float Ex_2 = moments.x * moments.x;
+//	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
+//	float m_d = (moments.x - currentDepth);
+//	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
+//	shadow = max(shadow, p + 0.05f);
+
+    return shadow;
+}
 float packColor(vec3 color) {
     return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
 }
@@ -501,6 +536,14 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
 		{
 			accumFog += ComputeScattering(NdotL);
+			for(int lightIndex = 0; lightIndex < pointLightCount; lightIndex++) {
+			    PointLight pointLight = pointLights[lightIndex];
+
+			    vec3 pointLightPosition = vec3(float(pointLight.positionX), float(pointLight.positionY), float(pointLight.positionZ));
+			    if(isInsideSphere(currentPosition, pointLightPosition, float(pointLight.radius))){
+                    accumFog += ComputeScattering(distance(currentPosition, pointLightPosition)/float(pointLight.radius)) + getVisibilityCubemap(currentPosition, lightIndex, pointLight);
+			    }
+			}
 		}
 		{
 //			accumFogShadow += 0.0005f * ComputeScattering(NdotL);

@@ -490,6 +490,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
         engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         engine.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+        engine.getScene().getPointLightSystem().getShadowMapStrategy().bindTextures();
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
 
         if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
@@ -517,6 +518,10 @@ public class SimpleDrawStrategy implements DrawStrategy {
             aoScatteringProgram.setUniform("inverseSceneScale", 1f/directionalLightShadowMapExtension.getVoxelConeTracingExtension().getSceneScale());
             aoScatteringProgram.setUniform("gridSize", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGridSize());
         }
+
+        aoScatteringProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS);
+        aoScatteringProgram.setUniform("pointLightCount", engine.getSceneManager().getScene().getPointLights().size());
+        aoScatteringProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().getLightBuffer());
 
         engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(aoScatteringProgram);
         gpuContext.getFullscreenBuffer().draw();

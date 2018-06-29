@@ -10,7 +10,7 @@ interface ManagerRegistry {
         getManagers().forEach{ it.update(deltaSeconds) }
     }
     fun <T : Manager> register(manager: T): T
-    fun clearManager() {
+    fun clearManagers() {
         getManagers().forEach { it.clear() }
     }
 

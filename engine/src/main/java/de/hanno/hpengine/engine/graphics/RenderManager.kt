@@ -76,8 +76,8 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
     fun resetAllocations() {
         engine.gpuContext.execute({
             StopWatch.getInstance().start("SimpleScene init")
-            engine.renderManager.vertexIndexBufferStatic.resetAllocations()
-            engine.renderManager.vertexIndexBufferAnimated.resetAllocations()
+            vertexIndexBufferStatic.resetAllocations()
+            vertexIndexBufferAnimated.resetAllocations()
             StopWatch.getInstance().stopAndPrintMS()
         }, true)
     }
