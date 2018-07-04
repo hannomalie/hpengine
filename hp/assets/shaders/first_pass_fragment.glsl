@@ -220,7 +220,7 @@ void main(void) {
 	{
 		out_colorMetallic.rgb = vec3(1,0,0);
 	}
-	//out_color.rgb = vec3(1,0,0);
+//	out_colorMetallic.rgb = vec3(1,0,0);
 //	out_color.rgb = position_world.rgb/100.0;
 	//out_normal.a = 1;
 }

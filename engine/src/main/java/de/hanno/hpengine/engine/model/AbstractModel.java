@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.transform.Spatial;
 
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
         }
     }
 
-    public void setMaterial(Material material) {
+    public void setMaterial(SimpleMaterial material) {
         for (Mesh mesh : meshes) {
             mesh.setMaterial(material);
         }

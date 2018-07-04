@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.model.AbstractModel;
 import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -52,7 +52,7 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
 
 
     @Override
-    public void setMaterial(Material material) {
+    public void setMaterial(SimpleMaterial material) {
         for (Mesh<AnimatedVertex> mesh : meshes) {
             mesh.setMaterial(material);
         }

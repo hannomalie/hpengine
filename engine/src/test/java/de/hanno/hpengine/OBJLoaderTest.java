@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.model.Face;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import org.joml.Vector2f;
@@ -62,11 +62,11 @@ public class OBJLoaderTest extends TestWithEngine {
     @Test
     public void loadsMaterial() throws Exception {
         StaticModel sibenik = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"));
-        Material material = sibenik.getMesh(0).getMaterial();
+        SimpleMaterial material = sibenik.getMesh(0).getMaterial();
 
-        Assert.assertEquals("rozeta", material.getName());
-        Assert.assertEquals("hp/assets/models/textures/KAMEN-stup", material.getMaterialInfo().maps.get(Material.MAP.DIFFUSE).getName());
-        Assert.assertEquals(1, material.getTextures().size());
+        Assert.assertEquals("rozeta", material.getMaterialInfo().getName());
+        Assert.assertEquals("hp/assets/models/textures/KAMEN-stup", material.getMaterialInfo().getMaps().get(SimpleMaterial.MAP.DIFFUSE).getName());
+        Assert.assertEquals(1, material.getMaterialInfo().getMaps().values().size());
     }
 
 	@Test

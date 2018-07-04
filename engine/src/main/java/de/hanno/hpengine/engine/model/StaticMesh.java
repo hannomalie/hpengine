@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.Vertex;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -38,7 +38,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     private List<Face> indexFaces = new ArrayList<>();
     private List<CompiledFace> compiledFaces = new ArrayList<>();
 	private String name = "";
-	private Material material;
+	private SimpleMaterial material;
     private IntArrayList indexBufferValues = new IntArrayList();
     private FloatArrayList vertexBufferValues = new FloatArrayList();
     private int[] indexBufferValuesArray;
@@ -61,11 +61,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
 		this.name  = name;
 	}
 
-    public void setMaterial(Material material) {
+    public void setMaterial(SimpleMaterial material) {
 		this.material = material;
 	}
 
-    public Material getMaterial() {
+    public SimpleMaterial getMaterial() {
 		return material;
 	}
 

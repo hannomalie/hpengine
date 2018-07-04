@@ -2,13 +2,13 @@ package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand.MaterialResult;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 
 public class InitMaterialCommand implements Command<MaterialResult> {
 
-	private Material material;
+	private SimpleMaterial material;
 	
-	public InitMaterialCommand(Material material) {
+	public InitMaterialCommand(SimpleMaterial material) {
 		this.material = material;
 	}
 
@@ -20,10 +20,10 @@ public class InitMaterialCommand implements Command<MaterialResult> {
 	}
 
 	public static class MaterialResult extends Result {
-		public Material material;
+		public SimpleMaterial material;
 		private boolean successful;
 		
-		public MaterialResult(Material material) {
+		public MaterialResult(SimpleMaterial material) {
 			this.material = material;
 			if(this.material != null) {
 				successful = true;

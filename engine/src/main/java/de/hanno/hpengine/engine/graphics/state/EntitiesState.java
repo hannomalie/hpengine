@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.GpuEntity;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.BatchKey;
 import de.hanno.hpengine.engine.scene.Vertex;
@@ -29,7 +29,7 @@ public class EntitiesState {
     public VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated;
     public GPUBuffer<GpuEntity> entitiesBuffer;
     public GPUBuffer<BufferableMatrix4f> jointsBuffer;
-    public GPUBuffer<Material> materialBuffer;
+    public GPUBuffer<SimpleMaterial> materialBuffer;
     public List<BufferableMatrix4f> joints;
 
     public EntitiesState(GpuContext gpuContext) {

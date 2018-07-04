@@ -111,7 +111,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
         StaticModel skyBox = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
         skyBoxEntity = this.engine.getSceneManager().getScene().getEntityManager().create();
-        skyBoxEntity.addComponent(new ModelComponent(engine, skyBoxEntity, skyBox));
+        skyBoxEntity.addComponent(new ModelComponent(skyBoxEntity, skyBox));
         skyBoxEntity.init(engine);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);
         VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(engine.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);

@@ -29,7 +29,7 @@ public interface DrawStrategy {
         currentProgram.setUniform("indirect", false);
 
 
-//        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE))
+//        if(material.getMaterialType().equals(SimpleMaterial.MaterialType.FOLIAGE))
         {
             gpuContext.disable(GlCap.CULL_FACE);
         }

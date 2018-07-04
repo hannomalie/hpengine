@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.manager.Manager;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.SimpleScene;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +30,7 @@ public class DirectoryManager implements Manager {
         dirs.add(new File(WORKDIR_NAME));
         dirs.add(new File(ASSETDIR_NAME));
         dirs.add(new File(Texture.getDirectory()));
-        dirs.add(new File(Material.getDirectory()));
+        dirs.add(new File(SimpleMaterial.Companion.getDirectory()));
         dirs.add(new File(Entity.getDirectory()));
         dirs.add(new File(SimpleScene.Companion.getDirectory()));
 

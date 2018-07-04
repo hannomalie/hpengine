@@ -332,7 +332,7 @@ public class DebugFrame implements HostComponent {
         tabbedPane.addTab("Scene", scenePane);
         tabbedPane.addTab("Probes", probesPane);
         tabbedPane.addTab("Texture", texturePane);
-        tabbedPane.addTab("Material", materialPane);
+        tabbedPane.addTab("SimpleMaterial", materialPane);
         tabbedPane.addTab("Main light", mainLightPane);
         tabbedPane.addTab("PointLights", pointLightsPane);
         tabbedPane.addTab("TubeLights", tubeLightsPane);
@@ -576,7 +576,7 @@ public class DebugFrame implements HostComponent {
             }
             performanceMonitor.toggleVisibility();
         });
-        WebMenuItem loadMaterial = new WebMenuItem("Load Material");
+        WebMenuItem loadMaterial = new WebMenuItem("Load SimpleMaterial");
         loadMaterial.addActionListener(e -> {
         	File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/materials/", choser -> {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));

@@ -551,7 +551,10 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 			if(useVoxelGrid == 1) {
 			    int mipLevel = 4;
 				vec4 voxel = voxelFetch(currentPosition, mipLevel);
-				accumFogShadow += 5.5*(surface3(currentPosition.xyz/30f + 0.0003*vec3(time%1000000), 0.5f))*voxel.rgb;
+				float rand = (surface3(currentPosition.xyz/30f + 0.0003*vec3(time%1000000), 0.5f));
+				accumFogShadow += 5.5*rand*voxel.rgb;
+
+			    accumFogShadow += 0.02*rand*mix(0, 1, 1-clamp(distance(currentPosition.y, 0)/15f, 0, 1));
 			}
 		}
 

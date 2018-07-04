@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.structure;
 
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -26,21 +26,21 @@ public class MaterialTableModel extends AbstractTableModel {
         }
     }
 
-    public Material getValueAt(int row, int col) {
+    public SimpleMaterial getValueAt(int row, int col) {
         if (col == 0) {
             return getMaterial(row);
         }
         throw new IllegalArgumentException("Column index should be 0");
     }
 
-    private Material getMaterial(int row) {
+    private SimpleMaterial getMaterial(int row) {
         return engine.getScene().getMaterialManager().getMaterials()
                 .get(row);
     }
 
     public String getColumnName(int column) {
         if (column == 0) {
-            return "Material";
+            return "SimpleMaterial";
         }
         throw new IllegalArgumentException("Column index should be 0");
     }

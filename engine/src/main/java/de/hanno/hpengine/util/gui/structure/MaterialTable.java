@@ -3,7 +3,7 @@ package de.hanno.hpengine.util.gui.structure;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.util.gui.MaterialView;
 
 import javax.swing.*;
@@ -12,7 +12,7 @@ import javax.swing.event.ListSelectionListener;
 
 public class MaterialTable extends JTable {
 
-    private WebFrame materialViewFrame = new WebFrame("Material");
+    private WebFrame materialViewFrame = new WebFrame("SimpleMaterial");
 
     public MaterialTable(Engine engine) {
         super(new MaterialTableModel(engine));
@@ -24,7 +24,7 @@ public class MaterialTable extends JTable {
                 materialViewFrame.getContentPane().removeAll();
                 materialViewFrame.pack();
                 materialViewFrame.setSize(600, 600);
-                WebScrollPane scrollPane = new WebScrollPane(new MaterialView(engine, (Material) getModel().getValueAt(self.getSelectedRow(), 0)));
+                WebScrollPane scrollPane = new WebScrollPane(new MaterialView(engine, (SimpleMaterial) getModel().getValueAt(self.getSelectedRow(), 0)));
                 scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
                 materialViewFrame.add(scrollPane);
                 materialViewFrame.setVisible(true);

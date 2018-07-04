@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
@@ -16,7 +16,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
 
 public class InitInstancedAnimated implements LifeCycle {
 
@@ -67,7 +66,7 @@ public class InitInstancedAnimated implements LifeCycle {
                             trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex % clusterLocations.length])).add(new Vector3f(randomFloat * maxDistance * x, 0.001f * randomFloat, randomFloat * maxDistance * z)));
 
                             final ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-                            List<Material> materials = modelComponent.getMaterials();
+                            List<SimpleMaterial> materials = modelComponent.getMaterials();
                             ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, new AnimationController(120, 24f), new AnimatedTransformSpatial(trafo, modelComponent));
                         }
                     }

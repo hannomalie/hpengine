@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.hanno.hpengine.engine.model.material.Material.MAP;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 
@@ -77,7 +77,7 @@ public class MaterialMap implements Serializable {
 	}
 	
 	private void writeObject(ObjectOutputStream oos) throws IOException {
-		textureNames = new HashMap<Material.MAP, String>();
+		textureNames = new HashMap<SimpleMaterial.MAP, String>();
 		for (MAP map : textures.keySet()) {
 			textureNames.put(map, textures.get(map).getPath());
 		}

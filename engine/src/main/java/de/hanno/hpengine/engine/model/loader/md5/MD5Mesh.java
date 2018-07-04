@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -52,7 +52,7 @@ public class MD5Mesh implements Mesh {
     private List<MD5Weight> weights;
     private float[] vertexBufferValuesArray;
     private IntArrayList indicesList = new IntArrayList();
-    private Material material;
+    private SimpleMaterial material;
     private String name;
     private AnimatedModel model;
 
@@ -258,7 +258,7 @@ public class MD5Mesh implements Mesh {
     }
 
     @Override
-    public Material getMaterial() {
+    public SimpleMaterial getMaterial() {
         return material;
     }
 
@@ -268,7 +268,7 @@ public class MD5Mesh implements Mesh {
     }
 
     @Override
-    public void setMaterial(Material material) {
+    public void setMaterial(SimpleMaterial material) {
         this.material = material;
     }
 

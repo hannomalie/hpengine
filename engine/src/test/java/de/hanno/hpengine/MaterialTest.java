@@ -1,6 +1,6 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,13 +11,13 @@ public class MaterialTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws IOException, ClassNotFoundException {
-        Material material = engine.getScene().getMaterialManager().getDefaultMaterial();
+        SimpleMaterial material = engine.getScene().getMaterialManager().getDefaultMaterial();
 		
 		String filename = "default.hpmaterial";
 
-		Assert.assertTrue(Material.write(material, filename));
+		Assert.assertTrue(SimpleMaterial.Companion.write(material, filename));
 
-        Material loadedMaterial = engine.getScene().getMaterialManager().read(filename);
+        SimpleMaterial loadedMaterial = engine.getScene().getMaterialManager().read(filename);
 	    
 		StopWatch.ACTIVE = false;
 	    Assert.assertTrue(material.equals(loadedMaterial));

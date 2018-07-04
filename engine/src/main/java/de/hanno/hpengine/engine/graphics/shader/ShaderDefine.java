@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.material.Material.MAP;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP;
 
 import java.util.EnumSet;
 
@@ -22,9 +22,9 @@ public enum ShaderDefine {
 		return defineString;
 	};
 	
-	private ShaderDefine(MAP map) {
+	ShaderDefine(MAP map) {
 		this.map = map;
-		this.defineString = "#define use_" + map.shaderVariableName;
+		this.defineString = "#define use_" + map.getShaderVariableName();
 	}
 	
 	public static String getDefineString(EnumSet<ShaderDefine> defines) {

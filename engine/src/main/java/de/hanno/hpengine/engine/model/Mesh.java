@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import org.joml.Vector3f;
 
 import java.util.List;
@@ -22,11 +22,11 @@ public interface Mesh<T extends Bufferable> {
 
     int getTriangleCount();
 
-    Material getMaterial();
+    SimpleMaterial getMaterial();
 
     void init(MaterialManager materialManager);
 
-    void setMaterial(Material material);
+    void setMaterial(SimpleMaterial material);
 
     void putToValueArrays();
 

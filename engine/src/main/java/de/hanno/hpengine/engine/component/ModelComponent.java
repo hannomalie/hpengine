@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
@@ -86,7 +86,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     public ModelComponent(Entity entity) {
         this.entity = entity;
     }
-    public ModelComponent(Engine engine, Entity entity, Model model) {
+    public ModelComponent(Entity entity, Model model) {
         super();
         this.entity = entity;
         this.model = model;
@@ -98,15 +98,15 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         baseVertices = new int[model.getMeshes().size()];
     }
 
-    private transient WeakReference<Material> materialCache = null;
-    public Material getMaterial(MaterialManager materialManager) {
-        if(materialCache != null && materialCache.get() != null && materialCache.get().getName().equals(materialName)) {
-            return materialCache.get();
+    private transient WeakReference<SimpleMaterial> materialCache = null;
+    public SimpleMaterial getMaterial(MaterialManager materialManager) {
+        if(materialCache != null && materialCache.get() != null && materialCache.get().getMaterialInfo().getName().equals(materialName)) {
+//            return materialCache.get();
         }
-        Material material = materialManager.getMaterial(materialName);
+        SimpleMaterial material = materialManager.getMaterial(materialName);
         materialCache = new WeakReference<>(material);
         if(material == null) {
-            Logger.getGlobal().info("Material null, default is applied");
+            Logger.getGlobal().info("SimpleMaterial null, default is applied");
             return materialManager.getDefaultMaterial();
         }
         return material;
@@ -327,7 +327,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         return model.isInvertTexCoordY();
     }
 
-    public List<Material> getMaterials() {
+    public List<SimpleMaterial> getMaterials() {
         return getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
     }
 
@@ -543,7 +543,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                 .append(buffer.getFloat()).append(" ")
                 .append(buffer.getFloat()).append("\n");
 //                .append("Selected ").append(buffer.getInt()).append("\n")
-//                .append("Material Index ").append(buffer.getInt()).append("\n")
+//                .append("SimpleMaterial Index ").append(buffer.getInt()).append("\n")
 //                .append("Update ").append(buffer.getInt() == 0 ? "Dynamic" : "Static").append("\n")
 //                .append("Mesh Buffer Index ").append(buffer.getInt()).append("\n")
 //                .append("Entity Index ").append(buffer.getInt()).append("\n")

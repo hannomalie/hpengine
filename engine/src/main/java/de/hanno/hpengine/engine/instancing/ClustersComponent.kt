@@ -10,7 +10,7 @@ import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
-import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.transform.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -104,7 +104,7 @@ class ClustersComponent(val engine: Engine, private val eventBus: EventBus, priv
                                    cluster: Cluster,
                                    transform: Transform<*>,
                                    modelComponent: ModelComponent,
-                                   materials: List<Material> = modelComponent.materials,
+                                   materials: List<SimpleMaterial> = modelComponent.materials,
                                    animationController: AnimationController = if (modelComponent.isStatic) AnimationController(0, 0f) else AnimationController(120, 24f),
                                    spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else TransformSpatial(transform, modelComponent)) {
 

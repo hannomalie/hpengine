@@ -79,7 +79,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
 
     fun <T: Bufferable> create(entity: Entity, model: Model<T>): ModelComponent {
-        val component = ModelComponent(engine, entity, model)
+        val component = ModelComponent(entity, model)
         components.add(component)
         return component
     }

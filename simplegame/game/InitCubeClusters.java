@@ -1,6 +1,6 @@
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.DirectoryManager;
@@ -52,7 +52,7 @@ public class InitCubeClusters implements LifeCycle {
                                 trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,randomFloat* maxDistance *y,randomFloat* maxDistance *z)));
 
                                 ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-                                List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
+                                List<SimpleMaterial> materials = modelComponent == null ? new ArrayList<SimpleMaterial>() : modelComponent.getMaterials();
                                 cluster.add(new Instance(, trafo, materials, new AnimationController(0,0), new SimpleSpatial(){
                                     @Override
                                     public Vector3f[] getMinMax() {

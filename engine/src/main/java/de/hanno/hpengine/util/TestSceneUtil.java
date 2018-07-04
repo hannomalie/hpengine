@@ -1,19 +1,19 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
-import de.hanno.hpengine.engine.graphics.light.point.PointLight;
-import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
+import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
+import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;
-import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
+import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
-import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.scene.Scene;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -41,17 +41,13 @@ public class TestSceneUtil {
                 for (int j = 0; j < entityCount; j++) {
                     for (int k = 0; k < entityCount; k++) {
 
-                        MaterialInfo materialInfo = new MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
-                                .setDiffuse(new Vector3f(1, 1, 1))
-                                .setRoughness((float) i / entityCount)
-                                .setMetallic((float) j / entityCount)
-                                .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
-                                .setAmbient(1);
-                        materialInfo.setName("Default_" + i + "_" + j);
-                        Material mat = materialManager.getMaterial(materialInfo);
-                        mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
-                        mat.setMetallic((float)j/entityCount);
-                        mat.setRoughness((float)k/entityCount);
+                        SimpleMaterialInfo materialInfo = new SimpleMaterialInfo("Default" + i + "_" + j + "_" + k,
+                                new Vector3f((float)i/entityCount, 0,0),
+                                (float) k / entityCount,
+                                (float) j / entityCount,
+                                1);
+
+                        SimpleMaterial mat = materialManager.getMaterial(materialInfo);
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);

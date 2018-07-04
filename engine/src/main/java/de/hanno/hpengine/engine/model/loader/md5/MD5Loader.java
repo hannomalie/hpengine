@@ -2,9 +2,9 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
-import de.hanno.hpengine.engine.model.material.MaterialInfo;
+import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -260,9 +260,8 @@ public class MD5Loader {
         if (texturePath != null && texturePath.length() > 0) {
             try {
 
-                MaterialInfo materialInfo = new MaterialInfo();
-                materialInfo.setName(texturePath);
-                materialInfo.put(Material.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath));
+                SimpleMaterialInfo materialInfo = new SimpleMaterialInfo(texturePath);
+                materialInfo = materialInfo.put(SimpleMaterial.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath));
 
                 // Handle normal Maps;
                 int pos = texturePath.lastIndexOf(".");
@@ -272,20 +271,20 @@ public class MD5Loader {
                     String normalMapFileName = basePath + "_local" + extension;
                     if (new File(normalMapFileName).exists()) {
                         Texture normalMap = materialManager.getTextureManager().getTexture(normalMapFileName);
-                        materialInfo.put(Material.MAP.NORMAL, normalMap);
+                        materialInfo = materialInfo.put(SimpleMaterial.MAP.NORMAL, normalMap);
                     }
                     String heightMapFileName = basePath + "_h" + extension;
                     if (new File(heightMapFileName).exists()) {
                         Texture heightMap = materialManager.getTextureManager().getTexture(heightMapFileName);
-                        materialInfo.put(Material.MAP.HEIGHT, heightMap);
+                        materialInfo = materialInfo.put(SimpleMaterial.MAP.HEIGHT, heightMap);
                     }
                     String specularMapFile = basePath + "_s" + extension;
                     if (new File(specularMapFile).exists()) {
                         Texture specularMap = materialManager.getTextureManager().getTexture(specularMapFile);
-                        materialInfo.put(Material.MAP.SPECULAR, specularMap);
+                        materialInfo = materialInfo.put(SimpleMaterial.MAP.SPECULAR, specularMap);
                     }
                 }
-                Material material = materialManager.getMaterial(materialInfo);
+                SimpleMaterial material = materialManager.getMaterial(materialInfo);
                 mesh.setMaterial(material);
             } catch (Exception e) {
                 e.printStackTrace();
