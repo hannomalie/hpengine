@@ -379,63 +379,8 @@ public class Texture implements Serializable, Reloadable {
         return data[index];
     }
 
-	public static boolean write(Texture texture, String resourceName) {
-		String fileName = FilenameUtils.getBaseName(resourceName);
-		FileOutputStream fos = null;
-		ObjectOutputStream out = null;
-		try {
-			fos = new FileOutputStream(getDirectory() + fileName + ".hptexture");
-			out = new ObjectOutputStream(fos);
-			out.writeObject(texture);
-			return true;
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				out.close();
-				fos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return false;
-	}
-	
 
-	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-//		long start = System.currentTimeMillis();
-		in.defaultReadObject();
-	    decompress();
-//		LOGGER.info("TEXTURE READ IN " +  (System.currentTimeMillis() - start) + " ms");
-	}
-
-	
-	private void writeObject(ObjectOutputStream oos) throws IOException {
-		compress();
-        oos.defaultWriteObject();
-    }
-
-	protected void compress() throws IOException {
-//    	long start = System.currentTimeMillis();
-		synchronized (data) {
-			setData(CompressionUtils.compress(getData()));
-		}
-//		LOGGER.info("Compression took " + (System.currentTimeMillis() - start));
-	}
-
-	protected void decompress() throws IOException {
-		try {
-//	    	long start = System.currentTimeMillis();
-			synchronized (data) {
-				setData(CompressionUtils.decompress(getData()));
-			}
-//			LOGGER.info("Decompression took " + (System.currentTimeMillis() - start));
-		} catch (DataFormatException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	public static String getDirectory() {
 		return DirectoryManager.WORKDIR_NAME + "/assets/textures/";
 	}

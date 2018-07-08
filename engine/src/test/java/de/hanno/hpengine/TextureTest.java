@@ -24,24 +24,6 @@ public class TextureTest extends TestWithEngine {
 
     private static final Logger LOGGER = Logger.getLogger(TextureTest.class.getName());
 
-	@Test
-	public void writeAndRead() throws IOException, ClassNotFoundException {
-        Texture texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
-		
-		byte[] data = texture.getData();
-		
-		String filename = "wood_diffuse.hptexture";
-
-		assertTrue(Texture.write(texture, filename));
-
-        assertTrue(engine.getTextureManager().removeTexture("hp/assets/textures/wood_diffuse.png"));
-
-        texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
-	    
-	    assertArrayEquals(data, texture.getData());
-	    
-	}
-
     @Test
     public void testDDSLoad() throws IOException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
@@ -148,7 +130,7 @@ public class TextureTest extends TestWithEngine {
 
 	@Test
 	public void loadsCubeMap() throws IOException {
-        CubeMap cubeMap = engine.getTextureManager().getCubeMap(engine.getTextureManager(), "hp/assets/textures/wood_diffuse.png");
+        CubeMap cubeMap = engine.getTextureManager().getCubeMap("hp/assets/textures/wood_diffuse.png");
 	}
 
     @Test

@@ -163,7 +163,7 @@ public class TextureManager implements Manager {
         lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
         GpuContext.exitOnGLError("After load lensFlareTexture");
         try {
-            cubeMap = getCubeMap(this, "hp/assets/textures/skybox.png");
+            cubeMap = getCubeMap("hp/assets/textures/skybox.png");
             GpuContext.exitOnGLError("After load cubemap");
             this.gpuContext.activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
@@ -196,7 +196,7 @@ public class TextureManager implements Manager {
 				if(FilenameUtils.isExtension(file.getAbsolutePath(), "hptexture")) {
 					getTexture(file.getAbsolutePath());
 				} else {
-					getCubeMap(this, file.getAbsolutePath());
+					getCubeMap(file.getAbsolutePath());
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -386,21 +386,13 @@ public class TextureManager implements Manager {
     	return f.exists();
 	}
 
-	public CubeMap getCubeMap(TextureManager textureManager, String resourceName) throws IOException {
+	public CubeMap getCubeMap(String resourceName) throws IOException {
 		CubeMap tex = (CubeMap) TEXTURES.get(resourceName+ "_cube");
         
-        if (tex != null && tex instanceof CubeMap) {
+        if (tex != null) {
             return tex;
         }
 
-        if (Texture.COMPILED_TEXTURES && cubeMapPreCompiled(resourceName)) {
-        	tex = CubeMap.read(textureManager, resourceName, createTextureID());
-        	if (tex != null) {
-                TEXTURES.put(resourceName+ "_cube",tex);
-                return tex;
-            }
-        }
-        
         tex = getCubeMap(resourceName,
                          GL11.GL_RGBA,     // dst pixel format
                          GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
