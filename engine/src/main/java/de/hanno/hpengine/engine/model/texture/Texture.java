@@ -3,10 +3,7 @@ package de.hanno.hpengine.engine.model.texture;
 import ddsutil.DDSUtil;
 import ddsutil.ImageRescaler;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.event.TexturesChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.util.CompressionUtils;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.ressources.Reloadable;
 import jogl.DDSImage;
@@ -16,38 +13,31 @@ import org.lwjgl.opengl.*;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
-import java.util.zip.DataFormatException;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
-import static de.hanno.hpengine.engine.model.texture.Texture.DDSConversionState.*;
 import static de.hanno.hpengine.engine.model.texture.Texture.UploadState.*;
 import static org.lwjgl.opengl.GL15.GL_STREAM_COPY;
 import static org.lwjgl.opengl.GL15.glBufferData;
 import static org.lwjgl.opengl.GL21.GL_PIXEL_UNPACK_BUFFER;
 
-public class Texture implements Serializable, Reloadable {
-
+public class Texture implements Reloadable {
     private static final Logger LOGGER = Logger.getLogger(Texture.class.getName());
 
-	private static final long serialVersionUID = 1L;
-    public static final boolean COMPILED_TEXTURES = false;
-    private final TextureManager textureManager;
-    public transient boolean srgba;
-
-    private String path = "";
-
+    protected final TextureManager textureManager;
+    protected boolean srgba;
+    protected String path = "";
     private volatile boolean mipmapsGenerated = false;
     private boolean sourceDataCompressed = false;
-
-    private transient long lastUsedTimeStamp = System.currentTimeMillis();
-    private transient volatile boolean preventUnload = false;
+    private long lastUsedTimeStamp = System.currentTimeMillis();
+    private volatile boolean preventUnload = false;
 
     public void setUsedNow() {
         if(NOT_UPLOADED.equals(uploadState)) {
@@ -55,10 +45,6 @@ public class Texture implements Serializable, Reloadable {
         } else if(UPLOADED.equals(uploadState) || UPLOADING.equals(uploadState)) {
             lastUsedTimeStamp = System.currentTimeMillis();
         }
-    }
-
-    public DDSConversionState getDdsConversionState() {
-        return ddsConversionState;
     }
 
     public long getLastUsedTimeStamp() {
@@ -69,16 +55,8 @@ public class Texture implements Serializable, Reloadable {
         return uploadState;
     }
 
-    public void setPreventUnload(boolean preventUnload) {
-        this.preventUnload = preventUnload;
-    }
-
     public void setData(byte[][] bytes) {
         data = bytes;
-    }
-
-    public void setDdsConversionState(DDSConversionState ddsConversionState) {
-        this.ddsConversionState = ddsConversionState;
     }
 
     public void setMipmapCount(int mipmapCount) {
@@ -94,24 +72,12 @@ public class Texture implements Serializable, Reloadable {
     }
 
 
-    public enum UploadState {
-        NOT_UPLOADED,
-        UPLOADING,
-        UPLOADED
-    }
-    private transient volatile UploadState uploadState = NOT_UPLOADED;
+    private volatile UploadState uploadState = NOT_UPLOADED;
 
-    public enum DDSConversionState {
-        NOT_CONVERTED,
-        CONVERTING,
-        CONVERTED
-    }
-    private DDSConversionState ddsConversionState = NOT_CONVERTED;
 	protected GlTextureTarget target = TEXTURE_2D;
-    transient protected int textureID = -1;
+    protected int textureID = -1;
     protected int height;
     protected int width;
-
     protected volatile byte[][] data;
     protected int dstPixelFormat = GL11.GL_RGBA;
     protected int srcPixelFormat = GL11.GL_RGBA;
@@ -138,15 +104,19 @@ public class Texture implements Serializable, Reloadable {
         }
     }
 
-    /**
-     * Create a new de.hanno.hpengine.texture
-     */
-    Texture(TextureManager textureManager, String path) {
-        this(textureManager, path, false);
-    }
+    Texture(TextureManager textureManager, String path, boolean srgba, int width, int height, int mipMapCount, boolean mipmapsGenerated, int srcPixelFormat, boolean sourceDataCompressed, byte[][] data) {
+        this.target = TEXTURE_2D;
+        this.path = path;
+        this.srgba = srgba;
+        this.textureManager = textureManager;
+        this.width = width;
+        this.height = height;
+        this.mipmapCount = mipMapCount;
+        this.mipmapsGenerated = mipmapsGenerated;
+        this.srcPixelFormat = srcPixelFormat;
+        this.sourceDataCompressed = sourceDataCompressed;
+        this.data = data;
 
-    Texture(TextureManager textureManager, String path, boolean srgba) {
-        this(textureManager, path, TEXTURE_2D, srgba);
     }
 
     Texture(TextureManager textureManager, String path, GlTextureTarget target, boolean srgba) {
@@ -219,13 +189,19 @@ public class Texture implements Serializable, Reloadable {
 	public void setSrcPixelFormat(int srcPixelFormat) {
 		this.srcPixelFormat = srcPixelFormat;
 	}
-	
-	public ByteBuffer buffer() {
-		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data[0].length);
-		imageBuffer.put(data[0], 0, data[0].length);
-		imageBuffer.flip();
-		return imageBuffer;
-	}
+
+    public ByteBuffer buffer() {
+        ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data[0].length);
+        imageBuffer.put(data[0], 0, data[0].length);
+        imageBuffer.flip();
+        return imageBuffer;
+    }
+    public static ByteBuffer buffer(byte[] data) {
+        ByteBuffer imageBuffer = BufferUtils.createByteBuffer(data.length);
+        imageBuffer.put(data, 0, data.length);
+        imageBuffer.flip();
+        return imageBuffer;
+    }
 
 	public void upload(TextureManager textureManager, boolean srgba) {
         this.srgba = srgba;
@@ -244,7 +220,9 @@ public class Texture implements Serializable, Reloadable {
 	}
 	
 	public void upload(TextureManager textureManager, ByteBuffer textureBuffer, boolean srgba) {
-        if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
+        boolean doesntNeedUpload = UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState);
+        if(doesntNeedUpload) { return; }
+
         uploadState = UPLOADING;
 
         Runnable uploadRunnable = () -> {
@@ -282,9 +260,6 @@ public class Texture implements Serializable, Reloadable {
                 }
             });
             genHandle(textureManager);
-//            textureManager.getGpuContext().execute(() -> {
-//                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-//            });
             setUploaded();
             textureManager.postTextureChangedEvent();
         };
@@ -379,8 +354,6 @@ public class Texture implements Serializable, Reloadable {
         return data[index];
     }
 
-
-
 	public static String getDirectory() {
 		return DirectoryManager.WORKDIR_NAME + "/assets/textures/";
 	}
@@ -407,44 +380,12 @@ public class Texture implements Serializable, Reloadable {
 		return textureID;
 	}
 
-	public void setTextureID(int textureID) {
-		this.textureID = textureID;
-	}
-
 	public static boolean filterRequiresMipmaps(int magTextureFilter) {
 		return (magTextureFilter == GL11.GL_LINEAR_MIPMAP_LINEAR ||
 				magTextureFilter == GL11.GL_LINEAR_MIPMAP_NEAREST ||
 				magTextureFilter == GL11.GL_NEAREST_MIPMAP_LINEAR ||
 				magTextureFilter == GL11.GL_NEAREST_MIPMAP_NEAREST);
 	}
-
-    public void readAndUpload(TextureManager textureManager) {
-        new Thread(() -> {
-            try {
-                LOGGER.info("Thread started ...");
-                FileInputStream fis = new FileInputStream(getDirectory() + FilenameUtils.getBaseName(path) + ".hptexture");
-                ObjectInputStream in = new ObjectInputStream(fis);
-                Texture texture = (Texture) in.readObject();
-                in.close();
-                init(texture);
-                LOGGER.fine("Data: " + getData().length);
-                upload(textureManager, texture.buffer(), texture.srgba);
-            } catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
-    private void init(Texture texture) {
-        setData(texture.getData());
-        setWidth(texture.getWidth());
-        setHeight(texture.getHeight());
-        setTarget(texture.getTarget());
-        setDstPixelFormat(texture.getDstPixelFormat());
-        setSrcPixelFormat(texture.getSrcPixelFormat());
-        setMinFilter(texture.getMinFilter());
-        setMagFilter(texture.getMagFilter());
-    }
 
     public static boolean textureAvailableAsDDS(String resourceName) {
         String fullPathAsDDS = getFullPathAsDDS(resourceName);
@@ -459,8 +400,7 @@ public class Texture implements Serializable, Reloadable {
         if(restPath == null) {
             restPath = "";
         }
-        String fullDDSPath = restPath + name + ".dds";
-        return fullDDSPath;
+        return restPath + name + ".dds";
     }
     protected static int getNextPowerOfTwo(int fold) {
         int ret = 2;
@@ -482,9 +422,8 @@ public class Texture implements Serializable, Reloadable {
         frame.pack();
     }
 
-    public BufferedImage saveAsDDS(BufferedImage bufferedImage) throws IOException {
+    public static BufferedImage saveAsDDS(String path, BufferedImage bufferedImage) throws IOException {
         long start = System.currentTimeMillis();
-        ddsConversionState = CONVERTING;
 
         bufferedImage = rescaleToNextPowerOfTwo(bufferedImage);
         File ddsFile = new File(getFullPathAsDDS(path));
@@ -497,7 +436,6 @@ public class Texture implements Serializable, Reloadable {
         } finally {
             DDSUtilWriteLock.unlock();
         }
-        ddsConversionState = CONVERTED;
         LOGGER.info("Converting and saving as dds took " + (System.currentTimeMillis() - start) + "ms");
         return bufferedImage;
     }
@@ -508,22 +446,6 @@ public class Texture implements Serializable, Reloadable {
 
     public void setTarget(GlTextureTarget target) {
         this.target = target;
-    }
-
-    public int getDstPixelFormat() {
-        return dstPixelFormat;
-    }
-
-    public int getSrcPixelFormat() {
-        return srcPixelFormat;
-    }
-
-    public int getMinFilter() {
-        return minFilter;
-    }
-
-    public int getMagFilter() {
-        return magFilter;
     }
 
     public static BufferedImage rescaleToNextPowerOfTwo(BufferedImage nonPowerOfTwoImage) {
@@ -550,7 +472,6 @@ public class Texture implements Serializable, Reloadable {
     @Override
     public void load() {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
-//        LOGGER.info("Loading " + path);
 
         upload(textureManager, srgba);
     }
@@ -573,5 +494,15 @@ public class Texture implements Serializable, Reloadable {
 
     private void bindWithoutReupload() {
         textureManager.getGpuContext().bindTexture(target, textureID);
+    }
+
+    public void setPreventUnload(boolean preventUnload) {
+        this.preventUnload = preventUnload;
+    }
+
+    public enum UploadState {
+        NOT_UPLOADED,
+        UPLOADING,
+        UPLOADED
     }
 }

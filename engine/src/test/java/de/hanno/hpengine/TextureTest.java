@@ -58,7 +58,6 @@ public class TextureTest extends TestWithEngine {
         File fileAsDds = new File(Texture.getFullPathAsDDS(pathToSourceTexture));
         Texture regularLoaded = engine.getTextureManager().getTexture(pathToSourceTexture);
         byte[] regularLoadedData = regularLoaded.getData();
-        while(!regularLoaded.getDdsConversionState().equals(Texture.DDSConversionState.CONVERTED) || !fileAsDds.exists()) {}
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
         DDSImage.ImageInfo highestMipMapOfDDSImage = allMipMaps[0];
         byte[] ddsDecompressedData = engine.getTextureManager().convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
@@ -202,7 +201,6 @@ public class TextureTest extends TestWithEngine {
         }
         LOGGER.info("Texture uploaded");
 
-//        de.hanno.hpengine.texture.unload();
         Thread.sleep(TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
         texture.setPreventUnload(true);
         Assert.assertEquals(NOT_UPLOADED, (texture.getUploadState()));

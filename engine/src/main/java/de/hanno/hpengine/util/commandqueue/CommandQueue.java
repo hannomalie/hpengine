@@ -52,6 +52,23 @@ public class CommandQueue {
         workQueue.offer(command);
         return command.getFuture();
     }
+    public <RESULT_TYPE> RESULT_TYPE calculate(FutureCallable<RESULT_TYPE> command) {
+        RESULT_TYPE result;
+        try {
+            if(executeDirectly()) {
+                command.getFuture().complete(command.execute());
+                result = command.getFuture().get();
+            } else {
+                workQueue.offer(command);
+                result = command.getFuture().get();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            result = null;
+        }
+        return result;
+    }
+
     public Exception execute(Runnable runnable, boolean andBlock) {
         if(executeDirectly()) {
             runnable.run();

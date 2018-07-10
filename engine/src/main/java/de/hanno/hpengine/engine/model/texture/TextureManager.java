@@ -13,11 +13,13 @@ import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import jogl.DDSImage;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.*;
 
@@ -34,10 +36,10 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
-import static de.hanno.hpengine.engine.model.texture.Texture.DDSConversionState.CONVERTED;
 import static de.hanno.hpengine.engine.model.texture.Texture.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 
@@ -244,7 +246,7 @@ public class TextureManager implements Manager {
             loadingTextures.add(resourceName);
         } else {
             while (!textureLoaded(resourceName)) {
-                LOGGER.info("Waiting for de.hanno.de.hanno.hpengine.texture " + resourceName + " to become available...");
+                LOGGER.info("Waiting for texture " + resourceName + " to become available...");
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -254,119 +256,120 @@ public class TextureManager implements Manager {
             return TEXTURES.get(resourceName);
         }
         LOGGER.info(resourceName + " requested");
-        if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
-            Texture texture = new Texture(this, resourceName, srgba);
-            TEXTURES.put(resourceName, texture);
-            postTextureChangedEvent();
-            texture.readAndUpload(this);
-            return texture;
-        }
 
-        Texture texture = new Texture(this, resourceName, srgba);
-        TEXTURES.put(resourceName, texture);
-        LOGGER.severe("Adding " + resourceName);
-        convertAndUpload(texture, this);
-        return texture;
+        return convertAndUpload(resourceName, srgba);
     }
 
-    public void convertAndUpload(Texture texture, TextureManager textureManager) {
-        CompletableFuture<Object> future = textureManager.getCommandQueue().addCommand(() -> {
-            try {
-                LOGGER.severe(texture.getPath());
-                texture.setData(new byte[1][]);
+    public Texture convertAndUpload(String resourceName, boolean srgba) {
+        final String path = resourceName;
+        Texture texture = getCommandQueue().calculate(new FutureCallable<Texture>() {
+            @Override
+            public Texture execute() throws Exception {
+                return getTextureXXX(path, resourceName, srgba);
+            }
+        });
 
-                boolean imageExists = new File(texture.getPath()).exists();
-                boolean ddsRequested = FilenameUtils.isExtension(texture.getPath(), "dds");
-                BufferedImage bufferedImage;
+        if(texture != null) {
+            TEXTURES.put(resourceName, texture);
+            return texture;
+        } else {
+            LOGGER.severe("No texture loaded for " + resourceName);
+            return defaultTexture;
+        }
+    }
 
-                long start = System.currentTimeMillis();
-                if (imageExists) {
-                    LOGGER.info(texture.getPath() + " available as dds: " + textureAvailableAsDDS(texture.getPath()));
-                    if (!textureAvailableAsDDS(texture.getPath())) {
-                        bufferedImage = TextureManager.this.loadImage(texture.getPath());
-                        if (bufferedImage != null) {
-                            texture.setData(new byte[de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][]);
-                        }
+    @Nullable
+    private Texture getTextureXXX(String path, String resourceName, boolean srgba) {
+        boolean ddsImageAvailable = textureAvailableAsDDS(path);
+        boolean imageExists = new File(path).exists();
+        LOGGER.info(path + " available as dds: " + ddsImageAvailable);
+        int height;
+        int width;
+        int mipMapCount;
+        int srcPixelFormat = GL11.GL_RGB;
+        boolean mipmapsGenerated = false;
+        boolean sourceDataCompressed = false;
+        byte[][] data;
+        ByteBuffer textureBuffer;
+        Texture result = null;
+        try {
+            long start = System.currentTimeMillis();
+            if (imageExists) {
+                if (ddsImageAvailable) {
+                    DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
+                    sourceDataCompressed = true;
+                    height = ddsImage.getHeight();
+                    width = ddsImage.getWidth();
+                    int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(width, height);
+                    mipMapCount = mipMapCountPlusOne - 1;
+
+                    data = new byte[mipMapCountPlusOne][];
+                    for (int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
+                        DDSImage.ImageInfo info = ddsImage.getMipMap(i);
+//                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
+//                        showAsTextureInFrame(mipmapImage);
+//                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
+                        data[i] = new byte[info.getData().capacity()];
+                        info.getData().get(data[i]);
+                    }
+                    if (ddsImage.getNumMipMaps() > 1) {
+                        mipmapsGenerated = true;
+                    }
+                    textureBuffer = Texture.buffer(data[0]);
+                } else {
+                    BufferedImage bufferedImage = TextureManager.this.loadImage(path);
+                    if (bufferedImage == null) {
+                        bufferedImage = getDefaultTextureAsBufferedImage();
+                        LOGGER.severe("Texture " + path + " cannot be read, default texture returned instead...");
+                    } else {
                         if (autoConvertToDDS) {
+                            BufferedImage finalBufferedImage = bufferedImage;
                             new Thread(() -> {
                                 try {
-                                    texture.saveAsDDS(bufferedImage);
+                                    Texture.saveAsDDS(path, finalBufferedImage);
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
                             }).start();
                         }
-
-                    } else { // de.hanno.hpengine.texture available as dds
-                        texture.setDdsConversionState(CONVERTED);
-                        DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(texture.getPath())));
-                        int mipMapCountPlusOne = de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight());
-                        texture.setMipmapCount(mipMapCountPlusOne - 1);
-                        texture.setData(new byte[mipMapCountPlusOne][]);
-                        for (int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
-                            DDSImage.ImageInfo info = ddsImage.getMipMap(i);
-
-//                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
-//                        showAsTextureInFrame(mipmapImage);
-//                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
-                            texture.setData(i, new byte[info.getData().capacity()]);
-                            info.getData().get(texture.data[i]);
-                        }
-                        texture.setWidth(ddsImage.getWidth());
-                        texture.setHeight(ddsImage.getHeight());
-                        if (ddsImage.getNumMipMaps() > 1) {
-                            texture.setMipmapsGenerated(true);
-                        }
-                        texture.setSourceDataCompressed(true);
-                        texture.upload(this, texture.buffer(), texture.srgba);
-                        LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + texture.getPath());
-                        return;
                     }
+                    data = new byte[Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][];
 
-                } else {
-                    bufferedImage = getDefaultTextureAsBufferedImage();
-                    LOGGER.severe("Texture " + texture.getPath() + " cannot be read, default de.hanno.hpengine.texture data inserted instead...");
-                }
-
-                if(bufferedImage != null) {
-                    texture.setWidth(bufferedImage.getWidth());
-                    texture.setHeight(bufferedImage.getHeight());
-                    int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(texture.getWidth(), texture.getHeight());
-                    texture.setMipmapCount(mipMapCountPlusOne - 1);
-//                    texture.setMinFilter(minFilter);
-//                    texture.setMagFilter(magFilter);
+                    width = bufferedImage.getWidth();
+                    height = bufferedImage.getHeight();
+                    int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(width, height);
+                    mipMapCount = mipMapCountPlusOne - 1;
 
                     if (bufferedImage.getColorModel().hasAlpha()) {
-                        texture.srcPixelFormat = GL11.GL_RGBA;
-                    } else {
-                        texture.srcPixelFormat = GL11.GL_RGB;
+                        srcPixelFormat = GL11.GL_RGBA;
                     }
 
-                    texture.setDstPixelFormat(texture.dstPixelFormat);
-                    texture.setSrcPixelFormat(texture.srcPixelFormat);
+                    data[0] = TextureManager.this.convertImageData(bufferedImage);
 
-                    byte[] bytes = TextureManager.this.convertImageData(bufferedImage);
-                    texture.setData(0, bytes);
-                    ByteBuffer textureBuffer = texture.buffer();
-                    texture.upload(textureManager, textureBuffer, texture.srgba);
-                    LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + texture.getPath());
-                } else {
-                    LOGGER.warning("BufferedImage couldn't be loaded!");
+                    textureBuffer = Texture.buffer(data[0]);
                 }
-            } catch (IOException | NullPointerException e) {
-                e.printStackTrace();
-                LOGGER.severe("Texture not found: " + texture.getPath() + ". Default de.hanno.hpengine.texture returned...");
+
+                Texture texture = new Texture(TextureManager.this,
+                        resourceName,
+                        srgba,
+                        width,
+                        height,
+                        mipMapCount,
+                        mipmapsGenerated,
+                        srcPixelFormat,
+                        sourceDataCompressed,
+                        data);
+                texture.upload(TextureManager.this, textureBuffer, texture.srgba);
+                result = texture;
             }
+            LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
             postTextureChangedEvent();
-        });
-//        try {
-//            // TODO: Check out why this is necessary
-//            future.get();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+            return result;
+        } catch (IOException | NullPointerException e) {
+            e.printStackTrace();
+            LOGGER.severe("Texture not found: " + path + ". Default de.hanno.hpengine.texture returned...");
+            return null;
+        }
     }
 
     private boolean textureLoaded(String resourceName) {
@@ -399,9 +402,6 @@ public class TextureManager implements Manager {
                          GL11.GL_LINEAR, false);
 
         TEXTURES.put(resourceName + "_cube",tex);
-        if(Texture.COMPILED_TEXTURES) {
-            LOGGER.info("Precompiled " + CubeMap.write(tex, resourceName));
-        }
         return tex;
     }
 
