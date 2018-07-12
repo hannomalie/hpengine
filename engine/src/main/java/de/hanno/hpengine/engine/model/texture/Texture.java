@@ -59,19 +59,6 @@ public class Texture implements Reloadable {
         data = bytes;
     }
 
-    public void setMipmapCount(int mipmapCount) {
-        this.mipmapCount = mipmapCount;
-    }
-
-    public void setMipmapsGenerated(boolean mipmapsGenerated) {
-        this.mipmapsGenerated = mipmapsGenerated;
-    }
-
-    public void setSourceDataCompressed(boolean sourceDataCompressed) {
-        this.sourceDataCompressed = sourceDataCompressed;
-    }
-
-
     private volatile UploadState uploadState = NOT_UPLOADED;
 
 	protected GlTextureTarget target = TEXTURE_2D;
@@ -174,14 +161,6 @@ public class Texture implements Reloadable {
         return width;
     }
 
-
-    private void setData(byte[] data) {
-        setData(0, data);
-    }
-    public void setData(int i, byte[] data) {
-        this.data[i] = data;
-    }
-
 	public void setDstPixelFormat(int dstPixelFormat) {
 		this.dstPixelFormat = dstPixelFormat;
 	}
@@ -208,12 +187,6 @@ public class Texture implements Reloadable {
         if(data == null || data[0] == null) { return; }
         upload(textureManager, buffer(), srgba);
 	}
-    Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
-        public void uncaughtException(Thread th, Throwable ex) {
-            LOGGER.severe("Uncaught exception: " + ex);
-            ex.printStackTrace();
-        }
-    };
 
 	public void upload(TextureManager textureManager, ByteBuffer textureBuffer) {
 		upload(textureManager, textureBuffer, false);
@@ -316,8 +289,8 @@ public class Texture implements Reloadable {
         LOGGER.info("Uploading mipmaps for " + path);
         int currentWidth = width;
         int currentHeight = height;
-        List<Integer> widths = new ArrayList();
-        List<Integer> heights = new ArrayList();
+        List<Integer> widths = new ArrayList<>();
+        List<Integer> heights = new ArrayList<>();
         for(int i = 0; i < mipmapCount-1; i++) {
             int minSize = 1;
             currentWidth = Math.max(minSize, currentWidth/2);
@@ -325,11 +298,10 @@ public class Texture implements Reloadable {
             widths.add(currentWidth);
             heights.add(currentHeight);
         }
-        for(int i = mipmapCount-1; i >= 1; i--) {
-            currentWidth = widths.get(i - 1);
-            currentHeight = heights.get(i - 1);
-            int mipmapIndex = i;
-            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(data[mipmapIndex].length);//currentHeight * currentWidth * 4);
+        for(int mipmapIndex = mipmapCount-1; mipmapIndex >= 1; mipmapIndex--) {
+            currentWidth = widths.get(mipmapIndex - 1);
+            currentHeight = heights.get(mipmapIndex - 1);
+            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(data[mipmapIndex].length);
             tempBuffer.rewind();
             tempBuffer.put(data[mipmapIndex]);
             tempBuffer.rewind();
