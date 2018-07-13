@@ -132,16 +132,16 @@ class ProbeRenderStrategy(private val engine: Engine) {
 //            floatBuffer.put(2, 0f)
 //            floatBuffer.put(3, 0f)
 //            glActiveTexture(0)
-//            gpuContext.bindTexture(0, TEXTURE_CUBE_MAP, ambientCube.cubeMap.textureID)
+//            gpuContext.bindTexture(0, TEXTURE_CUBE_MAP, ambientCube.cubeMap.textureId)
 //            GL45.glGetTextureSubImage(cubeMapRenderTarget.renderedTexture, 4, 0, 0, 0, 1, 1, 6, GL_RGBA, GL11.GL_FLOAT, floatBuffer)
 //            Util.printFloatBuffer(floatBuffer)
 
             glFinish()
             GL43.glCopyImageSubData(cubeMapRenderTarget.renderedTexture, GL13.GL_TEXTURE_CUBE_MAP, mipmapCount-1, 0, 0, 0,
-                    ambientCube.cubeMap.textureID, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, 1, 1, 6)
+                    ambientCube.cubeMap.textureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, 1, 1, 6)
             GL43.glCopyImageSubData(cubeMapRenderTarget.getRenderedTexture(1), GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-                    ambientCube.distanceMap.textureID, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, resolution, resolution, 6)
-//            GL44.glClearTexSubImage(ambientCube.cubeMap.textureID, 0, 0, 0, 0, 1, 1, 6, GL_RGBA, GL11.GL_FLOAT, blackBuffer)
+                    ambientCube.distanceMap.textureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, resolution, resolution, 6)
+//            GL44.glClearTexSubImage(ambientCube.cubeMap.textureId, 0, 0, 0, 0, 1, 1, 6, GL_RGBA, GL11.GL_FLOAT, blackBuffer)
 
             glFinish()
 

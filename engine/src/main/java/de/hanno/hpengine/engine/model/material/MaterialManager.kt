@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
+import de.hanno.hpengine.engine.model.texture.ITexture
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.util.commandqueue.FutureCallable
@@ -140,14 +141,11 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     }
 
     fun getMaterial(name: String, hashMap: HashMap<MAP, String>): SimpleMaterial {
-        val textures = hashMapOf<MAP, Texture>()
+        val textures = hashMapOf<MAP, ITexture<*>>()
 
         for (map in hashMap.keys) {
-            var srgba = false
-            if (map == MAP.DIFFUSE) {
-                srgba = true
-            }
-            textures.put(map, textureManager.getTexture(hashMap[map], srgba))
+            var srgba = map == MAP.DIFFUSE
+            textures[map] = textureManager.getTexture(hashMap[map], srgba)
         }
         val info = SimpleMaterialInfo(name = name, mapsInternal = textures.toImmutableHashMap())
         return getMaterial(info)

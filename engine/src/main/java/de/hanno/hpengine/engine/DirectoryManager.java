@@ -29,7 +29,7 @@ public class DirectoryManager implements Manager {
         ArrayList<File> dirs = new ArrayList<>();
         dirs.add(new File(WORKDIR_NAME));
         dirs.add(new File(ASSETDIR_NAME));
-        dirs.add(new File(Texture.getDirectory()));
+        dirs.add(new File(Texture.directory));
         dirs.add(new File(SimpleMaterial.Companion.getDirectory()));
         dirs.add(new File(Entity.getDirectory()));
         dirs.add(new File(SimpleScene.Companion.getDirectory()));

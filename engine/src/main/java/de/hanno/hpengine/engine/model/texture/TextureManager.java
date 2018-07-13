@@ -34,9 +34,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
@@ -76,17 +74,17 @@ public class TextureManager implements Manager {
 
     private CommandQueue commandQueue = new CommandQueue();
 
-    public Texture getLensFlareTexture() {
+    public ITexture getLensFlareTexture() {
         return lensFlareTexture;
     }
 
-    private Texture lensFlareTexture;
+    private ITexture lensFlareTexture;
     public CubeMap cubeMap;
     private final ComputeShaderProgram blur2dProgramSeperableHorizontal;
     private final ComputeShaderProgram blur2dProgramSeperableVertical;
 
     /** The table of textures that have been loaded in this loader */
-    public Map<String, Texture> TEXTURES = new ConcurrentHashMap<>();
+    public Map<String, ITexture> TEXTURES = new ConcurrentHashMap<>();
 
     private Set<String> loadingTextures = new HashSet<>();
 
@@ -100,7 +98,7 @@ public class TextureManager implements Manager {
      * Create a new de.hanno.de.hanno.hpengine.texture loader based on the game panel
      *
      */
-    Texture defaultTexture = null;
+    ITexture defaultTexture = null;
 
     public TextureManager(EventBus eventBus, ProgramManager programManager, GpuContext gpuContext) {
         this.eventBus = eventBus;
@@ -138,9 +136,9 @@ public class TextureManager implements Manager {
             new TimeStepThread("TextureWatcher", 0.5f) {
                 @Override
                 public void update(float seconds) {
-                    Iterator<Texture> iterator = TEXTURES.values().iterator();
+                    Iterator<ITexture> iterator = TEXTURES.values().iterator();
                     while(iterator.hasNext()) {
-                        Texture texture = iterator.next();
+                        ITexture texture = iterator.next();
                         long notUsedSinceMs = System.currentTimeMillis() - texture.getLastUsedTimeStamp();
 //                    System.out.println("Not used since " + notUsedSinceMs + ": " + de.hanno.de.hanno.hpengine.texture.getPath());
                         if(notUsedSinceMs > TEXTURE_UNLOAD_THRESHOLD_IN_MS && notUsedSinceMs < 20000) { // && de.hanno.de.hanno.hpengine.texture.getTarget().equals(TEXTURE_2D)) {
@@ -168,7 +166,7 @@ public class TextureManager implements Manager {
             cubeMap = getCubeMap("hp/assets/textures/skybox.png");
             GpuContext.exitOnGLError("After load cubemap");
             this.gpuContext.activeTexture(0);
-//            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
+//            instance.generateMipMapsCubeMap(cubeMap.getTextureId());
         } catch (IOException e) {
             LOGGER.severe(e.getMessage());
         }
@@ -190,7 +188,7 @@ public class TextureManager implements Manager {
     }
 
     private void loadAllAvailableTextures() {
-    	File textureDir = new File(Texture.getDirectory());
+    	File textureDir = new File(Texture.directory);
     	List<File> files = (List<File>) FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 		GpuContext.exitOnGLError("Before loadAllAvailableTextures");
 		for (File file : files) {
@@ -214,7 +212,7 @@ public class TextureManager implements Manager {
         return true;
     }
 
-    public Texture getDefaultTexture() {
+    public ITexture getDefaultTexture() {
         return defaultTexture;
     }
 
@@ -223,7 +221,7 @@ public class TextureManager implements Manager {
      *
      * @return A new de.hanno.de.hanno.hpengine.texture ID
      */
-    private int createTextureID()
+    private int genTexture()
     {
         return gpuContext.genTextures();
     }
@@ -235,10 +233,10 @@ public class TextureManager implements Manager {
      * @return The loaded de.hanno.de.hanno.hpengine.texture
      * @throws IOException Indicates a failure to access the resource
      */
-    public Texture getTexture(String resourceName) {
+    public ITexture getTexture(String resourceName) {
     	return getTexture(resourceName, false);
     }
-    public Texture getTexture(String resourceName, boolean srgba) {
+    public ITexture getTexture(String resourceName, boolean srgba) {
         if(textureLoaded(resourceName)) {
             return TEXTURES.get(resourceName);
         }
@@ -260,7 +258,7 @@ public class TextureManager implements Manager {
         return convertAndUpload(resourceName, srgba);
     }
 
-    public Texture convertAndUpload(String resourceName, boolean srgba) {
+    public ITexture convertAndUpload(String resourceName, boolean srgba) {
         final String path = resourceName;
         Texture texture = getCommandQueue().calculate(new FutureCallable<Texture>() {
             @Override
@@ -315,7 +313,7 @@ public class TextureManager implements Manager {
                     if (ddsImage.getNumMipMaps() > 1) {
                         mipmapsGenerated = true;
                     }
-                    textureBuffer = Texture.buffer(data[0]);
+                    textureBuffer = Texture.buffer(data);
                 } else {
                     BufferedImage bufferedImage = TextureManager.this.loadImage(path);
                     if (bufferedImage == null) {
@@ -346,7 +344,7 @@ public class TextureManager implements Manager {
 
                     data[0] = TextureManager.this.convertImageData(bufferedImage);
 
-                    textureBuffer = Texture.buffer(data[0]);
+                    textureBuffer = Texture.buffer(data);
                 }
 
                 Texture texture = new Texture(TextureManager.this,
@@ -358,8 +356,8 @@ public class TextureManager implements Manager {
                         mipmapsGenerated,
                         srcPixelFormat,
                         sourceDataCompressed,
-                        data);
-                texture.upload(TextureManager.this, textureBuffer, texture.srgba);
+                        data, genTexture());
+                texture.upload(TextureManager.this, textureBuffer, texture.getSrgba());
                 result = texture;
             }
             LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
@@ -378,14 +376,14 @@ public class TextureManager implements Manager {
 
     public boolean texturePreCompiled(String resourceName) {
     	String fileName = FilenameUtils.getBaseName(resourceName);
-    	File f = new File(Texture.getDirectory() + fileName + ".hptexture");
+    	File f = new File(Texture.directory + fileName + ".hptexture");
     	return f.exists();
 	}
     
 
 	private boolean cubeMapPreCompiled(String resourceName) {
     	String fileName = FilenameUtils.getBaseName(resourceName);
-    	File f = new File(Texture.getDirectory() + fileName + ".hpcubemap");
+    	File f = new File(Texture.directory + fileName + ".hpcubemap");
     	return f.exists();
 	}
 
@@ -413,36 +411,28 @@ public class TextureManager implements Manager {
         GlTextureTarget target = TEXTURE_CUBE_MAP;
 
     	 int srcPixelFormat = 0;
-         
-         // create the de.hanno.de.hanno.hpengine.texture ID for this de.hanno.de.hanno.hpengine.texture
-         int textureID = createTextureID(); 
-         CubeMap cubeMap = new CubeMap(this, resourceName, target);
+
+        BufferedImage bufferedImage = null;
+        if (asStream) {
+            bufferedImage = loadImageAsStream(resourceName);
+        } else {
+            bufferedImage = loadImage(resourceName);
+        }
+
+        if (bufferedImage.getColorModel().hasAlpha()) {
+            srcPixelFormat = GL11.GL_RGBA;
+        } else {
+            srcPixelFormat = GL11.GL_RGB;
+        }
+        // create the de.hanno.de.hanno.hpengine.texture ID for this de.hanno.de.hanno.hpengine.texture
+         int textureID = genTexture();
+         CubeMap cubeMap = new CubeMap(this, resourceName, target, bufferedImage.getWidth(), bufferedImage.getHeight(), minFilter, magFilter, srcPixelFormat, dstPixelFormat);
          
          // bind this de.hanno.de.hanno.hpengine.texture
         gpuContext.bindTexture(target, textureID);
 
-         BufferedImage bufferedImage = null;
-         if (asStream) {
-             bufferedImage = loadImageAsStream(resourceName);
-         } else {
-             bufferedImage = loadImage(resourceName);
-         } 
-         cubeMap.setWidth(bufferedImage.getWidth());
-         cubeMap.setHeight(bufferedImage.getHeight());
-         cubeMap.setMinFilter(minFilter);
-         cubeMap.setMagFilter(magFilter);
-         
-         if (bufferedImage.getColorModel().hasAlpha()) {
-             srcPixelFormat = GL11.GL_RGBA;
-         } else {
-             srcPixelFormat = GL11.GL_RGB;
-         }
-
-         cubeMap.setDstPixelFormat(dstPixelFormat);
-         cubeMap.setSrcPixelFormat(srcPixelFormat);
-         
          // convert that image into a byte buffer of de.hanno.de.hanno.hpengine.texture data
-         ByteBuffer[] textureBuffers = convertCubeMapData(bufferedImage,cubeMap);
+         ByteBuffer[] textureBuffers = convertCubeMapData(bufferedImage, cubeMap);
          
          upload(cubeMap);
          
@@ -455,13 +445,13 @@ public class TextureManager implements Manager {
             cubeMap.bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
             {
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, cubeMap.minFilter);
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, cubeMap.magFilter);
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(cubeMap.width, cubeMap.height)));
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL11.GL_TEXTURE_MIN_FILTER, cubeMap.getMinFilter());
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL11.GL_TEXTURE_MAG_FILTER, cubeMap.getMagFilter());
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                GL11.glTexParameteri(cubeMap.getTarget().glTarget, GL12.GL_TEXTURE_MAX_LEVEL, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(cubeMap.getWidth(), cubeMap.getHeight())));
             }
 
 
@@ -474,9 +464,9 @@ public class TextureManager implements Manager {
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(4)));
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(5)));
 
-            TextureManager.this.generateMipMapsCubeMap(cubeMap.getTextureID());
-            cubeMap.handle = ARBBindlessTexture.glGetTextureHandleARB(cubeMap.textureID);
-            ARBBindlessTexture.glMakeTextureHandleResidentARB(cubeMap.handle);
+            TextureManager.this.generateMipMapsCubeMap(cubeMap.getTextureId());
+            cubeMap.setHandle(ARBBindlessTexture.glGetTextureHandleARB(cubeMap.getTextureId()));
+            ARBBindlessTexture.glMakeTextureHandleResidentARB(cubeMap.getHandle());
         });
     }
     /**
@@ -732,7 +722,7 @@ public class TextureManager implements Manager {
     }
 
     public int getTexture(int width, int height, int format, GlTextureTarget target, int depth) {
-        int textureId = createTextureID();
+        int textureId = genTexture();
         gpuContext.bindTexture(target, textureId);
 
 

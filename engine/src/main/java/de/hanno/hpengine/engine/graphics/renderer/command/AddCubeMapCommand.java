@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ public class AddCubeMapCommand extends AddTextureCommand {
 
 	@Override
 	public TextureResult execute(Engine engine) {
-		Texture texture = null;
+		CubeMap texture = null;
 		try {
             texture = engine.getTextureManager().getCubeMap(path);
 		} catch (IOException e) {

@@ -2,10 +2,10 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo;
-import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.ITexture;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -270,17 +270,17 @@ public class MD5Loader {
                     String extension = texturePath.substring(pos, texturePath.length());
                     String normalMapFileName = basePath + "_local" + extension;
                     if (new File(normalMapFileName).exists()) {
-                        Texture normalMap = materialManager.getTextureManager().getTexture(normalMapFileName);
+                        ITexture normalMap = materialManager.getTextureManager().getTexture(normalMapFileName);
                         materialInfo = materialInfo.put(SimpleMaterial.MAP.NORMAL, normalMap);
                     }
                     String heightMapFileName = basePath + "_h" + extension;
                     if (new File(heightMapFileName).exists()) {
-                        Texture heightMap = materialManager.getTextureManager().getTexture(heightMapFileName);
+                        ITexture heightMap = materialManager.getTextureManager().getTexture(heightMapFileName);
                         materialInfo = materialInfo.put(SimpleMaterial.MAP.HEIGHT, heightMap);
                     }
                     String specularMapFile = basePath + "_s" + extension;
                     if (new File(specularMapFile).exists()) {
-                        Texture specularMap = materialManager.getTextureManager().getTexture(specularMapFile);
+                        ITexture specularMap = materialManager.getTextureManager().getTexture(specularMapFile);
                         materialInfo = materialInfo.put(SimpleMaterial.MAP.SPECULAR, specularMap);
                     }
                 }

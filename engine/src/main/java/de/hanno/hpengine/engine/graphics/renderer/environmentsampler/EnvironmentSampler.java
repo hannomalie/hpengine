@@ -127,7 +127,7 @@ public class EnvironmentSampler extends Entity {
 			cubeMapFaceViews[1][z] = GL11.glGenTextures();
             cubeMapFaceViews[2][z] = GL11.glGenTextures();
             cubeMapFaceViews[3][z] = GL11.glGenTextures();
-			//GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
+			//GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureId(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
 			GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
 			GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
             GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
@@ -487,7 +487,7 @@ public class EnvironmentSampler extends Entity {
 		renderTarget.use(false);
 
         engine.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP, cubeMapView);
-		//GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentMap().getTextureID());
+		//GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentMap().getTextureId());
 		
 		for (int i = 0; i < 6; i++) {
 
@@ -690,7 +690,7 @@ public class EnvironmentSampler extends Entity {
 //			try {
 //				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 //				Texture lightTexture = TextureManager.getInstance().getDiffuseTexture("brick.hptexture");
-//				GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightTexture.getTextureID());
+//				GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightTexture.getTextureId());
 //			} catch (IOException e) {
 //				e.printStackTrace();
 //			}

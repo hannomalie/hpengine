@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
+import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import org.joml.Vector2f;
@@ -55,7 +56,7 @@ public class OBJLoaderTest extends TestWithEngine {
     @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
-        de.hanno.hpengine.engine.model.texture.Texture texture = engine.getTextureManager().getTexture("C://default.png");
+        Texture texture = (Texture) engine.getTextureManager().getTexture("C://default.png");
 		Assert.assertEquals(1, texture.getHeight());
 	}
 
@@ -65,7 +66,7 @@ public class OBJLoaderTest extends TestWithEngine {
         SimpleMaterial material = sibenik.getMesh(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getMaterialInfo().getName());
-        Assert.assertEquals("hp/assets/models/textures/KAMEN-stup", material.getMaterialInfo().getMaps().get(SimpleMaterial.MAP.DIFFUSE).getName());
+        Assert.assertTrue(material.getMaterialInfo().getMaps().get(SimpleMaterial.MAP.DIFFUSE).toString().contains("hp/assets/models/textures/KAMEN-stup"));
         Assert.assertEquals(1, material.getMaterialInfo().getMaps().values().size());
     }
 

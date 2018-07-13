@@ -21,7 +21,7 @@ import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand.Ma
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
-import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.ITexture
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.gui.input.*
 import org.apache.commons.io.FileUtils
@@ -38,8 +38,8 @@ import kotlin.Comparator
 class MaterialView(private val engine: Engine, var material: SimpleMaterial) : WebPanel() {
     private val nameField = WebTextField(material.materialInfo.name)
 
-    private val allTexturesSorted: List<Texture>
-        get() = engine.textureManager.TEXTURES.values.sortedWith(Comparator<Texture> { o1, o2 -> o1.path.compareTo(o2.path) })
+    private val allTexturesSorted: List<ITexture<*>>
+        get() = engine.textureManager.TEXTURES.values.sortedWith(Comparator<ITexture<*>> { o1, o2 -> o1.toString().compareTo(o2.toString()) })
 
     init {
         isUndecorated = true

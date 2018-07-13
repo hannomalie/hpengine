@@ -77,8 +77,8 @@ public class CubeRenderTarget extends RenderTarget {
 //
 //	public void setCubeMapFace(int index) {
 //		engine.getRenderer().getOpenGLContext().clearDepthBuffer();
-//		engine.getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
-//		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
+//		engine.getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureId());
+//		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureId(), 0);
 //	}
 
 	public void saveBuffer(String path) {

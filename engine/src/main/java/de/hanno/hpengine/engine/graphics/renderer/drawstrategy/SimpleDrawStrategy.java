@@ -274,7 +274,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
         gpuContext.bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-        gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, engine.getTextureManager().getCubeMap().getTextureID());
+        gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, engine.getTextureManager().getCubeMap().getTextureId());
         gpuContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         gpuContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
         gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).getTextureID());
@@ -465,7 +465,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 //			try {
 //				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 //				Texture lightTexture = renderer.getTextureManager().getDiffuseTexture("brick.hptexture");
-//				GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightTexture.getTextureID());
+//				GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightTexture.getTextureId());
 //			} catch (IOException e) {
 //				e.printStackTrace();
 //			}
@@ -656,7 +656,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
         engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
-        engine.getGpuContext().bindTexture(4, TEXTURE_2D, engine.getTextureManager().getLensFlareTexture().getTextureID());
+        engine.getGpuContext().bindTexture(4, TEXTURE_2D, engine.getTextureManager().getLensFlareTexture().getTextureId());
         gpuContext.getFullscreenBuffer().draw();
 
         GPUProfiler.end();
