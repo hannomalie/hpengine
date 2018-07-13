@@ -32,7 +32,7 @@ interface ITexture<T> {
     val width: Int
     val height: Int
     val textureId: Int
-    var target: GlTextureTarget
+    val target: GlTextureTarget
     val handle: Long
     val lastUsedTimeStamp: Long
     val minFilter: Int
@@ -41,7 +41,6 @@ interface ITexture<T> {
     fun setUsedNow() { }
     fun getData(): T
 }
-interface CubeTexture: ITexture<List<ByteArray>>
 
 open class Texture internal constructor(protected val textureManager: TextureManager, path: String, val srgba: Boolean, override val width: Int, override val height: Int, private val mipmapCount: Int, mipmapsGenerated: Boolean, protected val srcPixelFormat: Int, sourceDataCompressed: Boolean, protected val data: Array<ByteArray>, override val textureId: Int) : Reloadable, ITexture<ByteArray> {
     var path = ""

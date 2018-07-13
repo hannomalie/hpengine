@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -221,8 +220,7 @@ public class TextureManager implements Manager {
      *
      * @return A new de.hanno.de.hanno.hpengine.texture ID
      */
-    private int genTexture()
-    {
+    private int genTextures() {
         return gpuContext.genTextures();
     }
     
@@ -356,7 +354,7 @@ public class TextureManager implements Manager {
                         mipmapsGenerated,
                         srcPixelFormat,
                         sourceDataCompressed,
-                        data, genTexture());
+                        data, genTextures());
                 texture.upload(TextureManager.this, textureBuffer, texture.getSrgba());
                 result = texture;
             }
@@ -408,8 +406,6 @@ public class TextureManager implements Manager {
 					            int minFilter, 
 					            int magFilter, boolean asStream) throws IOException {
 
-        GlTextureTarget target = TEXTURE_CUBE_MAP;
-
     	 int srcPixelFormat = 0;
 
         BufferedImage bufferedImage = null;
@@ -425,18 +421,18 @@ public class TextureManager implements Manager {
             srcPixelFormat = GL11.GL_RGB;
         }
         // create the de.hanno.de.hanno.hpengine.texture ID for this de.hanno.de.hanno.hpengine.texture
-         int textureID = genTexture();
-         CubeMap cubeMap = new CubeMap(this, resourceName, target, bufferedImage.getWidth(), bufferedImage.getHeight(), minFilter, magFilter, srcPixelFormat, dstPixelFormat);
-         
-         // bind this de.hanno.de.hanno.hpengine.texture
-        gpuContext.bindTexture(target, textureID);
+         int textureID = genTextures();
 
-         // convert that image into a byte buffer of de.hanno.de.hanno.hpengine.texture data
-         ByteBuffer[] textureBuffers = convertCubeMapData(bufferedImage, cubeMap);
-         
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
+
+        List<byte[]> data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel);
+
+        CubeMap cubeMap = new CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, dstPixelFormat, genTextures(), data);
+        cubeMap.bind();
          upload(cubeMap);
          
-         return cubeMap; 
+         return cubeMap;
 	}
 
     public void upload(CubeMap cubeMap) {
@@ -455,14 +451,14 @@ public class TextureManager implements Manager {
             }
 
 
-            ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(cubeMap.dataList.get(0).length);
+            ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(cubeMap.getData().get(0).length);
 
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(1))); //1
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(0))); //0
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(2)));
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(3)));
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(4)));
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(5)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, cubeMap.buffer(perFaceBuffer, cubeMap.getData().get(1))); //1
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, cubeMap.buffer(perFaceBuffer, cubeMap.getData().get(0))); //0
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, cubeMap.buffer(perFaceBuffer, cubeMap.getData().get(2)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, cubeMap.buffer(perFaceBuffer, cubeMap.getData().get(3)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.getData().get(4)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.getData().get(5)));
 
             TextureManager.this.generateMipMapsCubeMap(cubeMap.getTextureId());
             cubeMap.setHandle(ARBBindlessTexture.glGetTextureHandleARB(cubeMap.getTextureId()));
@@ -500,16 +496,13 @@ public class TextureManager implements Manager {
         return data;
     }
     
-    private ByteBuffer[] convertCubeMapData(BufferedImage bufferedImage,CubeMap cubeMap) { 
-        ByteBuffer imageBuffers[] = new ByteBuffer[6];
+    private static List<byte[]> convertCubeMapData(BufferedImage bufferedImage, int width, int height, ColorModel glAlphaColorModel, ColorModel glColorModel) {
+//        ByteBuffer imageBuffers[] = new ByteBuffer[6];
         List<byte[]> byteArrays = new ArrayList<>();
         
         WritableRaster raster;
         BufferedImage texImage;
 
-
-        int width = cubeMap.getWidth();
-        int height = cubeMap.getHeight();
 
         int tileWidth = (width /4);
         int tileHeight = (height /3);
@@ -544,20 +537,17 @@ public class TextureManager implements Manager {
             byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
             byteArrays.add(data);
             
-    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
-    		tempBuffer.order(ByteOrder.nativeOrder());
-    		tempBuffer.put(data, 0, data.length);
-    		tempBuffer.flip();
-            
-            imageBuffers[i] = tempBuffer;
+//    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
+//    		tempBuffer.order(ByteOrder.nativeOrder());
+//    		tempBuffer.put(data, 0, data.length);
+//    		tempBuffer.flip();
+//          imageBuffers[i] = tempBuffer;
             
 		}
-//        System.exit(0);
-        cubeMap.setData(byteArrays);
-        return imageBuffers;
+        return byteArrays;
     }
     
-    private Vector2f[] getRectForFaceIndex(int index, int imageWidth, int imageHeight) {
+    private static Vector2f[] getRectForFaceIndex(int index, int imageWidth, int imageHeight) {
     	Vector2f[] result = new Vector2f[2];
     	
     	switch (index) {
@@ -722,7 +712,7 @@ public class TextureManager implements Manager {
     }
 
     public int getTexture(int width, int height, int format, GlTextureTarget target, int depth) {
-        int textureId = genTexture();
+        int textureId = genTextures();
         gpuContext.bindTexture(target, textureId);
 
 

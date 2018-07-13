@@ -12,20 +12,19 @@ public class DynamicCubeMap extends CubeMap {
     private Engine engine;
 
     public DynamicCubeMap(Engine engine, int resolution, int internalFormat, int type, int minFilter, int format, FloatBuffer[] values) {
-        super(engine.getTextureManager(), "", GlTextureTarget.TEXTURE_CUBE_MAP, resolution, resolution, minFilter, GL11.GL_LINEAR, GL11.GL_RGBA, GL11.GL_RGBA ); // TODO: pass formats
+        super(engine.getTextureManager(), "", resolution, resolution, minFilter, GL11.GL_LINEAR, GL11.GL_RGBA, GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
         if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;
-		this.textureId = createTextureID();
 
-        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, textureId);
+        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, getTextureId());
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, getMagFilter());
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, getMinFilter());
         GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
 
         GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalFormat, resolution, resolution, 0, format, type, values[0]);
@@ -39,26 +38,19 @@ public class DynamicCubeMap extends CubeMap {
     }
 
     protected void genHandle(TextureManager textureManager) {
-        if (handle <= 0) {
-            handle = textureManager.getGpuContext().calculate(() -> {
+        if (getHandle() <= 0) {
+            setHandle(textureManager.getGpuContext().calculate(() -> {
                 bind(15);
-                long theHandle = ARBBindlessTexture.glGetTextureHandleARB(textureId);
+                long theHandle = ARBBindlessTexture.glGetTextureHandleARB(getTextureId());
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(theHandle);
                 unbind(15);
                 return theHandle;
-            });
+            }));
         }
     }
 
     void unbind(int unit) {
-        textureManager.getGpuContext().bindTexture(unit, target, 0);
-    }
-    private int createTextureID() 
-    {
-       return GL11.glGenTextures();
+        engine.getGpuContext().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP, 0);
     }
 
-    public void bind() {
-        engine.getGpuContext().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP, textureId);
-    }
 }
