@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.ITexture
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.util.commandqueue.FutureCallable
 import kotlinx.collections.immutable.toImmutableHashMap
 import net.engio.mbassy.listener.Handler
 import org.apache.commons.io.FilenameUtils
@@ -41,7 +42,11 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
         get() = ArrayList(MATERIALS.values)
 
     val bufferMaterialsExtractor = Supplier {
-        ArrayList(materials) as List<SimpleMaterial>
+        engine.commandQueue.calculate(object: FutureCallable<List<SimpleMaterial>>() {
+            override fun execute(): List<SimpleMaterial> {
+                return materials // TODO: Move this out of the update queue
+            }
+        })
     }
     val bufferMaterialsConsumer = BiConsumer<RenderState, List<SimpleMaterial>> { renderState, materials ->
         renderState.entitiesState.materialBuffer.put(0, materials)
