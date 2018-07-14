@@ -418,10 +418,6 @@ public final class OpenGLContext implements GpuContext {
     }
 
     @Override
-    public void execute(Runnable runnable) {
-        execute(runnable, true);
-    }
-    @Override
     public void execute(Runnable runnable, boolean andBlock) {
         if(isOpenGLThread()) {
             runnable.run();

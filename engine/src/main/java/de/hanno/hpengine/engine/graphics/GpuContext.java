@@ -140,7 +140,9 @@ public interface GpuContext {
 
     boolean isInitialized();
 
-    void execute(Runnable runnable);
+    default void execute(Runnable runnable) {
+        execute(runnable, true);
+    }
 
     void execute(Runnable runnable, boolean andBlock);
 

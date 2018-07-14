@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model.texture
 import ddsutil.DDSUtil
 import ddsutil.ImageRescaler
 import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.Reloadable
@@ -27,6 +28,7 @@ import de.hanno.hpengine.engine.model.texture.Texture.UploadState.*
 import org.lwjgl.opengl.GL15.GL_STREAM_COPY
 import org.lwjgl.opengl.GL15.glBufferData
 import org.lwjgl.opengl.GL21.GL_PIXEL_UNPACK_BUFFER
+import java.util.concurrent.ForkJoinPool
 
 //TODO: Remove leading I
 interface ITexture<T> {
@@ -119,13 +121,12 @@ open class Texture internal constructor(protected val textureManager: TextureMan
                 LOGGER.info("Mipmaps already generated")
                 uploadMipMaps(internalFormat)
             }
-            uploadWithPixelBuffer(textureBuffer, internalFormat, width, height, 0, sourceDataCompressed, false)
+            uploadWithPixelBuffer(textureManager.gpuContext, textureBuffer, internalFormat, width, height, 0, sourceDataCompressed, false)
             this.textureManager.gpuContext.execute {
                 if (!mipmapsGenerated) {
                     textureManager.gpuContext.bindTexture(15, this)
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
                     textureManager.gpuContext.unbindTexture(15, this)
-
                 }
             }
             handle = genHandle(this.textureManager, textureId)
@@ -136,22 +137,22 @@ open class Texture internal constructor(protected val textureManager: TextureMan
         this.textureManager.commandQueue.addCommand<Any>(uploadRunnable)
     }
 
-    private fun uploadWithPixelBuffer(textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    private fun uploadWithPixelBuffer(gpuContext: GpuContext, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)
-        val temp = textureManager.gpuContext.calculate {
-            textureManager.gpuContext.bindTexture(15, this)
+        val pixelUnpackBuffer = gpuContext.calculate {
+            gpuContext.bindTexture(15, this)
             pbo.set(GL15.glGenBuffers())
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
             glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity().toLong(), GL_STREAM_COPY)
             val theBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)
-            textureManager.gpuContext.unbindTexture(15, this)
+            gpuContext.unbindTexture(15, this)
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
             theBuffer
         }
-        temp.put(textureBuffer)
-        textureManager.gpuContext.execute {
-            textureManager.gpuContext.bindTexture(15, this)
+        pixelUnpackBuffer.put(textureBuffer)
+        gpuContext.execute {
+            gpuContext.bindTexture(15, this)
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
             GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER)
 
@@ -167,7 +168,7 @@ open class Texture internal constructor(protected val textureManager: TextureMan
                 LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel))
                 GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel)
             }
-            textureManager.gpuContext.unbindTexture(15, this)
+            gpuContext.unbindTexture(15, this)
 
             if (mipmapsGenerated && mipLevel == 0) {
                 uploadState = UPLOADED
@@ -191,12 +192,10 @@ open class Texture internal constructor(protected val textureManager: TextureMan
         for (mipmapIndex in mipmapCount - 1 downTo 1) {
             currentWidth = widths[mipmapIndex - 1]
             currentHeight = heights[mipmapIndex - 1]
-            val tempBuffer = BufferUtils.createByteBuffer(data!![mipmapIndex].size)
-            tempBuffer.rewind()
-            tempBuffer.put(data[mipmapIndex])
-            tempBuffer.rewind()
-            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " + currentHeight)
-            uploadWithPixelBuffer(tempBuffer, internalFormat, currentWidth, currentHeight, mipmapIndex, sourceDataCompressed, true)
+            val tempBuffer = BufferUtils.createByteBuffer(data[mipmapIndex].size).apply {
+                put(data[mipmapIndex])
+            }
+            uploadWithPixelBuffer(textureManager.gpuContext, tempBuffer, internalFormat, currentWidth, currentHeight, mipmapIndex, sourceDataCompressed, true)
         }
     }
 
