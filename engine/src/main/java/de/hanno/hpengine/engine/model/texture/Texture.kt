@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Logger
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.model.texture.ITexture.Companion.genHandle
 import de.hanno.hpengine.engine.model.texture.Texture.UploadState.*
 import org.lwjgl.opengl.GL15.GL_STREAM_COPY
 import org.lwjgl.opengl.GL15.glBufferData
@@ -52,22 +53,26 @@ interface ITexture<T> {
     }
 }
 
-open class Texture internal constructor(protected val textureManager: TextureManager, path: String, val srgba: Boolean, override val width: Int, override val height: Int, private val mipmapCount: Int, mipmapsGenerated: Boolean, protected val srcPixelFormat: Int, sourceDataCompressed: Boolean, protected val data: Array<ByteArray>, override val textureId: Int) : Reloadable, ITexture<ByteArray> {
-    var path = ""
-    private val mipmapsGenerated: Boolean
-    private val sourceDataCompressed: Boolean
+open class Texture internal constructor(protected val textureManager: TextureManager,
+                                        val path: String,
+                                        val srgba: Boolean,
+                                        override val width: Int,
+                                        override val height: Int,
+                                        private val mipmapCount: Int,
+                                        val mipmapsGenerated: Boolean,
+                                        protected val srcPixelFormat: Int,
+                                        val sourceDataCompressed: Boolean,
+                                        protected val data: Array<ByteArray>,
+                                        override val textureId: Int,
+                                        override val minFilter: Int = GL11.GL_LINEAR,
+                                        override val magFilter: Int = GL11.GL_LINEAR) : Reloadable, ITexture<ByteArray> {
+    override val target = TEXTURE_2D
     override var lastUsedTimeStamp = System.currentTimeMillis()
-    @Volatile
-    private var preventUnload = false
+    @Volatile private var preventUnload = false
 
-    @Volatile
-    var uploadState = NOT_UPLOADED
+    @Volatile var uploadState = NOT_UPLOADED
         private set
 
-    override var target = TEXTURE_2D
-    protected val dstPixelFormat: Int = 0
-    override val minFilter: Int = 0
-    override val magFilter: Int = 0
     override var handle = -1L
         protected set
 
@@ -79,64 +84,15 @@ open class Texture internal constructor(protected val textureManager: TextureMan
         }
     }
 
-    init {
-        this.target = TEXTURE_2D
-        this.path = path
-        this.mipmapsGenerated = mipmapsGenerated
-        this.sourceDataCompressed = sourceDataCompressed
-
-    }
-
-    protected fun genHandle(textureManager: TextureManager) {
-        if (handle <= 0) {
-            handle = textureManager.gpuContext.calculate {
-                bind(15)
-                val theHandle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
-                ARBBindlessTexture.glMakeTextureHandleResidentARB(theHandle)
-                unbind(15)
-                theHandle
-            }
+    fun buffer(): ByteBuffer = BufferUtils.createByteBuffer(data[0].size).apply {
+            put(data[0], 0, data[0].size)
+            flip()
         }
-    }
 
     @JvmOverloads
-    fun bind(setUsed: Boolean = true) {
-        if (setUsed) {
-            setUsedNow()
-        }
-        textureManager.gpuContext.bindTexture(target, textureId)
-    }
-
-    @JvmOverloads
-    fun bind(unit: Int, setUsed: Boolean = true) {
-        if (setUsed) {
-            setUsedNow()
-        }
-        textureManager.gpuContext.bindTexture(unit, target, textureId)
-    }
-
-    fun unbind(unit: Int) {
-        textureManager.gpuContext.bindTexture(unit, target, 0)
-    }
-
-    fun buffer(): ByteBuffer {
-        val imageBuffer = ByteBuffer.allocateDirect(data!![0].size)
-        imageBuffer.put(data[0], 0, data[0].size)
-        imageBuffer.flip()
-        return imageBuffer
-    }
-
-    fun upload(textureManager: TextureManager, srgba: Boolean) {
-        if (data == null || data[0] == null) {
-            return
-        }
-        upload(textureManager, buffer(), srgba)
-    }
-
-    @JvmOverloads
-    fun upload(textureManager: TextureManager, textureBuffer: ByteBuffer, srgba: Boolean = false) {
-        val doesntNeedUpload = UPLOADING == uploadState || UPLOADED == uploadState
-        if (doesntNeedUpload) {
+    fun upload(textureBuffer: ByteBuffer = buffer()) {
+        val doesNotNeedUpload = UPLOADING == uploadState || UPLOADED == uploadState
+        if (doesNotNeedUpload) {
             return
         }
 
@@ -144,14 +100,10 @@ open class Texture internal constructor(protected val textureManager: TextureMan
 
         val uploadRunnable = {
             LOGGER.info("Uploading $path")
-            var internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-            if (srgba) {
-                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
-            }
-            val finalInternalformat = internalformat
+            val internalFormat = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 
-            textureManager.gpuContext.execute {
-                bind(15)
+            this.textureManager.gpuContext.execute {
+                textureManager.gpuContext.bindTexture(15, this)
                 if (target == TEXTURE_2D) {
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
@@ -160,59 +112,53 @@ open class Texture internal constructor(protected val textureManager: TextureMan
                     GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
                     GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)))
                 }
-                unbind(15)
+                textureManager.gpuContext.unbindTexture(15, this)
             }
             LOGGER.info("Actually uploading...")
             if (mipmapsGenerated) {
                 LOGGER.info("Mipmaps already generated")
-                uploadMipMaps(finalInternalformat)
+                uploadMipMaps(internalFormat)
             }
-            uploadWithPixelBuffer(textureBuffer, finalInternalformat, width, height, 0, sourceDataCompressed, false)
-            textureManager.gpuContext.execute {
+            uploadWithPixelBuffer(textureBuffer, internalFormat, width, height, 0, sourceDataCompressed, false)
+            this.textureManager.gpuContext.execute {
                 if (!mipmapsGenerated) {
-                    bind(15)
+                    textureManager.gpuContext.bindTexture(15, this)
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
-                    unbind(15)
+                    textureManager.gpuContext.unbindTexture(15, this)
 
                 }
             }
-            genHandle(textureManager)
-            setUploaded()
-            textureManager.postTextureChangedEvent()
+            handle = genHandle(this.textureManager, textureId)
+            uploadState = UPLOADED
+            this.textureManager.postTextureChangedEvent()
         }
 
-        textureManager.commandQueue.addCommand<Any>(uploadRunnable)
+        this.textureManager.commandQueue.addCommand<Any>(uploadRunnable)
     }
 
-    private fun setUploaded() {
-        uploadState = UPLOADED
-        LOGGER.info("Upload finished")
-        LOGGER.fine("Free VRAM: " + textureManager.gpuContext.availableVRAM)
-    }
-
-    private fun uploadWithPixelBuffer(textureBuffer: ByteBuffer, internalformat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    private fun uploadWithPixelBuffer(textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)
         val temp = textureManager.gpuContext.calculate {
-            bind(15)
+            textureManager.gpuContext.bindTexture(15, this)
             pbo.set(GL15.glGenBuffers())
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
             glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity().toLong(), GL_STREAM_COPY)
-            val xxx = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)
-            unbind(15)
+            val theBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)
+            textureManager.gpuContext.unbindTexture(15, this)
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
-            xxx
+            theBuffer
         }
         temp.put(textureBuffer)
         textureManager.gpuContext.execute {
-            bind(15)
+            textureManager.gpuContext.bindTexture(15, this)
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
             GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER)
 
             if (sourceDataCompressed) {
-                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, textureBuffer.capacity(), 0)
+                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer.capacity(), 0)
             } else {
-                GL11.glTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0)
             }
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
             GL15.glDeleteBuffers(pbo.get())
@@ -221,15 +167,15 @@ open class Texture internal constructor(protected val textureManager: TextureMan
                 LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel))
                 GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel)
             }
-            unbind(15)
+            textureManager.gpuContext.unbindTexture(15, this)
 
             if (mipmapsGenerated && mipLevel == 0) {
-                setUploaded()
+                uploadState = UPLOADED
             }
         }
     }
 
-    private fun uploadMipMaps(internalformat: Int) {
+    private fun uploadMipMaps(internalFormat: Int) {
         LOGGER.info("Uploading mipmaps for $path")
         var currentWidth = width
         var currentHeight = height
@@ -250,7 +196,7 @@ open class Texture internal constructor(protected val textureManager: TextureMan
             tempBuffer.put(data[mipmapIndex])
             tempBuffer.rewind()
             LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " + currentHeight)
-            uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, mipmapIndex, sourceDataCompressed, true)
+            uploadWithPixelBuffer(tempBuffer, internalFormat, currentWidth, currentHeight, mipmapIndex, sourceDataCompressed, true)
         }
     }
 
@@ -267,13 +213,7 @@ open class Texture internal constructor(protected val textureManager: TextureMan
 
     override fun getName() = path
 
-    override fun load() {
-        if (UPLOADING == uploadState || UPLOADED == uploadState) {
-            return
-        }
-
-        upload(textureManager, srgba)
-    }
+    override fun load() = upload()
 
     override fun unload() {
         if (uploadState != UPLOADED || preventUnload) {
@@ -287,10 +227,6 @@ open class Texture internal constructor(protected val textureManager: TextureMan
             ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle)
             LOGGER.info("Free VRAM: " + textureManager.gpuContext.availableVRAM)
         }
-    }
-
-    private fun bindWithoutReupload() {
-        textureManager.gpuContext.bindTexture(target, textureId)
     }
 
     fun setPreventUnload(preventUnload: Boolean) {

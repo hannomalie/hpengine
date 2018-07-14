@@ -354,8 +354,8 @@ public class TextureManager implements Manager {
                         mipmapsGenerated,
                         srcPixelFormat,
                         sourceDataCompressed,
-                        data, genTextures());
-                texture.upload(TextureManager.this, textureBuffer, texture.getSrgba());
+                        data, genTextures(), GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_LINEAR);
+                texture.upload(textureBuffer);
                 result = texture;
             }
             LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
@@ -622,16 +622,14 @@ public class TextureManager implements Manager {
     
     private void generateMipMaps(Texture texture, boolean mipmap) {
         gpuContext.execute(() -> {
-            texture.bind(15);
+            gpuContext.bindTexture(15, texture);
             if (mipmap) {
-//                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
                 GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
             }
 
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
-            texture.unbind(15);
+            gpuContext.unbindTexture(15, texture);
         });
     }
     public void generateMipMaps(int textureId) {
