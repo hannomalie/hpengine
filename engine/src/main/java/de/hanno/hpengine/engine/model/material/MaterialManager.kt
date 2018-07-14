@@ -8,15 +8,12 @@ import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.TexturesChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
-import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.ITexture
-import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.util.commandqueue.FutureCallable
 import kotlinx.collections.immutable.toImmutableHashMap
 import net.engio.mbassy.listener.Handler
 import org.apache.commons.io.FilenameUtils
@@ -26,11 +23,11 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiConsumer
 import java.util.function.Supplier
 import java.util.logging.Logger
 import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashMap
 
 class MaterialManager(private val engine: Engine, val textureManager: TextureManager) : Manager {
     val skyboxMaterial: SimpleMaterial

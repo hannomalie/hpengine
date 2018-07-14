@@ -27,6 +27,7 @@ public class MBassadorEventBus implements EventBus {
                 LOGGER.severe(error.getMessage());
                 LOGGER.severe(String.valueOf(error.getCause()));
                 LOGGER.severe(error.getPublishedMessage().toString());
+                error.getCause().printStackTrace();
                 throw new IllegalStateException("Eventbus error");
             });
         this.eventBus = new MBassador(config);

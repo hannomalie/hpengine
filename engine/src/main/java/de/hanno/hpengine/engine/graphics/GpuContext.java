@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.model.texture.ITexture;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -77,15 +78,27 @@ public interface GpuContext {
 
     void activeTexture(int textureUnitIndex);
 
-    void bindTexture(GlTextureTarget target, int textureId);
-
     void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId);
+
+    default void bindTexture(GlTextureTarget target, int textureId) {
+        bindTexture(0, target, textureId);
+    }
+
+    default void bindTexture(int textureUnitIndex, ITexture<?> texture) {
+        bindTexture(textureUnitIndex, texture.getTarget(), texture.getTextureId());
+        texture.setUsedNow();
+    }
 
     void bindTextures(IntBuffer textureIds);
 
     void bindTextures(int count, IntBuffer textureIds);
 
     void bindTextures(int firstUnit, int count, IntBuffer textureIds);
+
+    default void unbindTexture(int textureUnitIndex, ITexture texture) {
+        bindTexture(textureUnitIndex, texture.getTarget(), 0);
+    }
+
 
     void viewPort(int x, int y, int width, int height);
 

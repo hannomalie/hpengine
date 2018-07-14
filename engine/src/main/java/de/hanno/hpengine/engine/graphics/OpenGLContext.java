@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.model.texture.ITexture;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -277,9 +278,6 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
         execute(() -> {
-        // TODO: Use when no bypassing calls to bindtexture any more
-//        if(!textureBindings.containsKey(textureUnitIndex) ||
-//           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
             activeTexture(textureUnitIndex);
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(textureUnitIndex, textureId);
