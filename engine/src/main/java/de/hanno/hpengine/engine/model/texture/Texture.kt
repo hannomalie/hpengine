@@ -40,6 +40,16 @@ interface ITexture<T> {
     fun unload() {} //TODO: Remove this maybe?
     fun setUsedNow() { }
     fun getData(): T
+
+    companion object {
+        fun genHandle(textureManager: TextureManager, textureId: Int): Long {
+            return textureManager.gpuContext.calculate {
+                val theHandle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
+                ARBBindlessTexture.glMakeTextureHandleResidentARB(theHandle)
+                theHandle
+            }
+        }
+    }
 }
 
 open class Texture internal constructor(protected val textureManager: TextureManager, path: String, val srgba: Boolean, override val width: Int, override val height: Int, private val mipmapCount: Int, mipmapsGenerated: Boolean, protected val srcPixelFormat: Int, sourceDataCompressed: Boolean, protected val data: Array<ByteArray>, override val textureId: Int) : Reloadable, ITexture<ByteArray> {
