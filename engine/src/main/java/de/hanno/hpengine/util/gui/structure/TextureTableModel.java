@@ -21,7 +21,7 @@ public class TextureTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         try {
-            return engine.getTextureManager().TEXTURES.size();
+            return engine.getTextureManager().getTextures().size();
         } catch (IllegalStateException e) {
             return 0;
         }
@@ -29,7 +29,7 @@ public class TextureTableModel extends AbstractTableModel {
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            List<Object> paths = Arrays.asList(engine.getTextureManager().TEXTURES.keySet()
+            List<Object> paths = Arrays.asList(engine.getTextureManager().getTextures().keySet()
                     .toArray());
             return paths.get(row);
         } else if(col == 1) {
@@ -46,7 +46,7 @@ public class TextureTableModel extends AbstractTableModel {
     }
 
     private Texture getTexture(int row) {
-        List<Object> textures = Arrays.asList(engine.getTextureManager().TEXTURES.values()
+        List<Object> textures = Arrays.asList(engine.getTextureManager().getTextures().values()
                 .toArray());
         return (Texture) textures.get(row);
     }

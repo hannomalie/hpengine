@@ -191,7 +191,7 @@ public class TextureTest extends TestWithEngine {
     public void testUnloadAndReloadTexture() throws Exception {
         String fileName = "testfolder/stone_normal_streaming_test.dds";
         Assert.assertTrue(new File(fileName).exists());
-        Assert.assertFalse(engine.getTextureManager().TEXTURES.containsKey(fileName));
+        Assert.assertFalse(engine.getTextureManager().getTextures().containsKey(fileName));
         Texture texture = (Texture) engine.getTextureManager().getTexture(fileName);
         while(texture.getUploadState() != UPLOADING) {
             Thread.sleep(20);

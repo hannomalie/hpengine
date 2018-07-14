@@ -24,7 +24,6 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiConsumer
 import java.util.function.Supplier
 import java.util.logging.Logger
@@ -145,9 +144,8 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     fun getMaterial(name: String, hashMap: HashMap<MAP, String>): SimpleMaterial {
         val textures = hashMapOf<MAP, ITexture<*>>()
 
-        for (map in hashMap.keys) {
-            var srgba = map == MAP.DIFFUSE
-            textures[map] = textureManager.getTexture(hashMap[map], srgba)
+        hashMap.forEach { map, value ->
+            textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE)
         }
         val info = SimpleMaterialInfo(name = name, mapsInternal = textures.toImmutableHashMap())
         return getMaterial(info)

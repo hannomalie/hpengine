@@ -39,7 +39,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
     private val nameField = WebTextField(material.materialInfo.name)
 
     private val allTexturesSorted: List<ITexture<*>>
-        get() = engine.textureManager.TEXTURES.values.sortedWith(Comparator<ITexture<*>> { o1, o2 -> o1.toString().compareTo(o2.toString()) })
+        get() = engine.textureManager.textures.values.sortedWith(Comparator<ITexture<*>> { o1, o2 -> o1.toString().compareTo(o2.toString()) })
 
     init {
         isUndecorated = true
