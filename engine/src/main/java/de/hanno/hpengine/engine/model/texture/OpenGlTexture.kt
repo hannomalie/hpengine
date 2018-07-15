@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.util.concurrent.Future
 import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Logger
 import javax.swing.ImageIcon
@@ -158,6 +159,13 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
         @JvmStatic fun buffer(data: Array<ByteArray>): ByteBuffer {
             val imageBuffer = BufferUtils.createByteBuffer(data[0].size)
             imageBuffer.put(data[0], 0, data[0].size)
+            imageBuffer.flip()
+            return imageBuffer
+        }
+        @JvmStatic fun buffer(data: Array<Future<ByteArray>>): ByteBuffer {
+            val actualData = data[0].get()
+            val imageBuffer = BufferUtils.createByteBuffer(actualData.size)
+            imageBuffer.put(actualData, 0, actualData.size)
             imageBuffer.flip()
             return imageBuffer
         }

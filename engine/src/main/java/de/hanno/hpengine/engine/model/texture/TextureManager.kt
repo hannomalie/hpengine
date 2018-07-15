@@ -33,6 +33,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -208,7 +209,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     //                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
                 val array = ByteArray(info.data.capacity())
                 info.data.get(array)
-                array
+                CompletableFuture<ByteArray>().apply { complete(array) }
             }
             val mipMapsGenerated = ddsImage.numMipMaps > 1
 
@@ -222,7 +223,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             val mipMapCount = mipMapCountPlusOne - 1
 
             val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) GL11.GL_RGBA else GL11.GL_RGB
-            val data = listOf(convertImageData(bufferedImage))
+            val data = listOf(CompletableFuture<ByteArray>().apply { convertImageData(bufferedImage) })
             CompleteTextureInfo(TextureInfo(srgba, bufferedImage.width, bufferedImage.height, mipMapCount, srcPixelFormat, false, false), data.toTypedArray())
         }
     }
@@ -565,17 +566,14 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             gpuContext.execute {
                 gpuContext.bindTexture(15, this)
-                if (target == TEXTURE_2D) {
-                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
-                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
-                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT)
-                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT)
-                    GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
-                    GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)))
-                }
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT)
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT)
+                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
+                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureInfo.info.mipMapCount)
                 gpuContext.unbindTexture(15, this)
             }
-            LOGGER.info("Actually uploading...")
             if (textureInfo.info.mipmapsGenerated) {
                 LOGGER.info("Mipmaps already generated")
                 uploadMipMaps(textureInfo, internalFormat)
@@ -596,7 +594,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
     }
 
-    fun OpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    private fun OpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)
         val pixelUnpackBuffer = gpuContext.calculate {
@@ -635,7 +633,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    fun OpenGlTexture.uploadMipMaps(textureInfo: CompleteTextureInfo, internalFormat: Int) {
+    private fun OpenGlTexture.uploadMipMaps(textureInfo: CompleteTextureInfo, internalFormat: Int) {
         LOGGER.info("Uploading mipmaps for $path")
         var currentWidth = width
         var currentHeight = height
@@ -648,13 +646,14 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             widths.add(currentWidth)
             heights.add(currentHeight)
         }
-        for (mipmapIndex in mipmapCount - 1 downTo 1) {
-            currentWidth = widths[mipmapIndex - 1]
-            currentHeight = heights[mipmapIndex - 1]
-            val tempBuffer = BufferUtils.createByteBuffer(textureInfo.data[mipmapIndex].size).apply {
-                put(textureInfo.data[mipmapIndex])
+        for (mipMapIndex in mipmapCount - 1 downTo 1) {
+            val currentWidth = widths[mipMapIndex - 1]
+            val currentHeight = heights[mipMapIndex - 1]
+            val actual = textureInfo.data[mipMapIndex].get()
+            val tempBuffer = BufferUtils.createByteBuffer(actual.size).apply {
+                put(actual)
             }
-            uploadWithPixelBuffer(gpuContext, textureInfo, tempBuffer, internalFormat, currentWidth, currentHeight, mipmapIndex, textureInfo.info.sourceDataCompressed, true)
+            uploadWithPixelBuffer(gpuContext, textureInfo, tempBuffer, internalFormat, currentWidth, currentHeight, mipMapIndex, textureInfo.info.sourceDataCompressed, false)
         }
     }
 

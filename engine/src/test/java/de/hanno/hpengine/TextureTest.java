@@ -16,6 +16,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.model.texture.OpenGlTexture.UploadState.*;
@@ -55,12 +56,12 @@ public class TextureTest extends TestWithEngine {
     }
 
     @Test(timeout = 30000L)
-    public void testEqualityDdsAndRegularTexture() throws IOException {
+    public void testEqualityDdsAndRegularTexture() throws IOException, ExecutionException, InterruptedException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
         File fileAsDds = new File(OpenGlTexture.getFullPathAsDDS(pathToSourceTexture));
         OpenGlTexture regularLoaded = (OpenGlTexture) engine.getTextureManager().getTexture(pathToSourceTexture);
         CompleteTextureInfo textureInfo = engine.getTextureManager().getCompleteTextureInfo(pathToSourceTexture, false);
-        byte[] regularLoadedData = textureInfo.getData()[0];
+        byte[] regularLoadedData = textureInfo.getData()[0].get();
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
         DDSImage.ImageInfo highestMipMapOfDDSImage = allMipMaps[0];
         byte[] ddsDecompressedData = engine.getTextureManager().convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
@@ -104,15 +105,15 @@ public class TextureTest extends TestWithEngine {
     }
 
     @Test(timeout = 30000L)
-    public void testEqualityDifferentTextures() throws IOException {
+    public void testEqualityDifferentTextures() throws IOException, ExecutionException, InterruptedException {
         String pathToFirstSourceTexture = "hp/assets/textures/stone_reflection.png";
         OpenGlTexture regularLoadedFirst = (OpenGlTexture) engine.getTextureManager().getTexture(pathToFirstSourceTexture);
         CompleteTextureInfo textureInfoFirst = engine.getTextureManager().getCompleteTextureInfo(pathToFirstSourceTexture, false);
         String pathToSecondSourceTexture = "hp/assets/textures/wood_diffuse.png";
         OpenGlTexture regularLoadedSecond = (OpenGlTexture) engine.getTextureManager().getTexture(pathToSecondSourceTexture);
         CompleteTextureInfo textureInfoSecond = engine.getTextureManager().getCompleteTextureInfo(pathToSecondSourceTexture, false);
-        byte[] regularLoadedFirstData = textureInfoFirst.getData()[0];
-        byte[] regularLoadedSecondData = textureInfoSecond.getData()[0];
+        byte[] regularLoadedFirstData = textureInfoFirst.getData()[0].get();
+        byte[] regularLoadedSecondData = textureInfoSecond.getData()[0].get();
 
         float expectedFailurePercentage = 70f;
         float actualFailurePercentage = getFailurePercentageWithTolerance(regularLoadedFirstData, regularLoadedSecondData, 2f);
