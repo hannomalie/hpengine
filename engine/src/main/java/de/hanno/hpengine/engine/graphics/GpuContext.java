@@ -6,10 +6,12 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.ITexture;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.IntBuffer;
@@ -87,6 +89,10 @@ public interface GpuContext {
     default void bindTexture(int textureUnitIndex, ITexture<?> texture) {
         bindTexture(textureUnitIndex, texture.getTarget(), texture.getTextureId());
         texture.setUsedNow();
+    }
+
+    default void bindTexture( ITexture<?> texture) {
+        bindTexture(texture.getTarget(), texture.getTextureId());
     }
 
     void bindTextures(IntBuffer textureIds);
@@ -177,4 +183,5 @@ public interface GpuContext {
     void register(RenderTarget target);
 
     List<RenderTarget> getRegisteredRenderTargets();
+
 }

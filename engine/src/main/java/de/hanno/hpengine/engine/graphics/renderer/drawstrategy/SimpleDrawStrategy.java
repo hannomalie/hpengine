@@ -541,11 +541,11 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         engine.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
         engine.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
-        engine.getTextureManager().getCubeMap().bind(6);
+        engine.getGpuContext().bindTexture(6, engine.getTextureManager().getCubeMap());
 //        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //        reflectionBuffer.getRenderedTexture(0);
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
-        engine.getTextureManager().getCubeMap().bind(9);
+        engine.getGpuContext().bindTexture(9, engine.getTextureManager().getCubeMap());
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
         engine.getGpuContext().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
 
@@ -623,7 +623,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         engine.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer.getPositionMap());
         engine.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer.getNormalMap());
-        engine.getTextureManager().getCubeMap().bind(6);
+        engine.getGpuContext().bindTexture(6, engine.getTextureManager().getCubeMap());
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 7);
         engine.getGpuContext().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
         engine.getGpuContext().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());

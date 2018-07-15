@@ -355,7 +355,7 @@ public class EnvironmentSampler extends Entity {
         engine.getGpuContext().bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
         engine.getGpuContext().bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
-        engine.getTextureManager().getCubeMap().bind(4);
+        engine.getGpuContext().bindTexture(4, engine.getTextureManager().getCubeMap());
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
@@ -413,7 +413,7 @@ public class EnvironmentSampler extends Entity {
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, colorMap);
         engine.getGpuContext().bindTexture(8, TEXTURE_2D, colorMap);
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
-        engine.getTextureManager().getCubeMap().bind(9);
+        engine.getGpuContext().bindTexture(9, engine.getTextureManager().getCubeMap());
 
         engine.getGpuContext().bindImageTexture(6, engine.getSceneManager().getScene().getEnvironmentProbeManager().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();
