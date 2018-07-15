@@ -38,8 +38,8 @@ import kotlin.Comparator
 class MaterialView(private val engine: Engine, var material: SimpleMaterial) : WebPanel() {
     private val nameField = WebTextField(material.materialInfo.name)
 
-    private val allTexturesSorted: List<Texture<*>>
-        get() = engine.textureManager.textures.values.sortedWith(Comparator<Texture<*>> { o1, o2 -> o1.toString().compareTo(o2.toString()) })
+    private val allTexturesSorted: List<Texture>
+        get() = engine.textureManager.textures.values.sortedWith(Comparator { o1, o2 -> o1.toString().compareTo(o2.toString()) })
 
     init {
         isUndecorated = true

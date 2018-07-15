@@ -20,19 +20,25 @@ import javax.swing.ImageIcon
 import javax.swing.JFrame
 import javax.swing.JLabel
 
+data class TextureInfo(val srgba: Boolean,
+                       val width: Int,
+                       val height: Int,
+                       val mipMapCount: Int,
+                       val srcPixelFormat: Int,
+                       val mipmapsGenerated: Boolean,
+                       val sourceDataCompressed: Boolean)
+data class CompleteTextureInfo(val info: TextureInfo, val data: Array<ByteArray> )
+
 open class OpenGlTexture internal constructor(protected val textureManager: TextureManager,
                                               val path: String,
                                               val srgba: Boolean,
                                               override val width: Int,
                                               override val height: Int,
                                               val mipmapCount: Int,
-                                              val mipmapsGenerated: Boolean,
                                               val srcPixelFormat: Int,
-                                              val sourceDataCompressed: Boolean,
-                                              val data: Array<ByteArray>,
                                               override val textureId: Int,
                                               override val minFilter: Int = GL11.GL_LINEAR,
-                                              override val magFilter: Int = GL11.GL_LINEAR) : Reloadable, Texture<ByteArray> {
+                                              override val magFilter: Int = GL11.GL_LINEAR) : Reloadable, Texture {
     override val target = TEXTURE_2D
     override var lastUsedTimeStamp = System.currentTimeMillis()
     @Volatile var preventUnload = false
@@ -50,26 +56,12 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
         }
     }
 
-    fun buffer(): ByteBuffer = BufferUtils.createByteBuffer(data[0].size).apply {
-            put(data[0], 0, data[0].size)
-            flip()
-        }
-
-    fun getData(index: Int):ByteArray {
-        while (uploadState != UPLOADED) {
-        }
-        return data[index]
-    }
-    override fun getData(): ByteArray {
-        return getData(0)
-    }
-
     override fun toString() = "(Texture)$path"
 
     override fun getName() = path
 
     override fun load() = with(textureManager) {
-        upload()
+        upload(textureManager.getCompleteTextureInfo(path, srgba))
     }
 
     override fun unload() = with(textureManager) {
@@ -173,7 +165,7 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
         }
 
         @JvmStatic fun buffer(data: Array<ByteArray>): ByteBuffer {
-            val imageBuffer = ByteBuffer.allocateDirect(data[0].size)
+            val imageBuffer = BufferUtils.createByteBuffer(data[0].size)
             imageBuffer.put(data[0], 0, data[0].size)
             imageBuffer.flip()
             return imageBuffer

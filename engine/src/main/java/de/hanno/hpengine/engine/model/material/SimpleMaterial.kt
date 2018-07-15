@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 interface Material: Bufferable {
     var materialInfo: SimpleMaterialInfo
 
-    fun put(map: SimpleMaterial.MAP, texture: Texture<*>): SimpleMaterialInfo {
+    fun put(map: SimpleMaterial.MAP, texture: Texture): SimpleMaterialInfo {
         materialInfo = materialInfo.put(map, texture)
         return materialInfo
     }

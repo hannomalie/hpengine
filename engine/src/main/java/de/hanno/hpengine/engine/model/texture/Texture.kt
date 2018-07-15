@@ -3,8 +3,7 @@ package de.hanno.hpengine.engine.model.texture
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import org.lwjgl.opengl.ARBBindlessTexture
 
-//TODO: Remove leading I
-interface Texture<T> {
+interface Texture {
     val width: Int
     val height: Int
     val textureId: Int
@@ -15,7 +14,6 @@ interface Texture<T> {
     val magFilter: Int
     fun unload() {}
     fun setUsedNow() { }
-    fun getData(): T
 
     companion object {
         fun genHandle(textureManager: TextureManager, textureId: Int): Long {

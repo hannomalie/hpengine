@@ -1,6 +1,7 @@
 package de.hanno.hpengine;
 
 import ddsutil.DDSUtil;
+import de.hanno.hpengine.engine.model.texture.CompleteTextureInfo;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
 import de.hanno.hpengine.engine.model.texture.TextureManager;
@@ -58,7 +59,8 @@ public class TextureTest extends TestWithEngine {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
         File fileAsDds = new File(OpenGlTexture.getFullPathAsDDS(pathToSourceTexture));
         OpenGlTexture regularLoaded = (OpenGlTexture) engine.getTextureManager().getTexture(pathToSourceTexture);
-        byte[] regularLoadedData = regularLoaded.getData();
+        CompleteTextureInfo textureInfo = engine.getTextureManager().getCompleteTextureInfo(pathToSourceTexture, false);
+        byte[] regularLoadedData = textureInfo.getData()[0];
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
         DDSImage.ImageInfo highestMipMapOfDDSImage = allMipMaps[0];
         byte[] ddsDecompressedData = engine.getTextureManager().convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
@@ -105,10 +107,12 @@ public class TextureTest extends TestWithEngine {
     public void testEqualityDifferentTextures() throws IOException {
         String pathToFirstSourceTexture = "hp/assets/textures/stone_reflection.png";
         OpenGlTexture regularLoadedFirst = (OpenGlTexture) engine.getTextureManager().getTexture(pathToFirstSourceTexture);
+        CompleteTextureInfo textureInfoFirst = engine.getTextureManager().getCompleteTextureInfo(pathToFirstSourceTexture, false);
         String pathToSecondSourceTexture = "hp/assets/textures/wood_diffuse.png";
         OpenGlTexture regularLoadedSecond = (OpenGlTexture) engine.getTextureManager().getTexture(pathToSecondSourceTexture);
-        byte[] regularLoadedFirstData = regularLoadedFirst.getData();
-        byte[] regularLoadedSecondData = regularLoadedSecond.getData();
+        CompleteTextureInfo textureInfoSecond = engine.getTextureManager().getCompleteTextureInfo(pathToSecondSourceTexture, false);
+        byte[] regularLoadedFirstData = textureInfoFirst.getData()[0];
+        byte[] regularLoadedSecondData = textureInfoSecond.getData()[0];
 
         float expectedFailurePercentage = 70f;
         float actualFailurePercentage = getFailurePercentageWithTolerance(regularLoadedFirstData, regularLoadedSecondData, 2f);

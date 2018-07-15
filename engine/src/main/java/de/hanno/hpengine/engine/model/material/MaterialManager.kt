@@ -142,7 +142,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     }
 
     fun getMaterial(name: String, hashMap: HashMap<MAP, String>): SimpleMaterial {
-        val textures = hashMapOf<MAP, Texture<*>>()
+        val textures = hashMapOf<MAP, Texture>()
 
         hashMap.forEach { map, value ->
             textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE)

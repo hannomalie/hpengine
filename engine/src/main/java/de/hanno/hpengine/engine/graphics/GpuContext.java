@@ -84,12 +84,12 @@ public interface GpuContext {
         bindTexture(0, target, textureId);
     }
 
-    default void bindTexture(int textureUnitIndex, Texture<?> texture) {
+    default void bindTexture(int textureUnitIndex, Texture texture) {
         bindTexture(textureUnitIndex, texture.getTarget(), texture.getTextureId());
         texture.setUsedNow();
     }
 
-    default void bindTexture(Texture<?> texture) {
+    default void bindTexture(Texture texture) {
         bindTexture(texture.getTarget(), texture.getTextureId());
     }
 
