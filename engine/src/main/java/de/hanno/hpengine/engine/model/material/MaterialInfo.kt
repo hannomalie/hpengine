@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
-import de.hanno.hpengine.engine.model.texture.ITexture
 import de.hanno.hpengine.engine.model.texture.Texture
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.immutableHashMapOf
@@ -23,7 +22,7 @@ interface MaterialInfo {
     val parallaxBias: Float
     val materialType: SimpleMaterial.MaterialType
     val textureLess: Boolean
-    val maps: Map<SimpleMaterial.MAP, ITexture<*>>
+    val maps: Map<SimpleMaterial.MAP, Texture<*>>
 
     fun getHasSpecularMap(): Boolean
     fun getHasNormalMap(): Boolean
@@ -43,7 +42,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
                                                         override val parallaxScale: Float = 0.04f,
                                                         override val parallaxBias: Float = 0.02f,
                                                         override val materialType: SimpleMaterial.MaterialType = DEFAULT,
-                                                        private val mapsInternal: ImmutableMap<SimpleMaterial.MAP, ITexture<*>> = immutableHashMapOf(),
+                                                        private val mapsInternal: ImmutableMap<SimpleMaterial.MAP, Texture<*>> = immutableHashMapOf(),
                                                         override val environmentMapType: SimpleMaterial.ENVIRONMENTMAP_TYPE = SimpleMaterial.ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
 
     override fun getHasSpecularMap() = mapsInternal.containsKey(SimpleMaterial.MAP.SPECULAR)
@@ -63,7 +62,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
             return textureIdsCache!!.get()
         }
 
-    fun put(map: SimpleMaterial.MAP, texture: ITexture<*>): SimpleMaterialInfo {
+    fun put(map: SimpleMaterial.MAP, texture: Texture<*>): SimpleMaterialInfo {
         val result = this.copy(mapsInternal = mapsInternal.put(map, texture))
         if (textureIdsCache != null) textureIdsCache!!.clear()
 
@@ -76,7 +75,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
         return result
     }
 
-    override val maps = mapsInternal as Map<SimpleMaterial.MAP, ITexture<*>>
+    override val maps = mapsInternal as Map<SimpleMaterial.MAP, Texture<*>>
 
     private fun cacheTextures() {
         if (textureIdsCache == null || textureIdsCache!!.get() == null) {

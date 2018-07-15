@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Arrays;
@@ -33,22 +33,22 @@ public class TextureTableModel extends AbstractTableModel {
                     .toArray());
             return paths.get(row);
         } else if(col == 1) {
-            de.hanno.hpengine.engine.model.texture.Texture texture = getTexture(row);
+            de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
             return String.format("Texture %d x %d", texture.getWidth(), texture.getHeight());
         } else if(col == 2) {
-            de.hanno.hpengine.engine.model.texture.Texture texture = getTexture(row);
+            de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
             return texture.getUploadState();
         } else if(col == 3) {
-            de.hanno.hpengine.engine.model.texture.Texture texture = getTexture(row);
+            de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
             return Math.max(0, System.currentTimeMillis() - texture.getLastUsedTimeStamp());
         }
         return "";
     }
 
-    private Texture getTexture(int row) {
+    private OpenGlTexture getTexture(int row) {
         List<Object> textures = Arrays.asList(engine.getTextureManager().getTextures().values()
                 .toArray());
-        return (Texture) textures.get(row);
+        return (OpenGlTexture) textures.get(row);
     }
 
     public String getColumnName(int column) {

@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
-import de.hanno.hpengine.engine.model.texture.ITexture
+import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import kotlinx.collections.immutable.toImmutableHashMap
@@ -142,7 +142,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     }
 
     fun getMaterial(name: String, hashMap: HashMap<MAP, String>): SimpleMaterial {
-        val textures = hashMapOf<MAP, ITexture<*>>()
+        val textures = hashMapOf<MAP, Texture<*>>()
 
         hashMap.forEach { map, value ->
             textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE)

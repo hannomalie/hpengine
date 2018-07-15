@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
-import de.hanno.hpengine.engine.model.texture.ITexture;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 public class AddTextureCommand implements Command<TextureResult> {
@@ -21,7 +20,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	
 	@Override
 	public TextureResult execute(Engine engine) {
-		ITexture texture = null;
+		Texture texture = null;
 		try {
             texture = engine.getTextureManager().getTexture(path, srgba);
 		} catch (Exception e) {
@@ -31,10 +30,10 @@ public class AddTextureCommand implements Command<TextureResult> {
 	}
 	
 	public static class TextureResult extends Result {
-		ITexture texture;
+		Texture texture;
 		private boolean successful = false;
 		
-		public TextureResult(ITexture texture) {
+		public TextureResult(Texture texture) {
 			this.texture = texture;
 			if(texture != null) {
 				successful = true;

@@ -34,6 +34,6 @@ public class DynamicCubeMap extends CubeMap {
         GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+4, 0, internalFormat, resolution, resolution, 0, format, type, values[4]);
         GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+5, 0, internalFormat, resolution, resolution, 0, format, type, values[5]);
 
-        ITexture.Companion.genHandle(engine.getTextureManager(), getTextureId());
+        Texture.Companion.genHandle(engine.getTextureManager(), getTextureId());
     }
 }

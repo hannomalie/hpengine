@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP;
-import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
 
 
 public class MaterialMap implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private transient ConcurrentHashMap<MAP, Texture> textures = new ConcurrentHashMap<>();
+	private transient ConcurrentHashMap<MAP, OpenGlTexture> textures = new ConcurrentHashMap<>();
 	private HashMap<MAP, String> textureNames = new HashMap<>();
 	
 	
@@ -34,7 +34,7 @@ public class MaterialMap implements Serializable {
 			if(!b.getTextures().containsKey(key)) {
 				return false;
 			} else {
-				if (!((Texture) b.getTextures().get(key)).equals((Texture)getTextures().get(key))) {
+				if (!((OpenGlTexture) b.getTextures().get(key)).equals((OpenGlTexture)getTextures().get(key))) {
 					return false;
 				}
 			}
@@ -43,19 +43,19 @@ public class MaterialMap implements Serializable {
 		return true;
 	}
 
-	public Texture get(MAP key) {
+	public OpenGlTexture get(MAP key) {
 		return getTextures().get(key);
 	}
 
-	public void put(MAP key, Texture value) {
+	public void put(MAP key, OpenGlTexture value) {
 		getTextures().put(key, value);
 	}
 
-	public ConcurrentHashMap<MAP, Texture> getTextures() {
+	public ConcurrentHashMap<MAP, OpenGlTexture> getTextures() {
 		return textures;
 	}
 
-	public void setTextures(ConcurrentHashMap<MAP, Texture> textures) {
+	public void setTextures(ConcurrentHashMap<MAP, OpenGlTexture> textures) {
 		this.textures = textures;
 	}
 
@@ -73,7 +73,7 @@ public class MaterialMap implements Serializable {
 	
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 	    in.defaultReadObject();
-	    setTextures(new ConcurrentHashMap<MAP, Texture>());
+	    setTextures(new ConcurrentHashMap<MAP, OpenGlTexture>());
 	}
 	
 	private void writeObject(ObjectOutputStream oos) throws IOException {

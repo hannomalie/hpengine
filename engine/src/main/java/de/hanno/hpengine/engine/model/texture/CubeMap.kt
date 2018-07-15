@@ -7,7 +7,7 @@ import java.io.Serializable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-interface CubeTexture: ITexture<List<ByteArray>>
+interface CubeTexture: Texture<List<ByteArray>>
 
 open class CubeMap(protected val textureManager: TextureManager, private val path: String, override val width: Int, override val height: Int, override val minFilter: Int, override val magFilter: Int, protected var srcPixelFormat: Int, protected var dstPixelFormat: Int, override val textureId: Int, private val data: MutableList<ByteArray>) : CubeTexture, Serializable {
     override var handle: Long = 0

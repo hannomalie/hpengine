@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
-import de.hanno.hpengine.engine.model.texture.Texture;
 
 import java.io.IOException;
 

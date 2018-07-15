@@ -11,9 +11,9 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.model.texture.Texture.Companion.autoConvertToDDS
-import de.hanno.hpengine.engine.model.texture.Texture.Companion.getFullPathAsDDS
-import de.hanno.hpengine.engine.model.texture.Texture.Companion.textureAvailableAsDDS
+import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.autoConvertToDDS
+import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.getFullPathAsDDS
+import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.textureAvailableAsDDS
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.commandqueue.CommandQueue
@@ -61,13 +61,13 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     val commandQueue = CommandQueue()
 
-    val lensFlareTexture: ITexture<*>?
+    val lensFlareTexture: Texture<*>?
     var cubeMap: CubeMap? = null
     private val blur2dProgramSeperableHorizontal: ComputeShaderProgram
     private val blur2dProgramSeperableVertical: ComputeShaderProgram
 
     /** The table of textures that have been loaded in this loader  */
-    var textures: MutableMap<String, ITexture<*>> = ConcurrentHashMap()
+    var textures: MutableMap<String, Texture<*>> = ConcurrentHashMap()
 
     private val loadingTextures = HashSet<String>()
 
@@ -81,7 +81,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
      * Create a new de.hanno.de.hanno.hpengine.texture loader based on the game panel
      *
      */
-    lateinit var defaultTexture: ITexture<*>
+    lateinit var defaultTexture: Texture<*>
         internal set
 
     init {
@@ -169,7 +169,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     private fun loadAllAvailableTextures() {
-        val textureDir = File(Texture.directory)
+        val textureDir = File(OpenGlTexture.directory)
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
         GpuContext.exitOnGLError("Before loadAllAvailableTextures")
         for (file in files) {
@@ -204,7 +204,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false): ITexture<*> {
+    fun getTexture(resourceName: String, srgba: Boolean = false): Texture<*> {
         if (textureLoaded(resourceName)) {
             return textures[resourceName]!!
         }
@@ -227,11 +227,11 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         return convertAndUpload(resourceName, srgba)
     }
 
-    fun convertAndUpload(resourceName: String, srgba: Boolean): ITexture<*> {
-        val texture = commandQueue.calculate(object : FutureCallable<Texture>() {
+    fun convertAndUpload(resourceName: String, srgba: Boolean): Texture<*> {
+        val texture = commandQueue.calculate(object : FutureCallable<OpenGlTexture>() {
             @Throws(Exception::class)
-            override fun execute(): Texture? {
-                return getTextureXXX(resourceName, resourceName, srgba)
+            override fun execute(): OpenGlTexture? {
+                return getTextureXXX(resourceName, srgba)
             }
         })
 
@@ -244,10 +244,10 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    private fun getTextureXXX(path: String, resourceName: String, srgba: Boolean): Texture? {
-        val ddsImageAvailable = textureAvailableAsDDS(path)
-        val imageExists = File(path).exists()
-        LOGGER.info("$path available as dds: $ddsImageAvailable")
+    private fun getTextureXXX(resourceName: String, srgba: Boolean): OpenGlTexture? {
+        val ddsImageAvailable = textureAvailableAsDDS(resourceName)
+        val imageExists = File(resourceName).exists()
+        LOGGER.info("$resourceName available as dds: $ddsImageAvailable")
         val height: Int
         val width: Int
         val mipMapCount: Int
@@ -255,12 +255,11 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         var mipmapsGenerated = false
         var sourceDataCompressed = false
         val data: List<ByteArray>
-        var result: Texture? = null
-        try {
+        return try {
             val start = System.currentTimeMillis()
             if (imageExists) {
                 if (ddsImageAvailable) {
-                    val ddsImage = DDSImage.read(File(getFullPathAsDDS(path)))
+                    val ddsImage = DDSImage.read(File(getFullPathAsDDS(resourceName)))
                     sourceDataCompressed = true
                     height = ddsImage.height
                     width = ddsImage.width
@@ -282,20 +281,17 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     }
                 } else {
                     val bufferedImage = {
-                        val image = this@TextureManager.loadImage(path)
-                        if (image != null && autoConvertToDDS) {
+                        val image = this@TextureManager.loadImage(resourceName) ?: throw IllegalStateException("Can not load texture $resourceName")
+                        if (autoConvertToDDS) {
                             Thread {
                                 try {
-                                    Texture.saveAsDDS(path, image)
+                                    OpenGlTexture.saveAsDDS(resourceName, image)
                                 } catch (e: IOException) {
                                     e.printStackTrace()
                                 }
                             }.start()
                         }
-                        image ?: {
-                            LOGGER.severe("Texture $path cannot be read, default texture returned instead...")
-                            defaultTextureAsBufferedImage
-                        }()
+                        image
                     }()
 
                     width = bufferedImage.width
@@ -311,7 +307,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
                 }
 
-                val texture = Texture(this@TextureManager,
+                val texture = OpenGlTexture(this@TextureManager,
                         resourceName,
                         srgba,
                         width,
@@ -322,18 +318,21 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                         sourceDataCompressed,
                         data.toTypedArray(), genTextures(), GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_LINEAR)
                 texture.upload()
-                result = texture
+                texture
+            } else {
+                defaultTexture as OpenGlTexture // TODO: Remove this cast
+            }.apply {
+                LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + resourceName)
+                postTextureChangedEvent()
+
             }
-            LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path)
-            postTextureChangedEvent()
-            return result
         } catch (e: IOException) {
             e.printStackTrace()
-            LOGGER.severe("Texture not found: $path. Default de.hanno.hpengine.texture returned...")
+            LOGGER.severe("Texture not found: $resourceName. Default texture returned...")
             return null
         } catch (e: NullPointerException) {
             e.printStackTrace()
-            LOGGER.severe("Texture not found: $path. Default de.hanno.hpengine.texture returned...")
+            LOGGER.severe("Texture not found: $resourceName. Default texture returned...")
             return null
         }
 
@@ -345,14 +344,14 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     fun texturePreCompiled(resourceName: String): Boolean {
         val fileName = FilenameUtils.getBaseName(resourceName)
-        val f = File(Texture.directory + fileName + ".hptexture")
+        val f = File(OpenGlTexture.directory + fileName + ".hptexture")
         return f.exists()
     }
 
 
     private fun cubeMapPreCompiled(resourceName: String): Boolean {
         val fileName = FilenameUtils.getBaseName(resourceName)
-        val f = File(Texture.directory + fileName + ".hpcubemap")
+        val f = File(OpenGlTexture.directory + fileName + ".hpcubemap")
         return f.exists()
     }
 
@@ -365,9 +364,9 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
 
         tex = getCubeMap(resourceName,
-                GL11.GL_RGBA, // dst pixel format
-                GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
-                GL11.GL_LINEAR, false)
+                GL11.GL_RGBA,
+                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_LINEAR)
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -377,35 +376,24 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     private fun getCubeMap(resourceName: String,
                            dstPixelFormat: Int,
                            minFilter: Int,
-                           magFilter: Int, asStream: Boolean): CubeMap {
+                           magFilter: Int): CubeMap {
 
-        var srcPixelFormat = 0
 
-        var bufferedImage: BufferedImage? = null
-        if (asStream) {
-            bufferedImage = loadImageAsStream(resourceName)
+        val bufferedImage: BufferedImage = loadImage(resourceName) ?: throw IOException("Cannot load image $resourceName")
+
+        val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) {
+            GL11.GL_RGBA
         } else {
-            bufferedImage = loadImage(resourceName)
+            GL11.GL_RGB
         }
-
-        if (bufferedImage!!.colorModel.hasAlpha()) {
-            srcPixelFormat = GL11.GL_RGBA
-        } else {
-            srcPixelFormat = GL11.GL_RGB
-        }
-        // create the de.hanno.de.hanno.hpengine.texture ID for this de.hanno.de.hanno.hpengine.texture
-        val textureID = genTextures()
-
         val width = bufferedImage.width
         val height = bufferedImage.height
 
         val data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
 
-        val cubeMap = CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, dstPixelFormat, genTextures(), data)
-        gpuContext.bindTexture(cubeMap)
-        upload(cubeMap)
-
-        return cubeMap
+        return CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, dstPixelFormat, genTextures(), data).apply {
+            upload(this)
+        }
     }
 
     fun upload(cubeMap: CubeMap) {
@@ -495,7 +483,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     }
 
-    private fun generateMipMaps(texture: Texture, mipmap: Boolean) {
+    private fun generateMipMaps(texture: OpenGlTexture, mipmap: Boolean) {
         gpuContext.execute {
             gpuContext.bindTexture(15, texture)
             if (mipmap) {
@@ -675,13 +663,13 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     @JvmOverloads
-    fun Texture.upload() {
-        val doesNotNeedUpload = Texture.UploadState.UPLOADING == uploadState || Texture.UploadState.UPLOADED == uploadState
+    fun OpenGlTexture.upload() {
+        val doesNotNeedUpload = OpenGlTexture.UploadState.UPLOADING == uploadState || OpenGlTexture.UploadState.UPLOADED == uploadState
         if (doesNotNeedUpload) {
             return
         }
 
-        uploadState = Texture.UploadState.UPLOADING
+        uploadState = OpenGlTexture.UploadState.UPLOADING
 
         val uploadRunnable = {
             LOGGER.info("Uploading $path")
@@ -712,15 +700,15 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     gpuContext.unbindTexture(15, this)
                 }
             }
-            handle = ITexture.genHandle(this@TextureManager, textureId)
-            uploadState = Texture.UploadState.UPLOADED
+            handle = Texture.genHandle(this@TextureManager, textureId)
+            uploadState = OpenGlTexture.UploadState.UPLOADED
             this@TextureManager.postTextureChangedEvent()
         }
 
         this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
     }
 
-    fun Texture.uploadWithPixelBuffer(gpuContext: GpuContext, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    fun OpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)
         val pixelUnpackBuffer = gpuContext.calculate {
@@ -754,12 +742,12 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             gpuContext.unbindTexture(15, this)
 
             if (mipmapsGenerated && mipLevel == 0) {
-                uploadState = Texture.UploadState.UPLOADED
+                uploadState = OpenGlTexture.UploadState.UPLOADED
             }
         }
     }
 
-    fun Texture.uploadMipMaps(internalFormat: Int) {
+    fun OpenGlTexture.uploadMipMaps(internalFormat: Int) {
         LOGGER.info("Uploading mipmaps for $path")
         var currentWidth = width
         var currentHeight = height
@@ -782,13 +770,13 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    fun Texture.unloadTexture() {
-        if (uploadState != Texture.UploadState.UPLOADED || preventUnload) {
+    fun OpenGlTexture.unloadTexture() {
+        if (uploadState != OpenGlTexture.UploadState.UPLOADED || preventUnload) {
             return
         }
 
         LOGGER.info("Unloading $path")
-        uploadState = Texture.UploadState.NOT_UPLOADED
+        uploadState = OpenGlTexture.UploadState.NOT_UPLOADED
 
         gpuContext.execute {
             ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle)

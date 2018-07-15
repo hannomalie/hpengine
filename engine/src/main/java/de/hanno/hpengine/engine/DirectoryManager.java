@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.SimpleScene;
-import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -29,7 +29,7 @@ public class DirectoryManager implements Manager {
         ArrayList<File> dirs = new ArrayList<>();
         dirs.add(new File(WORKDIR_NAME));
         dirs.add(new File(ASSETDIR_NAME));
-        dirs.add(new File(Texture.directory));
+        dirs.add(new File(OpenGlTexture.directory));
         dirs.add(new File(SimpleMaterial.Companion.getDirectory()));
         dirs.add(new File(Entity.getDirectory()));
         dirs.add(new File(SimpleScene.Companion.getDirectory()));
