@@ -6,9 +6,8 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*
-import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.graphics.shader.define.Define
+import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.autoConvertToDDS
@@ -40,84 +39,29 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-/**
- * A utility class to load textures for JOGL. This source is based
- * on a texture that can be found in the Java Gaming (www.javagaming.org)
- * Wiki. It has been simplified slightly for explicit 2D graphics use.
- *
- * OpenGL uses a particular image format. Since the images that are
- * loaded from disk may not match this format this loader introduces
- * a intermediate image which the source image is copied into. In turn,
- * this image is used as source for the OpenGL texture.
- *
- * @author Kevin Glass
- * @author Brian Matzon
- */
 class TextureManager(private val eventBus: EventBus, programManager: ProgramManager,
                      val gpuContext: GpuContext) : Manager {
 
-    @Volatile
-    lateinit var defaultTextureAsBufferedImage: BufferedImage
-        private set
-
     val commandQueue = CommandQueue()
 
-    val lensFlareTexture: Texture?
-    var cubeMap: CubeMap? = null
-    private val blur2dProgramSeparableHorizontal: ComputeShaderProgram
-    private val blur2dProgramSeparableVertical: ComputeShaderProgram
-
-    /** The table of textures that have been loaded in this loader  */
-    var textures: MutableMap<String, Texture> = ConcurrentHashMap()
-
-    private val loadingTextures = HashSet<String>()
-
     /** The colour model including alpha for the GL image  */
-    private val glAlphaColorModel: ColorModel
+    private val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+            intArrayOf(8, 8, 8, 8),
+            true,
+            false,
+            ComponentColorModel.TRANSLUCENT,
+            DataBuffer.TYPE_BYTE)
 
     /** The colour model for the GL image  */
-    private val glColorModel: ColorModel
-
-    /**
-     * Create a new de.hanno.de.hanno.hpengine.texture loader based on the game panel
-     *
-     */
-    lateinit var defaultTexture: Texture
-        internal set
+    private val glColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+            intArrayOf(8, 8, 8, 0),
+            false,
+            false,
+            ComponentColorModel.OPAQUE,
+            DataBuffer.TYPE_BYTE)
 
     init {
-        println("TextureManager constructor")
-        GpuContext.exitOnGLError("Begin TextureManager constructor")
-        glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                intArrayOf(8, 8, 8, 8),
-                true,
-                false,
-                ComponentColorModel.TRANSLUCENT,
-                DataBuffer.TYPE_BYTE)
-
-        glColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                intArrayOf(8, 8, 8, 0),
-                false,
-                false,
-                ComponentColorModel.OPAQUE,
-                DataBuffer.TYPE_BYTE)
-
-        //    	loadAllAvailableTextures();
-
-        val horizontalDefines = object : Defines() {
-            init {
-                add(Define.getDefine("HORIZONTAL", true))
-            }
-        }
-        val verticalDefines = object : Defines() {
-            init {
-                add(Define.getDefine("VERTICAL", true))
-            }
-        }
-        blur2dProgramSeparableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines)
-        blur2dProgramSeparableVertical = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines)
-
-        GpuContext.exitOnGLError("After TextureManager constructor")
+//    	loadAllAvailableTextures();
 
         if (USE_TEXTURE_STREAMING) {
             object : TimeStepThread("TextureWatcher", 0.5f) {
@@ -141,32 +85,26 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                 }
             }.start()
         }
-
-        loadDefaultTexture()
-        GpuContext.exitOnGLError("After loadDefaultTexture")
-        lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true)
-        GpuContext.exitOnGLError("After load lensFlareTexture")
-        try {
-            cubeMap = getCubeMap("hp/assets/textures/skybox.png")
-            GpuContext.exitOnGLError("After load cubemap")
-            this.gpuContext.activeTexture(0)
-            //            instance.generateMipMapsCubeMap(cubeMap.getTextureId());
-        } catch (e: IOException) {
-            LOGGER.severe(e.message)
-        }
-
     }
 
-    fun loadDefaultTexture() {
-        val defaultTexturePath = "hp/assets/models/textures/gi_flag.png"
-        defaultTexture = getTexture(defaultTexturePath, true)
-        try {
-            defaultTextureAsBufferedImage = loadImage(defaultTexturePath) ?: throw IllegalStateException("Cannot load default texture!")
-        } catch (e: IOException) {
-            e.printStackTrace()
-            System.exit(-1)
-        }
+    /** The table of textures that have been loaded in this loader  */
+    var textures: MutableMap<String, Texture> = ConcurrentHashMap()
 
+    val lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true)
+    var cubeMap = getCubeMap("hp/assets/textures/skybox.png")
+    private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("HORIZONTAL", true)))
+    private val blur2dProgramSeparableVertical = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("VERTICAL", true)))
+
+    private val temp = loadDefaultTexture()
+    val defaultTexture = temp.first
+    val defaultTextureAsBufferedImage = temp.second
+
+
+    private fun loadDefaultTexture(): Pair<Texture, BufferedImage> {
+        val defaultTexturePath = "hp/assets/models/textures/gi_flag.png"
+        val defaultTexture = getTexture(defaultTexturePath, true)
+        val defaultTextureAsBufferedImage = loadImage(defaultTexturePath) ?: throw IllegalStateException("Cannot load default texture!")
+        return Pair(defaultTexture, defaultTextureAsBufferedImage)
     }
 
     private fun loadAllAvailableTextures() {
@@ -195,53 +133,26 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         return true
     }
 
-    /**
-     * Create a new de.hanno.de.hanno.hpengine.texture ID
-     *
-     * @return A new de.hanno.de.hanno.hpengine.texture ID
-     */
-    private fun genTextures(): Int {
-        return gpuContext.genTextures()
-    }
-
     @JvmOverloads
     fun getTexture(resourceName: String, srgba: Boolean = false): Texture {
         if (textureLoaded(resourceName)) {
             return textures[resourceName]!!
         }
-        if (!loadingTextures.contains(resourceName)) {
-            loadingTextures.add(resourceName)
-        } else {
-            while (!textureLoaded(resourceName)) {
-                LOGGER.info("Waiting for texture $resourceName to become available...")
-                try {
-                    Thread.sleep(10)
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
-
-            }
-            return textures[resourceName]!!
-        }
         LOGGER.info("$resourceName requested")
 
-        return convertAndUpload(resourceName, srgba)
+        return convertAndUpload(resourceName, srgba) ?: {
+            LOGGER.severe("No texture loaded for $resourceName")
+            defaultTexture
+        }()
     }
 
-    fun convertAndUpload(resourceName: String, srgba: Boolean): Texture {
-        val texture = commandQueue.calculate(object : FutureCallable<OpenGlTexture>() {
-            @Throws(Exception::class)
+    private fun convertAndUpload(resourceName: String, srgba: Boolean): Texture? {
+        return commandQueue.calculate(object : FutureCallable<OpenGlTexture>() {
             override fun execute(): OpenGlTexture? {
                 return getOpenGlTexture(resourceName, srgba)
             }
-        })
-
-        return if (texture != null) {
-            textures[resourceName] = texture
-            texture
-        } else {
-            LOGGER.severe("No texture loaded for $resourceName")
-            defaultTexture
+        })?.apply {
+            textures[resourceName] = this
         }
     }
 
@@ -252,16 +163,17 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             if (imageExists) {
                 val textureInfo = getCompleteTextureInfo(resourceName, srgba)
 
-                val texture = OpenGlTexture(this@TextureManager,
+                OpenGlTexture(this@TextureManager,
                         resourceName,
                         srgba,
                         textureInfo.info.width,
                         textureInfo.info.height,
                         textureInfo.info.mipMapCount,
                         textureInfo.info.srcPixelFormat,
-                        genTextures(), GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_LINEAR)
-                texture.upload(textureInfo)
-                texture
+                        gpuContext.genTextures(), GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_LINEAR).apply {
+
+                    upload(textureInfo)
+                }
             } else {
                 defaultTexture as OpenGlTexture // TODO: Remove this cast
             }.apply {
@@ -302,9 +214,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             CompleteTextureInfo(TextureInfo(srgba, ddsImage.width, ddsImage.height, mipMapCount, GL11.GL_RGB, mipMapsGenerated, true), data.toTypedArray())
         } else {
-            val bufferedImage = (loadImage(resourceName)
-                    ?: throw IllegalStateException("Can not load texture $resourceName")).apply {
-                handleDdsConversion(resourceName, this)
+            val bufferedImage = (loadImage(resourceName) ?: throw IllegalStateException("Can not load texture $resourceName")).apply {
+                    handleDdsConversion(resourceName, this)
                 }
 
             val mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(bufferedImage.width, bufferedImage.height)
@@ -340,18 +251,12 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     @Throws(IOException::class)
     fun getCubeMap(resourceName: String): CubeMap? {
-        var tex: CubeMap? = textures[resourceName + "_cube"] as CubeMap?
-
-        if (tex != null) {
-            return tex
-        }
-
-        tex = getCubeMap(resourceName,
+        val tex: CubeMap? = textures[resourceName + "_cube"] as CubeMap? ?: getCubeMap(resourceName,
                 GL11.GL_RGBA,
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
                 GL11.GL_LINEAR)
 
-        textures[resourceName + "_cube"] = tex
+        textures[resourceName + "_cube"] = tex as Texture
         return tex
     }
 
@@ -374,7 +279,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         val data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
 
-        return CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, dstPixelFormat, genTextures(), data).apply {
+        return CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, dstPixelFormat, gpuContext.genTextures(), data).apply {
             upload(this)
         }
     }
@@ -547,7 +452,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     @JvmOverloads
     fun getTexture(width: Int, height: Int, format: Int, target: GlTextureTarget, depth: Int = 1): Int {
-        val textureId = genTextures()
+        val textureId = gpuContext.genTextures()
         gpuContext.bindTexture(target, textureId)
 
 

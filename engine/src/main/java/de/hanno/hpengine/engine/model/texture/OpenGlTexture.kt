@@ -20,15 +20,6 @@ import javax.swing.ImageIcon
 import javax.swing.JFrame
 import javax.swing.JLabel
 
-data class TextureInfo(val srgba: Boolean,
-                       val width: Int,
-                       val height: Int,
-                       val mipMapCount: Int,
-                       val srcPixelFormat: Int,
-                       val mipmapsGenerated: Boolean,
-                       val sourceDataCompressed: Boolean)
-data class CompleteTextureInfo(val info: TextureInfo, val data: Array<ByteArray> )
-
 open class OpenGlTexture internal constructor(protected val textureManager: TextureManager,
                                               val path: String,
                                               val srgba: Boolean,
