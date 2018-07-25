@@ -8,8 +8,8 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
+import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -41,6 +41,10 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
 
     private int[] indicesCounts;
     private int[] baseVertices;
+
+    public int[] getBaseVertices() {
+        return baseVertices;
+    }
 
     protected String materialName = "";
 
