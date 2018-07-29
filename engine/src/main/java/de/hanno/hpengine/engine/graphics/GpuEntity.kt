@@ -4,13 +4,13 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.math.Vector3f
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.struct.SlidingWindow
+import de.hanno.struct.Struct
 import org.joml.Matrix4f
 import java.nio.ByteBuffer
 
 typealias HpMatrix = de.hanno.hpengine.engine.math.Matrix4f
 
-class GpuEntityXXX: SlidingWindow() {
+class GpuEntityXXX(parent: Struct? = null): Struct(parent) {
     val trafo by HpMatrix(this)
     var selected by 0
         private set
@@ -30,9 +30,9 @@ class GpuEntityXXX: SlidingWindow() {
     val dummy1 by 0
     val dummy2 by 0
     val min by Vector3f(this)
-    val dummy3 by 0.0f
+    var dummy3 by 0.0f
     val max by Vector3f(this)
-    val dummy4 by 0.0f
+    var dummy4 by 0.0f
 
     fun setTrafo(source: Matrix4f) {
         trafo.m00 = source.m00()
@@ -75,6 +75,12 @@ class GpuEntityXXX: SlidingWindow() {
                 |material: $materialIndex
                 |baseVertex: $baseVertex
                 """.trimMargin()
+    }
+
+    companion object {
+        fun getBytesPerInstance(): Int {
+            return 16 * java.lang.Float.BYTES + 16 * Integer.BYTES + 8 * java.lang.Float.BYTES
+        }
     }
 }
 

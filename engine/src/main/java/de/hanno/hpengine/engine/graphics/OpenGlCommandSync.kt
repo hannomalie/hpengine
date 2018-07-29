@@ -23,3 +23,9 @@ class OpenGlCommandSync internal constructor() : GpuCommandSync {
         }
     }
 }
+
+fun checkCommandSyncsReturnUnsignaled(commandSyncs: List<OpenGlCommandSync>): List<OpenGlCommandSync> {
+    return commandSyncs.filter { !it.signaled }.apply {
+        forEach { it.checkSignal() }
+    }
+}

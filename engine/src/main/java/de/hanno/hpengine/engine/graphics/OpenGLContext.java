@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+import static de.hanno.hpengine.engine.graphics.OpenGlCommandSyncKt.checkCommandSyncsReturnUnsignaled;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBClearTexture.glClearTexImage;
 import static org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage;
@@ -209,15 +210,7 @@ public final class OpenGLContext implements GpuContext {
     }
 
     private void checkCommandSyncs() {
-        Iterator<OpenGlCommandSync> iterator = commandSyncs.iterator();
-        while(iterator.hasNext()) {
-            OpenGlCommandSync sync = iterator.next();
-            sync.checkSignal();
-            if(sync.isSignaled()) {
-                sync.delete();
-                iterator.remove();
-            }
-        }
+        commandSyncs = checkCommandSyncsReturnUnsignaled(commandSyncs);
     }
 
     private void executePerFrameCommands() {

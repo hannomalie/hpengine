@@ -38,7 +38,7 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
         }
 
     val drawRunnable: Runnable = object : Runnable {
-        internal var lastTimeSwapped = true
+        var lastTimeSwapped = true
         override fun run() {
             renderState.startRead()
 

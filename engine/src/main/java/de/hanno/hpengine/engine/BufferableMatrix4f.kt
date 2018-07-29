@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import org.joml.Matrix4f
+import java.lang.Float
 import java.nio.ByteBuffer
 
 class BufferableMatrix4f : Matrix4f, Bufferable {
@@ -30,5 +31,9 @@ class BufferableMatrix4f : Matrix4f, Bufferable {
         }
     }
 
-    override fun getBytesPerObject() = java.lang.Float.BYTES * 16
+    override fun getBytesPerObject() = getBytesPerInstance()
+
+    companion object {
+        fun getBytesPerInstance() = Float.BYTES * 16
+    }
 }

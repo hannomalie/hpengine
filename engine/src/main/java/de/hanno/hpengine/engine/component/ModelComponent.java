@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.GpuEntity;
+import de.hanno.hpengine.engine.graphics.GpuEntityXXX;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
@@ -14,6 +15,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
+import de.hanno.struct.StructArray;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
@@ -415,113 +417,6 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         buffer.putFloat(1);
     }
 
-    public List<GpuEntity> toEntities(List<GpuEntity> gpuEntitiesPool) {
-
-        List<GpuEntity> result = new ArrayList<>();
-
-        int meshIndex = 0;
-        List<Mesh> meshes = getMeshes();
-        for(Mesh mesh : meshes) {
-            int materialIndex = mesh.getMaterial().getMaterialIndex();
-            {
-                GpuEntity target;
-                if(!gpuEntitiesPool.isEmpty()) {
-                    target = gpuEntitiesPool.get(gpuEntitiesPool.size() - 1);
-                    gpuEntitiesPool.remove(gpuEntitiesPool.size() - 1);
-                    target.setTrafo(entity.getTransformation());
-                    target.setSelected(entity.isSelected());
-                    target.setMaterialIndex(materialIndex);
-                    target.setUpdate(entity.getUpdate());
-                    target.setMeshBufferIndex(entityBufferIndex + meshIndex);
-                    target.setEntityIndex(entity.getIndex());
-                    target.setMeshIndex(meshIndex);
-                    target.setBaseVertex(baseVertices[meshIndex]);
-                    target.setBaseJointIndex(getBaseJointIndex());
-                    target.setAnimationFrame0(getAnimationFrame0());
-                    target.setInvertedTexCoordY(isInvertTexCoordY());
-                    target.setAabb(getMinMax(entity, mesh));
-                } else {
-                    target = new GpuEntity(entity.getTransformation(),
-                            entity.isSelected(),
-                            materialIndex,
-                            entity.getUpdate(),
-                            entityBufferIndex + meshIndex,
-                            entity.getIndex(),
-                            meshIndex,
-                            baseVertices[meshIndex],
-                            getBaseJointIndex(),
-                            getAnimationFrame0(),
-                            isInvertTexCoordY(),
-                            getMinMax(entity, mesh));
-                }
-                result.add(target);
-            }
-
-            for(Cluster cluster : getClusters(entity)) {
-                for(int i = 0; i < cluster.size(); i++) {
-                    Instance instance = cluster.get(i);
-                    Matrix4f instanceMatrix = instance.getTransformation();
-                    int instanceMaterialIndex = instance.getMaterials().get(meshIndex).getMaterialIndex();
-
-                    GpuEntity target;
-                    if(!gpuEntitiesPool.isEmpty()) {
-                        target = gpuEntitiesPool.get(gpuEntitiesPool.size() - 1);
-                        gpuEntitiesPool.remove(gpuEntitiesPool.size() - 1);
-                        target.setTrafo(instanceMatrix);
-                        target.setSelected(entity.isSelected());
-                        target.setMaterialIndex(instanceMaterialIndex);
-                        target.setUpdate(entity.getUpdate());
-                        target.setMeshBufferIndex(entityBufferIndex + meshIndex);
-                        target.setEntityIndex(entity.getIndex());
-                        target.setMeshIndex(meshIndex);
-                        target.setBaseVertex(baseVertices[meshIndex]);
-                        target.setBaseJointIndex(getBaseJointIndex());
-                        target.setAnimationFrame0(instance.getAnimationController().getCurrentFrameIndex());
-                        target.setInvertedTexCoordY(isInvertTexCoordY());
-                        target.setAabb(instance.getMinMaxWorld());
-                    } else {
-                        target = new GpuEntity(instanceMatrix,
-                                entity.isSelected(),
-                                instanceMaterialIndex,
-                                entity.getUpdate(),
-                                entityBufferIndex + meshIndex,
-                                entity.getIndex(),
-                                meshIndex,
-                                baseVertices[meshIndex],
-                                getBaseJointIndex(),
-                                instance.getAnimationController().getCurrentFrameIndex(),
-                                isInvertTexCoordY(),
-                                instance.getMinMaxWorld());
-                    }
-
-                    result.add(target);
-                }
-            }
-
-            // TODO: This has to be the outer loop i think?
-            if(entity.hasParent()) {
-                for(Instance instance : getInstances(entity)) {
-                    Matrix4f instanceMatrix = instance.getTransformation();
-
-                    result.add(new GpuEntity(instanceMatrix,
-                            entity.isSelected(),
-                            materialIndex,
-                            entity.getUpdate(),
-                            entityBufferIndex + meshIndex,
-                            entity.getIndex(),
-                            meshIndex,
-                            baseVertices[meshIndex],
-                            getBaseJointIndex(),
-                            instance.getAnimationController().getCurrentFrameIndex(),
-                            isInvertTexCoordY(),
-                            instance.getMinMaxWorld()));
-                }
-            }
-            meshIndex++;
-        }
-
-        return result;
-    }
     @Override
     public String debugPrintFromBuffer(ByteBuffer buffer) {
         return getDebugStringFromBuffer(buffer);
