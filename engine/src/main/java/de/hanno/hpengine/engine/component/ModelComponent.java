@@ -11,11 +11,16 @@ import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
+import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
+import de.hanno.hpengine.engine.scene.VertexXXX;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
+import de.hanno.struct.Struct;
 import de.hanno.struct.StructArray;
+import de.hanno.struct.StructArrayKt;
+import kotlin.jvm.functions.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
@@ -29,6 +34,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.*;
+import static de.hanno.struct.StructArrayKt.*;
 
 
 public class ModelComponent extends BaseComponent implements Serializable, Bufferable {
@@ -149,8 +155,19 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
+        StructArray<VertexXXX> converted = new StructArray<>(null, compiledVertices.size(), VertexXXX::new);
+        for(int i = 0; i < compiledVertices.size(); i++) {
+            Vertex source = (Vertex) compiledVertices.get(i);
+            VertexXXX target = converted.getAtIndex(i);
+            target.getPosition().set(source.getPosition());
+            target.getTexCoord().set(source.getTexCoord());
+            target.getNormal().set(source.getNormal());
+        }
+
         gpuContext.execute(() -> {
-            vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
+            int bytesPerObject = Vertex.Companion.getSizeInBytes();
+            vertexIndexBuffer.getVertexBuffer().setCapacityInBytes(bytesPerObject * compiledVertices.size());
+            copyTo(converted.getBuffer(), vertexIndexBuffer.getVertexBuffer().getBuffer(), true, vertexIndexOffsets.vertexOffset*bytesPerObject);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);

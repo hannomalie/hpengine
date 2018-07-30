@@ -35,7 +35,8 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
         return buffer;
     }
 
-    protected synchronized void setCapacityInBytes(int requestedCapacity) {
+    @Override
+    public synchronized void setCapacityInBytes(int requestedCapacity) {
         int capacityInBytes = requestedCapacity;
         if(capacityInBytes <= 0) { capacityInBytes = 10; }
 

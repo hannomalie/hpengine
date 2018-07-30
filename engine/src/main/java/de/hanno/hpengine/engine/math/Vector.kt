@@ -1,12 +1,34 @@
 package de.hanno.hpengine.engine.math
 
-import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.struct.Struct
+import org.joml.Matrix4f
+import org.joml.Vector4f
 
 class Vector3f(parent: Struct? = null) : Struct(parent) {
     var x by 0.0f
     var y by 0.0f
     var z by 0.0f
+
+    fun set(target: org.joml.Vector3f) {
+        this.x = target.x
+        this.y = target.y
+        this.z = target.z
+    }
+
+    fun set(target: Vector4f) {
+        this.x = target.x
+        this.y = target.y
+        this.z = target.z
+    }
+}
+class Vector2f(parent: Struct? = null) : Struct(parent) {
+    var x by 0.0f
+    var y by 0.0f
+
+    fun set(target: org.joml.Vector2f) {
+        this.x = target.x
+        this.y = target.y
+    }
 }
 class Matrix4f(parent: Struct? = null): Struct(parent) {
     var m00 by 0.0f
@@ -35,7 +57,7 @@ class Matrix4f(parent: Struct? = null): Struct(parent) {
             """.trimMargin()
     }
 
-    fun set(joint: BufferableMatrix4f) {
+    fun <T: Matrix4f> set(joint: T) {
         this.m00 = joint.m00()
         this.m01 = joint.m01()
         this.m02 = joint.m02()

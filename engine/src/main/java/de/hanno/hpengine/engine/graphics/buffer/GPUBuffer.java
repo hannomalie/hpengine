@@ -6,6 +6,8 @@ import java.nio.IntBuffer;
 import java.util.List;
 
 public interface GPUBuffer<T extends Bufferable> {
+    default void setCapacityInBytes(int requestedCapacity) { throw new IllegalStateException("NOT IMPLEMENTED"); }
+
     void bind();
 
     void unbind();
