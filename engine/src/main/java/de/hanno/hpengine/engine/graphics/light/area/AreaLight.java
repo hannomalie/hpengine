@@ -179,6 +179,10 @@ public class AreaLight implements Component, Bufferable {
 
 	@Override
 	public int getBytesPerObject() {
+		return getBytesPerInstance();
+	}
+
+	public static int getBytesPerInstance() {
 		return Float.BYTES * 24;
 	}
 }

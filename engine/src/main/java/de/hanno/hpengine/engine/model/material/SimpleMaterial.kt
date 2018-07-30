@@ -9,6 +9,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
 import java.io.Serializable
+import java.lang.Double
+import java.lang.Float
 import java.nio.ByteBuffer
 
 interface Material: Bufferable {
@@ -130,11 +132,13 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
     }
 
     override fun getBytesPerObject(): Int {
-        return 10 * java.lang.Float.BYTES + 6 * Integer.BYTES + 6 * java.lang.Double.BYTES + 2 * Integer.BYTES
+        return Companion.bytesPerObject
     }
+
 
     companion object {
 
+        const val bytesPerObject = 10 * Float.BYTES + 6 * Integer.BYTES + 6 * Double.BYTES + 2 * Integer.BYTES
         private const val serialVersionUID = 1L
 
         var MIPMAP_DEFAULT = true

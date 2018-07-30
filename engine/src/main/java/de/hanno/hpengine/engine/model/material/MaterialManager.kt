@@ -48,7 +48,11 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
         })
     }
     val bufferMaterialsConsumer = BiConsumer<RenderState, List<SimpleMaterial>> { renderState, materials ->
-        renderState.entitiesState.materialBuffer.put(0, materials)
+        renderState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
+        renderState.entitiesState.materialBuffer.buffer.rewind()
+        for (material in materials) {
+            material.putToBuffer(renderState.materialBuffer.buffer)
+        }
     }
     val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.RareAction<List<SimpleMaterial>>(bufferMaterialsExtractor, bufferMaterialsConsumer, engine))
 
