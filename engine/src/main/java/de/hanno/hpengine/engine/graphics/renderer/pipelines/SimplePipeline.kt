@@ -12,8 +12,12 @@ import de.hanno.hpengine.engine.model.CommandBuffer
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.struct.Struct
+import de.hanno.struct.StructArray
+import de.hanno.struct.Structable
+import de.hanno.struct.copyTo
+
 open class SimplePipeline(private val engine: Engine,
                           private val useFrustumCulling: Boolean = true,
                           private val useBackFaceCulling: Boolean = true,
@@ -23,6 +27,8 @@ open class SimplePipeline(private val engine: Engine,
     private var entitiesDrawn = 0
     protected open fun beforeDrawStatic(renderState: RenderState, program: Program) {}
     protected open fun beforeDrawAnimated(renderState: RenderState, program: Program) {}
+
+    private val gpuCommandsArray = StructArray<Command>(null, 1000) { Command(it) }
 
     override fun prepare(renderState: RenderState) {
         verticesCount = 0
@@ -132,8 +138,30 @@ open class SimplePipeline(private val engine: Engine,
         }
 
         entityOffsetBuffer.put(0, offsets.toArray())
-        commandBuffer.put(*Util.toArray(commands, CommandBuffer.DrawElementsIndirectCommand::class.java))
-//        println("Commands after frustum culling ${commands.size}")
+
+        commandBuffer.setCapacityInBytes((commands.size) * CommandBuffer.DrawElementsIndirectCommand.sizeInBytes())
+        commandBuffer.buffer.rewind()
+
+        for ((i, command) in commands.withIndex()) {
+            val target = gpuCommandsArray.getAtIndex(i)
+            target.baseInstance = command.baseInstance
+            target.baseVertex = command.baseVertex
+            target.count = command.count
+            target.firstIndex = command.firstIndex
+            target.primCount = command.primCount
+        }
+
+        gpuCommandsArray.buffer.copyTo(commandBuffer.buffer)
+
+        commandBuffer.buffer.rewind()
     }
+}
+
+class Command(parent: Structable?) : Struct(parent){
+    var count by 0
+    var primCount by 0
+    var firstIndex by 0
+    var baseVertex by 0
+    var baseInstance by 0
 }
 
