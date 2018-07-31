@@ -96,8 +96,10 @@ public class StorageBufferTest extends TestWithEngine {
 
 
         GPUBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 0);
-		buffer.put(bufferable, bufferable, bufferable, bufferable);
-
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
 
 		FloatBuffer result = buffer.getBuffer().asFloatBuffer();
 		float[] dst = new float[result.capacity()];
@@ -144,19 +146,24 @@ public class StorageBufferTest extends TestWithEngine {
         CustomBufferable customBufferable1 = new CustomBufferable(0, 1, 0);
         CustomBufferable customBufferable2 = new CustomBufferable(1, 0, 0);
 
-        PersistentMappedBuffer<CustomBufferable> buffer = new PersistentMappedBuffer<>(engine.getGpuContext(), 3 * customBufferable0.getBytesPerObject());
-        buffer.put(customBufferable0, customBufferable1, customBufferable2);
+        PersistentMappedBuffer buffer = new PersistentMappedBuffer(engine.getGpuContext(), 3 * customBufferable0.getBytesPerObject());
+		customBufferable0.putToBuffer(buffer.getBuffer());
+		customBufferable1.putToBuffer(buffer.getBuffer());
+		customBufferable2.putToBuffer(buffer.getBuffer());
         CustomBufferable fromBuffer = new CustomBufferable(-1, -1, -1);
-        buffer.get(0, fromBuffer);
+        buffer.getBuffer().position(0);
+        fromBuffer.getFromBuffer(buffer.getBuffer());
         Assert.assertEquals(0, fromBuffer.x, Double.MIN_VALUE);
         Assert.assertEquals(0, fromBuffer.y, Double.MIN_VALUE);
         Assert.assertEquals(1, fromBuffer.z, Double.MIN_VALUE);
-        buffer.get(2, fromBuffer);
+		buffer.getBuffer().position(2* fromBuffer.getBytesPerObject());
+		fromBuffer.getFromBuffer(buffer.getBuffer());
         Assert.assertEquals(1, fromBuffer.x, Double.MIN_VALUE);
         Assert.assertEquals(0, fromBuffer.y, Double.MIN_VALUE);
         Assert.assertEquals(0, fromBuffer.z, Double.MIN_VALUE);
 
-        buffer.putAtIndex(3, customBufferable0);
+		buffer.getBuffer().position(3* fromBuffer.getBytesPerObject());
+		fromBuffer.getFromBuffer(buffer.getBuffer());
         fromBuffer.getFromIndex(3, buffer.getBuffer());
         Assert.assertEquals(0, fromBuffer.x, Double.MIN_VALUE);
         Assert.assertEquals(0, fromBuffer.y, Double.MIN_VALUE);

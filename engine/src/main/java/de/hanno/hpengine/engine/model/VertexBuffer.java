@@ -1,12 +1,10 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
-import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.libc.LibCStdlib;
 
@@ -20,7 +18,7 @@ import java.util.logging.Logger;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 import static org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect;
 
-public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T> {
+public class VertexBuffer extends PersistentMappedBuffer {
 
     static final Logger LOGGER = Logger.getLogger(VertexBuffer.class.getName());
 

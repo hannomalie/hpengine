@@ -28,8 +28,8 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
                                                               renderStateFactory(),
                                                               renderStateFactory())
 
-    val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
-    val vertexIndexBufferAnimated = VertexIndexBuffer<AnimatedVertex>(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
+    val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
 
     val drawCycle = AtomicLong()
     var cpuGpuSyncTimeNs: Long = 0

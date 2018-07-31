@@ -63,7 +63,7 @@ open class SimplePipeline(private val engine: Engine,
         GPUProfiler.end()
     }
 
-    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer<*>, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit) {
+    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit) {
         GPUProfiler.start("Actually render")
         program.use()
         beforeRender()
@@ -107,7 +107,7 @@ open class SimplePipeline(private val engine: Engine,
         }
     }
 
-    protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer<*>, commandBuffer: CommandBuffer, commandCount: Int, drawCountBuffer: AtomicCounterBuffer) {
+    protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer, commandBuffer: CommandBuffer, commandCount: Int, drawCountBuffer: AtomicCounterBuffer) {
         val indexBuffer = vertexIndexBuffer.indexBuffer
         val vertexBuffer = vertexIndexBuffer.vertexBuffer
         if (Config.getInstance().isDrawLines && useLineDrawingIfActivated) {

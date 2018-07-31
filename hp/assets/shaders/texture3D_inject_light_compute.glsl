@@ -115,8 +115,8 @@ void main(void) {
 
     for(int i = 0; i < pointLightCount; i++) {
         PointLight pointLight = pointLights[i];
-        vec3 lightPosition = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
-        vec3 lightDiffuse = vec3(pointLight.colorR, pointLight.colorG, pointLight.colorB);
+        vec3 lightPosition = pointLight.position;
+        vec3 lightDiffuse = pointLight.color;
         vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
         float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
 

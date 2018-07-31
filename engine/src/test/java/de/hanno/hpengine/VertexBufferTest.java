@@ -136,16 +136,18 @@ public class VertexBufferTest extends TestWithEngine {
 		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
 		};
 		
-		VertexBuffer<Vertex> buffer = new VertexBuffer<>(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 		float[] result = buffer.getValues(DataChannels.TEXCOORD);
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
 
 		Vertex current = new Vertex();
-        buffer.get(0, current);
+		current.getFromBuffer(buffer.getBuffer());
         Assert.assertEquals(new Vertex(new Vector3f(-1, -1, 0), new Vector2f(0,0)), current);
-        buffer.get(1, current);
+        buffer.getBuffer().position(current.getBytesPerObject());
+        current.getFromBuffer(buffer.getBuffer());
         Assert.assertEquals(new Vertex(new Vector3f(1, -1, 0), new Vector2f(0,0)), current);
-        buffer.get(5, current);
+        buffer.getBuffer().position(5*current.getBytesPerObject());
+        current.getFromBuffer(buffer.getBuffer());
         Assert.assertEquals(new Vertex(new Vector3f(1, 1, 0), new Vector2f(1,1)), current);
 
 	}

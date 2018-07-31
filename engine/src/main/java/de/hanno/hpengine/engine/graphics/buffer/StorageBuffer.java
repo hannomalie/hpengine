@@ -113,18 +113,4 @@ public abstract class StorageBuffer implements GPUBuffer {
         putValues(xxx);
         tempBuffer = null;
     }
-
-    @Override
-    public void put(int offset, Bufferable... bufferable) {
-        if(bufferable.length == 0) { return; }
-        gpuContext.execute(() -> {
-            ByteBuffer tempByteBuffer = BufferUtils.createByteBuffer(20 * 4 * bufferable.length); // TODO Estimate better
-            tempBuffer = tempByteBuffer.asDoubleBuffer();
-            for (int i = 0; i < bufferable.length; i++) {
-                Bufferable currentBufferable = bufferable[i];
-                currentBufferable.putToBuffer(tempByteBuffer);
-            }
-            putValues(offset, tempByteBuffer);
-        });
-    }
 }

@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 
-public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> implements GPUBuffer<T> {
+public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
     private final GpuContext gpuContext;
     protected int target = 0;
     private int id;

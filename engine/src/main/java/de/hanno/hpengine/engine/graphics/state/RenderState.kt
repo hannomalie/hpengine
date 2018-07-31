@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -46,15 +45,15 @@ class RenderState(gpuContext: GpuContext) {
     val renderBatchesAnimated: List<RenderBatch>
         get() = entitiesState.renderBatchesAnimated
 
-    val vertexIndexBufferStatic: VertexIndexBuffer<Vertex>
+    val vertexIndexBufferStatic: VertexIndexBuffer
         get() = entitiesState.vertexIndexBufferStatic
-    val vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>
+    val vertexIndexBufferAnimated: VertexIndexBuffer
         get() = entitiesState.vertexIndexBufferAnimated
 
-    val entitiesBuffer: GPUBuffer<GpuEntity>
+    val entitiesBuffer: GPUBuffer
         get() = entitiesState.entitiesBuffer
 
-    val materialBuffer: GPUBuffer<*>
+    val materialBuffer: GPUBuffer
         get() = entitiesState.materialBuffer
 
     val directionalLightViewMatrixAsBuffer: FloatBuffer
@@ -81,7 +80,7 @@ class RenderState(gpuContext: GpuContext) {
         //        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
     }
 
-    fun init(vertexIndexBufferStatic: VertexIndexBuffer<Vertex>, vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector3f, sceneMax: Vector3f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
+    fun init(vertexIndexBufferStatic: VertexIndexBuffer, vertexIndexBufferAnimated: VertexIndexBuffer, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector3f, sceneMax: Vector3f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
         this.entitiesState.joints = joints // TODO: Fixme
@@ -120,11 +119,11 @@ class RenderState(gpuContext: GpuContext) {
         return currentStaging.cycle < currentRead.cycle
     }
 
-    fun setVertexIndexBufferStatic(vertexIndexBuffer: VertexIndexBuffer<Vertex>) {
+    fun setVertexIndexBufferStatic(vertexIndexBuffer: VertexIndexBuffer) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBuffer
     }
 
-    fun setVertexIndexBufferAnimated(vertexIndexBufferAnimated: VertexIndexBuffer<AnimatedVertex>) {
+    fun setVertexIndexBufferAnimated(vertexIndexBufferAnimated: VertexIndexBuffer) {
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
     }
 

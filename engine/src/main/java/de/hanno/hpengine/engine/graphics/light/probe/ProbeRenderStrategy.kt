@@ -60,7 +60,7 @@ class ProbeRenderStrategy(private val engine: Engine) {
     private val ambientCubeCache = HashMap<Vector3i, AmbientCube>()
 
 
-    val probeGrid = PersistentMappedBuffer<AmbientCube>(engine.gpuContext, resolution*resolution*resolution*AmbientCube.sizeInBytes)
+    val probeGrid = PersistentMappedBuffer(engine.gpuContext, resolution*resolution*resolution*AmbientCube.sizeInBytes)
     var x = 0
     var y = 0
 
@@ -151,7 +151,8 @@ class ProbeRenderStrategy(private val engine: Engine) {
             if(y == dimension) { y = 0; x++ }
             if(x == dimension) { x = 0 }
         }
-        probeGrid.put(0, getAmbientCubes())
+//        TODO: Fix this with structs
+//        probeGrid.put(0, getAmbientCubes())
 
         GPUProfiler.end()
     }

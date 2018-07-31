@@ -25,16 +25,16 @@ public class EntitiesState {
     public long entityAddedInCycle;
     public RenderBatches renderBatchesStatic = new RenderBatches();
     public RenderBatches renderBatchesAnimated = new RenderBatches();
-    public VertexIndexBuffer<Vertex> vertexIndexBufferStatic;
-    public VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated;
-    public GPUBuffer<GpuEntity> entitiesBuffer;
-    public GPUBuffer<BufferableMatrix4f> jointsBuffer;
-    public GPUBuffer<SimpleMaterial> materialBuffer;
+    public VertexIndexBuffer vertexIndexBufferStatic;
+    public VertexIndexBuffer vertexIndexBufferAnimated;
+    public GPUBuffer entitiesBuffer;
+    public GPUBuffer jointsBuffer;
+    public GPUBuffer materialBuffer;
     public List<BufferableMatrix4f> joints;
 
     public EntitiesState(GpuContext gpuContext) {
-        vertexIndexBufferStatic = new VertexIndexBuffer<>(gpuContext, 10,10, ModelComponent.DEFAULTCHANNELS);
-        vertexIndexBufferAnimated = new VertexIndexBuffer<>(gpuContext, 10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
+        vertexIndexBufferStatic = new VertexIndexBuffer(gpuContext, 10,10, ModelComponent.DEFAULTCHANNELS);
+        vertexIndexBufferAnimated = new VertexIndexBuffer(gpuContext, 10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
         entitiesBuffer = new PersistentMappedBuffer(gpuContext, 8000);
         jointsBuffer = new PersistentMappedBuffer(gpuContext, 8000);
         materialBuffer = new PersistentMappedBuffer(gpuContext, 8000);

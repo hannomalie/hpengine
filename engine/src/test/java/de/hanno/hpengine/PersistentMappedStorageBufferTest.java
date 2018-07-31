@@ -91,7 +91,10 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 			}
 		};
 
-		buffer.put(bufferable, bufferable, bufferable, bufferable);
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
 
 
 		FloatBuffer result = buffer.getBuffer().asFloatBuffer();
@@ -133,7 +136,10 @@ public class PersistentMappedStorageBufferTest extends TestWithEngine {
 			}
 		};
 
-		buffer.put(bufferable, bufferable, bufferable, bufferable);
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
+		bufferable.putToBuffer(buffer.getBuffer());
 
 
 		FloatBuffer result = buffer.getBuffer().asFloatBuffer();

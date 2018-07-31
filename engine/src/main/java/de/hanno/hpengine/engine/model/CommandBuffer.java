@@ -13,7 +13,7 @@ import static de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectC
 import static de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand.getSizeInInts;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.DrawElementsIndirectCommand> {
+public class CommandBuffer extends AbstractPersistentMappedBuffer {
 
     public CommandBuffer(GpuContext gpuContext, int capacityInBytes) {
         super(gpuContext, GL40.GL_DRAW_INDIRECT_BUFFER);
@@ -49,24 +49,6 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.
     @Override
     public void putValues(int offset, float... values) {
         throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void put(int offset, DrawElementsIndirectCommand[] bufferable) {
-        if(bufferable.length == 0) { return; }
-
-        setCapacityInBytes((offset + bufferable.length) * sizeInBytes());
-
-        buffer.rewind();
-        for (int i = 0; i < bufferable.length; i++) {
-            Bufferable currentBufferable = bufferable[i];
-            DrawElementsIndirectCommand command = (DrawElementsIndirectCommand) currentBufferable;
-            int currentOffset = i * getSizeInInts();
-            int[] currentBufferablesValues = command.getAsInts();
-            for (int z = 0; z < currentBufferablesValues.length; z++) {
-                getIntBufferView().put(offset+currentOffset + z, currentBufferablesValues[z]);
-            }
-        }
     }
 
     public final static class DrawElementsIndirectCommand implements Bufferable {

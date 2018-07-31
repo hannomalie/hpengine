@@ -54,7 +54,7 @@ bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
 
 float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
-	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+	vec3 pointLightPositionWorld = pointLight.position;
 
 	vec3 fragToLight = positionWorld - pointLightPositionWorld;
     vec4 textureSample = textureLod(pointLightShadowMapsCube, vec4(fragToLight, pointLightIndex), 0);
@@ -75,7 +75,7 @@ float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight 
 
     return shadow;
 }
-float packColor(vec3 color) {
+float packColor (vec3 color) {
     return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
 }
 vec3 unpackColor(float f) {
@@ -539,7 +539,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 			for(int lightIndex = 0; lightIndex < pointLightCount; lightIndex++) {
 			    PointLight pointLight = pointLights[lightIndex];
 
-			    vec3 pointLightPosition = vec3(float(pointLight.positionX), float(pointLight.positionY), float(pointLight.positionZ));
+			    vec3 pointLightPosition = pointLight.position;
 			    if(isInsideSphere(currentPosition, pointLightPosition, float(pointLight.radius))){
                     accumFog += ComputeScattering(distance(currentPosition, pointLightPosition)/float(pointLight.radius)) + getVisibilityCubemap(currentPosition, lightIndex, pointLight);
 			    }

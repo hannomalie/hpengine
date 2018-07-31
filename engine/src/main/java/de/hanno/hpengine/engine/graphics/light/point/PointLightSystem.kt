@@ -1,33 +1,34 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
-import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.event.PointLightMovedEvent
-import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
+import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
-import net.engio.mbassy.listener.Handler
+import de.hanno.struct.StructArray
+import de.hanno.struct.copyTo
 import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(theComponentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
 
 class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 
+    private val gpuPointLightArray = StructArray(size = 20) { PointLightXXX(it) }
+
     var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
     val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
-    val lightBuffer: PersistentMappedBuffer<PointLight> = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
+    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     val shadowMapStrategy = if (Config.getInstance().isUseDpsm) {
         DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
@@ -36,13 +37,21 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
         }
 
     private fun bufferLights() {
+        gpuPointLightArray.resize(getRequiredPointLightBufferSize())
         val pointLights = getComponents(PointLight::class.java)
-        engine.gpuContext.execute {
-            if (pointLights.isNotEmpty()) {
-                lightBuffer.put(0, pointLights)
-            }
+        pointLights.withIndex().forEach { (index, pointLight) ->
+            val target = gpuPointLightArray.getAtIndex(index)
+            target.position.set(pointLight.entity.position)
+            target.radius = pointLight.radius
+            target.color.set(pointLight.color)
         }
+        lightBuffer.setCapacityInBytes(pointLights.size * PointLightXXX.getBytesPerInstance())
+        lightBuffer.buffer.rewind()
+        gpuPointLightArray.copyTo(lightBuffer.buffer)
+        lightBuffer.buffer.rewind()
     }
+
+    fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount } * PointLightXXX.getBytesPerInstance()
 
     override fun update(deltaSeconds: Float) {
         val pointLights = getComponents(PointLight::class.java)
@@ -61,23 +70,7 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
         while (pointLightsIterator.hasNext()) {
             pointLightsIterator.next().update(deltaSeconds)
         }
-    }
 
-    @Subscribe
-    @Handler
-    fun bufferLights(event: LightChangedEvent) {
-        bufferLights()
-    }
-
-    @Subscribe
-    @Handler
-    fun bufferLights(event: PointLightMovedEvent) {
-        bufferLights()
-    }
-
-    @Subscribe
-    @Handler
-    fun bufferLights(event: SceneInitEvent) {
         bufferLights()
     }
 

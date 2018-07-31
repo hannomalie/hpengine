@@ -1,11 +1,9 @@
 package de.hanno.hpengine.engine.graphics.light.area
 
-import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.event.LightChangedEvent
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -20,10 +18,12 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
+import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import net.engio.mbassy.listener.Handler
+import de.hanno.struct.StructArray
+import de.hanno.struct.copyTo
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
@@ -36,8 +36,9 @@ class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentCla
 class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
+    private val gpuAreaLightArray = StructArray(size = 20) { AreaLightXXX(it) }
 
-    val lightBuffer: PersistentMappedBuffer<AreaLight> = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
+    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     private val renderTarget: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
             .setName("AreaLight Shadow")
@@ -60,21 +61,6 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
                 add(renderedTextureTemp)
-            }
-        }
-    }
-
-    @Subscribe
-    @Handler
-    fun handleLightChange(event: LightChangedEvent) {
-        bufferLights()
-    }
-
-    private fun bufferLights() {
-        val areaLights = getComponents(AreaLight::class.java)
-        engine.gpuContext.execute {
-            if (areaLights.isNotEmpty()) {
-                lightBuffer.put(0, areaLights)
             }
         }
     }
@@ -108,6 +94,13 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
         GPUProfiler.end()
     }
 
+    fun copyGpuBuffers(currentWriteState: RenderState) {
+//        TODO: Use this stuff instead of uniforms, take a look at SimpleDrawStrategy.java
+//        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredAreaLightBufferSize()
+//        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
+//        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
+    }
+
     fun getDepthMapForAreaLight(light: AreaLight): Int {
         val index = getAreaLights().indexOf(light)
         return if (index >= MAX_AREALIGHT_SHADOWMAPS) {
@@ -126,7 +119,25 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
     fun getAreaLights() = getComponents(AreaLight::class.java)
 
     override fun update(deltaSeconds: Float) {
+//        TODO: Resize with instance count
+        gpuAreaLightArray.resize(getRequiredAreaLightBufferSize())
+        gpuAreaLightArray.buffer.rewind()
+
+        getComponents(AreaLight::class.java).withIndex().forEach { (index, areaLight) ->
+            val target = gpuAreaLightArray.getAtIndex(index)
+            target.trafo.set(areaLight.entity)
+            target.color.set(areaLight.color)
+            target.dummy0 = -1
+            target.widthHeightRange.x = areaLight.width
+            target.widthHeightRange.y = areaLight.height
+            target.widthHeightRange.z = areaLight.range
+            target.dummy1 = -1
+        }
+        gpuAreaLightArray
     }
+    private fun getRequiredAreaLightBufferSize() =
+            getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount } * AreaLight.getBytesPerInstance()
+
 
     override fun render(result: DrawResult, state: RenderState) {
         renderAreaLightShadowMaps(state)

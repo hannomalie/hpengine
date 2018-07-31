@@ -5,9 +5,9 @@ import de.hanno.struct.Struct
 import de.hanno.struct.Structable
 
 class PointLightXXX(parent: Structable?) : Struct(parent) {
-    val position by Vector3f()
+    val position by Vector3f(this)
     var radius by 0.0f
-    val color by Vector3f()
+    val color by Vector3f(this)
     val dummy by 0
 
     companion object {

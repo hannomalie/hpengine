@@ -1,12 +1,11 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import org.lwjgl.system.libc.LibCStdlib;
 
-import java.nio.*;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
@@ -71,11 +70,6 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
 
     @Override
     public void putValues(int offset, float... values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void put(int offset, Bufferable[] bufferable) {
         throw new IllegalStateException("Not implemented");
     }
 

@@ -92,9 +92,9 @@ float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight poi
 	if(!USE_POINTLIGHT_SHADOWMAPPING) { return 1.0; }
 
 	const float NearPlane = 0.0001;
-	float FarPlane = float(pointLight.radius);
+	float FarPlane = pointLight.radius;
 
-	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+	vec3 pointLightPositionWorld = pointLight.position;
 	vec3 positionInPointLightSpace = positionWorld - pointLightPositionWorld;
 
 	float L = length(positionInPointLightSpace.xyz);
@@ -165,7 +165,7 @@ float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight poi
 }
 float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
-	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+	vec3 pointLightPositionWorld = pointLight.position;
 
 	vec3 fragToLight = positionWorld - pointLightPositionWorld;
     vec4 textureSample = textureLod(pointLightShadowMapsCube, vec4(fragToLight, pointLightIndex), 0);
@@ -261,7 +261,7 @@ void main(void) {
     {
         uint lightIndex =  passIt * threadCount + gl_LocalInvocationIndex;
 		PointLight pointLight = pointLights[lightIndex];
-		vec3 pointLightPosition = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+		vec3 pointLightPosition = pointLight.position;
 		vec4 pos = (viewMatrix * vec4(pointLightPosition, 1.0f));
 		float rad = 2*float(pointLight.radius);
 
@@ -290,8 +290,8 @@ void main(void) {
 		PointLight pointLight = pointLights[lightIndex];
 //	for(int i = 0; i < uint(pointLightCount); i++) {
 //		PointLight pointLight = pointLights[i];
-		vec3 lightPositionView = (viewMatrix * vec4(pointLight.positionX, pointLight.positionY, pointLight.positionZ, 1)).xyz;
-		vec3 lightDiffuse = vec3(pointLight.colorR, pointLight.colorG, pointLight.colorB);
+		vec3 lightPositionView = (viewMatrix * vec4(pointLight.position, 1)).xyz;
+		vec3 lightDiffuse = pointLight.color;
 		vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
 		float attenuation = calculateAttenuation(length(lightPositionView - positionView), float(pointLight.radius));
 

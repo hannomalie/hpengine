@@ -110,8 +110,8 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 
 	PointLight pointLight = pointLights[currentLightIndex];
-	vec3 lightPositionView = (viewMatrix * vec4(pointLight.positionX, pointLight.positionY, pointLight.positionZ, 1)).xyz;
-	vec3 lightDiffuse = vec3(pointLight.colorR, pointLight.colorG, pointLight.colorB);
+	vec3 lightPositionView = (viewMatrix * vec4(pointLight.position, 1)).xyz;
+	vec3 lightDiffuse = pointLight.color;
 
 	vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
 	float attenuation = calculateAttenuation(float(pointLight.radius), length(lightPositionView - positionView));

@@ -93,6 +93,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
         }
         batchingSystem.addRenderBatches(currentWriteState)
         modelComponentSystem.copyGpuBuffers(currentWriteState)
+        areaLightSystemX.copyGpuBuffers(currentWriteState)
     }
 
     companion object {

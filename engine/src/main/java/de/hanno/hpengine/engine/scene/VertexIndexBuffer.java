@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.scene;
 
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.IndexBuffer;
@@ -11,22 +10,22 @@ import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
-    private volatile VertexBuffer<T> vertexBuffer;
+public class VertexIndexBuffer implements Serializable {
+    private volatile VertexBuffer vertexBuffer;
     private volatile IndexBuffer indexBuffer;
     private volatile AtomicInteger currentBaseVertex = new AtomicInteger();
     private volatile AtomicInteger currentIndexOffset = new AtomicInteger();
 
     public VertexIndexBuffer(GpuContext gpuContext, int vertexBufferSizeInFloatsCount, int indexBufferSizeInIntsCount, EnumSet<DataChannels> channels) {
-        vertexBuffer = new VertexBuffer<>(gpuContext, BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), channels);
+        vertexBuffer = new VertexBuffer(gpuContext, BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), channels);
         indexBuffer  = new IndexBuffer(gpuContext, BufferUtils.createIntBuffer(indexBufferSizeInIntsCount));
     }
 
-    public VertexBuffer<T> getVertexBuffer() {
+    public VertexBuffer getVertexBuffer() {
         return vertexBuffer;
     }
 
-    public void setVertexBuffer(VertexBuffer<T> vertexBuffer) {
+    public void setVertexBuffer(VertexBuffer vertexBuffer) {
         this.vertexBuffer = vertexBuffer;
     }
 
@@ -54,8 +53,8 @@ public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
         this.currentIndexOffset = currentIndexOffset;
     }
 
-    public synchronized VertexIndexOffsets<T> allocate(int elementsCount, int indicesCount) {
-        VertexIndexOffsets<T> vertexIndexOffsets = new VertexIndexOffsets<>(currentBaseVertex.get(), currentIndexOffset.get());
+    public synchronized VertexIndexOffsets allocate(int elementsCount, int indicesCount) {
+        VertexIndexOffsets vertexIndexOffsets = new VertexIndexOffsets(currentBaseVertex.get(), currentIndexOffset.get());
         currentBaseVertex.getAndSet(vertexIndexOffsets.vertexOffset + elementsCount);
         currentIndexOffset.getAndSet(vertexIndexOffsets.indexOffset + indicesCount);
         return vertexIndexOffsets;
@@ -66,7 +65,7 @@ public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
         currentIndexOffset.getAndSet(0);
     }
 
-    public static class VertexIndexOffsets<T extends Bufferable> {
+    public static class VertexIndexOffsets {
         public final int vertexOffset;
         public final int indexOffset;
 

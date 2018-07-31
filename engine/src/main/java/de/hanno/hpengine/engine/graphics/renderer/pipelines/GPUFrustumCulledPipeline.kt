@@ -164,7 +164,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         GPUProfiler.end()
     }
 
-    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer<*>, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
+    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
         GPUProfiler.start("Actually render")
         program.use()
         beforeRender()

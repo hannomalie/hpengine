@@ -31,15 +31,11 @@ struct Material {
 };
 
 struct PointLight {
-	double positionX;
-	double positionY;
-	double positionZ;
-	double radius;
+    vec3 position;
+	float radius;
 
-	double colorR;
-	double colorG;
-	double colorB;
-	double xxx;
+    vec3 color;
+    float xxx;
 };
 
 struct AreaLight {

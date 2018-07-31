@@ -5,11 +5,10 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.system.libc.LibCStdlib;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersistentMappedBuffer<T> {
+public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer {
 
     public PersistentMappedBuffer(GpuContext gpuContext, int capacityInBytes) {
         this(gpuContext, capacityInBytes, GL43.GL_SHADER_STORAGE_BUFFER);
@@ -61,44 +60,4 @@ public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersis
         }
         buffer.asDoubleBuffer().put(doubleValues);
     }
-
-    @Override
-    public void put(int offset, T... bufferable) {
-        if(bufferable.length == 0) { return; }
-
-        int bytesPerObject = bufferable[0].getBytesPerObject();
-        setCapacityInBytes(bytesPerObject * bufferable.length);
-
-        int firstPosition = bytesPerObject * offset;
-        buffer.position(firstPosition);
-
-        int currentByteOffset = 0;
-        for (int i = 0; i < bufferable.length; i++) {
-            Bufferable currentBufferable = bufferable[i];
-            currentByteOffset += currentBufferable.getBytesPerObject();
-            setCapacityInBytes(firstPosition + currentByteOffset);
-            currentBufferable.putToBuffer(buffer);
-        }
-    }
-
-    @Override
-    public void put(int offset, List<T> bufferables) {
-        if(bufferables.size() == 0) { return; }
-
-        int bytesPerObject = bufferables.get(0).getBytesPerObject();
-        setCapacityInBytes(bytesPerObject * bufferables.size());
-
-        int firstPosition = bytesPerObject * offset;
-        buffer.position(firstPosition);
-
-        int currentByteOffset = 0;
-        for (int i = 0; i < bufferables.size(); i++) {
-            Bufferable currentBufferable = bufferables.get(i);
-            currentByteOffset += currentBufferable.getBytesPerObject();
-            setCapacityInBytes(firstPosition + currentByteOffset);
-            currentBufferable.putToBuffer(buffer);
-        }
-        buffer.position(0);
-    }
-
 }
