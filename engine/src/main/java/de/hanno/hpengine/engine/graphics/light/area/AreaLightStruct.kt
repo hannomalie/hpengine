@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.math.Vector3f
 import de.hanno.struct.Struct
 import de.hanno.struct.Structable
 
-class AreaLightXXX(parent: Structable? = null) : Struct(parent) {
+class AreaLightStruct(parent: Structable? = null) : Struct(parent) {
     val trafo by Matrix4f(this)
     val color by Vector3f(this)
     var dummy0 by 0

@@ -5,14 +5,13 @@ import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.GpuEntity
-import de.hanno.hpengine.engine.graphics.GpuEntityXXX
+import de.hanno.hpengine.engine.graphics.GpuEntityStruct
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
-import de.hanno.struct.StructArray
+import de.hanno.struct.ResizableStructArray
 import de.hanno.struct.copyTo
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -26,8 +25,8 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
 
-    private val gpuEntitiesArray = StructArray(size = 1000) { GpuEntityXXX(it) }
-    private val gpuJointsArray = StructArray(size = 1000) { de.hanno.hpengine.engine.math.Matrix4f(it) }
+    private val gpuEntitiesArray = ResizableStructArray(size = 1000) { GpuEntityStruct(it) }
+    private val gpuJointsArray = ResizableStructArray(size = 1000) { de.hanno.hpengine.engine.math.Matrix4f(it) }
 
     override fun getComponents(): List<ModelComponent> = components
 
@@ -71,8 +70,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
 
     private fun updateGpuJointsArray() {
-//        TODO: Resize with instance count
-        gpuJointsArray.resize(getRequiredJointsBufferSize())
+        gpuJointsArray.enlarge(joints.size)
         gpuJointsArray.buffer.rewind()
 
         for((index, joint) in joints.withIndex()) {
@@ -84,8 +82,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     private fun updateGpuEntitiesArray() {
         var counter = 0
 
-//        TODO: Resize with instance count
-        gpuEntitiesArray.resize(getRequiredEntityBufferSize())
+        gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
         gpuEntitiesArray.buffer.rewind()
 
         for(modelComponent in components) {
@@ -173,10 +170,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         gpuEntitiesArray.buffer.rewind()
     }
 
-    private fun getRequiredEntityBufferSize() =
-            components.sumBy { it.entity.instanceCount * it.meshes.size } * GpuEntityXXX.getBytesPerInstance()
-
-    private fun getRequiredJointsBufferSize() = joints.size * BufferableMatrix4f.getBytesPerInstance()
+    private fun getRequiredEntityBufferSize() = components.sumBy { it.entity.instanceCount * it.meshes.size }
 
     fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
         entities.forEach { e ->
@@ -207,12 +201,12 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     }
 
     fun copyGpuBuffers(currentWriteState: RenderState) {
-        currentWriteState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize()
-        gpuEntitiesArray.shrink(currentWriteState.entitiesBuffer.buffer.capacity())
+        currentWriteState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize() * GpuEntityStruct.getBytesPerInstance()
+        gpuEntitiesArray.shrinkToBytes(currentWriteState.entitiesBuffer.buffer.capacity())
         gpuEntitiesArray.copyTo(currentWriteState.entitiesBuffer.buffer)
 
-        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredJointsBufferSize()
-        gpuJointsArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
+        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = joints.size * BufferableMatrix4f.getBytesPerInstance()
+        gpuJointsArray.shrinkToBytes(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
         gpuJointsArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
 
     }

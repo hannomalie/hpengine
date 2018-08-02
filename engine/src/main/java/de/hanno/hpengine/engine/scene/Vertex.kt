@@ -13,7 +13,7 @@ import java.nio.ByteBuffer
 
 typealias HpVector3f = de.hanno.hpengine.engine.math.Vector3f
 typealias HpVector2f = de.hanno.hpengine.engine.math.Vector2f
-class VertexXXX(parent: Structable?) : Struct(parent) {
+class VertexStruct(parent: Structable?) : Struct(parent) {
     val position by HpVector3f(this)
     val texCoord by HpVector2f(this)
     val normal by HpVector3f(this)

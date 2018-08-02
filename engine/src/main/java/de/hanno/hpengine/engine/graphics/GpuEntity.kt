@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
 
 typealias HpMatrix = de.hanno.hpengine.engine.math.Matrix4f
 
-class GpuEntityXXX(parent: Struct? = null): Struct(parent) {
+class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     val trafo by HpMatrix(this)
     var selected by 0
         private set

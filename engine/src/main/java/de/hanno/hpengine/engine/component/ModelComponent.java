@@ -3,8 +3,6 @@ package de.hanno.hpengine.engine.component;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.GpuEntity;
-import de.hanno.hpengine.engine.graphics.GpuEntityXXX;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
@@ -14,27 +12,24 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
-import de.hanno.hpengine.engine.scene.VertexXXX;
+import de.hanno.hpengine.engine.scene.VertexStruct;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
-import de.hanno.struct.Struct;
+import de.hanno.struct.ResizableStructArray;
 import de.hanno.struct.StructArray;
 import de.hanno.struct.StructArrayKt;
-import kotlin.jvm.functions.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.*;
-import static de.hanno.struct.StructArrayKt.*;
 
 
 public class ModelComponent extends BaseComponent implements Serializable, Bufferable {
@@ -155,10 +150,10 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
-        StructArray<VertexXXX> converted = new StructArray<>(null, compiledVertices.size(), VertexXXX::new);
+        StructArray<VertexStruct> converted = new ResizableStructArray<>(null, compiledVertices.size(), VertexStruct::new);
         for(int i = 0; i < compiledVertices.size(); i++) {
             Vertex source = (Vertex) compiledVertices.get(i);
-            VertexXXX target = converted.getAtIndex(i);
+            VertexStruct target = converted.getAtIndex(i);
             target.getPosition().set(source.getPosition());
             target.getTexCoord().set(source.getTexCoord());
             target.getNormal().set(source.getNormal());
@@ -167,7 +162,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         gpuContext.execute(() -> {
             int bytesPerObject = Vertex.Companion.getSizeInBytes();
             vertexIndexBuffer.getVertexBuffer().setCapacityInBytes(bytesPerObject * compiledVertices.size());
-            copyTo(converted.getBuffer(), vertexIndexBuffer.getVertexBuffer().getBuffer(), true, vertexIndexOffsets.vertexOffset*bytesPerObject);
+            StructArrayKt.copyTo(converted.getBuffer(), vertexIndexBuffer.getVertexBuffer().getBuffer(), true, vertexIndexOffsets.vertexOffset*bytesPerObject);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);

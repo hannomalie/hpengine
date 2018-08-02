@@ -22,8 +22,7 @@ import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.struct.StructArray
-import de.hanno.struct.copyTo
+import de.hanno.struct.ResizableStructArray
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
@@ -36,7 +35,7 @@ class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentCla
 class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
-    private val gpuAreaLightArray = StructArray(size = 20) { AreaLightXXX(it) }
+    private val gpuAreaLightArray = ResizableStructArray(size = 20) { AreaLightStruct(it) }
 
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
@@ -120,7 +119,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
 
     override fun update(deltaSeconds: Float) {
 //        TODO: Resize with instance count
-        gpuAreaLightArray.resize(getRequiredAreaLightBufferSize())
+        gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
         gpuAreaLightArray.buffer.rewind()
 
         getComponents(AreaLight::class.java).withIndex().forEach { (index, areaLight) ->
@@ -136,7 +135,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
         gpuAreaLightArray
     }
     private fun getRequiredAreaLightBufferSize() =
-            getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount } * AreaLight.getBytesPerInstance()
+            getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount }
 
 
     override fun render(result: DrawResult, state: RenderState) {

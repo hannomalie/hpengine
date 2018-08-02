@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
-import de.hanno.struct.StructArray
+import de.hanno.struct.ResizableStructArray
 import de.hanno.struct.copyTo
 import org.joml.Vector4f
 
@@ -22,7 +22,7 @@ class PointLightComponentSystem: SimpleComponentSystem<PointLight>(theComponentC
 
 class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 
-    private val gpuPointLightArray = StructArray(size = 20) { PointLightXXX(it) }
+    private val gpuPointLightArray = ResizableStructArray(size = 20) { PointLightStruct(it) }
 
     var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
@@ -37,7 +37,7 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
         }
 
     private fun bufferLights() {
-        gpuPointLightArray.resize(getRequiredPointLightBufferSize())
+        gpuPointLightArray.enlarge(getRequiredPointLightBufferSize())
         val pointLights = getComponents(PointLight::class.java)
         pointLights.withIndex().forEach { (index, pointLight) ->
             val target = gpuPointLightArray.getAtIndex(index)
@@ -45,13 +45,13 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
             target.radius = pointLight.radius
             target.color.set(pointLight.color)
         }
-        lightBuffer.setCapacityInBytes(pointLights.size * PointLightXXX.getBytesPerInstance())
+        lightBuffer.setCapacityInBytes(pointLights.size * PointLightStruct.getBytesPerInstance())
         lightBuffer.buffer.rewind()
         gpuPointLightArray.copyTo(lightBuffer.buffer)
         lightBuffer.buffer.rewind()
     }
 
-    fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount } * PointLightXXX.getBytesPerInstance()
+    fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
 
     override fun update(deltaSeconds: Float) {
         val pointLights = getComponents(PointLight::class.java)

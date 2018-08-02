@@ -4,6 +4,7 @@ import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.*
+import de.hanno.hpengine.engine.graphics.renderer.command.Result
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -13,10 +14,7 @@ import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.struct.Struct
-import de.hanno.struct.StructArray
-import de.hanno.struct.Structable
-import de.hanno.struct.copyTo
+import de.hanno.struct.*
 
 open class SimplePipeline(private val engine: Engine,
                           private val useFrustumCulling: Boolean = true,
@@ -28,7 +26,7 @@ open class SimplePipeline(private val engine: Engine,
     protected open fun beforeDrawStatic(renderState: RenderState, program: Program) {}
     protected open fun beforeDrawAnimated(renderState: RenderState, program: Program) {}
 
-    private val gpuCommandsArray = StructArray<Command>(null, 1000) { Command(it) }
+    private val gpuCommandsArray = ResizableStructArray(null, 1000) { Command(it) }
 
     override fun prepare(renderState: RenderState) {
         verticesCount = 0
