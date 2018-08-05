@@ -86,7 +86,6 @@ public interface GpuContext {
 
     default void bindTexture(int textureUnitIndex, Texture texture) {
         bindTexture(textureUnitIndex, texture.getTarget(), texture.getTextureId());
-        texture.setUsedNow();
     }
 
     default void bindTexture(Texture texture) {

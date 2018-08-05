@@ -210,7 +210,6 @@ public class TextureTest extends TestWithEngine {
         Thread.sleep(TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
         texture.setPreventUnload(true);
         Assert.assertEquals(NOT_UPLOADED, (texture.getUploadState()));
-        texture.setUsedNow();
         while(texture.getUploadState() != UPLOADED) {
             LOGGER.info("uploadState is " + texture.getUploadState());
             Thread.sleep(20);

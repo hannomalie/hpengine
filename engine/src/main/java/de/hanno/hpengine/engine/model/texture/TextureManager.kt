@@ -70,8 +70,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     val iterator = textures.values.iterator()
                     while (iterator.hasNext()) {
                         val texture = iterator.next()
-                        val notUsedSinceMs = System.currentTimeMillis() - texture.lastUsedTimeStamp
-                        if (notUsedSinceMs in (TEXTURE_UNLOAD_THRESHOLD_IN_MS + 1)..19999) {
+                        val shoudlUnload = false
+                        if (shoudlUnload) {
                             texture.unload()
                         }
                     }

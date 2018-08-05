@@ -47,7 +47,6 @@ class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySyst
                 val mesh = meshes[i]
                 val meshCenter = mesh.getCenter(entity)
                 val boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh)
-                mesh.material.setTexturesUsed()
 
                 val (min1, max1) = modelComponent.getMinMax(entity, mesh)
                 val intersectAABB = camera.frustum.frustumIntersection.intersectAab(min1, max1)

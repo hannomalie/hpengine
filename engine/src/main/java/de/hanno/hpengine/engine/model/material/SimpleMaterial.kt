@@ -79,10 +79,6 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
 //        }
     }
 
-    fun setTexturesUsed() {
-        materialInfo.maps.forEach { _, value -> value.setUsedNow() }
-    }
-
     override fun toString(): String {
         return materialInfo.name
     }

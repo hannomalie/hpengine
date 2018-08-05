@@ -32,21 +32,12 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
                                               override val minFilter: Int = GL11.GL_LINEAR,
                                               override val magFilter: Int = GL11.GL_LINEAR) : Reloadable, Texture {
     override val target = TEXTURE_2D
-    override var lastUsedTimeStamp = System.currentTimeMillis()
     @Volatile var preventUnload = false
 
     @Volatile var uploadState = NOT_UPLOADED
         internal set
 
     override var handle = -1L
-
-    override fun setUsedNow() {
-        if (NOT_UPLOADED == uploadState) {
-            load()
-        } else if (UPLOADED == uploadState || UPLOADING == uploadState) {
-            lastUsedTimeStamp = System.currentTimeMillis()
-        }
-    }
 
     override fun toString() = "(Texture)$path"
 

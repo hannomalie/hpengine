@@ -40,7 +40,7 @@ public class TextureTableModel extends AbstractTableModel {
             return texture.getUploadState();
         } else if(col == 3) {
             de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
-            return Math.max(0, System.currentTimeMillis() - texture.getLastUsedTimeStamp());
+            return 0; // TODO: Use this colum  here somehow
         }
         return "";
     }
