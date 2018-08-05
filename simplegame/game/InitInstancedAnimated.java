@@ -54,7 +54,7 @@ public class InitInstancedAnimated implements LifeCycle {
             for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                 Cluster cluster = new Cluster();
                 Random random = new Random();
-                int count = 8;
+                int count = 6;
                 for (int x = -count; x < count; x++) {
                     for (int y = -count; y < count; y++) {
                         for (int z = -count; z < count; z++) {
@@ -65,7 +65,7 @@ public class InitInstancedAnimated implements LifeCycle {
                             trafo.rotate(new Vector3f(0, 0, 1), (int) (random.nextFloat() * 360f));
                             trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex % clusterLocations.length])).add(new Vector3f(randomFloat * maxDistance * x, 0.001f * randomFloat, randomFloat * maxDistance * z)));
 
-                            final ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+                            final ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                             List<SimpleMaterial> materials = modelComponent.getMaterials();
                             ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, new AnimationController(120, 24f), new AnimatedTransformSpatial(trafo, modelComponent));
                         }
@@ -75,8 +75,7 @@ public class InitInstancedAnimated implements LifeCycle {
                 System.out.println("Added " + cluster.size());
             }
             clustersComponent.addClusters(clusters);
-            entity.addComponent(clustersComponent, ClustersComponent.Companion.getClustersComponentType());
-            engine.getScene().getClusterComponentSystem().addComponent(clustersComponent);
+            entity.addComponent(clustersComponent);
         }
 
         engine.getScene().addAll(loaded.entities);

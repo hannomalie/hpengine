@@ -20,7 +20,7 @@ open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: En
                                                           useLineDrawing: Boolean = true,
                                                           renderCam: Camera? = null,
                                                           cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackFaceCulling, useLineDrawing, renderCam, cullCam) {
-    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false), Define.getDefine("OCCLUSION_CULLING", true))
+    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false), Define.getDefine("OCCLUSION_CULLING", Config.getInstance().isUseGpuOcclusionCulling))
     val depthTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
                     .setName("DepthPrepassPipeline")
                     .add(ColorAttachmentDefinition("Depth")

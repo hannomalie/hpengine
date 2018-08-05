@@ -84,6 +84,7 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures/Dielectric_metallic.png
 map_Kd textures/Sponza_Bricks_a_Albedo.png
+map_Kh textures/Sponza_Bricks_a_height.png
 map_bump textures/Sponza_Bricks_a_Normal.png
 map_Ns textures/Sponza_Bricks_a_Roughness.png
 bump textures/Sponza_Bricks_a_Normal.png

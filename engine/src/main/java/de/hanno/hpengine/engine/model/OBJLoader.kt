@@ -222,6 +222,10 @@ class OBJLoader {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL)
 
+                } else if ("map_Kh" == firstToken) {
+                    val map = rest
+                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.HEIGHT)
+
                 } else if ("Kd" == firstToken) {
                     currentMaterialInfo = currentMaterialInfo!!.copy(diffuse = parseVertex(materialLine))
                 } else if ("Kr" == firstToken) {

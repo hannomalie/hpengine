@@ -84,6 +84,15 @@ vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
 	mat3 TBN = cotangent_frame( N, V, texcoord );
 	return normalize( TBN * map );
 }
+vec2 parallaxMapping(sampler2D heightMap, vec2 texCoords, vec3 viewDir, float height_scale, float parallaxBias)
+{
+    float height =  texture(heightMap, texCoords).r;
+    if(height < parallaxBias) {
+        height = 0;
+    };
+    vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
+    return texCoords - p;
+}
 void main(void) {
 
     int entityIndex = outEntityBufferIndex;
@@ -153,7 +162,11 @@ void main(void) {
             v = clamp(0, v, v);
         #endif
 		uvParallax = (v * viewVectorTangentSpace.xy);
-		UV = UV + uvParallax;
+		vec3 viewPositionTanget = TBN * eyePos_world;
+		vec3 fragmentPositionTangent = TBN * position_world.xyz;
+		vec3 viewDirTanget = normalize(viewPositionTanget - fragmentPositionTangent);
+		UV = parallaxMapping(_heightMap, UV, viewDirTanget, parallaxScale, parallaxBias);
+//		UV = UV + uvParallax;
 	}
 
 

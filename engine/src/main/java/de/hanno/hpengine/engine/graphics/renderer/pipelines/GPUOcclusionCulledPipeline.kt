@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -13,5 +14,5 @@ open class GPUOcclusionCulledPipeline @JvmOverloads constructor(private val engi
                                                                 useLineDrawing: Boolean = true,
                                                                 renderCam: Camera? = null,
                                                                 cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackFaceCulling, useLineDrawing, renderCam, cullCam) {
-    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false), Define.getDefine("OCCLUSION_CULLING", true))
+    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false), Define.getDefine("OCCLUSION_CULLING", Config.getInstance().isUseGpuOcclusionCulling))
 }

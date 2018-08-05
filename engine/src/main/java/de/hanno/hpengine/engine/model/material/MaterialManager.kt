@@ -78,6 +78,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
             init {
                 put(MAP.DIFFUSE, "hp/assets/textures/stone_diffuse.png")
                 put(MAP.NORMAL, "hp/assets/textures/stone_normal.png")
+                put(MAP.HEIGHT, "hp/assets/textures/stone_height.png")
             }
         })
 
@@ -88,6 +89,13 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
             }
         })
 
+        getMaterial("brick", object : HashMap<MAP, String>() {
+            init {
+                put(MAP.DIFFUSE, "hp/assets/textures/brick.png")
+                put(MAP.NORMAL, "hp/assets/textures/brick_normal.png")
+                put(MAP.HEIGHT, "hp/assets/textures/brick_height.png")
+            }
+        })
         getMaterial("wood", object : HashMap<MAP, String>() {
             init {
                 put(MAP.DIFFUSE, "hp/assets/textures/wood_diffuse.png")
@@ -108,9 +116,9 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
         })
         getMaterial("stoneParallax", object : HashMap<MAP, String>() {
             init {
-                put(MAP.DIFFUSE, "hp/assets/models/textures/bricks_parallax.jpg")
-                put(MAP.HEIGHT, "hp/assets/models/textures/bricks_parallax_height.jpg")
-                put(MAP.NORMAL, "hp/assets/models/textures/bricks_parallax_normal.png")
+                put(MAP.DIFFUSE, "hp/assets/textures/bricks_parallax.dds")
+                put(MAP.HEIGHT, "hp/assets/textures/bricks_parallax_height.dds")
+                put(MAP.NORMAL, "hp/assets/textures/bricks_parallax_normal.dds")
             }
         })
     }

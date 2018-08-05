@@ -71,7 +71,7 @@ public final class Config {
 	@Toggable(group = "Debug")
 	private volatile boolean useCpuFrustumCulling = true;
 	@Toggable(group = "Debug")
-	private volatile boolean useGpuOcclusionCulling = true;
+	private volatile boolean useGpuOcclusionCulling = false;
 	private volatile boolean useInstantRadiosity = false;
 	private volatile boolean forceRevoxelization = false;
 	@Toggable(group = "Quality settings")

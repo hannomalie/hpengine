@@ -21,6 +21,32 @@ class Vector3f(parent: Struct? = null) : Struct(parent) {
         this.z = target.z
     }
 }
+class Vector4f(parent: Struct? = null) : Struct(parent) {
+    var x by 0.0f
+    var y by 0.0f
+    var z by 0.0f
+    var w by 0.0f
+
+    fun set(target: org.joml.Vector4f) {
+        this.x = target.x
+        this.y = target.y
+        this.z = target.z
+        this.w = target.w
+    }
+}
+class Vector4i(parent: Struct? = null) : Struct(parent) {
+    var x by 0
+    var y by 0
+    var z by 0
+    var w by 0
+
+    fun set(target: org.joml.Vector4i) {
+        this.x = target.x
+        this.y = target.y
+        this.z = target.z
+        this.w = target.w
+    }
+}
 class Vector2f(parent: Struct? = null) : Struct(parent) {
     var x by 0.0f
     var y by 0.0f
