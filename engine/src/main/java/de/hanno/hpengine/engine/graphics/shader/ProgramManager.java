@@ -27,6 +27,7 @@ public class ProgramManager implements Manager {
 
     private ComputeShaderProgram highZProgram;
     private Program appendDrawcommandsProgram;
+    ComputeShaderProgram appendDrawcommandsComputeProgram;
 
     private Program renderToQuadProgram;
     private Program debugFrameProgram;
@@ -50,6 +51,7 @@ public class ProgramManager implements Manager {
             firstpassAnimatedDefaultProgram = getProgram(firstpassAnimatedDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, new Defines());
 
             appendDrawcommandsProgram = getProgramFromFileNames("append_drawcommands_vertex.glsl", null, new Defines());
+            appendDrawcommandsComputeProgram = getComputeProgram("append_drawcommands_compute.glsl", new Defines());
             highZProgram = getComputeProgram("highZ_compute.glsl");
 
             renderToQuadProgram = getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
@@ -164,6 +166,9 @@ public class ProgramManager implements Manager {
 
     public Program getAppendDrawCommandProgram() {
         return appendDrawcommandsProgram;
+    }
+    public ComputeShaderProgram getAppendDrawCommandComputeProgram() {
+        return appendDrawcommandsComputeProgram;
     }
 
     @NotNull

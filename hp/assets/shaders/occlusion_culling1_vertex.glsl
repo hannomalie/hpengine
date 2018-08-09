@@ -249,6 +249,15 @@ bool boxInFrustum(mat4 viewProjectionMatrix, vec3 min, vec3 max)
 
     return true;
 }
+
+bool in_frustumXXX(mat4 M, vec3 p) {
+        vec4 Pclip = M * vec4(p, 1.);
+        const float bias = 0.;
+        return abs(Pclip.x) < Pclip.w + bias &&
+               abs(Pclip.y) < Pclip.w + bias &&
+               0 < Pclip.z + bias &&
+               Pclip.z < Pclip.w + bias;
+    }
 void main(){
     mat4 viewProjectionMatrix = projectionMatrix*viewMatrix;
 	uint commandIndex = gl_VertexID;
@@ -281,7 +290,8 @@ void main(){
 //        bool inFrustum = in_frustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
 
         vec3 span = (entity.max.xyz - entity.min.xyz);
-        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, 0.5 * span.x));
+//        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, 0.5 * span.x));
+
 //        bool inFrustum = boxInFrustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
 //        bool inFrustum = (testPoint(viewProjectionMatrix, entity.min.xyz) && testPoint(viewProjectionMatrix, entity.max.xyz));
 
@@ -290,6 +300,21 @@ void main(){
         minMaxView[0] = viewMatrix*entity.min;
         minMaxView[1] = viewMatrix*entity.max;
 //        bool inFrustum = (testPoint(viewProjectionMatrix, minMaxView[0].xyz) && testPoint(viewProjectionMatrix, minMaxView[1].xyz));
+
+
+        bool inFrustum = (
+                        in_frustumXXX(viewProjectionMatrix, entity.max.xyz)
+                        || in_frustumXXX(viewProjectionMatrix, entity.min.xyz)
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.min.xy, entity.max.z))
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.min.x, entity.max.y, entity.max.z))
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.max.x, entity.min.y, entity.max.z))
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.max.x, entity.max.yz))
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.max.xy, entity.min.z))
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.max.x, entity.min.y, entity.max.z))
+                        || in_frustumXXX(viewProjectionMatrix, vec3(entity.min + 0.5*entity.max)) //TODO: Better handling large objects, this culse falsely sometimes
+                        );
+
+
 
         boundingRect[0] = (projectionMatrix*minMaxView[0]);
         boundingRect[1] = (projectionMatrix*minMaxView[1]);
@@ -324,11 +349,13 @@ void main(){
 
         bool isVisible = true;
 
-        if(FRUSTUM_CULLING) {
+        if(FRUSTUM_CULLING)
+        {
             isVisible = isVisible && inFrustum;
         }
 
-        if(OCCLUSION_CULLING) {
+        if(OCCLUSION_CULLING)
+        {
             isVisible = isVisible && !allOccluded;
         }
 

@@ -11,13 +11,13 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelC
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
+import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.CommandBuffer
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
@@ -34,7 +34,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                                                               open val renderCam: Camera? = null,
                                                               open val cullCam: Camera? = renderCam) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
-    protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", false))
+    protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
     private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
     private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
@@ -129,7 +129,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram = engine.programManager.appendDrawCommandProgram
+        val appendProgram: AbstractProgram = if(Config.getInstance().isUseComputeShaderDrawCommandAppend) engine.programManager.appendDrawCommandComputeProgram else engine.programManager.appendDrawcommandsProgram
 
         GPUProfiler.start("Buffer compaction")
         with(commandOrganization) {
@@ -140,7 +140,6 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             val entitiesCountersToUse = entitiesCounters
             entitiesCountersToUse.sizeInBytes = commands.size * java.lang.Integer.BYTES
             with(appendProgram) {
-                val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
                 use()
                 bindShaderStorageBuffer(1, entitiesCounters)
                 bindShaderStorageBuffer(2, drawCountBuffer)
@@ -155,7 +154,12 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                 bindShaderStorageBuffer(12, commandOffsets)
                 bindShaderStorageBuffer(13, currentCompactedPointers)
                 setUniform("maxDrawCommands", commands.size)
-                GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)
+                if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
+                    this.engine.programManager.appendDrawCommandComputeProgram.dispatchCompute(1, commands.size, 1)
+                } else {
+                    val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
+                    GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)
+                }
                 GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT or GL42.GL_TEXTURE_FETCH_BARRIER_BIT or GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL42.GL_COMMAND_BARRIER_BIT)
                 GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
             }

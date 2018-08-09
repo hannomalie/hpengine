@@ -119,6 +119,9 @@ public final class Config {
 	private volatile boolean drawlightsEnabled = false;
     @Toggable(group = "Debug")
     private volatile boolean printPipelineDebugOutput = false;
+	@Toggable(group = "Debug")
+	private volatile boolean useComputeShaderDrawCommandAppend = true;
+
 	@Toggable(group = "Quality settings")
 	private volatile boolean drawProbes = true;
 	@Adjustable(group = "Debug")
@@ -399,6 +402,14 @@ public final class Config {
     public boolean isPrintPipelineDebugOutput() {
         return printPipelineDebugOutput;
     }
+
+	public boolean isUseComputeShaderDrawCommandAppend() {
+		return useComputeShaderDrawCommandAppend;
+	}
+
+	public void setUseComputeShaderDrawCommandAppend(boolean useComputeShaderDrawCommandAppend) {
+		this.useComputeShaderDrawCommandAppend = useComputeShaderDrawCommandAppend;
+	}
 
 	public void setDrawlightsEnabled(boolean drawlightsEnabled) {
 		this.drawlightsEnabled = drawlightsEnabled;

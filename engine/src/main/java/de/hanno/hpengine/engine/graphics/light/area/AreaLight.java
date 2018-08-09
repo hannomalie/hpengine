@@ -36,7 +36,7 @@ public class AreaLight implements Component, Bufferable {
 
 	@Override
 	public void update(float deltaSeconds) {
-//		camera.update(deltaSeconds);
+//		cameraEntity.update(deltaSeconds);
 	}
 	public void setColor(Vector3f color) {
 		this.color = color;

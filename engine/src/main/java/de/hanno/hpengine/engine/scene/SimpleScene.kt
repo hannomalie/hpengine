@@ -72,12 +72,13 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
             .apply { this@SimpleScene.add(this) }
 
-    private val camera = Entity("MainCamera")
+    val cameraEntity = Entity("MainCamera")
             .apply { addComponent(inputComponentSystem.create(this)) }
-            .apply { addComponent(cameraComponentSystem.create(this)) }
             .apply { this@SimpleScene.add(this) }
 
-    override var activeCamera: Camera = camera.getComponent(Camera::class.java)
+    override val camera = cameraComponentSystem.create(cameraEntity).apply { cameraEntity.addComponent(this) }
+
+    override var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)
 
 
     override fun init(engine: Engine) {
@@ -85,7 +86,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
     }
 
     override fun restoreWorldCamera() {
-        activeCamera = camera.getComponent(Camera::class.java)
+        activeCamera = cameraEntity.getComponent(Camera::class.java)
     }
     override fun extract(currentWriteState: RenderState) {
         with(entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()) {

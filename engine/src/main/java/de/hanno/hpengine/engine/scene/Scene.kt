@@ -24,6 +24,7 @@ import java.util.*
 
 interface Scene : LifeCycle, Serializable {
     val name: String
+    val camera: Camera
     var activeCamera: Camera
     var currentCycle: Long
     val managers: ManagerRegistry
