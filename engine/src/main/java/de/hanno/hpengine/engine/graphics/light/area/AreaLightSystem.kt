@@ -83,7 +83,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
 
             areaShadowPassProgram.use()
             areaShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-            areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.entity.viewMatrixAsBuffer)
+            areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.camera.viewMatrixAsBuffer)
             areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
             for (e in renderState.renderBatchesStatic) {

@@ -379,7 +379,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
                     int instanceMaterialIndex = instance.getMaterials().get(meshIndex).getMaterialIndex();
-                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
+                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld(instance));
                 }
             }
 

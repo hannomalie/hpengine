@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.math.Vector3f
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.struct.Struct
+import de.hanno.struct.copyFrom
 import org.joml.Matrix4f
 import java.nio.ByteBuffer
 
@@ -35,33 +36,36 @@ class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     var dummy4 by 0.0f
 
     fun setTrafo(source: Matrix4f) {
-        trafo.m00 = source.m00()
-        trafo.m01 = source.m01()
-        trafo.m02 = source.m02()
-        trafo.m03 = source.m03()
-        trafo.m10 = source.m10()
-        trafo.m11 = source.m11()
-        trafo.m12 = source.m12()
-        trafo.m13 = source.m13()
-        trafo.m20 = source.m20()
-        trafo.m21 = source.m21()
-        trafo.m22 = source.m22()
-        trafo.m23 = source.m23()
-        trafo.m30 = source.m30()
-        trafo.m31 = source.m31()
-        trafo.m32 = source.m32()
-        trafo.m33 = source.m33()
+        source.get(trafo.baseByteOffset, trafo.buffer)
+//        trafo.m00 = source.m00()
+//        trafo.m01 = source.m01()
+//        trafo.m02 = source.m02()
+//        trafo.m03 = source.m03()
+//        trafo.m10 = source.m10()
+//        trafo.m11 = source.m11()
+//        trafo.m12 = source.m12()
+//        trafo.m13 = source.m13()
+//        trafo.m20 = source.m20()
+//        trafo.m21 = source.m21()
+//        trafo.m22 = source.m22()
+//        trafo.m23 = source.m23()
+//        trafo.m30 = source.m30()
+//        trafo.m31 = source.m31()
+//        trafo.m32 = source.m32()
+//        trafo.m33 = source.m33()
     }
 
     fun setMin(min: org.joml.Vector3f) {
-        this.min.x = min.x
-        this.min.y = min.y
-        this.min.z = min.z
+        min.get(this.min.baseByteOffset, buffer)
+//        this.min.x = min.x
+//        this.min.y = min.y
+//        this.min.z = min.z
     }
     fun setMax(max: org.joml.Vector3f) {
-        this.max.x = max.x
-        this.max.y = max.y
-        this.max.z = max.z
+        max.get(this.max.baseByteOffset, buffer)
+//        this.max.x = max.x
+//        this.max.y = max.y
+//        this.max.z = max.z
     }
 
     fun setSelected(selected: Boolean) {

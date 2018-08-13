@@ -155,7 +155,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                 bindShaderStorageBuffer(13, currentCompactedPointers)
                 setUniform("maxDrawCommands", commands.size)
                 if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
-                    this.engine.programManager.appendDrawCommandComputeProgram.dispatchCompute(1, commands.size, 1)
+                    engine.programManager.appendDrawCommandComputeProgram.dispatchCompute(1, commands.size, 1)
                 } else {
                     val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
                     GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)
@@ -175,7 +175,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.setUniform("entityIndex", 0)
         program.setUniform("entityBaseIndex", 0)
         program.setUniform("indirect", true)
-        var drawCountBufferToUse = drawCountBuffer
+        val drawCountBufferToUse = drawCountBuffer
         if(Config.getInstance().isUseGpuOcclusionCulling) {
             program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
             program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
@@ -214,7 +214,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             setUniform("maxDrawCommands", commandOrganization.commands.size)
             val camera = cullCam ?: renderState.camera
             setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
-            setUniformAsMatrix4("viewMatrix", camera.entity.viewMatrixAsBuffer)
+            setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
             setUniform("camPosition", camera.entity.position)
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             engine.gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)

@@ -53,7 +53,7 @@ open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: En
     fun setUniforms(renderState: RenderState, program: Program) {
 
         val camera = cullCam ?: renderCam ?: renderState.camera
-        val viewMatrixAsBuffer = camera.entity.viewMatrixAsBuffer
+        val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
         val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
         val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
 

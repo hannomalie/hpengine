@@ -222,7 +222,7 @@ public class TransformTest {
 		Transform camera = new SimpleTransform();
         camera.translateLocal(new Vector3f(0, 5, 0));
 
-        Vector4f vectorInViewSpace = new Vector4f(0, 5, 0, 1).mul(camera.getViewMatrix());
+        Vector4f vectorInViewSpace = new Vector4f(0, 5, 0, 1).mul(camera.invert(new Matrix4f()));
 		assertEpsilonEqual(new Vector4f(0,0,0,1), vectorInViewSpace);
 	}
 	@Test
@@ -231,7 +231,7 @@ public class TransformTest {
 		camera.rotate(new Vector4f(0, 1, 0, 90));
 		assertEpsilonEqual(new Vector3f(1, 0, 0), camera.getViewDirection());
 
-		Vector4f vectorInViewSpace = new Vector4f(5, 0, 0, 1).mul(camera.getViewMatrix());
+		Vector4f vectorInViewSpace = new Vector4f(5, 0, 0, 1).mul(camera.invert(new Matrix4f()));
 		assertEpsilonEqual(new Vector4f(0,0,5,1), vectorInViewSpace);
 	}
 
@@ -255,7 +255,7 @@ public class TransformTest {
         camera.translateLocal(new Vector3f(-10, 0, 0));
         assertEpsilonEqual(new Vector3f(-10, 5, 0), camera.getPosition());
 
-		Vector4f vectorInViewSpace = new Vector4f(0, 5, 0, 1).mul(camera.getViewMatrix());
+		Vector4f vectorInViewSpace = new Vector4f(0, 5, 0, 1).mul(camera.invert(new Matrix4f()));
 	}
 
 

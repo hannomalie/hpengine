@@ -25,12 +25,10 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 
 	private boolean hasMoved = true;
 	final protected FloatBuffer modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
-	final protected FloatBuffer viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
     public Transform() {
 		identity();
 		modelMatrixBuffer.rewind();
-		viewMatrixBuffer.rewind();
 	}
 
 	public Transform(Transform source) {
@@ -105,14 +103,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		this.hasMoved = hasMoved;
 	}
 
-	public FloatBuffer getViewMatrixAsBuffer() {
-		return getViewMatrixAsBuffer(true);
-	}
-
-	public FloatBuffer getViewMatrixAsBuffer(boolean recalculateBefore) {
-		return getTranslationRotationBuffer(recalculateBefore);
-	}
-
 	@Override
 	public boolean equals(Object b) {
 		if(!(b instanceof Transform)) {
@@ -134,35 +124,15 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 	}
 
-
-	Matrix4f viewMatrix = new Matrix4f();
-	public Matrix4f getViewMatrix() {
-		return this.getTransformationWithoutRecalculation().invert(viewMatrix);
-	}
-
 	protected void bufferMatrices() {
-		synchronized(modelMatrixBuffer) {
-			modelMatrixBuffer.rewind();
-			this.getTransformationWithoutRecalculation().get(modelMatrixBuffer);
-			modelMatrixBuffer.rewind();
-		}
-
-		synchronized(viewMatrixBuffer) {
-			viewMatrixBuffer.rewind();
-			getViewMatrix().get(viewMatrixBuffer);
-			viewMatrixBuffer.rewind();
-		}
+		modelMatrixBuffer.rewind();
+		this.getTransformationWithoutRecalculation().get(modelMatrixBuffer);
+		modelMatrixBuffer.rewind();
 	}
 
 	public FloatBuffer getTransformationBuffer() {
 		recalculateIfDirty();
 		return modelMatrixBuffer;
-	}
-	public FloatBuffer getTranslationRotationBuffer(boolean recalculateBefore) {
-		if(recalculateBefore) {
-			recalculateIfDirty();
-		}
-		return viewMatrixBuffer;
 	}
 
 	Vector3f position = new Vector3f();

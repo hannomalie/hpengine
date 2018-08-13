@@ -11,6 +11,7 @@ import org.joml.*
 import org.lwjgl.BufferUtils
 import java.io.IOException
 import java.io.ObjectOutputStream
+import java.nio.FloatBuffer
 
 open class Camera: Component {
 
@@ -52,7 +53,12 @@ open class Camera: Component {
     @Transient
     var lastViewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
         internal set
+    val viewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
 
+    var viewMatrix = Matrix4f()
+        get() {
+            return entity.transformation.invert(field)
+        }
     var projectionMatrix = Matrix4f()
     var viewProjectionMatrix = Matrix4f()
 
@@ -90,7 +96,7 @@ open class Camera: Component {
                     inverseProjection.transform(Vector4f(1f, -1f, -1f, 1f)),
                     inverseProjection.transform(Vector4f(-1f, -1f, -1f, 1f)))
 
-            val inverseView = entity.viewMatrix.invert(Matrix4f())
+            val inverseView = viewMatrix.invert(Matrix4f())
             val resultVec3 = result.map { it.div(it.w) }.map { inverseView.transform(it) }.map { Vector3f(it.x, it.y, it.z) }
 
             return resultVec3.toTypedArray()
@@ -121,7 +127,7 @@ open class Camera: Component {
 
     override fun update(seconds: Float) {
         saveViewMatrixAsLastViewMatrix()
-        projectionMatrix.mul(getViewMatrix(), viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
+        projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
         frustum.frustumIntersection.set(viewProjectionMatrix)
         if (entity.hasMoved()) {
             transform()
@@ -130,16 +136,18 @@ open class Camera: Component {
     }
 
     private fun storeMatrices() {
-        synchronized(projectionMatrixAsBuffer) {
-            projectionMatrixAsBuffer.rewind()
-            projectionMatrix.get(projectionMatrixAsBuffer)
-            projectionMatrixAsBuffer.rewind()
-        }
-        synchronized(viewProjectionMatrixAsBuffer) {
-            viewProjectionMatrixAsBuffer.rewind()
-            viewProjectionMatrix.set(projectionMatrix).mul(entity.viewMatrix).get(viewProjectionMatrixAsBuffer)
-            viewProjectionMatrixAsBuffer.rewind()
-        }
+
+        viewMatrixAsBuffer.rewind()
+        viewMatrix.get(viewMatrixAsBuffer)
+        viewMatrixAsBuffer.rewind()
+
+        projectionMatrixAsBuffer.rewind()
+        projectionMatrix.get(projectionMatrixAsBuffer)
+        projectionMatrixAsBuffer.rewind()
+
+        viewProjectionMatrixAsBuffer.rewind()
+        viewProjectionMatrix.set(projectionMatrix).mul(viewMatrix).get(viewProjectionMatrixAsBuffer)
+        viewProjectionMatrixAsBuffer.rewind()
     }
 
     private fun transform() {
@@ -148,7 +156,7 @@ open class Camera: Component {
 
     fun saveViewMatrixAsLastViewMatrix() {
         lastViewMatrixAsBuffer.rewind()
-        lastViewMatrixAsBuffer.put(entity.getViewMatrixAsBuffer(false))
+        lastViewMatrixAsBuffer.put(viewMatrixAsBuffer)
         lastViewMatrixAsBuffer.rewind()
     }
 
@@ -216,7 +224,6 @@ open class Camera: Component {
         oos.defaultWriteObject()
     }
 
-    fun getViewMatrix() = entity.viewMatrix
     fun getViewDirection() = entity.viewDirection
     fun getRightDirection() = entity.rightDirection
     fun getUpDirection() = entity.upDirection
@@ -225,8 +232,12 @@ open class Camera: Component {
     fun getTranslation(dest: Vector3f) = entity.getTranslation(dest)
     fun translateLocal(offset: Vector3f) = entity.translateLocal(offset)
     fun setTranslation(translation: Vector3f) = entity.setTranslation(translation)
-    fun getViewMatrixAsBuffer() = entity.viewMatrixAsBuffer
     fun getPosition() = entity.position
+
+
+    fun getTranslationRotationBuffer(): FloatBuffer {
+        return viewMatrixAsBuffer
+    }
 
     companion object {
         private val LOGGER = ConsoleLogger.getLogger()

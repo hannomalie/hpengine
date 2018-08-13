@@ -167,7 +167,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         if(!isClean(transform)) {
             calculateMinMax(transform, minMax.getMin(), minMax.getMax(), compiledFaces);
         }
-        return super.getMinMaxWorld(IDENTITY);
+        return super.getMinMaxWorld(transform);
     }
 
     @Override

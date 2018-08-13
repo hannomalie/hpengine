@@ -197,7 +197,7 @@ class EvaluateProbeRenderExtension(val engine: Engine): RenderExtension {
         evaluateProbeProgram.use()
         val camTranslation = Vector3f()
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.entity.viewMatrixAsBuffer)
+        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(0, engine.renderer.gBuffer.storageBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)

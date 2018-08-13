@@ -1,6 +1,8 @@
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.DirectoryManager;
@@ -40,10 +42,12 @@ public class InitCubeClusters implements LifeCycle {
                 File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
                 current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
 
+                List clusters = new ArrayList<Cluster>();
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
-                    int count = 5;
+                    int count = 10;
+                    ClustersComponent clustersComponent = new ClustersComponent(engine, engine.getEventBus(), current);
                     for(int x = -count; x < count; x++) {
                         for(int y = -count; y < count; y++) {
                             for(int z = -count; z < count; z++) {
@@ -51,18 +55,21 @@ public class InitCubeClusters implements LifeCycle {
                                 float randomFloat = random.nextFloat() - 0.5f;
                                 trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,randomFloat* maxDistance *y,randomFloat* maxDistance *z)));
 
-                                ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+                                ModelComponent modelComponent = current.getComponent(ModelComponent.class);
                                 List<SimpleMaterial> materials = modelComponent == null ? new ArrayList<SimpleMaterial>() : modelComponent.getMaterials();
-                                cluster.add(new Instance(, trafo, materials, new AnimationController(0,0), new SimpleSpatial(){
+                                cluster.add(new Instance(current, trafo, materials, new AnimationController(0,0), new SimpleSpatial(){
                                     @Override
-                                    public Vector3f[] getMinMax() {
+                                    public AABB getMinMax() {
                                         return current.getMinMax();
                                     }
                                 }));
                             }
                         }
                     }
-                    current.addCluster(cluster);
+                    clusters.add(cluster);
+
+                    clustersComponent.addClusters(clusters);
+                    current.addComponent(clustersComponent);
                     System.out.println("Added " + cluster.size());
                 }
             }

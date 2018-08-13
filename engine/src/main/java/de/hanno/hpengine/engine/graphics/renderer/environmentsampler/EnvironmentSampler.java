@@ -318,7 +318,7 @@ public class EnvironmentSampler extends Entity {
         firstpassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
         firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
         firstpassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
-        firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getEntity().getViewMatrixAsBuffer());
+        firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstpassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
@@ -364,7 +364,7 @@ public class EnvironmentSampler extends Entity {
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeManager.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeManager.RESOLUTION);
-		FloatBuffer viewMatrix = getViewMatrixAsBuffer();
+		FloatBuffer viewMatrix = getCamera().getViewMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		FloatBuffer projectionMatrix = getCamera().getProjectionMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);

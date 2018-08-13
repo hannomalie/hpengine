@@ -242,7 +242,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
-            FloatBuffer viewMatrixAsBuffer1 = orthoCam.getEntity().getViewMatrixAsBuffer();
+            FloatBuffer viewMatrixAsBuffer1 = orthoCam.getViewMatrixAsBuffer();
             voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
             FloatBuffer projectionMatrixAsBuffer1 = orthoCam.getProjectionMatrixAsBuffer();
             voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
@@ -339,7 +339,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.use();
         Vector3f camTranslation = new Vector3f();
         voxelConeTraceProgram.setUniform("eyePosition", renderState.getCamera().getEntity().getTranslation(camTranslation));
-        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getEntity().getViewMatrixAsBuffer());
+        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
         voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.getRenderer().getGBuffer().getStorageBuffer());
         voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderState));
@@ -388,7 +388,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private void initViewZBuffer() {
         viewZBuffer.rewind();
-        viewZTransform.getViewMatrix().get(viewZBuffer);
+        viewZTransform.invert(new Matrix4f()).get(viewZBuffer);
         viewZBuffer.rewind();
     }
 
@@ -396,7 +396,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         viewYTransform.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90f)));
         viewYTransform.recalculate();
         viewYBuffer.rewind();
-        viewYTransform.getViewMatrix().get(viewYBuffer);
+        viewYTransform.invert(new Matrix4f()).get(viewYBuffer);
         viewYBuffer.rewind();
     }
 
@@ -404,7 +404,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         viewXTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(90f)));
         viewXTransform.recalculate();
         viewXBuffer.rewind();
-        viewXTransform.getViewMatrix().get(viewXBuffer);
+        viewXTransform.invert(new Matrix4f()).get(viewXBuffer);
         viewXBuffer.rewind();
     }
 
