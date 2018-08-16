@@ -84,7 +84,7 @@ class Matrix4f(parent: Struct? = null): Struct(parent) {
     }
 
     fun <T: Matrix4f> set(joint: T) {
-        joint.get(baseByteOffset, buffer)
+        joint.get(baseByteOffset.toInt(), buffer)
 //        this.m00 = joint.m00()
 //        this.m01 = joint.m01()
 //        this.m02 = joint.m02()

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.transform
 
-import de.hanno.hpengine.engine.model.StaticMesh
 import org.joml.Vector3f
 import org.joml.Vector4f
 
@@ -20,8 +19,8 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
 
         minMaxWorldProperty.resetToAbsoluteMinMax()
         corners.forEach { corner ->
-            StaticMesh.calculateMin(minMaxWorldProperty.min, corner)
-            StaticMesh.calculateMax(minMaxWorldProperty.max, corner)
+            minMaxWorldProperty.min.min(corner)
+            minMaxWorldProperty.max.max(corner)
         }
     }
 

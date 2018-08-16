@@ -36,7 +36,7 @@ class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     var dummy4 by 0.0f
 
     fun setTrafo(source: Matrix4f) {
-        source.get(trafo.baseByteOffset, trafo.buffer)
+        source.get(trafo.baseByteOffset.toInt(), trafo.buffer)
 //        trafo.m00 = source.m00()
 //        trafo.m01 = source.m01()
 //        trafo.m02 = source.m02()
@@ -56,13 +56,13 @@ class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     }
 
     fun setMin(min: org.joml.Vector3f) {
-        min.get(this.min.baseByteOffset, buffer)
+        min.get(this.min.baseByteOffset.toInt(), buffer)
 //        this.min.x = min.x
 //        this.min.y = min.y
 //        this.min.z = min.z
     }
     fun setMax(max: org.joml.Vector3f) {
-        max.get(this.max.baseByteOffset, buffer)
+        max.get(this.max.baseByteOffset.toInt(), buffer)
 //        this.max.x = max.x
 //        this.max.y = max.y
 //        this.max.z = max.z

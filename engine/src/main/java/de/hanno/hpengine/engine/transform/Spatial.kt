@@ -25,7 +25,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     override fun getMinMaxWorld(): AABB = minMaxWorldProperty
 
     protected open fun isClean(transform: Transform<*>): Boolean {
-        return /*transform == null || */(lastUsedTransformationMatrix != null && Util.equals(transform, lastUsedTransformationMatrix))
+        return transform == lastUsedTransformationMatrix
     }
 
     private fun calculateCenters() {
