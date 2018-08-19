@@ -35,37 +35,11 @@ class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     val max by Vector3f(this)
     var dummy4 by 0.0f
 
-    fun setTrafo(source: Matrix4f) {
-        source.get(trafo.baseByteOffset.toInt(), trafo.buffer)
-//        trafo.m00 = source.m00()
-//        trafo.m01 = source.m01()
-//        trafo.m02 = source.m02()
-//        trafo.m03 = source.m03()
-//        trafo.m10 = source.m10()
-//        trafo.m11 = source.m11()
-//        trafo.m12 = source.m12()
-//        trafo.m13 = source.m13()
-//        trafo.m20 = source.m20()
-//        trafo.m21 = source.m21()
-//        trafo.m22 = source.m22()
-//        trafo.m23 = source.m23()
-//        trafo.m30 = source.m30()
-//        trafo.m31 = source.m31()
-//        trafo.m32 = source.m32()
-//        trafo.m33 = source.m33()
-    }
-
-    fun setMin(min: org.joml.Vector3f) {
-        min.get(this.min.baseByteOffset.toInt(), buffer)
-//        this.min.x = min.x
-//        this.min.y = min.y
-//        this.min.z = min.z
-    }
-    fun setMax(max: org.joml.Vector3f) {
-        max.get(this.max.baseByteOffset.toInt(), buffer)
-//        this.max.x = max.x
-//        this.max.y = max.y
-//        this.max.z = max.z
+    fun setTrafoMinMax(source: Matrix4f, min: org.joml.Vector3f, max: org.joml.Vector3f) {
+        val baseByteOffset = baseByteOffset
+        source.get((baseByteOffset + trafo.localByteOffset).toInt(), buffer)
+        min.get((baseByteOffset + this.min.localByteOffset).toInt(), buffer)
+        max.get((baseByteOffset + this.max.localByteOffset).toInt(), buffer)
     }
 
     fun setSelected(selected: Boolean) {

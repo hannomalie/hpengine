@@ -22,10 +22,10 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements
     }
 
 //    This can be used for debug drawing
-    @Override
-    public Camera getCullCam() {
-        return getDebugCam();
-    }
+//    @Override
+//    public Camera getCullCam() {
+//        return getDebugCam();
+//    }
 
     private Camera getDebugCam() {
         return engine.getSceneManager().getScene().getComponentSystems().get(CameraComponentSystem.class).getComponents().stream().findFirst().orElse(engine.getScene().getActiveCamera());

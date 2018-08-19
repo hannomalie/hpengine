@@ -125,9 +125,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 	}
 
 	protected void bufferMatrices() {
-		modelMatrixBuffer.rewind();
 		this.getTransformationWithoutRecalculation().get(modelMatrixBuffer);
-		modelMatrixBuffer.rewind();
 	}
 
 	public FloatBuffer getTransformationBuffer() {

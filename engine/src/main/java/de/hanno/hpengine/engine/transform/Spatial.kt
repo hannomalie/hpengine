@@ -39,7 +39,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     }
 
     override fun getMinMaxWorld(transform: Transform<*>): AABB {
-        recalculateIfNotClean(transform)
+//        recalculateIfNotClean(transform)
         return minMaxWorldProperty
     }
 
@@ -89,10 +89,8 @@ open class TransformSpatial(val transform: Transform<*>, val modelComponent: Mod
         return modelComponent.minMax
     }
 
-    override fun getMinMaxWorld(): AABB = super.getMinMaxWorld(transform)
-
     override fun update(deltaSeconds: Float) {
-        super.getMinMaxWorld(transform)
+        super.recalculateIfNotClean(transform)
     }
 }
 open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent) {

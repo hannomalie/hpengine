@@ -76,7 +76,8 @@ public class TripleBuffer<T extends RenderState> {
         swapLock.lock();
         stagingLock.lock();
 
-        if(!currentReadState.state.preventSwap(currentStagingState.state, currentReadState.state)) {
+        if(!currentReadState.state.preventSwap(currentStagingState.state, currentReadState.state))
+        {
             tempA = currentReadState;
             currentReadState = currentStagingState;
             currentStagingState = tempA;
