@@ -94,7 +94,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
                 for ((meshIndex, mesh) in meshes.withIndex()) {
                     val materialIndex = mesh.material.materialIndex
-                    target.setSelected(entity.isSelected)
+                    target.selected = entity.isSelected
                     target.materialIndex = materialIndex
                     target.update = entity.update.ordinal
                     target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
@@ -116,7 +116,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
                         val instanceMatrix = instance.transformation
                         val instanceMaterialIndex = instance.materials[meshIndex].materialIndex
 
-                        target.setSelected(entity.isSelected)
+                        target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex
                         target.update = entity.update.ordinal
                         target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
@@ -138,7 +138,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
                         for (instance in entity.instances) {
                             val instanceMatrix = instance.transformation
 
-                            target.setSelected(entity.isSelected)
+                            target.selected = entity.isSelected
                             target.materialIndex = materialIndex
                             target.update = entity.update.ordinal
                             target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex

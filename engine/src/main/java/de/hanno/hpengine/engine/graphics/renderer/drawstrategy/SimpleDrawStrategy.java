@@ -31,6 +31,7 @@ import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
 import java.io.File;
@@ -81,6 +82,8 @@ public class SimpleDrawStrategy implements DrawStrategy {
     private StateRef<GPUCulledMainPipeline> mainPipelineRef;
 
     private final RenderBatch skyBoxRenderBatch;
+
+    private FloatBuffer modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
     public SimpleDrawStrategy(Engine engine) throws Exception {
         super();
@@ -242,7 +245,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         Vector3f translation = new Vector3f();
         program.setUniform("eyePos_world", camera.getTranslation(translation));
         program.setUniform("materialIndex", engine.getScene().getMaterialManager().getSkyboxMaterial().getMaterialIndex());
-        program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
+        program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformation().get(modelMatrixBuffer));
         program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         DrawStrategy.draw(gpuContext, skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, program, false);

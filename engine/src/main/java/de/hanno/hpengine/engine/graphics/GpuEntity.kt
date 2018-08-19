@@ -13,8 +13,7 @@ typealias HpMatrix = de.hanno.hpengine.engine.math.Matrix4f
 
 class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     val trafo by HpMatrix(this)
-    var selected by 0
-        private set
+    var selected by false
     var materialIndex by 0
     var update by 0
     var meshBufferIndex by 0
@@ -40,10 +39,6 @@ class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
         source.get((baseByteOffset + trafo.localByteOffset).toInt(), buffer)
         min.get((baseByteOffset + this.min.localByteOffset).toInt(), buffer)
         max.get((baseByteOffset + this.max.localByteOffset).toInt(), buffer)
-    }
-
-    fun setSelected(selected: Boolean) {
-        this.selected = if (selected) 1 else 0
     }
 
     override fun toString(): String {

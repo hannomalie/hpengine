@@ -146,6 +146,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
         engine.gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
     }
 
+    private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
         val entities = engine.getScene().entityManager.getEntities()
         val gpuContext = engine.gpuContext
@@ -170,7 +171,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
 
             for (e in entities) {
                 e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                    pointShadowPassProgram!!.setUniformAsMatrix4("modelMatrix", e.transformationBuffer)
+                    pointShadowPassProgram!!.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
                     pointShadowPassProgram!!.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.getHasDiffuseMap())
                     pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.diffuse)
 
@@ -184,7 +185,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
             gpuContext.clearDepthAndColorBuffer()
             for (e in entities) {
                 e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                    pointShadowPassProgram!!.setUniformAsMatrix4("modelMatrix", e.transformationBuffer)
+                    pointShadowPassProgram!!.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
                     pointShadowPassProgram!!.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.getHasDiffuseMap())
                     pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.diffuse)
 

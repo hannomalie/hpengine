@@ -24,11 +24,9 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 	private List<T> children = new ArrayList<>();
 
 	private boolean hasMoved = true;
-	final protected FloatBuffer modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
     public Transform() {
 		identity();
-		modelMatrixBuffer.rewind();
 	}
 
 	public Transform(Transform source) {
@@ -88,7 +86,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		for (int i = 0; i < getChildren().size(); i++) {
 			getChildren().get(i).recalculate();
 		}
-		bufferMatrices();
 	}
 
 	public boolean isHasMoved() {
@@ -122,15 +119,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 	}
 	private boolean equals(Quaternionf a, Quaternionf b) {
 		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
-	}
-
-	protected void bufferMatrices() {
-		this.getTransformationWithoutRecalculation().get(modelMatrixBuffer);
-	}
-
-	public FloatBuffer getTransformationBuffer() {
-		recalculateIfDirty();
-		return modelMatrixBuffer;
 	}
 
 	Vector3f position = new Vector3f();

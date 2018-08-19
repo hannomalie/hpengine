@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.util.List;
@@ -23,12 +24,12 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FA
 public class DrawLinesExtension implements RenderExtension {
 
     private final Program linesProgram;
-    private final FloatBuffer identityMatrix44Buffer;
+    private final FloatBuffer identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
     private final Engine engine;
 
     public DrawLinesExtension(Engine engine) throws Exception {
         this.engine = engine;
-        identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
+        new SimpleTransform().get(identityMatrix44Buffer);
         linesProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
     }
 
