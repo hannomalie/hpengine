@@ -38,4 +38,6 @@ public interface Spatial {
     float getBoundingSphereRadius();
 
     AABB getMinMaxWorld();
+
+    default void update(float deltaSeconds) {}
 }

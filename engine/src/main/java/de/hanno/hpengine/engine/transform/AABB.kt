@@ -4,7 +4,7 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 
 data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) {
-    private val  corners = Array(8, { Vector3f() })
+    private val  corners = Array(8) { Vector3f() }
 
     fun transform(transform: Transform<*>, minMaxWorldProperty: AABB) {
         transform.transformPosition(min, corners[0])

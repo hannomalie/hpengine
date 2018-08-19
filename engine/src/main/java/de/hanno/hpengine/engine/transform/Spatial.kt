@@ -76,6 +76,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     override fun getMinMax() = minMaxProperty
 
     override fun getBoundingSphereRadius() = boundingSphereRadiusProperty
+
 }
 
 open class SimpleSpatial : AbstractSpatial() {
@@ -89,11 +90,13 @@ open class TransformSpatial(val transform: Transform<*>, val modelComponent: Mod
     }
 
     override fun getMinMaxWorld(): AABB = super.getMinMaxWorld(transform)
+
+    override fun update(deltaSeconds: Float) {
+        super.getMinMaxWorld(transform)
+    }
 }
 open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent) {
-
-    override fun getMinMaxWorld(): AABB {
+    override fun update(deltaSeconds: Float) {
         recalculate(transform)
-        return super.getMinMaxWorld()
     }
 }
