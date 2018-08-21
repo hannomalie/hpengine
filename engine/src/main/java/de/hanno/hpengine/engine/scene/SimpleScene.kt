@@ -74,9 +74,11 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
 
     val cameraEntity = Entity("MainCamera")
             .apply { addComponent(inputComponentSystem.create(this)) }
-            .apply { this@SimpleScene.add(this) }
 
-    override val camera = cameraComponentSystem.create(cameraEntity).apply { cameraEntity.addComponent(this) }
+    override val camera = cameraComponentSystem.create(cameraEntity)
+            .apply { cameraEntity.addComponent(this) }
+            .apply { this@SimpleScene.add(cameraEntity) }
+//    TODO: Exclude from entity movement determination
 
     override var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)
 

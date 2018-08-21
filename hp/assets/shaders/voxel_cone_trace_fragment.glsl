@@ -96,7 +96,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		alpha += sampledValue.a;
 		currentPosition += step;
 	}
-	return lit;
+	return accumAlbedo.rgb;
 }
 
 void main(void) {

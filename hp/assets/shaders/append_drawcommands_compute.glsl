@@ -1,6 +1,4 @@
-#define WORK_GROUP_SIZE 1024
-
-layout(local_size_x = WORK_GROUP_SIZE) in;
+layout(local_size_x = 1, local_size_y = 1024, local_size_x = 1) in;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _entityCounts {
@@ -47,17 +45,21 @@ layout(std430, binding=13) buffer _currentCompactedPointers {
 uniform int maxDrawCommands;
 uniform int threadCount;
 
-shared uint instanceCounterPerCommand = 0;
-shared uint[] instanceIndicesToAppend;
-
+shared uint instanceCounterPerCommand; // no initialization for shared memory, read https://www.khronos.org/opengl/wiki/Compute_Shader
+/**
+    THIS IS FUCKED UP; THIS SHADER IS SOMEHOW EXECUTED TWICE
+    AND THAT SIMPLY FUCKS UP EVERYTHING. UNUSABLE.
+**/
 void main()
 {
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
 
-    uint commandIndex = storePos.y;
+    uint commandIndex = gl_GlobalInvocationID.x;//storePos.x;
     if(commandIndex > maxDrawCommands) { return; }
+    uint instanceIndexBeforeMultiply = gl_LocalInvocationID.y;//storePos.y;
 
     DrawCommand sourceCommand = drawCommandsSource[commandIndex];
+    int noOfVisibleInstances = entityCounts[commandIndex];
 
     int targetCommandIndex = 0;
     int visibilityBufferOffset = 0;
@@ -69,45 +71,45 @@ void main()
     }
 
 
-    for(int i = 0; i < 10*1024; i+=1024) {
-
-        uint instanceIndex = storePos.x + i;
+    for(int i = 0; i < 10*1024; i+=1024)
+    {
+        uint instanceIndex = instanceIndexBeforeMultiply + i;
         if(instanceIndex > sourceCommand.instanceCount) { return; }
-        if(instanceIndex == 0 && commandIndex == 0 && i == 0) {
-            int noOfVisibleInstances = entityCounts[commandIndex];
+        if(instanceIndex == 0) {
+            instanceCounterPerCommand = 0;
             if(noOfVisibleInstances > 0) {
-                atomicAdd(entitiesCompactedCounter, entityCounts[commandIndex]);
-                atomicAdd(drawCount, 1);
                 sourceCommand.instanceCount = noOfVisibleInstances;
                 drawCommandsTarget[targetCommandIndex] = sourceCommand;
+                atomicAdd(drawCount, 1);
             }
         }
+//        barrier();
+        memoryBarrierShared();
 
         bool visible = visibility[visibilityBufferOffset + instanceIndex] == 1;
         if(visible)
         {
-            uint targetInstanceIndex = atomicAdd(instanceCounterPerCommand, 1);
             int compactedBufferOffset = 0;
             for(int i = 0; i < commandIndex; i++) {
                 compactedBufferOffset += entityCounts[i];
             }
 
             uint entityBufferSource = offsetsSource[commandIndex] + instanceIndex;
-    //        uint compactedPointer = atomicAdd(currentCompactedPointers[commandIndex], 1);
-            uint compactedEntityBufferIndex = compactedBufferOffset + targetInstanceIndex;//compactedPointer;
+            uint targetInstanceIndex = atomicAdd(instanceCounterPerCommand, 1);
+            uint compactedEntityBufferIndex = compactedBufferOffset + targetInstanceIndex;
 
             entitiesCompacted[compactedEntityBufferIndex] = entities[entityBufferSource];
 
             if(instanceIndex == 0) {
                 offsetsTarget[targetCommandIndex] = compactedBufferOffset;
             }
-    //        DEBUG
-    //        commandEntityOffsets[commandIndex] = compactedBufferOffset;
         }
 
-        if(instanceIndex == 0 && commandIndex == 0 && i == 0) {
-            barrier();
-            currentCompactedPointers[commandIndex] = instanceCounterPerCommand;//sourceCommand.instanceCount;
+        barrier();
+        if(instanceIndex == 0) {
+            atomicAdd(entitiesCompactedCounter, noOfVisibleInstances);
+//            debug
+            currentCompactedPointers[commandIndex] = instanceCounterPerCommand;
         }
     }
 }

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.transform;
 
 import de.hanno.hpengine.util.Parentable;
+import de.hanno.hpengine.util.Util;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -22,8 +23,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 
 	private T parent;
 	private List<T> children = new ArrayList<>();
-
-	private boolean hasMoved = true;
 
     public Transform() {
 		identity();
@@ -90,14 +89,10 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 
 	public boolean isHasMoved() {
 		if(parent != null && parent.isHasMoved()) { return true; }
-		hasMoved = !lastState.equals(this);
-		return hasMoved;
+		return !Util.equals(lastState, this);
 	}
 	public void setHasMoved(boolean hasMoved) {
-    	if(this.hasMoved) {
-			lastState.set(this);
-		}
-		this.hasMoved = hasMoved;
+		lastState.set(this);
 	}
 
 	@Override

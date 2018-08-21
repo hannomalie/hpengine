@@ -24,6 +24,7 @@ import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL11.glFinish
 import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: Engine,
@@ -155,7 +156,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                 bindShaderStorageBuffer(13, currentCompactedPointers)
                 setUniform("maxDrawCommands", commands.size)
                 if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
-                    engine.programManager.appendDrawCommandComputeProgram.dispatchCompute(1, commands.size, 1)
+                    engine.programManager.appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
                 } else {
                     val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
                     GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)

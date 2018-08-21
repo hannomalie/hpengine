@@ -359,6 +359,8 @@ void main(){
             isVisible = isVisible && !allOccluded;
         }
 
+isVisible = true;
+
         visibility[instancesBaseOffset+invocationIndex] = isVisible ? 1 : 0;
         if(isVisible) {
             atomicAdd(entityCounts[commandIndex], 1);

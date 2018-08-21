@@ -129,7 +129,9 @@ open class Camera: Component {
         saveViewMatrixAsLastViewMatrix()
         projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
         frustum.frustumIntersection.set(viewProjectionMatrix)
-        if (entity.hasMoved()) {
+//        TODO: Fix this, doesn't work
+//        if (entity.hasMoved())
+        run {
             transform()
             storeMatrices()
         }

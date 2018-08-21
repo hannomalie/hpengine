@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.transform
 
+import com.bulletphysics.linearmath.MatrixUtil
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.util.Util
@@ -25,7 +26,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     override fun getMinMaxWorld(): AABB = minMaxWorldProperty
 
     protected open fun isClean(transform: Transform<*>): Boolean {
-        return transform == lastUsedTransformationMatrix
+        return Util.equals(transform, lastUsedTransformationMatrix)
     }
 
     private fun calculateCenters() {

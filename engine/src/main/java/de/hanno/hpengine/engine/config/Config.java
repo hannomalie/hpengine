@@ -120,7 +120,7 @@ public final class Config {
     @Toggable(group = "Debug")
     private volatile boolean printPipelineDebugOutput = false;
 	@Toggable(group = "Debug")
-	private volatile boolean useComputeShaderDrawCommandAppend = true;
+	private volatile boolean useComputeShaderDrawCommandAppend = false;
 
 	@Toggable(group = "Quality settings")
 	private volatile boolean drawProbes = true;

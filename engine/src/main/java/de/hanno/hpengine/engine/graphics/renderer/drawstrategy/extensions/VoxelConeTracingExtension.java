@@ -151,7 +151,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.getSceneInitiallyDrawn() || Config.getInstance().isForceRevoxelization() || renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC)));
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.getSceneInitiallyDrawn() || Config.getInstance().isForceRevoxelization() || entityMoved || (renderState.entityHasMoved() && renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC))));
         if(entityMoved || needsRevoxelization) {
             lightInjectedCounter = 0;
         }
