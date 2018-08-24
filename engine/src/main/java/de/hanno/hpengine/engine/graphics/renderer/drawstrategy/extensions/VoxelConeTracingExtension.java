@@ -47,7 +47,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     public float sceneScale = 2;
 
     private Matrix4f ortho = de.hanno.hpengine.util.Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
-    private Camera orthoCam;
+    public Camera orthoCam;
     public final FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
     public final FloatBuffer viewYBuffer = BufferUtils.createFloatBuffer(16);
     public final FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
@@ -364,7 +364,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         maxExtents.z = (Math.max(Math.abs(renderState.getSceneMin().z), Math.abs(renderState.getSceneMax().z)));
         float max = Math.max(Math.max(maxExtents.x, maxExtents.y), maxExtents.z);
         float sceneScale = max / (float) gridSizeHalf;
-        sceneScale = Math.max(sceneScale, 2.0f);
+        sceneScale = Math.max(sceneScale, 1.0f);
         boolean sceneScaleChanged = this.sceneScale != sceneScale;
         if(sceneScaleChanged)
         {
@@ -408,13 +408,15 @@ public class VoxelConeTracingExtension implements RenderExtension {
     }
 
     private void initOrthoCam() {
-        ortho = Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
+        ortho = Util.createOrthogonal(-getGridSizeScaled(), getGridSizeScaled(), getGridSizeScaled(), -getGridSizeScaled(), getGridSizeScaled(), -getGridSizeScaled());
 
-        orthoCam = new Camera(new Entity("VCTCam"), ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+        orthoCam = new Camera(new Entity("VCTCam"), ortho, getGridSizeScaled(), -getGridSizeScaled(), 90, 1);
         orthoCam.setPerspective(false);
-        orthoCam.setWidth(getGridSizeHalfScaled());
-        orthoCam.setHeight(getGridSizeHalfScaled());
-        orthoCam.setFar(-2000);
+        orthoCam.setWidth(getGridSizeScaled());
+        orthoCam.setHeight(getGridSizeScaled());
+//        orthoCam.setFar(-2000);
+        orthoCam.setFar(getGridSizeHalfScaled());
+        orthoCam.setNear(getGridSizeHalfScaled());
         orthoCam.update(0.000001f);
     }
 

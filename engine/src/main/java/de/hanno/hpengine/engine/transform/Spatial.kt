@@ -40,7 +40,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     }
 
     override fun getMinMaxWorld(transform: Transform<*>): AABB {
-//        recalculateIfNotClean(transform)
+        recalculateIfNotClean(transform)
         return minMaxWorldProperty
     }
 

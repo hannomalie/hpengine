@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import de.hanno.hpengine.engine.camera.Camera;
 
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.log.ConsoleLogger;
 import org.joml.Vector3f;
@@ -233,6 +234,9 @@ public class AABB implements Serializable {
 		getMax().set(absoluteMinimum);
 
 		for (Entity entity : entities) {
+			if(!entity.hasComponent(ModelComponent.class)) {
+				continue;
+			}
 			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getMinMaxWorld();
 			Vector3f currentMin = minMaxWorld.getMin();
 			Vector3f currentMax = minMaxWorld.getMax();

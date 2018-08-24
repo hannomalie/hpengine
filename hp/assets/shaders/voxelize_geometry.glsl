@@ -104,14 +104,14 @@ void main()
 
 
 	for(int i = 0; i < 3; i++) {
-        vec4 vertexTemp = (proj * vec4(pos[i],1));
+        vec4 vertexTemp = (projectionMatrix * vec4(pos[i],1));
 
 
 //        select dominant action
         if( x > y && x > z ) {
-                vertexTemp.xyz = vertexTemp.zyx;
+            vertexTemp.xyz = vertexTemp.zyx;
         } else if( y > x && y > z  ) {
-                vertexTemp.xyz = vertexTemp.xzy;
+            vertexTemp.xyz = vertexTemp.xzy;
         }
 
 //        conservative rasterization

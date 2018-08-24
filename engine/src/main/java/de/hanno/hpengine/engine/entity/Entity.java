@@ -25,7 +25,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	public final SimpleSpatial spatial = new SimpleSpatial() {
 		@Override
 		public AABB getMinMax() {
-			if (hasComponent(ModelComponent.COMPONENT_KEY)) {
+			if (hasComponent(ModelComponent.class)) {
 				ModelComponent modelComponent = getComponent(ModelComponent.class);
 				return modelComponent.getMinMax(modelComponent.getAnimationController());
 			} else {
@@ -115,7 +115,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	}
 
     public boolean hasComponent(Class<? extends Component> type) {
-        return getComponents().containsKey(type.getSimpleName());
+        return getComponents().containsKey(type);
     }
     public boolean hasComponent(String key) {
         return getComponents().containsKey(key);
