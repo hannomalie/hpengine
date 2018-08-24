@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
@@ -265,7 +264,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             } else {
                 for (RenderBatch entity : renderState.getRenderBatchesStatic()) {
                     boolean isStatic = entity.getUpdate().equals(Update.STATIC);
-                    if (renderState.getSceneInitiallyDrawn() && !Config.getInstance().isForceRevoxelization() && isStatic) {
+                    if (renderState.getSceneInitiallyDrawn() && !Config.getInstance().isForceRevoxelization() && (isStatic && !renderState.getStaticEntityHasMoved())) {
                         continue;
                     }
                     int currentVerticesCount = DrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), entity, voxelizer, false);

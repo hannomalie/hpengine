@@ -22,6 +22,7 @@ import static de.hanno.hpengine.engine.graphics.renderer.RenderBatch.RenderBatch
 public class EntitiesState {
     public final Map<BatchKey, RenderBatch> cash = new HashMap<>();
     public long entityMovedInCycle;
+    public long staticEntityMovedInCycle;
     public long entityAddedInCycle;
     public RenderBatches renderBatchesStatic = new RenderBatches();
     public RenderBatches renderBatchesAnimated = new RenderBatches();

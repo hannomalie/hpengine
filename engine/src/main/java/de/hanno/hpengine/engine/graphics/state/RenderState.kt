@@ -11,8 +11,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
-import de.hanno.hpengine.engine.scene.AnimatedVertex
-import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import org.joml.Vector3f
 import java.nio.FloatBuffer
@@ -25,6 +23,7 @@ class RenderState(gpuContext: GpuContext) {
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
     val directionalLightState = DirectionalLightState()
+
     val entitiesState: EntitiesState = EntitiesState(gpuContext)
 
     val commandOrganizationStatic: CommandOrganization = CommandOrganization(gpuContext)
@@ -65,12 +64,14 @@ class RenderState(gpuContext: GpuContext) {
     val directionalLightViewProjectionMatrixAsBuffer: FloatBuffer
         get() = directionalLightState.directionalLightViewProjectionMatrixAsBuffer
 
+    val staticEntityHasMoved: Boolean
+        get() = entitiesState.staticEntityMovedInCycle == cycle
     /**
      * Copy constructor
      * @param source
      */
     constructor(source: RenderState) : this(source.gpuContext) {
-        init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointLightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.cycle, source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle)
+        init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.entitiesState.staticEntityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointLightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.cycle, source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle)
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
         //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
@@ -80,7 +81,7 @@ class RenderState(gpuContext: GpuContext) {
         //        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
     }
 
-    fun init(vertexIndexBufferStatic: VertexIndexBuffer, vertexIndexBufferAnimated: VertexIndexBuffer, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector3f, sceneMax: Vector3f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
+    fun init(vertexIndexBufferStatic: VertexIndexBuffer, vertexIndexBufferAnimated: VertexIndexBuffer, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, staticEntityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector3f, sceneMax: Vector3f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
         this.entitiesState.joints = joints // TODO: Fixme
@@ -96,6 +97,7 @@ class RenderState(gpuContext: GpuContext) {
         this.directionalLightState.directionalLightScatterFactor = directionalLightScatterFactor
 
         this.entitiesState.entityMovedInCycle = entityMovedInCycle
+        this.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         this.entitiesState.entityAddedInCycle = entityAddedInCycle
         this.directionalLightHasMovedInCycle = directionalLightHasMovedInCycle
         this.pointLightMovedInCycle = pointLightMovedInCycle

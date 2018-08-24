@@ -4,7 +4,9 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.renderer.*
+import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
+import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
+import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
@@ -24,7 +26,6 @@ import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL11.glFinish
 import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: Engine,

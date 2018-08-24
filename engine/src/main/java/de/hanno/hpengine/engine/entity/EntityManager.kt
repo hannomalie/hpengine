@@ -13,6 +13,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
     private val entityContainer: EntityContainer = SimpleContainer()
 
     var entityMovedInCycle: Long = 0
+    var staticEntityMovedInCycle: Long = 0
     var entityAddedInCycle: Long = 0
 
     var entityHasMoved = false
@@ -66,7 +67,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
 
         val currentScene = engine.getScene()
 
-        for (entity in entityContainer.entities.filter { it != currentScene.activeCamera }) {
+        for (entity in entityContainer.entities.filter { it != currentScene.activeCamera.entity }) {
             if (!entity.hasMoved()) {
                 continue
             }
@@ -75,6 +76,7 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             entityHasMoved = true
             if (entity.update == Update.STATIC) {
                 staticEntityHasMoved = true
+                staticEntityMovedInCycle = currentScene.currentCycle
             }
             break
         }
