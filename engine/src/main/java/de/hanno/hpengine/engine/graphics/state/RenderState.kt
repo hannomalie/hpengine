@@ -132,9 +132,9 @@ class RenderState(gpuContext: GpuContext) {
     fun add(state: CustomState) = customState.add(state)
 
     fun <T> getState(stateRef: StateRef<T>) = customState.get(stateRef.index) as T
-    fun pointLightHasMoved() = pointLightMovedInCycle > cycle
-    fun entityHasMoved() = entitiesState.entityMovedInCycle > cycle
-    fun entityWasAdded() = entitiesState.entityAddedInCycle > cycle
+    fun pointLightHasMoved() = pointLightMovedInCycle >= cycle
+    fun entityHasMoved() = entitiesState.entityMovedInCycle >= cycle
+    fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
 }
 
 class CustomStateHolder {

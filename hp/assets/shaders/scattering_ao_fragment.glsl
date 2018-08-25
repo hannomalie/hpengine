@@ -618,7 +618,7 @@ float getAmbientOcclusion(vec2 st) {
         float sum = 0.0;
         float prof = texture(motionMap, st.xy).b; // depth
         vec3 norm = normalize(vec3(texture(normalMap, st.xy).xyz)); //*2.0-vec3(1.0)
-        const int NUM_SAMPLES = 4;
+        const int NUM_SAMPLES = 14;
         int hf = NUM_SAMPLES/2;
 
         //calculate sampling rates:
@@ -645,7 +645,7 @@ float getAmbientOcclusion(vec2 st) {
                       //if there is coherence, calculate occlusion:
                       if (coherence2 > 0){
                           float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
-                          sum += clamp(pformfactor2*0.25,0.0,1.0);//ao intensity;
+                          sum += clamp(pformfactor2*0.25,0.0,.075);//ao intensity;
                       }
                   }
                }

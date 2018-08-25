@@ -81,6 +81,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private SimplePipeline pipeline;
     private FirstPassResult firstPassResult = new FirstPassResult();
     private boolean useIndirectDrawing = false;
+    private long voxelizedInCycle = -1;
 
     public VoxelConeTracingExtension(Engine engine, DirectionalLightShadowMapExtension directionalLightShadowMapExtension) throws Exception {
         this.engine = engine;
@@ -121,9 +122,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         directionalLightShadowMapExtension.setVoxelConeTracingExtension(this);
     }
 
-    private long entityMovedLastInCycle;
-    private long directionalLightMovedLastInCycle;
-    private long pointLightMovedLastInCycle;
+    private long litInCycle = -1;
 
     public int getGridSize() {
         return gridSize;
@@ -132,26 +131,19 @@ public class VoxelConeTracingExtension implements RenderExtension {
     @Override
     public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("VCT first pass");
-        boolean entityMoved = renderState.getEntitiesState().entityMovedInCycle > entityMovedLastInCycle;
-        boolean directionalLightMoved = renderState.getDirectionalLightHasMovedInCycle() > directionalLightMovedLastInCycle;
-        boolean pointlightMoved = renderState.getPointLightMovedInCycle() > pointLightMovedLastInCycle;
-        if(entityMoved) {
-            entityMovedLastInCycle = renderState.getCycle();
-        }
-        if(pointlightMoved) {
-            pointLightMovedLastInCycle = renderState.getCycle();
-            lightInjectedCounter = 0;
-        }
-        if(directionalLightMoved) {
-            directionalLightMovedLastInCycle = renderState.getCycle();
+        boolean entityMoved = renderState.getEntitiesState().entityAddedInCycle > voxelizedInCycle;
+        boolean entityAdded = renderState.getEntitiesState().entityMovedInCycle > voxelizedInCycle;
+        boolean directionalLightMoved = renderState.getDirectionalLightHasMovedInCycle() > litInCycle;
+        boolean pointlightMoved = renderState.getPointLightMovedInCycle() > litInCycle;
+        if(pointlightMoved || directionalLightMoved) {
             lightInjectedCounter = 0;
         }
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.getSceneInitiallyDrawn() || Config.getInstance().isForceRevoxelization() || entityMoved || (renderState.entityHasMoved() && renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC))));
-        if(entityMoved || needsRevoxelization) {
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.getSceneInitiallyDrawn() || Config.getInstance().isForceRevoxelization() || entityMoved || entityAdded || (renderState.entityHasMoved() && renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC))));
+        if(needsRevoxelization) {
             lightInjectedCounter = 0;
         }
         boolean needsLightInjection = lightInjectedCounter < bounces || directionalLightMoved;
@@ -163,6 +155,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     public void injectLight(RenderState renderState, int bounces, int lightInjectedFramesAgo, boolean needsLightInjection) {
         if(needsLightInjection) {
+            litInCycle = renderState.getCycle();
             GPUProfiler.start("grid shading");
             GL42.glBindImageTexture(0, currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             engine.getGpuContext().bindTexture(1, TEXTURE_3D, albedoGrid);
@@ -226,6 +219,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         }
 
         if(needsRevoxelization) {
+            voxelizedInCycle = renderState.getCycle();
             GPUProfiler.start("Voxelization");
             float sceneScale = getSceneScale(renderState);
             int gridSizeScaled = (int) (gridSize * sceneScale);
