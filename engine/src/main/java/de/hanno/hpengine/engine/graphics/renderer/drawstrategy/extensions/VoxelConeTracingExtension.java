@@ -274,15 +274,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
         }
     }
     private void mipmapGrid() {
-        boolean generatevoxelsMipmap = true;
-        if(generatevoxelsMipmap){
-            GPUProfiler.start("grid mipmap");
-            GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
-            mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram);
-//                mipmapGrid(normalGrid, texture3DMipMapComputeProgram);
+        GPUProfiler.start("grid mipmap");
+        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
+        mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram);
 
-            GPUProfiler.end();
-        }
+        GPUProfiler.end();
     }
 
     private void mipmapGrid(int texture3D, ComputeShaderProgram shader) {
@@ -325,6 +321,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, engine.getRenderer().getGBuffer().getColorReflectivenessMap());
         engine.getGpuContext().bindTexture(3, TEXTURE_2D, engine.getRenderer().getGBuffer().getMotionMap());
         engine.getGpuContext().bindTexture(7, TEXTURE_2D, engine.getRenderer().getGBuffer().getVisibilityMap());
+        engine.getGpuContext().bindTexture(11, TEXTURE_2D, engine.getRenderer().getGBuffer().getAmbientOcclusionScatteringMap());
         engine.getGpuContext().bindTexture(12, TEXTURE_3D, albedoGrid);
         engine.getGpuContext().bindTexture(13, TEXTURE_3D, currentVoxelSource);
         engine.getGpuContext().bindTexture(14, TEXTURE_3D, normalGrid);

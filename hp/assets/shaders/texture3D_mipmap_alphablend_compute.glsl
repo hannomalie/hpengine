@@ -46,15 +46,16 @@ vec4 calculateMipMap(ivec3 pos) {
           float clampDot = 1;
 //          float clampDot = clamp(dot(centerNormal, currentNormal), 0, 1);
 //          if(clampDot > 0.0) { clampDot = 1; }
-          result += currentValue.a * currentValue.rgb * clampDot;
+          result += (currentValue.a) * currentValue.rgb * clampDot;
           alpha += currentValue.a;
         }
       }
     }
 
     if(alpha < 0.0000001) { return vec4(0);}
-    float denominator = (kernelSize*kernelSize*kernelSize);
-    return vec4(result/alpha, alpha/denominator);
+//    float denominator = (kernelSize*kernelSize*kernelSize);
+//    return vec4(result/alpha, alpha/denominator);
+    return vec4(result.rgb, 1)/alpha;
 }
 vec4 calculateMipMapNormalWeighted(ivec3 pos) {
 

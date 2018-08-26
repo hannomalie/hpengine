@@ -31,9 +31,9 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     val shadowMapStrategy = if (Config.getInstance().isUseDpsm) {
-        DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
+            DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
         } else {
-        CubeShadowMapStrategy(engine, this)
+            CubeShadowMapStrategy(engine, this)
         }
 
     private fun bufferLights() {
@@ -76,8 +76,11 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
 
     fun getPointLights(): List<PointLight> = getComponents(PointLight::class.java)
 
+    private var shadowMapsRenderedInCycle: Long = -1
+
     override fun render(result: DrawResult, state: RenderState) {
-        if(state.entityWasAdded() || state.pointLightHasMoved()) {
+        if(state.entityWasAdded() || state.pointLightMovedInCycle > shadowMapsRenderedInCycle || state.entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle) {
+            shadowMapsRenderedInCycle = state.cycle
             shadowMapStrategy.renderPointLightShadowMaps(state)
         }
     }
