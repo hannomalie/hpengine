@@ -52,29 +52,22 @@ void main(void) {
 
 	float visibility = 1.0;
 	vec3 positionWorld = sceneScale*vec3(storePos-vec3(float(gridSizeHalf)));
-	vec3 gridPosition = vec3(inverseSceneScale)*positionWorld.xyz + ivec3(gridSizeHalf);
-    vec3 positionGridScaled = inverseSceneScale*gridPosition.xyz;
-    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
 
     vec4 color = texelFetch(albedoGrid, storePos, 0);//voxelFetch(albedoGrid, gridSize, sceneScale, positionWorld, 0);
     vec4 normalStaticEmissive = texelFetch(normalGrid, storePos, 0);//voxelFetch(normalGrid, gridSize, sceneScale, positionWorld, 0);
-    vec3 g_normal = normalize(Decode(normalStaticEmissive.xy));
-    vec3 g_pos = positionWorld;
+    vec3 normalWorld = normalize(Decode(normalStaticEmissive.xy));
     float opacity = color.a;
-    float isStatic = normalStaticEmissive.b;
-
-    vec3 finalVoxelColor = vec3(0);
+    float emissive = normalStaticEmissive.a;
 
 	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos,0);
-	finalVoxelColor += currentPositionsValues.rgb;
+    vec3 finalVoxelColor = currentPositionsValues.rgb;
 
-    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos+g_normal*sceneScale);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, g_normal, .25f, 200); // 0.05
+    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(secondVoxelGrid, gridSize, sceneScale, normalWorld, positionWorld+normalWorld*sceneScale);
 
-    vec3 maxMultipleBounce = vec3(0.0001f);
-	vec3 multipleBounceColor = maxMultipleBounce*(voxelSpecular.rgb*voxelSpecular.a+diffuseVoxelTraced.rgb*diffuseVoxelTraced.a);
+    vec3 maxMultipleBounce = vec3(0.1f);
+	vec3 multipleBounceColor = maxMultipleBounce*(diffuseVoxelTraced.rgb);
 
-	finalVoxelColor.rgb += color.rgb*color.a*multipleBounceColor.rgb;// * (1f/float(bounces+1));
+	finalVoxelColor.rgb += color.rgb*multipleBounceColor.rgb;
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, currentPositionsValues.a));
 }

@@ -546,15 +546,17 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 			}
 		}
 		{
-//			accumFogShadow += 0.0005f * ComputeScattering(NdotL);
-
 			if(useVoxelGrid == 1) {
 			    int mipLevel = 4;
 				vec4 voxel = voxelFetch(currentPosition, mipLevel);
 				float rand = (surface3(currentPosition.xyz/30f + 0.0003*vec3(time%1000000), 0.5f));
-				accumFogShadow += 5.5*rand*voxel.rgb;
+				accumFogShadow += 3.5*rand*voxel.rgb;
 
-			    accumFogShadow += 0.02*rand*mix(0, 1, 1-clamp(distance(currentPosition.y, 0)/15f, 0, 1));
+                const float maxFogHeight = 5;
+                const bool useGroundFog = false;
+                if(useGroundFog) {
+			        accumFogShadow += 0.02*(1-rand)*mix(0, 1, 1-clamp(distance(currentPosition.y, 0)/maxFogHeight, 0, 1));
+                }
 			}
 		}
 

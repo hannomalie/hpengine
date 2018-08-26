@@ -111,7 +111,7 @@ void main(void) {
 	vec3 lightDirectionTemp = lightDirection;
     float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
-    vec3 finalVoxelColor = voxelColorAmbient+(1*NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
+    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
 
     for(int i = 0; i < pointLightCount; i++) {
         PointLight pointLight = pointLights[i];
