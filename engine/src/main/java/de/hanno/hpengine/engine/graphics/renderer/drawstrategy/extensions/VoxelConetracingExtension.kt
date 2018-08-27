@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.struct.Struct
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -28,6 +29,33 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.io.File
+
+open class VoxelGrid: Struct() {
+    var albedoGrid by 0
+    var normalGrid by 0
+    var grid by 0
+
+    open val currentVoxelSource: Int
+        get() = grid
+}
+
+class TwoBounceVoxelGrid: VoxelGrid() {
+    var grid2 by 0
+
+    override var currentVoxelSource: Int = 0
+    var currentVoxelTarget: Int = 0
+
+    fun switchCurrentVoxelGrid() {
+        if (currentVoxelTarget == grid) {
+            currentVoxelTarget = grid2
+            currentVoxelSource = grid
+        } else {
+            currentVoxelTarget = grid
+            currentVoxelSource = grid2
+        }
+    }
+}
+
 
 class VoxelConeTracingExtension @Throws(Exception::class)
 constructor(private val engine: Engine, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension) : RenderExtension {
@@ -51,14 +79,27 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     private val injectLightComputeProgram: ComputeShaderProgram
     private val injectMultipleBounceLightComputeProgram: ComputeShaderProgram
 
-    private val albedoGrid: Int
-    internal var normalGrid: Int = 0
-    internal var currentVoxelTarget: Int = 0
-    var litGrid: Int = 0
-        internal set
+    val globalGrid = TwoBounceVoxelGrid().apply{
+        grid = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_LINEAR,
+                GL12.GL_CLAMP_TO_EDGE)
+        grid2 = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_LINEAR,
+                GL12.GL_CLAMP_TO_EDGE)
+        albedoGrid = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_LINEAR,
+                GL12.GL_CLAMP_TO_EDGE)
+        normalGrid = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                GL11.GL_NEAREST,
+                GL11.GL_LINEAR,
+                GL12.GL_CLAMP_TO_EDGE)
+        currentVoxelTarget = grid
+        currentVoxelSource = grid2
+    }
 
-    val grid: Int
-    private val gridTwo: Int
     private var lightInjectedCounter: Int = 0
 
     private val pipeline: SimplePipeline
@@ -89,25 +130,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         injectLightComputeProgram = this.engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
         injectMultipleBounceLightComputeProgram = this.engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
 
-        grid = this.engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                GL11.GL_LINEAR_MIPMAP_LINEAR,
-                GL11.GL_LINEAR,
-                GL12.GL_CLAMP_TO_EDGE)
-        gridTwo = this.engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                GL11.GL_LINEAR_MIPMAP_LINEAR,
-                GL11.GL_LINEAR,
-                GL12.GL_CLAMP_TO_EDGE)
-        albedoGrid = this.engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                GL11.GL_LINEAR_MIPMAP_LINEAR,
-                GL11.GL_LINEAR,
-                GL12.GL_CLAMP_TO_EDGE)
-        normalGrid = this.engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                GL11.GL_NEAREST,
-                GL11.GL_LINEAR,
-                GL12.GL_CLAMP_TO_EDGE)
-
-        currentVoxelTarget = grid
-        litGrid = gridTwo
         voxelConeTraceProgram = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", Defines())
         Config.getInstance().isUseAmbientOcclusion = false
         pipeline = SimplePipeline(engine, false, false, false)
@@ -146,10 +168,10 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         if (needsLightInjection) {
             litInCycle = renderState.cycle
             GPUProfiler.start("grid shading")
-            GL42.glBindImageTexture(0, currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-            engine.gpuContext.bindTexture(1, TEXTURE_3D, albedoGrid)
-            engine.gpuContext.bindTexture(2, TEXTURE_3D, normalGrid)
-            engine.gpuContext.bindTexture(3, TEXTURE_3D, currentVoxelTarget)
+            GL42.glBindImageTexture(0, globalGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+            engine.gpuContext.bindTexture(1, TEXTURE_3D, globalGrid.albedoGrid)
+            engine.gpuContext.bindTexture(2, TEXTURE_3D, globalGrid.normalGrid)
+            engine.gpuContext.bindTexture(3, TEXTURE_3D, globalGrid.currentVoxelTarget)
             val num_groups_xyz = Math.max(gridSize / 8, 1)
 
             if (lightInjectedFramesAgo == 0) {
@@ -177,7 +199,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             }
             lightInjectedCounter++
             mipmapGrid()
-            switchCurrentVoxelGrid()
+            globalGrid.switchCurrentVoxelGrid()
             GPUProfiler.end()
         }
 
@@ -189,16 +211,16 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         if (needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels")
             if (Config.getInstance().isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
-                ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-                ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-                ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+                ARBClearTexture.glClearTexImage(globalGrid.currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+                ARBClearTexture.glClearTexImage(globalGrid.normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+                ARBClearTexture.glClearTexImage(globalGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
             } else {
                 clearDynamicVoxelsComputeProgram.use()
                 val num_groups_xyz = Math.max(gridSize / 8, 1)
-                GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
-                GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                engine.gpuContext.bindTexture(4, TEXTURE_3D, normalGrid)
+                GL42.glBindImageTexture(0, globalGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                GL42.glBindImageTexture(1, globalGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
+                GL42.glBindImageTexture(3, globalGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                engine.gpuContext.bindTexture(4, TEXTURE_3D, globalGrid.normalGrid)
                 clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
             }
             GPUProfiler.end()
@@ -211,8 +233,8 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             val gridSizeScaled = (gridSize * sceneScale).toInt()
             engine.gpuContext.viewPort(0, 0, gridSizeScaled, gridSizeScaled)
             voxelizer.use()
-            GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-            GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+            GL42.glBindImageTexture(3, globalGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+            GL42.glBindImageTexture(5, globalGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
             voxelizer.setUniformAsMatrix4("shadowMatrix", renderState.directionalLightViewProjectionMatrixAsBuffer)
             voxelizer.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection)
             voxelizer.setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
@@ -263,7 +285,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     private fun mipmapGrid() {
         GPUProfiler.start("grid mipmap")
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
-        mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram)
+        mipmapGrid(globalGrid.currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram)
 
         GPUProfiler.end()
     }
@@ -281,22 +303,12 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 
             GL42.glBindImageTexture(0, texture3D, currentMipMapLevel - 1, true, 0, GL15.GL_READ_ONLY, gridTextureFormatSized)
             GL42.glBindImageTexture(1, texture3D, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-            GL42.glBindImageTexture(3, normalGrid, currentMipMapLevel - 1, true, 0, GL15.GL_READ_ONLY, gridTextureFormatSized)
+            GL42.glBindImageTexture(3, globalGrid.normalGrid, currentMipMapLevel - 1, true, 0, GL15.GL_READ_ONLY, gridTextureFormatSized)
             shader.setUniform("sourceSize", currentSizeSource)
             shader.setUniform("targetSize", currentSizeTarget)
 
             val num_groups_xyz = Math.max(currentSizeTarget / 8, 1)
             shader.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
-        }
-    }
-
-    private fun switchCurrentVoxelGrid() {
-        if (currentVoxelTarget == grid) {
-            currentVoxelTarget = gridTwo
-            litGrid = grid
-        } else {
-            currentVoxelTarget = grid
-            litGrid = gridTwo
         }
     }
 
@@ -308,9 +320,9 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.renderer.gBuffer.motionMap)
         engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.renderer.gBuffer.visibilityMap)
         engine.gpuContext.bindTexture(11, TEXTURE_2D, engine.renderer.gBuffer.ambientOcclusionScatteringMap)
-        engine.gpuContext.bindTexture(12, TEXTURE_3D, albedoGrid)
-        engine.gpuContext.bindTexture(13, TEXTURE_3D, litGrid)
-        engine.gpuContext.bindTexture(14, TEXTURE_3D, normalGrid)
+        engine.gpuContext.bindTexture(12, TEXTURE_3D, globalGrid.albedoGrid)
+        engine.gpuContext.bindTexture(13, TEXTURE_3D, globalGrid.currentVoxelSource)
+        engine.gpuContext.bindTexture(14, TEXTURE_3D, globalGrid.normalGrid)
 
         voxelConeTraceProgram.use()
         val camTranslation = Vector3f()

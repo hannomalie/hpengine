@@ -497,7 +497,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
 
         if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
-            gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getLitGrid());
+            gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getCurrentVoxelSource());
         }
 
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
