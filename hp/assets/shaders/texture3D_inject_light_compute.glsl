@@ -43,7 +43,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	//moments /= 3;
 
 	// Surface is fully lit. as the current fragment is before the lights occluder
-	if (dist <= moments.x + 0.01) {
+	if (dist <= moments.x + 0.001) {
 		return vec3(1.0,1.0,1.0);
 	}
 	else { return vec3(0.); }
@@ -97,7 +97,8 @@ void main(void) {
     float opacity = color.a;
     float isStatic = normalStaticEmissive.b;
 
-    float ambientAmount = 0;//.0125f;
+    //second bounce?
+    vec3 ambientAmount = vec3(0);//voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+sceneScale*g_normal, g_normal, .12, 150).rgb;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
     vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalStaticEmissive.a))*voxelColor;

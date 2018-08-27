@@ -74,7 +74,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	vec3 isStaticValue = vec3(0,0,0);
 	float alpha = 0;
 
-	int mipLevel = 1;
+	int mipLevel = 0;
 	const int NB_STEPS = 1530/(mipLevel+1);
 	for (int i = 0; i < NB_STEPS; i++) {
 		if(alpha >= 0.01)
@@ -160,9 +160,10 @@ void main(void) {
         vec4 voxelDiffuse = vec4(0);
 
         voxelDiffuse = 4*traceVoxelsDiffuse(grid, gridSize, sceneScale, normalWorld, positionWorld+sceneScale*normalWorld);
-		vec4 voxelSpecular = 4*voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), roughness, 370); // 0.05
+        float aperture =  tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+		vec4 voxelSpecular = 4*voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), aperture, 370); // 0.05
 
-        vct += boost*(NdotL*specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
+        vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
 
         const bool useTransparency = false;
         if(useTransparency) {

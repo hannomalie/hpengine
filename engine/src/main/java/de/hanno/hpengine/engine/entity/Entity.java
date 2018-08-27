@@ -254,7 +254,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 
 	public Update getUpdate() {
         if((hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class).isDynamic())
-				|| (hasComponent(ModelComponent.COMPONENT_KEY) && !getComponent(ModelComponent.class).getModel().isStatic())) {
+				|| (hasComponent(ModelComponent.class) && !getComponent(ModelComponent.class).getModel().isStatic())) {
             return Update.DYNAMIC;
         }
 		return update;

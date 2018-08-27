@@ -120,10 +120,9 @@ void main()
 //    vec3 samplePositionNormalized = gridPosition/vec3(gridSize);
 //    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).b > 0) { discard; }
 
-    float ambientAmount = 0;//.0125f;
+    float ambientAmount = 0.1;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
-    vec3 voxelColorAmbient = (vec3(ambientAmount)+float((1+dynamicAdjust)*4*material.ambient))*voxelColor;
 
 	float visibility = 1.0;
 	vec4 positionShadow = (shadowMatrix * vec4(g_pos.xyz, 1));

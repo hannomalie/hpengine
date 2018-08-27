@@ -160,7 +160,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GL42.glBindImageTexture(0, currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             engine.getGpuContext().bindTexture(1, TEXTURE_3D, albedoGrid);
             engine.getGpuContext().bindTexture(2, TEXTURE_3D, normalGrid);
-            engine.getGpuContext().bindTexture(3, TEXTURE_3D, currentVoxelSource);
+            engine.getGpuContext().bindTexture(3, TEXTURE_3D, currentVoxelTarget);
             int num_groups_xyz = Math.max(gridSize / 8, 1);
 
             if(lightInjectedFramesAgo == 0)

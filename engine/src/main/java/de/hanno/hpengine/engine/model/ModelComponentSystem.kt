@@ -96,7 +96,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
                     val materialIndex = mesh.material.materialIndex // TODO: This is broken
                     target.selected = entity.isSelected
                     target.materialIndex = materialIndex
-                    target.update = entity.update.ordinal
+                    target.update = entity.update.asDouble.toInt()
                     target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
                     target.entityIndex = entity.index
                     target.meshIndex = meshIndex
