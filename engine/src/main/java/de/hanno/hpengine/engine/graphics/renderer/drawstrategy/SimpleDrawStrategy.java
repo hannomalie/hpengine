@@ -517,8 +517,8 @@ public class SimpleDrawStrategy implements DrawStrategy {
         aoScatteringProgram.setUniform("time", (int) System.currentTimeMillis());
         aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
         if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
-            aoScatteringProgram.setUniform("sceneScale", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getSceneScale());
-            aoScatteringProgram.setUniform("inverseSceneScale", 1f/directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getSceneScale());
+            aoScatteringProgram.setUniform("sceneScale", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getScale());
+            aoScatteringProgram.setUniform("inverseSceneScale", 1f/directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getScale());
             aoScatteringProgram.setUniform("gridSize", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getGridSize());
         }
 
