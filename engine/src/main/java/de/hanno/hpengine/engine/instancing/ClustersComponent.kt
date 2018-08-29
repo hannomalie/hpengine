@@ -106,7 +106,7 @@ class ClustersComponent(val engine: Engine, private val eventBus: EventBus, priv
                                    modelComponent: ModelComponent,
                                    materials: List<SimpleMaterial> = modelComponent.materials,
                                    animationController: AnimationController = if (modelComponent.isStatic) AnimationController(0, 0f) else AnimationController(120, 24f),
-                                   spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else TransformSpatial(transform, modelComponent)) {
+                                   spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
 
             val instance = Instance(entity, transform, materials, animationController, spatial)
             cluster.add(instance)

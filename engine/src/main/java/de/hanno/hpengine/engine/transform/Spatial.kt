@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.transform
 
-import com.bulletphysics.linearmath.MatrixUtil
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.util.Util
@@ -80,11 +79,14 @@ abstract class AbstractSpatial : Serializable, Spatial {
 
 }
 
-open class SimpleSpatial : AbstractSpatial() {
-    override val minMaxProperty = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))
-}
+open class SimpleSpatial(override val minMaxProperty: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : AbstractSpatial()
 
-open class TransformSpatial(val transform: Transform<*>, val modelComponent: ModelComponent) : SimpleSpatial() {
+open class TransformSpatial(val transform: Transform<*>, override val minMaxProperty: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : SimpleSpatial() {
+    override fun update(deltaSeconds: Float) {
+        super.recalculateIfNotClean(transform)
+    }
+}
+open class StaticTransformSpatial(val transform: Transform<*>, val modelComponent: ModelComponent) : SimpleSpatial() {
 
     override fun getMinMax(): AABB {
         return modelComponent.minMax
@@ -94,7 +96,7 @@ open class TransformSpatial(val transform: Transform<*>, val modelComponent: Mod
         super.recalculateIfNotClean(transform)
     }
 }
-open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent) {
+open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent) {
     override fun update(deltaSeconds: Float) {
         recalculate(transform)
     }

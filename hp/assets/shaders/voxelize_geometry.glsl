@@ -28,9 +28,6 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform int entityIndex;
 
-uniform mat4 u_MVPx;
-uniform mat4 u_MVPy;
-uniform mat4 u_MVPz;
 uniform int u_width;
 uniform int u_height;
 
@@ -57,17 +54,6 @@ void main()
     z = abs(n.z) < maxC ? 0 : 1;
 
     vec4 axis = vec4(x,y,z,1);
-
-	mat4 proj;
-	if( x > y && x > z ) {
-        proj=projectionMatrix*u_MVPx;
-    }
-	else if( y > x && y > z  ) {
-        proj=projectionMatrix*u_MVPy;
-    }
-    else {
-        proj=projectionMatrix*u_MVPz;
-    }
 
 //	for(int i = 0; i < 3; i++) {
 //        pos[i] = (proj * vec4(pos[i],1)).xyz;
