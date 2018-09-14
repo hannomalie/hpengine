@@ -7,10 +7,6 @@ layout(binding=2) uniform sampler3D normalGrid;
 layout(binding=3) uniform sampler3D secondVoxelGrid;
 layout(binding=6) uniform sampler2D shadowMap;
 
-uniform float sceneScale = 2f;
-uniform float inverseSceneScale = 0.5f;
-uniform int gridSize = 256;
-
 uniform mat4 shadowMatrix;
 
 uniform vec3 lightDirection;
@@ -23,6 +19,10 @@ uniform int bounces = 1;
 uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
 	PointLight pointLights[100];
+};
+
+layout(std430, binding=5) buffer _voxelGrids {
+	VoxelGrid voxelGrids[10];
 };
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
@@ -75,7 +75,12 @@ float calculateAttenuation(float dist, float lightRadius) {
     return atten_factor;
 }
 void main(void) {
-    int gridSizeHalf = gridSize/2;
+    VoxelGrid grid = voxelGrids[0];
+    float sceneScale = grid.scale;
+    float inverseSceneScale = 1f/sceneScale;
+
+    int gridSize = grid.resolution;
+    int gridSizeHalf = grid.resolution/2;
 	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
 	ivec3 workGroup = ivec3(gl_WorkGroupID);
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
