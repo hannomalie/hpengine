@@ -24,8 +24,6 @@ flat out vec4 g_AABB;
 flat out vec3 primMin;
 flat out vec3 primMax;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
 uniform int entityIndex;
 
 uniform int u_width;
@@ -34,8 +32,15 @@ uniform int u_height;
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
+layout(std430, binding=5) buffer _voxelGrids {
+	VoxelGrid voxelGrids[10];
+};
+
 void main()
 {
+    VoxelGrid grid = voxelGrids[0];
+    mat4 projectionMatrix = grid.projectionMatrix;
+
 	vec3 faceNormal = normalize( cross( v_vertex[1]-v_vertex[0], v_vertex[2]-v_vertex[0] ) );
 	float NdotXAxis = abs( faceNormal.x );
 	float NdotYAxis = abs( faceNormal.y );

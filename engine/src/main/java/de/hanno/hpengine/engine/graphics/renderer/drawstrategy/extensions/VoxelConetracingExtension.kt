@@ -23,6 +23,7 @@ import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.*
 import java.io.File
 
@@ -94,7 +95,14 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         val clearVoxels = true
         val bounces = 1
 
-        val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
+        val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
+            globalGrid.move(Vector3f(0f, 0f, 1f))
+            println(globalGrid.position.z)
+            true
+        } else false
+
+        val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || Config.getInstance().isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
+
         if (needsRevoxelization) {
             lightInjectedCounter = 0
         }
@@ -167,9 +175,9 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             voxelizedInCycle = renderState.cycle
             GPUProfiler.start("Voxelization")
 
-            val sceneScale = getSceneScale(renderState)
-            val gridSizeScaled = (globalGrid.gridSize * sceneScale).toInt()
-            engine.gpuContext.viewPort(0, 0, gridSizeScaled, gridSizeScaled)
+            val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
+            globalGrid.scale = sceneScale
+            engine.gpuContext.viewPort(0, 0, globalGrid.gridSizeScaled, globalGrid.gridSizeScaled)
             voxelizer.use()
             GL42.glBindImageTexture(3, globalGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
             GL42.glBindImageTexture(5, globalGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
@@ -179,10 +187,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             voxelizer.bindShaderStorageBuffer(1, renderState.materialBuffer)
             voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
             voxelizer.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
-            val viewMatrixAsBuffer1 = globalGrid.orthoCam.viewMatrixAsBuffer
-            voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1)
-            val projectionMatrixAsBuffer1 = globalGrid.orthoCam.projectionMatrixAsBuffer
-            voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1)
 
             voxelizer.setUniform("writeVoxels", true)
             engine.gpuContext.depthMask(false)
@@ -276,14 +280,13 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     }
 
     private var maxExtents = Vector4f()
-    fun getSceneScale(renderState: RenderState): Float {
+    fun getSceneScale(renderState: RenderState, gridSizeHalf: Int): Float {
         maxExtents.x = Math.max(Math.abs(renderState.sceneMin.x), Math.abs(renderState.sceneMax.x))
         maxExtents.y = Math.max(Math.abs(renderState.sceneMin.y), Math.abs(renderState.sceneMax.y))
         maxExtents.z = Math.max(Math.abs(renderState.sceneMin.z), Math.abs(renderState.sceneMax.z))
         val max = Math.max(Math.max(maxExtents.x, maxExtents.y), maxExtents.z)
-        var sceneScale = max / globalGrid.gridSizeHalf.toFloat()
+        var sceneScale = max / gridSizeHalf.toFloat()
         sceneScale = Math.max(sceneScale, 1.0f)
-        this.globalGrid.scale = sceneScale
         return sceneScale
     }
 

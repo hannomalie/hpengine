@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.HpMatrix
 import de.hanno.hpengine.engine.scene.HpVector3f
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.engine.transform.TransformSpatial
@@ -19,6 +20,8 @@ open class VoxelGrid protected constructor(): Struct() {
     var gridSizeHalf by 0
     val dummy2 by 0
     val dummy3 by 0
+
+    val projectionMatrix by HpMatrix(this)
 
     var position by HpVector3f(this)
     private var scaleProperty by 0f
@@ -62,6 +65,7 @@ open class VoxelGrid protected constructor(): Struct() {
         orthoCam.setFar(gridSizeHalfScaled.toFloat())
         orthoCam.setNear(gridSizeHalfScaled.toFloat())
         orthoCam.update(0.000001f)
+        projectionMatrix.set(orthoCam.projectionMatrix)
         return orthoCam
     }
 

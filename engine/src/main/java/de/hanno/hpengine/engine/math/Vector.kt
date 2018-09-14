@@ -83,24 +83,24 @@ class Matrix4f(parent: Struct? = null): Struct(parent) {
             """.trimMargin()
     }
 
-    fun <T: Matrix4f> set(joint: T) {
-        joint.get(baseByteOffset.toInt(), buffer)
-//        this.m00 = joint.m00()
-//        this.m01 = joint.m01()
-//        this.m02 = joint.m02()
-//        this.m03 = joint.m03()
-//        this.m10 = joint.m10()
-//        this.m11 = joint.m11()
-//        this.m12 = joint.m12()
-//        this.m13 = joint.m13()
-//        this.m20 = joint.m20()
-//        this.m21 = joint.m21()
-//        this.m22 = joint.m22()
-//        this.m23 = joint.m23()
-//        this.m30 = joint.m30()
-//        this.m31 = joint.m31()
-//        this.m32 = joint.m32()
-//        this.m33 = joint.m33()
+    fun <T: Matrix4f> set(source: T) {
+        source.get(baseByteOffset.toInt(), buffer)
+//        this.m00 = source.m00()
+//        this.m01 = source.m01()
+//        this.m02 = source.m02()
+//        this.m03 = source.m03()
+//        this.m10 = source.m10()
+//        this.m11 = source.m11()
+//        this.m12 = source.m12()
+//        this.m13 = source.m13()
+//        this.m20 = source.m20()
+//        this.m21 = source.m21()
+//        this.m22 = source.m22()
+//        this.m23 = source.m23()
+//        this.m30 = source.m30()
+//        this.m31 = source.m31()
+//        this.m32 = source.m32()
+//        this.m33 = source.m33()
     }
 }
 class AABB(parent: Struct? = null): Struct(parent) {

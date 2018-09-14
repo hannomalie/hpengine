@@ -1,6 +1,4 @@
 #extension GL_ARB_shader_draw_parameters : require
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
 
 uniform int entityIndex;
 uniform int entityBaseIndex;
@@ -34,7 +32,6 @@ out vec4 position_world;
 out vec3 v_vertex;
 out vec3 v_normal;
 out vec2 v_texcoord;
-//flat out Entity ventity;
 out int v_materialIndex;
 out int v_isStatic;
 

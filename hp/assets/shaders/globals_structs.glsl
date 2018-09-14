@@ -104,6 +104,8 @@ struct VoxelGrid {
     int dummy2;
     int dummy3;
 
+    mat4 projectionMatrix;
+
     vec3 position;
     float scale;
 };
