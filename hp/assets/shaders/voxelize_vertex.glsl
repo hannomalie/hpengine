@@ -17,6 +17,9 @@ layout(std430, binding=3) buffer _entities {
 layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
+layout(std430, binding=5) buffer _voxelGrids {
+	VoxelGrid voxelGrids[10];
+};
 
 in vec3 in_Position;
 in vec4 in_Color;
@@ -35,9 +38,6 @@ out vec2 v_texcoord;
 out int v_materialIndex;
 out int v_isStatic;
 
-uniform float sceneScale = 1f;
-uniform float inverseSceneScale = 1f;
-uniform int gridSize = 256;
 
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
@@ -47,7 +47,10 @@ void main(void) {
     int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
-    //entityBufferIndex = 0;
+    VoxelGrid grid = voxelGrids[0];
+    float sceneScale = grid.scale;
+    float inverseSceneScale = 1f / grid.scale;
+    int gridSize = grid.resolution;
 
     Entity entity = entities[entityBufferIndex];
     v_isStatic = int(entity.isStatic);

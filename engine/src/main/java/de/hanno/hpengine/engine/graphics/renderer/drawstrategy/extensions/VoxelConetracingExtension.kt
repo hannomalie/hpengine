@@ -1,10 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
@@ -16,122 +15,26 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.scene.HpVector3f
-import de.hanno.hpengine.engine.transform.SimpleTransform
-import de.hanno.hpengine.engine.transform.TransformSpatial
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.struct.Struct
+import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.io.File
 
-open class VoxelGrid protected constructor(): Struct() {
-    var albedoGrid by 0
-    var normalGrid by 0
-    var grid by 0
-    var grid2 by 0
-
-    var gridSize by 0
-    var gridSizeHalf by 0
-    val dummy2 by 0
-    val dummy3 by 0
-
-    var position by HpVector3f(this)
-    private var scaleProperty by 0f
-
-    private val transform = SimpleTransform()
-    val spatial = TransformSpatial(transform)
-    var scale: Float = 0f
-        get() = scaleProperty
-        set(value) {
-            if(field != value) {
-                field = value
-                scaleProperty = value
-                transform.scale(value)
-                initCam()
-            }
-        }
-
-    val gridSizeScaled: Int
-        get() = (gridSize * scaleProperty).toInt()
-
-    val gridSizeHalfScaled: Int
-        get() = (gridSizeHalf * scaleProperty).toInt()
-
-    open val currentVoxelSource: Int
-        get() = grid
-
-
-    var orthoCam = Camera(Entity("VCTCam"), createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
-
-    init {
-        initCam()
-    }
-
-    private fun initCam(): Camera {
-        this.orthoCam = Camera(Entity("VCTCam"), createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
-        orthoCam.perspective = false
-        orthoCam.width = gridSizeScaled.toFloat()
-        orthoCam.height = gridSizeScaled.toFloat()
-        orthoCam.setFar(gridSizeHalfScaled.toFloat())
-        orthoCam.setNear(gridSizeHalfScaled.toFloat())
-        orthoCam.update(0.000001f)
-        return orthoCam
-    }
-
-    fun setPosition(position: Vector3f) {
-        this.position.set(position)
-        this.transform.identity().translate(position)
-    }
-    private val tempTranslation = Vector3f()
-    fun move(amount: Vector3f) {
-        transform.translate(amount)
-        this.position.set(transform.getTranslation(tempTranslation))
-    }
-
-    fun createOrthoMatrix() =
-            Util.createOrthogonal((-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat())
-    companion object {
-        operator fun invoke(gridSize: Int): VoxelGrid {
-            return VoxelGrid().apply {
-                this@apply.gridSize = gridSize
-                this@apply.gridSizeHalf = gridSize / 2
-            }
-        }
-    }
-}
-
-class TwoBounceVoxelGrid(gridSize: Int): VoxelGrid() {
-
-    override var currentVoxelSource: Int = 0
-    var currentVoxelTarget: Int = 0
-
-    fun switchCurrentVoxelGrid() {
-        if (currentVoxelTarget == grid) {
-            currentVoxelTarget = grid2
-            currentVoxelSource = grid
-        } else {
-            currentVoxelTarget = grid
-            currentVoxelSource = grid2
-        }
-    }
-
-    init {
-        this.gridSize = gridSize
-        this.gridSizeHalf = gridSize / 2
-    }
-}
-
+class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
 class VoxelConeTracingExtension @Throws(Exception::class)
 constructor(private val engine: Engine, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension) : RenderExtension {
 
     val globalGrid = TwoBounceVoxelGrid(256)
+    val voxelGridBufferRef = engine.renderManager.renderState.registerState {
+        VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, globalGrid.sizeInBytes))
+    }
 
     private val voxelizer: Program = this.engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_fragment.glsl")), Defines())
     private val voxelConeTraceProgram: Program = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", Defines())
@@ -178,6 +81,8 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 
     override fun renderFirstPass(engine: Engine, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
         GPUProfiler.start("VCT first pass")
+//         TODO: Move to update somehow
+        globalGrid.buffer.copyTo(engine.renderManager.renderState.currentWriteState.getState(voxelGridBufferRef).voxelGridBuffer.buffer, true)
         val entityMoved = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
         val entityAdded = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
@@ -215,10 +120,8 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 
                 injectLightComputeProgram.setUniform("pointLightCount", engine.sceneManager.scene.getPointLights().size)
                 injectLightComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().lightBuffer)
+                injectLightComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
                 injectLightComputeProgram.setUniform("bounces", bounces)
-                injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderState))
-                injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState))
-                injectLightComputeProgram.setUniform("gridSize", globalGrid.gridSize)
                 injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLightViewProjectionMatrixAsBuffer)
                 injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection)
                 injectLightComputeProgram.setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
@@ -228,9 +131,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 injectMultipleBounceLightComputeProgram.use()
                 injectMultipleBounceLightComputeProgram.setUniform("bounces", bounces)
                 injectMultipleBounceLightComputeProgram.setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
-                injectMultipleBounceLightComputeProgram.setUniform("sceneScale", getSceneScale(renderState))
-                injectMultipleBounceLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState))
-                injectMultipleBounceLightComputeProgram.setUniform("gridSize", globalGrid.gridSize)
+                injectMultipleBounceLightComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
                 injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
             }
             lightInjectedCounter++
@@ -265,6 +166,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         if (needsRevoxelization) {
             voxelizedInCycle = renderState.cycle
             GPUProfiler.start("Voxelization")
+
             val sceneScale = getSceneScale(renderState)
             val gridSizeScaled = (globalGrid.gridSize * sceneScale).toInt()
             engine.gpuContext.viewPort(0, 0, gridSizeScaled, gridSizeScaled)
@@ -276,17 +178,13 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             voxelizer.setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
             voxelizer.bindShaderStorageBuffer(1, renderState.materialBuffer)
             voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+            voxelizer.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
             val viewMatrixAsBuffer1 = globalGrid.orthoCam.viewMatrixAsBuffer
             voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1)
             val projectionMatrixAsBuffer1 = globalGrid.orthoCam.projectionMatrixAsBuffer
             voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1)
-            voxelizer.setUniform("u_width", globalGrid.gridSize)
-            voxelizer.setUniform("u_height", globalGrid.gridSize)
 
             voxelizer.setUniform("writeVoxels", true)
-            voxelizer.setUniform("sceneScale", sceneScale)
-            voxelizer.setUniform("inverseSceneScale", 1f / sceneScale)
-            voxelizer.setUniform("gridSize", globalGrid.gridSize)
             engine.gpuContext.depthMask(false)
             engine.gpuContext.disable(DEPTH_TEST)
             engine.gpuContext.disable(BLEND)
@@ -363,9 +261,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
         voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.renderer.gBuffer.storageBuffer)
-        voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderState))
-        voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState))
-        voxelConeTraceProgram.setUniform("gridSize", globalGrid.gridSize)
+        voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
         voxelConeTraceProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
         voxelConeTraceProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())

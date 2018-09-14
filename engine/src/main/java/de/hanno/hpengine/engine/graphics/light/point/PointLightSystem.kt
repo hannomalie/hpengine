@@ -28,6 +28,7 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
     val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
+//    TODO: This has to be part of a custom renderstate!
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     val shadowMapStrategy = if (Config.getInstance().isUseDpsm) {

@@ -19,10 +19,9 @@ layout(binding=14) uniform sampler3D normalGrid;
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
-
-uniform float sceneScale = 1;
-uniform float inverseSceneScale = 1;
-uniform int gridSize;
+layout(std430, binding=5) buffer _voxelGrids {
+	VoxelGrid voxelGrids[10];
+};
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -56,8 +55,8 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 scatter(vec3 worldPos, vec3 startPosition) {
-
+vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale) {
+    float inverseSceneScale = 1f/sceneScale;
 	vec3 rayVector = worldPos.xyz - startPosition;
 
 	vec3 rayDirection = normalize(rayVector);
@@ -100,6 +99,11 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 }
 
 void main(void) {
+
+    VoxelGrid voxelGrid = voxelGrids[0];
+    float sceneScale = voxelGrid.scale;
+    float inverseSceneScale = 1f / voxelGrid.scale;
+    int gridSize = voxelGrid.resolution;
 
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
@@ -183,7 +187,7 @@ void main(void) {
     out_DiffuseSpecular.rgb = vct;
 
     if(debugVoxels) {
-    	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition);
+    	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, gridSize, sceneScale);
     	out_DiffuseSpecular.rgb = vct;
     	out_AOReflection.rgb = vct;
     }

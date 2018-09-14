@@ -92,3 +92,18 @@ struct AmbientCube {
     double handle;
     double distanceMapHandle;
 };
+
+struct VoxelGrid {
+    int albedoGrid;
+    int normalGrid;
+    int grid;
+    int grid2;
+
+    int resolution;
+    int resolutionHalf;
+    int dummy2;
+    int dummy3;
+
+    vec3 position;
+    float scale;
+};

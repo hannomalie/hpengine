@@ -35,12 +35,9 @@ layout(std430, binding=1) buffer _materials {
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
-uniform int u_width;
-uniform int u_height;
-
-uniform float sceneScale = 1f;
-uniform float inverseSceneScale = 1f;
-uniform int gridSize = 256;
+layout(std430, binding=5) buffer _voxelGrids {
+	VoxelGrid voxelGrids[10];
+};
 
 uniform mat4 shadowMatrix;
 
@@ -92,6 +89,14 @@ void main()
 {
 //	if( g_pos.x < g_AABB.x || g_pos.y < g_AABB.y || g_pos.x > g_AABB.z || g_pos.y > g_AABB.w )
 //		discard;
+
+
+    VoxelGrid grid = voxelGrids[0];
+    float sceneScale = grid.scale;
+    float inverseSceneScale = 1f / grid.scale;
+    int gridSize = grid.resolution;
+
+
 	Material material = materials[g_materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
 									 material.diffuseG,
@@ -133,5 +138,5 @@ void main()
 
 	imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(color.rgb, opacity));
 	imageStore(out_voxelNormal, ivec3(round(gridPosition)), vec4(Encode(normalize(g_normal)), g_isStatic, 0.25*float(material.ambient)));
-//    imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(vec3(0,0,isStatic) ,1));
+//    imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(vec3(0,0,1) ,1));
 }
