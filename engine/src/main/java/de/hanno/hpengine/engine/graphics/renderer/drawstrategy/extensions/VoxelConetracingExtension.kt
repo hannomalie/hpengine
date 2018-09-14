@@ -83,7 +83,17 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     override fun renderFirstPass(engine: Engine, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
         GPUProfiler.start("VCT first pass")
 //         TODO: Move to update somehow
-        globalGrid.buffer.copyTo(engine.renderManager.renderState.currentWriteState.getState(voxelGridBufferRef).voxelGridBuffer.buffer, true)
+
+        val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
+            globalGrid.move(Vector3f(0f, 0f, 1f))
+            println(globalGrid.position.z)
+            true
+        } else false
+        val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
+        globalGrid.scale = sceneScale
+        val voxelGridState = renderState.getState(voxelGridBufferRef)
+        globalGrid.buffer.copyTo(voxelGridState.voxelGridBuffer.buffer, true)
+
         val entityMoved = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
         val entityAdded = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
@@ -95,12 +105,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         val clearVoxels = true
         val bounces = 1
 
-        val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
-            globalGrid.move(Vector3f(0f, 0f, 1f))
-            println(globalGrid.position.z)
-            true
-        } else false
-
         val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || Config.getInstance().isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
 
         if (needsRevoxelization) {
@@ -108,7 +112,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         }
         val needsLightInjection = lightInjectedCounter < bounces || directionalLightMoved
 
-        voxelizeScene(renderState, clearVoxels, needsRevoxelization)
+        voxelizeScene(renderState, voxelGridState, clearVoxels, needsRevoxelization)
         injectLight(renderState, bounces, lightInjectedCounter, needsLightInjection)
         GPUProfiler.end()
     }
@@ -152,7 +156,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         GL11.glColorMask(true, true, true, true)
     }
 
-    fun voxelizeScene(renderState: RenderState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
+    fun voxelizeScene(renderState: RenderState, voxelGridState: VoxelGridsState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
         if (needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels")
             if (Config.getInstance().isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
@@ -175,8 +179,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             voxelizedInCycle = renderState.cycle
             GPUProfiler.start("Voxelization")
 
-            val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
-            globalGrid.scale = sceneScale
             engine.gpuContext.viewPort(0, 0, globalGrid.gridSizeScaled, globalGrid.gridSizeScaled)
             voxelizer.use()
             GL42.glBindImageTexture(3, globalGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
@@ -186,7 +188,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             voxelizer.setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
             voxelizer.bindShaderStorageBuffer(1, renderState.materialBuffer)
             voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-            voxelizer.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+            voxelizer.bindShaderStorageBuffer(5, voxelGridState.voxelGridBuffer)
 
             voxelizer.setUniform("writeVoxels", true)
             engine.gpuContext.depthMask(false)
