@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
-import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
+import de.hanno.hpengine.engine.model.texture.PathBasedOpenGlTexture;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import org.joml.Vector2f;
@@ -56,7 +56,7 @@ public class OBJLoaderTest extends TestWithEngine {
     @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
-        OpenGlTexture texture = (OpenGlTexture) engine.getTextureManager().getTexture("C://default.png");
+        PathBasedOpenGlTexture texture = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture("C://default.png");
 		Assert.assertEquals(1, texture.getHeight());
 	}
 

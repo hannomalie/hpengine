@@ -42,9 +42,9 @@ class CubeMapArrayBasedCubeRenderTarget(val engine: Engine, val cubeMapArray: Cu
             this.gpuContext.execute { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         }
 
-        gpuContext.execute({
+        gpuContext.execute {
             GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, cubeMapArray.textureID, 0)
-        })
+        }
         renderedTextures[0] = cubeMapArray.textureID
 
         scratchBuffer.put(0, GL30.GL_COLOR_ATTACHMENT0)

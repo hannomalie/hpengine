@@ -4,8 +4,9 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
-import de.hanno.hpengine.engine.scene.SimpleScene;
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
+import de.hanno.hpengine.engine.scene.SimpleScene;
+import de.hanno.hpengine.engine.model.texture.PathBasedOpenGlTexture;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;

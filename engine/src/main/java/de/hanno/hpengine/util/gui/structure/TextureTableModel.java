@@ -1,7 +1,8 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
+import de.hanno.hpengine.engine.model.texture.PathBasedOpenGlTexture;
+import de.hanno.hpengine.engine.model.texture.Texture;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Arrays;
@@ -16,7 +17,7 @@ public class TextureTableModel extends AbstractTableModel {
     }
 
     public int getColumnCount() {
-        return 4;
+        return 3;
     }
 
     public int getRowCount() {
@@ -33,22 +34,19 @@ public class TextureTableModel extends AbstractTableModel {
                     .toArray());
             return paths.get(row);
         } else if(col == 1) {
-            de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
+            Texture texture = getTexture(row);
             return String.format("Texture %d x %d", texture.getWidth(), texture.getHeight());
         } else if(col == 2) {
-            de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
+            Texture texture = getTexture(row);
             return texture.getUploadState();
-        } else if(col == 3) {
-            de.hanno.hpengine.engine.model.texture.OpenGlTexture texture = getTexture(row);
-            return 0; // TODO: Use this colum  here somehow
         }
         return "";
     }
 
-    private OpenGlTexture getTexture(int row) {
-        List<Object> textures = Arrays.asList(engine.getTextureManager().getTextures().values()
-                .toArray());
-        return (OpenGlTexture) textures.get(row);
+    private Texture getTexture(int row) {
+        List<Texture> textures = Arrays.asList(engine.getTextureManager().getTextures().values()
+                .toArray(new Texture[0]));
+        return textures.get(row);
     }
 
     public String getColumnName(int column) {

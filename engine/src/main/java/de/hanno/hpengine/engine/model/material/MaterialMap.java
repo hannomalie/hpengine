@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP;
-import de.hanno.hpengine.engine.model.texture.OpenGlTexture;
+import de.hanno.hpengine.engine.model.texture.PathBasedOpenGlTexture;
 
 
 public class MaterialMap implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private transient ConcurrentHashMap<MAP, OpenGlTexture> textures = new ConcurrentHashMap<>();
+	private transient ConcurrentHashMap<MAP, PathBasedOpenGlTexture> textures = new ConcurrentHashMap<>();
 	private HashMap<MAP, String> textureNames = new HashMap<>();
 	
 	
@@ -34,7 +34,7 @@ public class MaterialMap implements Serializable {
 			if(!b.getTextures().containsKey(key)) {
 				return false;
 			} else {
-				if (!((OpenGlTexture) b.getTextures().get(key)).equals((OpenGlTexture)getTextures().get(key))) {
+				if (!((PathBasedOpenGlTexture) b.getTextures().get(key)).equals((PathBasedOpenGlTexture)getTextures().get(key))) {
 					return false;
 				}
 			}
@@ -43,19 +43,19 @@ public class MaterialMap implements Serializable {
 		return true;
 	}
 
-	public OpenGlTexture get(MAP key) {
+	public PathBasedOpenGlTexture get(MAP key) {
 		return getTextures().get(key);
 	}
 
-	public void put(MAP key, OpenGlTexture value) {
+	public void put(MAP key, PathBasedOpenGlTexture value) {
 		getTextures().put(key, value);
 	}
 
-	public ConcurrentHashMap<MAP, OpenGlTexture> getTextures() {
+	public ConcurrentHashMap<MAP, PathBasedOpenGlTexture> getTextures() {
 		return textures;
 	}
 
-	public void setTextures(ConcurrentHashMap<MAP, OpenGlTexture> textures) {
+	public void setTextures(ConcurrentHashMap<MAP, PathBasedOpenGlTexture> textures) {
 		this.textures = textures;
 	}
 
@@ -73,7 +73,7 @@ public class MaterialMap implements Serializable {
 	
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 	    in.defaultReadObject();
-	    setTextures(new ConcurrentHashMap<MAP, OpenGlTexture>());
+	    setTextures(new ConcurrentHashMap<MAP, PathBasedOpenGlTexture>());
 	}
 	
 	private void writeObject(ObjectOutputStream oos) throws IOException {

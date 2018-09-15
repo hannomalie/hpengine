@@ -199,12 +199,12 @@ class OBJLoader {
                 } else if ("map_Disp" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR)
-                    //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
+                    //			    	  addHelper(currentMaterialInfo, name, map, MAP.ROUGHNESS );
 
                 } else if ("map_Ks" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR)
-                    //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
+                    //			    	  addHelper(currentMaterialInfo, name, map, MAP.ROUGHNESS );
 
                 } else if ("map_Ns" == firstToken) {
                     val map = rest

@@ -1,25 +1,57 @@
 package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
+import de.hanno.hpengine.util.Util
+import org.lwjgl.opengl.EXTTextureCompressionS3TC
 import org.lwjgl.opengl.EXTTextureSRGB
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.glTexParameteri
+import org.lwjgl.opengl.GL12
 import java.io.Serializable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-interface CubeTexture: Texture
+interface CubeTexture : Texture
 
-open class CubeMap(protected val textureManager: TextureManager, private val path: String, override val width: Int, override val height: Int, override val minFilter: Int, override val magFilter: Int, protected var srcPixelFormat: Int, protected var dstPixelFormat: Int, override val textureId: Int, private val data: MutableList<ByteArray>) : CubeTexture, Serializable {
-    override var handle: Long = 0
+open class CubeMap(protected val textureManager: TextureManager,
+                   private val path: String,
+                   override val width: Int,
+                   override val height: Int,
+                   override val minFilter: Int,
+                   override val magFilter: Int,
+                   protected var srcPixelFormat: Int,
+                   override val textureId: Int,
+                   private val data: MutableList<ByteArray>) : CubeTexture, Serializable {
+    private val srgba = true // TODO: Make this configurable
+    override var handle: Long = -1
     override val target = TEXTURE_CUBE_MAP
+    override val wrapMode = GL12.GL_CLAMP_TO_EDGE // TODO: Make this configurable
+    override val depth = 0
+    override val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+    override var uploadState = UploadState.NOT_UPLOADED
+
+    init {
+        textureManager.gpuContext.bindTexture(this)
+        setupTextureParameters()
+    }
+
+    fun setupTextureParameters() = textureManager.gpuContext.execute {
+        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter)
+        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
+        glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
+        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, wrapMode)
+        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, wrapMode)
+        glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
+        glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)))
+    }
 
     fun load(cubeMapFace: Int, buffer: ByteBuffer) {
         GL11.glTexImage2D(cubeMapFace,
                 0,
-                EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT,
+                internalFormat,
                 width / 4,
                 height / 3,
-                0,
+                depth,
                 srcPixelFormat,
                 GL11.GL_UNSIGNED_BYTE,
                 buffer)
@@ -36,7 +68,8 @@ open class CubeMap(protected val textureManager: TextureManager, private val pat
     companion object {
         private const val serialVersionUID = 1L
 
-        @JvmStatic fun buffer(buffer: ByteBuffer, values: ByteArray): ByteBuffer {
+        @JvmStatic
+        fun buffer(buffer: ByteBuffer, values: ByteArray): ByteBuffer {
             buffer.order(ByteOrder.nativeOrder())
             buffer.put(values, 0, values.size)
             buffer.flip()

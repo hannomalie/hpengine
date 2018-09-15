@@ -4,6 +4,8 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 
+import static de.hanno.hpengine.engine.model.texture.TextureKt.isMipMapped;
+
 public class CubeMapArray {
 
     private final int resolution;
@@ -30,7 +32,8 @@ public class CubeMapArray {
 			textureId = GL11.glGenTextures();
 			bind(gpuContext);
 
-            if(OpenGlTexture.filterRequiresMipmaps(magTextureFilter)) {
+			boolean isMipMapped = isMipMapped(magTextureFilter);
+			if(isMipMapped) {
                 mipMapCount = de.hanno.hpengine.util.Util.calculateMipMapCount(resolution);
             }
 			this.internalFormat = internalFormat;
@@ -42,7 +45,7 @@ public class CubeMapArray {
 			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
 
-			if(OpenGlTexture.filterRequiresMipmaps(magTextureFilter)) {
+			if(isMipMapped) {
 				GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
 			}
 		});

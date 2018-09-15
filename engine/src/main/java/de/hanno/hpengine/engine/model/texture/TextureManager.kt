@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.getFullPat
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.textureAvailableAsDDS
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.Util.*
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import jogl.DDSImage
@@ -32,6 +33,7 @@ import java.awt.image.*
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -104,7 +106,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     private fun loadDefaultTexture(): Pair<Texture, BufferedImage> {
         val defaultTexturePath = "hp/assets/models/textures/gi_flag.png"
         val defaultTexture = getTexture(defaultTexturePath, true)
-        val defaultTextureAsBufferedImage = loadImage(defaultTexturePath) ?: throw IllegalStateException("Cannot load default texture!")
+        val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
+                ?: throw IllegalStateException("Cannot load default texture!")
         return Pair(defaultTexture, defaultTextureAsBufferedImage)
     }
 
@@ -148,8 +151,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     private fun convertAndUpload(resourceName: String, srgba: Boolean): Texture? {
-        return commandQueue.calculate(object : FutureCallable<OpenGlTexture>() {
-            override fun execute(): OpenGlTexture? {
+        return commandQueue.calculate(object : FutureCallable<PathBasedOpenGlTexture>() {
+            override fun execute(): PathBasedOpenGlTexture? {
                 return getOpenGlTexture(resourceName, srgba)
             }
         })?.apply {
@@ -157,38 +160,42 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    private fun getOpenGlTexture(resourceName: String, srgba: Boolean): OpenGlTexture? {
+    private fun getOpenGlTexture(path: String, srgba: Boolean): PathBasedOpenGlTexture? {
         return try {
             val start = System.currentTimeMillis()
-            val imageExists = File(resourceName).exists()
+            val imageExists = File(path).exists()
             if (imageExists) {
-                val textureInfo = getCompleteTextureInfo(resourceName, srgba)
+                val textureInfo = getCompleteTextureInfo(path, srgba)
 
-                OpenGlTexture(this@TextureManager,
-                        resourceName,
+                PathBasedOpenGlTexture(this@TextureManager,
+                        TEXTURE_2D,
+                        path,
                         srgba,
                         textureInfo.info.width,
                         textureInfo.info.height,
+                        0,
                         textureInfo.info.mipMapCount,
                         textureInfo.info.srcPixelFormat,
-                        gpuContext.genTextures(), GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_LINEAR).apply {
+                        gpuContext.genTextures(),
+                        GL11.GL_LINEAR,
+                        GL11.GL_LINEAR_MIPMAP_LINEAR).apply {
 
                     upload(textureInfo)
                 }
             } else {
-                defaultTexture as OpenGlTexture // TODO: Remove this cast
+                defaultTexture as PathBasedOpenGlTexture // TODO: Remove this cast
             }.apply {
-                LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + resourceName)
+                LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path)
                 postTextureChangedEvent()
 
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            LOGGER.severe("Texture not found: $resourceName. Default texture returned...")
+            LOGGER.severe("Texture not found: $path. Default texture returned...")
             return null
         } catch (e: NullPointerException) {
             e.printStackTrace()
-            LOGGER.severe("Texture not found: $resourceName. Default texture returned...")
+            LOGGER.severe("Texture not found: $path. Default texture returned...")
             return null
         }
 
@@ -199,14 +206,14 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         LOGGER.info("$resourceName available as dds: $ddsImageAvailable")
         return if (ddsImageAvailable) {
             val ddsImage = DDSImage.read(File(getFullPathAsDDS(resourceName)))
-            val mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(ddsImage.width, ddsImage.height)
+            val mipMapCountPlusOne = calculateMipMapCountPlusOne(ddsImage.width, ddsImage.height)
             val mipMapCount = mipMapCountPlusOne - 1
 
             val data = (0 until ddsImage.allMipMaps.size).map {
                 val info = ddsImage.getMipMap(it)
-    //                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
-    //                        showAsTextureInFrame(mipmapImage);
-    //                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
+                //                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
+                //                        showAsTextureInFrame(mipmapImage);
+                //                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
                 val array = ByteArray(info.data.capacity())
                 info.data.get(array)
                 CompletableFuture<ByteArray>().apply { complete(array) }
@@ -215,11 +222,12 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             CompleteTextureInfo(TextureInfo(srgba, ddsImage.width, ddsImage.height, mipMapCount, GL11.GL_RGB, mipMapsGenerated, true), data.toTypedArray())
         } else {
-            val bufferedImage = (loadImage(resourceName) ?: throw IllegalStateException("Can not load texture $resourceName")).apply {
-                    handleDdsConversion(resourceName, this)
-                }
+            val bufferedImage = (loadImage(resourceName)
+                    ?: throw IllegalStateException("Can not load texture $resourceName")).apply {
+                handleDdsConversion(resourceName, this)
+            }
 
-            val mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(bufferedImage.width, bufferedImage.height)
+            val mipMapCountPlusOne = calculateMipMapCountPlusOne(bufferedImage.width, bufferedImage.height)
             val mipMapCount = mipMapCountPlusOne - 1
 
             val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) GL11.GL_RGBA else GL11.GL_RGB
@@ -268,7 +276,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                            magFilter: Int): CubeMap {
 
 
-        val bufferedImage: BufferedImage = loadImage(resourceName) ?: throw IOException("Cannot load image $resourceName")
+        val bufferedImage: BufferedImage = loadImage(resourceName)
+                ?: throw IOException("Cannot load image $resourceName")
 
         val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) {
             GL11.GL_RGBA
@@ -280,7 +289,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         val data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
 
-        return CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, dstPixelFormat, gpuContext.genTextures(), data).apply {
+        return CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, gpuContext.genTextures(), data).apply {
             upload(this)
         }
     }
@@ -289,16 +298,6 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         gpuContext.execute {
             gpuContext.bindTexture(cubeMap)
-            run {
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, cubeMap.minFilter)
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, cubeMap.magFilter)
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE)
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
-                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(cubeMap.width, cubeMap.height)))
-            }
-
 
             val perFaceBuffer = ByteBuffer.allocateDirect(cubeMap.getData()[0].size)
 
@@ -310,9 +309,13 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[5]))
 
             this@TextureManager.generateMipMapsCubeMap(cubeMap.textureId)
-            cubeMap.handle = ARBBindlessTexture.glGetTextureHandleARB(cubeMap.textureId)
-            ARBBindlessTexture.glMakeTextureHandleResidentARB(cubeMap.handle)
+            cubeMap.createTextureHandleAndMakeResident() // TODO: Can this be placed into the init of the texture?
         }
+    }
+
+    fun Texture.createTextureHandleAndMakeResident() = gpuContext.calculate {
+        handle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
+        ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
     }
 
     /**
@@ -372,7 +375,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     }
 
-    private fun generateMipMaps(texture: OpenGlTexture, mipmap: Boolean) {
+    private fun generateMipMaps(texture: PathBasedOpenGlTexture, mipmap: Boolean) {
         gpuContext.execute {
             gpuContext.bindTexture(15, texture)
             if (mipmap) {
@@ -459,15 +462,40 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         gpuContext.execute {
             setupTextureParameters(target)
-            if (target == TEXTURE_CUBE_MAP_ARRAY) {
-                GL42.glTexStorage3D(target.glTarget, 1, format, width, height, 6 * depth)
-            } else {
-                GL42.glTexStorage2D(target.glTarget, 1, format, width, height)
-            }
+            texStorage(target, format, width, height, depth, 1)
         }
 
         return textureId
     }
+
+    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute {
+        when (target) {
+            TEXTURE_CUBE_MAP_ARRAY -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, 6 * depth)
+            else -> GL42.glTexStorage2D(target.glTarget, mipMapCount, internalFormat, width, height)
+        }
+    }
+    fun texImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+        when (target) {
+            TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
+            else -> {
+                GL11.glTexImage2D(target.glTarget, 0, internalFormat, width, height, 0, if(internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+            }
+        }
+    }
+
+//    TODO: The data buffer mustn't be null
+    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+        when (target) {
+            TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
+            else -> {
+                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, if(internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+            }
+        }
+    }
+
+    // TODO: This should only work for internalFormats, not for all ints
+    val Int.hasAlpha
+        get() = intArrayOf(GL11.GL_RGBA8, GL30.GL_RGBA16F, GL30.GL_RGBA32F, GL30.GL_RGBA16I, GL30.GL_RGBA32I).contains(this)
 
     private fun setupTextureParameters(target: GlTextureTarget) {
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
@@ -481,17 +509,17 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     // TODO return proper object
-    fun getTexture3D(gridSize: Int, gridTextureFormatSized: Int, filterMin: Int, filterMag: Int, wrapMode: Int): Int {
+    fun getTexture3D(gridSize: Int, gridTextureFormatSized: Int, minFilter: Int, magFilter: Int, wrapMode: Int): Int {
         val grid = IntArray(1)
         gpuContext.execute {
             grid[0] = GL11.glGenTextures()
             GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0])
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, filterMin)
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, filterMag)
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, minFilter)
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, wrapMode)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, wrapMode)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, wrapMode)
-            GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, de.hanno.hpengine.util.Util.calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize)
+            GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize)
             GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0])
             GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D)
         }
@@ -551,29 +579,28 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    @JvmOverloads
-    fun OpenGlTexture.upload(textureInfo: CompleteTextureInfo) {
-        val doesNotNeedUpload = OpenGlTexture.UploadState.UPLOADING == uploadState || OpenGlTexture.UploadState.UPLOADED == uploadState
+    fun PathBasedOpenGlTexture.upload(textureInfo: CompleteTextureInfo) {
+        val doesNotNeedUpload = UploadState.UPLOADING == uploadState || UploadState.UPLOADED == uploadState
         if (doesNotNeedUpload) {
             return
         }
 
-        uploadState = OpenGlTexture.UploadState.UPLOADING
+        uploadState = UploadState.UPLOADING
 
         val uploadRunnable = {
             LOGGER.info("Uploading $path")
-            val internalFormat = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-
-            gpuContext.execute {
-                gpuContext.bindTexture(15, this)
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT)
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT)
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureInfo.info.mipMapCount)
-                gpuContext.unbindTexture(15, this)
-            }
+//            val internalFormat = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+//
+//            gpuContext.execute {
+//                gpuContext.bindTexture(15, this)
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT)
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT)
+//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
+//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureInfo.info.mipMapCount)
+//                gpuContext.unbindTexture(15, this)
+//            }
             if (textureInfo.info.mipmapsGenerated) {
                 LOGGER.info("Mipmaps already generated")
                 uploadMipMaps(textureInfo, internalFormat)
@@ -586,15 +613,15 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     gpuContext.unbindTexture(15, this)
                 }
             }
-            handle = Texture.genHandle(this@TextureManager, textureId)
-            uploadState = OpenGlTexture.UploadState.UPLOADED
+            createTextureHandleAndMakeResident()
+            uploadState = UploadState.UPLOADED
             this@TextureManager.postTextureChangedEvent()
         }
 
         this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
     }
 
-    private fun OpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    private fun PathBasedOpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)
         val pixelUnpackBuffer = gpuContext.calculate {
@@ -628,12 +655,12 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             gpuContext.unbindTexture(15, this)
 
             if (textureInfo.info.mipmapsGenerated && mipLevel == 0) {
-                uploadState = OpenGlTexture.UploadState.UPLOADED
+                uploadState = UploadState.UPLOADED
             }
         }
     }
 
-    private fun OpenGlTexture.uploadMipMaps(textureInfo: CompleteTextureInfo, internalFormat: Int) {
+    private fun PathBasedOpenGlTexture.uploadMipMaps(textureInfo: CompleteTextureInfo, internalFormat: Int) {
         LOGGER.info("Uploading mipmaps for $path")
         var currentWidth = width
         var currentHeight = height
@@ -647,8 +674,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             heights.add(currentHeight)
         }
         for (mipMapIndex in mipmapCount - 1 downTo 1) {
-            val currentWidth = widths[mipMapIndex - 1]
-            val currentHeight = heights[mipMapIndex - 1]
+            currentWidth = widths[mipMapIndex - 1]
+            currentHeight = heights[mipMapIndex - 1]
             val actual = textureInfo.data[mipMapIndex].get()
             val tempBuffer = BufferUtils.createByteBuffer(actual.size).apply {
                 put(actual)
@@ -657,13 +684,13 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    fun OpenGlTexture.unloadTexture() {
-        if (uploadState != OpenGlTexture.UploadState.UPLOADED || preventUnload) {
+    fun PathBasedOpenGlTexture.unloadTexture() {
+        if (uploadState != UploadState.UPLOADED || preventUnload) {
             return
         }
 
         LOGGER.info("Unloading $path")
-        uploadState = OpenGlTexture.UploadState.NOT_UPLOADED
+        uploadState = UploadState.NOT_UPLOADED
 
         gpuContext.execute {
             ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle)
@@ -694,7 +721,9 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     companion object {
         private val LOGGER = Logger.getLogger(TextureManager::class.java.name)
         private val TEXTURE_FACTORY_THREAD_COUNT = 1
-        @Volatile @JvmField var TEXTURE_UNLOAD_THRESHOLD_IN_MS: Long = 10000
+        @Volatile
+        @JvmField
+        var TEXTURE_UNLOAD_THRESHOLD_IN_MS: Long = 10000
         private val USE_TEXTURE_STREAMING = false
 
         var executor = Executors.newFixedThreadPool(4)
@@ -750,25 +779,25 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             return byteArrays
         }
 
-        private fun getRectForFaceIndex(index: Int, imageWidth: Int, imageHeight: Int) = when (GL_TEXTURE_CUBE_MAP_POSITIVE_X +index) {
+        private fun getRectForFaceIndex(index: Int, imageWidth: Int, imageHeight: Int) = when (GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
 
             GL_TEXTURE_CUBE_MAP_POSITIVE_X -> arrayOf(Vector2f((imageWidth / 2).toFloat(), (imageHeight / 3 + 2).toFloat()),
-                        Vector2f((3 * imageWidth / 4).toFloat(), (2 * imageHeight / 3).toFloat()))
+                    Vector2f((3 * imageWidth / 4).toFloat(), (2 * imageHeight / 3).toFloat()))
 
             GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> arrayOf(Vector2f(0f, (imageHeight / 3).toFloat()),
-                        Vector2f((imageWidth / 4).toFloat(), (2 * imageHeight / 3).toFloat()))
+                    Vector2f((imageWidth / 4).toFloat(), (2 * imageHeight / 3).toFloat()))
 
             GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> arrayOf(Vector2f((imageWidth / 4).toFloat(), 0f),
-                        Vector2f((imageWidth / 2).toFloat(), (imageHeight / 3).toFloat()))
+                    Vector2f((imageWidth / 2).toFloat(), (imageHeight / 3).toFloat()))
 
             GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> arrayOf(Vector2f((imageWidth / 2 - 1).toFloat(), imageHeight.toFloat()),
-                        Vector2f((imageWidth / 4).toFloat(), (2 * imageHeight / 3 + 1).toFloat()))
+                    Vector2f((imageWidth / 4).toFloat(), (2 * imageHeight / 3 + 1).toFloat()))
 
             GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> arrayOf(Vector2f((3 * imageWidth / 4).toFloat(), (imageHeight / 3).toFloat()),
-                        Vector2f(imageWidth.toFloat(), (2 * imageHeight / 3).toFloat()))
+                    Vector2f(imageWidth.toFloat(), (2 * imageHeight / 3).toFloat()))
 
             GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> arrayOf(Vector2f((imageWidth / 4).toFloat(), (imageHeight / 3).toFloat()),
-                        Vector2f((imageWidth / 2).toFloat(), (2 * imageHeight / 3).toFloat()))
+                    Vector2f((imageWidth / 2).toFloat(), (2 * imageHeight / 3).toFloat()))
 
             else -> throw IllegalStateException("")
         }

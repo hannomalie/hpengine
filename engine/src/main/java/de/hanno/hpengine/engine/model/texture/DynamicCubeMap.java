@@ -12,7 +12,7 @@ public class DynamicCubeMap extends CubeMap {
     private Engine engine;
 
     public DynamicCubeMap(Engine engine, int resolution, int internalFormat, int type, int minFilter, int format, FloatBuffer[] values) {
-        super(engine.getTextureManager(), "", resolution, resolution, minFilter, GL11.GL_LINEAR, GL11.GL_RGBA, GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
+        super(engine.getTextureManager(), "", resolution, resolution, minFilter, GL11.GL_LINEAR, GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
         if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;
 
@@ -34,6 +34,6 @@ public class DynamicCubeMap extends CubeMap {
         GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+4, 0, internalFormat, resolution, resolution, 0, format, type, values[4]);
         GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X+5, 0, internalFormat, resolution, resolution, 0, format, type, values[5]);
 
-        Texture.Companion.genHandle(engine.getTextureManager(), getTextureId());
+        getTextureManager().createTextureHandleAndMakeResident(this);
     }
 }

@@ -3,13 +3,16 @@ package de.hanno.hpengine.engine.model.texture
 import ddsutil.DDSUtil
 import ddsutil.ImageRescaler
 import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.engine.model.texture.OpenGlTexture.UploadState.*
+import de.hanno.hpengine.engine.model.texture.UploadState.NOT_UPLOADED
+import de.hanno.hpengine.engine.model.texture.UploadState.UPLOADED
 import de.hanno.hpengine.util.ressources.Reloadable
 import jogl.DDSImage
 import org.apache.commons.io.FilenameUtils
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
@@ -21,27 +24,22 @@ import javax.swing.ImageIcon
 import javax.swing.JFrame
 import javax.swing.JLabel
 
-open class OpenGlTexture internal constructor(protected val textureManager: TextureManager,
-                                              val path: String,
-                                              val srgba: Boolean,
-                                              override val width: Int,
-                                              override val height: Int,
-                                              val mipmapCount: Int,
-                                              val srcPixelFormat: Int,
-                                              override val textureId: Int,
-                                              override val minFilter: Int = GL11.GL_LINEAR,
-                                              override val magFilter: Int = GL11.GL_LINEAR) : Reloadable, Texture {
-    override val target = TEXTURE_2D
-    @Volatile var preventUnload = false
+open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
+                                  target: GlTextureTarget,
+                                  val path: String,
+                                  val srgba: Boolean,
+                                  width: Int,
+                                  height: Int,
+                                  depth: Int = if (target.is3D) 1 else 0,
+                                  mipmapCount: Int,
+                                  val srcPixelFormat: Int,
+                                  textureId: Int,
+                                  minFilter: Int = GL11.GL_LINEAR,
+                                  magFilter: Int = GL11.GL_LINEAR,
+                                  wrapMode: Int = GL_CLAMP_TO_EDGE,
+                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width, height, depth, mipmapCount, textureId, path, minFilter, magFilter, wrapMode, NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
 
-    @Volatile var uploadState = NOT_UPLOADED
-        internal set
-
-    override var handle = -1L
-
-    override fun toString() = "(Texture)$path"
-
-    override fun getName() = path
+    var preventUnload = false
 
     override fun load() = with(textureManager) {
         upload(textureManager.getCompleteTextureInfo(path, srgba))
@@ -51,12 +49,54 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
         unloadTexture()
     }
 
-    enum class UploadState {
-        NOT_UPLOADED,
-        UPLOADING,
-        UPLOADED
+    override fun toString() = "(Texture)$path"
+
+    override fun getName() = path
+}
+
+
+open class OpenGlTexture(protected val textureManager: TextureManager,
+                         override val target: GlTextureTarget = TEXTURE_2D,
+                         val srgba: Boolean,
+                         override val width: Int,
+                         override val height: Int,
+                         override val depth: Int = if (target.is3D) 1 else 0,
+                         val mipmapCount: Int,
+                         override val textureId: Int,
+                         val name: String = "OpenGlTexture-$textureId",
+                         override val minFilter: Int = GL11.GL_LINEAR,
+                         override val magFilter: Int = GL11.GL_LINEAR,
+                         override val wrapMode: Int = GL_CLAMP_TO_EDGE,
+                         override var uploadState: UploadState = UPLOADED) : Texture {
+
+    override var handle = -1L
+
+    override fun toString() = "(Texture)$name"
+
+    override val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+
+    init {
+        with(textureManager) {
+            gpuContext.bindTexture(this@OpenGlTexture)
+//            TODO: Switch to better api with texstorage
+//            texStorage(target, internalFormat, width, height, depth, mipmapCount)
+//            texSubImage(target, internalFormat, width, height, depth)
+            texImage(target, internalFormat, width, height, depth)
+//            GL30.glGenerateMipmap(target.glTarget)
+            setupTextureParameters()
+            createTextureHandleAndMakeResident()
+        }
     }
 
+    private fun setupTextureParameters() = textureManager.gpuContext.execute {
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter)
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, wrapMode)
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, wrapMode)
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount)
+    }
     companion object {
         private val LOGGER = Logger.getLogger(OpenGlTexture::class.java.name)
         fun buffer(data: ByteArray): ByteBuffer {
@@ -68,20 +108,15 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
 
         const val directory = DirectoryManager.WORKDIR_NAME + "/assets/textures/"
 
-        @JvmStatic fun filterRequiresMipmaps(magTextureFilter: Int): Boolean {
-            return magTextureFilter == GL11.GL_LINEAR_MIPMAP_LINEAR ||
-                    magTextureFilter == GL11.GL_LINEAR_MIPMAP_NEAREST ||
-                    magTextureFilter == GL11.GL_NEAREST_MIPMAP_LINEAR ||
-                    magTextureFilter == GL11.GL_NEAREST_MIPMAP_NEAREST
-        }
-
-        @JvmStatic fun textureAvailableAsDDS(resourceName: String): Boolean {
+        @JvmStatic
+        fun textureAvailableAsDDS(resourceName: String): Boolean {
             val fullPathAsDDS = getFullPathAsDDS(resourceName)
             val f = File(fullPathAsDDS)
             return f.exists()
         }
 
-        @JvmStatic fun getFullPathAsDDS(fileName: String): String {
+        @JvmStatic
+        fun getFullPathAsDDS(fileName: String): String {
             val name = FilenameUtils.getBaseName(fileName)
             val nameWithExtension = FilenameUtils.getName(fileName)//FilenameUtils.getName(fileName) + "." + extension;
             var restPath: String? = fileName.replace(nameWithExtension.toRegex(), "")
@@ -91,7 +126,8 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
             return "$restPath$name.dds"
         }
 
-        @JvmStatic protected fun getNextPowerOfTwo(fold: Int): Int {
+        @JvmStatic
+        protected fun getNextPowerOfTwo(fold: Int): Int {
             var ret = 2
             while (ret < fold) {
                 ret *= 2
@@ -114,7 +150,8 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
         }
 
         @Throws(IOException::class)
-        @JvmStatic fun saveAsDDS(path: String, bufferedImage: BufferedImage): BufferedImage {
+        @JvmStatic
+        fun saveAsDDS(path: String, bufferedImage: BufferedImage): BufferedImage {
             val start = System.currentTimeMillis()
             val rescaledImage = rescaleToNextPowerOfTwo(bufferedImage)
             val ddsFile = File(getFullPathAsDDS(path))
@@ -131,7 +168,8 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
             return rescaledImage
         }
 
-        @JvmStatic fun rescaleToNextPowerOfTwo(nonPowerOfTwoImage: BufferedImage): BufferedImage {
+        @JvmStatic
+        fun rescaleToNextPowerOfTwo(nonPowerOfTwoImage: BufferedImage): BufferedImage {
             val oldWidth = nonPowerOfTwoImage.width
             val nextPowerOfTwoWidth = getNextPowerOfTwo(oldWidth)
             val oldHeight = nonPowerOfTwoImage.height
@@ -147,20 +185,25 @@ open class OpenGlTexture internal constructor(protected val textureManager: Text
             return result
         }
 
-        @JvmStatic fun buffer(data: Array<ByteArray>): ByteBuffer {
+        @JvmStatic
+        fun buffer(data: Array<ByteArray>): ByteBuffer {
             val imageBuffer = BufferUtils.createByteBuffer(data[0].size)
             imageBuffer.put(data[0], 0, data[0].size)
             imageBuffer.flip()
             return imageBuffer
         }
-        @JvmStatic fun buffer(data: Array<Future<ByteArray>>): ByteBuffer {
+
+        @JvmStatic
+        fun buffer(data: Array<Future<ByteArray>>): ByteBuffer {
             val actualData = data[0].get()
             val imageBuffer = BufferUtils.createByteBuffer(actualData.size)
             imageBuffer.put(actualData, 0, actualData.size)
             imageBuffer.flip()
             return imageBuffer
         }
-        @JvmStatic fun bufferLayer(data: ByteArray): ByteBuffer {
+
+        @JvmStatic
+        fun bufferLayer(data: ByteArray): ByteBuffer {
             val imageBuffer = ByteBuffer.allocateDirect(data.size)
             imageBuffer.put(data, 0, data.size)
             imageBuffer.flip()
