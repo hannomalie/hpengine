@@ -509,21 +509,23 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     // TODO return proper object
-    fun getTexture3D(gridSize: Int, gridTextureFormatSized: Int, minFilter: Int, magFilter: Int, wrapMode: Int): Int {
-        val grid = IntArray(1)
-        gpuContext.execute {
-            grid[0] = GL11.glGenTextures()
-            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0])
+    fun getTexture3D(gridSize: Int, gridTextureFormatSized: Int, minFilter: Int, magFilter: Int, wrapMode: Int): Pair<Int, Long> {
+        return gpuContext.calculate {
+            val grid = GL11.glGenTextures()
+            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, minFilter)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, wrapMode)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, wrapMode)
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, wrapMode)
             GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize)
-            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0])
+            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid)
             GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D)
+
+            val handle = ARBBindlessTexture.glGetTextureHandleARB(grid)
+            ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
+            Pair(grid, handle)
         }
-        return grid[0]
     }
 
     fun blur2DTextureRGBA16F(sourceTexture: Int, width: Int, height: Int, mipmapTarget: Int, mipmapSource: Int) {

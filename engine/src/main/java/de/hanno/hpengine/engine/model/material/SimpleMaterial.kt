@@ -10,6 +10,7 @@ import java.io.IOException
 import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.lang.Double
+import java.lang.Double.*
 import java.lang.Float
 import java.nio.ByteBuffer
 
@@ -113,12 +114,12 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
         buffer.putInt(if (materialInfo.getHasHeightMap()) 1 else 0)
         buffer.putInt(if (materialInfo.getHasOcclusionMap()) 1 else 0)
         buffer.putInt(if (materialInfo.getHasRoughnessMap()) 1 else 0)
-        buffer.putDouble(if (materialInfo.getHasDiffuseMap()) java.lang.Double.longBitsToDouble(materialInfo.maps[MAP.DIFFUSE]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasNormalMap()) java.lang.Double.longBitsToDouble(materialInfo.maps[MAP.NORMAL]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasSpecularMap()) java.lang.Double.longBitsToDouble(materialInfo.maps[MAP.SPECULAR]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasHeightMap()) java.lang.Double.longBitsToDouble(materialInfo.maps[MAP.HEIGHT]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasOcclusionMap()) java.lang.Double.longBitsToDouble(materialInfo.maps[MAP.OCCLUSION]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasRoughnessMap()) java.lang.Double.longBitsToDouble(materialInfo.maps[MAP.ROUGHNESS]!!.handle) else 0.0)
+        buffer.putDouble(if (materialInfo.getHasDiffuseMap()) longBitsToDouble(materialInfo.maps[MAP.DIFFUSE]!!.handle) else 0.0)
+        buffer.putDouble(if (materialInfo.getHasNormalMap()) longBitsToDouble(materialInfo.maps[MAP.NORMAL]!!.handle) else 0.0)
+        buffer.putDouble(if (materialInfo.getHasSpecularMap()) longBitsToDouble(materialInfo.maps[MAP.SPECULAR]!!.handle) else 0.0)
+        buffer.putDouble(if (materialInfo.getHasHeightMap()) longBitsToDouble(materialInfo.maps[MAP.HEIGHT]!!.handle) else 0.0)
+        buffer.putDouble(if (materialInfo.getHasOcclusionMap()) longBitsToDouble(materialInfo.maps[MAP.OCCLUSION]!!.handle) else 0.0)
+        buffer.putDouble(if (materialInfo.getHasRoughnessMap()) longBitsToDouble(materialInfo.maps[MAP.ROUGHNESS]!!.handle) else 0.0)
         buffer.putInt(0)
         buffer.putInt(0)
     }
@@ -134,7 +135,7 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
 
     companion object {
 
-        const val bytesPerObject = 10 * Float.BYTES + 6 * Integer.BYTES + 6 * Double.BYTES + 2 * Integer.BYTES
+        const val bytesPerObject = 10 * Float.BYTES + 6 * Integer.BYTES + 6 * BYTES + 2 * Integer.BYTES
         private const val serialVersionUID = 1L
 
         var MIPMAP_DEFAULT = true

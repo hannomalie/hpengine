@@ -26,6 +26,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.*
 import java.io.File
+import java.lang.Double.longBitsToDouble
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
@@ -55,23 +56,38 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     private var litInCycle: Long = -1
 
     init {
-        globalGrid.apply{
-            grid = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+        with(globalGrid) {
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     GL11.GL_LINEAR_MIPMAP_LINEAR,
                     GL11.GL_LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE)
-            grid2 = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                        grid = first
+                        gridHandle = longBitsToDouble(second)
+                    }
+
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     GL11.GL_LINEAR_MIPMAP_LINEAR,
                     GL11.GL_LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE)
-            albedoGrid = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                        grid2 = first
+                        grid2Handle = longBitsToDouble(second)
+                    }
+
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     GL11.GL_LINEAR_MIPMAP_LINEAR,
                     GL11.GL_LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE)
-            normalGrid = engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                        albedoGrid = first
+                        albedoGridHandle = longBitsToDouble(second)
+                    }
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     GL11.GL_NEAREST,
                     GL11.GL_LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE)
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                        normalGrid = first
+                        normalGridHandle = longBitsToDouble(second)
+                    }
+
             currentVoxelTarget = grid
             currentVoxelSource = grid2
         }

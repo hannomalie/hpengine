@@ -26,6 +26,11 @@ open class VoxelGrid protected constructor(): Struct() {
     var position by HpVector3f(this)
     private var scaleProperty by 0f
 
+    var albedoGridHandle by 0.0
+    var normalGridHandle by 0.0
+    var gridHandle by 0.0
+    var grid2Handle by 0.0
+
     private val transform = SimpleTransform()
     val spatial = TransformSpatial(transform)
     var scale: Float = 0f
