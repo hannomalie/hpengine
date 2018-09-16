@@ -1,3 +1,5 @@
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
 
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
@@ -10,10 +12,6 @@ layout(binding=7) uniform sampler2D visibilityMap;
 layout(binding=8) uniform samplerCubeArray probes;
 
 layout(binding=11) uniform sampler2D aoScattering;
-
-layout(binding=12) uniform sampler3D albedoGrid;
-layout(binding=13) uniform sampler3D grid;
-layout(binding=14) uniform sampler3D normalGrid;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -55,7 +53,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale) {
+vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, sampler3D albedoGrid, sampler3D normalGrid, sampler3D grid) {
     float inverseSceneScale = 1f/sceneScale;
 	vec3 rayVector = worldPos.xyz - startPosition;
 
@@ -104,6 +102,10 @@ void main(void) {
     float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1f / voxelGrid.scale;
     int gridSize = voxelGrid.resolution;
+
+    sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
+    sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
+    sampler3D grid = sampler3D(uint64_t(voxelGrid.gridHandle));
 
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
@@ -187,7 +189,7 @@ void main(void) {
     out_DiffuseSpecular.rgb = vct;
 
     if(debugVoxels) {
-    	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, gridSize, sceneScale);
+    	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, gridSize, sceneScale, albedoGrid, normalGrid, grid);
     	out_DiffuseSpecular.rgb = vct;
     	out_AOReflection.rgb = vct;
     }

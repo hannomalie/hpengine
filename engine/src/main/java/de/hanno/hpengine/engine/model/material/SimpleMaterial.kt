@@ -120,8 +120,6 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
         buffer.putDouble(if (materialInfo.getHasHeightMap()) longBitsToDouble(materialInfo.maps[MAP.HEIGHT]!!.handle) else 0.0)
         buffer.putDouble(if (materialInfo.getHasOcclusionMap()) longBitsToDouble(materialInfo.maps[MAP.OCCLUSION]!!.handle) else 0.0)
         buffer.putDouble(if (materialInfo.getHasRoughnessMap()) longBitsToDouble(materialInfo.maps[MAP.ROUGHNESS]!!.handle) else 0.0)
-        buffer.putInt(0)
-        buffer.putInt(0)
     }
 
     override fun debugPrintFromBuffer(buffer: ByteBuffer): String {

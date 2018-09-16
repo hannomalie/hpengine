@@ -21,13 +21,13 @@ struct Material {
 
     double handleDiffuse;
     double handleNormal;
+
     double handleSpecular;
     double handleHeight;
 
     double handleOcclusion;
     double handleRoughness;
-    int placeHolder0;
-    int placeHolder1;
+
 };
 
 struct PointLight {
@@ -89,6 +89,7 @@ struct DrawCommand {
 struct AmbientCube {
     vec3 position;
     float filler;
+
     double handle;
     double distanceMapHandle;
 };
@@ -108,4 +109,10 @@ struct VoxelGrid {
 
     vec3 position;
     float scale;
+
+    uvec2 albedoGridHandle;
+    uvec2 normalGridHandle;
+
+    uvec2 gridHandle;
+    uvec2 grid2Handle;
 };

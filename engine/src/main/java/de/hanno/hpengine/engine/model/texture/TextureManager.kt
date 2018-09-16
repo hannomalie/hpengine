@@ -524,6 +524,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             val handle = ARBBindlessTexture.glGetTextureHandleARB(grid)
             ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
+
             Pair(grid, handle)
         }
     }

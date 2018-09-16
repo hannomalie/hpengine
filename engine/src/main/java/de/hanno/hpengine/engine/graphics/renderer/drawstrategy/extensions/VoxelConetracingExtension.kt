@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
@@ -26,7 +25,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.*
 import java.io.File
-import java.lang.Double.longBitsToDouble
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
@@ -62,7 +60,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     GL11.GL_LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         grid = first
-                        gridHandle = longBitsToDouble(second)
+                        gridHandle = second
                     }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
@@ -70,7 +68,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     GL11.GL_LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         grid2 = first
-                        grid2Handle = longBitsToDouble(second)
+                        grid2Handle = second
                     }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
@@ -78,14 +76,14 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     GL11.GL_LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         albedoGrid = first
-                        albedoGridHandle = longBitsToDouble(second)
+                        albedoGridHandle = second
                     }
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     GL11.GL_NEAREST,
                     GL11.GL_LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         normalGrid = first
-                        normalGridHandle = longBitsToDouble(second)
+                        normalGridHandle = second
                     }
 
             currentVoxelTarget = grid
@@ -138,9 +136,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             litInCycle = renderState.cycle
             GPUProfiler.start("grid shading")
             GL42.glBindImageTexture(0, globalGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-            engine.gpuContext.bindTexture(1, TEXTURE_3D, globalGrid.albedoGrid)
-            engine.gpuContext.bindTexture(2, TEXTURE_3D, globalGrid.normalGrid)
-            engine.gpuContext.bindTexture(3, TEXTURE_3D, globalGrid.currentVoxelTarget)
             val num_groups_xyz = Math.max(globalGrid.gridSize / 8, 1)
 
             if (lightInjectedFramesAgo == 0) {
@@ -185,7 +180,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 GL42.glBindImageTexture(0, globalGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(1, globalGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
                 GL42.glBindImageTexture(3, globalGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                engine.gpuContext.bindTexture(4, TEXTURE_3D, globalGrid.normalGrid)
+                clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
                 clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
             }
             GPUProfiler.end()
@@ -273,9 +268,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.renderer.gBuffer.motionMap)
         engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.renderer.gBuffer.visibilityMap)
         engine.gpuContext.bindTexture(11, TEXTURE_2D, engine.renderer.gBuffer.ambientOcclusionScatteringMap)
-        engine.gpuContext.bindTexture(12, TEXTURE_3D, globalGrid.albedoGrid)
-        engine.gpuContext.bindTexture(13, TEXTURE_3D, globalGrid.currentVoxelSource)
-        engine.gpuContext.bindTexture(14, TEXTURE_3D, globalGrid.normalGrid)
 
         voxelConeTraceProgram.use()
         val camTranslation = Vector3f()

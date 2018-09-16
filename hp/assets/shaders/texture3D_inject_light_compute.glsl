@@ -1,10 +1,9 @@
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
 #define WORK_GROUP_SIZE 8
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
-layout(binding=0, rgba8) writeonly uniform image3D voxelGrid;
-layout(binding=1) uniform sampler3D albedoGrid;
-layout(binding=2) uniform sampler3D normalGrid;
-layout(binding=3) uniform sampler3D secondVoxelGrid;
+layout(binding=0, rgba8) writeonly uniform image3D targetVoxelGrid;
 layout(binding=6) uniform sampler2D shadowMap;
 
 uniform mat4 shadowMatrix;
@@ -75,12 +74,14 @@ float calculateAttenuation(float dist, float lightRadius) {
     return atten_factor;
 }
 void main(void) {
-    VoxelGrid grid = voxelGrids[0];
-    float sceneScale = grid.scale;
+    VoxelGrid voxelGrid = voxelGrids[0];
+    float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1f/sceneScale;
 
-    int gridSize = grid.resolution;
-    int gridSizeHalf = grid.resolution/2;
+    sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
+    sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
+    sampler3D secondVoxelGrid = sampler3D(uint64_t(voxelGrid.grid2Handle));
+
 	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
 	ivec3 workGroup = ivec3(gl_WorkGroupID);
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
@@ -90,20 +91,20 @@ void main(void) {
 	float weightSum = 0;
 
 	float visibility = 1.0;
-	vec3 positionWorld = sceneScale*vec3(storePos-vec3(float(gridSizeHalf)));
-	vec3 gridPosition = vec3(inverseSceneScale)*positionWorld.xyz + ivec3(gridSizeHalf);
+	vec3 positionWorld = sceneScale*vec3(storePos-vec3(float(voxelGrid.resolutionHalf)));
+	vec3 gridPosition = vec3(inverseSceneScale)*positionWorld.xyz + ivec3(voxelGrid.resolutionHalf);
     vec3 positionGridScaled = inverseSceneScale*gridPosition.xyz;
-    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
+    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(voxelGrid.resolution)+vec3(0.5);
 
-    vec4 color = texelFetch(albedoGrid, storePos, 0);//voxelFetch(albedoGrid, gridSize, sceneScale, positionWorld, 0);
-    vec4 normalStaticEmissive = texelFetch(normalGrid, storePos, 0);//voxelFetch(normalGrid, gridSize, sceneScale, positionWorld, 0);
+    vec4 color = texelFetch(albedoGrid, storePos, 0);
+    vec4 normalStaticEmissive = texelFetch(normalGrid, storePos, 0);
     vec3 g_normal = normalize(Decode(normalStaticEmissive.xy));
     vec3 g_pos = positionWorld;
     float opacity = color.a;
     float isStatic = normalStaticEmissive.b;
 
     //second bounce?
-    vec3 ambientAmount = vec3(0);//voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+sceneScale*g_normal, g_normal, .12, 150).rgb;//.0125f;
+    vec3 ambientAmount = vec3(0);
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
     vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalStaticEmissive.a))*voxelColor;
@@ -129,5 +130,5 @@ void main(void) {
         finalVoxelColor += 4*attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
     }
 
-	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
+	imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }
