@@ -59,7 +59,7 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements
         program.use();
         program.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
         program.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-        program.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+        program.setUniform("useRainEffect", !(Config.getInstance().getRainEffect() == 0.0));
         program.setUniform("rainEffect", Config.getInstance().getRainEffect());
         program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
         program.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);

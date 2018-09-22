@@ -10,14 +10,11 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
-import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
-import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
@@ -47,7 +44,7 @@ class Engine private constructor(gameDirName: String) {
 
     val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
     val renderManager = managers.register(RenderManager(this, gpuContext, { RenderState(gpuContext) }))
-    val programManager = managers.register(ProgramManager(this))
+    val programManager = managers.register(ProgramManager(gpuContext, eventBus))
     val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
     val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
 

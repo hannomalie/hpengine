@@ -21,6 +21,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.graphics.OpenGlCommandSyncKt.checkCommandSyncsReturnUnsignaled;
@@ -90,7 +91,7 @@ public final class OpenGLContext implements GpuContext {
     private GLFWFramebufferSizeCallback framebufferSizeCallback;
     private GLFWWindowCloseCallbackI closeCallback = l -> System.exit(0);
 
-    protected OpenGLContext() {
+    public OpenGLContext() {
         init();
         fullscreenBuffer = new QuadVertexBuffer(this, true);
         debugBuffer = new QuadVertexBuffer(this, false);
@@ -204,8 +205,8 @@ public final class OpenGLContext implements GpuContext {
         try {
             executePerFrameCommands();
             commandQueue.executeCommands();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Error e) {
+            LOGGER.log(Level.SEVERE, "", e);
         }
     }
 
@@ -412,7 +413,11 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public void execute(Runnable runnable, boolean andBlock) {
         if(isOpenGLThread()) {
-            runnable.run();
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "", e);
+            }
             return;
         }
 
@@ -547,6 +552,9 @@ public final class OpenGLContext implements GpuContext {
                 }
             }
         };
+        openGLThread.setUncaughtExceptionHandler((t, e) -> {
+            LOGGER.log(Level.SEVERE, "", e);
+        });
         OpenGLContext.executorService.submit(this.openGLThread);
         System.out.println("OpenGLContext thread submitted with id " + OpenGLContext.OPENGL_THREAD_ID);
         waitForInitialization(this);

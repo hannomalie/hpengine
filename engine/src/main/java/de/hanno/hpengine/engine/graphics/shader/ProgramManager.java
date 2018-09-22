@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.manager.Manager;
@@ -13,8 +14,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
 import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
+import static de.hanno.hpengine.engine.graphics.shader.Shader.getDirectory;
 
 public class ProgramManager implements Manager {
 
@@ -36,12 +37,12 @@ public class ProgramManager implements Manager {
     private Program linesProgram;
 
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
-    private Engine engine;
     private GpuContext gpuContext;
+    private EventBus eventBus;
 
-    public ProgramManager(Engine engine) {
-        this.engine = engine;
-        gpuContext = engine.getGpuContext();
+    public ProgramManager(GpuContext gpuContext, EventBus eventBus) {
+        this.gpuContext = gpuContext;
+        this.eventBus = eventBus;
         try {
             firstpassAnimatedDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
             firstpassDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
@@ -77,7 +78,7 @@ public class ProgramManager implements Manager {
 	public Program getProgram(Defines defines) {
 		Program program = new Program(this, firstpassDefaultVertexshaderSource, null, firstpassDefaultFragmentshaderSource, defines);
 		LOADED_PROGRAMS.add(program);
-		engine.getEventBus().register(program);
+		eventBus.register(program);
 		return program;
 	}
 
@@ -85,10 +86,10 @@ public class ProgramManager implements Manager {
         return getComputeProgram(computeShaderLocation, new Defines());
     }
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, Defines defines) {
-        return engine.getGpuContext().calculate(() -> {
+        return gpuContext.calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(this, getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
-            engine.getEventBus().register(program);
+            eventBus.register(program);
             return program;
         });
 	}
@@ -97,10 +98,10 @@ public class ProgramManager implements Manager {
 		return getProgram(vertexShaderSource, null, fragmentShaderSource, defines);
 	}
 	public Program getProgram(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource, Defines defines) {
-        return engine.getGpuContext().calculate(() -> {
+        return gpuContext.calculate(() -> {
             Program program = new Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
             LOADED_PROGRAMS.add(program);
-            engine.getEventBus().register(program);
+            eventBus.register(program);
             return program;
         });
 	}
@@ -169,11 +170,6 @@ public class ProgramManager implements Manager {
     }
     public ComputeShaderProgram getAppendDrawCommandComputeProgram() {
         return appendDrawcommandsComputeProgram;
-    }
-
-    @NotNull
-    public Engine getEngine() {
-        return engine;
     }
 
     public GpuContext getGpuContext() {
