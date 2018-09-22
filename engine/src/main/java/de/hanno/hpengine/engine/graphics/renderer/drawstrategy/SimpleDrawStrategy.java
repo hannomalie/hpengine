@@ -248,7 +248,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformation().get(modelMatrixBuffer));
         program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        DrawStrategy.draw(gpuContext, skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, program, false);
+        DrawStrategy.draw(gpuContext, skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, program, false, false);
     }
 
     public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {

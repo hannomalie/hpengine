@@ -217,7 +217,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
                         continue
                     }
-                    val currentVerticesCount = DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false)
+                    val currentVerticesCount = DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
 
                     //                TODO: Count this somehow?
                     //                firstPassResult.verticesDrawn += currentVerticesCount;

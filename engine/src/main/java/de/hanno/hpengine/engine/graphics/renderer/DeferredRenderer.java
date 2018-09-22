@@ -11,11 +11,13 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
 
@@ -110,10 +112,8 @@ public class DeferredRenderer implements Renderer {
 		engine.getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-//			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
-//			drawToQuad(gBuffer.getlaBuffer().getRenderedTexture(0), engine.getGpuContext().getDebugBuffer());
-
-			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+			ArrayList<Texture> textures = new ArrayList<>(engine.getTextureManager().getTextures().values());
+			drawToQuad(textures.get(0).getTextureId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 //			drawToQuad(engine.getSimpleScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getSimpleScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 
 //			for(int i = 0; i < 6; i++) {

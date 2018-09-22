@@ -293,7 +293,7 @@ public class EnvironmentSampler extends Entity {
 			if (!Spatial.isInFrustum(getCamera(), e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
 //				continue;
 			}
-			DrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false);
+			DrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false, true);
 		}
 		GPUProfiler.end();
 	}

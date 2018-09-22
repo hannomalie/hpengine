@@ -114,7 +114,7 @@ class ProbeRenderStrategy(private val engine: Engine) {
 
             GPUProfiler.start("Probe entity rendering")
             for (e in renderState.renderBatchesStatic) {
-                DrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible)
+                DrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
             }
             GPUProfiler.end()
             engine.textureManager.generateMipMapsCubeMap(cubeMapRenderTarget.renderedTexture)

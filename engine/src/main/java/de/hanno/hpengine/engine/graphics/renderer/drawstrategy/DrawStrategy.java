@@ -13,9 +13,9 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 public interface DrawStrategy {
 
     static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch) {
-        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera());
+        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), true);
     }
-    static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible) {
+    static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible, boolean drawLinesIfEnabled) {
         if(invisible) {
             return 0;
         }
@@ -34,7 +34,7 @@ public interface DrawStrategy {
             gpuContext.disable(GlCap.CULL_FACE);
         }
 
-        if (Config.getInstance().isDrawLines()) {
+        if (Config.getInstance().isDrawLines() && drawLinesIfEnabled) {
             return vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, renderBatch.getIndexCount(), renderBatch.getInstanceCount(), renderBatch.getIndexOffset(), renderBatch.getBaseVertex());
         } else {
             return vertexBuffer

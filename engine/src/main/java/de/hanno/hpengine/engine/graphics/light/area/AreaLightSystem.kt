@@ -87,7 +87,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
             areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
             for (e in renderState.renderBatchesStatic) {
-                DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible)
+                DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
             }
         }
         GPUProfiler.end()

@@ -97,7 +97,7 @@ class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSy
 
             GPUProfiler.start("PointLight shadowmap entity rendering")
             for (e in renderState.renderBatchesStatic) {
-                DrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, pointCubeShadowPassProgram, !e.isVisible)
+                DrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, pointCubeShadowPassProgram, !e.isVisible, true)
             }
             GPUProfiler.end()
         }
