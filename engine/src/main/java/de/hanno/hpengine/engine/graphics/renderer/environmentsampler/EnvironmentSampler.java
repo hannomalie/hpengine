@@ -549,14 +549,14 @@ public class EnvironmentSampler extends Entity {
 			for (int i = 0; i < 6; i++) {
 				int cubeMapFaceView = GL11.glGenTextures();
                 GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6 * probe.getIndex() + i, 1);
-                engine.getTextureManager().generateMipMaps(cubeMapFaceView, GL11.GL_NEAREST, GL11.GL_NEAREST);
+                engine.getTextureManager().generateMipMaps(TEXTURE_2D, cubeMapFaceView);
 				GL11.glDeleteTextures(cubeMapFaceView);
 			}
 			
 		} else {
 			int cubeMapView = GL11.glGenTextures();
             GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, engine.getSceneManager().getScene().getEnvironmentProbeManager().CUBEMAP_MIPMAP_COUNT, 6*probe.getIndex(), 6);
-            engine.getTextureManager().generateMipMapsCubeMap(cubeMapView);
+            engine.getTextureManager().generateMipMaps(TEXTURE_CUBE_MAP, cubeMapView);
 			GL11.glDeleteTextures(cubeMapView);
 		}
 		GPUProfiler.end();

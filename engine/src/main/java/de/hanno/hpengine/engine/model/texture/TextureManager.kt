@@ -308,7 +308,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[4]))
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[5]))
 
-            this@TextureManager.generateMipMapsCubeMap(cubeMap.textureId)
+            this@TextureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMap.textureId)
             cubeMap.createTextureHandleAndMakeResident() // TODO: Can this be placed into the init of the texture?
         }
     }
@@ -389,25 +389,10 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     @JvmOverloads
-    fun generateMipMaps(textureId: Int, textureMinFilter: Int = GL11.GL_LINEAR_MIPMAP_LINEAR, textureMagFilter: Int = GL11.GL_LINEAR) {
-        gpuContext.activeTexture(GL_TEXTURE0)
-        gpuContext.bindTexture(TEXTURE_2D, textureId)
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter)
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter)
-        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
-    }
-
-    fun enableMipMaps(textureId: Int, textureMinFilter: Int, textureMagFilter: Int) {
-        gpuContext.bindTexture(TEXTURE_2D, textureId)
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter)
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter)
-    }
-
-    fun generateMipMapsCubeMap(textureId: Int) {
+    fun generateMipMaps(glTextureTarget: GlTextureTarget = TEXTURE_2D, textureId: Int) {
         gpuContext.execute {
-            gpuContext.activeTexture(GL_TEXTURE0)
-            gpuContext.bindTexture(TEXTURE_CUBE_MAP, textureId)
-            GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP)
+            gpuContext.bindTexture(glTextureTarget, textureId)
+            GL30.glGenerateMipmap(glTextureTarget.glTarget)
         }
     }
 

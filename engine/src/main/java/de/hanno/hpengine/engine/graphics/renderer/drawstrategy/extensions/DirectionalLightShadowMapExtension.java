@@ -20,6 +20,7 @@ import java.util.List;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
 
 public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
@@ -80,7 +81,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
             DrawStrategy.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible(), true);
         }
-        engine.getTextureManager().generateMipMaps(getShadowMapId());
+        engine.getTextureManager().generateMipMaps(TEXTURE_2D, getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;
 
         renderedInCycle = renderState.getCycle();

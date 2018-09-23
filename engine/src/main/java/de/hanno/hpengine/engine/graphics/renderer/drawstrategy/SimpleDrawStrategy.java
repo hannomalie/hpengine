@@ -227,7 +227,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         gpuContext.enable(CULL_FACE);
 
         GPUProfiler.start("Generate Mipmaps of colormap");
-        engine.getTextureManager().generateMipMaps(engine.getRenderer().getGBuffer().getColorReflectivenessMap());
+        engine.getTextureManager().generateMipMaps(TEXTURE_2D, engine.getRenderer().getGBuffer().getColorReflectivenessMap());
         GPUProfiler.end();
 
         return firstPassResult;
@@ -324,7 +324,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
         GPUProfiler.start("MipMap generation AO and light buffer");
         engine.getGpuContext().activeTexture(0);
-        engine.getTextureManager().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
+        engine.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
         GPUProfiler.end();
 
         if (Config.getInstance().isUseGi()) {
@@ -529,7 +529,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(aoScatteringProgram);
         gpuContext.getFullscreenBuffer().draw();
         engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getTextureManager().generateMipMaps(gBuffer.getHalfScreenBuffer().getRenderedTexture());
+        engine.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer.getHalfScreenBuffer().getRenderedTexture());
         GPUProfiler.end();
     }
 
@@ -601,7 +601,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
     public void combinePass(RenderTarget target, RenderState renderState) {
         DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
         RenderTarget finalBuffer = gBuffer.getFinalBuffer();
-        engine.getTextureManager().generateMipMaps(finalBuffer.getRenderedTexture(0));
+        engine.getTextureManager().generateMipMaps(TEXTURE_2D, finalBuffer.getRenderedTexture(0));
 
         combineProgram.use();
         combineProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
