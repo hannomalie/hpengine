@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.buffer
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.getFullPathAsDDS
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.textureAvailableAsDDS
 import de.hanno.hpengine.engine.threads.TimeStepThread
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.Util.*
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
@@ -26,7 +25,10 @@ import org.apache.commons.io.filefilter.TrueFileFilter
 import org.joml.Vector2f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL11.GL_RGBA8
 import org.lwjgl.opengl.GL13.*
+import org.lwjgl.opengl.GL30.GL_RGBA16F
+import org.lwjgl.opengl.GL30.GL_RGBA32F
 import java.awt.Color
 import java.awt.color.ColorSpace
 import java.awt.image.*
@@ -167,18 +169,18 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             if (imageExists) {
                 val textureInfo = getCompleteTextureInfo(path, srgba)
 
-                PathBasedOpenGlTexture(this@TextureManager,
-                        TEXTURE_2D,
-                        path,
-                        srgba,
-                        textureInfo.info.width,
-                        textureInfo.info.height,
-                        0,
-                        textureInfo.info.mipMapCount,
-                        textureInfo.info.srcPixelFormat,
-                        gpuContext.genTextures(),
-                        GL11.GL_LINEAR,
-                        GL11.GL_LINEAR_MIPMAP_LINEAR).apply {
+                PathBasedOpenGlTexture(textureManager = this@TextureManager,
+                    target = TEXTURE_2D,
+                    path = path,
+                    srgba = srgba,
+                    width = textureInfo.info.width,
+                    height = textureInfo.info.height,
+                    depth = 0,
+                    mipmapCount = textureInfo.info.mipMapCount,
+                    srcPixelFormat = textureInfo.info.srcPixelFormat,
+                    textureId = gpuContext.genTextures(),
+                    minFilter = GL11.GL_LINEAR,
+                    magFilter = GL11.GL_LINEAR_MIPMAP_LINEAR).apply { // TODO: WTF, filters are swapped and doesn't work otherwise
 
                     upload(textureInfo)
                 }
@@ -456,31 +458,58 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute {
         when (target) {
             TEXTURE_CUBE_MAP_ARRAY -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, 6 * depth)
+            TEXTURE_3D -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, depth)
             else -> GL42.glTexStorage2D(target.glTarget, mipMapCount, internalFormat, width, height)
         }
     }
     fun texImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
-        when (target) {
-            TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
+        val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
+        when {
+            target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
+            target.is3D -> GL12.glTexImage3D(target.glTarget, 0, internalFormat, width, height, depth, 0, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
             else -> {
-                GL11.glTexImage2D(target.glTarget, 0, internalFormat, width, height, 0, if(internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+                GL11.glTexImage2D(target.glTarget, 0, internalFormat, width, height, 0, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
             }
         }
     }
 
-//    TODO: The data buffer mustn't be null
+    //    TODO: The data buffer mustn't be null
     fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+        val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
+        //null as FloatBuffer?)
         when (target) {
             TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
-            else -> {
-                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, if(internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
-            }
+            TEXTURE_3D -> GL12.glTexSubImage3D(target.glTarget, 0, 0, 0, 0, width, height, depth, format, GL11.GL_UNSIGNED_BYTE, BufferUtils.createByteBuffer(width*height*depth*internalFormat.bytesPerTexel))
+            else -> GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, format, GL11.GL_UNSIGNED_BYTE, BufferUtils.createByteBuffer(width*height*internalFormat.bytesPerTexel))
+        }
+    }
+    //    TODO: The data buffer mustn't be null
+    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+        val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
+        //null as FloatBuffer?)
+        when (target) {
+            TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
+            TEXTURE_3D -> throw NotImplementedError()
+            else -> GL13.glCompressedTexSubImage2D(target.glTarget, 0, 0, 0, width, height, format, BufferUtils.createByteBuffer(width*height*internalFormat.bytesPerTexel))
         }
     }
 
     // TODO: This should only work for internalFormats, not for all ints
     val Int.hasAlpha
         get() = intArrayOf(GL11.GL_RGBA8, GL30.GL_RGBA16F, GL30.GL_RGBA32F, GL30.GL_RGBA16I, GL30.GL_RGBA32I).contains(this)
+    val Int.bytesPerTexel: Int
+        get() = if(this == GL_RGBA8) {
+            4
+        } else if(this == GL_RGBA16F) {
+            8
+        } else if(this == GL_RGBA32F) {
+            16
+        } else if(this == EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+               || this == EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT) {
+            8 // TODO: this is wroooooong but I couldn't figure out what size the formats are
+        } else {
+            throw NotImplementedError(" size for format $this not specified")
+        }
 
     private fun setupTextureParameters(target: GlTextureTarget) {
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
@@ -493,24 +522,22 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         GL30.glGenerateMipmap(target.glTarget)
     }
 
-    // TODO return proper object
-    fun getTexture3D(gridSize: Int, gridTextureFormatSized: Int, minFilter: Int, magFilter: Int, wrapMode: Int): Pair<Int, Long> {
+//    TODO: This doesn't work yet
+    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: Int, magFilter: Int, wrapMode: Int): Pair<Int, Long> {
         return gpuContext.calculate {
-            val grid = GL11.glGenTextures()
-            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid)
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, minFilter)
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, wrapMode)
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, wrapMode)
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, wrapMode)
-            GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize)
-            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid)
-            GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D)
-
-            val handle = ARBBindlessTexture.glGetTextureHandleARB(grid)
-            ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
-
-            Pair(grid, handle)
+            OpenGlTexture(
+                textureManager = this,
+                target = TEXTURE_3D,
+                srgba = false,
+                internalFormat = internalFormat,
+                width = gridResolution,
+                height = gridResolution,
+                depth = gridResolution,
+                textureId = gpuContext.genTextures(),
+                minFilter = minFilter,
+                magFilter = magFilter,
+                wrapMode = wrapMode
+            ).let { Pair(it.textureId, it.handle) }
         }
     }
 
@@ -577,18 +604,6 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         val uploadRunnable = {
             LOGGER.info("Uploading $path")
-//            val internalFormat = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-//
-//            gpuContext.execute {
-//                gpuContext.bindTexture(15, this)
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT)
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT)
-//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
-//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureInfo.info.mipMapCount)
-//                gpuContext.unbindTexture(15, this)
-//            }
             if (textureInfo.info.mipmapsGenerated) {
                 LOGGER.info("Mipmaps already generated")
                 uploadMipMaps(textureInfo, internalFormat)
@@ -609,6 +624,46 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
     }
 
+    private fun PathBasedOpenGlTexture.uploadWithPixelBuffer_NEW(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+        textureBuffer.rewind()
+        val pbo = AtomicInteger(-1)
+        val pixelUnpackBuffer = gpuContext.calculate {
+            gpuContext.bindTexture(15, this)
+            pbo.set(GL15.glGenBuffers())
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
+            GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity().toLong(), GL15.GL_STREAM_COPY)
+            val theBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)
+            gpuContext.unbindTexture(15, this)
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
+            theBuffer
+        }
+        pixelUnpackBuffer.put(textureBuffer)
+        gpuContext.execute {
+            gpuContext.bindTexture(15, this)
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
+            GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER)
+
+            if (sourceDataCompressed) {
+//                GL13.glCompressedTexSubImage2D(target.glTarget, 0, 0, 0, width, height, GL11.GL_UNSIGNED_BYTE, textureBuffer.capacity(), 0)
+                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer.capacity(), 0)
+            } else {
+//                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, internalFormat, GL11.GL_UNSIGNED_BYTE, 0)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0)
+            }
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
+            GL15.glDeleteBuffers(pbo.get())
+            val textureMaxLevel = mipmapCount - mipLevel
+            if (setMaxLevel) {
+                LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel))
+                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel)
+            }
+            gpuContext.unbindTexture(15, this)
+
+            if (textureInfo.info.mipmapsGenerated && mipLevel == 0) {
+                uploadState = UploadState.UPLOADED
+            }
+        }
+    }
     private fun PathBasedOpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)

@@ -14,10 +14,11 @@ import jogl.DDSImage
 import org.apache.commons.io.FilenameUtils
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.EXTTextureCompressionS3TC
-import org.lwjgl.opengl.EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.EXTTextureSRGB
+import org.lwjgl.opengl.EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_REPEAT
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
 import java.awt.image.BufferedImage
@@ -43,7 +44,7 @@ open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
                                   textureId: Int,
                                   minFilter: Int = GL11.GL_LINEAR_MIPMAP_LINEAR,
                                   magFilter: Int = GL11.GL_LINEAR,
-                                  wrapMode: Int = GL_CLAMP_TO_EDGE,
+                                  wrapMode: Int = GL_REPEAT,
                                   val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width = width, height = height, depth = depth, mipmapCount = mipmapCount, textureId = textureId, name = path, minFilter = minFilter, magFilter = magFilter, wrapMode = wrapMode, uploadState = NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
 
     var preventUnload = false
@@ -64,35 +65,41 @@ open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
 
 open class OpenGlTexture(protected val textureManager: TextureManager,
                          override val target: GlTextureTarget = TEXTURE_2D,
-                         val srgba: Boolean,
+                         srgba: Boolean = false,
+                         override val internalFormat: Int = if (srgba) GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
                          override val width: Int,
                          override val height: Int,
                          override val depth: Int = if (target.is3D) 1 else 0,
-                         val mipmapCount: Int,
-                         override val textureId: Int,
+                         val mipmapCount: Int = Util.calculateMipMapCount(width, height),
+                         override val textureId: Int = textureManager.gpuContext.genTextures(),
                          val name: String = "OpenGlTexture-$textureId",
-                         override val minFilter: Int = GL11.GL_LINEAR,
+                         override val minFilter: Int = GL11.GL_LINEAR_MIPMAP_LINEAR,
                          override val magFilter: Int = GL11.GL_LINEAR,
-                         override val wrapMode: Int = GL_CLAMP_TO_EDGE,
+                         override val wrapMode: Int = GL_REPEAT,
                          override var uploadState: UploadState = UPLOADED) : Texture {
 
     override var handle = -1L
 
     override fun toString() = "(Texture)$name"
 
-    override val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
-
     init {
         with(textureManager) {
-            gpuContext.bindTexture(this@OpenGlTexture)
-//            TODO: Switch to better api with texstorage
-//            texStorage(target, internalFormat, width, height, depth, mipmapCount)
-//            texSubImage(target, internalFormat, width, height, depth)
-            texImage(target, internalFormat, width, height, depth)
-//            GL30.glGenerateMipmap(target.glTarget)
-            setupTextureParameters()
-            createTextureHandleAndMakeResident()
-        }
+//            gpuContext.execute {
+                gpuContext.bindTexture(this@OpenGlTexture)
+
+                texStorage(target, internalFormat, width, height, depth, mipmapCount)
+                texSubImage(target, internalFormat, width, height, depth)
+//                texImage(target, internalFormat, width, height, depth)
+
+                generateMipMaps(target, textureId)
+
+                setupTextureParameters()
+                createTextureHandleAndMakeResident()
+                if(handle <= 0) {
+                    GpuContext.exitOnGLError("Handle of texture $name is $handle, means texture is not complete!")
+                }
+            }
+//        }
     }
 
     private fun setupTextureParameters() = textureManager.gpuContext.execute {
@@ -101,8 +108,9 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, wrapMode)
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, wrapMode)
+//         TODO: Maybe remove this
         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
-        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount)
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount+1)
     }
     companion object {
         private val LOGGER = Logger.getLogger(OpenGlTexture::class.java.name)
@@ -218,4 +226,8 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
         }
 
     }
+
 }
+
+val Int.isCompressed: Boolean
+    get() = this == GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT || this == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
