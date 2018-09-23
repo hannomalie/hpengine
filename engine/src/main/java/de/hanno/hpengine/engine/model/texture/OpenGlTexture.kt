@@ -3,15 +3,22 @@ package de.hanno.hpengine.engine.model.texture
 import ddsutil.DDSUtil
 import ddsutil.ImageRescaler
 import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.model.texture.UploadState.NOT_UPLOADED
 import de.hanno.hpengine.engine.model.texture.UploadState.UPLOADED
+import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.Reloadable
 import jogl.DDSImage
 import org.apache.commons.io.FilenameUtils
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.EXTTextureCompressionS3TC
+import org.lwjgl.opengl.EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+import org.lwjgl.opengl.EXTTextureSRGB
+import org.lwjgl.opengl.EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
 import java.awt.image.BufferedImage
 import java.io.File
@@ -34,10 +41,10 @@ open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
                                   mipmapCount: Int,
                                   val srcPixelFormat: Int,
                                   textureId: Int,
-                                  minFilter: Int = GL11.GL_LINEAR,
+                                  minFilter: Int = GL11.GL_LINEAR_MIPMAP_LINEAR,
                                   magFilter: Int = GL11.GL_LINEAR,
                                   wrapMode: Int = GL_CLAMP_TO_EDGE,
-                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width, height, depth, mipmapCount, textureId, path, minFilter, magFilter, wrapMode, NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
+                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width = width, height = height, depth = depth, mipmapCount = mipmapCount, textureId = textureId, name = path, minFilter = minFilter, magFilter = magFilter, wrapMode = wrapMode, uploadState = NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
 
     var preventUnload = false
 
