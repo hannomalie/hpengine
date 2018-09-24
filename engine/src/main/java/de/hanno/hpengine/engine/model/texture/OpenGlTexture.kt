@@ -13,14 +13,12 @@ import de.hanno.hpengine.util.ressources.Reloadable
 import jogl.DDSImage
 import org.apache.commons.io.FilenameUtils
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.EXTTextureCompressionS3TC
-import org.lwjgl.opengl.EXTTextureSRGB
 import org.lwjgl.opengl.EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_REPEAT
+import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL12
-import org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE
+import org.lwjgl.opengl.GL44.glClearTexImage
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
@@ -50,7 +48,7 @@ open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
     var preventUnload = false
 
     override fun load() = with(textureManager) {
-        upload(textureManager.getCompleteTextureInfo(path, srgba))
+        upload(getCompleteTextureInfo(path, srgba))
     }
 
     override fun unload() = with(textureManager) {
@@ -87,10 +85,9 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
 //            gpuContext.execute {
                 gpuContext.bindTexture(this@OpenGlTexture)
 
-                texStorage(target, internalFormat, width, height, depth, mipmapCount)
-                texSubImage(target, internalFormat, width, height, depth)
-//                texImage(target, internalFormat, width, height, depth)
-
+//                texStorage(target, internalFormat, width, height, depth, mipmapCount)
+//                texSubImage(target, internalFormat, width, height, depth)
+                texImage(target, 0, internalFormat, width, height, depth)
                 generateMipMaps(target, textureId)
 
                 setupTextureParameters()

@@ -1,0 +1,17 @@
+package de.hanno.hpengine.engine.graphics.renderer.constants
+
+import org.lwjgl.opengl.GL11.*
+
+class TextureFilter {
+    enum class MinFilter(val glValue: Int) {
+        NEAREST_MIPMAP_NEAREST(GL_NEAREST_MIPMAP_NEAREST),
+        LINEAR_MIPMAP_NEAREST(GL_LINEAR_MIPMAP_NEAREST),
+        NEAREST_MIPMAP_LINEAR(GL_NEAREST_MIPMAP_LINEAR),
+        LINEAR_MIPMAP_LINEAR(GL_LINEAR_MIPMAP_LINEAR)
+    }
+
+    enum class MagFilter(val glValue: Int) {
+        NEAREST(GL_NEAREST),
+        LINEAR(GL_LINEAR)
+    }
+}

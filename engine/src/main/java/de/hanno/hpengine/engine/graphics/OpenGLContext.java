@@ -437,15 +437,13 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {
         try {
-            return (RETURN_TYPE) execute(new FutureCallable() {
+            return execute(new FutureCallable<RETURN_TYPE>() {
                 @Override
                 public RETURN_TYPE execute() throws Exception {
                     return callable.call();
                 }
             }).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 

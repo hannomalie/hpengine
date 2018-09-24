@@ -25,7 +25,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter
 import org.joml.Vector2f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL11.GL_RGBA8
+import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.*
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.GL_RGBA32F
@@ -462,13 +462,13 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             else -> GL42.glTexStorage2D(target.glTarget, mipMapCount, internalFormat, width, height)
         }
     }
-    fun texImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         when {
             target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
-            target.is3D -> GL12.glTexImage3D(target.glTarget, 0, internalFormat, width, height, depth, 0, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+            target.is3D -> GL12.glTexImage3D(target.glTarget, mipMapLevel, internalFormat, width, height, depth, mipMapLevel, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
             else -> {
-                GL11.glTexImage2D(target.glTarget, 0, internalFormat, width, height, 0, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+                GL11.glTexImage2D(target.glTarget, mipMapLevel, internalFormat, width, height, mipMapLevel, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
             }
         }
     }
@@ -621,43 +621,24 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             this@TextureManager.postTextureChangedEvent()
         }
 
-        this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
+//        this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
+        uploadRunnable()
     }
 
-    private fun PathBasedOpenGlTexture.uploadWithPixelBuffer_NEW(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
-        textureBuffer.rewind()
-        val pbo = AtomicInteger(-1)
-        val pixelUnpackBuffer = gpuContext.calculate {
-            gpuContext.bindTexture(15, this)
-            pbo.set(GL15.glGenBuffers())
-            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
-            GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity().toLong(), GL15.GL_STREAM_COPY)
-            val theBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)
-            gpuContext.unbindTexture(15, this)
-            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
-            theBuffer
-        }
-        pixelUnpackBuffer.put(textureBuffer)
+    private fun PathBasedOpenGlTexture.uploadWithoutPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         gpuContext.execute {
-            gpuContext.bindTexture(15, this)
-            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
-            GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER)
+
+            glActiveTexture(15)
+            glBindTexture(target.glTarget, textureId)
 
             if (sourceDataCompressed) {
 //                GL13.glCompressedTexSubImage2D(target.glTarget, 0, 0, 0, width, height, GL11.GL_UNSIGNED_BYTE, textureBuffer.capacity(), 0)
-                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer.capacity(), 0)
+                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer)
             } else {
 //                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, internalFormat, GL11.GL_UNSIGNED_BYTE, 0)
-                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer)
             }
-            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
-            GL15.glDeleteBuffers(pbo.get())
-            val textureMaxLevel = mipmapCount - mipLevel
-            if (setMaxLevel) {
-                LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel))
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel)
-            }
-            gpuContext.unbindTexture(15, this)
+            glBindTexture(target.glTarget, 0)
 
             if (textureInfo.info.mipmapsGenerated && mipLevel == 0) {
                 uploadState = UploadState.UPLOADED
@@ -684,9 +665,11 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER)
 
             if (sourceDataCompressed) {
+//                GL13.glCompressedTexSubImage2D(target.glTarget, 0, 0, 0, width, height, GL11.GL_UNSIGNED_BYTE, textureBuffer.capacity(), 0)
                 GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer.capacity(), 0)
             } else {
-                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0)
+//                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, internalFormat, GL11.GL_UNSIGNED_BYTE, 0)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0)
             }
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
             GL15.glDeleteBuffers(pbo.get())
