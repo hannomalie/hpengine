@@ -14,12 +14,11 @@ import java.io.Serializable
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-interface CubeTexture : Texture
+interface CubeTexture : Texture<TextureDimension3D>
 
 open class CubeMap(protected val textureManager: TextureManager,
                    private val path: String,
-                   override val width: Int,
-                   override val height: Int,
+                   override val dimension: TextureDimension3D,
                    override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
                    protected var srcPixelFormat: Int,
                    override val textureId: Int,
@@ -28,7 +27,6 @@ open class CubeMap(protected val textureManager: TextureManager,
     override var handle: Long = -1
     override val target = TEXTURE_CUBE_MAP
     override val wrapMode = GL12.GL_CLAMP_TO_EDGE // TODO: Make this configurable
-    override val depth = 0
     override val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
     override var uploadState = UploadState.NOT_UPLOADED
 
@@ -44,16 +42,16 @@ open class CubeMap(protected val textureManager: TextureManager,
         glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, wrapMode)
         glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, wrapMode)
         glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0)
-        glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)))
+        glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(dimension.width, dimension.height)))
     }
 
     fun load(cubeMapFace: Int, buffer: ByteBuffer) {
         GL11.glTexImage2D(cubeMapFace,
                 0,
                 internalFormat,
-                width / 4,
-                height / 3,
-                depth,
+                dimension.width / 4,
+                dimension.height / 3,
+                dimension.depth,
                 srcPixelFormat,
                 GL11.GL_UNSIGNED_BYTE,
                 buffer)

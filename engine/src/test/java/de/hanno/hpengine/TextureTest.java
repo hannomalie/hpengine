@@ -56,7 +56,7 @@ public class TextureTest extends TestWithEngine {
     public void testEqualityDdsAndRegularTexture() throws IOException, ExecutionException, InterruptedException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
         File fileAsDds = new File(OpenGlTexture.getFullPathAsDDS(pathToSourceTexture));
-        PathBasedOpenGlTexture regularLoaded = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture(pathToSourceTexture);
+        Texture<TextureDimension2D> regularLoaded = engine.getTextureManager().getTexture(pathToSourceTexture);
         CompleteTextureInfo textureInfo = engine.getTextureManager().getCompleteTextureInfo(pathToSourceTexture, false);
         byte[] regularLoadedData = textureInfo.getData()[0].get();
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
@@ -104,10 +104,10 @@ public class TextureTest extends TestWithEngine {
     @Test(timeout = 30000L)
     public void testEqualityDifferentTextures() throws IOException, ExecutionException, InterruptedException {
         String pathToFirstSourceTexture = "hp/assets/textures/stone_reflection.png";
-        PathBasedOpenGlTexture regularLoadedFirst = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture(pathToFirstSourceTexture);
+        Texture<TextureDimension2D> regularLoadedFirst = engine.getTextureManager().getTexture(pathToFirstSourceTexture);
         CompleteTextureInfo textureInfoFirst = engine.getTextureManager().getCompleteTextureInfo(pathToFirstSourceTexture, false);
         String pathToSecondSourceTexture = "hp/assets/textures/wood_diffuse.png";
-        PathBasedOpenGlTexture regularLoadedSecond = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture(pathToSecondSourceTexture);
+        Texture<TextureDimension2D> regularLoadedSecond = engine.getTextureManager().getTexture(pathToSecondSourceTexture);
         CompleteTextureInfo textureInfoSecond = engine.getTextureManager().getCompleteTextureInfo(pathToSecondSourceTexture, false);
         byte[] regularLoadedFirstData = textureInfoFirst.getData()[0].get();
         byte[] regularLoadedSecondData = textureInfoSecond.getData()[0].get();
@@ -120,14 +120,14 @@ public class TextureTest extends TestWithEngine {
 
 	@Test
 	public void loadsTexture() throws IOException {
-        PathBasedOpenGlTexture texture = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture("hp/assets/textures/test_test_test.png");
+        Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("hp/assets/textures/test_test_test.png");
 	}
 
     @Test
     public void loadsTextureFromDDS() throws IOException {
-        PathBasedOpenGlTexture xxx = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
+        Texture<TextureDimension2D> xxx = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
         Assert.assertTrue(new File("hp/assets/textures/wood_diffuse.dds").exists());
-        PathBasedOpenGlTexture texture = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.dds");
+        Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.dds");
     }
 
 	@Test
@@ -194,7 +194,7 @@ public class TextureTest extends TestWithEngine {
         String fileName = "testfolder/stone_normal_streaming_test.dds";
         Assert.assertTrue(new File(fileName).exists());
         Assert.assertFalse(engine.getTextureManager().getTextures().containsKey(fileName));
-        PathBasedOpenGlTexture texture = (PathBasedOpenGlTexture) engine.getTextureManager().getTexture(fileName);
+        Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture(fileName);
         while(texture.getUploadState() != UPLOADING) {
             Thread.sleep(20);
         }
@@ -205,7 +205,6 @@ public class TextureTest extends TestWithEngine {
         LOGGER.info("Texture uploaded");
 
         Thread.sleep(TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
-        texture.setPreventUnload(true);
         Assert.assertEquals(NOT_UPLOADED, (texture.getUploadState()));
         while(texture.getUploadState() != UPLOADED) {
             LOGGER.info("uploadState is " + texture.getUploadState());

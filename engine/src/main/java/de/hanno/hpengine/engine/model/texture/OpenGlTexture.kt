@@ -7,10 +7,6 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
 import de.hanno.hpengine.engine.model.texture.UploadState.NOT_UPLOADED
 import de.hanno.hpengine.engine.model.texture.UploadState.UPLOADED
 import de.hanno.hpengine.util.Util
@@ -21,7 +17,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL11.GL_REPEAT
 import org.lwjgl.opengl.GL12
 import java.awt.image.BufferedImage
 import java.io.File
@@ -38,15 +34,13 @@ open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
                                   target: GlTextureTarget,
                                   val path: String,
                                   val srgba: Boolean,
-                                  width: Int,
-                                  height: Int,
-                                  depth: Int = if (target.is3D) 1 else 0,
+                                  dimension: TextureDimension3D,
                                   mipmapCount: Int,
                                   val srcPixelFormat: Int,
                                   textureId: Int,
                                   textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
                                   wrapMode: Int = GL_REPEAT,
-                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width = width, height = height, depth = depth, mipmapCount = mipmapCount, textureId = textureId, name = path, textureFilterConfig = textureFilterConfig, wrapMode = wrapMode, uploadState = NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
+                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, dimension = dimension, mipmapCount = mipmapCount, textureId = textureId, name = path, textureFilterConfig = textureFilterConfig, wrapMode = wrapMode, uploadState = NOT_UPLOADED)) : Reloadable, Texture<TextureDimension3D> by backingTexture  {
 
     var preventUnload = false
 
@@ -68,15 +62,13 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
                          override val target: GlTextureTarget = TEXTURE_2D,
                          srgba: Boolean = false,
                          override val internalFormat: Int = if (srgba) GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
-                         override val width: Int,
-                         override val height: Int,
-                         override val depth: Int = if (target.is3D) 1 else 0,
-                         val mipmapCount: Int = Util.calculateMipMapCount(width, height),
+                         override val dimension: TextureDimension3D,
+                         val mipmapCount: Int = Util.calculateMipMapCount(dimension.width, dimension.height),
                          override val textureId: Int = textureManager.gpuContext.genTextures(),
                          val name: String = "OpenGlTexture-$textureId",
                          override val textureFilterConfig:TextureFilterConfig = TextureFilterConfig(),
                          override val wrapMode: Int = GL_REPEAT,
-                         override var uploadState: UploadState = UPLOADED) : Texture {
+                         override var uploadState: UploadState = UPLOADED) : Texture<TextureDimension3D> {
 
     override var handle = -1L
 
@@ -89,7 +81,7 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
 
 //                texStorage(target, internalFormat, width, height, depth, mipmapCount)
 //                texSubImage(target, internalFormat, width, height, depth)
-                texImage(target, 0, internalFormat, width, height, depth)
+                texImage(target, 0, internalFormat, dimension.width, dimension.height, dimension.depth)
                 generateMipMaps(target, textureId)
 
                 setupTextureParameters()

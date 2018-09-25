@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.gui.input.*
 import org.apache.commons.io.FileUtils
@@ -38,7 +39,7 @@ import kotlin.Comparator
 class MaterialView(private val engine: Engine, var material: SimpleMaterial) : WebPanel() {
     private val nameField = WebTextField(material.materialInfo.name)
 
-    private val allTexturesSorted: List<Texture>
+    private val allTexturesSorted: List<Texture<*>>
         get() = engine.textureManager.textures.values.sortedWith(Comparator { o1, o2 -> o1.toString().compareTo(o2.toString()) })
 
     init {
@@ -122,7 +123,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             select.addActionListener { e ->
                 val cb = e.source as WebComboBox
                 val selectedTexture = textures[cb.selectedIndex]
-                engine.getScene().materialManager.changeMaterial(material.put(map, selectedTexture))
+                engine.getScene().materialManager.changeMaterial(material.put(map, selectedTexture as Texture<TextureDimension2D>))
 //                material.materialInfo.maps.put(map, selectedTexture)
                 addMaterialInitCommand(material)
             }
@@ -142,7 +143,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
     private fun addExistingTexturesPanels(webComponentPanel: WebComponentPanel) {
         for (map in material.materialInfo.maps.keys) {
-            val texture = material.materialInfo.maps[map]
+            val texture: Texture<TextureDimension2D> = material.materialInfo.maps[map]!!
 
             val label = WebLabel(map.name)
 
@@ -154,7 +155,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
             select.addActionListener { e ->
                 val cb = e.source as WebComboBox
-                val selectedTexture = textures[cb.selectedIndex]
+                val selectedTexture: Texture<TextureDimension2D> = textures[cb.selectedIndex] as Texture<TextureDimension2D>
                 engine.getScene().materialManager.changeMaterial(material.materialInfo.put(map, selectedTexture))
 //                material.materialInfo.maps.put(map, selectedTexture)
                 engine.eventBus.post(MaterialChangedEvent(material))

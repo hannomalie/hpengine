@@ -35,7 +35,7 @@ public class TextureTableModel extends AbstractTableModel {
             return paths.get(row);
         } else if(col == 1) {
             Texture texture = getTexture(row);
-            return String.format("Texture %d x %d", texture.getWidth(), texture.getHeight());
+            return texture.getDimension();
         } else if(col == 2) {
             Texture texture = getTexture(row);
             return texture.getUploadState();

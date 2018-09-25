@@ -7,10 +7,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.GL11
 
-interface Texture {
-    val width: Int
-    val height: Int
-    val depth: Int
+interface Texture<out DIMENSION: TextureDimension1D> {
+    val dimension: DIMENSION
     val textureId: Int
     val target: GlTextureTarget
     val internalFormat: Int
@@ -22,7 +20,7 @@ interface Texture {
 }
 
 
-val Texture.isMipMapped: Boolean
+val Texture<*>.isMipMapped: Boolean
     get() = textureFilterConfig.minFilter.isMipMapped
 
 //TODO: Remove this and all usages, convert to property above
@@ -35,7 +33,7 @@ val Int.isMipMapped: Boolean
     }
 
 
-val Texture.mipmapCount: Int
+val Texture<TextureDimension3D>.mipmapCount: Int
     get() = if(isMipMapped) {
-            Util.calculateMipMapCount(width, height)
+            Util.calculateMipMapCount(dimension.width, dimension.height) // TODO: Consider depth parameter
         } else 0

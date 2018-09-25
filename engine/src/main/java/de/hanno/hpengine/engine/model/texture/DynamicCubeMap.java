@@ -16,7 +16,7 @@ public class DynamicCubeMap extends CubeMap {
     private Engine engine;
 
     public DynamicCubeMap(Engine engine, int resolution, int internalFormat, int type, MinFilter minFilter, int format, FloatBuffer[] values) {
-        super(engine.getTextureManager(), "", resolution, resolution, new TextureFilterConfig(minFilter), GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
+        super(engine.getTextureManager(), "", new TextureDimension(resolution, resolution), new TextureFilterConfig(minFilter), GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
         if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;
 

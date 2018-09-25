@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model.material
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.log.ConsoleLogger
 import org.apache.commons.io.FilenameUtils
 import java.io.FileOutputStream
@@ -17,7 +18,7 @@ import java.nio.ByteBuffer
 interface Material: Bufferable {
     var materialInfo: SimpleMaterialInfo
 
-    fun put(map: SimpleMaterial.MAP, texture: Texture): SimpleMaterialInfo {
+    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>): SimpleMaterialInfo {
         materialInfo = materialInfo.put(map, texture)
         return materialInfo
     }

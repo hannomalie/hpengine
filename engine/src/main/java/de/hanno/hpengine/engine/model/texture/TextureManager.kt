@@ -97,7 +97,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     /** The table of textures that have been loaded in this loader  */
-    var textures: MutableMap<String, Texture> = ConcurrentHashMap()
+    var textures: MutableMap<String, Texture<*>> = ConcurrentHashMap()
 
     val lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true)
     var cubeMap = getCubeMap("hp/assets/textures/skybox.png")
@@ -109,7 +109,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     val defaultTextureAsBufferedImage = temp.second
 
 
-    private fun loadDefaultTexture(): Pair<Texture, BufferedImage> {
+    private fun loadDefaultTexture(): Pair<Texture<TextureDimension2D>, BufferedImage> {
         val defaultTexturePath = "hp/assets/models/textures/gi_flag.png"
         val defaultTexture = getTexture(defaultTexturePath, true)
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
@@ -144,9 +144,9 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false): Texture {
+    fun getTexture(resourceName: String, srgba: Boolean = false): Texture<TextureDimension2D> {
         if (textureLoaded(resourceName)) {
-            return textures[resourceName]!!
+            return (textures[resourceName] as Texture<TextureDimension2D>)
         }
         LOGGER.info("$resourceName requested")
 
@@ -156,7 +156,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }()
     }
 
-    private fun convertAndUpload(resourceName: String, srgba: Boolean): Texture? {
+    private fun convertAndUpload(resourceName: String, srgba: Boolean): Texture<TextureDimension2D>? {
         return commandQueue.calculate(object : FutureCallable<PathBasedOpenGlTexture>() {
             override fun execute(): PathBasedOpenGlTexture? {
                 return getOpenGlTexture(resourceName, srgba)
@@ -177,9 +177,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     target = TEXTURE_2D,
                     path = path,
                     srgba = srgba,
-                    width = textureInfo.info.width,
-                    height = textureInfo.info.height,
-                    depth = 0,
+                    dimension = TextureDimension(textureInfo.info.width, textureInfo.info.height, 0),
                     mipmapCount = textureInfo.info.mipMapCount,
                     srcPixelFormat = textureInfo.info.srcPixelFormat,
                     textureId = gpuContext.genTextures()).apply { // TODO: WTF, filters are swapped and doesn't work otherwise
@@ -264,12 +262,12 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     @Throws(IOException::class)
     fun getCubeMap(resourceName: String): CubeMap? {
-        val tex: CubeMap? = textures[resourceName + "_cube"] as CubeMap? ?: getCubeMap(resourceName,
+        val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap? ?: getCubeMap(resourceName,
                 GL11.GL_RGBA,
                 LINEAR_MIPMAP_LINEAR,
-                LINEAR)
+                LINEAR) ?: return null
 
-        textures[resourceName + "_cube"] = tex as Texture
+        textures[resourceName + "_cube"] = tex
         return tex
     }
 
@@ -293,7 +291,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         val data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
 
-        return CubeMap(this, resourceName, width, height, TextureFilterConfig(minFilter, magFilter), srcPixelFormat, gpuContext.genTextures(), data).apply {
+        return CubeMap(this, resourceName, TextureDimension(width, height), TextureFilterConfig(minFilter, magFilter), srcPixelFormat, gpuContext.genTextures(), data).apply {
             upload(this)
         }
     }
@@ -317,7 +315,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    fun Texture.createTextureHandleAndMakeResident() = gpuContext.calculate {
+    fun Texture<*>.createTextureHandleAndMakeResident() = gpuContext.calculate {
         handle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
         ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
     }
@@ -532,9 +530,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                 target = TEXTURE_3D,
                 srgba = false,
                 internalFormat = internalFormat,
-                width = gridResolution,
-                height = gridResolution,
-                depth = gridResolution,
+                dimension = TextureDimension(gridResolution, gridResolution, gridResolution),
                 textureId = gpuContext.genTextures(),
                 textureFilterConfig = TextureFilterConfig(minFilter, magFilter),
                 wrapMode = wrapMode
@@ -609,7 +605,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                 LOGGER.info("Mipmaps already generated")
                 uploadMipMaps(textureInfo, internalFormat)
             }
-            uploadWithPixelBuffer(gpuContext, textureInfo, buffer(textureInfo.data), internalFormat, width, height, 0, textureInfo.info.sourceDataCompressed, false)
+            uploadWithPixelBuffer(gpuContext, textureInfo, buffer(textureInfo.data), internalFormat, dimension, 0, textureInfo.info.sourceDataCompressed, false)
             gpuContext.execute {
                 if (!textureInfo.info.mipmapsGenerated) {
                     gpuContext.bindTexture(15, this)
@@ -622,8 +618,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             this@TextureManager.postTextureChangedEvent()
         }
 
-//        this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
-        uploadRunnable()
+        this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
+//        uploadRunnable()
     }
 
     private fun PathBasedOpenGlTexture.uploadWithoutPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
@@ -646,7 +642,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             }
         }
     }
-    private fun PathBasedOpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    private fun PathBasedOpenGlTexture.uploadWithPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, dimension: TextureDimension2D, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         textureBuffer.rewind()
         val pbo = AtomicInteger(-1)
         val pixelUnpackBuffer = gpuContext.calculate {
@@ -667,10 +663,10 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             if (sourceDataCompressed) {
 //                GL13.glCompressedTexSubImage2D(target.glTarget, 0, 0, 0, width, height, GL11.GL_UNSIGNED_BYTE, textureBuffer.capacity(), 0)
-                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer.capacity(), 0)
+                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, textureBuffer.capacity(), 0)
             } else {
 //                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, internalFormat, GL11.GL_UNSIGNED_BYTE, 0)
-                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0)
             }
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
             GL15.glDeleteBuffers(pbo.get())
@@ -689,8 +685,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     private fun PathBasedOpenGlTexture.uploadMipMaps(textureInfo: CompleteTextureInfo, internalFormat: Int) {
         LOGGER.info("Uploading mipmaps for $path")
-        var currentWidth = width
-        var currentHeight = height
+        var currentWidth = dimension.width
+        var currentHeight = dimension.height
         val widths = ArrayList<Int>()
         val heights = ArrayList<Int>()
         for (i in 0 until mipmapCount - 1) {
@@ -707,7 +703,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             val tempBuffer = BufferUtils.createByteBuffer(actual.size).apply {
                 put(actual)
             }
-            uploadWithPixelBuffer(gpuContext, textureInfo, tempBuffer, internalFormat, currentWidth, currentHeight, mipMapIndex, textureInfo.info.sourceDataCompressed, false)
+            uploadWithPixelBuffer(gpuContext, textureInfo, tempBuffer, internalFormat, TextureDimension(currentWidth, currentHeight), mipMapIndex, textureInfo.info.sourceDataCompressed, false)
         }
     }
 
