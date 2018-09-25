@@ -6,11 +6,11 @@ import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter.*
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
 import de.hanno.hpengine.engine.model.texture.UploadState.NOT_UPLOADED
 import de.hanno.hpengine.engine.model.texture.UploadState.UPLOADED
 import de.hanno.hpengine.util.Util
@@ -44,10 +44,9 @@ open class PathBasedOpenGlTexture(protected val textureManager: TextureManager,
                                   mipmapCount: Int,
                                   val srcPixelFormat: Int,
                                   textureId: Int,
-                                  minFilter: MinFilter = LINEAR_MIPMAP_LINEAR,
-                                  magFilter: MagFilter = LINEAR,
+                                  textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
                                   wrapMode: Int = GL_REPEAT,
-                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width = width, height = height, depth = depth, mipmapCount = mipmapCount, textureId = textureId, name = path, minFilter = minFilter, magFilter = magFilter, wrapMode = wrapMode, uploadState = NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
+                                  val backingTexture: OpenGlTexture = OpenGlTexture(textureManager, target, srgba, width = width, height = height, depth = depth, mipmapCount = mipmapCount, textureId = textureId, name = path, textureFilterConfig = textureFilterConfig, wrapMode = wrapMode, uploadState = NOT_UPLOADED)) : Reloadable, Texture by backingTexture  {
 
     var preventUnload = false
 
@@ -75,8 +74,7 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
                          val mipmapCount: Int = Util.calculateMipMapCount(width, height),
                          override val textureId: Int = textureManager.gpuContext.genTextures(),
                          val name: String = "OpenGlTexture-$textureId",
-                         override val minFilter: MinFilter = LINEAR_MIPMAP_LINEAR,
-                         override val magFilter: MagFilter = LINEAR,
+                         override val textureFilterConfig:TextureFilterConfig = TextureFilterConfig(),
                          override val wrapMode: Int = GL_REPEAT,
                          override var uploadState: UploadState = UPLOADED) : Texture {
 
@@ -104,8 +102,8 @@ open class OpenGlTexture(protected val textureManager: TextureManager,
     }
 
     private fun setupTextureParameters() = textureManager.gpuContext.execute {
-        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter.glValue)
-        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter.glValue)
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, textureFilterConfig.minFilter.glValue)
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, textureFilterConfig.magFilter.glValue)
         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, wrapMode)
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, wrapMode)

@@ -2,12 +2,13 @@ package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter;
 import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter;
 
 @SuppressWarnings("serial")
 public class DynamicCubeMap extends CubeMap {
@@ -15,7 +16,7 @@ public class DynamicCubeMap extends CubeMap {
     private Engine engine;
 
     public DynamicCubeMap(Engine engine, int resolution, int internalFormat, int type, MinFilter minFilter, int format, FloatBuffer[] values) {
-        super(engine.getTextureManager(), "", resolution, resolution, minFilter, MagFilter.LINEAR, GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
+        super(engine.getTextureManager(), "", resolution, resolution, new TextureFilterConfig(minFilter), GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
         if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;
 
@@ -26,8 +27,8 @@ public class DynamicCubeMap extends CubeMap {
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, getMagFilter().getGlValue());
-        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, getMinFilter().getGlValue());
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, getTextureFilterConfig().getMagFilter().getGlValue());
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, getTextureFilterConfig().getMinFilter().getGlValue());
         GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
 
         GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalFormat, resolution, resolution, 0, format, type, values[0]);

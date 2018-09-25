@@ -2,7 +2,8 @@ package de.hanno.hpengine.engine.graphics.renderer.constants
 
 import org.lwjgl.opengl.GL11.*
 
-class TextureFilter {
+class TextureFilterConfig @JvmOverloads constructor(val minFilter: MinFilter = MinFilter.LINEAR_MIPMAP_LINEAR, val magFilter: MagFilter = MagFilter.LINEAR) {
+
     enum class MinFilter(val glValue: Int, val isMipMapped: Boolean = false) {
         NEAREST(GL_NEAREST),
         LINEAR(GL_LINEAR),

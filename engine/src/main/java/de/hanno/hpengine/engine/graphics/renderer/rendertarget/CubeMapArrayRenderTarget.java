@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
@@ -13,7 +12,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
     private final ArrayList<long[]> handleLists;

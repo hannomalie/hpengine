@@ -6,9 +6,10 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.*
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -181,9 +182,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     depth = 0,
                     mipmapCount = textureInfo.info.mipMapCount,
                     srcPixelFormat = textureInfo.info.srcPixelFormat,
-                    textureId = gpuContext.genTextures(),
-                    minFilter = LINEAR_MIPMAP_LINEAR,
-                    magFilter = LINEAR).apply { // TODO: WTF, filters are swapped and doesn't work otherwise
+                    textureId = gpuContext.genTextures()).apply { // TODO: WTF, filters are swapped and doesn't work otherwise
 
                     upload(textureInfo)
                 }
@@ -294,7 +293,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
         val data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
 
-        return CubeMap(this, resourceName, width, height, minFilter, magFilter, srcPixelFormat, gpuContext.genTextures(), data).apply {
+        return CubeMap(this, resourceName, width, height, TextureFilterConfig(minFilter, magFilter), srcPixelFormat, gpuContext.genTextures(), data).apply {
             upload(this)
         }
     }
@@ -537,8 +536,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                 height = gridResolution,
                 depth = gridResolution,
                 textureId = gpuContext.genTextures(),
-                minFilter = minFilter,
-                magFilter = magFilter,
+                textureFilterConfig = TextureFilterConfig(minFilter, magFilter),
                 wrapMode = wrapMode
             ).let { Pair(it.textureId, it.handle) }
         }

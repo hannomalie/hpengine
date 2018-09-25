@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
@@ -30,8 +29,8 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR_MIPMAP_LINEAR;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR;
 
 public class EnvironmentProbeManager implements Manager, RenderSystem {
 	public static final int MAX_PROBES = 25;

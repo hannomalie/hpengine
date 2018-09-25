@@ -1,11 +1,11 @@
 package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR_MIPMAP_LINEAR;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR;
 import static de.hanno.hpengine.engine.model.texture.TextureKt.isMipMapped;
 
 public class CubeMapArray {
@@ -20,7 +20,7 @@ public class CubeMapArray {
 		this(gpuContext, textureCount, LINEAR_MIPMAP_LINEAR, resolution);
 	}
 	
-	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilter.MinFilter minTextureFilter, int resolution) {
+	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilterConfig.MinFilter minTextureFilter, int resolution) {
 		this(gpuContext, textureCount, minTextureFilter, GL30.GL_RGBA16F, resolution);
 	}
 	/**
@@ -29,7 +29,7 @@ public class CubeMapArray {
 	 * @param minFilter
 	 * @param resolution
 	 */
-	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilter.MinFilter minFilter, int internalFormat, int resolution) {
+	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilterConfig.MinFilter minFilter, int internalFormat, int resolution) {
         this.resolution = resolution;
         gpuContext.execute(() -> {
 			textureId = GL11.glGenTextures();
