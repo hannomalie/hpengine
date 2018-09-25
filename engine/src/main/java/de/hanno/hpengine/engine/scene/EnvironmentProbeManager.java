@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR_MIPMAP_LINEAR;
 
 public class EnvironmentProbeManager implements Manager, RenderSystem {
 	public static final int MAX_PROBES = 25;
@@ -54,10 +57,10 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 
 	public EnvironmentProbeManager(Engine engine) {
     	this.engine = engine;
-		this.environmentMapsArray = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, RESOLUTION);
-		this.environmentMapsArray1 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
-		this.environmentMapsArray2 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
-		this.environmentMapsArray3 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR, RESOLUTION);
+		this.environmentMapsArray = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR, RESOLUTION);
+		this.environmentMapsArray1 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
+		this.environmentMapsArray2 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
+		this.environmentMapsArray3 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR_MIPMAP_LINEAR, RESOLUTION);
         this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engine.getGpuContext(), EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");

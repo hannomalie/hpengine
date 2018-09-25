@@ -1,6 +1,9 @@
 package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.EXTTextureCompressionS3TC
 import org.lwjgl.opengl.EXTTextureSRGB
@@ -17,8 +20,8 @@ open class CubeMap(protected val textureManager: TextureManager,
                    private val path: String,
                    override val width: Int,
                    override val height: Int,
-                   override val minFilter: Int,
-                   override val magFilter: Int,
+                   override val minFilter: MinFilter,
+                   override val magFilter: MagFilter,
                    protected var srcPixelFormat: Int,
                    override val textureId: Int,
                    private val data: MutableList<ByteArray>) : CubeTexture, Serializable {
@@ -36,8 +39,8 @@ open class CubeMap(protected val textureManager: TextureManager,
     }
 
     fun setupTextureParameters() = textureManager.gpuContext.execute {
-        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter)
-        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter)
+        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter.glValue)
+        glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter.glValue)
         glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)
         glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, wrapMode)
         glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, wrapMode)

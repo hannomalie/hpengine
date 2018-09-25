@@ -1,8 +1,9 @@
 package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter
 import de.hanno.hpengine.util.Util
-import org.lwjgl.opengl.ARBBindlessTexture
 import org.lwjgl.opengl.GL11
 
 interface Texture {
@@ -13,8 +14,8 @@ interface Texture {
     val target: GlTextureTarget
     val internalFormat: Int
     var handle: Long
-    val minFilter: Int
-    val magFilter: Int
+    val minFilter: MinFilter
+    val magFilter: MagFilter
     val wrapMode: Int
     var uploadState: UploadState
     fun unload() {}
@@ -22,12 +23,7 @@ interface Texture {
 
 
 val Texture.isMipMapped: Boolean
-    get() {
-        return magFilter == GL11.GL_LINEAR_MIPMAP_LINEAR ||
-                magFilter == GL11.GL_LINEAR_MIPMAP_NEAREST ||
-                magFilter == GL11.GL_NEAREST_MIPMAP_LINEAR ||
-                magFilter == GL11.GL_NEAREST_MIPMAP_NEAREST
-    }
+    get() = minFilter.isMipMapped
 
 //TODO: Remove this and all usages, convert to property above
 val Int.isMipMapped: Boolean

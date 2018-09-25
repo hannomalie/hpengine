@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
@@ -11,6 +12,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
     private final ArrayList<long[]> handleLists;
@@ -71,7 +74,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 				System.exit(0);
 			}
 
-            CubeMapArray depthCubeMapArray = new CubeMapArray(gpuContext, this.depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
+            CubeMapArray depthCubeMapArray = new CubeMapArray(gpuContext, this.depth, LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
 			depthBufferLocation = depthCubeMapArray.getTextureID();

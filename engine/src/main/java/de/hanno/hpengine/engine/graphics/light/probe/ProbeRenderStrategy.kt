@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.light.probe.ProbeRenderStrategy.Compani
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
@@ -121,8 +122,8 @@ class ProbeRenderStrategy(private val engine: Engine) {
             engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
 
             val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z), {
-                val cubeMap: CubeMap = DynamicCubeMap(engine, 1, GL30.GL_RGBA16F, GL11.GL_FLOAT, GL_LINEAR, GL_RGBA, colorValueBuffers)
-                val distanceCubeMap = DynamicCubeMap(engine, resolution, GL30.GL_RG16F, GL11.GL_FLOAT, GL_LINEAR, GL_RG, visibilityValueBuffers)
+                val cubeMap: CubeMap = DynamicCubeMap(engine, 1, GL30.GL_RGBA16F, GL11.GL_FLOAT, TextureFilter.MinFilter.LINEAR, GL_RGBA, colorValueBuffers)
+                val distanceCubeMap = DynamicCubeMap(engine, resolution, GL30.GL_RG16F, GL11.GL_FLOAT, TextureFilter.MinFilter.LINEAR, GL_RG, visibilityValueBuffers)
                 AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
             })
 

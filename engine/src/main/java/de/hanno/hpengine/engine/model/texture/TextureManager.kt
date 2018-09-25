@@ -6,6 +6,9 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter.LINEAR
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.*
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -179,8 +182,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     mipmapCount = textureInfo.info.mipMapCount,
                     srcPixelFormat = textureInfo.info.srcPixelFormat,
                     textureId = gpuContext.genTextures(),
-                    minFilter = GL11.GL_LINEAR,
-                    magFilter = GL11.GL_LINEAR_MIPMAP_LINEAR).apply { // TODO: WTF, filters are swapped and doesn't work otherwise
+                    minFilter = LINEAR_MIPMAP_LINEAR,
+                    magFilter = LINEAR).apply { // TODO: WTF, filters are swapped and doesn't work otherwise
 
                     upload(textureInfo)
                 }
@@ -264,8 +267,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     fun getCubeMap(resourceName: String): CubeMap? {
         val tex: CubeMap? = textures[resourceName + "_cube"] as CubeMap? ?: getCubeMap(resourceName,
                 GL11.GL_RGBA,
-                GL11.GL_LINEAR_MIPMAP_LINEAR,
-                GL11.GL_LINEAR)
+                LINEAR_MIPMAP_LINEAR,
+                LINEAR)
 
         textures[resourceName + "_cube"] = tex as Texture
         return tex
@@ -274,8 +277,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     @Throws(IOException::class)
     private fun getCubeMap(resourceName: String,
                            dstPixelFormat: Int,
-                           minFilter: Int,
-                           magFilter: Int): CubeMap {
+                           minFilter: MinFilter,
+                           magFilter: MagFilter): CubeMap {
 
 
         val bufferedImage: BufferedImage = loadImage(resourceName)
@@ -523,7 +526,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
 //    TODO: This doesn't work yet
-    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: Int, magFilter: Int, wrapMode: Int): Pair<Int, Long> {
+    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: MinFilter, magFilter: MagFilter, wrapMode: Int): Pair<Int, Long> {
         return gpuContext.calculate {
             OpenGlTexture(
                 textureManager = this,

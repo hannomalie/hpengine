@@ -1,9 +1,11 @@
 package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 
+import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.LINEAR_MIPMAP_LINEAR;
 import static de.hanno.hpengine.engine.model.texture.TextureKt.isMipMapped;
 
 public class CubeMapArray {
@@ -15,37 +17,37 @@ public class CubeMapArray {
 	private int internalFormat;
 	
 	public CubeMapArray(GpuContext gpuContext, int textureCount, int resolution) {
-		this(gpuContext, textureCount, GL11.GL_LINEAR_MIPMAP_LINEAR, resolution);
+		this(gpuContext, textureCount, LINEAR_MIPMAP_LINEAR, resolution);
 	}
 	
-	public CubeMapArray(GpuContext gpuContext, int textureCount, int magTextureFilter, int resolution) {
-		this(gpuContext, textureCount, magTextureFilter, GL30.GL_RGBA16F, resolution);
+	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilter.MinFilter minTextureFilter, int resolution) {
+		this(gpuContext, textureCount, minTextureFilter, GL30.GL_RGBA16F, resolution);
 	}
 	/**
 	 * @param gpuContext
 	 * @param textureCount the actual number of cubemap textures you want to allocate
+	 * @param minFilter
 	 * @param resolution
 	 */
-	public CubeMapArray(GpuContext gpuContext, int textureCount, int magTextureFilter, int internalFormat, int resolution) {
+	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilter.MinFilter minFilter, int internalFormat, int resolution) {
         this.resolution = resolution;
         gpuContext.execute(() -> {
 			textureId = GL11.glGenTextures();
 			bind(gpuContext);
 
-			boolean isMipMapped = isMipMapped(magTextureFilter);
-			if(isMipMapped) {
+			if(minFilter.isMipMapped()) {
                 mipMapCount = de.hanno.hpengine.util.Util.calculateMipMapCount(resolution);
             }
 			this.internalFormat = internalFormat;
 			GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, mipMapCount, internalFormat, resolution, resolution, textureCount*6);
 
-			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, magTextureFilter);
+			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, minFilter.getGlValue());
 			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
 
-			if(isMipMapped) {
+			if(minFilter.isMipMapped()) {
 				GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
 			}
 		});

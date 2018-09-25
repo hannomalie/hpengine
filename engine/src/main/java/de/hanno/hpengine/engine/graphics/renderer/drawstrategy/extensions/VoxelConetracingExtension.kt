@@ -6,6 +6,11 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MagFilter.LINEAR
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilter.MinFilter.*
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
@@ -56,31 +61,31 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     init {
         with(globalGrid) {
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    GL11.GL_LINEAR_MIPMAP_LINEAR,
-                    GL11.GL_LINEAR,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         grid = first
                         gridHandle = second
                     }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    GL11.GL_LINEAR_MIPMAP_LINEAR,
-                    GL11.GL_LINEAR,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         grid2 = first
                         grid2Handle = second
                     }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    GL11.GL_LINEAR_MIPMAP_LINEAR,
-                    GL11.GL_LINEAR,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         albedoGrid = first
                         albedoGridHandle = second
                     }
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    GL11.GL_NEAREST,
-                    GL11.GL_LINEAR,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
                         normalGrid = first
                         normalGridHandle = second
