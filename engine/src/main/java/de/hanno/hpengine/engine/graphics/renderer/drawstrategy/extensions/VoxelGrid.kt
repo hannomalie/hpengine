@@ -16,10 +16,19 @@ open class VoxelGrid protected constructor(): Struct() {
     var grid by 0
     var grid2 by 0
 
-    var gridSize by 0
-    var gridSizeHalf by 0
+    private var _gridSize by 0
+    private var _gridSizeHalf by 0
     val dummy2 by 0
     val dummy3 by 0
+
+    var gridSize
+        get() = _gridSize
+        set(value) {
+            _gridSize = value
+            _gridSizeHalf = value/2
+        }
+    val gridSizeHalf
+        get() = _gridSizeHalf
 
     val projectionMatrix by HpMatrix(this)
 
@@ -39,7 +48,7 @@ open class VoxelGrid protected constructor(): Struct() {
             if(field != value) {
                 field = value
                 scaleProperty = value
-                transform.scale(value)
+//                transform.scale(value)
                 initCam()
             }
         }
@@ -67,8 +76,8 @@ open class VoxelGrid protected constructor(): Struct() {
         orthoCam.perspective = false
         orthoCam.width = gridSizeScaled.toFloat()
         orthoCam.height = gridSizeScaled.toFloat()
-        orthoCam.setFar(gridSizeHalfScaled.toFloat())
-        orthoCam.setNear(gridSizeHalfScaled.toFloat())
+        orthoCam.setFar(gridSizeScaled.toFloat())
+        orthoCam.setNear(-gridSizeScaled.toFloat())
         orthoCam.update(0.000001f)
         projectionMatrix.set(orthoCam.projectionMatrix)
         return orthoCam
@@ -90,7 +99,6 @@ open class VoxelGrid protected constructor(): Struct() {
         operator fun invoke(gridSize: Int): VoxelGrid {
             return VoxelGrid().apply {
                 this@apply.gridSize = gridSize
-                this@apply.gridSizeHalf = gridSize / 2
             }
         }
     }
@@ -113,6 +121,5 @@ class TwoBounceVoxelGrid(gridSize: Int): VoxelGrid() {
 
     init {
         this.gridSize = gridSize
-        this.gridSizeHalf = gridSize / 2
     }
 }

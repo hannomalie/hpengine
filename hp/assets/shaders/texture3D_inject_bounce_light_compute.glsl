@@ -19,6 +19,7 @@ uniform vec3 lightColor;
 uniform int bounces = 1;
 uniform int lightInjectedFramesAgo = 1;
 
+//include(globals_structs.glsl)
 //include(globals.glsl)
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)

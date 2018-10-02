@@ -14,6 +14,7 @@ in int v_isStatic[3];
 
 out vec3 g_normal;
 out vec3 g_pos;
+out vec3 g_posWorld;
 out vec2 g_texcoord;
 flat out int g_materialIndex;
 flat out int g_isStatic;
@@ -91,8 +92,8 @@ void main()
 
 
 	for(int i = 0; i < 3; i++) {
-        vec4 vertexTemp = (projectionMatrix * vec4(pos[i],1));
-
+	    g_posWorld = pos[i];
+        vec4 vertexTemp = (projectionMatrix * (vec4(pos[i] - grid.position,1)) / grid.scale);
 
 //        select dominant action
         if( x > y && x > z ) {

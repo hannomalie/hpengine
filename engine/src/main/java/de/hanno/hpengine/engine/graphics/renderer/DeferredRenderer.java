@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
@@ -211,6 +212,11 @@ public class DeferredRenderer implements Renderer {
     @Override
 	public DeferredRenderingBuffer getGBuffer() {
 		return gBuffer;
+	}
+
+	@Override
+	public List<RenderExtension> getRenderExtensions() {
+    	return simpleDrawStrategy.getRenderExtensions();
 	}
 
 }

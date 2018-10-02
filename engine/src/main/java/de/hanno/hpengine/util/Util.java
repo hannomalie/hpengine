@@ -98,37 +98,11 @@ public class Util {
 	}
 
     public static Matrix4f createPerspective(float fovInDegrees, float ratio, float near, float far) {
-        Matrix4f projectionMatrix = new Matrix4f().setPerspective((float) Math.toRadians(fovInDegrees), ratio, near, far);
-//        float fieldOfView = fovInDegrees;
-//        float aspectRatio = ratio;
-//        float near_plane = near;
-//        float far_plane = far;
-//
-//        float y_scale = (float) (1f / Math.tan(Math.toRadians(fieldOfView / 2f)));
-//        float x_scale = y_scale / aspectRatio;
-//        float frustum_length = far_plane - near_plane;
-//
-//        projectionMatrix.m00 = x_scale;
-//        projectionMatrix.m11 = y_scale;
-//        projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
-//        projectionMatrix.m23 = -1;
-//        projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
-//        projectionMatrix.m33 = 0;
-
-        return projectionMatrix;
+		return new Matrix4f().setPerspective((float) Math.toRadians(fovInDegrees), ratio, near, far);
     }
     
     public static Matrix4f createOrthogonal(float left, float right, float top, float bottom, float near, float far) {
-    	Matrix4f projectionMatrix = new Matrix4f().setOrtho(left, right, bottom, top, near, far);
-//        projectionMatrix.m00 = 2f / (right - left);
-//        projectionMatrix.m11 = 2f / (top - bottom);
-//        projectionMatrix.m22 = -1f / (far - near);
-//        projectionMatrix.m33 = 1f;
-//
-//        projectionMatrix.m30 = -((right + left) / (right - left));
-//        projectionMatrix.m31 = -((top + bottom) / (top - bottom));
-//        projectionMatrix.m32 = -((near) / (far - near));
-        return projectionMatrix;
+		return new Matrix4f().setOrtho(left, right, bottom, top, near, far);
     }
 	
 	public static Matrix4f lookAt(Vector3f eye, Vector3f center, Vector3f up) {

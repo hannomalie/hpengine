@@ -91,13 +91,11 @@ void main(void) {
 	float weightSum = 0;
 
 	float visibility = 1.0;
-	vec3 positionWorld = sceneScale*vec3(storePos-vec3(float(voxelGrid.resolutionHalf)));
-	vec3 gridPosition = vec3(inverseSceneScale)*positionWorld.xyz + ivec3(voxelGrid.resolutionHalf);
-    vec3 positionGridScaled = inverseSceneScale*gridPosition.xyz;
-    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(voxelGrid.resolution)+vec3(0.5);
+	vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);//sceneScale*vec3(storePos-vec3(float(voxelGrid.resolutionHalf)));
+    vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5);
 
-    vec4 color = texelFetch(albedoGrid, storePos, 0);
-    vec4 normalStaticEmissive = texelFetch(normalGrid, storePos, 0);
+    vec4 color = voxelFetchXXX(voxelGrid, albedoGrid, positionWorld, 0);
+    vec4 normalStaticEmissive = voxelFetchXXX(voxelGrid, normalGrid, positionWorld, 0);
     vec3 g_normal = normalize(Decode(normalStaticEmissive.xy));
     vec3 g_pos = positionWorld;
     float opacity = color.a;

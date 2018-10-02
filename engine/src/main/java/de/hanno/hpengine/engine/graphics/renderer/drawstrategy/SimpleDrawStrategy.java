@@ -700,6 +700,10 @@ public class SimpleDrawStrategy implements DrawStrategy {
         renderExtensions.add(extension);
     }
 
+    public List<RenderExtension> getRenderExtensions() {
+        return renderExtensions;
+    }
+
     public DirectionalLightShadowMapExtension getDirectionalLightExtension() {
         return directionalLightShadowMapExtension;
     }

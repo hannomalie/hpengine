@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
@@ -22,7 +23,9 @@ import org.joml.Vector3f;
 import javax.vecmath.Vector2f;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
@@ -124,6 +127,11 @@ public class SimpleTextureRenderer implements Renderer {
 	@Override
 	public void drawToQuad(int texture) {
 		drawToQuad(texture, engine.getGpuContext().getFullscreenBuffer(), renderToQuadProgram);
+	}
+
+	@Override
+	public List<RenderExtension> getRenderExtensions() {
+		return Collections.emptyList();
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {

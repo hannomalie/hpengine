@@ -14,6 +14,8 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
 import org.joml.AxisAngle4f;
@@ -26,6 +28,7 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class MainLightView extends WebPanel {
 
@@ -178,6 +181,14 @@ public class MainLightView extends WebPanel {
         webComponentPanel.addElement(new WebButton("Use Light Cam") {{
             addActionListener(e -> {
                 engine.getSceneManager().getScene().setActiveCamera(engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight());
+            });
+        }});
+        webComponentPanel.addElement(new WebButton("Use Voxelizer Cam") {{
+            addActionListener(e -> {
+                Optional<RenderExtension> voxelConeTracingExtension = engine.getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
+                voxelConeTracingExtension.ifPresent(it -> {
+                    engine.getSceneManager().getScene().setActiveCamera(((VoxelConeTracingExtension) it).getGlobalGrid().getOrthoCam());
+                });
             });
         }});
         webComponentPanel.addElement(new WebButton("Use World Cam") {{

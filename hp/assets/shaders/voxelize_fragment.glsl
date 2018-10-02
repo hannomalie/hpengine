@@ -17,6 +17,7 @@ flat in vec4 g_AABB;
 
 in vec3 g_normal;
 in vec3 g_pos;
+in vec3 g_posWorld;
 in vec2 g_texcoord;
 flat in int g_materialIndex;
 flat in int g_isStatic;
@@ -85,17 +86,11 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 
 	return vec3(p_max,p_max,p_max);
 }
+
 void main()
 {
-//	if( g_pos.x < g_AABB.x || g_pos.y < g_AABB.y || g_pos.x > g_AABB.z || g_pos.y > g_AABB.w )
-//		discard;
-
 
     VoxelGrid grid = voxelGrids[0];
-    float sceneScale = grid.scale;
-    float inverseSceneScale = 1f / grid.scale;
-    int gridSize = grid.resolution;
-
 
 	Material material = materials[g_materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
@@ -119,24 +114,20 @@ void main()
     vec3 maxSpecular = mix(vec3(0.1), color.rgb, metallic);
     vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
 
-    const int gridSizeHalf = gridSize/2;
-    vec3 gridPosition = vec3(inverseSceneScale) * g_pos.xyz + vec3(gridSizeHalf);
-
-//    vec3 samplePositionNormalized = gridPosition/vec3(gridSize);
-//    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).b > 0) { discard; }
+    ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);
 
     float ambientAmount = 0.1;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
 
 	float visibility = 1.0;
-	vec4 positionShadow = (shadowMatrix * vec4(g_pos.xyz, 1));
+	vec4 positionShadow = (shadowMatrix * vec4(g_posWorld.xyz, 1));
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
 
-	imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(color.rgb, opacity));
-	imageStore(out_voxelNormal, ivec3(round(gridPosition)), vec4(Encode(normalize(g_normal)), g_isStatic, 0.25*float(material.ambient)));
-//    imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(vec3(0,0,1) ,1));
+	imageStore(out_voxelAlbedo, positionGridSpace, vec4(color.rgb, opacity));
+	imageStore(out_voxelNormal, positionGridSpace, vec4(Encode(normalize(g_normal)), g_isStatic, 0.25*float(material.ambient)));
+//    imageStore(out_voxelAlbedo, positionGridSpace, vec4(vec3(positionGridSpace) ,1));
 }

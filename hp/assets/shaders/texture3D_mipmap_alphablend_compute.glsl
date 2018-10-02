@@ -6,6 +6,7 @@ layout(binding=1, rgba8) writeonly uniform image3D target;
 layout(binding=2, rgba8) writeonly uniform image3D targetTwo;
 layout(binding=3, rgba8) readonly uniform image3D normalSource;
 
+//include(globals_structs.glsl)
 //include(globals.glsl)
 
 vec4[8] fetchTexels(ivec3 pos) {

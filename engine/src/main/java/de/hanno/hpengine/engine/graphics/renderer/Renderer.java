@@ -3,10 +3,13 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import org.joml.Vector3f;
+
+import java.util.List;
 
 public interface Renderer extends LifeCycle, RenderSystem {
 
@@ -299,4 +302,5 @@ public interface Renderer extends LifeCycle, RenderSystem {
     }
 
 
+    List<RenderExtension> getRenderExtensions();
 }

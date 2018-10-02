@@ -187,7 +187,7 @@ open class Camera: Component {
         if (perspective) {
             projectionMatrix = Util.createPerspective(fov, ratio, near, far)
         } else {
-            projectionMatrix = Util.createOrthogonal(-this.width / 2, this.width / 2, this.height / 2, -this.height / 2, -far / 2, far / 2)
+            projectionMatrix = Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
         }
     }
 

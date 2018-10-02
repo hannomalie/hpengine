@@ -33,7 +33,7 @@ class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 class VoxelConeTracingExtension @Throws(Exception::class)
 constructor(private val engine: Engine, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension) : RenderExtension {
 
-    val globalGrid = TwoBounceVoxelGrid(256)
+    val globalGrid = TwoBounceVoxelGrid(256).apply { setPosition(Vector3f(20f,0f,0f)) }
     val voxelGridBufferRef = engine.renderManager.renderState.registerState {
         VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, globalGrid.sizeInBytes))
     }
@@ -101,12 +101,16 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 //         TODO: Move to update somehow
 
         val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
-            globalGrid.move(Vector3f(0f, 0f, 1f))
-            println(globalGrid.position.z)
+            globalGrid.move(Vector3f(-0.5f, 0f, 0f))
+            println(globalGrid.position.x)
+            true
+        } else if(engine.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
+            globalGrid.move(Vector3f(0.5f, 0f, 0f))
+            println(globalGrid.position.x)
             true
         } else false
         val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
-        globalGrid.scale = sceneScale
+        globalGrid.scale = sceneScale // TODO: scenescale for first grid, other scale for other grids
         val voxelGridState = renderState.getState(voxelGridBufferRef)
         globalGrid.buffer.copyTo(voxelGridState.voxelGridBuffer.buffer, true)
 
@@ -229,6 +233,11 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 }
             }
             GPUProfiler.end()
+            if(Config.getInstance().isDebugVoxels) {
+                GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
+                mipmapGrid(globalGrid.albedoGrid, texture3DMipMapAlphaBlendComputeProgram)
+                mipmapGrid(globalGrid.currentVoxelSource, texture3DMipMapAlphaBlendComputeProgram)
+            }
         }
     }
 
@@ -281,6 +290,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
         voxelConeTraceProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
         voxelConeTraceProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+        voxelConeTraceProgram.setUniform("debugVoxels", Config.getInstance().isDebugVoxels)
         engine.gpuContext.fullscreenBuffer.draw()
         //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
         //        if(entityOrDirectionalLightHasMoved)

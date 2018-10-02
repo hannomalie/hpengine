@@ -40,6 +40,7 @@ layout(location=0)out vec4 out_environment;
 layout(location=1)out vec4 out_refracted;
 
 
+//include(globals_structs.glsl)
 //include(globals.glsl)
 
 vec3 Uncharted2Tonemap(vec3 x)
@@ -177,8 +178,8 @@ TraceResult traceCubes(vec3 positionWorld, vec3 dir, vec3 V, float roughness, fl
 }
 
 // if a direction is very strong, it is taken unless it is the world y axis. Vertical interpolation doesnt work well.
-vec3 findMainAxis(vec3 input) {
-	if(abs(input.x) > abs(input.z)) {
+vec3 findMainAxis(vec3 inputVector) {
+	if(abs(inputVector.x) > abs(inputVector.z)) {
 		return vec3(1,0,0);
 	} else {
 		return vec3(0,0,1);

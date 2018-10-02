@@ -5,12 +5,16 @@ import de.hanno.hpengine.engine.graphics.renderer.MockContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.Collections;
+import java.util.List;
 
 public class MockedRendererEngineTest {
 
@@ -57,6 +61,12 @@ public class MockedRendererEngineTest {
 
         @Override
         public void drawToQuad(int texture) {
+
+        }
+
+        @Override
+        public List<RenderExtension> getRenderExtensions() {
+            return Collections.emptyList();
 
         }
 

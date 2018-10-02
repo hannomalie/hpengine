@@ -45,8 +45,6 @@ void main(void) {
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
     VoxelGrid grid = voxelGrids[0];
-    float sceneScale = grid.scale;
-    float inverseSceneScale = 1f / grid.scale;
     int gridSize = grid.resolution;
 
     Entity entity = entities[entityBufferIndex];

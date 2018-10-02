@@ -126,6 +126,8 @@ public final class Config {
 	private volatile boolean drawProbes = true;
 	@Adjustable(group = "Debug")
 	private volatile float cameraSpeed = 1.0f;
+	@Toggable(group = "Debug")
+	private volatile boolean debugVoxels = false;
 	@Toggable(group = "Effects")
 	private volatile boolean scattering = false;
 	@Adjustable(group = "Effects")
@@ -590,5 +592,13 @@ public final class Config {
 
 	public void setInitFileName(String initFileName) {
 		this.initFileName = initFileName;
+	}
+
+	public boolean isDebugVoxels() {
+		return debugVoxels;
+	}
+
+	public void setDebugVoxels(boolean debugVoxels) {
+		this.debugVoxels = debugVoxels;
 	}
 }
