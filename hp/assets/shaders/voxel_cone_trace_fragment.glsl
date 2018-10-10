@@ -65,10 +65,6 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, 
 
 	vec3 rayDirection = normalize(rayVector);
 
-	float stepLength = .35;
-
-	vec3 step = rayDirection * stepLength;
-
 	vec3 currentPosition = startPosition;
 
 	vec3 lit = vec3(0,0,0);
@@ -79,17 +75,18 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, 
 
 	float mipLevel = 0f;
 	const int NB_STEPS = int(1530/(mipLevel+1));
-	const float stepSize = 0.5f*(mipLevel+1);
+	const float stepSize = voxelGrid.scale*0.125f*(mipLevel+1);
+	vec3 step = rayDirection * stepSize;
 	for (int i = 0; i < NB_STEPS; i++) {
 		if(accumAlpha >= 1.0f)
 		{
 			break;
 		}
 		if(!isInsideVoxelGrid(currentPosition, voxelGrid)) {
+		    currentPosition += step;
 		    continue;
 		}
 		vec3 gridSizeHalf = ivec3(gridSize/2);
-		ivec3 positionInGridSpace = worldToGridPosition(currentPosition, voxelGrid, int(mipLevel));
 		vec4 sampledValue = voxelFetchXXX(voxelGrid, albedoGrid, currentPosition, mipLevel);
 		vec4 sampledNormalValue = voxelFetchXXX(voxelGrid, normalGrid, currentPosition, mipLevel);
 		vec4 sampledLitValue = voxelFetchXXX(voxelGrid, grid, currentPosition, mipLevel);
@@ -99,7 +96,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, 
 		float alpha = 1 - sampledValue.a;
 		accumAlbedo += sampledValue.rgb * alpha;
 		accumAlpha += sampledValue.a * alpha;
-		currentPosition += step*stepSize;
+		currentPosition += step;
 	}
 	accumAlbedo *= accumAlpha;
 	return accumAlbedo.rgb;
