@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.SizedArray
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
@@ -20,6 +21,7 @@ import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.struct.copyFrom
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -33,9 +35,48 @@ class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 class VoxelConeTracingExtension @Throws(Exception::class)
 constructor(private val engine: Engine, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension) : RenderExtension {
 
-    val globalGrid = TwoBounceVoxelGrid(256).apply { setPosition(Vector3f(20f,0f,0f)) }
+    val voxelGrids = SizedArray(10) { VoxelGrid(it) }.apply {
+        array[0].apply { gridSize = 256 }.apply {
+            setPosition(Vector3f(20f,0f,0f))
+
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                grid = first
+                gridHandle = second
+            }
+
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                grid2 = first
+                grid2Handle = second
+            }
+
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                albedoGrid = first
+                albedoGridHandle = second
+            }
+            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                    LINEAR_MIPMAP_LINEAR,
+                    LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE).apply {
+                normalGrid = first
+                normalGridHandle = second
+            }
+
+            currentVoxelTarget = grid
+            currentVoxelSource = grid2
+        }
+    }
+
     val voxelGridBufferRef = engine.renderManager.renderState.registerState {
-        VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, globalGrid.sizeInBytes))
+        VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, voxelGrids.sizeInBytes))
     }
 
     private val voxelizer: Program = this.engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_fragment.glsl")), Defines())
@@ -56,42 +97,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     private var litInCycle: Long = -1
 
     init {
-        with(globalGrid) {
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                        grid = first
-                        gridHandle = second
-                    }
-
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                        grid2 = first
-                        grid2Handle = second
-                    }
-
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                        albedoGrid = first
-                        albedoGridHandle = second
-                    }
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                        normalGrid = first
-                        normalGridHandle = second
-                    }
-
-            currentVoxelTarget = grid
-            currentVoxelSource = grid2
-        }
-
         Config.getInstance().isUseAmbientOcclusion = false
         directionalLightShadowMapExtension.voxelConeTracingExtension = this
     }
@@ -100,6 +105,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         GPUProfiler.start("VCT first pass")
 //         TODO: Move to update somehow
 
+        val globalGrid = voxelGrids[0]
         val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
             globalGrid.move(Vector3f(-0.5f, 0f, 0f))
             println(globalGrid.position.x)
@@ -141,6 +147,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         if (needsLightInjection) {
             litInCycle = renderState.cycle
             GPUProfiler.start("grid shading")
+            val globalGrid = voxelGrids[0]
             GL42.glBindImageTexture(0, globalGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
             val num_groups_xyz = Math.max(globalGrid.gridSize / 8, 1)
 
@@ -174,6 +181,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     }
 
     fun voxelizeScene(renderState: RenderState, voxelGridState: VoxelGridsState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
+        val globalGrid = voxelGrids[0]
         if (needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels")
             if (Config.getInstance().isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
@@ -244,6 +252,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     private fun mipmapGrid() {
         GPUProfiler.start("grid mipmap")
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
+        val globalGrid = voxelGrids[0]
         mipmapGrid(globalGrid.currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram)
 
         GPUProfiler.end()
@@ -251,6 +260,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 
     private fun mipmapGrid(texture3D: Int, shader: ComputeShaderProgram) {
         shader.use()
+        val globalGrid = voxelGrids[0]
         val size = globalGrid.gridSize
         var currentSizeSource = 2 * size
         var currentMipMapLevel = 0

@@ -37,6 +37,10 @@ layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
 layout(std430, binding=5) buffer _voxelGrids {
+    int size;
+    int dummy0;
+    int dummy1;
+    int dummy2;
 	VoxelGrid voxelGrids[10];
 };
 

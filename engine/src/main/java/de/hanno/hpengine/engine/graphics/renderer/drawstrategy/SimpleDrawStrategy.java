@@ -497,7 +497,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
 
         if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
-            gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getCurrentVoxelSource());
+            gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getCurrentVoxelSource());
         }
 
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
@@ -517,9 +517,9 @@ public class SimpleDrawStrategy implements DrawStrategy {
         aoScatteringProgram.setUniform("time", (int) System.currentTimeMillis());
         aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
         if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
-            aoScatteringProgram.setUniform("sceneScale", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getScale());
-            aoScatteringProgram.setUniform("inverseSceneScale", 1f/directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getScale());
-            aoScatteringProgram.setUniform("gridSize", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getGlobalGrid().getGridSize());
+            aoScatteringProgram.setUniform("sceneScale", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getScale());
+            aoScatteringProgram.setUniform("inverseSceneScale", 1f/directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getScale());
+            aoScatteringProgram.setUniform("gridSize", directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getGridSize());
         }
 
         aoScatteringProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS);

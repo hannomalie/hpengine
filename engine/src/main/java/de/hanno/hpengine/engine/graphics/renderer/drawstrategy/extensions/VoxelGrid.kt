@@ -10,7 +10,7 @@ import de.hanno.hpengine.util.Util
 import de.hanno.struct.Struct
 import org.joml.Vector3f
 
-open class VoxelGrid protected constructor(): Struct() {
+open class VoxelGrid(parent: Struct? = null): Struct(parent) {
     var albedoGrid by 0
     var normalGrid by 0
     var grid by 0
@@ -59,14 +59,13 @@ open class VoxelGrid protected constructor(): Struct() {
     val gridSizeHalfScaled: Int
         get() = (gridSizeHalf * scaleProperty).toInt()
 
-    open val currentVoxelSource: Int
-        get() = grid
+    var currentVoxelSource: Int = 0
 
 
     val entity = Entity("VCTCam")
-    var orthoCam = Camera(entity, createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
+    lateinit var orthoCam: Camera// = Camera(entity, createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
 
-    init {
+    fun init() {
         initCam()
     }
 
@@ -95,18 +94,8 @@ open class VoxelGrid protected constructor(): Struct() {
 
     fun createOrthoMatrix() =
             Util.createOrthogonal((-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat())
-    companion object {
-        operator fun invoke(gridSize: Int): VoxelGrid {
-            return VoxelGrid().apply {
-                this@apply.gridSize = gridSize
-            }
-        }
-    }
-}
 
-class TwoBounceVoxelGrid(gridSize: Int): VoxelGrid() {
 
-    override var currentVoxelSource: Int = 0
     var currentVoxelTarget: Int = 0
 
     fun switchCurrentVoxelGrid() {
@@ -119,7 +108,11 @@ class TwoBounceVoxelGrid(gridSize: Int): VoxelGrid() {
         }
     }
 
-    init {
-        this.gridSize = gridSize
+    companion object {
+        operator fun invoke(gridSize: Int): VoxelGrid {
+            return VoxelGrid().apply {
+                this@apply.gridSize = gridSize
+            }
+        }
     }
 }

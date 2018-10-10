@@ -16,6 +16,10 @@ layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 layout(std430, binding=5) buffer _voxelGrids {
+    int size;
+    int dummy0;
+    int dummy1;
+    int dummy2;
 	VoxelGrid voxelGrids[10];
 };
 

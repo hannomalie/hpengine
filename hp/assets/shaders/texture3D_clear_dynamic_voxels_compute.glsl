@@ -11,6 +11,10 @@ layout(binding=3, rgba8) writeonly uniform image3D grid2;
 //include(globals_structs.glsl)
 
 layout(std430, binding=5) buffer _voxelGrids {
+    int size;
+    int dummy0;
+    int dummy1;
+    int dummy2;
 	VoxelGrid voxelGrids[10];
 };
 

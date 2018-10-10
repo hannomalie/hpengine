@@ -697,12 +697,22 @@ ivec3 worldToGridPositionHelper(vec3 worldPosition, VoxelGrid voxelGrid, int mip
     ivec3 intPositionInGridSpace = ivec3(positionInGridSpace+(voxelGrid.resolutionHalf/pow(2,mipMapLevel)));
     return intPositionInGridSpace;
 }
+vec3 worldToGridPositionHelperFloat(vec3 worldPosition, VoxelGrid voxelGrid, float mipMapLevel) {
+    vec3 positionInGridSpace = worldPosition - voxelGrid.position;
+    positionInGridSpace /= voxelGrid.scale;
+    positionInGridSpace /= pow(2, mipMapLevel);
+    vec3 resultPositionInGridSpace = positionInGridSpace+(voxelGrid.resolutionHalf/pow(2,mipMapLevel));
+    return resultPositionInGridSpace;
+}
 ivec3 worldToGridPosition(vec3 worldPosition, VoxelGrid voxelGrid) {
     return worldToGridPositionHelper(worldPosition, voxelGrid, 0);
 }
 
 ivec3 worldToGridPosition(vec3 worldPosition, VoxelGrid voxelGrid, int mipMapLevel) {
     return worldToGridPositionHelper(worldPosition, voxelGrid, mipMapLevel);
+}
+vec3 worldToGridPositionFloat(vec3 worldPosition, VoxelGrid voxelGrid, float mipMapLevel) {
+    return worldToGridPositionHelperFloat(worldPosition, voxelGrid, mipMapLevel);
 }
 
 vec3 gridToWorldPosition(VoxelGrid voxelGrid, ivec3 gridPosition) {
@@ -724,8 +734,8 @@ vec4 voxelFetchXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 positionWorld, floa
        return vec4(0);
     }
 
-    vec3 positionInGridSpaceMipMapAdjusted = worldToGridPosition(positionWorld, voxelGrid, int(LoD));
-    float normalizer = voxelGrid.resolution/pow(2, int(LoD));
+    vec3 positionInGridSpaceMipMapAdjusted = worldToGridPositionFloat(positionWorld, voxelGrid, LoD);
+    float normalizer = voxelGrid.resolution/pow(2, LoD);
     vec4 result = textureLod(grid, positionInGridSpaceMipMapAdjusted/normalizer, LoD);
 
     return result;
@@ -754,7 +764,7 @@ vec4 voxelTraceConeXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 di
         }
 
 		float a = 1 - alpha;
-		accum.rgb += a * sampleValue.rgb;
+		accum.rgb += /*a * this looks odd*/sampleValue.rgb;
 		alpha += a * sampleValue.a;
 
 		dist += diameter;
