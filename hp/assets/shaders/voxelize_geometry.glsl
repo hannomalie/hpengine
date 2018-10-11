@@ -40,10 +40,11 @@ layout(std430, binding=5) buffer _voxelGrids {
     int dummy2;
 	VoxelGrid voxelGrids[10];
 };
+uniform int voxelGridIndex = 0;
 
 void main()
 {
-    VoxelGrid grid = voxelGrids[0];
+    VoxelGrid grid = voxelGrids[voxelGridIndex];
     mat4 projectionMatrix = grid.projectionMatrix;
 
 	vec3 faceNormal = normalize( cross( v_vertex[1]-v_vertex[0], v_vertex[2]-v_vertex[0] ) );

@@ -42,13 +42,14 @@ out int v_isStatic;
 
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
+uniform int voxelGridIndex = 0;
 
 void main(void) {
 
     int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
-    VoxelGrid grid = voxelGrids[0];
+    VoxelGrid grid = voxelGrids[voxelGridIndex];
     int gridSize = grid.resolution;
 
     Entity entity = entities[entityBufferIndex];

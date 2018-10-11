@@ -17,6 +17,7 @@ layout(std430, binding=5) buffer _voxelGrids {
     int dummy2;
 	VoxelGrid voxelGrids[10];
 };
+uniform int voxelGridIndex = 0;
 
 void main(void) {
 	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
@@ -24,7 +25,7 @@ void main(void) {
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
 	ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
 
-    VoxelGrid grid = voxelGrids[0];
+    VoxelGrid grid = voxelGrids[voxelGridIndex];
     float sceneScale = grid.scale;
     float inverseSceneScale = 1f/sceneScale;
 

@@ -49,6 +49,8 @@ uniform mat4 shadowMatrix;
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
+uniform int voxelGridIndex = 0;
+
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
@@ -94,7 +96,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 void main()
 {
 
-    VoxelGrid grid = voxelGrids[0];
+    VoxelGrid grid = voxelGrids[voxelGridIndex];
 
 	Material material = materials[g_materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
@@ -118,7 +120,6 @@ void main()
     vec3 maxSpecular = mix(vec3(0.1), color.rgb, metallic);
     vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
 
-    ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);
 
     float ambientAmount = 0.1;//.0125f;
     float dynamicAdjust = 0;//.015f;
@@ -131,7 +132,7 @@ void main()
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
 
+    ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);
 	imageStore(out_voxelAlbedo, positionGridSpace, vec4(color.rgb, opacity));
 	imageStore(out_voxelNormal, positionGridSpace, vec4(Encode(normalize(g_normal)), g_isStatic, 0.25*float(material.ambient)));
-//    imageStore(out_voxelAlbedo, positionGridSpace, vec4(vec3(positionGridSpace) ,1));
 }
