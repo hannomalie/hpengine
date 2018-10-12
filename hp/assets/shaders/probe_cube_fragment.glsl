@@ -1,6 +1,3 @@
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
-
 layout(binding=0) uniform sampler2D diffuseMap;
 
 //include(globals_structs.glsl)

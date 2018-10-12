@@ -1,6 +1,3 @@
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
-
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
@@ -54,10 +51,6 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     projectedCoord.xy /= projectedCoord.w;
     projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
     return projectedCoord;
-}
-
-sampler3D toSampler(uvec2 handle) {
-    return sampler3D(uint64_t(handle));
 }
 
 vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, sampler3D albedoGrid, sampler3D normalGrid, sampler3D grid, VoxelGrid voxelGrid) {
@@ -204,45 +197,33 @@ void main(void) {
 
 	const float boost = 1.;
 
-    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+    if(!debugVoxels && useVoxelConeTracing) {
 
-        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
-        float sceneScale = voxelGrid.scale;
-        float inverseSceneScale = 1f / voxelGrid.scale;
-        int gridSize = voxelGrid.resolution;
+        vec4 voxelDiffuse = 4*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
+        float aperture =  tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+//            sampler3D grid = sampler3D(uint64_t(voxelGrid.gridHandle));
+        vec4 voxelSpecular = vec4(0);//4*voxelTraceCone(voxelGrid, grid, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), aperture, 370); // 0.05
 
-        sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
-        sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
-        sampler3D grid = sampler3D(uint64_t(voxelGrid.gridHandle));
-
-        if(!debugVoxels && useVoxelConeTracing) {
-
-            vec4 voxelDiffuse = 4*traceVoxelsDiffuse(voxelGrid, grid, normalWorld, positionWorld+sceneScale*normalWorld);
-            float aperture =  tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
-            vec4 voxelSpecular = 4*voxelTraceCone(voxelGrid, grid, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), aperture, 370); // 0.05
-
-            vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
+        vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
 
 //            const bool useTransparency = false;
 //            if(useTransparency) {
 //                vec3 sampledValue = voxelTraceCone(voxelGrid, grid, positionWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
-    //        	compensate missing secondary bounces
-    //        	sampledValue += 0.1*voxelTraceCone(albedoGrid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*1*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
+//        	compensate missing secondary bounces
+//        	sampledValue += 0.1*voxelTraceCone(albedoGrid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*1*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
 //                vct = /* small boost factor, figure out why */ 4 * boost * color * sampledValue * (transparency) + vct * opacity;
 //            }
-        }
+    }
 
-        if(useAmbientOcclusion){
-            vec4 AOscattering = textureLod(aoScattering, st, 0);
-            vct *= clamp(AOscattering.r,0.0,1.0);
-        }
+    if(useAmbientOcclusion){
+        vec4 AOscattering = textureLod(aoScattering, st, 0);
+        vct *= clamp(AOscattering.r,0.0,1.0);
+    }
 
-        if(debugVoxels) {
-            vec3 temp = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, voxelGridArray);
-            if(temp.x > 0 || temp.y > 0 || temp.z > 0) {
-                vct += temp;
-                break;
-            }
+    if(debugVoxels) {
+        vec3 temp = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, voxelGridArray);
+        if(temp.x > 0 || temp.y > 0 || temp.z > 0) {
+            vct += temp;
         }
     }
     out_DiffuseSpecular.rgb = vct;

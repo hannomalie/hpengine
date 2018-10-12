@@ -34,17 +34,13 @@ uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
 layout(std430, binding=5) buffer _voxelGrids {
-    int size;
-    int dummy0;
-    int dummy1;
-    int dummy2;
-	VoxelGrid voxelGrids[10];
+    VoxelGridArray voxelGridArray;
 };
 uniform int voxelGridIndex = 0;
 
 void main()
 {
-    VoxelGrid grid = voxelGrids[voxelGridIndex];
+    VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
     mat4 projectionMatrix = grid.projectionMatrix;
 
 	vec3 faceNormal = normalize( cross( v_vertex[1]-v_vertex[0], v_vertex[2]-v_vertex[0] ) );

@@ -1,5 +1,3 @@
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
 #define WORK_GROUP_SIZE 8
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
@@ -21,11 +19,7 @@ layout(std430, binding=2) buffer _lights {
 };
 
 layout(std430, binding=5) buffer _voxelGrids {
-    int size;
-    int dummy0;
-    int dummy1;
-    int dummy2;
-	VoxelGrid voxelGrids[10];
+    VoxelGridArray voxelGridArray;
 };
 uniform int voxelGridIndex = 0;
 
@@ -80,7 +74,7 @@ float calculateAttenuation(float dist, float lightRadius) {
 }
 void main(void) {
 
-    VoxelGrid voxelGrid = voxelGrids[voxelGridIndex];
+    VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
     float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1f/sceneScale;
 

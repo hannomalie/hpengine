@@ -1,5 +1,3 @@
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
 #define WORK_GROUP_SIZE 8
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
@@ -11,11 +9,7 @@ layout(binding=3, rgba8) writeonly uniform image3D grid2;
 //include(globals_structs.glsl)
 
 layout(std430, binding=5) buffer _voxelGrids {
-    int size;
-    int dummy0;
-    int dummy1;
-    int dummy2;
-	VoxelGrid voxelGrids[10];
+    VoxelGridArray voxelGridArray;
 };
 uniform int voxelGridIndex = 0;
 
@@ -25,7 +19,7 @@ void main(void) {
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
 	ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
 
-    VoxelGrid grid = voxelGrids[voxelGridIndex];
+    VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
     float sceneScale = grid.scale;
     float inverseSceneScale = 1f/sceneScale;
 

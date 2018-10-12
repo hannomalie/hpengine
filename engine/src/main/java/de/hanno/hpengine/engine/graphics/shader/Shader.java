@@ -44,6 +44,8 @@ public interface Shader extends Reloadable {
         }
 
         String resultingShaderSource = "#version 430 core \n"
+                + "#extension GL_NV_gpu_shader5 : enable\n"
+                + "#extension GL_ARB_bindless_texture : enable\n"
                 + (defines.isEmpty() ? "" : defines) + "\n"
                 + ShaderDefine.getGlobalDefinesString() + "\n";
 

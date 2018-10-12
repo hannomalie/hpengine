@@ -1,5 +1,3 @@
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
@@ -37,11 +35,7 @@ layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    int size;
-    int dummy0;
-    int dummy1;
-    int dummy2;
-	VoxelGrid voxelGrids[10];
+    VoxelGridArray voxelGridArray;
 };
 
 uniform mat4 shadowMatrix;
@@ -96,7 +90,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 void main()
 {
 
-    VoxelGrid grid = voxelGrids[voxelGridIndex];
+    VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
 
 	Material material = materials[g_materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,

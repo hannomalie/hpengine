@@ -1,5 +1,9 @@
 #define kPI 3.1415926536f
 
+sampler3D toSampler(uvec2 handle) {
+    return sampler3D(uint64_t(handle));
+}
+
 const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				2.0/16.0, 4.0/16.0, 2.0/16.0,
 				1.0/16.0, 2.0/16.0, 1.0/16.0 };
@@ -551,86 +555,90 @@ vec4 voxelTraceCone(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, 
 	return vec4(accum.rgb, alpha);
 }
 
-vec4 traceVoxelsDiffuse(VoxelGrid voxelGrid, sampler3D grid, vec3 normalWorld, vec3 positionWorld) {
-    int gridSize = voxelGrid.resolution;
-    float sceneScale = voxelGrid.scale;
+vec4 traceVoxelsDiffuse(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
     vec4 voxelDiffuse;
+    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        sampler3D grid = toSampler(voxelGrid.gridHandle);
+        int gridSize = voxelGrid.resolution;
+        float sceneScale = voxelGrid.scale;
 
-    float minVoxelDiameter = sceneScale;
-    float maxDist = 150;
-    const int SAMPLE_COUNT = 13;
+        float minVoxelDiameter = sceneScale;
+        float maxDist = 150;
+        const int SAMPLE_COUNT = 13;
 
-    const int UE4 = 0;
-    const int domme = 1;
-    const int thefranke = 2;
-    const int diffuseTracingMode = UE4;
+        const int UE4 = 0;
+        const int domme = 1;
+        const int thefranke = 2;
+        const int diffuseTracingMode = UE4;
 
-    if(diffuseTracingMode == UE4) {
-        for (int k = 0; k < SAMPLE_COUNT; k++) {
-            const float PI = 3.1415926536;
-            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
-            float Phi = 2 * PI * Xi.x;
-            float a = 0.5;
-            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
-            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+        if(diffuseTracingMode == UE4) {
+            for (int k = 0; k < SAMPLE_COUNT; k++) {
+                const float PI = 3.1415926536;
+                vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+                float Phi = 2 * PI * Xi.x;
+                float a = 0.5;
+                float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+                float SinTheta = sqrt( 1 - CosTheta * CosTheta );
 
-            vec3 H;
-            H.x = SinTheta * cos( Phi );
-            H.y = SinTheta * sin( Phi );
-            H.z = CosTheta;
-            H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+                vec3 H;
+                H.x = SinTheta * cos( Phi );
+                H.y = SinTheta * sin( Phi );
+                H.z = CosTheta;
+                H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
-            float coneRatio = 0.25;
-            float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += vec4(dotProd) * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
-        }
-    } else if(diffuseTracingMode == domme) {
+                float coneRatio = 0.25;
+                float dotProd = clamp(dot(normalWorld, H),0,1);
+                voxelDiffuse += vec4(dotProd) * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
+            }
+        } else if(diffuseTracingMode == domme) {
 
-        vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
-        vec3 bitangent = cross(normalWorld, tangent);
-        float coneRatio = 2.;
-        //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
-        voxelDiffuse += voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld + tangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld - tangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld + bitangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld - bitangent), coneRatio, maxDist);
+            vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
+            vec3 bitangent = cross(normalWorld, tangent);
+            float coneRatio = 2.;
+            //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
+            voxelDiffuse += voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld + tangent), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld - tangent), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld + bitangent), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld - bitangent), coneRatio, maxDist);
 
-    } else if(diffuseTracingMode == thefranke) {
+        } else if(diffuseTracingMode == thefranke) {
 
-        //https://github.com/thefranke/dirtchamber/blob/master/shader/vct_tools.hlsl
-        vec3 diffdir = normalize(normalWorld.zxy);
-        vec3 crossdir = cross(normalWorld.xyz, diffdir);
-        vec3 crossdir2 = cross(normalWorld.xyz, crossdir);
+            //https://github.com/thefranke/dirtchamber/blob/master/shader/vct_tools.hlsl
+            vec3 diffdir = normalize(normalWorld.zxy);
+            vec3 crossdir = cross(normalWorld.xyz, diffdir);
+            vec3 crossdir2 = cross(normalWorld.xyz, crossdir);
 
-        // jitter cones
-        float j = 1.0 + (fract(sin(dot(vec2(0.5, 0.5), vec2(12.9898, 78.233))) * 43758.5453)) * 0.2;
+            // jitter cones
+            float j = 1.0 + (fract(sin(dot(vec2(0.5, 0.5), vec2(12.9898, 78.233))) * 43758.5453)) * 0.2;
 
-        vec3 directions[9] =
-        {
-            normalWorld,
-            normalize(crossdir   * j + normalWorld),
-            normalize(-crossdir  * j + normalWorld),
-            normalize(crossdir2  * j + normalWorld),
-            normalize(-crossdir2 * j + normalWorld),
-            normalize((crossdir + crossdir2)  * j + normalWorld),
-            normalize((crossdir - crossdir2)  * j + normalWorld),
-            normalize((-crossdir + crossdir2) * j + normalWorld),
-            normalize((-crossdir - crossdir2) * j + normalWorld),
-        };
+            vec3 directions[9] =
+            {
+                normalWorld,
+                normalize(crossdir   * j + normalWorld),
+                normalize(-crossdir  * j + normalWorld),
+                normalize(crossdir2  * j + normalWorld),
+                normalize(-crossdir2 * j + normalWorld),
+                normalize((crossdir + crossdir2)  * j + normalWorld),
+                normalize((crossdir - crossdir2)  * j + normalWorld),
+                normalize((-crossdir + crossdir2) * j + normalWorld),
+                normalize((-crossdir - crossdir2) * j + normalWorld),
+            };
 
-        float diff_angle = 0.6f;
+            float diff_angle = 0.6f;
 
-        vec4 diffuse = vec4(0, 0, 0, 0);
+            vec4 diffuse = vec4(0, 0, 0, 0);
 
-        for (uint d = 0; d < 9; ++d)
-        {
-            vec3 D = directions[d];
+            for (uint d = 0; d < 9; ++d)
+            {
+                vec3 D = directions[d];
 
-            float NdotL = clamp(dot(normalize(normalWorld), normalize(D)), 0, 1);
+                float NdotL = clamp(dot(normalize(normalWorld), normalize(D)), 0, 1);
 
-            float minDiameter = 1.f;
-            voxelDiffuse += voxelTraceCone(voxelGrid, grid, positionWorld, normalize(D), 1., maxDist) * NdotL;
+                float minDiameter = 1.f;
+                voxelDiffuse += voxelTraceCone(voxelGrid, grid, positionWorld, normalize(D), 1., maxDist) * NdotL;
+            }
         }
     }
 

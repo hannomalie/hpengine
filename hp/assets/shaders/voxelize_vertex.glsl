@@ -16,11 +16,7 @@ layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    int size;
-    int dummy0;
-    int dummy1;
-    int dummy2;
-	VoxelGrid voxelGrids[10];
+    VoxelGridArray voxelGridArray;
 };
 
 in vec3 in_Position;
@@ -49,7 +45,7 @@ void main(void) {
     int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
-    VoxelGrid grid = voxelGrids[voxelGridIndex];
+    VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
     int gridSize = grid.resolution;
 
     Entity entity = entities[entityBufferIndex];
