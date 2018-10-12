@@ -410,227 +410,6 @@ vec3[2] cookTorranceCubeMap(samplerCube cubemap,
 	return result;
 }
 
-
-vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWorld, float loD) {
-    const int gridSizeHalf = gridSize/2;
-    float inverseSceneScale = 1.f/sceneScale;
-
-    vec3 positionGridScaled = inverseSceneScale*positionWorld;
-    if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
-       any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
-
-       return vec4(0);
-    }
-
-    int level = int(loD);
-    vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
-    float positionScaleFactor = pow(2, level);
-
-    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
-
-    vec4 result = textureLod(grid, samplePositionNormalized, loD);
-
-    return result;
-
-//    return textureLod(grid, samplePositionNormalized, level);
-}
-vec4 voxelFetchBlurred(sampler3D grid, int gridSize, float sceneScale, vec3 positionWorld, float loD) {
-    const int gridSizeHalf = gridSize/2;
-    float inverseSceneScale = 1.f/sceneScale;
-
-    vec3 positionGridScaled = inverseSceneScale*positionWorld;
-    if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
-       any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
-
-       return vec4(0);
-    }
-
-    int level = int(loD);
-    vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
-    float positionScaleFactor = pow(2, level);
-
-    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
-
-    vec4 result = textureLod(grid, samplePositionNormalized, level);
-
-    float amount = 0.005;
-    result *= 0.2;
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, -amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, -amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, -amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, -amount), loD);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, amount), loD);
-
-    return result;
-}
-
-vec4 voxelTraceCone(sampler3D grid, int gridSize, float sceneScale, float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
-	float minVoxelDiameterInv = 1.0/minVoxelDiameter;
-	vec4 accum = vec4(0.0);
-	float minDiameter = minVoxelDiameter;
-	float dist = 0;
-	vec4 ambientLightColor = vec4(0.);
-	float alpha = 0;
-	while (dist <= maxDist && alpha < 1.0)
-	{
-		float diameter = max(minDiameter, 2 * coneRatio * dist);
-		float sampleLOD = log2(diameter * minVoxelDiameterInv);
-		vec3 samplePos = origin + dir * dist;
-//		sampleLOD = 3f;
-//        sampleLOD = max(sampleLOD, 2);
-		vec4 sampleValue = voxelFetch(grid, gridSize, sceneScale, samplePos+dir, sampleLOD);
-
-		float a = 1 - alpha;
-		accum.rgb += a * sampleValue.rgb;
-		alpha += a * sampleValue.a;
-
-		dist += diameter;
-	}
-	return vec4(accum.rgb, alpha);
-}
-
-vec4 specConeTrace(sampler3D grid, int gridSize, float sceneScale, vec3 o, vec3 dir, float coneRatio, float maxDist)
-{
-    float voxDim = 256;
-	vec3 samplePos = o;
-	vec4 accum = vec4(0.0);
-	float minDiam = 1.0/voxDim;
-	float startDist = 2*minDiam;
-
-	float dist = startDist;
-	while(dist <= maxDist && accum.w < 1.0)
-	{
-		float sampleDiam = max(minDiam, coneRatio*dist);
-		float sampleLOD = log2(sampleDiam*voxDim);
-		vec3 samplePos = o + dir*dist;
-//		sampleLOD = 1.5;
-		vec4 sampleVal = voxelFetch(grid, gridSize, sceneScale, samplePos-dir, sampleLOD);//sampleSpecVox(samplePos, -d, sampleLOD);
-
-		float sampleWt = (1.0 - accum.w);
-		accum += sampleVal * sampleWt;
-		dist += sampleDiam;
-	}
-
-	accum.xyz *= 2.0;
-
-	return accum;
-}
-
-vec4 traceVoxels(sampler3D grid, int gridSize, float sceneScale, vec3 worldPos, vec3 startPosition, float lod) {
-	const int NB_STEPS = 30;
-
-	vec3 rayVector = worldPos.xyz - startPosition;
-
-	float rayLength = length(rayVector);
-	vec3 rayDirection = rayVector / rayLength;
-
-	float stepLength = rayLength / NB_STEPS;
-
-	vec3 step = rayDirection * stepLength;
-	vec3 currentPosition = startPosition;
-
-	vec4 accumFog = vec4(0);
-
-    int stepCount = 0;
-	for (int i = 0; i < NB_STEPS; i++) {
-	    stepCount++;
-	    if(accumFog.a >= 0.99f) { break; }
-        accumFog += voxelFetch(grid, gridSize, sceneScale, currentPosition, lod);
-		currentPosition += step;
-	}
-	accumFog /= stepCount;
-	return accumFog;
-}
-
-
-vec4 traceVoxelsDiffuse(sampler3D grid, int gridSize, float sceneScale, vec3 normalWorld, vec3 positionWorld) {
-    vec4 voxelDiffuse;
-
-    float minVoxelDiameter = sceneScale;
-    float maxDist = 150;
-    const int SAMPLE_COUNT = 13;
-
-    const int UE4 = 0;
-    const int domme = 1;
-    const int thefranke = 2;
-    const int diffuseTracingMode = UE4;
-
-    if(diffuseTracingMode == UE4) {
-        for (int k = 0; k < SAMPLE_COUNT; k++) {
-            const float PI = 3.1415926536;
-            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
-            float Phi = 2 * PI * Xi.x;
-            float a = 0.5;
-            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
-            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
-
-            vec3 H;
-            H.x = SinTheta * cos( Phi );
-            H.y = SinTheta * sin( Phi );
-            H.z = CosTheta;
-            H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
-
-            float coneRatio = 0.25;
-            float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(H), coneRatio, maxDist);
-        }
-    } else if(diffuseTracingMode == domme) {
-
-        vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
-        vec3 bitangent = cross(normalWorld, tangent);
-        float coneRatio = 2.;
-        //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
-        voxelDiffuse += voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + tangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld - tangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + bitangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld - bitangent), coneRatio, maxDist);
-
-    } else if(diffuseTracingMode == thefranke) {
-
-        //https://github.com/thefranke/dirtchamber/blob/master/shader/vct_tools.hlsl
-        vec3 diffdir = normalize(normalWorld.zxy);
-        vec3 crossdir = cross(normalWorld.xyz, diffdir);
-        vec3 crossdir2 = cross(normalWorld.xyz, crossdir);
-
-        // jitter cones
-        float j = 1.0 + (fract(sin(dot(vec2(0.5, 0.5), vec2(12.9898, 78.233))) * 43758.5453)) * 0.2;
-
-        vec3 directions[9] =
-        {
-            normalWorld,
-            normalize(crossdir   * j + normalWorld),
-            normalize(-crossdir  * j + normalWorld),
-            normalize(crossdir2  * j + normalWorld),
-            normalize(-crossdir2 * j + normalWorld),
-            normalize((crossdir + crossdir2)  * j + normalWorld),
-            normalize((crossdir - crossdir2)  * j + normalWorld),
-            normalize((-crossdir + crossdir2) * j + normalWorld),
-            normalize((-crossdir - crossdir2) * j + normalWorld),
-        };
-
-        float diff_angle = 0.6f;
-
-        vec4 diffuse = vec4(0, 0, 0, 0);
-
-        for (uint d = 0; d < 9; ++d)
-        {
-            vec3 D = directions[d];
-
-            float NdotL = clamp(dot(normalize(normalWorld), normalize(D)), 0, 1);
-
-            float minDiameter = 1.f;
-            voxelDiffuse += voxelTraceCone(grid, gridSize, sceneScale, minDiameter, positionWorld, normalize(D), 1., maxDist) * NdotL;
-        }
-    }
-
-    return voxelDiffuse;
-}
-
-
 vec2 cartesianToSpherical(vec3 cartCoords){
 	float a = atan(cartCoords.y/cartCoords.x);
 	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
@@ -729,7 +508,7 @@ bool isInsideVoxelGrid(vec3 positionWorld, VoxelGrid voxelGrid) {
                && positionWorld.x < worldMax.x && positionWorld.y < worldMax.y && positionWorld.z < worldMax.z;
     return result;
 }
-vec4 voxelFetchXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 positionWorld, float LoD) {
+vec4 voxelFetch(VoxelGrid voxelGrid, sampler3D grid, vec3 positionWorld, float LoD) {
     if(!isInsideVoxelGrid(positionWorld, voxelGrid)) {
        return vec4(0);
     }
@@ -741,7 +520,7 @@ vec4 voxelFetchXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 positionWorld, floa
     return result;
 
 }
-vec4 voxelTraceConeXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
+vec4 voxelTraceCone(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
     int gridSize = voxelGrid.resolution;
     float minVoxelDiameter = voxelGrid.scale;
 
@@ -760,7 +539,7 @@ vec4 voxelTraceConeXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 di
 
 		vec4 sampleValue = vec4(0);
         if(isInsideVoxelGrid(samplePos, voxelGrid)) {
-            sampleValue = voxelFetchXXX(voxelGrid, grid, samplePos, sampleLOD);
+            sampleValue = voxelFetch(voxelGrid, grid, samplePos, sampleLOD);
         }
 
 		float a = 1 - alpha;
@@ -772,7 +551,7 @@ vec4 voxelTraceConeXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 di
 	return vec4(accum.rgb, alpha);
 }
 
-vec4 traceVoxelsDiffuseXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 normalWorld, vec3 positionWorld) {
+vec4 traceVoxelsDiffuse(VoxelGrid voxelGrid, sampler3D grid, vec3 normalWorld, vec3 positionWorld) {
     int gridSize = voxelGrid.resolution;
     float sceneScale = voxelGrid.scale;
     vec4 voxelDiffuse;
@@ -803,7 +582,7 @@ vec4 traceVoxelsDiffuseXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 normalWorld
 
             float coneRatio = 0.25;
             float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += vec4(dotProd) * voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
+            voxelDiffuse += vec4(dotProd) * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
         }
     } else if(diffuseTracingMode == domme) {
 
@@ -811,11 +590,11 @@ vec4 traceVoxelsDiffuseXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 normalWorld
         vec3 bitangent = cross(normalWorld, tangent);
         float coneRatio = 2.;
         //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
-        voxelDiffuse += voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(normalWorld), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(normalWorld + tangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(normalWorld - tangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(normalWorld + bitangent), coneRatio, maxDist);
-        voxelDiffuse += 0.707 * voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(normalWorld - bitangent), coneRatio, maxDist);
+        voxelDiffuse += voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld), coneRatio, maxDist);
+        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld + tangent), coneRatio, maxDist);
+        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld - tangent), coneRatio, maxDist);
+        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld + bitangent), coneRatio, maxDist);
+        voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(normalWorld - bitangent), coneRatio, maxDist);
 
     } else if(diffuseTracingMode == thefranke) {
 
@@ -851,7 +630,7 @@ vec4 traceVoxelsDiffuseXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 normalWorld
             float NdotL = clamp(dot(normalize(normalWorld), normalize(D)), 0, 1);
 
             float minDiameter = 1.f;
-            voxelDiffuse += voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(D), 1., maxDist) * NdotL;
+            voxelDiffuse += voxelTraceCone(voxelGrid, grid, positionWorld, normalize(D), 1., maxDist) * NdotL;
         }
     }
 

@@ -18,11 +18,7 @@ layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    int size;
-    int dummy0;
-    int dummy1;
-    int dummy2;
-	VoxelGrid voxelGrids[10];
+    VoxelGridArray voxelGridArray;
 };
 
 uniform float screenWidth = 1280;
@@ -60,6 +56,10 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
+sampler3D toSampler(uvec2 handle) {
+    return sampler3D(uint64_t(handle));
+}
+
 vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, sampler3D albedoGrid, sampler3D normalGrid, sampler3D grid, VoxelGrid voxelGrid) {
 	vec3 rayVector = worldPos.xyz - startPosition;
 
@@ -87,9 +87,9 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, 
 		    continue;
 		}
 		vec3 gridSizeHalf = ivec3(gridSize/2);
-		vec4 sampledValue = voxelFetchXXX(voxelGrid, albedoGrid, currentPosition, mipLevel);
-		vec4 sampledNormalValue = voxelFetchXXX(voxelGrid, normalGrid, currentPosition, mipLevel);
-		vec4 sampledLitValue = voxelFetchXXX(voxelGrid, grid, currentPosition, mipLevel);
+		vec4 sampledValue = voxelFetch(voxelGrid, albedoGrid, currentPosition, mipLevel);
+		vec4 sampledNormalValue = voxelFetch(voxelGrid, normalGrid, currentPosition, mipLevel);
+		vec4 sampledLitValue = voxelFetch(voxelGrid, grid, currentPosition, mipLevel);
 		normalValue.rgb = sampledNormalValue.rgb;
 		lit += sampledLitValue.rgb * sampledLitValue.a;
 		isStaticValue = vec3(normalValue.b);
@@ -102,17 +102,59 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, int gridSize, float sceneScale, 
 	return accumAlbedo.rgb;
 }
 
+vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
+	vec3 rayVector = worldPos.xyz - startPosition;
+
+	vec3 rayDirection = normalize(rayVector);
+
+	vec3 currentPosition = startPosition;
+
+	vec3 lit = vec3(0,0,0);
+	vec3 accumAlbedo = vec3(0,0,0);
+	vec3 normalValue = vec3(0,0,0);
+	vec3 isStaticValue = vec3(0,0,0);
+	float accumAlpha = 0;
+
+	float mipLevel = 0f;
+	const int NB_STEPS = int(1530/(mipLevel+1));
+	const float stepSize = 0.25f*(mipLevel+1);
+	vec3 step = rayDirection * stepSize;
+	for (int i = 0; i < NB_STEPS; i++) {
+		if(accumAlpha >= 1.0f)
+		{
+			break;
+		}
+
+		float minScale = -1;
+        for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+            VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+
+            if(!isInsideVoxelGrid(currentPosition, voxelGrid)) {
+                continue;
+            }
+//            If we don't have a hit yet minScale is still -1
+            if(minScale > -1 && voxelGrid.scale > minScale) {
+                continue;
+            }
+            vec3 gridSizeHalf = ivec3(voxelGrid.resolution/2);
+            vec4 sampledValue = voxelFetch(voxelGrid, toSampler(voxelGrid.albedoGridHandle), currentPosition, mipLevel);
+            vec4 sampledNormalValue = voxelFetch(voxelGrid, toSampler(voxelGrid.normalGridHandle), currentPosition, mipLevel);
+            vec4 sampledLitValue = voxelFetch(voxelGrid, toSampler(voxelGrid.gridHandle), currentPosition, mipLevel);
+            normalValue.rgb = sampledNormalValue.rgb;
+            lit += sampledLitValue.rgb * sampledLitValue.a;
+            isStaticValue = vec3(normalValue.b);
+            float alpha = 1 - sampledValue.a;
+            accumAlbedo += sampledValue.rgb * alpha;
+            accumAlpha += sampledValue.a * alpha;
+        }
+
+        currentPosition += step;
+	}
+	accumAlbedo *= accumAlpha;
+	return accumAlbedo.rgb;
+}
+
 void main(void) {
-
-    VoxelGrid voxelGrid = voxelGrids[0];
-    float sceneScale = voxelGrid.scale;
-    float inverseSceneScale = 1f / voxelGrid.scale;
-    int gridSize = voxelGrid.resolution;
-
-    sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
-    sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
-    sampler3D grid = sampler3D(uint64_t(voxelGrid.gridHandle));
-
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
@@ -161,40 +203,47 @@ void main(void) {
     float NdotL = clamp(dot(normalWorld, V), 0, 1);
 
 	const float boost = 1.;
-    if(!debugVoxels && useVoxelConeTracing) {
 
-        vec4 voxelDiffuse = vec4(0);
+    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
 
-        voxelDiffuse = 4*traceVoxelsDiffuseXXX(voxelGrid, grid, normalWorld, positionWorld+sceneScale*normalWorld);
-        float aperture =  tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
-		vec4 voxelSpecular = 4*voxelTraceConeXXX(voxelGrid, grid, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), aperture, 370); // 0.05
+        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        float sceneScale = voxelGrid.scale;
+        float inverseSceneScale = 1f / voxelGrid.scale;
+        int gridSize = voxelGrid.resolution;
 
-        vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
+        sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
+        sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
+        sampler3D grid = sampler3D(uint64_t(voxelGrid.gridHandle));
 
-        const bool useTransparency = false;
-        if(useTransparency) {
-        	vec3 sampledValue = voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
-//        	compensate missing secondary bounces
-//        	sampledValue += 0.1*voxelTraceConeXXX(albedoGrid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*1*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
-            vct = /* small boost factor, figure out why */ 4 * boost * color * sampledValue * (transparency) + vct * opacity;
+        if(!debugVoxels && useVoxelConeTracing) {
+
+            vec4 voxelDiffuse = 4*traceVoxelsDiffuse(voxelGrid, grid, normalWorld, positionWorld+sceneScale*normalWorld);
+            float aperture =  tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+            vec4 voxelSpecular = 4*voxelTraceCone(voxelGrid, grid, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), aperture, 370); // 0.05
+
+            vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
+
+//            const bool useTransparency = false;
+//            if(useTransparency) {
+//                vec3 sampledValue = voxelTraceCone(voxelGrid, grid, positionWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
+    //        	compensate missing secondary bounces
+    //        	sampledValue += 0.1*voxelTraceCone(albedoGrid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*1*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
+//                vct = /* small boost factor, figure out why */ 4 * boost * color * sampledValue * (transparency) + vct * opacity;
+//            }
         }
-    }
 
+        if(useAmbientOcclusion){
+            vec4 AOscattering = textureLod(aoScattering, st, 0);
+            vct *= clamp(AOscattering.r,0.0,1.0);
+        }
 
-	if(useAmbientOcclusion){
-	    vec4 AOscattering = textureLod(aoScattering, st, 0);
-		vct *= clamp(AOscattering.r,0.0,1.0);
-	}
-
-
-    if(debugVoxels) {
-    	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, gridSize, sceneScale, albedoGrid, normalGrid, grid, voxelGrid);
-//    	int lod = 0;
-//    	vct = texelFetch(albedoGrid, worldToGridPosition(positionWorld, voxelGrid, lod), lod).rgb;
-    	out_AOReflection.rgb = vct;
-    	if(!isInsideVoxelGrid(positionWorld, voxelGrid)) {
-    	    vct.rgb = vec3(1,0,0);
-    	}
+        if(debugVoxels) {
+            vec3 temp = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, voxelGridArray);
+            if(temp.x > 0 || temp.y > 0 || temp.z > 0) {
+                vct += temp;
+                break;
+            }
+        }
     }
     out_DiffuseSpecular.rgb = vct;
 }

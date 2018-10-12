@@ -116,3 +116,11 @@ struct VoxelGrid {
     uvec2 gridHandle;
     uvec2 grid2Handle;
 };
+
+struct VoxelGridArray {
+    int size;
+    int dummy0;
+    int dummy1;
+    int dummy2;
+	VoxelGrid voxelGrids[10];
+};

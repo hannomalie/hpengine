@@ -27,6 +27,7 @@ layout(std430, binding=5) buffer _voxelGrids {
     int dummy2;
 	VoxelGrid voxelGrids[10];
 };
+uniform int voxelGridIndex = 0;
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
@@ -78,7 +79,8 @@ float calculateAttenuation(float dist, float lightRadius) {
     return atten_factor;
 }
 void main(void) {
-    VoxelGrid voxelGrid = voxelGrids[0];
+
+    VoxelGrid voxelGrid = voxelGrids[voxelGridIndex];
     float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1f/sceneScale;
 
@@ -86,20 +88,20 @@ void main(void) {
     sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
     sampler3D secondVoxelGrid = sampler3D(uint64_t(voxelGrid.grid2Handle));
 
-	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
-	ivec3 workGroup = ivec3(gl_WorkGroupID);
-	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
-	ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
+    ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 workGroup = ivec3(gl_WorkGroupID);
+    ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
+    ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
 
-	vec4 sourceValue = vec4(0);//imageLoad(source, loadPosition);
-	float weightSum = 0;
+    vec4 sourceValue = vec4(0);
+    float weightSum = 0;
 
-	float visibility = 1.0;
-	vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);//sceneScale*vec3(storePos-vec3(float(voxelGrid.resolutionHalf)));
+    float visibility = 1.0;
+    vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);
     vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5);
 
-    vec4 color = voxelFetchXXX(voxelGrid, albedoGrid, positionWorld, 0);
-    vec4 normalStaticEmissive = voxelFetchXXX(voxelGrid, normalGrid, positionWorld, 0);
+    vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0);
+    vec4 normalStaticEmissive = voxelFetch(voxelGrid, normalGrid, positionWorld, 0);
     vec3 g_normal = normalize(Decode(normalStaticEmissive.xy));
     vec3 g_pos = positionWorld;
     float opacity = color.a;
@@ -111,13 +113,13 @@ void main(void) {
     vec3 voxelColor = color.rgb;
     vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalStaticEmissive.a))*voxelColor;
 
-	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
-  	positionShadow.xyz /= positionShadow.w;
-  	float depthInLightSpace = positionShadow.z;
+    vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
+    positionShadow.xyz /= positionShadow.w;
+    float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0, 1.0).r;
+    visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0, 1.0).r;
 
-	vec3 lightDirectionTemp = lightDirection;
+    vec3 lightDirectionTemp = lightDirection;
     float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
@@ -131,6 +133,5 @@ void main(void) {
 
         finalVoxelColor += 4*attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
     }
-
-	imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
+    imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }
