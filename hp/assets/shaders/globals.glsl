@@ -531,7 +531,7 @@ vec4 voxelTraceCone(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, 
 	float minVoxelDiameterInv = 1.0/minVoxelDiameter;
 	vec4 accum = vec4(0.0);
 	float minDiameter = minVoxelDiameter;
-	float dist = 0;
+	float dist = minDiameter;
 	vec4 ambientLightColor = vec4(0.);
 	float alpha = 0;
 	while (dist <= maxDist && alpha < 1.0)
@@ -539,7 +539,6 @@ vec4 voxelTraceCone(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, 
 		float diameter = max(minDiameter, 2 * coneRatio * dist);
 		float sampleLOD = log2(diameter * minVoxelDiameterInv);
 		vec3 samplePos = origin + dir * dist;
-//		sampleLOD = 3f;
 
 		vec4 sampleValue = vec4(0);
         if(isInsideVoxelGrid(samplePos, voxelGrid)) {
@@ -552,6 +551,55 @@ vec4 voxelTraceCone(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, 
 
 		dist += diameter;
 	}
+	return vec4(accum.rgb, alpha);
+}
+
+int ALBEDOGRID = 0;
+int NORMALGRID = 1;
+int GRID1 = 2;
+int GRID2 = 3;
+vec4 voxelTraceCone(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
+
+    vec4 accum = vec4(0.0);
+    float alpha = 0;
+
+    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        sampler3D grid;
+        if(gridIndex == ALBEDOGRID) {
+            grid = toSampler(voxelGrid.albedoGridHandle);
+        } else if(gridIndex == NORMALGRID) {
+            grid = toSampler(voxelGrid.normalGridHandle);
+        } else if(gridIndex == GRID1) {
+            grid = toSampler(voxelGrid.gridHandle);
+        } else {
+            grid = toSampler(voxelGrid.grid2Handle);
+        }
+        int gridSize = voxelGrid.resolution;
+        float minVoxelDiameter = voxelGrid.scale;
+
+        float minVoxelDiameterInv = 1.0/minVoxelDiameter;
+        float minDiameter = minVoxelDiameter;
+        float dist = 0;
+        vec4 ambientLightColor = vec4(0.);
+        while (dist <= maxDist && alpha < 1.0)
+        {
+            float diameter = max(minDiameter, 2 * coneRatio * dist);
+            float sampleLOD = log2(diameter * minVoxelDiameterInv);
+            vec3 samplePos = origin + dir * dist;
+
+            vec4 sampleValue = vec4(0);
+            if(isInsideVoxelGrid(samplePos, voxelGrid)) {
+                sampleValue = voxelFetch(voxelGrid, grid, samplePos, sampleLOD);
+            }
+
+            float a = 1 - alpha;
+            accum.rgb += /*a * this looks odd*/sampleValue.rgb;
+            alpha += a * sampleValue.a;
+
+            dist += diameter;
+        }
+    }
 	return vec4(accum.rgb, alpha);
 }
 

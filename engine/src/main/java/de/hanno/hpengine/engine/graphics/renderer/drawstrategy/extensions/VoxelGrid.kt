@@ -59,8 +59,6 @@ open class VoxelGrid(parent: Struct? = null): Struct(parent) {
     val gridSizeHalfScaled: Int
         get() = (gridSizeHalf * scaleProperty).toInt()
 
-    var currentVoxelSource: Int = 0
-
 
     val entity = Entity("VCTCam")
     lateinit var orthoCam: Camera// = Camera(entity, createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
@@ -87,6 +85,12 @@ open class VoxelGrid(parent: Struct? = null): Struct(parent) {
         this.transform.identity().translate(position)
     }
     private val tempTranslation = Vector3f()
+    val currentVoxelTarget: Int
+        get() = grid2
+    val currentVoxelSource: Int
+        get() = grid
+
+
     fun move(amount: Vector3f) {
         transform.translate(amount)
         position.set(transform.getTranslation(tempTranslation))
@@ -96,16 +100,10 @@ open class VoxelGrid(parent: Struct? = null): Struct(parent) {
             Util.createOrthogonal((-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat())
 
 
-    var currentVoxelTarget: Int = 0
-
     fun switchCurrentVoxelGrid() {
-        if (currentVoxelTarget == grid) {
-            currentVoxelTarget = grid2
-            currentVoxelSource = grid
-        } else {
-            currentVoxelTarget = grid
-            currentVoxelSource = grid2
-        }
+        val temp = grid
+        grid = grid2
+        grid2 = temp
     }
 
     companion object {

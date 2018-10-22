@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
@@ -69,8 +70,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 normalGridHandle = second
             }
 
-            currentVoxelTarget = grid
-            currentVoxelSource = grid2
         }
         array[1].apply { gridSize = 128 }.apply {
             setPosition(Vector3f(-50f,0f,0f))
@@ -106,8 +105,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 normalGridHandle = second
             }
 
-            currentVoxelTarget = grid
-            currentVoxelSource = grid2
         }
     }
 
@@ -188,29 +185,37 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             for(voxelGridIndex in 0 until voxelGrids.size) {
                 val currentVoxelGrid = voxelGrids[voxelGridIndex]
                 val num_groups_xyz = Math.max(currentVoxelGrid.gridSize / 8, 1)
-                if (lightInjectedFramesAgo == 0) {
-                    injectLightComputeProgram.use()
 
-                    GL42.glBindImageTexture(0, currentVoxelGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                    injectLightComputeProgram.setUniform("pointLightCount", engine.sceneManager.scene.getPointLights().size)
-                    injectLightComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().lightBuffer)
-                    injectLightComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
-                    injectLightComputeProgram.setUniform("bounces", bounces)
-                    injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLightViewProjectionMatrixAsBuffer)
-                    injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection)
-                    injectLightComputeProgram.setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
-                    injectLightComputeProgram.setUniform("voxelGridIndex", voxelGridIndex)
+                if(lightInjectedFramesAgo == 0) {
+                    with(injectLightComputeProgram) {
+                        use()
+                        GL42.glBindImageTexture(0, currentVoxelGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                        setUniform("pointLightCount", engine.sceneManager.scene.getPointLights().size)
+                        bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().lightBuffer)
+                        bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+                        setUniform("bounces", bounces)
+                        setUniformAsMatrix4("shadowMatrix", renderState.directionalLightViewProjectionMatrixAsBuffer)
+                        setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection)
+                        setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
+                        setUniform("voxelGridIndex", voxelGridIndex)
 
-                    injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
-                } else {
-                    injectMultipleBounceLightComputeProgram.use()
-                    injectMultipleBounceLightComputeProgram.setUniform("bounces", bounces)
-                    injectMultipleBounceLightComputeProgram.setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
-                    injectMultipleBounceLightComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
-                    injectMultipleBounceLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
+                        dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
+                        mipmapGrid(currentVoxelGrid)
+                        currentVoxelGrid.switchCurrentVoxelGrid()
+                    }
                 }
-                mipmapGrid(currentVoxelGrid)
-                currentVoxelGrid.switchCurrentVoxelGrid()
+                if(bounces > 1 && lightInjectedFramesAgo > 0) {
+                    with(injectMultipleBounceLightComputeProgram) {
+                        use()
+                        GL42.glBindImageTexture(0, currentVoxelGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                        setUniform("bounces", bounces)
+                        setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
+                        bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+                        dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
+                        mipmapGrid(currentVoxelGrid)
+                        currentVoxelGrid.switchCurrentVoxelGrid()
+                    }
+                }
             }
             lightInjectedCounter++
             GPUProfiler.end()
@@ -284,9 +289,11 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     }
                 }
                 GPUProfiler.end()
+//                mipmapGrid(currentVoxelGrid.albedoGrid, texture3DMipMapAlphaBlendComputeProgram)
+                engine.textureManager.generateMipMaps(TEXTURE_3D, currentVoxelGrid.albedoGrid)
+
                 if(Config.getInstance().isDebugVoxels) {
                     GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
-                    mipmapGrid(currentVoxelGrid.albedoGrid, texture3DMipMapAlphaBlendComputeProgram)
                     mipmapGrid(currentVoxelGrid.currentVoxelSource, texture3DMipMapAlphaBlendComputeProgram)
                 }
             }

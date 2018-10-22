@@ -147,6 +147,62 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 	return accumAlbedo.rgb;
 }
 
+vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
+
+    vec4 accum = vec4(0.0);
+    float alpha = 0;
+    float dist = 0;
+    vec3 samplePos = origin;// + dir;
+
+    while (dist <= maxDist && alpha < 1.0)
+    {
+        float minScale = -1;
+        int canditateIndex = -1;
+        VoxelGrid voxelGrid;
+        for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+            VoxelGrid candidate = voxelGridArray.voxelGrids[voxelGridIndex];
+            if(isInsideVoxelGrid(samplePos, candidate) && (minScale == -1 || candidate.scale < minScale)) {
+                canditateIndex = voxelGridIndex;
+                minScale = candidate.scale;
+                voxelGrid = candidate;
+            }
+        }
+
+        float minVoxelDiameter = voxelGrid.scale;
+        float minVoxelDiameterInv = 1.0/minVoxelDiameter;
+        float minDiameter = minVoxelDiameter;
+        vec4 ambientLightColor = vec4(0.);
+        float diameter = max(minDiameter, 2 * coneRatio * dist);
+        float increment = voxelGrid.scale;
+
+        if(canditateIndex != -1) {
+            sampler3D grid;
+            if(gridIndex == ALBEDOGRID) {
+                grid = toSampler(voxelGrid.albedoGridHandle);
+            } else if(gridIndex == NORMALGRID) {
+                grid = toSampler(voxelGrid.normalGridHandle);
+            } else if(gridIndex == GRID1) {
+                grid = toSampler(voxelGrid.gridHandle);
+            } else {
+                grid = toSampler(voxelGrid.grid2Handle);
+            }
+            int gridSize = voxelGrid.resolution;
+
+            float sampleLOD = log2(diameter * minVoxelDiameterInv);
+            vec4 sampleValue = voxelFetch(voxelGrid, grid, samplePos, sampleLOD);
+            vec4 albedoValue = vec4(0);//voxelFetch(voxelGrid, toSampler(voxelGrid.albedoGridHandle), samplePos, 0);
+
+            accum.rgb += sampleValue.rgb;
+            float a = 1 - alpha;
+            alpha += a * sampleValue.a;
+        }
+
+        dist += increment;
+        samplePos = origin + dir * dist;
+        increment *= 1.25f;
+    }
+	return vec4(accum.rgb, alpha);
+}
 void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
@@ -200,9 +256,8 @@ void main(void) {
     if(!debugVoxels && useVoxelConeTracing) {
 
         vec4 voxelDiffuse = 4*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
-        float aperture =  tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
-//            sampler3D grid = sampler3D(uint64_t(voxelGrid.gridHandle));
-        vec4 voxelSpecular = vec4(0);//4*voxelTraceCone(voxelGrid, grid, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), aperture, 370); // 0.05
+        float aperture = tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+        vec4 voxelSpecular = 4*voxelTraceConeXXX(voxelGridArray, GRID1, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
 
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
 

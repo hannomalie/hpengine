@@ -125,7 +125,7 @@ void main(void) {
         vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
         float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
 
-        finalVoxelColor += 4*attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
+        finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
     }
     imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }
