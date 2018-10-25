@@ -117,8 +117,15 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 		{
 			break;
 		}
+		
+//TODO: Make this a struct please
+        vec3 step_lit = vec3(0,0,0);
+        vec3 step_accumAlbedo = vec3(0,0,0);
+        vec3 step_normalValue = vec3(0,0,0);
+        vec3 step_isStaticValue = vec3(0,0,0);
+        float step_accumAlpha = 0;
 
-		float minScale = -1;
+		float minScale = 1000000.0;
         for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
             VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
 
@@ -126,20 +133,28 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
                 continue;
             }
 //            If we don't have a hit yet minScale is still -1
-            if(minScale > -1 && voxelGrid.scale > minScale) {
+            if(voxelGrid.scale > minScale) {
                 continue;
             }
-            vec3 gridSizeHalf = ivec3(voxelGrid.resolution/2);
+
+            minScale = voxelGrid.scale;
             vec4 sampledValue = voxelFetch(voxelGrid, toSampler(voxelGrid.albedoGridHandle), currentPosition, mipLevel);
             vec4 sampledNormalValue = voxelFetch(voxelGrid, toSampler(voxelGrid.normalGridHandle), currentPosition, mipLevel);
             vec4 sampledLitValue = voxelFetch(voxelGrid, toSampler(voxelGrid.gridHandle), currentPosition, mipLevel);
-            normalValue.rgb = sampledNormalValue.rgb;
-            lit += sampledLitValue.rgb * sampledLitValue.a;
-            isStaticValue = vec3(normalValue.b);
+            step_normalValue.rgb = sampledNormalValue.rgb;
+            step_lit = sampledLitValue.rgb * sampledLitValue.a;
+            step_isStaticValue = vec3(normalValue.b);
             float alpha = 1 - sampledValue.a;
-            accumAlbedo += sampledValue.rgb * alpha;
-            accumAlpha += sampledValue.a * alpha;
+            step_accumAlbedo = sampledValue.rgb * alpha;
+            step_accumAlpha = sampledValue.a * alpha;
         }
+
+
+        lit += step_lit;
+        accumAlbedo += step_accumAlbedo;
+        normalValue = step_normalValue;
+        isStaticValue = step_isStaticValue;
+        accumAlpha += step_accumAlpha;
 
         currentPosition += step;
 	}
@@ -256,7 +271,7 @@ void main(void) {
     if(!debugVoxels && useVoxelConeTracing) {
 
         vec4 voxelDiffuse = 4*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
-        float aperture = tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+        float aperture = roughness;//tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
         vec4 voxelSpecular = 4*voxelTraceConeXXX(voxelGridArray, GRID1, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
 
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);

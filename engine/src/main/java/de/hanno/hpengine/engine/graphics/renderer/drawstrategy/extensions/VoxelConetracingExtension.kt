@@ -201,7 +201,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 
                         dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                         mipmapGrid(currentVoxelGrid)
-                        currentVoxelGrid.switchCurrentVoxelGrid()
                     }
                 }
                 if(bounces > 1 && lightInjectedFramesAgo > 0) {
@@ -213,9 +212,11 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                         bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
                         dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                         mipmapGrid(currentVoxelGrid)
-                        currentVoxelGrid.switchCurrentVoxelGrid()
                     }
                 }
+            }
+            for(voxelGridIndex in 0 until voxelGrids.size) {
+                voxelGrids[voxelGridIndex].switchCurrentVoxelGrid()
             }
             lightInjectedCounter++
             GPUProfiler.end()
