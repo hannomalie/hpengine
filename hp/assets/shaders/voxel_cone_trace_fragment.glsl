@@ -117,7 +117,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 		{
 			break;
 		}
-		
+
 //TODO: Make this a struct please
         vec3 step_lit = vec3(0,0,0);
         vec3 step_accumAlbedo = vec3(0,0,0);
@@ -171,12 +171,12 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
 
     while (dist <= maxDist && alpha < 1.0)
     {
-        float minScale = -1;
+        float minScale = 100000.0;
         int canditateIndex = -1;
         VoxelGrid voxelGrid;
         for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
             VoxelGrid candidate = voxelGridArray.voxelGrids[voxelGridIndex];
-            if(isInsideVoxelGrid(samplePos, candidate) && (minScale == -1 || candidate.scale < minScale)) {
+            if(isInsideVoxelGrid(samplePos, candidate) && candidate.scale < minScale) {
                 canditateIndex = voxelGridIndex;
                 minScale = candidate.scale;
                 voxelGrid = candidate;
@@ -185,10 +185,9 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
 
         float minVoxelDiameter = voxelGrid.scale;
         float minVoxelDiameterInv = 1.0/minVoxelDiameter;
-        float minDiameter = minVoxelDiameter;
         vec4 ambientLightColor = vec4(0.);
-        float diameter = max(minDiameter, 2 * coneRatio * dist);
-        float increment = voxelGrid.scale;
+        float diameter = max(minVoxelDiameter, 2 * coneRatio * dist);
+        float increment = diameter;
 
         if(canditateIndex != -1) {
             sampler3D grid;

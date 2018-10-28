@@ -203,7 +203,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                         mipmapGrid(currentVoxelGrid)
                     }
                 }
-                if(bounces > 1 && lightInjectedFramesAgo > 0) {
+                if(bounces > 1 && lightInjectedFramesAgo == 1) {//> 0) {
                     with(injectMultipleBounceLightComputeProgram) {
                         use()
                         GL42.glBindImageTexture(0, currentVoxelGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
