@@ -28,6 +28,7 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL11.glFinish
 import java.io.File
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
@@ -70,8 +71,10 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 normalGridHandle = second
             }
 
+//             TODO: Add emissive
+
         }
-        array[1].apply { gridSize = 128 }.apply {
+        array[1].apply { gridSize = 256 }.apply {
             setPosition(Vector3f(-50f,0f,0f))
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
@@ -120,7 +123,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
     private val injectLightComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
     private val injectMultipleBounceLightComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
 
-    private var lightInjectedCounter: Int = 0
+    private var lightInjectedFramesAgo: Int = 0
 
     private val pipeline = SimplePipeline(engine, false, false, false)
     private val firstPassResult = FirstPassResult()
@@ -138,16 +141,18 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         GPUProfiler.start("VCT first pass")
 //         TODO: Move to update somehow
 
-        val globalGrid = voxelGrids[0]
+        val movableGrid = voxelGrids[1]
         val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
-            globalGrid.move(Vector3f(-1.5f, 0f, 0f))
-            println(globalGrid.position.x)
+            movableGrid.move(Vector3f(-1.5f, 0f, 0f))
+            println(movableGrid.position.x)
             true
         } else if(engine.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
-            globalGrid.move(Vector3f(1.5f, 0f, 0f))
-            println(globalGrid.position.x)
+            movableGrid.move(Vector3f(1.5f, 0f, 0f))
+            println(movableGrid.position.x)
             true
         } else false
+        val globalGrid = voxelGrids[0]
+        globalGrid.setPosition(Vector3f(0f,0f,0f))
         val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
         globalGrid.scale = sceneScale // TODO: scenescale for first grid, other scale for other grids
         voxelGrids[1].scale = 1.0f
@@ -158,26 +163,23 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         val entityAdded = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
-        if (pointlightMoved || directionalLightMoved) {
-            lightInjectedCounter = 0
-        }
         val useVoxelConeTracing = true
         val clearVoxels = true
-        val bounces = 1
+        val bounces = 2
 
         val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || Config.getInstance().isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
 
-        if (needsRevoxelization) {
-            lightInjectedCounter = 0
+        if (needsRevoxelization || directionalLightMoved || pointlightMoved) {
+            lightInjectedFramesAgo = 0
         }
-        val needsLightInjection = lightInjectedCounter < bounces || directionalLightMoved
+        val needsLightInjection = lightInjectedFramesAgo < bounces
 
         voxelizeScene(renderState, voxelGridState, clearVoxels, needsRevoxelization)
-        injectLight(renderState, bounces, lightInjectedCounter, needsLightInjection)
+        injectLight(renderState, bounces, needsLightInjection)
         GPUProfiler.end()
     }
 
-    fun injectLight(renderState: RenderState, bounces: Int, lightInjectedFramesAgo: Int, needsLightInjection: Boolean) {
+    fun injectLight(renderState: RenderState, bounces: Int, needsLightInjection: Boolean) {
         if (needsLightInjection) {
             litInCycle = renderState.cycle
             GPUProfiler.start("grid shading")
@@ -189,7 +191,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 if(lightInjectedFramesAgo == 0) {
                     with(injectLightComputeProgram) {
                         use()
-                        GL42.glBindImageTexture(0, currentVoxelGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                        GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                         setUniform("pointLightCount", engine.sceneManager.scene.getPointLights().size)
                         bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().lightBuffer)
                         bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
@@ -200,25 +202,27 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                         setUniform("voxelGridIndex", voxelGridIndex)
 
                         dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
-                        mipmapGrid(currentVoxelGrid)
+                        mipmapGrid(currentVoxelGrid.grid)
                     }
                 }
-                if(bounces > 1 && lightInjectedFramesAgo == 1) {//> 0) {
+                if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
                     with(injectMultipleBounceLightComputeProgram) {
                         use()
-                        GL42.glBindImageTexture(0, currentVoxelGrid.currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                        GL42.glBindImageTexture(0, currentVoxelGrid.grid2, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                         setUniform("bounces", bounces)
                         setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
+                        setUniform("voxelGridIndex", voxelGridIndex)
                         bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
                         dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
-                        mipmapGrid(currentVoxelGrid)
+                        mipmapGrid(currentVoxelGrid.grid2)
                     }
                 }
             }
-            for(voxelGridIndex in 0 until voxelGrids.size) {
-                voxelGrids[voxelGridIndex].switchCurrentVoxelGrid()
-            }
-            lightInjectedCounter++
+
+//            for(voxelGridIndex in 0 until voxelGrids.size) {
+//                voxelGrids[voxelGridIndex].switchCurrentVoxelGrid()
+//            }
+            lightInjectedFramesAgo++
             GPUProfiler.end()
         }
 
@@ -232,7 +236,8 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
             if (needsRevoxelization && clearVoxels) {
                 GPUProfiler.start("Clear voxels")
                 if (Config.getInstance().isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
-                    ARBClearTexture.glClearTexImage(currentVoxelGrid.currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+                    ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+                    ARBClearTexture.glClearTexImage(currentVoxelGrid.grid2, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
                     ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
                     ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
                 } else {
@@ -242,8 +247,8 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     GL42.glBindImageTexture(1, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
                     GL42.glBindImageTexture(3, currentVoxelGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                     clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
-                    clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                     clearDynamicVoxelsComputeProgram.setUniform("voxelGridIndex", voxelGridIndex)
+                    clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                 }
                 GPUProfiler.end()
             }
@@ -256,6 +261,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                 voxelizer.use()
                 GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                GL42.glBindImageTexture(6, currentVoxelGrid.grid2, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 voxelizer.setUniformAsMatrix4("shadowMatrix", renderState.directionalLightViewProjectionMatrixAsBuffer)
                 voxelizer.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection)
                 voxelizer.setUniform("lightColor", renderState.directionalLightState.directionalLightColor)
@@ -290,7 +296,6 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     }
                 }
                 GPUProfiler.end()
-//                mipmapGrid(currentVoxelGrid.albedoGrid, texture3DMipMapAlphaBlendComputeProgram)
                 engine.textureManager.generateMipMaps(TEXTURE_3D, currentVoxelGrid.albedoGrid)
 
                 if(Config.getInstance().isDebugVoxels) {
@@ -301,11 +306,11 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         }
     }
 
-    private fun mipmapGrid(voxelGrid: VoxelGrid) {
+    private fun mipmapGrid(textureId: Int) {
         GPUProfiler.start("grid mipmap")
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
-        mipmapGrid(voxelGrid.currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram)
-
+        mipmapGrid(textureId, texture3DMipMapAlphaBlendComputeProgram)
+        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
         GPUProfiler.end()
     }
 
@@ -351,6 +356,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
         voxelConeTraceProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
         voxelConeTraceProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+        voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", engine.getScene().materialManager.skyboxMaterial.materialIndex)
         voxelConeTraceProgram.setUniform("debugVoxels", Config.getInstance().isDebugVoxels)
         engine.gpuContext.fullscreenBuffer.draw()
         //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;

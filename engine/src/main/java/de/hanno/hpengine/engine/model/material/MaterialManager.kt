@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model.material
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.SizedArray
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
@@ -16,7 +17,8 @@ import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.util.commandqueue.FutureCallable
-import kotlinx.collections.immutable.toImmutableHashMap
+import de.hanno.struct.StaticStructObjectArray
+import de.hanno.struct.copyTo
 import net.engio.mbassy.listener.Handler
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
@@ -41,6 +43,8 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
 
+    val materialsAsStructs = StaticStructObjectArray(null, 1000) { MaterialStruct(it) }
+
     val bufferMaterialsExtractor = Supplier {
         engine.commandQueue.calculate(object: FutureCallable<List<SimpleMaterial>>() {
             override fun execute(): List<SimpleMaterial> {
@@ -51,9 +55,25 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     val bufferMaterialsConsumer = BiConsumer<RenderState, List<SimpleMaterial>> { renderState, materials ->
         renderState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
-        for (material in materials) {
-            material.putToBuffer(renderState.materialBuffer.buffer)
+        for ((index, material) in materials.withIndex()) {
+//            material.putToBuffer(renderState.materialBuffer.buffer)
+            val target = materialsAsStructs[index]
+            target.diffuse.set(material.materialInfo.diffuse)
+            target.metallic = material.materialInfo.metallic
+            target.roughness = material.materialInfo.roughness
+            target.ambient = material.materialInfo.ambient
+            target.parallaxBias = material.materialInfo.parallaxBias
+            target.parallaxScale = material.materialInfo.parallaxScale
+            target.transparency = material.materialInfo.transparency
+            target.materialType = material.materialInfo.materialType
+            target.diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
+            target.normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
+            target.specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
+            target.heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
+            target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
+            target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
         }
+        materialsAsStructs.buffer.copyTo(renderState.entitiesState.materialBuffer.buffer)
     }
     val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.RareAction<List<SimpleMaterial>>(bufferMaterialsExtractor, bufferMaterialsConsumer, engine))
 
@@ -125,7 +145,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     }
 
     @JvmOverloads
-    fun getMaterial(materialInfo: SimpleMaterialInfo, readFromHdd: Boolean = false): SimpleMaterial {
+    fun getMaterial(materialInfo: MaterialInfo, readFromHdd: Boolean = false): SimpleMaterial {
         if ("" == materialInfo.name) {
             throw IllegalArgumentException("Don't pass a material with null or empty name")
         }
@@ -160,7 +180,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
         hashMap.forEach { map, value ->
             textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE)
         }
-        val info = SimpleMaterialInfo(name = name, mapsInternal = textures.toImmutableHashMap())
+        val info = SimpleMaterialInfo(name = name, mapsInternal = textures)
         return getMaterial(info)
     }
 
@@ -186,7 +206,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
         eventBus.post(MaterialAddedEvent())
     }
 
-    fun putAll(materialLib: Map<String, SimpleMaterialInfo>) {
+    fun putAll(materialLib: Map<String, MaterialInfo>) {
         for (key in materialLib.keys) {
             getMaterial(materialLib[key]!!)
         }
@@ -256,7 +276,7 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
         }
     }
 
-    fun changeMaterial(changedMaterial: SimpleMaterialInfo) {
+    fun changeMaterial(changedMaterial: MaterialInfo) {
         val oldMaterial = materials.find { it.materialInfo.name == changedMaterial.name }
         if(oldMaterial != null) {
             oldMaterial.materialInfo = changedMaterial

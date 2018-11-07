@@ -122,7 +122,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
         gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
         gpuAreaLightArray.buffer.rewind()
 
-        getComponents(AreaLight::class.java).withIndex().forEach { (index, areaLight) ->
+        for((index, areaLight) in getComponents(AreaLight::class.java).withIndex()) {
             val target = gpuAreaLightArray.getAtIndex(index)
             target.trafo.set(areaLight.entity)
             target.color.set(areaLight.color)

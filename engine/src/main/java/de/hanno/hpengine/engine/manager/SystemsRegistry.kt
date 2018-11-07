@@ -78,7 +78,9 @@ class ComponentSystemRegistry : SystemsRegistry {
     }
 
     override fun update(deltaSeconds: Float) {
-        systems.values.forEach { it.update(deltaSeconds) }
+        for (system in systems.values) {
+            system.update(deltaSeconds)
+        }
     }
 
 }

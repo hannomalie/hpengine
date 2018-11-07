@@ -100,12 +100,6 @@ open class VoxelGrid(parent: Struct? = null): Struct(parent) {
             Util.createOrthogonal((-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat())
 
 
-    fun switchCurrentVoxelGrid() {
-        val temp = grid
-        grid = grid2
-        grid2 = temp
-    }
-
     companion object {
         operator fun invoke(gridSize: Int): VoxelGrid {
             return VoxelGrid().apply {

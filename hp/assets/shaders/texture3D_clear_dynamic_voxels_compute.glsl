@@ -23,7 +23,7 @@ void main(void) {
     float sceneScale = grid.scale;
     float inverseSceneScale = 1f/sceneScale;
 
-    sampler3D normalGridTexture = sampler3D(uint64_t(grid.normalGridHandle));
+    sampler3D normalGridTexture = sampler3D((grid.normalGridHandle));
 
 	vec4 currentValue = texelFetch(normalGridTexture, storePos, 0);
 	float isStatic = currentValue.b;

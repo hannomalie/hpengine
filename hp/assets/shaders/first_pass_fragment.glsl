@@ -131,12 +131,12 @@ void main(void) {
 	vec3 old_PN_world = PN_world;
 
     #define use_precomputed_tangent_space_
-	if(useNormalMaps && material.hasNormalMap != 0) {
+	if(useNormalMaps && uint64_t(material.handleNormal) > 0) {
         #ifdef use_precomputed_tangent_space
-            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+            sampler2D _normalMap = sampler2D((material.handleNormal));
             PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
         #else
-            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+            sampler2D _normalMap = sampler2D((material.handleNormal));
             PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
         #endif
         PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
@@ -144,8 +144,8 @@ void main(void) {
 
 
 	vec2 uvParallax = vec2(0,0);
-	if(material.hasHeightMap != 0) {
-        sampler2D _heightMap = sampler2D(uint64_t(material.handleHeight));
+	if(uint64_t(material.handleHeight) > 0) {
+        sampler2D _heightMap = sampler2D((material.handleHeight));
 
 		float height = (texture(_heightMap, UV).rgb).r;
 
@@ -175,8 +175,8 @@ void main(void) {
 
 	vec4 color = vec4(materialDiffuseColor, 1);
     float alpha = materialTransparency;
-	if(material.hasDiffuseMap != 0) {
-        sampler2D _diffuseMap = sampler2D(uint64_t(material.handleDiffuse));
+	if(uint64_t(material.handleDiffuse) > 0) {
+        sampler2D _diffuseMap = sampler2D((material.handleDiffuse));
 
     	color = texture(_diffuseMap, UV);
     	//color = textureLod(_diffuseMap, UV, 6);
@@ -189,13 +189,13 @@ void main(void) {
   	out_colorMetallic = color;
   	out_colorMetallic.w = float(materialMetallic);
 
-	if(material.hasOcclusionMap != 0) {
+	if(uint64_t(material.handleOcclusion) > 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
 	}
 
 	out_positionRoughness.w = materialRoughness;
-	if(material.hasRoughnessMap != 0) {
-        sampler2D _roughnessMap = sampler2D(uint64_t(material.handleRoughness));
+	if(uint64_t(material.handleRoughness) != 0) {
+        sampler2D _roughnessMap = sampler2D((material.handleRoughness));
         float r = texture(_roughnessMap, UV).x;
         out_positionRoughness.w = materialRoughness*r;
     }
@@ -203,7 +203,7 @@ void main(void) {
 //    out_color.w = 1;
 //    out_position.w = 0.01;
 
-	if(material.hasSpecularMap != 0) {
+	if(uint64_t(material.handleSpecular) > 0) {
 //	UV.x = texCoord.x * specular;
 //	UV.y = texCoord.y * specular;
 //	UV = texCoord + uvParallax;

@@ -83,7 +83,7 @@ vec3 getSampleForProbeInPosition(vec3 probePositionGrid, vec3 normalWorld, int d
         int probeIndex = to1D(probeAsInt.x, probeAsInt.y, probeAsInt.z);
         vec3 probeWorld = (probeInGridClamped - dimension/2)*extent;
 
-        samplerCube cube = samplerCube(uint64_t(ambientCubes[probeIndex].handle));
+        samplerCube cube = samplerCube((ambientCubes[probeIndex].handle));
 
         vec3 sphereProjectedNormal = normalWorld;
         float intersection = 1;//TODO: Use this shit! raySphereIntersect(positionWorld, normalize(normalWorld), probeWorld, extent);
@@ -93,7 +93,7 @@ vec3 getSampleForProbeInPosition(vec3 probePositionGrid, vec3 normalWorld, int d
         }
 
         vec4 probeValue = textureLod(cube, normalWorld, 0);
-        samplerCube cubeDistance = samplerCube(uint64_t(ambientCubes[probeIndex].distanceMapHandle));
+        samplerCube cubeDistance = samplerCube((ambientCubes[probeIndex].distanceMapHandle));
         float distanceSample = textureLod(cubeDistance, sphereProjectedNormal, 0).r * 100f;
 
         float distPositionToProbe = distance(positionWorld, probeWorld);

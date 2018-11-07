@@ -5,8 +5,9 @@ layout(binding=3, rgba8) uniform image3D out_voxelNormal;
 //layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 layout(binding=5, rgba8) uniform image3D out_voxelAlbedo;
+layout(binding=6, rgba8) uniform image3D out_secondBounce;
 //layout(binding=5) uniform sampler2D reflectionMap;
-layout(binding=6) uniform sampler2D shadowMap;
+//layout(binding=6) uniform sampler2D shadowMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 layout(binding=8) uniform sampler3D secondVoxelVolume;
 
@@ -45,47 +46,42 @@ uniform vec3 lightColor;
 
 uniform int voxelGridIndex = 0;
 
-vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
-{
-  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-  		float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
-		return vec3(0,0,0);
-	}
 
-	// We retrive the two moments previously stored (depth and depth*depth)
-	vec4 shadowMapSample = textureLod(shadowMap,ShadowCoordPostW.xy, 2);
-	vec2 moments = shadowMapSample.rg;
-	vec2 momentsUnblurred = moments;
+vec4 traceVoxelsDiffuseBla(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
+    vec4 voxelDiffuse;
+    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        sampler3D grid = toSampler(voxelGrid.gridHandle);
+        int gridSize = voxelGrid.resolution;
+        float sceneScale = voxelGrid.scale;
 
-//	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0125, 1).rg;
-	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
-	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
-	//moments /= 3;
+        float minVoxelDiameter = sceneScale;
+        float maxDist = 100;
+        const int SAMPLE_COUNT = 7;
 
-	// Surface is fully lit. as the current fragment is before the lights occluder
-	if (dist <= moments.x) {
-//		return vec3(1.0,1.0,1.0);
-	}
+        for (int k = 0; k < SAMPLE_COUNT; k++) {
+            const float PI = 3.1415926536;
+            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+            float Phi = 2 * PI * Xi.x;
+            float a = 0.5;
+            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
 
-	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
-	// How likely this pixel is to be lit (p_max)
-	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.0005);
+            vec3 H;
+            H.x = SinTheta * cos( Phi );
+            H.y = SinTheta * sin( Phi );
+            H.z = CosTheta;
+            H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
-	float d = dist - moments.x;
-	//float p_max = (variance / (variance + d*d));
-	// thanks, for lights bleeding reduction, FOOGYWOO! http://dontnormalize.me/
-	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
+            float coneRatio = 0.125 * sceneScale;
+            float dotProd = clamp(dot(normalWorld, H),0,1);
+            voxelDiffuse += vec4(dotProd) * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
+        }
+    }
 
-	p_max = smoothstep(0.1, 1.0, p_max);
-
-	float darknessFactor = 420.0;
-	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
-
-	//p_max = blurESM(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
-
-	return vec3(p_max,p_max,p_max);
+    return voxelDiffuse;
 }
+
 
 void main()
 {
@@ -102,31 +98,19 @@ void main()
 	float roughness = float(material.roughness);
 	float metallic = float(material.metallic);
 
-	if(material.hasDiffuseMap != 0) {
-        sampler2D _diffuseMap = sampler2D(uint64_t(material.handleDiffuse));
+	if(uint64_t(material.handleDiffuse) > 0) {
+        sampler2D _diffuseMap = sampler2D((material.handleDiffuse));
         color = texture(_diffuseMap, g_texcoord);
     }
-	if(material.hasRoughnessMap != 0) {
-        roughness = texture(roughnessMap, g_texcoord).r;
+	if(uint64_t(material.handleRoughness) > 0) {
+        sampler2D _handleRoughnessMap = sampler2D((material.handleRoughness));
+        roughness = texture(_handleRoughnessMap, g_texcoord).r;
     }
 
-    float glossiness = (1-roughness);
-    vec3 maxSpecular = mix(vec3(0.1), color.rgb, metallic);
-    vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
-
-
-    float ambientAmount = 0.1;//.0125f;
-    float dynamicAdjust = 0;//.015f;
-    vec3 voxelColor = color.rgb;
-
-	float visibility = 1.0;
-	vec4 positionShadow = (shadowMatrix * vec4(g_posWorld.xyz, 1));
-  	positionShadow.xyz /= positionShadow.w;
-  	float depthInLightSpace = positionShadow.z;
-    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
-
     ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);
+
+	imageStore(out_secondBounce, positionGridSpace, vec4(color.rgb*traceVoxelsDiffuseBla(voxelGridArray, normalize(g_normal), g_posWorld).rgb, opacity));
 	imageStore(out_voxelAlbedo, positionGridSpace, vec4(color.rgb, opacity));
-	imageStore(out_voxelNormal, positionGridSpace, vec4(Encode(normalize(g_normal)), g_isStatic, 0.25*float(material.ambient)));
+	imageStore(out_voxelNormal, positionGridSpace, vec4(normalize(g_normal), g_isStatic));
+//	TODO: Add emissive 0.25*float(material.ambient)
 }

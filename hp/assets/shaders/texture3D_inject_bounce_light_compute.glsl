@@ -2,8 +2,6 @@
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
 layout(binding=0, rgba8) writeonly uniform image3D outputVoxelGrid;
-layout(binding=1, rgba8) readonly uniform image3D secondVoxelGrid;
-layout(binding=6) uniform sampler2D shadowMap;
 
 uniform int bounces = 1;
 uniform int lightInjectedFramesAgo = 1;
@@ -16,24 +14,70 @@ layout(std430, binding=5) buffer _voxelGrids {
 };
 uniform int voxelGridIndex = 0;
 
+vec4 voxelTraceConeXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 
-vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
-{
-  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-//  		float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
-		return vec3(0,0,0);
-	}
+    vec4 accum = vec4(0.0);
+    float alpha = 0;
+    float dist = 0;
+    vec3 samplePos = origin;// + dir;
 
-	// We retrive the two moments previously stored (depth and depth*depth)
-	vec4 shadowMapSample = textureLod(shadowMap,ShadowCoordPostW.xy, 2);
-	vec2 moments = shadowMapSample.rg;
-	vec2 momentsUnblurred = moments;
+    while (dist <= maxDist && alpha < 1.0)
+    {
+        float minScale = 100000.0;
+        float minVoxelDiameter = 0.5*voxelGrid.scale;
+        float minVoxelDiameterInv = 1.0/minVoxelDiameter;
+        vec4 ambientLightColor = vec4(0.);
+        float diameter = max(minVoxelDiameter, 2 * coneRatio * (1+dist));
+        float increment = diameter;
 
-	if (dist <= moments.x) {
-		return vec3(1.0,1.0,1.0);
-	}
-	else { return vec3(0); }
+        int gridSize = voxelGrid.resolution;
 
+        float sampleLOD = log2(diameter * minVoxelDiameterInv);
+        vec4 sampleValue = voxelFetch(voxelGrid, grid, samplePos, sampleLOD);
+
+        accum.rgb += sampleValue.rgb;
+        float a = 1 - alpha;
+        alpha += a * sampleValue.a;
+
+        dist += increment;
+        samplePos = origin + dir * dist;
+        increment *= 1.25f;
+    }
+	return vec4(accum.rgb, alpha);
+}
+vec4 traceVoxelsDiffuse2(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
+    vec4 voxelDiffuse;
+    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        sampler3D grid = toSampler(voxelGrid.gridHandle);
+        int gridSize = voxelGrid.resolution;
+        float sceneScale = voxelGrid.scale;
+
+        float minVoxelDiameter = sceneScale;
+        float maxDist = 50;
+        const int SAMPLE_COUNT = 7;
+
+        for (int k = 0; k < SAMPLE_COUNT; k++) {
+            const float PI = 3.1415926536;
+            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+            float Phi = 2 * PI * Xi.x;
+            float a = 0.5;
+            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+
+            vec3 H;
+            H.x = SinTheta * cos( Phi );
+            H.y = SinTheta * sin( Phi );
+            H.z = CosTheta;
+            H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+
+            float coneRatio = 0.0125 * sceneScale;
+            float dotProd = clamp(dot(normalWorld, H),0,1);
+            voxelDiffuse += vec4(dotProd) * voxelTraceConeXXX(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
+        }
+    }
+
+    return voxelDiffuse;
 }
 
 void main(void) {
@@ -43,27 +87,31 @@ void main(void) {
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
 	ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
 
-    sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
-    sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
+    sampler3D albedoGrid = toSampler(voxelGrid.albedoGridHandle);
+    sampler3D normalGrid = toSampler(voxelGrid.normalGridHandle);
+    sampler3D grid = toSampler(voxelGrid.gridHandle);
 
-	float visibility = 1.0;
 	vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);
 
-    vec4 color = texelFetch(albedoGrid, storePos, 0);
-    vec4 normalStaticEmissive = texelFetch(normalGrid, storePos, 0);
-    vec3 normalWorld = normalize(Decode(normalStaticEmissive.xy));
+    vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0);
     float opacity = color.a;
-    float emissive = normalStaticEmissive.a;
+    if(opacity > 0.0001f) {
+        vec4 normalStatic = voxelFetch(voxelGrid, normalGrid, positionWorld, 0);
+        vec3 normalWorld = normalize(normalStatic.rgb);
+        float emissive = normalStatic.a;
 
-	vec4 currentPositionsValues = texelFetch(toSampler(voxelGrid.gridHandle), storePos, 0);
-    vec3 finalVoxelColor = currentPositionsValues.rgb;
+        vec4 firstBounce = voxelFetch(voxelGrid, grid, positionWorld, 0);
 
-    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
+        vec4 diffuseVoxelTraced = traceVoxelsDiffuse2(voxelGridArray, normalize(normalWorld), positionWorld);
+//TODO: MAKE THIS THING WORK SOMEHOW
 
-    vec3 maxMultipleBounce = vec3(0.1f);
-	vec3 multipleBounceColor = maxMultipleBounce*(diffuseVoxelTraced.rgb);
+        vec3 maxMultipleBounce = vec3(0.005f);
+        vec3 multipleBounceColor = maxMultipleBounce*diffuseVoxelTraced.rgb;
 
-	finalVoxelColor.rgb += color.rgb*multipleBounceColor.rgb;
+        vec3 finalVoxelColor = color.rgb*multipleBounceColor.rgb;
+//        finalVoxelColor.rgb = color.rgb*0.1f;
+//        finalVoxelColor = vec3(0);
 
-	imageStore(outputVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
+//        imageStore(outputVoxelGrid, storePos, vec4(firstBounce.rgb + finalVoxelColor, opacity));
+    }
 }

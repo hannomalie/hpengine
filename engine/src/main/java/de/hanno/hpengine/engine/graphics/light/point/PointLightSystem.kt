@@ -40,7 +40,7 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
     private fun bufferLights() {
         gpuPointLightArray.enlarge(getRequiredPointLightBufferSize())
         val pointLights = getComponents(PointLight::class.java)
-        pointLights.withIndex().forEach { (index, pointLight) ->
+        for((index, pointLight) in pointLights.withIndex()) {
             val target = gpuPointLightArray.getAtIndex(index)
             target.position.set(pointLight.entity.position)
             target.radius = pointLight.radius

@@ -20,28 +20,34 @@ interface EntitySystem {
 interface EntitySystemRegistry {
     fun getSystems(): Collection<EntitySystem>
     fun update(deltaSeconds: Float) {
-        getSystems().forEach{ it.update(deltaSeconds) }
+        for(system in getSystems()){ system.update(deltaSeconds) }
     }
-    fun <T : EntitySystem> register(manager: T): T
+    fun <T : EntitySystem> register(system: T): T
     fun gatherEntities() {
-        getSystems().forEach { it.gatherEntities()}
+        for(system in getSystems()) { system.gatherEntities()}
     }
 
     fun <T: EntitySystem> get(clazz: Class<T>):T  {
-        val firstOrNull = getSystems().firstOrNull { it::class.java == clazz }
+        var firstOrNull: EntitySystem? = null
+        for(it in getSystems()) {
+            if(it::class.java == clazz) {
+                firstOrNull = it
+                break
+            }
+        }
         if(firstOrNull == null) {
             throw IllegalStateException("Requested entity system of class $clazz, but no system registered.")
         } else return clazz.cast(firstOrNull)
     }
 
     fun onEntityAdded(entities: List<Entity>) {
-        getSystems().forEach {
-            it.onEntityAdded(entities)
+        for(system in getSystems()) {
+            system.onEntityAdded(entities)
         }
     }
 
     fun clearSystems() {
-        getSystems().forEach { it.clear() }
+        for(system in getSystems()){ system.clear() }
     }
 }
 
@@ -81,18 +87,18 @@ abstract class SimpleEntitySystem(val engine: Engine, val simpleScene: SimpleSce
     fun gatherComponents() {
         components.clear()
         if(componentClasses.isEmpty()) {
-            entities.forEach {
-                it.components.forEach {
-                    val list: MutableList<Component> = mutableListOf(it.value)
-                    if(components[it.key] != null) {
-                        list.addAll(components[it.key]!!)
+            for (entity in entities) {
+                for (component in entity.components) {
+                    val list: MutableList<Component> = mutableListOf(component.value)
+                    if(components[component.key] != null) {
+                        list.addAll(components[component.key]!!)
                     }
-                    components[it.key] = list
+                    components[component.key] = list
                 }
             }
         } else {
-            componentClasses.forEach {
-                components[it] = entities.map { entity ->  entity.getComponent(it) }
+            for (clazz in componentClasses) {
+                components[clazz] = entities.map { entity ->  entity.getComponent(clazz) }
             }
         }
     }

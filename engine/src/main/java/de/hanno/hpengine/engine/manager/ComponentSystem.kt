@@ -5,8 +5,8 @@ import de.hanno.hpengine.engine.entity.Entity
 
 interface ComponentSystem<T : Component> {
     fun update(deltaSeconds: Float) {
-        getComponents().forEach {
-            it.update(deltaSeconds)
+        for(component in getComponents()) {
+            component.update(deltaSeconds)
         }
     }
     fun getComponents(): List<T>
@@ -17,8 +17,8 @@ interface ComponentSystem<T : Component> {
         clear()
     }
     fun onEntityAdded(entities: List<Entity>) {
-        entities.forEach {
-            addCorrespondingComponents(it.components)
+        for(entity in entities) {
+            addCorrespondingComponents(entity.components)
         }
     }
 

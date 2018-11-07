@@ -658,11 +658,10 @@ void main()
 
 	vec4 color = vec4(materialDiffuseColor, 1);
     float alpha = materialTransparency;
-    if(material.hasDiffuseMap != 0) {
-        sampler2D _diffuseMap = sampler2D(uint64_t(material.handleDiffuse));
+    if(material.handleDiffuse > 0) {
+        sampler2D _diffuseMap = sampler2D((material.handleDiffuse));
 
     	color = texture(_diffuseMap, UV);
-    	//color = textureLod(_diffuseMap, UV, 6);
         alpha *= color.a;
         if(color.a<0.1)
         {
@@ -686,8 +685,8 @@ void main()
 
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
-    if(material.hasNormalMap != 0) {
-        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+    if(material.handleNormal != 0) {
+        sampler2D _normalMap = sampler2D((material.handleNormal));
         PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
     }
 

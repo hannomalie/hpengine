@@ -78,9 +78,8 @@ void main(void) {
     float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1f/sceneScale;
 
-    sampler3D albedoGrid = sampler3D(uint64_t(voxelGrid.albedoGridHandle));
-    sampler3D normalGrid = sampler3D(uint64_t(voxelGrid.normalGridHandle));
-    sampler3D secondVoxelGrid = sampler3D(uint64_t(voxelGrid.grid2Handle));
+    sampler3D albedoGrid = sampler3D((voxelGrid.albedoGridHandle));
+    sampler3D normalGrid = sampler3D((voxelGrid.normalGridHandle));
 
     ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 workGroup = ivec3(gl_WorkGroupID);
@@ -95,17 +94,18 @@ void main(void) {
     vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5);
 
     vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0);
-    vec4 normalStaticEmissive = voxelFetch(voxelGrid, normalGrid, positionWorld, 0);
-    vec3 g_normal = normalize(Decode(normalStaticEmissive.xy));
+    vec4 normalStatic = voxelFetch(voxelGrid, normalGrid, positionWorld, 0);
+    vec3 g_normal = normalize(normalStatic.rgb);
     vec3 g_pos = positionWorld;
     float opacity = color.a;
-    float isStatic = normalStaticEmissive.b;
+    float isStatic = normalStatic.a;
 
     //second bounce?
-    vec3 ambientAmount = vec3(0);
+    vec3 ambientAmount = vec3(0.0);
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
-    vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalStaticEmissive.a))*voxelColor;
+    float emissive = 0;// TODO: Readd emissive materials like before with normalStatic.a;
+    vec3 voxelColorAmbient = (vec3(ambientAmount)+float(emissive))*voxelColor;
 
     vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
     positionShadow.xyz /= positionShadow.w;

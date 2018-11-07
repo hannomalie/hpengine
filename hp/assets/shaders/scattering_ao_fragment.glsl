@@ -303,6 +303,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
                 for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
                     VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
 		            vec4 voxel = voxelFetch(voxelGrid, toSampler(voxelGrid.gridHandle), currentPosition, mipLevel);
+//		            voxel += voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), currentPosition, mipLevel);
                     accumFogShadow += 3.5*rand*voxel.rgb;
                 }
 

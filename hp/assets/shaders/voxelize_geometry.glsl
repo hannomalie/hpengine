@@ -110,7 +110,7 @@ void main()
         gl_Position = vertexTemp;
 
         g_pos = pos[i].xyz;
-        g_normal = faceNormal;//v_normal[i];
+        g_normal = v_normal[i];
         g_texcoord = v_texcoord[i];
         g_texcoord.y = 1-g_texcoord.y;
         g_materialIndex = v_materialIndex[i];

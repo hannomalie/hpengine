@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.log.ConsoleLogger
@@ -155,8 +156,8 @@ class OBJLoader {
     }
 
 
-    private fun parseMaterialLib(textureManager: TextureManager, line: String, f: File): Map<String, SimpleMaterialInfo> {
-        val materials = HashMap<String, SimpleMaterialInfo>()
+    private fun parseMaterialLib(textureManager: TextureManager, line: String, f: File): Map<String, MaterialInfo> {
+        val materials = HashMap<String, MaterialInfo>()
         val twoStrings = line.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
 
         val fileName = twoStrings[1]
@@ -171,7 +172,7 @@ class OBJLoader {
         }
 
         val parseMaterialName = ""
-        var currentMaterialInfo: SimpleMaterialInfo? = null// = new SimpleMaterialInfo();
+        var currentMaterialInfo: MaterialInfo? = null// = new SimpleMaterialInfo();
 
         var materialLine: String?  = materialFileReader!!.readLine()
         try {
@@ -227,10 +228,10 @@ class OBJLoader {
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.HEIGHT)
 
                 } else if ("Kd" == firstToken) {
-                    currentMaterialInfo = currentMaterialInfo!!.copy(diffuse = parseVertex(materialLine))
+                    currentMaterialInfo = currentMaterialInfo!!.copyXXX(diffuse = parseVertex(materialLine))
                 } else if ("Kr" == firstToken) {
                     val roughness = rest
-                    currentMaterialInfo = currentMaterialInfo!!.copy(roughness = parseFloat(roughness))
+                    currentMaterialInfo = currentMaterialInfo!!.copyXXX(roughness = parseFloat(roughness))
                 } else if ("Ks" == firstToken) {
                     val specular = materialLine
                     //currentMaterialInfo.specular = parseVertex(specular);
@@ -254,7 +255,7 @@ class OBJLoader {
         return materials
     }
 
-    private fun addHelper(textureManager: TextureManager, currentMaterialInfo: SimpleMaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP): SimpleMaterialInfo {
+    private fun addHelper(textureManager: TextureManager, currentMaterialInfo: MaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP): MaterialInfo {
         return currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE))
     }
 

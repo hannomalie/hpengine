@@ -182,13 +182,13 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
         webComponentPanel.addElement(object : WebFormattedVec3Field("Diffuse", material.materialInfo.diffuse) {
             override fun onValueChange(current: Vector3f) {
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(diffuse = current))
+                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(diffuse = current))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
         })
         webComponentPanel.addElement(ColorChooserButton("Diffuse", object : ColorChooserFrame() {
             override fun onColorChange(color: Vector3f) {
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(diffuse = color))
+                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(diffuse = color))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
         }))
@@ -196,7 +196,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val roughnessInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(roughness = currentValue))
+                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(roughness = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -206,7 +206,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         roughnessInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(roughness = value.toFloat() / 100f))
+                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(roughness = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -217,7 +217,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val metallicInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(metallic = currentValue))
+                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(metallic = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -227,7 +227,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         metallicInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(metallic = value.toFloat() / 100f))
+                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(metallic = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -239,7 +239,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val ambientInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(ambient = currentValue))
+                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(ambient = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -249,7 +249,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         ambientInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(ambient = value.toFloat() / 100f))
+                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(ambient = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -261,7 +261,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val transparencyInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(transparency = currentValue))
+                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(transparency = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -271,7 +271,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         transparencyInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(transparency = value.toFloat() / 100f))
+                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(transparency = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -283,7 +283,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val parallaxScaleInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(parallaxScale = currentValue))
+                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxScale = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -293,7 +293,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         parallaxScaleInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(parallaxScale = value.toFloat() / 100f))
+                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxScale = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -305,7 +305,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val parallaxBiasInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(parallaxBias = currentValue))
+                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxBias = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -315,7 +315,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         parallaxBiasInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(parallaxBias = value.toFloat() / 100f))
+                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxBias = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -330,7 +330,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             val materialTypeInput = WebComboBox(values, values.indexOf(material.materialInfo.materialType))
             materialTypeInput.addActionListener { e ->
                 val selected = materialTypeInput.selectedItem as SimpleMaterial.MaterialType
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(materialType = selected))
+                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(materialType = selected))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
             val materialTypePanel = GroupPanel(4, WebLabel("Maeterial Type"), materialTypeInput)
@@ -341,7 +341,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             val environmentMapInput = WebComboBox(values, values.indexOf(material.materialInfo.environmentMapType))
             environmentMapInput.addActionListener { e ->
                 val selected = environmentMapInput.selectedItem as SimpleMaterial.ENVIRONMENTMAP_TYPE
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copy(environmentMapType = selected))
+                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(environmentMapType = selected))
             }
             val groupPanelEnironmentMapType = GroupPanel(4, WebLabel("Environment map type"), environmentMapInput)
             webComponentPanel.addElement(groupPanelEnironmentMapType)

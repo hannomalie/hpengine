@@ -97,7 +97,7 @@ void main(void) {
 	vec3 old_PN_world = PN_world;
 
     #define use_precomputed_tangent_space_
-	if(material.hasNormalMap != 0) {
+	if(material.handleNormal != 0) {
         #ifdef use_precomputed_tangent_space
             PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
         #else
@@ -114,7 +114,7 @@ void main(void) {
 
 	vec4 color = vec4(materialDiffuseColor, 0);
 
-	if(material.hasDiffuseMap != 0) {
+	if(material.handleDiffuse != 0) {
         color = texture(diffuseMap, UV);
 
         if(color.a<0.1)

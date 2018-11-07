@@ -84,8 +84,8 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
 
     override fun afterUpdate(deltaSeconds: Float) {
         onUpdate(deltaSeconds)
-        entityContainer.entities.forEach {
-            it.isHasMoved = false
+        for (entity in entityContainer.entities) {
+            entity.isHasMoved = false
         }
     }
 

@@ -10,29 +10,26 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
 import java.io.Serializable
-import java.lang.Double
 import java.lang.Double.*
 import java.lang.Float
 import java.nio.ByteBuffer
 
 interface Material: Bufferable {
-    var materialInfo: SimpleMaterialInfo
+    var materialInfo: MaterialInfo
 
-    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>): SimpleMaterialInfo {
+    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>): MaterialInfo {
         materialInfo = materialInfo.put(map, texture)
         return materialInfo
     }
-    fun remove(map: SimpleMaterial.MAP): SimpleMaterialInfo {
+    fun remove(map: SimpleMaterial.MAP): MaterialInfo {
         materialInfo = materialInfo.remove(map)
         return materialInfo
     }
 }
 
-class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, Serializable {
+class SimpleMaterial(override var materialInfo: MaterialInfo): Material, Serializable {
 
     var materialIndex = -1
-
-    internal var initialized = true
 
     enum class MaterialType {
         DEFAULT,
@@ -57,28 +54,6 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
     }
 
     fun init(materialManager: MaterialManager) {
-//        TODO: Move this to MaterialInfo
-//        for (map in materialInfo.maps.keys) {
-//            val name = materialInfo.maps[map]
-//            try {
-//                var tex: Texture?
-//                if (map == MAP.ENVIRONMENT) {
-//                    tex = materialManager.textureManager.getCubeMap(materialManager.textureManager, name)
-//                    if (tex == null) {
-//                        tex = materialManager.textureManager.getCubeMap()
-//                    }
-//                } else {
-//                    tex = materialManager.textureManager.getTexture(name)
-//                }
-//                materialInfo.maps[map] = tex!!
-//            } catch (e: IOException) {
-//                e.printStackTrace()
-//            }
-//
-//        }
-//        if (!materialInfo.maps.textures.containsKey(MAP.ENVIRONMENT)) {
-//            materialInfo.maps.textures[MAP.ENVIRONMENT] = materialManager.textureManager.getCubeMap()
-//        }
     }
 
     override fun toString(): String {
@@ -103,24 +78,22 @@ class SimpleMaterial(override var materialInfo: SimpleMaterialInfo): Material, S
         buffer.putFloat(materialInfo.diffuse.y)
         buffer.putFloat(materialInfo.diffuse.z)
         buffer.putFloat(materialInfo.metallic)
+
         buffer.putFloat(materialInfo.roughness)
         buffer.putFloat(materialInfo.ambient)
         buffer.putFloat(materialInfo.parallaxBias)
         buffer.putFloat(materialInfo.parallaxScale)
+
         buffer.putFloat(materialInfo.transparency)
-        buffer.putFloat(materialInfo.materialType.ordinal.toFloat())
-        buffer.putInt(if (materialInfo.getHasDiffuseMap()) 1 else 0)
-        buffer.putInt(if (materialInfo.getHasNormalMap()) 1 else 0)
-        buffer.putInt(if (materialInfo.getHasSpecularMap()) 1 else 0)
-        buffer.putInt(if (materialInfo.getHasHeightMap()) 1 else 0)
-        buffer.putInt(if (materialInfo.getHasOcclusionMap()) 1 else 0)
-        buffer.putInt(if (materialInfo.getHasRoughnessMap()) 1 else 0)
-        buffer.putDouble(if (materialInfo.getHasDiffuseMap()) longBitsToDouble(materialInfo.maps[MAP.DIFFUSE]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasNormalMap()) longBitsToDouble(materialInfo.maps[MAP.NORMAL]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasSpecularMap()) longBitsToDouble(materialInfo.maps[MAP.SPECULAR]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasHeightMap()) longBitsToDouble(materialInfo.maps[MAP.HEIGHT]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasOcclusionMap()) longBitsToDouble(materialInfo.maps[MAP.OCCLUSION]!!.handle) else 0.0)
-        buffer.putDouble(if (materialInfo.getHasRoughnessMap()) longBitsToDouble(materialInfo.maps[MAP.ROUGHNESS]!!.handle) else 0.0)
+        buffer.putInt(materialInfo.materialType.ordinal)
+        buffer.putFloat(0.0f)
+        buffer.putFloat(0.0f)
+        buffer.putDouble(if (materialInfo.getHasDiffuseMap()) longBitsToDouble(materialInfo.maps[MAP.DIFFUSE]!!.handle) else -1.0)
+        buffer.putDouble(if (materialInfo.getHasNormalMap()) longBitsToDouble(materialInfo.maps[MAP.NORMAL]!!.handle) else -1.0)
+        buffer.putDouble(if (materialInfo.getHasSpecularMap()) longBitsToDouble(materialInfo.maps[MAP.SPECULAR]!!.handle) else -1.0)
+        buffer.putDouble(if (materialInfo.getHasHeightMap()) longBitsToDouble(materialInfo.maps[MAP.HEIGHT]!!.handle) else -1.0)
+        buffer.putDouble(if (materialInfo.getHasOcclusionMap()) longBitsToDouble(materialInfo.maps[MAP.OCCLUSION]!!.handle) else -1.0)
+        buffer.putDouble(if (materialInfo.getHasRoughnessMap()) longBitsToDouble(materialInfo.maps[MAP.ROUGHNESS]!!.handle) else -1.0)
     }
 
     override fun debugPrintFromBuffer(buffer: ByteBuffer): String {

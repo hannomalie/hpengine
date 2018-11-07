@@ -1,19 +1,40 @@
 package de.hanno.hpengine.engine.model.material
 
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.*
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.immutableHashMapOf
+import de.hanno.hpengine.engine.scene.HpVector3f
+import de.hanno.struct.Struct
 import org.joml.Vector3f
-import org.lwjgl.BufferUtils
 import java.io.Serializable
-import java.lang.ref.WeakReference
-import java.nio.IntBuffer
+
+class MaterialStruct(parent: Struct?, val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED): Struct(parent) {
+    val diffuse by HpVector3f(this)
+    var metallic by 0.0f
+
+    var roughness by 0.0f
+    var ambient by 0.0f
+    var parallaxBias by 0.0f
+    var parallaxScale by 0.0f
+
+    var transparency by 0.0f
+    var materialType by MaterialType::class.java
+    val dummy0 by 0.0f
+    val dummy1 by 0.0f
+
+    var diffuseMapHandle: Long by 0L
+    var normalMapHandle: Long by 0L
+    var specularMapHandle: Long by 0L
+    var heightMapHandle: Long by 0L
+    var occlusionMapHandle: Long by 0L
+    var roughnessMapHandle: Long by 0L
+
+}
 
 interface MaterialInfo {
     val name: String
-    val environmentMapType: SimpleMaterial.ENVIRONMENTMAP_TYPE
+    val environmentMapType: ENVIRONMENTMAP_TYPE
     val diffuse: Vector3f
     val roughness: Float
     val metallic: Float
@@ -21,9 +42,9 @@ interface MaterialInfo {
     val transparency: Float
     val parallaxScale: Float
     val parallaxBias: Float
-    val materialType: SimpleMaterial.MaterialType
+    val materialType: MaterialType
     val textureLess: Boolean
-    val maps: Map<SimpleMaterial.MAP, Texture<TextureDimension2D>>
+    val maps: Map<MAP, Texture<TextureDimension2D>>
 
     fun getHasSpecularMap(): Boolean
     fun getHasNormalMap(): Boolean
@@ -31,6 +52,19 @@ interface MaterialInfo {
     fun getHasHeightMap(): Boolean
     fun getHasOcclusionMap(): Boolean
     fun getHasRoughnessMap(): Boolean
+    fun put(map: MAP, texture: Texture<TextureDimension2D>): MaterialInfo
+    fun remove(map: MAP): MaterialInfo
+    fun copyXXX(diffuse: Vector3f = this.diffuse,
+                roughness: Float = this.roughness,
+                metallic: Float = this.metallic,
+                ambient: Float = this.ambient,
+                transparency: Float = this.transparency,
+                parallaxScale: Float = this.parallaxScale,
+                parallaxBias: Float = this.parallaxBias,
+                materialType: MaterialType = this.materialType,
+                textureLess: Boolean = this.textureLess,
+                maps: Map<MAP, Texture<TextureDimension2D>> = this.maps,
+                environmentMapType: ENVIRONMENTMAP_TYPE = this.environmentMapType): MaterialInfo
 }
 
 // TODO: Make this truly immutable
@@ -42,55 +76,44 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
                                                         override val transparency: Float = 0f,
                                                         override val parallaxScale: Float = 0.04f,
                                                         override val parallaxBias: Float = 0.02f,
-                                                        override val materialType: SimpleMaterial.MaterialType = DEFAULT,
-                                                        private val mapsInternal: ImmutableMap<SimpleMaterial.MAP, Texture<TextureDimension2D>> = immutableHashMapOf(),
-                                                        override val environmentMapType: SimpleMaterial.ENVIRONMENTMAP_TYPE = SimpleMaterial.ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
+                                                        override val materialType: MaterialType = DEFAULT,
+                                                        private val mapsInternal: MutableMap<MAP, Texture<TextureDimension2D>> = hashMapOf(),
+                                                        override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
 
-    override fun getHasSpecularMap() = mapsInternal.containsKey(SimpleMaterial.MAP.SPECULAR)
-    override fun getHasNormalMap() = mapsInternal.containsKey(SimpleMaterial.MAP.NORMAL)
-    override fun getHasDiffuseMap() = mapsInternal.containsKey(SimpleMaterial.MAP.DIFFUSE)
-    override fun getHasHeightMap() = mapsInternal.containsKey(SimpleMaterial.MAP.HEIGHT)
-    override fun getHasOcclusionMap() = mapsInternal.containsKey(SimpleMaterial.MAP.OCCLUSION)
-    override fun getHasRoughnessMap() = mapsInternal.containsKey(SimpleMaterial.MAP.ROUGHNESS)
+    override fun copyXXX(diffuse: Vector3f, roughness: Float, metallic: Float, ambient: Float, transparency: Float, parallaxScale: Float, parallaxBias: Float, materialType: MaterialType, textureLess: Boolean, maps: Map<MAP, Texture<TextureDimension2D>>, environmentMapType: ENVIRONMENTMAP_TYPE): MaterialInfo {
+        return copy(
+                name = name,
+                diffuse = diffuse,
+                roughness = roughness,
+                metallic = metallic,
+                ambient = ambient,
+                transparency = transparency,
+                parallaxScale = parallaxScale,
+                parallaxBias = parallaxBias,
+                materialType = materialType,
+                mapsInternal = HashMap(maps),
+                environmentMapType = environmentMapType
+        )
+    }
+
+
+    override fun getHasSpecularMap() = mapsInternal.containsKey(MAP.SPECULAR)
+    override fun getHasNormalMap() = mapsInternal.containsKey(MAP.NORMAL)
+    override fun getHasDiffuseMap() = mapsInternal.containsKey(MAP.DIFFUSE)
+    override fun getHasHeightMap() = mapsInternal.containsKey(MAP.HEIGHT)
+    override fun getHasOcclusionMap() = mapsInternal.containsKey(MAP.OCCLUSION)
+    override fun getHasRoughnessMap() = mapsInternal.containsKey(MAP.ROUGHNESS)
 
     override val textureLess = mapsInternal.isEmpty()
 
-    private var textureIdsCache: WeakReference<IntBuffer>? = null
-
-    val textureIds: IntBuffer?
-        get() {
-            cacheTextures()
-            return textureIdsCache!!.get()
-        }
-
-    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>): SimpleMaterialInfo {
-        val result = this.copy(mapsInternal = mapsInternal.put(map, texture))
-        if (textureIdsCache != null) textureIdsCache!!.clear()
-
-        return result
+    override fun put(map: MAP, texture: Texture<TextureDimension2D>): SimpleMaterialInfo {
+        return copy(mapsInternal = mapsInternal.apply { put(map, texture) })
     }
-    fun remove(map: SimpleMaterial.MAP): SimpleMaterialInfo {
-        val result = this.copy(mapsInternal = mapsInternal.remove(map))
-        if (textureIdsCache != null) textureIdsCache!!.clear()
-
-        return result
+    override fun remove(map: MAP): SimpleMaterialInfo {
+        return copy(mapsInternal = mapsInternal.apply { remove(map)})
     }
 
-    override val maps = mapsInternal as Map<SimpleMaterial.MAP, Texture<TextureDimension2D>>
-
-    private fun cacheTextures() {
-        if (textureIdsCache == null || textureIdsCache!!.get() == null) {
-            textureIdsCache = WeakReference(BufferUtils.createIntBuffer(SimpleMaterial.MAP.values().size))
-            textureIdsCache!!.get()!!.rewind()
-            val ints = IntArray(SimpleMaterial.MAP.values().size)
-            for (i in 0 until SimpleMaterial.MAP.values().size - 1) {
-                val texture = mapsInternal[SimpleMaterial.MAP.values()[i]]
-                ints[i] = texture?.textureId ?: 0
-            }
-            textureIdsCache!!.get()!!.put(ints)
-            textureIdsCache!!.get()!!.rewind()
-        }
-    }
+    override val maps = mapsInternal as Map<MAP, Texture<TextureDimension2D>>
 
     companion object {
         private const val serialVersionUID = 3564429930446909410L

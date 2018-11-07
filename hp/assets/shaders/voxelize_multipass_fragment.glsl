@@ -94,8 +94,8 @@ void main(void) {
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
 
-	if(material.hasNormalMap != 0) {
-        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+	if(material.handleNormal != 0) {
+        sampler2D _normalMap = sampler2D((material.handleNormal));
         PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
         PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
     }
@@ -109,9 +109,8 @@ void main(void) {
 
 	vec4 color = vec4(materialDiffuseColor, 1);
 
-	if(material.hasDiffuseMap != 0) {
-
-        color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
+	if(material.handleDiffuse > 0) {
+        color = texture(sampler2D((material.handleDiffuse)), UV);
 
         if(color.a<0.1)
         {

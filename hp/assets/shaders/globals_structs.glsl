@@ -10,23 +10,18 @@ struct Material {
 	float parallaxScale;
 
 	float transparency;
-	float materialtype;
-	int hasDiffuseMap;
-	int hasNormalMap;
+	int materialtype;
+	float dummy0;
+	float dummy1;
 
-	int hasSpecularMap;
-	int hasHeightMap;
-	int hasOcclusionMap;
-	int hasRoughnessMap;
+    uvec2 handleDiffuse;
+    uvec2 handleNormal;
 
-    double handleDiffuse;
-    double handleNormal;
+    uvec2 handleSpecular;
+    uvec2 handleHeight;
 
-    double handleSpecular;
-    double handleHeight;
-
-    double handleOcclusion;
-    double handleRoughness;
+    uvec2 handleOcclusion;
+    uvec2 handleRoughness;
 
 };
 
