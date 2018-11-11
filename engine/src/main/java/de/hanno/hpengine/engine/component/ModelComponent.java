@@ -498,6 +498,10 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     }
 
     @Override
+    public String toString() {
+        return "ModelComponent (" + model.toString() + ")";
+    }
+    @Override
     public int getBytesPerObject() {
         return getBytesPerInstance() * getMeshes().size() * getInstanceCount(entity);
     }

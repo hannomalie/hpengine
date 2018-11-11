@@ -3,6 +3,7 @@ package de.hanno.hpengine.util.gui;
 import com.alee.laf.rootpane.WebFrame;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 
 import javax.swing.*;
@@ -17,6 +18,10 @@ public class SetSelectedListener implements TreeSelectionListener {
 	JTree tree;
 	private final static WebFrame entityViewFrame = new WebFrame();
     static {
+		entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		entityViewFrame.getContentPane().removeAll();
+		entityViewFrame.pack();
+		entityViewFrame.setSize(600, 600);
         entityViewFrame.setVisible(false);
     }
 	private Engine engine;
@@ -28,30 +33,11 @@ public class SetSelectedListener implements TreeSelectionListener {
 		tree.addTreeSelectionListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
 		
-//		final SetSelectedListener myself = this;
-//		tree.addMouseListener(new MouseAdapter() {
-//			public void mousePressed(MouseEvent e) {
-//		         int selRow = tree.getRowForLocation(e.getX(), e.getY());
-//		         TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-//		         
-//		         if(selRow != -1) {
-//		             if(e.getClickCount() == 1) {
-//		                 System.out.println("Single " + e.getButton());
-//		             }
-//		             else if(e.getClickCount() == 2) {
-//		                 System.out.println("Double " + e.getButton());
-//		             }
-//		             if(e.getButton() == MouseEvent.BUTTON1) {
-//		            	 
-//		             }
-//		         }
-//		     }
-//		});
 	}
 	
 	@Override
     public void valueChanged(TreeSelectionEvent e) {
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+        DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
         
         TreePath[] paths = tree.getSelectionPaths();
         TreePath currentPath =  e.getPath();
@@ -63,26 +49,25 @@ public class SetSelectedListener implements TreeSelectionListener {
     		}	
         }
 
-        if (node == null) return;
-        Object nodeInfo = node.getUserObject();
+        if (treeNode == null) return;
+        Object node = treeNode.getUserObject();
 
 		// TODO: MIIIIEEEEEES
-		if (nodeInfo instanceof EnvironmentProbe) {
-			EnvironmentProbe selected = (EnvironmentProbe) nodeInfo;
-			entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		if (node instanceof EnvironmentProbe) {
+			EnvironmentProbe selected = (EnvironmentProbe) node;
 			entityViewFrame.getContentPane().removeAll();
-			entityViewFrame.pack();
-			entityViewFrame.setSize(600, 600);
 			entityViewFrame.add(new ProbeView(engine, selected));
 			entityViewFrame.setVisible(true);
-		} else if (nodeInfo instanceof Entity) {
-        	Entity selected = (Entity) nodeInfo;
-	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-	    	entityViewFrame.getContentPane().removeAll();
-	    	entityViewFrame.pack();
-	    	entityViewFrame.setSize(600, 600);
-	    	entityViewFrame.add(new EntityView(engine, selected));
-	    	entityViewFrame.setVisible(true);
-        }
+		} else if (node instanceof Entity) {
+			Entity selected = (Entity) node;
+			entityViewFrame.getContentPane().removeAll();
+			entityViewFrame.add(new EntityView(engine, selected));
+			entityViewFrame.setVisible(true);
+		} else if (node instanceof Mesh) {
+			Mesh selected = (Mesh) node;
+			entityViewFrame.getContentPane().removeAll();
+			entityViewFrame.add(new MeshView(engine, selected));
+			entityViewFrame.setVisible(true);
+		}
     }
 }

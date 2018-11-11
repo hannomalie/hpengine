@@ -63,7 +63,6 @@ public class EntityView extends WebPanel {
 		this.entity = entity;
         WebTabbedPane tabbedPane = addEntityPanel();
 
-        addMeshesPanel(entity, tabbedPane);
         addInstancesPanel(entity, tabbedPane);
 
         addPhysicsPanel(entity, tabbedPane);
@@ -166,29 +165,6 @@ public class EntityView extends WebPanel {
         GridPanel instancesGridPanel = new GridPanel(instancesPanels.size(), 1, instancesPanels.toArray(new Component[0]));
         JScrollPane instancesScrollPane = new JScrollPane(instancesGridPanel);
         tabbedPane.addTab("Instances", instancesScrollPane);
-    }
-
-    private void addMeshesPanel(Entity entity, WebTabbedPane tabbedPane) {
-	    if(!entity.hasComponent(ModelComponent.class)) { return; }
-
-        List<Component> meshPanels = new ArrayList<>();
-        List<Mesh> meshes = entity.getComponent(ModelComponent.class).getMeshes();
-        for(Mesh mesh : meshes) {
-            WebComponentPanel materialSelectionPanel = new WebComponentPanel();
-            materialSelectionPanel.setElementMargin(4);
-            WebLabel meshName = new WebLabel(mesh.getName());
-            materialSelectionPanel.addElement(meshName);
-            addMaterialSelect(materialSelectionPanel, e -> {
-                WebComboBox cb = (WebComboBox) e.getSource();
-                SimpleMaterial selectedMaterial = engine.getScene().getMaterialManager().getMaterials().get(cb.getSelectedIndex());
-                mesh.setMaterial(selectedMaterial);
-                engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
-            }, mesh.getMaterial());
-            meshPanels.add(materialSelectionPanel);
-        }
-        GridPanel meshesGridPanel = new GridPanel(meshPanels.size(), 1, meshPanels.toArray(new Component[0]));
-        JScrollPane meshesPanel = new JScrollPane(meshesGridPanel);
-        tabbedPane.addTab("Meshes", meshesPanel);
     }
 
     private WebTabbedPane addEntityPanel() {

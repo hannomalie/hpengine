@@ -93,7 +93,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
                 var target = this.gpuEntitiesArray.getAtIndex(counter)
 
                 for ((meshIndex, mesh) in meshes.withIndex()) {
-                    val materialIndex = mesh.material.materialIndex // TODO: This is broken
+                    val materialIndex = engine.getScene().materialManager.materials.indexOf(mesh.material)
                     target.selected = entity.isSelected
                     target.materialIndex = materialIndex
                     target.update = entity.update.asDouble.toInt()
@@ -114,7 +114,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
                     for (instance in entity.instances) {
                         val instanceMatrix = instance.transformation
-                        val instanceMaterialIndex = instance.materials[meshIndex].materialIndex
+                        val instanceMaterialIndex = engine.getScene().materialManager.materials.indexOf(instance.materials[meshIndex])
 
                         target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex

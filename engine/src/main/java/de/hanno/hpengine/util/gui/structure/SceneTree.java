@@ -3,7 +3,9 @@ package de.hanno.hpengine.util.gui.structure;
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.util.Parentable;
 import de.hanno.hpengine.util.gui.SetVisibilityCheckStateListener;
 import de.hanno.hpengine.util.gui.DebugFrame;
@@ -116,6 +118,7 @@ public class SceneTree extends WebCheckBoxTree {
 
         for(Entity entity : rootEntities.stream().filter(e -> !e.hasParent()).collect(Collectors.toList())) {
             DefaultMutableTreeNode current = new DefaultMutableTreeNode(entity);
+            entity.getComponents().values().forEach(component -> addComponentNode(current, component));
             rootEntityMappings.put(entity, current);
             parent.add(current);
         }
@@ -123,6 +126,16 @@ public class SceneTree extends WebCheckBoxTree {
         for(Entity entity : rootEntities.stream().filter(Parentable::hasParent).collect(Collectors.toList())) {
             DefaultMutableTreeNode current = new DefaultMutableTreeNode(entity);
             rootEntityMappings.get(entity.getParent()).add(current);
+        }
+    }
+
+    private void addComponentNode(DefaultMutableTreeNode current, de.hanno.hpengine.engine.component.Component component) {
+        DefaultMutableTreeNode componentNode = new DefaultMutableTreeNode(component);
+        current.add(componentNode);
+        if(component instanceof ModelComponent) {
+            for(Mesh mesh: ((ModelComponent) component).getMeshes()) {
+                componentNode.add(new DefaultMutableTreeNode(mesh));
+            }
         }
     }
 

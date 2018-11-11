@@ -15,9 +15,11 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
     private ArrayList<Vector3f> vertices = new ArrayList<>();
     private ArrayList<Vector2f> texCoords = new ArrayList<>();
     private ArrayList<Vector3f> normals = new ArrayList<>();
+    private String path;
 
-    public StaticModel() {
+    public StaticModel(String path) {
         super(new ArrayList<>());
+        this.path = path;
     }
 
     public void addVertex(Vector3f vertex) {
@@ -65,6 +67,11 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
         meshes.add(mesh);
     }
 
+
+    @Override
+    public String toString() {
+        return "StaticModel(" + path + ")";
+    }
 
     @Override
     public Vector3f getCenterWorld(Transform transform) {

@@ -1309,16 +1309,23 @@ public class DebugFrame implements HostComponent {
 		NotificationManager.showNotification(mainFrame, notificationPopup);
 	}
 
-	@Subscribe
+    @Subscribe
     @Handler
-	public void handle(EntitySelectedEvent e) {
-		entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		entityViewFrame.getContentPane().removeAll();
-		entityViewFrame.pack();
-		entityViewFrame.setSize(600, 700);
-		entityViewFrame.add(new EntityView(engine, e.getEntity()));
-		entityViewFrame.setVisible(true);
-	}
+    public void handle(EntitySelectedEvent e) {
+        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        entityViewFrame.getContentPane().removeAll();
+        entityViewFrame.pack();
+        entityViewFrame.setSize(600, 700);
+        entityViewFrame.add(new EntityView(engine, e.getEntity()));
+        entityViewFrame.setVisible(true);
+    }
+    @Subscribe
+    @Handler
+    public void handle(MeshSelectedEvent e) {
+        entityViewFrame.getContentPane().removeAll();
+        entityViewFrame.add(new MeshView(engine, e.getMesh()));
+        entityViewFrame.setVisible(true);
+    }
 
     @Subscribe
     @Handler

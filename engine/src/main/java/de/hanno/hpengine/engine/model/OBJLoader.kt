@@ -89,7 +89,7 @@ class OBJLoader {
     @Throws(Exception::class)
     fun loadTexturedModel(materialManager: MaterialManager, f: File): StaticModel<Vertex> {
         val reader = BufferedReader(FileReader(f))
-        val resultModel = StaticModel<Vertex>()
+        val resultModel = StaticModel<Vertex>(f.path)
 
         var currentMesh: StaticMesh? = null
         var currentMaterial: SimpleMaterial? = null

@@ -351,6 +351,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     }
 
     @Override
+    public String toString() {
+        return name;
+    }
+
+    @Override
     public int hashCode() {
         return getUuid().hashCode();
     }

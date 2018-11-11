@@ -214,7 +214,7 @@ void main(void) {
     }
 
   	out_motionDepthTransparency = vec4(motionVec,depth,materialTransparency);
-  	out_depthAndIndices = vec4(1,depth,outMaterialIndex, float(outEntity.entityIndexWithoutMeshIndex));
+  	out_depthAndIndices = vec4(float(outEntity.entityIndexWithoutMeshIndex), depth, outMaterialIndex, float(outEntity.meshIndex));
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
