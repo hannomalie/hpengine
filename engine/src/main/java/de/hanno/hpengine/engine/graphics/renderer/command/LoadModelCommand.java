@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
@@ -15,8 +14,10 @@ import java.util.List;
 public class LoadModelCommand implements Command<EntityListResult> {
     private final File file;
     private final String name;
+    private MaterialManager materialManager;
 
-    public LoadModelCommand(File file, String name) {
+    public LoadModelCommand(File file, String name, MaterialManager materialManager) {
+        this.materialManager = materialManager;
         if(file == null) {
             throw new IllegalArgumentException("Passed file is null!");
         }
@@ -27,20 +28,16 @@ public class LoadModelCommand implements Command<EntityListResult> {
         this.name = name;
     }
 
-    public EntityListResult execute(Engine engine) {
+    public EntityListResult execute() {
         EntityListResult result = new EntityListResult();
         try {
             List<Entity> entities = new ArrayList<>();
-            Model model = getModel(engine.getScene().getMaterialManager());
-            List<Entity> allChildrenAndSelf = engine.getSceneManager().getScene().getEntityManager().create(name).getAllChildrenAndSelf();
-            if(!allChildrenAndSelf.isEmpty()) {
-                Entity entity = allChildrenAndSelf.get(0);
-                ModelComponent modelComponent = engine.getSceneManager().getScene().getComponentSystems().get(ModelComponentSystem.class).create(entity, model);
-                entity.addComponent(modelComponent);
-            }
+            Model model = getModel(materialManager);
+            Entity entity = new Entity(name);
+            ModelComponent modelComponent = new ModelComponent(entity, model);
+            entity.addComponent(modelComponent);
 
-            entities.addAll(allChildrenAndSelf);
-
+            entities.add(entity);
             return new EntityListResult(entities);
 
         } catch (Exception e) {

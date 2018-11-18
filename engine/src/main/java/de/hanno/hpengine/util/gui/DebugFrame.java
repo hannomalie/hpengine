@@ -92,7 +92,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
@@ -616,7 +615,7 @@ public class DebugFrame implements HostComponent {
                     CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable() {
                         @Override
                         public TextureResult execute() throws Exception {
-                            return new AddTextureCommand(chosenFile.getPath()).execute(engine);
+                            return new AddTextureCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
                         }
                     });
 					TextureResult result = null;
@@ -646,7 +645,7 @@ public class DebugFrame implements HostComponent {
                     CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable() {
                         @Override
                         public TextureResult execute() throws Exception {
-                            return new AddTextureCommand(chosenFile.getPath(), true).execute(engine);
+                            return new AddTextureCommand(chosenFile.getPath(), true, engine.getTextureManager()).execute();
                         }
                     });
 					TextureResult result = null;
@@ -678,7 +677,7 @@ public class DebugFrame implements HostComponent {
                     CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable<TextureResult>() {
                         @Override
                         public TextureResult execute() throws Exception {
-                            return new AddCubeMapCommand(chosenFile.getPath()).execute(engine);
+                            return new AddCubeMapCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
                         }
                     });
 

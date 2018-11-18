@@ -8,12 +8,14 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -47,19 +49,29 @@ public class SimpleTextureRenderer implements Renderer {
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
     private FPSCounter fpsCounter = new FPSCounter();
-	private Engine engine;
+	private ProgramManager programManager;
+	private GpuContext gpuContext;
+	private Texture texture;
 
-	public SimpleTextureRenderer() {
-    }
+	public Texture getTexture() {
+		return texture;
+	}
+	public void setTexture(Texture texture) {
+		this.texture = texture;
+	}
 
-	@Override
-	public void init(Engine engine) {
-		Renderer.super.init(engine);
-		this.engine = engine;
+	public SimpleTextureRenderer(ProgramManager programManager, Texture texture) {
+		this.texture = texture;
+		init(programManager);
+	}
+
+	private void init(ProgramManager programManager) {
+		this.programManager = programManager;
+		this.gpuContext = this.programManager.getGpuContext();
 
         if (!initialized) {
             setCurrentState("INITIALIZING");
-            setupBuffers(engine.getGpuContext());
+            setupBuffers(gpuContext);
             GpuContext.exitOnGLError("After TextureManager");
             try {
                 setupShaders();
@@ -94,8 +106,8 @@ public class SimpleTextureRenderer implements Renderer {
     private void setUpGBuffer() {
         GpuContext.exitOnGLError("Before setupGBuffer");
 
-        engine.getGpuContext().execute(() -> {
-            engine.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        gpuContext.execute(() -> {
+            gpuContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			GpuContext.exitOnGLError("setupGBuffer");
 		});
@@ -104,7 +116,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		GpuContext.exitOnGLError("Before setupShaders");
 
-        renderToQuadProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
+        renderToQuadProgram = programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
 
 	}
 
@@ -115,18 +127,18 @@ public class SimpleTextureRenderer implements Renderer {
 	@Override
 	public void render(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-		drawToQuad(engine.getTextureManager().getDefaultTexture().getTextureId(), engine.getGpuContext().getFullscreenBuffer());
+		drawToQuad(texture.getTextureId(), gpuContext.getFullscreenBuffer());
 		GPUProfiler.end();
 
         GPUProfiler.start("Waiting for driver");
 		glfwPollEvents();
-        glfwSwapBuffers(engine.getGpuContext().getWindowHandle());
+        glfwSwapBuffers(gpuContext.getWindowHandle());
         GPUProfiler.end();
 	}
 
 	@Override
 	public void drawToQuad(int texture) {
-		drawToQuad(texture, engine.getGpuContext().getFullscreenBuffer(), renderToQuadProgram);
+		drawToQuad(texture, gpuContext.getFullscreenBuffer(), renderToQuadProgram);
 	}
 
 	@Override
@@ -141,11 +153,11 @@ public class SimpleTextureRenderer implements Renderer {
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
 
-        engine.getGpuContext().bindFrameBuffer(0);
-        engine.getGpuContext().viewPort(0,0, engine.getGpuContext().getCanvasWidth(), engine.getGpuContext().getCanvasHeight());
-        engine.getGpuContext().disable(GlCap.DEPTH_TEST);
+        gpuContext.bindFrameBuffer(0);
+        gpuContext.viewPort(0,0, gpuContext.getCanvasWidth(), gpuContext.getCanvasHeight());
+        gpuContext.disable(GlCap.DEPTH_TEST);
 
-        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
 
 		buffer.draw();
 	}

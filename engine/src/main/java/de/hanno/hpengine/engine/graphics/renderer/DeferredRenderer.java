@@ -111,10 +111,10 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Frame");
 
 		engine.getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
-        simpleDrawStrategy.draw(result, renderState);
+        simpleDrawStrategy.draw(result, null, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
 			ArrayList<Texture> textures = new ArrayList<>(engine.getTextureManager().getTextures().values());
-			drawToQuad(textures.get(0).getTextureId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+			drawToQuad(engine.getTextureManager().getTexture("hp/assets/models/textures/gi_flag.png", true).getTextureId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 //			drawToQuad(engine.getSimpleScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getSimpleScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
 
 //			for(int i = 0; i < 6; i++) {

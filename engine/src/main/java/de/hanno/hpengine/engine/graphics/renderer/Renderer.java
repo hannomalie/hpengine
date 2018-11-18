@@ -11,9 +11,11 @@ import org.joml.Vector3f;
 
 import java.util.List;
 
-public interface Renderer extends LifeCycle, RenderSystem {
+public interface Renderer extends RenderSystem {
 
     default void destroy() { }
+
+    default void init(Engine engine) {}
 
     void update(Engine engine, float seconds);
 

@@ -1,15 +1,11 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.TestWithEngine;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
-import de.hanno.hpengine.engine.model.loader.md5.AnimCompiledVertex;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
-import de.hanno.hpengine.engine.model.loader.md5.MD5Loader;
 import de.hanno.hpengine.engine.model.loader.md5.MD5Mesh;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
-import de.hanno.hpengine.engine.scene.Vertex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,8 +15,8 @@ public class AnimatedModelTest extends TestWithEngine {
 
     @Test
     public void testBufferValues() {
-        LoadModelCommand command = new LoadModelCommand(new File("C:\\workspace\\hpengine/hp/assets/models/bob_lamp_update/bob_lamp_update.md5mesh"), "bob");
-        LoadModelCommand.EntityListResult result = command.execute(engine);
+        LoadModelCommand command = new LoadModelCommand(new File("C:\\workspace\\hpengine/hp/assets/models/bob_lamp_update/bob_lamp_update.md5mesh"), "bob", engine.getScene().getMaterialManager());
+        LoadModelCommand.EntityListResult result = command.execute();
         ModelComponent component = result.entities.get(0).getComponent(ModelComponent.class);
         AnimatedModel animatedModel = (AnimatedModel) component.getModel();
 

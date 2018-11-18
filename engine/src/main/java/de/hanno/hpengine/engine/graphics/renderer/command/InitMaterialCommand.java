@@ -1,20 +1,22 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand.MaterialResult;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 
 public class InitMaterialCommand implements Command<MaterialResult> {
 
 	private SimpleMaterial material;
-	
-	public InitMaterialCommand(SimpleMaterial material) {
+	private MaterialManager materialManager;
+
+	public InitMaterialCommand(SimpleMaterial material, MaterialManager materialManager) {
 		this.material = material;
+		this.materialManager = materialManager;
 	}
 
 	@Override
-	public MaterialResult execute(Engine engine) {
-		material.init(engine.getScene().getMaterialManager());
+	public MaterialResult execute() {
+		material.init(materialManager);
 		MaterialResult result = new MaterialResult(material);
 		return result;
 	}

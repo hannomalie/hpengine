@@ -11,9 +11,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTarget
@@ -116,7 +116,7 @@ class ProbeRenderStrategy(private val engine: Engine) {
 
             GPUProfiler.start("Probe entity rendering")
             for (e in renderState.renderBatchesStatic) {
-                DrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
+                SimpleDrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
             }
             GPUProfiler.end()
             engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)

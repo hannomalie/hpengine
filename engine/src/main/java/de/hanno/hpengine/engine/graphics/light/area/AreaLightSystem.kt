@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
@@ -87,7 +87,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
             areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
             for (e in renderState.renderBatchesStatic) {
-                DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
+                SimpleDrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
             }
         }
         GPUProfiler.end()

@@ -11,7 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
@@ -98,7 +98,7 @@ class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSy
 
             GPUProfiler.start("PointLight shadowmap entity rendering")
             for (e in renderState.renderBatchesStatic) {
-                DrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, pointCubeShadowPassProgram, !e.isVisible, true)
+                SimpleDrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, pointCubeShadowPassProgram, !e.isVisible, true)
             }
             GPUProfiler.end()
         }
@@ -177,7 +177,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
                     pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.diffuse)
 
                     val batch = RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, Config.getInstance().isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.update, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds)
-                    DrawStrategy.draw(gpuContext, renderState, batch)
+                    SimpleDrawStrategy.draw(gpuContext, renderState, batch)
                 }
             }
 
@@ -191,7 +191,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
                     pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.diffuse)
 
                     val batch = RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, Config.getInstance().isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.update, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds)
-                    DrawStrategy.draw(gpuContext, renderState, batch)
+                    SimpleDrawStrategy.draw(gpuContext, renderState, batch)
                 }
             }
         }

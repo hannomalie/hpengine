@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.transform.Transform;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.transform.Transformable;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 
@@ -19,7 +18,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	}
 	
 	@Override
-	public Result execute(Engine engine) {
+	public Result execute() {
 		return new Result();
 	}
 

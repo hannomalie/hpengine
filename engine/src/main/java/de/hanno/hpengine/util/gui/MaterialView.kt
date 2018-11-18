@@ -62,12 +62,12 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         val saveButton = WebButton("Save")
         saveButton.addActionListener { e ->
             var toSave: SimpleMaterial = material
-            if (nameField!!.text != material.materialInfo.name) {
-                val newInfo = SimpleMaterialInfo(nameField!!.text)
+            if (nameField.text != material.materialInfo.name) {
+                val newInfo = SimpleMaterialInfo(nameField.text)
                 val future = engine.gpuContext.execute(object : FutureCallable<MaterialResult>() {
                     @Throws(Exception::class)
                     override fun execute(): MaterialResult {
-                        return GetMaterialCommand(newInfo).execute(engine)
+                        return GetMaterialCommand(newInfo, engine.getScene().materialManager).execute()
                     }
                 })
                 val result: MaterialResult
@@ -366,7 +366,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         val future = engine.gpuContext.execute(object : FutureCallable<MaterialResult>() {
             @Throws(Exception::class)
             override fun execute(): MaterialResult {
-                return InitMaterialCommand(material).execute(engine)
+                return InitMaterialCommand(material, engine.getScene().materialManager).execute()
             }
         })
 

@@ -10,9 +10,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXT
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -286,7 +286,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                         if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
                             continue
                         }
-                        val currentVerticesCount = DrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
+                        val currentVerticesCount = SimpleDrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
 
                         //                TODO: Count this somehow?
                         //                firstPassResult.verticesDrawn += currentVerticesCount;

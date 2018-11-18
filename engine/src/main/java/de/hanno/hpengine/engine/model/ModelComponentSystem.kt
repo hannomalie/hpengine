@@ -187,6 +187,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
     override fun clear() = components.clear()
 
     override fun onEntityAdded(entities: List<Entity>) {
+        super.onEntityAdded(entities)
         allocateVertexIndexBufferSpace(entities)
         updateCache = true
     }

@@ -1,21 +1,21 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 
 import java.io.IOException;
 
 public class AddCubeMapCommand extends AddTextureCommand {
 
-	public AddCubeMapCommand(String path) {
-		super(path);
+	public AddCubeMapCommand(String path, TextureManager textureManager) {
+		super(path, textureManager);
 	}
 
 	@Override
-	public TextureResult execute(Engine engine) {
+	public TextureResult execute() {
 		CubeMap texture = null;
 		try {
-            texture = engine.getTextureManager().getCubeMap(path);
+            texture = textureManager.getCubeMap(path);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

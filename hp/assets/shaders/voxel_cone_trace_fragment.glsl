@@ -308,7 +308,7 @@ void main(void) {
         if(temp.x > 0 || temp.y > 0 || temp.z > 0) {
             vct += temp;
         }
-        const bool onlySample = true;
+        const bool onlySample = false;
         if(onlySample) {
             VoxelGrid voxelGrid = voxelGridArray.voxelGrids[0];
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;

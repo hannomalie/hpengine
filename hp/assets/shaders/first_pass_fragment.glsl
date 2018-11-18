@@ -176,10 +176,10 @@ void main(void) {
 	vec4 color = vec4(materialDiffuseColor, 1);
     float alpha = materialTransparency;
 	if(uint64_t(material.handleDiffuse) > 0) {
-        sampler2D _diffuseMap = sampler2D((material.handleDiffuse));
+        sampler2D _diffuseMap = sampler2D(material.handleDiffuse);
 
     	color = texture(_diffuseMap, UV);
-    	//color = textureLod(_diffuseMap, UV, 6);
+//    	color = textureLod(_diffuseMap, UV, 3.2);
         alpha *= color.a;
         if(color.a<0.1)
         {

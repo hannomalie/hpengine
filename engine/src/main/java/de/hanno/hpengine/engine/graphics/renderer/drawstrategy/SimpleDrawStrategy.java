@@ -23,8 +23,10 @@ import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
+import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.util.Util;
@@ -51,7 +53,7 @@ import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
-public class SimpleDrawStrategy implements DrawStrategy {
+public class SimpleDrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
     private final Entity skyBoxEntity;
@@ -128,7 +130,36 @@ public class SimpleDrawStrategy implements DrawStrategy {
         registerRenderExtension(new PixelPerfectPickingExtension());
     }
 
-    @Override
+    public static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch) {
+        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), true);
+    }
+
+    public static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible, boolean drawLinesIfEnabled) {
+        if(invisible) {
+            return 0;
+        }
+
+        if (program == null) {
+            return 0;
+        }
+        program.setUniform("entityBaseIndex", 0);
+        program.setUniform("entityIndex", renderBatch.getEntityBufferIndex());
+        program.setUniform("indirect", false);
+
+
+//        if(material.getMaterialType().equals(SimpleMaterial.MaterialType.FOLIAGE))
+        {
+            gpuContext.disable(GlCap.CULL_FACE);
+        }
+
+        if (Config.getInstance().isDrawLines() && drawLinesIfEnabled) {
+            return vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, renderBatch.getIndexCount(), renderBatch.getInstanceCount(), renderBatch.getIndexOffset(), renderBatch.getBaseVertex());
+        } else {
+            return vertexBuffer
+                .drawInstancedBaseVertex(indexBuffer, renderBatch.getIndexCount(), renderBatch.getInstanceCount(), renderBatch.getIndexOffset(), renderBatch.getBaseVertex());
+        }
+    }
+
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
@@ -248,7 +279,7 @@ public class SimpleDrawStrategy implements DrawStrategy {
         program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformation().get(modelMatrixBuffer));
         program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        DrawStrategy.draw(gpuContext, skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, program, false, false);
+        SimpleDrawStrategy.draw(gpuContext, skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, program, false, false);
     }
 
     public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
@@ -708,5 +739,9 @@ public class SimpleDrawStrategy implements DrawStrategy {
 
     public void setMainPipelineRef(StateRef<GPUCulledMainPipeline> mainPipelineRef) {
         this.mainPipelineRef = mainPipelineRef;
+    }
+
+    public void draw(DrawResult result, RenderState renderState) {
+        draw(result, null, renderState);
     }
 }

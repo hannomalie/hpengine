@@ -1,28 +1,30 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
 import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 
 public class AddTextureCommand implements Command<TextureResult> {
 
 	String path;
 	boolean srgba = false;
+	protected TextureManager textureManager;
 
-	public AddTextureCommand(String path) {
-		this(path, false);
+	public AddTextureCommand(String path, TextureManager textureManager) {
+		this(path, false, textureManager);
 	}
 	
-	public AddTextureCommand(String path, boolean srba) {
+	public AddTextureCommand(String path, boolean srba, TextureManager textureManager) {
 		this.path = path;
 		this.srgba = srba;
+		this.textureManager = textureManager;
 	}
 	
 	@Override
-	public TextureResult execute(Engine engine) {
+	public TextureResult execute() {
 		Texture texture = null;
 		try {
-            texture = engine.getTextureManager().getTexture(path, srgba);
+            texture = textureManager.getTexture(path, srgba);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
