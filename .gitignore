@@ -12,6 +12,7 @@
 *.hpentity
 *.hpscene
 */target/*
+*/build*
 target/
 /hp/java
 

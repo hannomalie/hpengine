@@ -1,8 +1,5 @@
 package de.hanno.hpengine.util.stopwatch;
 
-import junit.framework.Assert;
-import org.junit.Test;
-
 import java.util.LinkedList;
 import java.util.logging.Logger;
 
@@ -20,10 +17,10 @@ public class StopWatch {
 	public static StopWatch getInstance() {
 		return stopWatch;
 	}
-	private LinkedList<Watch> watches = new LinkedList<>();
+	LinkedList<Watch> watches = new LinkedList<>();
 
 
-	private StopWatch() {}
+	StopWatch() {}
 	public void start(String description) {
 		if (!ACTIVE) {return;}
 		watches.addLast(new Watch( System.nanoTime(), description));
@@ -58,27 +55,4 @@ public class StopWatch {
 		
 		return result.toString();
 	}
-	
-	@Test
-	public void validation() {
-		StopWatch.ACTIVE = true;
-		
-		StopWatch stopWatch = new StopWatch();
-
-		stopWatch.start("abc");
-		Assert.assertEquals(1, stopWatch.watches.size());
-		stopWatch.start("xyz");
-		Assert.assertEquals(2, stopWatch.watches.size());
-		stopWatch.stop();
-		Assert.assertEquals(1, stopWatch.watches.size());
-		stopWatch.start("123");
-		Assert.assertEquals(2, stopWatch.watches.size());
-		stopWatch.stop();
-		Assert.assertEquals(1, stopWatch.watches.size());
-		stopWatch.stop();
-		Assert.assertEquals(0, stopWatch.watches.size());
-		
-		StopWatch.ACTIVE = false;
-	}
-
 }

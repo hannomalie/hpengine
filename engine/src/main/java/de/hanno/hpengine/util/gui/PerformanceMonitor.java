@@ -40,6 +40,7 @@ import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.RectangleInsets;
+import org.jfree.util.UnitType;
 
 /*
  * Thank you David Gilbert ! All source code is from him, I just modified it.
@@ -126,7 +127,7 @@ public class PerformanceMonitor {
 		plot.setBackgroundPaint(Color.lightGray);
 		plot.setDomainGridlinePaint(Color.white);
 		plot.setRangeGridlinePaint(Color.white);
-		plot.setAxisOffset(new RectangleInsets(5.0, 5.0, 5.0, 5.0));
+		plot.setAxisOffset(new RectangleInsets(UnitType.ABSOLUTE, 5.0, 5.0, 5.0, 5.0));
 		domain.setAutoRange(true);
 		domain.setLowerMargin(0.0);
 		domain.setUpperMargin(0.0);
@@ -151,7 +152,7 @@ public class PerformanceMonitor {
         categoryplot.setBackgroundPaint(Color.lightGray);
         categoryplot.setRangeGridlinePaint(Color.white);
         categoryplot.setRangeGridlinesVisible(true);
-        categoryplot.setAxisOffset(new RectangleInsets(5D, 5D, 5D, 5D));
+        categoryplot.setAxisOffset(new RectangleInsets(UnitType.ABSOLUTE, 5D, 5D, 5D, 5D));
         ValueAxis valueaxis = categoryplot.getRangeAxis();
         DecimalFormat decimalformat = new DecimalFormat("##,#");
         TickUnits tickunits = new TickUnits();
