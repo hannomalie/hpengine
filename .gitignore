@@ -24,4 +24,7 @@ nbactions.xml
 .classpath
 .project
 .settings/*
+
+**/*.class
 *.orig
+*/out

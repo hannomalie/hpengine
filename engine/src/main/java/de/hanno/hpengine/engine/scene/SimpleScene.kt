@@ -98,9 +98,4 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
         modelComponentSystem.copyGpuBuffers(currentWriteState)
         areaLightSystemX.copyGpuBuffers(currentWriteState)
     }
-
-    companion object {
-        private const val serialVersionUID = 1L
-        @JvmStatic val directory = DirectoryManager.WORKDIR_NAME + "/assets/scenes/"
-    }
 }

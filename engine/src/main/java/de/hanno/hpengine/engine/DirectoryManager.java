@@ -33,7 +33,6 @@ public class DirectoryManager implements Manager {
         dirs.add(new File(OpenGlTexture.directory));
         dirs.add(new File(SimpleMaterial.Companion.getDirectory()));
         dirs.add(new File(Entity.getDirectory()));
-        dirs.add(new File(SimpleScene.Companion.getDirectory()));
 
         dirs.add(new File(GAMEDIR_NAME));
 
