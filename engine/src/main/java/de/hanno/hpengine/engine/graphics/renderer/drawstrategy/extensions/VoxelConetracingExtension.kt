@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -28,12 +28,11 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL11.glFinish
 import java.io.File
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
-class VoxelConeTracingExtension @Throws(Exception::class)
+class VoxelConeTracingExtension
 constructor(private val engine: Engine, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension) : RenderExtension {
 
     val voxelGrids = SizedArray(2) { VoxelGrid(it) }.apply {
@@ -286,7 +285,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                         if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
                             continue
                         }
-                        val currentVerticesCount = SimpleDrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
+                        val currentVerticesCount = DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
 
                         //                TODO: Count this somehow?
                         //                firstPassResult.verticesDrawn += currentVerticesCount;

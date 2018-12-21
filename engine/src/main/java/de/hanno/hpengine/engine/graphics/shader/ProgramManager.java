@@ -69,7 +69,7 @@ public class ProgramManager implements Manager {
         }
     }
 
-    public Program getProgramFromFileNames(String vertexShaderFilename, String fragmentShaderFileName, Defines defines) throws Exception {
+    public Program getProgramFromFileNames(String vertexShaderFilename, String fragmentShaderFileName, Defines defines) {
         CodeSource vertexShaderSource = getShaderSource(new File(getDirectory() + vertexShaderFilename));
         CodeSource fragmentShaderSource = getShaderSource(new File(getDirectory() + fragmentShaderFileName));
 

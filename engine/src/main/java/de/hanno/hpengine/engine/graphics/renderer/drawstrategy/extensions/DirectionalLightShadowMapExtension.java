@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -79,7 +79,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         for(int i = 0; i < visibles.size(); i++) {
             RenderBatch e = visibles.get(i);
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
-            SimpleDrawStrategy.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible(), true);
+            DrawUtils.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible(), true);
         }
         engine.getTextureManager().generateMipMaps(TEXTURE_2D, getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;

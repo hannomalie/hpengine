@@ -13,7 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXT
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTarget
@@ -31,7 +31,6 @@ import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.*
@@ -116,7 +115,7 @@ class ProbeRenderStrategy(private val engine: Engine) {
 
             GPUProfiler.start("Probe entity rendering")
             for (e in renderState.renderBatchesStatic) {
-                SimpleDrawStrategy.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
+                DrawUtils.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
             }
             GPUProfiler.end()
             engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)

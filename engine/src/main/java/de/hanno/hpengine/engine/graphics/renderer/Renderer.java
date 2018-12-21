@@ -15,8 +15,6 @@ public interface Renderer extends RenderSystem {
 
     default void destroy() { }
 
-    default void init(Engine engine) {}
-
     void update(Engine engine, float seconds);
 
     void batchLine(Vector3f from, Vector3f to);
@@ -290,19 +288,6 @@ public interface Renderer extends RenderSystem {
             }
         }
     }
-
-    static Renderer create(Engine engine) {
-        try {
-            Class<? extends Renderer> rendererClass = Config.getInstance().getRendererClass();
-            Renderer instance = rendererClass.newInstance();
-            instance.init(engine);
-            return instance;
-        } catch (InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
 
     List<RenderExtension> getRenderExtensions();
 }

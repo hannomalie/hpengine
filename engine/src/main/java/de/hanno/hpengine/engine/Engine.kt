@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -49,7 +50,7 @@ class Engine private constructor(gameDirName: String) {
     val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
 
     val sceneManager = managers.register(SceneManager(this))
-    val renderer: Renderer = Renderer.create(this)
+    val renderer: Renderer = DeferredRenderer(this)
 
     val physicsManager = PhysicsManager(renderer)
 

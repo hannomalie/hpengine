@@ -15,7 +15,7 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -293,7 +293,7 @@ public class EnvironmentSampler extends Entity {
 			if (!Spatial.isInFrustum(getCamera(), e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
 //				continue;
 			}
-			SimpleDrawStrategy.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false, true);
+			DrawUtils.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false, true);
 		}
 		GPUProfiler.end();
 	}
@@ -328,11 +328,11 @@ public class EnvironmentSampler extends Entity {
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
 
 		for (RenderBatch entity : extract.getRenderBatchesStatic()) {
-			SimpleDrawStrategy.draw(engine.getGpuContext(), extract, entity);
-		}
+            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, entity.getProgram(), !entity.isVisible() || !entity.isVisibleForCamera(), true);
+        }
 		for (RenderBatch entity : extract.getRenderBatchesAnimated()) {
-			SimpleDrawStrategy.draw(engine.getGpuContext(), extract, entity);
-		}
+            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, entity.getProgram(), !entity.isVisible() || !entity.isVisibleForCamera(), true);
+        }
 		GPUProfiler.end();
         engine.getGpuContext().enable(CULL_FACE);
 	}

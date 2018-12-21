@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
@@ -87,14 +87,14 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
             areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
             for (e in renderState.renderBatchesStatic) {
-                SimpleDrawStrategy.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
+                DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
             }
         }
         GPUProfiler.end()
     }
 
     fun copyGpuBuffers(currentWriteState: RenderState) {
-//        TODO: Use this stuff instead of uniforms, take a look at SimpleDrawStrategy.java
+//        TODO: Use this stuff instead of uniforms, take a look at DrawUtils.java
 //        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredAreaLightBufferSize()
 //        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
 //        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)

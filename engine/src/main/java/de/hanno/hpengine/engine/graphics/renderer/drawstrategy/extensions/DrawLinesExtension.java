@@ -27,7 +27,7 @@ public class DrawLinesExtension implements RenderExtension {
     private final FloatBuffer identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
     private final Engine engine;
 
-    public DrawLinesExtension(Engine engine) throws Exception {
+    public DrawLinesExtension(Engine engine) {
         this.engine = engine;
         new SimpleTransform().get(identityMatrix44Buffer);
         linesProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());

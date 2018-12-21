@@ -546,10 +546,6 @@ public final class Config {
 
 	}
 
-	public Class<? extends Renderer> getRendererClass() {
-		return rendererClass;
-	}
-
 	public void setRendererClass(Class <? extends Renderer> rendererClass) {
 		this.rendererClass = rendererClass;
 	}
