@@ -51,7 +51,7 @@ public class EntityView extends WebPanel {
 
 	public EntityView(Engine engine, Entity entity) {
 		this.engine = engine;
-        this.renderer = engine.getRenderer();
+        this.renderer = engine.getRenderManager().getRenderer();
 		setUndecorated(true);
 		this.setSize(600, 700);
 		setMargin(20);

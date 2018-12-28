@@ -31,7 +31,6 @@ interface Scene : LifeCycle, Serializable {
     val entityManager: EntityManager
     val entitySystems: EntitySystemRegistry
     val componentSystems: ComponentSystemRegistry
-    val renderSystems: List<RenderSystem>
 
     val materialManager: MaterialManager
     val environmentProbeManager: EnvironmentProbeManager //TODO: Remove this from interface

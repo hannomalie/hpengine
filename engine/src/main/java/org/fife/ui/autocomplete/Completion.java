@@ -96,7 +96,7 @@ public interface Completion extends Comparable {
 	 * Returns the "relevance" of this completion.  This is used when sorting
 	 * completions by their relevance.  It is an abstract concept that may
 	 * mean different things to different languages, and may depend on the
-	 * context of the completion.<p>
+	 * managerContext of the completion.<p>
 	 *
 	 * By default, all completions have a relevance of <code>0</code>.  The
 	 * higher the value returned by this method, the higher up in the list

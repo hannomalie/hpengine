@@ -1,33 +1,13 @@
 package de.hanno.hpengine.util.gui;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.text.DecimalFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.BorderFactory;
-import javax.swing.JFrame;
-import javax.swing.Timer;
-
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.EngineImpl;
 import de.hanno.hpengine.engine.graphics.RenderManager;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.DateAxis;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
-import org.jfree.chart.axis.TickUnits;
-import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.axis.*;
 import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
@@ -41,6 +21,15 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.RectangleInsets;
 import org.jfree.util.UnitType;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /*
  * Thank you David Gilbert ! All source code is from him, I just modified it.
@@ -60,10 +49,10 @@ public class PerformanceMonitor {
 	private DefaultCategoryDataset breakdownDataset;
 
 	private JFrame frame;
-	private Engine engine;
+	private EngineImpl engine;
 
 	@SuppressWarnings("deprecation")
-	public PerformanceMonitor(Engine engine) {
+	public PerformanceMonitor(EngineImpl engine) {
 		this.engine = engine;
 		this.renderManager = engine.getRenderManager();
 	}

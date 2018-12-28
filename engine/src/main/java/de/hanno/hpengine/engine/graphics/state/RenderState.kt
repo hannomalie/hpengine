@@ -6,6 +6,11 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.light.point.PointLightShadowMapStrategy
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
@@ -14,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import org.joml.Vector3f
 import java.nio.FloatBuffer
+import java.util.ArrayList
 
 class RenderState(gpuContext: GpuContext) {
     private val gpuContext: GpuContext = gpuContext
@@ -24,7 +30,13 @@ class RenderState(gpuContext: GpuContext) {
 
     val directionalLightState = DirectionalLightState()
 
+    val lightState = LightState(gpuContext)
+
     val entitiesState: EntitiesState = EntitiesState(gpuContext)
+
+    val environmentProbesState = EnvironmentProbeState(gpuContext)
+
+    var skyBoxMaterialIndex = -1
 
     val commandOrganizationStatic: CommandOrganization = CommandOrganization(gpuContext)
     val commandOrganizationAnimated: CommandOrganization = CommandOrganization(gpuContext)
@@ -37,7 +49,7 @@ class RenderState(gpuContext: GpuContext) {
     var sceneMax = Vector3f()
 
     var cycle: Long = 0
-    var gpuCommandSync: GpuCommandSync = object: GpuCommandSync {}
+    var gpuCommandSync: GpuCommandSync = object : GpuCommandSync {}
 
     val renderBatchesStatic: List<RenderBatch>
         get() = entitiesState.renderBatchesStatic
@@ -66,12 +78,46 @@ class RenderState(gpuContext: GpuContext) {
 
     val staticEntityHasMoved: Boolean
         get() = entitiesState.staticEntityMovedInCycle == cycle
+    var deltaInS: Float = 0.1f
+
     /**
      * Copy constructor
      * @param source
      */
     constructor(source: RenderState) : this(source.gpuContext) {
-        init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.entitiesState.staticEntityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointLightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.cycle, source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle)
+        init(source.entitiesState.vertexIndexBufferStatic,
+                source.entitiesState.vertexIndexBufferAnimated,
+                source.entitiesState.joints,
+                source.camera,
+                source.entitiesState.entityMovedInCycle,
+                source.entitiesState.staticEntityMovedInCycle,
+                source.directionalLightHasMovedInCycle,
+                source.pointLightMovedInCycle,
+                source.sceneInitiallyDrawn,
+                source.sceneMin,
+                source.sceneMax,
+                source.cycle,
+                source.directionalLightState.directionalLightViewMatrixAsBuffer,
+                source.directionalLightState.directionalLightProjectionMatrixAsBuffer,
+                source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer,
+                source.directionalLightState.directionalLightScatterFactor,
+                source.directionalLightState.directionalLightDirection,
+                source.directionalLightState.directionalLightColor,
+                source.entitiesState.entityAddedInCycle,
+                source.environmentProbesState.environmapsArray0Id,
+                source.environmentProbesState.environmapsArray3Id,
+                source.environmentProbesState.activeProbeCount,
+                source.environmentProbesState.environmentMapMin,
+                source.environmentProbesState.environmentMapMax,
+                source.environmentProbesState.environmentMapWeights,
+                source.skyBoxMaterialIndex,
+                source.lightState.pointLights,
+                source.lightState.pointLightBuffer,
+                source.lightState.areaLights,
+                source.lightState.tubeLights,
+                source.lightState.pointLightShadowMapStrategy,
+                source.lightState.areaLightDepthMaps
+        )
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
         //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
@@ -81,7 +127,38 @@ class RenderState(gpuContext: GpuContext) {
         //        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
     }
 
-    fun init(vertexIndexBufferStatic: VertexIndexBuffer, vertexIndexBufferAnimated: VertexIndexBuffer, joints: List<BufferableMatrix4f>, camera: Camera, entityMovedInCycle: Long, staticEntityMovedInCycle: Long, directionalLightHasMovedInCycle: Long, pointLightMovedInCycle: Long, sceneInitiallyDrawn: Boolean, sceneMin: Vector3f, sceneMax: Vector3f, cycle: Long, directionalLightViewMatrixAsBuffer: FloatBuffer, directionalLightProjectionMatrixAsBuffer: FloatBuffer, directionalLightViewProjectionMatrixAsBuffer: FloatBuffer, directionalLightScatterFactor: Float, directionalLightDirection: Vector3f, directionalLightColor: Vector3f, entityAddedInCycle: Long) {
+    fun init(vertexIndexBufferStatic: VertexIndexBuffer,
+             vertexIndexBufferAnimated: VertexIndexBuffer,
+             joints: List<BufferableMatrix4f>,
+             camera: Camera,
+             entityMovedInCycle: Long,
+             staticEntityMovedInCycle: Long,
+             directionalLightHasMovedInCycle: Long,
+             pointLightMovedInCycle: Long,
+             sceneInitiallyDrawn: Boolean,
+             sceneMin: Vector3f,
+             sceneMax: Vector3f,
+             cycle: Long,
+             directionalLightViewMatrixAsBuffer: FloatBuffer,
+             directionalLightProjectionMatrixAsBuffer: FloatBuffer,
+             directionalLightViewProjectionMatrixAsBuffer: FloatBuffer,
+             directionalLightScatterFactor: Float,
+             directionalLightDirection: Vector3f,
+             directionalLightColor: Vector3f,
+             entityAddedInCycle: Long,
+             environmentMapsArray0Id: Int,
+             environmentMapsArray3Id: Int,
+             activeProbeCount: Int,
+             environmentMapMin: FloatBuffer,
+             environmentMapMax: FloatBuffer,
+             environmentMapWeights: FloatBuffer,
+             skyBoxMaterialIndex: Int,
+             pointLights: List<PointLight>,
+             pointLightsBuffer: PersistentMappedBuffer,
+             areaLights: List<AreaLight>,
+             tubeLights: List<TubeLight>,
+             pointLightShadowMapStrategy: PointLightShadowMapStrategy,
+             areaLightDepthMaps: ArrayList<Int>) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
         this.entitiesState.joints = joints // TODO: Fixme
@@ -96,9 +173,26 @@ class RenderState(gpuContext: GpuContext) {
         this.directionalLightState.directionalLightColor.set(directionalLightColor)
         this.directionalLightState.directionalLightScatterFactor = directionalLightScatterFactor
 
+        this.lightState.pointLights = pointLights
+        this.lightState.pointLightBuffer = pointLightsBuffer
+        this.lightState.areaLights = areaLights
+        this.lightState.tubeLights = tubeLights
+        this.lightState.pointLightShadowMapStrategy = pointLightShadowMapStrategy
+        this.lightState.areaLightDepthMaps = areaLightDepthMaps
+
         this.entitiesState.entityMovedInCycle = entityMovedInCycle
         this.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         this.entitiesState.entityAddedInCycle = entityAddedInCycle
+
+        this.environmentProbesState.environmapsArray3Id = environmentMapsArray3Id
+        this.environmentProbesState.environmapsArray0Id = environmentMapsArray0Id
+        this.environmentProbesState.activeProbeCount = activeProbeCount
+//    TODO: Pass buffer contents by value
+        this.environmentProbesState.environmentMapMin = environmentMapMin
+        this.environmentProbesState.environmentMapMax = environmentMapMax
+        this.environmentProbesState.environmentMapWeights = environmentMapWeights
+        this.skyBoxMaterialIndex = skyBoxMaterialIndex
+
         this.directionalLightHasMovedInCycle = directionalLightHasMovedInCycle
         this.pointLightMovedInCycle = pointLightMovedInCycle
         this.sceneInitiallyDrawn = sceneInitiallyDrawn

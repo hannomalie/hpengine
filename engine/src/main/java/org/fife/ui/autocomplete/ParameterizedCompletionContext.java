@@ -857,7 +857,7 @@ class ParameterizedCompletionContext {
 
 
 	/**
-	 * Updates the <code>LookAndFeel</code> of all popup windows this context
+	 * Updates the <code>LookAndFeel</code> of all popup windows this managerContext
 	 * manages.
 	 */
 	public void updateUI() {

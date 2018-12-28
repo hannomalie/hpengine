@@ -19,7 +19,7 @@ public class SimpleMoveComponent implements LifeCycle {
     private int[] counters = new int[randomCount];
     private int[] flips = new int[randomCount];
 
-    public void init(Engine engine) {
+    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
         Random random = new Random();
         for(int i = 0; i < randomCount; i++) {
             float v = 100f * random.nextFloat();

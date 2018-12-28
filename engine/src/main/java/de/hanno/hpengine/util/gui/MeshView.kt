@@ -29,7 +29,7 @@ class MeshView(val engine: Engine, val mesh: Mesh<*>): WebPanel() {
         materialSelectionPanel.addElement(meshName)
         addMaterialSelect(materialSelectionPanel, ActionListener { e ->
             val cb = e.source as WebComboBox
-            val selectedMaterial = engine.getScene().materialManager.materials[cb.selectedIndex]
+            val selectedMaterial = engine.scene.materialManager.materials[cb.selectedIndex]
             mesh.material = selectedMaterial
             engine.eventBus.post(MaterialChangedEvent())
         }, mesh.material)
@@ -41,9 +41,9 @@ class MeshView(val engine: Engine, val mesh: Mesh<*>): WebPanel() {
     }
 
     private fun addMaterialSelect(webComponentPanel: WebComponentPanel, actionListener: ActionListener, initialSelection: SimpleMaterial) {
-        val materialSelect = WebComboBox(Vector<SimpleMaterial>(engine.getScene().materialManager.materials))
+        val materialSelect = WebComboBox(Vector<SimpleMaterial>(engine.scene.materialManager.materials))
 
-        materialSelect.selectedIndex = engine.getScene().materialManager.materials.indexOf(initialSelection)
+        materialSelect.selectedIndex = engine.scene.materialManager.materials.indexOf(initialSelection)
         materialSelect.addActionListener(actionListener)
         webComponentPanel.addElement(materialSelect)
     }

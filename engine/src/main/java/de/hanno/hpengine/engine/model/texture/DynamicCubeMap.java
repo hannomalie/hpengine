@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter;
@@ -8,14 +8,12 @@ import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter;
-
 @SuppressWarnings("serial")
 public class DynamicCubeMap extends CubeMap {
 
-    private Engine engine;
+    private Backend engine;
 
-    public DynamicCubeMap(Engine engine, int resolution, int internalFormat, int type, MinFilter minFilter, int format, FloatBuffer[] values) {
+    public DynamicCubeMap(Backend engine, int resolution, int internalFormat, int type, MinFilter minFilter, int format, FloatBuffer[] values) {
         super(engine.getTextureManager(), "", new TextureDimension(resolution, resolution), new TextureFilterConfig(minFilter), GL11.GL_RGBA, engine.getGpuContext().genTextures(), null); // TODO: pass formats
         if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;

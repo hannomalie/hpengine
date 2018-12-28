@@ -3,21 +3,19 @@ package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.util.Util;
 
 import org.lwjgl.BufferUtils;
 
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 import static org.lwjgl.opengl.GL45.glTextureStorage2D;
 
 public class CubeRenderTarget extends RenderTarget {
 
-	public CubeRenderTarget(Engine engine, CubeRenderTargetBuilder builder) {
+	public CubeRenderTarget(Backend engine, CubeRenderTargetBuilder builder) {
         super(engine.getGpuContext());
         this.width = builder.width;
 		this.height = builder.height;
@@ -76,8 +74,8 @@ public class CubeRenderTarget extends RenderTarget {
 	}
 //
 //	public void setCubeMapFace(int index) {
-//		engine.getRenderer().getOpenGLContext().clearDepthBuffer();
-//		engine.getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureId());
+//		managerContext.getRenderer().getOpenGLContext().clearDepthBuffer();
+//		managerContext.getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureId());
 //		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureId(), 0);
 //	}
 

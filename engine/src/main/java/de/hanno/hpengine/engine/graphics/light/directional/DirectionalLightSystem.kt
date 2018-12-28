@@ -18,7 +18,7 @@ class DirectionalLightSystem(engine: Engine, simpleScene: SimpleScene, val event
         getDirectionalLight().update(deltaSeconds)
 
         if (getDirectionalLight().getEntity().hasMoved()) {
-            directionalLightMovedInCycle = engine.getScene().currentCycle
+            directionalLightMovedInCycle = engine.scene.currentCycle
             getDirectionalLight().entity.isHasMoved = false
         }
     }

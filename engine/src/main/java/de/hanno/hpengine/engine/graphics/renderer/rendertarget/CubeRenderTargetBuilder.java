@@ -1,12 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.Backend;
 
 public class CubeRenderTargetBuilder extends RenderTargetBuilder<CubeRenderTargetBuilder, RenderTarget> {
 
-    private Engine engine;
+    private Backend engine;
 
-    public CubeRenderTargetBuilder(Engine engine) {
+    public CubeRenderTargetBuilder(Backend engine) {
         super(engine.getGpuContext());
         this.engine = engine;
     }

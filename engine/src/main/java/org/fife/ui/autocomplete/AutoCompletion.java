@@ -403,10 +403,10 @@ public class AutoCompletion {
 
 
 	/**
-	 * Returns the style context describing how auto-completion related
+	 * Returns the style managerContext describing how auto-completion related
 	 * highlights in the editor are rendered.
 	 *
-	 * @return The style context.
+	 * @return The style managerContext.
 	 */
 	public static AutoCompletionStyleContext getStyleContext() {
 		return styleContext;

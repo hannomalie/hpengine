@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.component;
 import de.hanno.compiler.RuntimeJavaCompiler;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
@@ -41,6 +43,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private Map map = new HashMap<>();
     private Class<?> compiledClass;
     private boolean isLifeCycle;
+    private boolean isEngineConsumer;
     private Object instance;
 
     public JavaComponent(String sourceCode) {
@@ -58,13 +61,20 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public void init(Engine engine) {
+    public void init(EngineContext engine) {
         observerJavaFile = new FileAlterationObserver(javaCodeSource.isFileBased() ? javaCodeSource.getFile().getParent() : JavaComponent.getDirectory());
         addFileListeners();
         initWrappingComponent();
         super.init(engine);
         if(isLifeCycle) {
             ((LifeCycle) instance).init(engine);
+        }
+    }
+
+//    TODO: Make this better
+    public void initWithEngine(Engine engine) {
+        if(isEngineConsumer) {
+            ((EngineConsumer) instance).consume(engine);
         }
     }
 
@@ -110,6 +120,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
             }
             isLifeCycle = instance instanceof LifeCycle;
+            isEngineConsumer= instance instanceof EngineConsumer;
 
         } catch (Exception e) {
             e.printStackTrace();

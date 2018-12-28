@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>de.hanno.hpengine</groupId>
-            <artifactId>engine</artifactId>
+            <artifactId>engineContext</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
@@ -47,7 +47,7 @@
                             <outputDirectory>${basedir}/target</outputDirectory>
                                 <resources>
                                     <resource>
-                                        <targetPath>${basedir}/../engine/game</targetPath>
+                                        <targetPath>${basedir}/../engineContext/game</targetPath>
                                         <directory>../game</directory>
                                         <includes>
                                             <include>**/*.*</include>

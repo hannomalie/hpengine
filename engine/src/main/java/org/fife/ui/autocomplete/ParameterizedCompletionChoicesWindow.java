@@ -80,7 +80,7 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 	 *
 	 * @param parent The parent window (hosting the text component).
 	 * @param ac The auto-completion instance.
-	 * @param context The completion context.
+	 * @param context The completion managerContext.
 	 */
 	public ParameterizedCompletionChoicesWindow(Window parent,
 						AutoCompletion ac,

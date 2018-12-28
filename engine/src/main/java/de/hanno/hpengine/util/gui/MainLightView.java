@@ -185,7 +185,7 @@ public class MainLightView extends WebPanel {
         }});
         webComponentPanel.addElement(new WebButton("Use Voxelizer Cam") {{
             addActionListener(e -> {
-                Optional<RenderExtension> voxelConeTracingExtension = engine.getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
+                Optional<RenderExtension> voxelConeTracingExtension = engine.getRenderManager().getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
                 voxelConeTracingExtension.ifPresent(it -> {
                     engine.getSceneManager().getScene().setActiveCamera(((VoxelConeTracingExtension) it).getVoxelGrids().get(0).getOrthoCam());
                 });

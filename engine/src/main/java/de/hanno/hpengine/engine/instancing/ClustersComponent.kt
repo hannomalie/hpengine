@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.instancing
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
@@ -14,7 +15,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.transform.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ClustersComponent(val engine: Engine, private val eventBus: EventBus, private val entity: Entity): Component {
+class ClustersComponent(val engine: EngineContext, private val eventBus: EventBus, private val entity: Entity): Component {
 
     private val instances = CopyOnWriteArrayList<Instance>()
     private val clusters = CopyOnWriteArrayList<Cluster>()
@@ -116,7 +117,7 @@ class ClustersComponent(val engine: Engine, private val eventBus: EventBus, priv
 
 }
 
-class ClustersComponentSystem(val engine: Engine) : ComponentSystem<ClustersComponent> {
+class ClustersComponentSystem(val engine: EngineContext) : ComponentSystem<ClustersComponent> {
     override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()

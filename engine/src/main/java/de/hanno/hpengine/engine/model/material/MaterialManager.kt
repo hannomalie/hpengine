@@ -2,23 +2,19 @@ package de.hanno.hpengine.engine.model.material
 
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.SizedArray
+import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.TexturesChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.struct.StaticStructObjectArray
-import de.hanno.struct.clone
 import de.hanno.struct.copyTo
 import net.engio.mbassy.listener.Handler
 import org.apache.commons.io.FilenameUtils
@@ -28,14 +24,12 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.util.*
-import java.util.function.BiConsumer
-import java.util.function.Supplier
 import java.util.logging.Logger
 import kotlin.collections.ArrayList
 
-class MaterialManager(private val engine: Engine, val textureManager: TextureManager) : Manager {
+class MaterialManager(private val backend: Backend, val textureManager: TextureManager = backend.textureManager) : Manager {
     val skyboxMaterial: SimpleMaterial
-    private val eventBus: EventBus = engine.eventBus
+    private val eventBus: EventBus = backend.eventBus
 
     var MATERIALS: MutableMap<String, SimpleMaterial> = LinkedHashMap()
 
@@ -46,85 +40,53 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
 
     val materialsAsStructs = StaticStructObjectArray(null, 1000) { MaterialStruct(it) }
 
-    val bufferMaterialsExtractor = Supplier {
-        engine.commandQueue.calculate(object: FutureCallable<List<SimpleMaterial>>() {
-            override fun execute(): List<SimpleMaterial> {
-                return materials // TODO: Move this out of the update queue
-            }
-        })
-    }
-    val bufferMaterialsConsumer = BiConsumer<RenderState, List<SimpleMaterial>> { renderState, materials ->
-        renderState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
-        renderState.entitiesState.materialBuffer.buffer.rewind()
-        for ((index, material) in materials.withIndex()) {
-//            material.putToBuffer(renderState.materialBuffer.buffer)
-            val target = materialsAsStructs[index]
-            target.diffuse.set(material.materialInfo.diffuse)
-            target.metallic = material.materialInfo.metallic
-            target.roughness = material.materialInfo.roughness
-            target.ambient = material.materialInfo.ambient
-            target.parallaxBias = material.materialInfo.parallaxBias
-            target.parallaxScale = material.materialInfo.parallaxScale
-            target.transparency = material.materialInfo.transparency
-            target.materialType = material.materialInfo.materialType
-            target.diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
-            target.normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
-            target.specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
-            target.heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
-            target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
-            target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
-        }
-        materialsAsStructs.buffer.copyTo(renderState.entitiesState.materialBuffer.buffer)
-    }
-    val bufferMaterialsActionRef = engine.renderManager.renderState.registerAction(TripleBuffer.RareAction<List<SimpleMaterial>>(bufferMaterialsExtractor, bufferMaterialsConsumer, engine))
-
     init {
         defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f,0f,0f)).apply {
-          put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/default.dds", true))
+          put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/default.dds", true))
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
         if (Config.getInstance().isLoadDefaultMaterials) {
             initDefaultMaterials()
         }
-        engine.eventBus.register(this)
+        backend.eventBus.register(this)
     }
 
     fun initDefaultMaterials() {
 
         getMaterial(SimpleMaterialInfo("stone").apply {
-            put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
-            put(MAP.NORMAL, engine.textureManager.getTexture("hp/assets/textures/stone_normal.png"))
-            put(MAP.HEIGHT, engine.textureManager.getTexture("hp/assets/textures/stone_height.png"))
+            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
+            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/stone_normal.png"))
+            put(MAP.HEIGHT, backend.textureManager.getTexture("hp/assets/textures/stone_height.png"))
         })
 
 //        getMaterial(SimpleMaterialInfo("stone2").apply {
-//            put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/brick.png", true))
-//            put(MAP.NORMAL, engine.textureManager.getTexture("hp/assets/textures/brick_normal.png"))
+//            put(MAP.DIFFUSE, managerContext.textureManager.getTexture("hp/assets/textures/brick.png", true))
+//            put(MAP.NORMAL, managerContext.textureManager.getTexture("hp/assets/textures/brick_normal.png"))
 //        })
 
         getMaterial(SimpleMaterialInfo("brick").apply {
-            put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/brick.png", true))
-            put(MAP.NORMAL, engine.textureManager.getTexture("hp/assets/textures/brick_normal.png"))
-            put(MAP.HEIGHT, engine.textureManager.getTexture("hp/assets/textures/brick_height.png"))
+            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/brick.png", true))
+            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/brick_normal.png"))
+            put(MAP.HEIGHT, backend.textureManager.getTexture("hp/assets/textures/brick_height.png"))
         })
 
         getMaterial(SimpleMaterialInfo("wood").apply {
-            put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/wood_diffuse.png", true))
-            put(MAP.NORMAL, engine.textureManager.getTexture("hp/assets/textures/wood_normal.png"))
+            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/wood_diffuse.png", true))
+            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/wood_normal.png"))
         })
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
-            put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
-            put(MAP.NORMAL, engine.textureManager.getTexture("hp/assets/textures/stone_normal.png"))
-            put(MAP.REFLECTION, engine.textureManager.getTexture("hp/assets/textures/stone_reflection.png"))
+            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
+            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/stone_normal.png"))
+            put(MAP.REFLECTION, backend.textureManager.getTexture("hp/assets/textures/stone_reflection.png"))
         })
         getMaterial(SimpleMaterialInfo(name = "mirror", diffuse = Vector3f(1f,1f,1f), metallic = 1f))
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
-            put(MAP.DIFFUSE, engine.textureManager.getTexture("hp/assets/textures/bricks_parallax.dds", true))
-            put(MAP.HEIGHT, engine.textureManager.getTexture("hp/assets/textures/bricks_parallax_height.dds"))
-            put(MAP.NORMAL, engine.textureManager.getTexture("hp/assets/textures/bricks_parallax_normal.dds"))
+            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/bricks_parallax.dds", true))
+            put(MAP.HEIGHT, backend.textureManager.getTexture("hp/assets/textures/bricks_parallax_height.dds"))
+            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/bricks_parallax_normal.dds"))
         })
     }
 
@@ -217,23 +179,22 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
-        bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
+        requestMaterialBuffering()
     }
 
     @Subscribe
     @Handler
     fun handle(event: TexturesChangedEvent) {
-        bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
+        requestMaterialBuffering()
     }
 
     @Subscribe
     @Handler
     fun handle(event: MaterialChangedEvent) {
         if (event.material.isPresent) {
-            //                renderStateX.bufferMaterial(event.getMaterials().get());
-            bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
+            requestMaterialBuffering()
         } else {
-            bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
+            requestMaterialBuffering()
         }
     }
 
@@ -254,7 +215,38 @@ class MaterialManager(private val engine: Engine, val textureManager: TextureMan
 //            MATERIALS.remove(oldMaterial.name)
 //            getMaterial(changedMaterial)
         }
-        bufferMaterialsActionRef.request(engine.renderManager.drawCycle.get())
+        requestMaterialBuffering()
         eventBus.post(MaterialChangedEvent())
     }
+
+    private fun requestMaterialBuffering() {
+//        bufferMaterialsActionRef.request(renderManager.drawCycle.get())
+    }
+
+    override fun extract(currentWriteState: RenderState) {
+//        TODO: Remove most of this
+        currentWriteState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
+        currentWriteState.entitiesState.materialBuffer.buffer.rewind()
+        for ((index, material) in materials.withIndex()) {
+//            material.putToBuffer(currentWriteState.materialBuffer.buffer)
+            val target = materialsAsStructs[index]
+            target.diffuse.set(material.materialInfo.diffuse)
+            target.metallic = material.materialInfo.metallic
+            target.roughness = material.materialInfo.roughness
+            target.ambient = material.materialInfo.ambient
+            target.parallaxBias = material.materialInfo.parallaxBias
+            target.parallaxScale = material.materialInfo.parallaxScale
+            target.transparency = material.materialInfo.transparency
+            target.materialType = material.materialInfo.materialType
+            target.diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
+            target.normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
+            target.specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
+            target.heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
+            target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
+            target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
+        }
+        materialsAsStructs.buffer.copyTo(currentWriteState.entitiesState.materialBuffer.buffer)
+        currentWriteState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
+    }
+
 }

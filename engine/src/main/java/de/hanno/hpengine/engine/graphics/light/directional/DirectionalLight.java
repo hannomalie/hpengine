@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.directional;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -68,9 +69,9 @@ public class DirectionalLight extends Camera {
 
 	public static class DirectionalLightController extends InputControllerComponent {
 		private static final long serialVersionUID = 1L;
-		private Engine engine;
+		private EngineContext engine;
 
-		public DirectionalLightController(Engine engine, @NotNull Entity entity) {
+		public DirectionalLightController(EngineContext engine, @NotNull Entity entity) {
 			super(entity);
 			this.engine = engine;
 		}

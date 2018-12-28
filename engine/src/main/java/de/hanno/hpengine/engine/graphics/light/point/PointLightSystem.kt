@@ -86,6 +86,12 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
         }
     }
 
+    override fun extract(currentWriteState: RenderState) {
+        currentWriteState.lightState.pointLights = getPointLights()
+        currentWriteState.lightState.pointLightBuffer = lightBuffer
+        currentWriteState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
+    }
+
     companion object {
         @JvmField val MAX_POINTLIGHT_SHADOWMAPS = 5
     }

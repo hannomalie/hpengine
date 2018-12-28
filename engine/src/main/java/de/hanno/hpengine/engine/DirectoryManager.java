@@ -24,9 +24,10 @@ public class DirectoryManager implements Manager {
     public DirectoryManager(String gameDir) {
         this.gameDir = new File(gameDir);
         gameInitScript = this.gameDir.toPath().resolve(Config.getInstance().getInitFileName()).toFile();
+        initWorkDir();
     }
 
-    public void initWorkDir() {
+    private void initWorkDir() {
         ArrayList<File> dirs = new ArrayList<>();
         dirs.add(new File(WORKDIR_NAME));
         dirs.add(new File(ASSETDIR_NAME));

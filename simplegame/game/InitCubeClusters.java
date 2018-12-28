@@ -33,7 +33,7 @@ public class InitCubeClusters implements LifeCycle {
             new Vector3f(0, 0, 0),
             new Vector3f(-clusterDistance, 0, clusterDistance)};
 
-    public void init(Engine engine) {
+    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
 
         try {
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"), "cube").execute(engine);

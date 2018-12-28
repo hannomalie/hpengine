@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -37,7 +38,7 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-class CubeShadowMapStrategy(private val engine: Engine, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
+class CubeShadowMapStrategy(private val engine: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget? = null
     private var pointCubeShadowPassProgram: Program? = null
@@ -149,7 +150,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
-        val entities = engine.getScene().entityManager.getEntities()
+        val entities = engine.scene.entityManager.getEntities()
         val gpuContext = engine.gpuContext
 
         GPUProfiler.start("PointLight shadowmaps")
@@ -173,8 +174,8 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
             for (e in entities) {
                 e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
                     pointShadowPassProgram!!.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
-                    pointShadowPassProgram!!.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.getHasDiffuseMap())
-                    pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.diffuse)
+                    pointShadowPassProgram!!.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.getHasDiffuseMap())
+                    pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
                     val batch = RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, Config.getInstance().isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.update, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds)
                     DrawUtils.draw(gpuContext, renderState, batch)
@@ -187,8 +188,8 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
             for (e in entities) {
                 e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
                     pointShadowPassProgram!!.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
-                    pointShadowPassProgram!!.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.getHasDiffuseMap())
-                    pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.getScene().materialManager).materialInfo.diffuse)
+                    pointShadowPassProgram!!.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.getHasDiffuseMap())
+                    pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
                     val batch = RenderBatch().init(pointShadowPassProgram, e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, Config.getInstance().isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.update, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds)
                     DrawUtils.draw(gpuContext, renderState, batch)

@@ -13,15 +13,14 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
-import org.joml.Vector3f;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.MovablePanel;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
+import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -63,10 +62,10 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable<Boolean>() {
                 @Override
                 public Boolean execute() throws Exception {
-                    return engine.getSceneManager().getScene().getEnvironmentProbeManager().remove(probe);
+                    return engine.getScene().getEnvironmentProbeManager().remove(probe);
                 }
             });
     		
@@ -106,7 +105,7 @@ public class ProbeView extends WebPanel {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
                 engine.getGpuContext().execute(() -> {
-                    engine.getSceneManager().getScene().getEnvironmentProbeManager().updateBuffers();
+                    engine.getScene().getEnvironmentProbeManager().updateBuffers();
 				});
 			}
 		});

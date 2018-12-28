@@ -1,7 +1,6 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.texture.PathBasedOpenGlTexture;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 import javax.swing.table.AbstractTableModel;

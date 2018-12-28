@@ -3,15 +3,17 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.entity.Entity;
 
 import java.io.File;
 
-public class InitSponza implements LifeCycle {
+public class InitSponza implements EngineConsumer {
 
     private boolean initialized;
 
-    public void init(Engine engine) {
+    @Override
+    public void consume(de.hanno.hpengine.engine.Engine engine) {
 
         try {
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"), "sponza", engine.getScene().getMaterialManager()).execute();

@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.camera.CameraComponentSystem;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -14,11 +13,8 @@ import java.nio.FloatBuffer;
 
 public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements CustomState {
 
-    private final Engine engine;
-
-    public GPUCulledMainPipeline(Engine engine, Renderer renderer) {
-        super(engine, renderer, true, true, true, null, null);
-        this.engine = engine;
+    public GPUCulledMainPipeline(EngineContext engineContext, Renderer renderer) {
+        super(engineContext, renderer, true, true, true);
     }
 
 //    This can be used for debug drawing
@@ -27,9 +23,9 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements
 //        return getDebugCam();
 //    }
 
-    private Camera getDebugCam() {
-        return engine.getSceneManager().getScene().getComponentSystems().get(CameraComponentSystem.class).getComponents().stream().findFirst().orElse(engine.getScene().getActiveCamera());
-    }
+//    private Camera getDebugCam() {
+//        return engine.getSceneManager().getScene().getComponentSystems().get(CameraComponentSystem.class).getComponents().stream().findFirst().orElse(engine.getScene().getActiveCamera());
+//    }
 //    @Override
 //    public void renderHighZMap() {
 //

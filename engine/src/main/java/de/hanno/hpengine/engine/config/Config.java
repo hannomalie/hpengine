@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.io.File;
@@ -17,6 +18,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
 
 public final class Config {
 
@@ -33,7 +36,7 @@ public final class Config {
         }
 	}
 
-    public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
+	public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
         Properties properties = new Properties();
         try {
             properties.load(inputStream);
@@ -54,7 +57,8 @@ public final class Config {
         }
     }
 
-	private Class<? extends Renderer> rendererClass = DeferredRenderer.class;
+	@NotNull
+	private String gameDir = GAMEDIR_NAME;
 	private String initFileName = "Init.java";
 	private Class<? extends GpuContext> gpuContextClass = OpenGLContext.class;
     private boolean useFileReloading = true;
@@ -546,10 +550,6 @@ public final class Config {
 
 	}
 
-	public void setRendererClass(Class <? extends Renderer> rendererClass) {
-		this.rendererClass = rendererClass;
-	}
-
 	public boolean isDrawBoundingVolumes() {
 		return drawBoundingVolumes;
 	}
@@ -596,5 +596,14 @@ public final class Config {
 
 	public void setDebugVoxels(boolean debugVoxels) {
 		this.debugVoxels = debugVoxels;
+	}
+
+	@NotNull
+	public String getGameDir() {
+		return gameDir;
+	}
+
+	public void setGameDir(@NotNull String gameDir) {
+		this.gameDir = gameDir;
 	}
 }

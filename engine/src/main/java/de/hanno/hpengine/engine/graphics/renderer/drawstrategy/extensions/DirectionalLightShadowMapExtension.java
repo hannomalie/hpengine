@@ -1,19 +1,20 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.Backend;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.graphics.shader.Shader;
-import org.lwjgl.opengl.GL30;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.lwjgl.opengl.GL30;
 
 import java.io.File;
 import java.util.List;
@@ -25,14 +26,14 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarg
 public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     public static final int SHADOWMAP_RESOLUTION = 2048;
-    private final Engine engine;
+    private final EngineContext engine;
 
     transient private RenderTarget renderTarget;
     transient private Program directionalShadowPassProgram;
     private final GpuContext gpuContext;
     private VoxelConeTracingExtension voxelConeTracingExtension;
 
-    public DirectionalLightShadowMapExtension(Engine engine) {
+    public DirectionalLightShadowMapExtension(EngineContext engine) {
         gpuContext = engine.getGpuContext();
         this.engine = engine;
         directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
@@ -50,7 +51,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     private long renderedInCycle;
     @Override
-    public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Backend backend, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("Directional shadowmap");
         if(renderedInCycle < renderState.getDirectionalLightHasMovedInCycle() ||
                 renderedInCycle < renderState.getEntitiesState().entityMovedInCycle ||

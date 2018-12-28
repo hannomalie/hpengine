@@ -30,7 +30,7 @@ public class InitInstancedAnimated implements LifeCycle {
             new Vector3f(0, 0, 0),
             new Vector3f(-clusterDistance, 0, clusterDistance)};
 
-    public void init(Engine engine) {
+    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
 
         try {
             loadLotsOfInstances(engine, "/assets/models/doom3monster/monster.md5mesh", 1, "hellknight");

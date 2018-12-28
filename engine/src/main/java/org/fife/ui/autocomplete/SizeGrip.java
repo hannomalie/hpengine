@@ -103,7 +103,7 @@ class SizeGrip extends JPanel {
 	/**
 	 * Paints this panel.
 	 *
-	 * @param g The graphics context.
+	 * @param g The graphics managerContext.
 	 */
 	protected void paintComponent(Graphics g) {
 

@@ -1,10 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.*
-import de.hanno.hpengine.engine.graphics.renderer.command.Result
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -16,7 +15,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.struct.*
 
-open class SimplePipeline(private val engine: Engine,
+open class SimplePipeline(private val engine: EngineContext,
                           private val useFrustumCulling: Boolean = true,
                           private val useBackFaceCulling: Boolean = true,
                           private val useLineDrawingIfActivated: Boolean = true) : Pipeline {

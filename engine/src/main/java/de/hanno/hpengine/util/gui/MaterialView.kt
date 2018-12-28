@@ -67,7 +67,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
                 val future = engine.gpuContext.execute(object : FutureCallable<MaterialResult>() {
                     @Throws(Exception::class)
                     override fun execute(): MaterialResult {
-                        return GetMaterialCommand(newInfo, engine.getScene().materialManager).execute()
+                        return GetMaterialCommand(newInfo, engine.scene.materialManager).execute()
                     }
                 })
                 val result: MaterialResult
@@ -123,14 +123,14 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             select.addActionListener { e ->
                 val cb = e.source as WebComboBox
                 val selectedTexture = textures[cb.selectedIndex]
-                engine.getScene().materialManager.changeMaterial(material.put(map, selectedTexture as Texture<TextureDimension2D>))
+                engine.scene.materialManager.changeMaterial(material.put(map, selectedTexture as Texture<TextureDimension2D>))
 //                material.materialInfo.maps.put(map, selectedTexture)
                 addMaterialInitCommand(material)
             }
 
             val removeTextureButton = WebButton("Remove")
             removeTextureButton.addActionListener { e ->
-                engine.getScene().materialManager.changeMaterial(material.remove(map))
+                engine.scene.materialManager.changeMaterial(material.remove(map))
 //                material.materialInfo.maps.remove(map)
                 select.selectedIndex = -1
                 addMaterialInitCommand(material)
@@ -156,14 +156,14 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             select.addActionListener { e ->
                 val cb = e.source as WebComboBox
                 val selectedTexture: Texture<TextureDimension2D> = textures[cb.selectedIndex] as Texture<TextureDimension2D>
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.put(map, selectedTexture))
+                engine.scene.materialManager.changeMaterial(material.materialInfo.put(map, selectedTexture))
 //                material.materialInfo.maps.put(map, selectedTexture)
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
 
             val removeTextureButton = WebButton("Remove")
             removeTextureButton.addActionListener { e ->
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.remove(map))
+                engine.scene.materialManager.changeMaterial(material.materialInfo.remove(map))
 //                material.materialInfo.maps.remove(map)
                 addMaterialInitCommand(material)
             }
@@ -182,13 +182,13 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
         webComponentPanel.addElement(object : WebFormattedVec3Field("Diffuse", material.materialInfo.diffuse) {
             override fun onValueChange(current: Vector3f) {
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(diffuse = current))
+                engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(diffuse = current))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
         })
         webComponentPanel.addElement(ColorChooserButton("Diffuse", object : ColorChooserFrame() {
             override fun onColorChange(color: Vector3f) {
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(diffuse = color))
+                engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(diffuse = color))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
         }))
@@ -196,7 +196,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val roughnessInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(roughness = currentValue))
+                    engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(roughness = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -206,7 +206,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         roughnessInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(roughness = value.toFloat() / 100f))
+                        engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(roughness = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -217,7 +217,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val metallicInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(metallic = currentValue))
+                    engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(metallic = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -227,7 +227,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         metallicInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(metallic = value.toFloat() / 100f))
+                        engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(metallic = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -239,7 +239,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val ambientInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(ambient = currentValue))
+                    engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(ambient = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -249,7 +249,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         ambientInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(ambient = value.toFloat() / 100f))
+                        engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(ambient = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -261,7 +261,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val transparencyInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(transparency = currentValue))
+                    engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(transparency = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -271,7 +271,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         transparencyInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(transparency = value.toFloat() / 100f))
+                        engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(transparency = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -283,7 +283,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val parallaxScaleInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxScale = currentValue))
+                    engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxScale = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -293,7 +293,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         parallaxScaleInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxScale = value.toFloat() / 100f))
+                        engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxScale = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -305,7 +305,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         run {
             val parallaxBiasInput = object : LimitedWebFormattedTextField(0f, 1f) {
                 override fun onChange(currentValue: Float) {
-                    engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxBias = currentValue))
+                    engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxBias = currentValue))
                     engine.eventBus.post(MaterialChangedEvent(material))
                 }
             }
@@ -315,7 +315,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
                     override fun onValueChange(value: Int, delta: Int) {
                         parallaxBiasInput.setValue(value.toFloat() / 100f)
-                        engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxBias = value.toFloat() / 100f))
+                        engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(parallaxBias = value.toFloat() / 100f))
                         engine.eventBus.post(MaterialChangedEvent(material))
                     }
                 }
@@ -330,7 +330,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             val materialTypeInput = WebComboBox(values, values.indexOf(material.materialInfo.materialType))
             materialTypeInput.addActionListener { e ->
                 val selected = materialTypeInput.selectedItem as SimpleMaterial.MaterialType
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(materialType = selected))
+                engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(materialType = selected))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
             val materialTypePanel = GroupPanel(4, WebLabel("Maeterial Type"), materialTypeInput)
@@ -341,7 +341,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             val environmentMapInput = WebComboBox(values, values.indexOf(material.materialInfo.environmentMapType))
             environmentMapInput.addActionListener { e ->
                 val selected = environmentMapInput.selectedItem as SimpleMaterial.ENVIRONMENTMAP_TYPE
-                engine.getScene().materialManager.changeMaterial(material.materialInfo.copyXXX(environmentMapType = selected))
+                engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(environmentMapType = selected))
             }
             val groupPanelEnironmentMapType = GroupPanel(4, WebLabel("Environment map type"), environmentMapInput)
             webComponentPanel.addElement(groupPanelEnironmentMapType)
@@ -366,7 +366,7 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
         val future = engine.gpuContext.execute(object : FutureCallable<MaterialResult>() {
             @Throws(Exception::class)
             override fun execute(): MaterialResult {
-                return InitMaterialCommand(material, engine.getScene().materialManager).execute()
+                return InitMaterialCommand(material, engine.scene.materialManager).execute()
             }
         })
 

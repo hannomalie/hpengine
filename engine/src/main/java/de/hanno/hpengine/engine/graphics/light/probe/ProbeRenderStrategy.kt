@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.probe
 
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.Backend
+import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
@@ -39,7 +40,7 @@ import java.io.File
 import java.nio.FloatBuffer
 
 
-class ProbeRenderStrategy(private val engine: Engine) {
+class ProbeRenderStrategy(private val engine: ManagerContext) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
@@ -174,33 +175,33 @@ class ProbeRenderStrategy(private val engine: Engine) {
     }
 }
 
-class EvaluateProbeRenderExtension(val engine: Engine): RenderExtension {
+class EvaluateProbeRenderExtension(val engine: ManagerContext): RenderExtension {
 
     private val probeRenderStrategy = ProbeRenderStrategy(engine)
 
     val evaluateProbeProgram = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe_fragment.glsl", Defines())
 
-    override fun renderFirstPass(engine: Engine, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)
 
     }
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
-        engine.renderer.gBuffer.lightAccumulationBuffer.use(false)
+        engine.renderManager.renderer.gBuffer.lightAccumulationBuffer.use(false)
 
-        engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.renderer.gBuffer.positionMap)
-        engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.renderer.gBuffer.normalMap)
-        engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.renderer.gBuffer.colorReflectivenessMap)
-        engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.renderer.gBuffer.motionMap)
-        engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.renderer.gBuffer.visibilityMap)
+        engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.renderManager.renderer.gBuffer.positionMap)
+        engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.renderManager.renderer.gBuffer.normalMap)
+        engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.renderManager.renderer.gBuffer.colorReflectivenessMap)
+        engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.renderManager.renderer.gBuffer.motionMap)
+        engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.renderManager.renderer.gBuffer.visibilityMap)
 
         evaluateProbeProgram.use()
         val camTranslation = Vector3f()
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.bindShaderStorageBuffer(0, engine.renderer.gBuffer.storageBuffer)
+        evaluateProbeProgram.bindShaderStorageBuffer(0, engine.renderManager.renderer.gBuffer.storageBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
         evaluateProbeProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
         evaluateProbeProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())

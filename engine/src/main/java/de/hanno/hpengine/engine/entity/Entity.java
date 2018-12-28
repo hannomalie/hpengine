@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.entity;
 
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -58,7 +59,7 @@ public class Entity extends Transform<Entity> implements LifeCycle {
     }
 
 	@Override
-	public void init(Engine engine) {
+	public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
 		for(Component component : components.values()) {
 			component.init(engine);
 		}

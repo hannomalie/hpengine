@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.RenderManager;
 import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
@@ -210,11 +211,11 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     public static class RareAction<EXTRACT> extends Action<EXTRACT> {
-        private Engine engine;
+        private RenderManager renderManager;
 
-        public RareAction(Supplier<EXTRACT> extractor, BiConsumer<RenderState, EXTRACT> consumer, Engine engine) {
+        public RareAction(Supplier<EXTRACT> extractor, BiConsumer<RenderState, EXTRACT> consumer, RenderManager renderManager) {
             super(extractor, consumer);
-            this.engine = engine;
+            this.renderManager = renderManager;
         }
         @Override
         public boolean shouldExecute() {
@@ -223,7 +224,7 @@ public class TripleBuffer<T extends RenderState> {
         @Override
         public void request(long cycle) {
             EXTRACT extract = extractor.get();
-            engine.getRenderManager().getRenderState().addCommand(state -> consumer.accept(state, extract));
+            renderManager.getRenderState().addCommand(state -> consumer.accept(state, extract));
         }
 
         @Override

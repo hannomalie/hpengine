@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.Backend;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
@@ -9,6 +11,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -25,9 +28,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
@@ -39,6 +44,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS;
@@ -50,6 +56,7 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.L
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
 import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
 import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
+import static de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions;
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
@@ -57,6 +64,8 @@ import static org.lwjgl.opengl.GL11.glFinish;
 
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
+	private final MaterialManager materialManager;
+	private final ModelComponent skyBoxModelComponent;
 
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
@@ -64,7 +73,7 @@ public class DeferredRenderer implements Renderer {
 
     private VertexBuffer buffer;
 
-	private Engine engine;
+	private Backend backend;
 
 	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
 	public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
@@ -97,17 +106,20 @@ public class DeferredRenderer implements Renderer {
 	private final RenderBatch skyBoxRenderBatch;
 
 	private FloatBuffer modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
-	public DeferredRenderer(Engine engine) throws Exception {
-		if(!(engine.getGpuContext() instanceof OpenGLContext)) {
+	public DeferredRenderer(EngineContext engineContext) throws Exception {
+		this(new MaterialManager(engineContext, engineContext.getTextureManager()), engineContext);
+	}
+	public DeferredRenderer(MaterialManager materialManager, EngineContext engineContext) throws Exception {
+		if(!(engineContext.getGpuContext() instanceof OpenGLContext)) {
 			throw new IllegalStateException("Cannot use this DeferredRenderer with a non-OpenGlContext!");
 		}
-		this.engine = engine;
+		this.backend = engineContext;
+		this.materialManager = materialManager;
 
 		setupBuffers();
 		setUpGBuffer();
 
-		this.engine = engine;
-		ProgramManager programManager = this.engine.getProgramManager();
+		ProgramManager programManager = this.backend.getProgramManager();
 		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
 		secondPassTubeProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")), new Defines());
 		secondPassAreaProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")), new Defines());
@@ -119,39 +131,40 @@ public class DeferredRenderer implements Renderer {
 		combineProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")), new Defines());
 		postProcessProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")), new Defines());
 
-		aoScatteringProgram = this.engine.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
-		reflectionProgram = this.engine.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());
-		linesProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
-		skyBoxProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", new Defines());
-		skyBoxDepthProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl", new Defines());
-		probeFirstpassProgram = this.engine.getProgramManager().getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl", new Defines());
-		depthPrePassProgram = this.engine.getProgramManager().getProgramFromFileNames("first_pass_vertex.glsl", "depth_prepass_fragment.glsl", new Defines());
-		tiledDirectLightingProgram = this.engine.getProgramManager().getComputeProgram("tiled_direct_lighting_compute.glsl");
-		tiledProbeLightingProgram = this.engine.getProgramManager().getComputeProgram("tiled_probe_lighting_compute.glsl");
+		aoScatteringProgram = this.backend.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
+		reflectionProgram = this.backend.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());
+		linesProgram = this.backend.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
+		skyBoxProgram = this.backend.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", new Defines());
+		skyBoxDepthProgram = this.backend.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl", new Defines());
+		probeFirstpassProgram = this.backend.getProgramManager().getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl", new Defines());
+		depthPrePassProgram = this.backend.getProgramManager().getProgramFromFileNames("first_pass_vertex.glsl", "depth_prepass_fragment.glsl", new Defines());
+		tiledDirectLightingProgram = this.backend.getProgramManager().getComputeProgram("tiled_direct_lighting_compute.glsl");
+		tiledProbeLightingProgram = this.backend.getProgramManager().getComputeProgram("tiled_probe_lighting_compute.glsl");
 
-		gpuContext = this.engine.getGpuContext();
+		gpuContext = this.backend.getGpuContext();
 
-		StaticModel skyBox = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
-		skyBoxEntity = this.engine.getSceneManager().getScene().getEntityManager().create();
-		skyBoxEntity.addComponent(new ModelComponent(skyBoxEntity, skyBox));
-		skyBoxEntity.init(engine);
+		StaticModel skyBox = new OBJLoader().loadTexturedModel(this.materialManager, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
+		skyBoxEntity = new Entity("Skybox");
+		skyBoxModelComponent = new ModelComponent(skyBoxEntity, skyBox);
+		skyBoxEntity.addComponent(skyBoxModelComponent);
+		skyBoxEntity.init(engineContext);
 		skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);
-		VertexIndexBuffer.VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(engine.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
+		VertexIndexBuffer.VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(engineContext.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
 		skyBoxRenderBatch = new RenderBatch().init(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(), 1000, skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.getInstanceMinMaxWorlds());
 
-		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engine);
+		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
-		registerRenderExtension(new DrawLinesExtension(engine));
-		registerRenderExtension(new VoxelConeTracingExtension(engine, directionalLightShadowMapExtension));
-//        registerRenderExtension(new EvaluateProbeRenderExtension(engine));
+		registerRenderExtension(new DrawLinesExtension(engineContext, this));
+		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
+//        registerRenderExtension(new EvaluateProbeRenderExtension(managerContext));
 		registerRenderExtension(new PixelPerfectPickingExtension());
 
 		float[] points = {0f, 0f, 0f, 0f};
-		buffer = new VertexBuffer(engine.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
+		buffer = new VertexBuffer(engineContext.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
 		buffer.upload();
 
-		TripleBuffer<RenderState> renderState = engine.getRenderManager().getRenderState();
-		mainPipelineRef = renderState.registerState(() -> new GPUCulledMainPipeline(engine, this));
+		TripleBuffer<RenderState> renderState = engineContext.getRenderStateManager().getRenderState();
+		mainPipelineRef = renderState.registerState(() -> new GPUCulledMainPipeline(engineContext, this));
 	}
 
 	private void registerRenderExtension(RenderExtension extension) {
@@ -165,7 +178,7 @@ public class DeferredRenderer implements Renderer {
 			float width = 2f;
 			float widthDiv = width/6f;
 			for (int i = 0; i < 6; i++) {
-				QuadVertexBuffer quadVertexBuffer = new QuadVertexBuffer(engine.getGpuContext(), new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height));
+				QuadVertexBuffer quadVertexBuffer = new QuadVertexBuffer(backend.getGpuContext(), new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height));
 				add(quadVertexBuffer);
 				quadVertexBuffer.upload();
 			}
@@ -177,10 +190,10 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		GpuContext.exitOnGLError("Before setupGBuffer");
 
-        gBuffer = engine.getGpuContext().calculate(() -> new DeferredRenderingBuffer(engine.getGpuContext()));
+        gBuffer = backend.getGpuContext().calculate(() -> new DeferredRenderingBuffer(backend.getGpuContext()));
 
-        engine.getGpuContext().execute(() -> {
-            engine.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        backend.getGpuContext().execute(() -> {
+            backend.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			GpuContext.exitOnGLError("setupGBuffer");
 		});
@@ -191,10 +204,9 @@ public class DeferredRenderer implements Renderer {
 
 
     @Override
-	public void render(DrawResult result, RenderState renderState) {
+	public void render(@NotNull DrawResult result, @NotNull RenderState renderState) {
 		GPUProfiler.start("Frame");
 
-		engine.getEnvironmentProbeManager().drawAlternating(renderState.getCamera().getEntity());
 		GPUProfiler.start("First pass");
 		FirstPassResult firstPassResult = result.getFirstPassResult();
 
@@ -203,7 +215,7 @@ public class DeferredRenderer implements Renderer {
 		Camera camera = renderState.getCamera();
 
 		gpuContext.depthMask(true);
-		engine.getRenderer().getGBuffer().use(true);
+		getGBuffer().use(true);
 
 		gpuContext.disable(CULL_FACE);
 		gpuContext.depthMask(false);
@@ -215,7 +227,7 @@ public class DeferredRenderer implements Renderer {
 		skyBoxProgram.setUniform("directionalLightColor", renderState.getDirectionalLightState().directionalLightColor);
 		Vector3f translation = new Vector3f();
 		skyBoxProgram.setUniform("eyePos_world", camera.getTranslation(translation));
-		skyBoxProgram.setUniform("materialIndex", engine.getScene().getMaterialManager().getSkyboxMaterial().getMaterialIndex());
+		skyBoxProgram.setUniform("materialIndex", materialManager.getSkyboxMaterial().getMaterialIndex());
 		skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformation().get(modelMatrixBuffer));
 		skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
@@ -232,17 +244,17 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Draw entities");
 
 		if (Config.getInstance().isDrawScene()) {
-			Program firstpassProgram = engine.getProgramManager().getFirstpassDefaultProgram();
-			Program firstpassProgramAnimated = engine.getProgramManager().getFirstpassAnimatedDefaultProgram();
+			Program firstpassProgram = backend.getProgramManager().getFirstpassDefaultProgram();
+			Program firstpassProgramAnimated = backend.getProgramManager().getFirstpassAnimatedDefaultProgram();
 			pipeline.draw(renderState, firstpassProgram, firstpassProgramAnimated, firstPassResult);
 		}
 		GPUProfiler.end();
 
 		if(!Config.getInstance().isUseDirectTextureOutput()) {
-			engine.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+			backend.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
 			for(RenderExtension extension : renderExtensions) {
 				GPUProfiler.start("RenderExtension " + extension.getClass().getSimpleName());
-				extension.renderFirstPass(engine, gpuContext, firstPassResult, renderState);
+				extension.renderFirstPass(backend, gpuContext, firstPassResult, renderState);
 				GPUProfiler.end();
 			}
 		}
@@ -250,16 +262,16 @@ public class DeferredRenderer implements Renderer {
 		gpuContext.enable(CULL_FACE);
 
 		GPUProfiler.start("Generate Mipmaps of colormap");
-		engine.getTextureManager().generateMipMaps(TEXTURE_2D, engine.getRenderer().getGBuffer().getColorReflectivenessMap());
+		backend.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer.getColorReflectivenessMap());
 		GPUProfiler.end();
 
 		GPUProfiler.end();
 
 		if (!Config.getInstance().isUseDirectTextureOutput()) {
 			GPUProfiler.start("Shadowmap pass");
-			directionalLightShadowMapExtension.renderFirstPass(engine, gpuContext, result.getFirstPassResult(), renderState);
-//            engine.getSimpleScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
-//            engine.getSimpleScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
+			directionalLightShadowMapExtension.renderFirstPass(backend, gpuContext, result.getFirstPassResult(), renderState);
+//            managerContext.getSimpleScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
+//            managerContext.getSimpleScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
 			GPUProfiler.end();
 
 			GPUProfiler.start("Second pass");
@@ -279,21 +291,20 @@ public class DeferredRenderer implements Renderer {
 			gpuContext.blendEquation(FUNC_ADD);
 			gpuContext.blendFunc(ONE, ONE);
 
-			DeferredRenderingBuffer gBuffer1 = engine.getRenderer().getGBuffer();
-			gBuffer1.getLightAccumulationBuffer().use(true);
-			GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer1.getDepthBufferTexture());
-			engine.getGpuContext().clearColor(0, 0, 0, 0);
-			engine.getGpuContext().clearColorBuffer();
+			gBuffer.getLightAccumulationBuffer().use(true);
+			GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
+			backend.getGpuContext().clearColor(0, 0, 0, 0);
+			backend.getGpuContext().clearColorBuffer();
 
 			GPUProfiler.start("Activate DeferredRenderingBuffer textures");
-			gpuContext.bindTexture(0, TEXTURE_2D, gBuffer1.getPositionMap());
-			gpuContext.bindTexture(1, TEXTURE_2D, gBuffer1.getNormalMap());
-			gpuContext.bindTexture(2, TEXTURE_2D, gBuffer1.getColorReflectivenessMap());
-			gpuContext.bindTexture(3, TEXTURE_2D, gBuffer1.getMotionMap());
-			gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, engine.getTextureManager().getCubeMap().getTextureId());
+			gpuContext.bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+			gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+			gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+			gpuContext.bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+			gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, backend.getTextureManager().getCubeMap().getTextureId());
 			gpuContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-			gpuContext.bindTexture(7, TEXTURE_2D, gBuffer1.getVisibilityMap());
-			gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).getTextureID());
+			gpuContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
+			gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray3Id());
 			GPUProfiler.end();
 
 			secondPassDirectionalProgram.use();
@@ -308,16 +319,16 @@ public class DeferredRenderer implements Renderer {
 			secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
 			secondPassDirectionalProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
 			secondPassDirectionalProgram.setUniform("lightDiffuse", renderState.getDirectionalLightState().directionalLightColor);
-			engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(secondPassDirectionalProgram);
+			bindEnvironmentProbePositions(secondPassDirectionalProgram, renderState.getEnvironmentProbesState());
 			GPUProfiler.start("Draw fullscreen buffer");
-			engine.getGpuContext().getFullscreenBuffer().draw();
+			backend.getGpuContext().getFullscreenBuffer().draw();
 			GPUProfiler.end();
 
 			GPUProfiler.end();
 
-			doTubeLights(engine.getSceneManager().getScene().getTubeLights(), camPositionV4, viewMatrix, projectionMatrix);
+			doTubeLights(renderState.getLightState().getTubeLights(), camPositionV4, viewMatrix, projectionMatrix);
 
-			doAreaLights(engine.getSceneManager().getScene().getAreaLights(), viewMatrix, projectionMatrix);
+			doAreaLights(renderState.getLightState().getAreaLights(), viewMatrix, projectionMatrix, renderState);
 
 			doPointLights(renderState, viewMatrix, projectionMatrix);
 
@@ -330,25 +341,25 @@ public class DeferredRenderer implements Renderer {
 				GPUProfiler.end();
 			}
 
-			engine.getGpuContext().disable(BLEND);
-			gBuffer1.getLightAccumulationBuffer().unuse();
+			backend.getGpuContext().disable(BLEND);
+			gBuffer.getLightAccumulationBuffer().unuse();
 
 			renderAOAndScattering(renderState);
 
 			GPUProfiler.start("MipMap generation AO and light buffer");
-			engine.getGpuContext().activeTexture(0);
-			engine.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer1.getLightAccumulationMapOneId());
+			backend.getGpuContext().activeTexture(0);
+			backend.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
 			GPUProfiler.end();
 
 			if (Config.getInstance().isUseGi()) {
 				GL11.glDepthMask(false);
-				engine.getGpuContext().disable(DEPTH_TEST);
-				engine.getGpuContext().disable(BLEND);
-				engine.getGpuContext().cullFace(BACK);
-				renderReflections(viewMatrix, projectionMatrix);
+				backend.getGpuContext().disable(DEPTH_TEST);
+				backend.getGpuContext().disable(BLEND);
+				backend.getGpuContext().cullFace(BACK);
+				renderReflections(viewMatrix, projectionMatrix, renderState);
 			} else {
-				gBuffer1.getReflectionBuffer().use(true);
-				gBuffer1.getReflectionBuffer().unuse();
+				gBuffer.getReflectionBuffer().use(true);
+				gBuffer.getReflectionBuffer().unuse();
 			}
 
 			for(RenderExtension extension: renderExtensions) {
@@ -361,7 +372,7 @@ public class DeferredRenderer implements Renderer {
 //        GPUProfiler.end();
 			GPUProfiler.start("Scattering texture");
 			if(Config.getInstance().isScattering() || Config.getInstance().isUseAmbientOcclusion()) {
-				engine.getTextureManager().blur2DTextureRGBA16F(gBuffer1.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().getWidth() / 2, Config.getInstance().getHeight() / 2, 0, 0);
+				backend.getTextureManager().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().getWidth() / 2, Config.getInstance().getHeight() / 2, 0, 0);
 			}
 			GPUProfiler.end();
 //        TextureManager.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().WIDTH / 2, Config.getInstance().HEIGHT / 2, 0, 0);
@@ -374,15 +385,15 @@ public class DeferredRenderer implements Renderer {
 //		renderer.blur2DTexture(halfScreenTarget.getRenderedTexture(0), (int)(renderer.WIDTH*0.5), (int)(renderer.HEIGHT*0.5), GL11.GL_RGBA8, false, 1);
 //		renderer.blur2DTexture(halfScreenTarget.getRenderedTexture(1), (int)(renderer.WIDTH*0.5), (int)(renderer.HEIGHT*0.5), GL11.GL_RGBA8, false, 1);
 
-			engine.getGpuContext().cullFace(BACK);
-			engine.getGpuContext().depthFunc(LESS);
+			backend.getGpuContext().cullFace(BACK);
+			backend.getGpuContext().depthFunc(LESS);
 			GPUProfiler.end();
 
 			GPUProfiler.end();
 			GPUProfiler.start("Combine pass");
-			DeferredRenderingBuffer gBuffer2 = engine.getRenderer().getGBuffer();
+			DeferredRenderingBuffer gBuffer2 = getGBuffer();
 			RenderTarget finalBuffer = gBuffer2.getFinalBuffer();
-			engine.getTextureManager().generateMipMaps(TEXTURE_2D, finalBuffer.getRenderedTexture(0));
+			backend.getTextureManager().generateMipMaps(TEXTURE_2D, finalBuffer.getRenderedTexture(0));
 
 			combineProgram.use();
 			combineProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
@@ -395,34 +406,34 @@ public class DeferredRenderer implements Renderer {
 			combineProgram.setUniform("worldExposure", Config.getInstance().getExposure());
 			combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled());
 			combineProgram.setUniform("fullScreenMipmapCount", gBuffer2.getFullScreenMipmapCount());
-			combineProgram.setUniform("activeProbeCount", engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().size());
+			combineProgram.setUniform("activeProbeCount", renderState.getEnvironmentProbesState().getActiveProbeCount());
 			combineProgram.bindShaderStorageBuffer(0, gBuffer2.getStorageBuffer());
 
 			finalBuffer.use(true);
-			engine.getGpuContext().disable(DEPTH_TEST);
+			backend.getGpuContext().disable(DEPTH_TEST);
 
-			engine.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer2.getColorReflectivenessMap());
-			engine.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer2.getLightAccumulationMapOneId());
-			engine.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer2.getLightAccumulationBuffer().getRenderedTexture(1));
-			engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer2.getMotionMap());
-			engine.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer2.getPositionMap());
-			engine.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer2.getNormalMap());
-			engine.getGpuContext().bindTexture(6, engine.getTextureManager().getCubeMap());
-			engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray().bind(engine.getGpuContext(), 7);
-			engine.getGpuContext().bindTexture(8, TEXTURE_2D, gBuffer2.getReflectionMap());
-			engine.getGpuContext().bindTexture(9, TEXTURE_2D, gBuffer2.getRefractedMap());
-			engine.getGpuContext().bindTexture(11, TEXTURE_2D, gBuffer2.getAmbientOcclusionScatteringMap());
+			backend.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer2.getColorReflectivenessMap());
+			backend.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer2.getLightAccumulationMapOneId());
+			backend.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer2.getLightAccumulationBuffer().getRenderedTexture(1));
+			backend.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer2.getMotionMap());
+			backend.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer2.getPositionMap());
+			backend.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer2.getNormalMap());
+			backend.getGpuContext().bindTexture(6, backend.getTextureManager().getCubeMap());
+			backend.getGpuContext().bindTexture(7, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
+			backend.getGpuContext().bindTexture(8, TEXTURE_2D, gBuffer2.getReflectionMap());
+			backend.getGpuContext().bindTexture(9, TEXTURE_2D, gBuffer2.getRefractedMap());
+			backend.getGpuContext().bindTexture(11, TEXTURE_2D, gBuffer2.getAmbientOcclusionScatteringMap());
 
 			gpuContext.getFullscreenBuffer().draw();
 
 			if (null == null) {
-				engine.getGpuContext().getFrontBuffer().use(true);
+				backend.getGpuContext().getFrontBuffer().use(true);
 			} else {
 				((RenderTarget) null).use(true);
 			}
 			GPUProfiler.start("Post processing");
 			postProcessProgram.use();
-			engine.getGpuContext().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
+			backend.getGpuContext().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
 			postProcessProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
 			postProcessProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
 			postProcessProgram.setUniform("worldExposure", Config.getInstance().getExposure());
@@ -434,29 +445,29 @@ public class DeferredRenderer implements Renderer {
 			} catch (IllegalStateException e) {
 				// Normalizing zero length vector
 			}
-			postProcessProgram.setUniform("seconds", (float) engine.getRenderManager().getDeltaInS());
+			postProcessProgram.setUniform("seconds", renderState.getDeltaInS());
 			postProcessProgram.bindShaderStorageBuffer(0, gBuffer2.getStorageBuffer());
-//        postProcessProgram.bindShaderStorageBuffer(1, engine.getRenderer().getMaterialManager().getMaterialBuffer());
-			engine.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer2.getNormalMap());
-			engine.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer2.getMotionMap());
-			engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer2.getLightAccumulationMapOneId());
-			engine.getGpuContext().bindTexture(4, TEXTURE_2D, engine.getTextureManager().getLensFlareTexture().getTextureId());
+//        postProcessProgram.bindShaderStorageBuffer(1, managerContext.getRenderer().getMaterialManager().getMaterialBuffer());
+			backend.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer2.getNormalMap());
+			backend.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer2.getMotionMap());
+			backend.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer2.getLightAccumulationMapOneId());
+			backend.getGpuContext().bindTexture(4, TEXTURE_2D, backend.getTextureManager().getLensFlareTexture().getTextureId());
 			gpuContext.getFullscreenBuffer().draw();
 
 			GPUProfiler.end();
 			GPUProfiler.end();
 		} else {
-			engine.getGpuContext().disable(DEPTH_TEST);
-			engine.getGpuContext().getFrontBuffer().use(true);
-			engine.getRenderer().drawToQuad(Config.getInstance().getDirectTextureOutputTextureIndex());
+			backend.getGpuContext().disable(DEPTH_TEST);
+			backend.getGpuContext().getFrontBuffer().use(true);
+			drawToQuad(Config.getInstance().getDirectTextureOutputTextureIndex());
 		}
 		if (Config.getInstance().isDebugframeEnabled()) {
-			ArrayList<Texture> textures = new ArrayList<>(engine.getTextureManager().getTextures().values());
-			drawToQuad(engine.getTextureManager().getTexture("hp/assets/models/textures/gi_flag.png", true).getTextureId(), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
-//			drawToQuad(engine.getSimpleScene().getAreaLightSystem().getDepthMapForAreaLight(engine.getSimpleScene().getAreaLightSystem().getAreaLights().get(0)), engine.getGpuContext().getDebugBuffer(), engine.getProgramManager().getDebugFrameProgram());
+			ArrayList<Texture> textures = new ArrayList<>(backend.getTextureManager().getTextures().values());
+			drawToQuad(backend.getTextureManager().getTexture("hp/assets/models/textures/gi_flag.png", true).getTextureId(), backend.getGpuContext().getDebugBuffer(), backend.getProgramManager().getDebugFrameProgram());
+//			drawToQuad(managerContext.getSimpleScene().getAreaLightSystem().getDepthMapForAreaLight(managerContext.getSimpleScene().getAreaLightSystem().getAreaLights().get(0)), managerContext.getGpuContext().getDebugBuffer(), managerContext.getProgramManager().getDebugFrameProgram());
 
 //			for(int i = 0; i < 6; i++) {
-//				drawToQuad(engine.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+//				drawToQuad(managerContext.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 //			}
 
 
@@ -478,10 +489,10 @@ public class DeferredRenderer implements Renderer {
 //            int[] faceViews = new int[6];
 //			int index = 0;
 //            for(int i = 0; i < 6; i++) {
-//                faceViews[i] = engine.getGpuContext().genTextures();
-//				int cubeMapArray = engine.getScene().getProbeSystem().getStrategy().getCubemapArrayRenderTarget().getCubeMapArray().getTextureID();
+//                faceViews[i] = managerContext.getGpuContext().genTextures();
+//				int cubeMapArray = managerContext.getScene().getProbeSystem().getStrategy().getCubemapArrayRenderTarget().getCubeMapArray().getTextureID();
 //				GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, cubeMapArray, GL_RGBA16F, 0, 10, (6*index)+i, 1);
-//				drawToQuad(faceViews[i], sixDebugBuffers.get(i), engine.getProgramManager().getDebugFrameProgram());
+//				drawToQuad(faceViews[i], sixDebugBuffers.get(i), managerContext.getProgramManager().getDebugFrameProgram());
 //			}
 //            for(int i = 0; i < 6; i++) {
 //                GL11.glDeleteTextures(faceViews[i]);
@@ -490,14 +501,14 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		GPUProfiler.start("Create new fence");
-        engine.getGpuContext().createNewGPUFenceForReadState(renderState);
+        backend.getGpuContext().createNewGPUFenceForReadState(renderState);
 		GPUProfiler.end();
 		GPUProfiler.start("Waiting for driver");
 		GPUProfiler.start("Poll events");
 		glfwPollEvents();
 		GPUProfiler.end();
 		GPUProfiler.start("Swap buffers");
-        glfwSwapBuffers(engine.getGpuContext().getWindowHandle());
+        glfwSwapBuffers(backend.getGpuContext().getWindowHandle());
 		GPUProfiler.end();
 		GPUProfiler.end();
 		GPUProfiler.end();
@@ -506,19 +517,19 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void drawToQuad(int texture) {
-        drawToQuad(texture, engine.getGpuContext().getFullscreenBuffer(), engine.getProgramManager().getRenderToQuadProgram());
+        drawToQuad(texture, backend.getGpuContext().getFullscreenBuffer(), backend.getProgramManager().getRenderToQuadProgram());
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {
-        drawToQuad(texture, buffer, engine.getProgramManager().getRenderToQuadProgram());
+        drawToQuad(texture, buffer, backend.getProgramManager().getRenderToQuadProgram());
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
-        engine.getGpuContext().disable(GlCap.DEPTH_TEST);
+        backend.getGpuContext().disable(GlCap.DEPTH_TEST);
 
-        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
-        engine.getGpuContext().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
+        backend.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        backend.getGpuContext().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}
@@ -545,6 +556,14 @@ public class DeferredRenderer implements Renderer {
 		linePoints.add(to);
 	}
 
+	@Override
+	public void drawAllLines(Consumer<Program> action) {
+		linePoints.clear();
+		linesProgram.use();
+		action.accept(linesProgram);
+		drawLines(linesProgram);
+	}
+
 	private List<Vector3f> linePoints = new ArrayList<>();
 
     @Override
@@ -558,28 +577,28 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private void doPointLights(RenderState renderState, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
-		if (engine.getSceneManager().getScene().getPointLights().isEmpty()) {
+		if (renderState.getLightState().getPointLights().isEmpty()) {
 			return;
 		}
 		GPUProfiler.start("Seconds pass PointLights");
-		gpuContext.bindTexture(0, TEXTURE_2D, engine.getRenderer().getGBuffer().getPositionMap());
-		gpuContext.bindTexture(1, TEXTURE_2D, engine.getRenderer().getGBuffer().getNormalMap());
-		gpuContext.bindTexture(2, TEXTURE_2D, engine.getRenderer().getGBuffer().getColorReflectivenessMap());
-		gpuContext.bindTexture(3, TEXTURE_2D, engine.getRenderer().getGBuffer().getMotionMap());
-		gpuContext.bindTexture(4, TEXTURE_2D, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId());
-		gpuContext.bindTexture(5, TEXTURE_2D, engine.getRenderer().getGBuffer().getVisibilityMap());
-		engine.getScene().getPointLightSystem().getShadowMapStrategy().bindTextures();
+		gpuContext.bindTexture(0, TEXTURE_2D, getGBuffer().getPositionMap());
+		gpuContext.bindTexture(1, TEXTURE_2D, getGBuffer().getNormalMap());
+		gpuContext.bindTexture(2, TEXTURE_2D, getGBuffer().getColorReflectivenessMap());
+		gpuContext.bindTexture(3, TEXTURE_2D, getGBuffer().getMotionMap());
+		gpuContext.bindTexture(4, TEXTURE_2D, getGBuffer().getLightAccumulationMapOneId());
+		gpuContext.bindTexture(5, TEXTURE_2D, getGBuffer().getVisibilityMap());
+		renderState.getLightState().getPointLightShadowMapStrategy().bindTextures();
 		// TODO: Add glbindimagetexture to openglcontext class
-		GL42.glBindImageTexture(4, engine.getRenderer().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
+		GL42.glBindImageTexture(4, getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
 		secondPassPointComputeProgram.use();
-		secondPassPointComputeProgram.setUniform("pointLightCount", engine.getSceneManager().getScene().getPointLights().size());
+		secondPassPointComputeProgram.setUniform("pointLightCount", renderState.getLightState().getPointLights().size());
 		secondPassPointComputeProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
 		secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
 		secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS);
 		secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-		secondPassPointComputeProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().getLightBuffer());
+		secondPassPointComputeProgram.bindShaderStorageBuffer(2, renderState.getLightState().getPointLightBuffer());
 		secondPassPointComputeProgram.dispatchCompute(Config.getInstance().getWidth() / 16, Config.getInstance().getHeight() / 16, 1);
 		GPUProfiler.end();
 	}
@@ -619,10 +638,10 @@ public class DeferredRenderer implements Renderer {
 		}
 	}
 
-	private void doAreaLights(List<AreaLight> areaLights, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+	private void doAreaLights(List<AreaLight> areaLights, FloatBuffer viewMatrix, FloatBuffer projectionMatrix, RenderState renderState) {
 
-		engine.getGpuContext().disable(CULL_FACE);
-		engine.getGpuContext().disable(DEPTH_TEST);
+		backend.getGpuContext().disable(CULL_FACE);
+		backend.getGpuContext().disable(DEPTH_TEST);
 		if (areaLights.isEmpty()) {
 			return;
 		}
@@ -661,7 +680,7 @@ public class DeferredRenderer implements Renderer {
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
-			engine.getGpuContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
+			gpuContext.bindTexture(9, GlTextureTarget.TEXTURE_2D, AreaLightSystem.Companion.getDepthMapForAreaLight(renderState.getLightState().getAreaLights(), renderState.getLightState().getAreaLightDepthMaps(), areaLight));
 			gpuContext.getFullscreenBuffer().draw();
 //            areaLight.getVertexBuffer().drawDebug();
 		}
@@ -674,16 +693,16 @@ public class DeferredRenderer implements Renderer {
 			return;
 		}
 		GPUProfiler.start("Scattering and AO");
-		DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
+		DeferredRenderingBuffer gBuffer = getGBuffer();
 		gBuffer.getHalfScreenBuffer().use(true);
-		engine.getGpuContext().disable(DEPTH_TEST);
-		engine.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
-		engine.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
-		engine.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-		engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-		engine.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-		engine.getScene().getPointLightSystem().getShadowMapStrategy().bindTextures();
-		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
+		backend.getGpuContext().disable(DEPTH_TEST);
+		backend.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+		backend.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+		backend.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+		backend.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+		backend.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+		renderState.getLightState().getPointLightShadowMapStrategy().bindTextures();
+		backend.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray3Id());
 
 		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
 			gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getCurrentVoxelSource());
@@ -710,44 +729,44 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		aoScatteringProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS);
-		aoScatteringProgram.setUniform("pointLightCount", engine.getSceneManager().getScene().getPointLights().size());
-		aoScatteringProgram.bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().getLightBuffer());
+		aoScatteringProgram.setUniform("pointLightCount", renderState.getLightState().getPointLights().size());
+		aoScatteringProgram.bindShaderStorageBuffer(2, renderState.getLightState().getPointLightBuffer());
 
-		engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(aoScatteringProgram);
+		bindEnvironmentProbePositions(aoScatteringProgram, renderState.getEnvironmentProbesState());
 		gpuContext.getFullscreenBuffer().draw();
-		engine.getGpuContext().enable(DEPTH_TEST);
-		engine.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer.getHalfScreenBuffer().getRenderedTexture());
+		backend.getGpuContext().enable(DEPTH_TEST);
+		backend.getTextureManager().generateMipMaps(TEXTURE_2D, gBuffer.getHalfScreenBuffer().getRenderedTexture());
 		GPUProfiler.end();
 	}
 
-	private void renderReflections(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+	private void renderReflections(FloatBuffer viewMatrix, FloatBuffer projectionMatrix, RenderState renderState) {
 		GPUProfiler.start("Reflections and AO");
-		DeferredRenderingBuffer gBuffer = engine.getRenderer().getGBuffer();
+		DeferredRenderingBuffer gBuffer = getGBuffer();
 		RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();
 
-		engine.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
-		engine.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
-		engine.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-		engine.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-		engine.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
-		engine.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
-		engine.getGpuContext().bindTexture(6, engine.getTextureManager().getCubeMap());
+		backend.getGpuContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+		backend.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+		backend.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+		backend.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+		backend.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
+		backend.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
+		backend.getGpuContext().bindTexture(6, backend.getTextureManager().getCubeMap());
 //        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //        reflectionBuffer.getRenderedTexture(0);
-		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
-		engine.getGpuContext().bindTexture(9, engine.getTextureManager().getCubeMap());
-		engine.getSceneManager().getScene().getEnvironmentProbeManager().getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
-		engine.getGpuContext().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
+		backend.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray3Id());
+		backend.getGpuContext().bindTexture(9, backend.getTextureManager().getCubeMap());
+		backend.getGpuContext().bindTexture(10, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
+		backend.getGpuContext().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
 
 		int copyTextureId = GL11.glGenTextures();
-		engine.getGpuContext().bindTexture(11, TEXTURE_2D, copyTextureId);
+		backend.getGpuContext().bindTexture(11, TEXTURE_2D, copyTextureId);
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA16F, reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 		GL43.glCopyImageSubData(reflectionBuffer.getRenderedTexture(), GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 1);
-		engine.getGpuContext().bindTexture(11, TEXTURE_2D, copyTextureId);
+		backend.getGpuContext().bindTexture(11, TEXTURE_2D, copyTextureId);
 
 		if (!USE_COMPUTESHADER_FOR_REFLECTIONS) {
 			reflectionBuffer.use(true);
@@ -759,8 +778,8 @@ public class DeferredRenderer implements Renderer {
 			reflectionProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
 			reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-			engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(reflectionProgram);
-			reflectionProgram.setUniform("activeProbeCount", engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().size());
+			bindEnvironmentProbePositions(reflectionProgram, renderState.getEnvironmentProbesState());
+			reflectionProgram.setUniform("activeProbeCount", renderState.getEnvironmentProbesState().getActiveProbeCount());
 			reflectionProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 			gpuContext.getFullscreenBuffer().draw();
 			reflectionBuffer.unuse();
@@ -774,8 +793,8 @@ public class DeferredRenderer implements Renderer {
 			tiledProbeLightingProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
 			tiledProbeLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			tiledProbeLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-			tiledProbeLightingProgram.setUniform("activeProbeCount", engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().size());
-			engine.getSceneManager().getScene().getEnvironmentProbeManager().bindEnvironmentProbePositions(tiledProbeLightingProgram);
+			tiledProbeLightingProgram.setUniform("activeProbeCount", renderState.getEnvironmentProbesState().getActiveProbeCount());
+			bindEnvironmentProbePositions(tiledProbeLightingProgram, renderState.getEnvironmentProbesState());
 			tiledProbeLightingProgram.dispatchCompute(reflectionBuffer.getWidth() / 16, reflectionBuffer.getHeight() / 16, 1); //16+1
 			//		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
 		}

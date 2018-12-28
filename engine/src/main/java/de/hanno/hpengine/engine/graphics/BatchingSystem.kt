@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ComponentMapper
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -13,7 +14,6 @@ import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.SimpleScene
 import org.joml.FrustumIntersection
-import org.joml.Matrix4f
 import org.joml.Vector3f
 
 class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(ModelComponent::class.java)) {
@@ -26,7 +26,7 @@ class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySyst
     }
 
     fun addRenderBatches(currentWriteState: RenderState) {
-        val camera = engine.getScene().activeCamera
+        val camera = engine.scene.activeCamera
         val cameraWorldPosition = camera.entity.position
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram

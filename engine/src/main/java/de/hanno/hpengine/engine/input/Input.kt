@@ -4,11 +4,12 @@ import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.ClickEvent
+import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 
 import org.lwjgl.glfw.GLFW.*
 
-class Input(val engine: Engine, private val gpuContext: GpuContext) {
+class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) {
 
     private val currentKeys = IntArrayList()
     private val keysPressed = IntArrayList()
@@ -59,7 +60,7 @@ class Input(val engine: Engine, private val gpuContext: GpuContext) {
 
         if (isMouseClicked(0)) {
             if (!MOUSE_LEFT_PRESSED_LAST_FRAME) {
-                engine.eventBus.post(ClickEvent())
+                eventBus.post(ClickEvent())
             }
             MOUSE_LEFT_PRESSED_LAST_FRAME = true
         } else {

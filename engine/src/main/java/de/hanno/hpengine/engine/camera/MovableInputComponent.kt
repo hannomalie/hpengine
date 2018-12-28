@@ -1,17 +1,15 @@
 package de.hanno.hpengine.engine.camera
 
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.InputControllerComponent
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.entity.Entity
-import org.joml.AxisAngle4f
+import de.hanno.hpengine.engine.manager.ComponentSystem
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent(val engine: Engine, entity: Entity) : InputControllerComponent(entity) {
+class MovableInputComponent(val engine: EngineContext, entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -98,7 +96,7 @@ class MovableInputComponent(val engine: Engine, entity: Entity) : InputControlle
     }
 }
 
-class InputComponentSystem(val engine: Engine): ComponentSystem<InputControllerComponent> {
+class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
     override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<InputControllerComponent>()

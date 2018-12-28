@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.container;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -69,7 +69,7 @@ public class Octree implements LifeCycle, Serializable, EntityContainer {
 	}
 
 	@Override
-    public void init(Engine engine) {
+    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
 		LifeCycle.super.init(engine);
 		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors()/2);
 		entityNodeMappings = new ConcurrentHashMap();

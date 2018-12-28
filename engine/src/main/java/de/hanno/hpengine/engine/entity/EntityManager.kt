@@ -1,15 +1,16 @@
 package de.hanno.hpengine.engine.entity
 
-import de.hanno.hpengine.engine.Engine
-
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import java.util.logging.Logger
-class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
+
+class EntityManager(private val engine: EngineContext, eventBus: EventBus, val scene: Scene) : Manager {
     private val entityContainer: EntityContainer = SimpleContainer()
 
     var entityMovedInCycle: Long = 0
@@ -65,18 +66,16 @@ class EntityManager(private val engine: Engine, eventBus: EventBus) : Manager {
             }
         }
 
-        val currentScene = engine.getScene()
-
-        for (entity in entityContainer.entities.filter { it != currentScene.activeCamera.entity }) {
+        for (entity in entityContainer.entities.filter { it != scene.activeCamera.entity }) {
             if (!entity.hasMoved()) {
                 continue
             }
-            currentScene.minMax.calculateMinMax(currentScene.entityManager.getEntities())
-            entityMovedInCycle = currentScene.currentCycle
+            scene.minMax.calculateMinMax(scene.entityManager.getEntities())
+            entityMovedInCycle = scene.currentCycle
             entityHasMoved = true
             if (entity.update == Update.STATIC) {
                 staticEntityHasMoved = true
-                staticEntityMovedInCycle = currentScene.currentCycle
+                staticEntityMovedInCycle = scene.currentCycle
             }
             break
         }

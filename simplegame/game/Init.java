@@ -14,7 +14,7 @@ public class Init implements LifeCycle {
 
     private boolean initialized;
 
-    public void init(Engine engine) {
+    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
 
         try {
             ArrayList<Entity> entities = new ArrayList<Entity>();

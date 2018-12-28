@@ -19,11 +19,16 @@ import com.bulletphysics.linearmath.*;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.RenderSystem;
+import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import org.jetbrains.annotations.NotNull;
 
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
@@ -34,8 +39,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class PhysicsManager {
+public class PhysicsManager implements Manager, RenderSystem {
 
+    private final Renderer renderer;
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
     private final CommandQueue commandQueue = new CommandQueue();
@@ -44,6 +50,7 @@ public class PhysicsManager {
 		this(new Vector3f(0,-20,0), renderer);
 	}
 	public PhysicsManager(Vector3f gravity, Renderer renderer) {
+        this.renderer = renderer;
         setupBullet(renderer, gravity);
         new TimeStepThread("Physics", 0.001f) {
 
@@ -159,6 +166,36 @@ public class PhysicsManager {
         getDynamicsWorld().debugDrawWorld();
     }
 
+    @Override
+    public void update(float deltaSeconds) {
+
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    @Override
+    public void onEntityAdded(@NotNull List<? extends Entity> entities) {
+
+    }
+
+    @Override
+    public void afterUpdate(float deltaSeconds) {
+
+    }
+
+    @Override
+    public void render(@NotNull DrawResult result, @NotNull RenderState state) {
+        if (Config.getInstance().isDrawLines()) {
+            renderer.drawAllLines((program) -> {
+                program.setUniform("diffuseColor", new org.joml.Vector3f(1,1,0));
+                debugDrawWorld();
+            });
+        }
+    }
+
     public class MeshShapeInfo {
         public MeshShapeInfo(Supplier<CollisionShape> shapeSupplier, Entity owner, float mass, Vector3f inertia) {
             this.shapeSupplier = shapeSupplier;
@@ -174,7 +211,7 @@ public class PhysicsManager {
     }
 	
 	public PhysicsComponent addPhysicsComponent(MeshShapeInfo info) {
-		return new PhysicsComponent(info.owner, info);
+		return new PhysicsComponent(info.owner, info, this);
 	}
 	
 

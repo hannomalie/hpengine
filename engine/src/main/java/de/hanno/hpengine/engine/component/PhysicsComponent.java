@@ -4,8 +4,9 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
-import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.util.Util;
@@ -22,40 +23,40 @@ public class PhysicsComponent extends BaseComponent {
 	private Entity owner;
     private transient RigidBody rigidBody;
     private transient PhysicsManager.MeshShapeInfo info;
+    private final PhysicsManager physicsManager;
 
-	public PhysicsComponent(Entity owner, PhysicsManager.MeshShapeInfo meshShapeInfo) {
+    public PhysicsComponent(Entity owner, PhysicsManager.MeshShapeInfo meshShapeInfo, PhysicsManager physicsManager) {
 		this.owner = owner;
 		this.info = meshShapeInfo;
-		owner.addComponent(this);
+        this.physicsManager = physicsManager;
+        owner.addComponent(this);
 	}
 
     @Override
-    public void init(Engine engine) {
+    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
         initialTransform = Util.toBullet(owner);
-        actuallyCreatePhysicsObject(engine);
+        actuallyCreatePhysicsObject();
     }
 
-    private void actuallyCreatePhysicsObject(Engine engine) {
+    private void actuallyCreatePhysicsObject() {
         MotionState motionState = new DefaultMotionState(initialTransform);
         rigidBodyConstructionInfo = new RigidBodyConstructionInfo(info.mass, motionState, info.shapeSupplier.get(), info.inertia);
         rigidBodyConstructionInfo.restitution = 0.5f;
         rigidBody = new RigidBody(rigidBodyConstructionInfo);
         rigidBody.setUserPointer(owner);
-        registerRigidBody(engine);
+        registerRigidBody();
     }
 
-    private void registerRigidBody(Engine engine) {
+    private void registerRigidBody() {
         try {
-            engine.getPhysicsManager().getCommandQueue().addCommand(new FutureCallable<Object>() {
+            physicsManager.getCommandQueue().addCommand(new FutureCallable<Object>() {
                 @Override
                 public Object execute() throws Exception {
-                    engine.getPhysicsManager().registerRigidBody(rigidBody);
+                    physicsManager.registerRigidBody(rigidBody);
                     return null;
                 }
             }).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
     }
@@ -71,7 +72,7 @@ public class PhysicsComponent extends BaseComponent {
 
     public void reset(Engine engine) {
         engine.getPhysicsManager().unregisterRigidBody(rigidBody);
-        actuallyCreatePhysicsObject(engine);
+        actuallyCreatePhysicsObject();
     }
 
 	@Override

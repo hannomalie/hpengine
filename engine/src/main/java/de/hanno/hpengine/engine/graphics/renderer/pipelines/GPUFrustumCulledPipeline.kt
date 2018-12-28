@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
@@ -28,7 +28,7 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.*
 import java.io.File
 
-open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: Engine,
+open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                               renderer: Renderer,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,

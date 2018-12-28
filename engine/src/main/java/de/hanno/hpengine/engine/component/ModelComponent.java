@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -125,7 +125,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     }
 
     @Override
-    public void init(Engine engine) {
+    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
         super.init(engine);
     }
 

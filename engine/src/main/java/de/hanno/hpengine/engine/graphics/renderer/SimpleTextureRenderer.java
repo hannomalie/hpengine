@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
@@ -120,6 +121,11 @@ public class SimpleTextureRenderer implements Renderer {
 
 	}
 
+	@Override
+	public void destroy() {
+
+	}
+
 	public void update(Engine engine, float seconds) {
 	}
 
@@ -139,6 +145,41 @@ public class SimpleTextureRenderer implements Renderer {
 	@Override
 	public void drawToQuad(int texture) {
 		drawToQuad(texture, gpuContext.getFullscreenBuffer(), renderToQuadProgram);
+	}
+
+	@Override
+	public void batchVector(Vector3f vector) {
+
+	}
+
+	@Override
+	public void batchVector(Vector3f vector, float charWidth) {
+
+	}
+
+	@Override
+	public void batchString(String text) {
+
+	}
+
+	@Override
+	public void batchString(String text, float charWidth) {
+
+	}
+
+	@Override
+	public void batchString(String text, float charWidthIn, float gapIn) {
+
+	}
+
+	@Override
+	public void batchString(String text, float charWidthIn, float gapIn, int x) {
+
+	}
+
+	@Override
+	public void batchString(String text, float charWidthIn, float gapIn, float x, float y) {
+
 	}
 
 	@Override
@@ -170,6 +211,11 @@ public class SimpleTextureRenderer implements Renderer {
 	public void batchLine(Vector3f from, Vector3f to) {
 	}
 
+	@Override
+	public void batchTriangle(Vector3f a, Vector3f b, Vector3f c) {
+
+	}
+
 	private void setCurrentState(String newState) {
 	}
 
@@ -186,6 +232,11 @@ public class SimpleTextureRenderer implements Renderer {
     public void endFrame() {
         GPUProfiler.endFrame();
     }
+
+	@Override
+	public void drawAllLines(Consumer<Program> action) {
+
+	}
 
 	@Override
 	public void startFrame() {

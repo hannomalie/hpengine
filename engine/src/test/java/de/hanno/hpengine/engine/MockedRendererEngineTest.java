@@ -22,7 +22,6 @@ public class MockedRendererEngineTest {
     @Test
     public void testEngineWithMockedRenderer() {
         // TODO: Make running this test possible
-        Config.getInstance().setRendererClass(MockRenderer.class);
         Config.getInstance().setGpuContextClass(MockContext.class);
         Engine.create();
     }

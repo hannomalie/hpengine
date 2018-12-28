@@ -5,11 +5,13 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.state.EnvironmentProbeState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.manager.Manager;
@@ -24,7 +26,10 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.FloatBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
@@ -49,34 +54,36 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	private CubeMapArray environmentMapsArray2;
 	private CubeMapArray environmentMapsArray3;
     private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
+	private final Renderer renderer;
 
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(100*3);
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(100*3);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(100*3);
 
-	public EnvironmentProbeManager(Engine engine) {
-    	this.engine = engine;
-		this.environmentMapsArray = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR, RESOLUTION);
-		this.environmentMapsArray1 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
-		this.environmentMapsArray2 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
-		this.environmentMapsArray3 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, LINEAR_MIPMAP_LINEAR, RESOLUTION);
-        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engine.getGpuContext(), EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+	public EnvironmentProbeManager(Engine engineContext, Renderer renderer) {
+    	this.engine = engineContext;
+		this.environmentMapsArray = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR, RESOLUTION);
+		this.environmentMapsArray1 = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
+		this.environmentMapsArray2 = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
+		this.environmentMapsArray3 = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR_MIPMAP_LINEAR, RESOLUTION);
+        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engineContext.getGpuContext(), EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
+		this.renderer = renderer;
 	}
 
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {
-		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Renderer renderer) throws Exception {
+		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f, renderer);
 	}
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, float weight) throws Exception {
-		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, weight);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, float weight, Renderer renderer) throws Exception {
+		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, weight, renderer);
 	}
 
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Update update, float weight) throws Exception {
-		return getProbe(entity, center, new Vector3f(size, size, size), update, weight);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Update update, float weight, Renderer renderer) throws Exception {
+		return getProbe(entity, center, new Vector3f(size, size, size), update, weight, renderer);
 	}
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, Vector3f size, Update update, float weight) throws Exception {
-		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, Vector3f size, Update update, float weight, Renderer renderer) throws Exception {
+		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight, renderer, this);
 		probes.add(probe);
 		updateBuffers();
         engine.getEventBus().post(new ProbeAddedEvent(probe));
@@ -170,7 +177,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	public void drawDebug(Program program, Octree octree) {
 		List<float[]> arrays = new ArrayList<>();
 
-		for (EnvironmentProbe probe : engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes()) {
+		for (EnvironmentProbe probe : getProbes()) {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
@@ -179,7 +186,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 //			renderer.batchLine(clipStart, clipEnd);
 
 			program.setUniform("diffuseColor", new Vector3f(0,1,1));
-            engine.getRenderer().drawLines(program);
+            renderer.drawLines(program);
 		}
 		
 		// 72 floats per array
@@ -197,7 +204,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-                engine.getRenderer().batchLine(probe.getEntity().getCenter(), e.getPosition());
+                renderer.batchLine(probe.getEntity().getCenter(), e.getPosition());
 			});
 		});
 		buffer.delete();
@@ -242,10 +249,16 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void bindEnvironmentProbePositions(AbstractProgram program) {
-		program.setUniform("activeProbeCount", engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().size());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", engine.getSceneManager().getScene().getEnvironmentProbeManager().getMinPositions());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", engine.getSceneManager().getScene().getEnvironmentProbeManager().getMaxPositions());
-		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", engine.getSceneManager().getScene().getEnvironmentProbeManager().getWeights());
+		bindEnvironmentProbePositions(program, getProbes().size(), getMinPositions(), getMaxPositions(), getWeights());
+	}
+	public static void bindEnvironmentProbePositions(AbstractProgram program, EnvironmentProbeState state) {
+		bindEnvironmentProbePositions(program, state.getActiveProbeCount(), state.getEnvironmentMapMin(), state.getEnvironmentMapMax(), state.getEnvironmentMapWeights());
+	}
+	public static void bindEnvironmentProbePositions(AbstractProgram program, int activeProbeCount, FloatBuffer minPositions, FloatBuffer maxPositions, FloatBuffer weights) {
+		program.setUniform("activeProbeCount", activeProbeCount);
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", minPositions);
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", maxPositions);
+		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", weights);
 	}
 
 	public void executeRenderProbeCommands(RenderState extract) {
@@ -293,12 +306,23 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void render(DrawResult result, @NotNull RenderState state) {
+	public void render(@NotNull DrawResult result, @NotNull RenderState state) {
 		executeRenderProbeCommands(state);
+		drawAlternating(state.getCamera().getEntity());
 	}
 
 	@Override
 	public void afterUpdate(float deltaSeconds) {
 
+	}
+
+	@Override
+	public void extract(@NotNull RenderState currentWriteState) {
+		currentWriteState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getTextureID());
+		currentWriteState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getTextureID());
+		currentWriteState.getEnvironmentProbesState().setActiveProbeCount(getProbes().size());
+		currentWriteState.getEnvironmentProbesState().setEnvironmentMapMin(getMinPositions());
+		currentWriteState.getEnvironmentProbesState().setEnvironmentMapMax(getMaxPositions());
+		currentWriteState.getEnvironmentProbesState().setEnvironmentMapWeights(getWeights());
 	}
 }

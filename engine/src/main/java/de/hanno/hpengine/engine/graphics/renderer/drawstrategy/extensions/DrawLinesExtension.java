@@ -1,12 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.backend.Backend;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.CameraComponentSystem;
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -25,20 +27,22 @@ public class DrawLinesExtension implements RenderExtension {
 
     private final Program linesProgram;
     private final FloatBuffer identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
-    private final Engine engine;
+    private final EngineContext engine;
+    private final DeferredRenderer renderer;
 
-    public DrawLinesExtension(Engine engine) {
+    public DrawLinesExtension(EngineContext engine, DeferredRenderer renderer) {
         this.engine = engine;
+        this.renderer = renderer;
         new SimpleTransform().get(identityMatrix44Buffer);
         linesProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
     }
 
     @Override
-    public void renderFirstPass(Engine engine, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Backend backend, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 
-            GpuContext context = engine.getGpuContext();
+            GpuContext context = backend.getGpuContext();
             context.disable(CULL_FACE);
             context.depthMask(false);
 
@@ -53,10 +57,10 @@ public class DrawLinesExtension implements RenderExtension {
 
             renderBatches(renderState.getRenderBatchesStatic());
             renderBatches(renderState.getRenderBatchesAnimated());
-            firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
+            firstPassResult.linesDrawn += renderer.drawLines(linesProgram);
 
 //            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            engine.getSceneManager().getSimpleScene().getEntityManager().drawDebug(Renderer.getInstance(), renderState.getCamera(), linesProgram);
+//            managerContext.getSceneManager().getSimpleScene().getEntityManager().drawDebug(Renderer.getInstance(), renderState.getCamera(), linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;
@@ -69,52 +73,24 @@ public class DrawLinesExtension implements RenderExtension {
 //                }
 //            }
 
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
+            renderer.batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
+            renderer.batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
+            renderer.batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
             linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            int linesDrawn = engine.getRenderer().drawLines(linesProgram);
+            int linesDrawn = renderer.drawLines(linesProgram);
 
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.getCamera().getRightDirection().mul(15));
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.getCamera().getUpDirection().mul(15));
-            engine.getRenderer().batchLine(new Vector3f(0,0,0), renderState.getCamera().getViewDirection().mul(15));
+            renderer.batchLine(new Vector3f(0,0,0), renderState.getCamera().getRightDirection().mul(15));
+            renderer.batchLine(new Vector3f(0,0,0), renderState.getCamera().getUpDirection().mul(15));
+            renderer.batchLine(new Vector3f(0,0,0), renderState.getCamera().getViewDirection().mul(15));
             linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
-            linesDrawn += engine.getRenderer().drawLines(linesProgram);
+            linesDrawn += renderer.drawLines(linesProgram);
 //            firstPassResult.linesDrawn += linesDrawn;
 
-
-            engine.getPhysicsManager().debugDrawWorld();
-            firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
-        }
-        if(Config.getInstance().isDrawCameras()) {
-//            TODO: Use renderstate somehow?
-            List<Camera> components = engine.getScene().getComponentSystems().get(CameraComponentSystem.class).getComponents();
-            for(int i = 0; i < components.size(); i++) {
-                Camera camera = components.get(i);
-                if(camera.equals(engine.getSceneManager().getScene().getActiveCamera())) { continue; }
-                Vector3f[] corners = camera.getFrustumCorners();
-                engine.getRenderer().batchLine(corners[0], corners[1]);
-                engine.getRenderer().batchLine(corners[1], corners[2]);
-                engine.getRenderer().batchLine(corners[2], corners[3]);
-                engine.getRenderer().batchLine(corners[3], corners[0]);
-
-                engine.getRenderer().batchLine(corners[4], corners[5]);
-                engine.getRenderer().batchLine(corners[5], corners[6]);
-                engine.getRenderer().batchLine(corners[6], corners[7]);
-                engine.getRenderer().batchLine(corners[7], corners[4]);
-
-                engine.getRenderer().batchLine(corners[0], corners[6]);
-                engine.getRenderer().batchLine(corners[1], corners[7]);
-                engine.getRenderer().batchLine(corners[2], corners[4]);
-                engine.getRenderer().batchLine(corners[3], corners[5]);
-            }
-            firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
+            firstPassResult.linesDrawn += renderer.drawLines(linesProgram);
         }
     }
 
     private void renderBatches(List<RenderBatch> batches) {
-        Renderer renderer = engine.getRenderer();
-
         for (RenderBatch batch : batches) {
             if(Config.getInstance().isDrawBoundingVolumes()) {
                 boolean renderAABBs = true;

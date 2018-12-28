@@ -10,7 +10,7 @@ public class InitSibenik implements LifeCycle {
 
     private boolean initialized;
 
-    public void init(Engine engine) {
+    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
 
         try {
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"), "sibenik").execute(engine);

@@ -1,15 +1,14 @@
 package de.hanno.hpengine.engine.graphics
 
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.event.FrameFinishedEvent
+import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.AnimatedVertex
-import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.threads.RenderThread
 import de.hanno.hpengine.util.fps.FPSCounter
@@ -17,19 +16,27 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 
-class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, renderStateFactory: () -> T) : Manager {
+class RenderStateManager(renderStateFactory: () -> RenderState) {
+    val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory(),
+            renderStateFactory(),
+            renderStateFactory())
+}
+class RenderManager(val engineContext: EngineContext,
+                    val renderStateManager: RenderStateManager,
+                    val renderer: Renderer) : Manager {
+
+    inline val renderState: TripleBuffer<RenderState>
+        get() = renderStateManager.renderState
     private var lastFrameTime = 0L
-    private val fpsCounter = FPSCounter()
+    val fpsCounter = FPSCounter()
 
-    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
-    var renderThread: RenderThread = RenderThread(engine, "Render")
+    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext)
+    var renderThread: RenderThread = RenderThread("Render") {
+        perFrameCommand.setReadyForExecution()
+    }
 
-    val renderState: TripleBuffer<T> = TripleBuffer(renderStateFactory(),
-                                                              renderStateFactory(),
-                                                              renderStateFactory())
-
-    val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
+    val vertexIndexBufferStatic = VertexIndexBuffer(engineContext.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(engineContext.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
 
     val drawCycle = AtomicLong()
     var cpuGpuSyncTimeNs: Long = 0
@@ -43,27 +50,26 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
             renderState.startRead()
 
             if (lastTimeSwapped) {
-                engine.input.update()
+                engineContext.input.update()
                 val drawResult = profilingFramed {
                     recorder.add(renderState.currentReadState)
                     val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                    engine.getScene().renderSystems.forEach {
+                    engineContext.renderSystems.forEach {
                         it.render(drawResult, renderState.currentReadState)
                     }
-                    engine.renderer.render(drawResult, renderState.currentReadState)
+                    renderer.render(drawResult, renderState.currentReadState)
                     drawResult.apply { GPUProfilingResult = GPUProfiler.dumpTimings() }
                 }
                 lastFrameTime = System.currentTimeMillis()
                 fpsCounter.update()
-                engine.sceneManager.scene.isInitiallyDrawn = true
 
-                engine.eventBus.post(FrameFinishedEvent(drawResult))
+                engineContext.eventBus.post(FrameFinishedEvent(drawResult))
             }
             lastTimeSwapped = renderState.stopRead()
         }
     }
-    val perFrameCommand = SimpleProvider(drawRunnable).also { gpuContext.registerPerFrameCommand(it) }
+    val perFrameCommand = SimpleProvider(drawRunnable).also { engineContext.gpuContext.registerPerFrameCommand(it) }
 
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
 
@@ -74,7 +80,7 @@ class RenderManager<T: RenderState>(val engine: Engine, gpuContext: GpuContext, 
     fun getMsPerFrame() = fpsCounter.msPerFrame
 
     fun resetAllocations() {
-        engine.gpuContext.execute({
+        engineContext.gpuContext.execute({
             StopWatch.getInstance().start("SimpleScene init")
             vertexIndexBufferStatic.resetAllocations()
             vertexIndexBufferAnimated.resetAllocations()

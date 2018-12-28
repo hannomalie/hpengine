@@ -1,18 +1,17 @@
 package de.hanno.hpengine.engine.threads;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.OpenGLContext;
+
+import java.util.function.Consumer;
 
 public class UpdateThread extends FpsCountedTimeStepThread {
     private static long UPDATE_THREAD_ID = -1;
+    private final Consumer<Float> action;
 
-    private Engine engine;
 
-
-    public UpdateThread(Engine engine, String name, float minCycleTimeInS) {
+    public UpdateThread(Consumer<Float> action, String name, float minCycleTimeInS) {
         super(name, minCycleTimeInS);
-        this.engine = engine;
+        this.action = action;
     }
 
     @Override
@@ -21,7 +20,7 @@ public class UpdateThread extends FpsCountedTimeStepThread {
             if(UPDATE_THREAD_ID == -1) {
               UPDATE_THREAD_ID = Thread.currentThread().getId();
             }
-            engine.update(seconds);
+            action.accept(seconds);
         } catch (Throwable e) {
             e.printStackTrace();
         }

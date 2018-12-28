@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -32,13 +33,13 @@ public class EnvironmentProbe implements Component {
 	private float weight;
 	
 
-	protected EnvironmentProbe(Engine engine, Entity entity, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
-        this.renderer = engine.getRenderer();
-        this.environmentProbeManager = engine.getSceneManager().getScene().getEnvironmentProbeManager();
+	protected EnvironmentProbe(Engine engine, Entity entity, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight, Renderer renderer, EnvironmentProbeManager environmentProbeManager) throws Exception {
+        this.renderer = renderer;
+        this.environmentProbeManager = environmentProbeManager;
 		this.entity = entity;
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		sampler = new EnvironmentSampler(entity, engine, this, center, resolution, resolution, probeIndex);
+		sampler = new EnvironmentSampler(entity, engine, this, center, resolution, resolution, probeIndex, renderer, this.environmentProbeManager);
         this.setWeight(weight);
         engine.getEventBus().register(this);
     }

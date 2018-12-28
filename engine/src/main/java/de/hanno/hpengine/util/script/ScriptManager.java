@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.script;
 
+import de.hanno.hpengine.engine.backend.ManagerContext;
 import de.hanno.hpengine.engine.component.JavaScriptComponent;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.manager.Manager;
@@ -27,7 +27,7 @@ public class ScriptManager implements Manager {
 
 	public ScriptManager() {
 		NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-		this.scriptEngine = factory.getScriptEngine(new String[] { "--global-per-engine" });
+		this.scriptEngine = factory.getScriptEngine();// TODO Find replacement for "--global-per-managerContext");
 		globalContext = this.scriptEngine.getContext();
 		globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
 		provider = new DefaultCompletionProvider();
@@ -39,9 +39,9 @@ public class ScriptManager implements Manager {
 		LOGGER.info("Script executed...");
 	}
 
-	public void defineGlobals(Engine engine, EntityManager entityManager, MaterialManager materialManager) {
+	public void defineGlobals(ManagerContext engine, EntityManager entityManager, MaterialManager materialManager) {
 		define("world", scriptEngine);
-        define("renderer", engine.getRenderer());
+        define("renderer", engine.getRenderManager().getRenderer());
         define("entityManager", entityManager);
 		define("materialManager", materialManager);
         define("textureManager", engine.getTextureManager());
@@ -65,7 +65,7 @@ public class ScriptManager implements Manager {
 		scriptEngine.setContext(javaScriptComponent.getContext());
 		try {
 			((Invocable) scriptEngine).invokeFunction("update", seconds);
-//			scriptEngine.eval(String.format("update(%s)", seconds, javaScriptComponent.getContext()));
+//			scriptEngine.eval(String.format("update(%s)", seconds, javaScriptComponent.getManagerContext()));
 		} catch (ScriptException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {

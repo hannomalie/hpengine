@@ -101,10 +101,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
     }
 
     fun getDepthMapForAreaLight(light: AreaLight): Int {
-        val index = getAreaLights().indexOf(light)
-        return if (index >= MAX_AREALIGHT_SHADOWMAPS) {
-            -1
-        } else areaLightDepthMaps[index]
+        return getDepthMapForAreaLight(getAreaLights(), areaLightDepthMaps, light)
     }
 
     fun getCameraForAreaLight(light: AreaLight): Camera {
@@ -142,8 +139,20 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
         renderAreaLightShadowMaps(state)
     }
 
+    override fun extract(renderState: RenderState) {
+        renderState.lightState.areaLights = getAreaLights()
+        renderState.lightState.areaLightDepthMaps = areaLightDepthMaps
+    }
+
     companion object {
         @JvmField val MAX_AREALIGHT_SHADOWMAPS = 2
         @JvmField val AREALIGHT_SHADOWMAP_RESOLUTION = 512
+
+        fun getDepthMapForAreaLight(areaLights: List<AreaLight>, depthMaps: List<Int>, light: AreaLight): Int {
+            val index = areaLights.indexOf(light)
+            return if (index >= MAX_AREALIGHT_SHADOWMAPS) {
+                -1
+            } else depthMaps[index]
+        }
     }
 }

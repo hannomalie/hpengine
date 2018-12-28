@@ -3,22 +3,15 @@ package de.hanno.hpengine.engine
 import com.alee.laf.WebLookAndFeel
 import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
+import de.hanno.hpengine.engine.backend.EngineContextImpl
+import de.hanno.hpengine.engine.backend.ManagerContext
+import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
-import de.hanno.hpengine.engine.event.bus.EventBus
-import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
-import de.hanno.hpengine.engine.graphics.renderer.Renderer
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
-import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.physics.PhysicsManager
-import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.engine.threads.UpdateThread.isUpdateThread
@@ -28,36 +21,35 @@ import de.hanno.hpengine.util.gui.DebugFrame
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
-import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 import java.util.logging.Logger
 
-class Engine private constructor(gameDirName: String) {
+interface Engine: ManagerContext {
+    val managerContext: ManagerContext
+    val sceneManager: SceneManager
 
-    val eventBus: EventBus = MBassadorEventBus()
-    val gpuContext: GpuContext = GpuContext.create()
-    val input = Input(this, gpuContext)
-    val updateThread: UpdateThread = UpdateThread(this, "Update", MILLISECONDS.toSeconds(8).toFloat())
-    val commandQueue = object: CommandQueue() {
-        override fun executeDirectly() = isUpdateThread()
-    }
+    val scene
+        get() = sceneManager.scene
+}
 
-    val managers = SimpleManagerRegistry()
+class EngineImpl private constructor(override val engineContext: EngineContextImpl = EngineContextImpl(object : CommandQueue() {
+                                         override fun executeDirectly() = isUpdateThread()
+                                     }),
+                                     val materialManager: MaterialManager = MaterialManager(engineContext),
+                                     val renderer: DeferredRenderer = DeferredRenderer(materialManager, engineContext),
+                                     override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer),
+                                     override val managerContext: ManagerContextImpl = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext by managerContext, Engine {
 
-    val directoryManager = managers.register(DirectoryManager(gameDirName).apply { initWorkDir() })
-    val renderManager = managers.register(RenderManager(this, gpuContext, { RenderState(gpuContext) }))
-    val programManager = managers.register(ProgramManager(gpuContext, eventBus))
-    val textureManager = managers.register(TextureManager(eventBus, programManager, gpuContext))
-    val environmentProbeManager = managers.register(EnvironmentProbeManager(this))
+    val updateConsumer = Consumer<Float> { this@EngineImpl.update(it) }
+    val updateThread: UpdateThread = UpdateThread(updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
 
-    val sceneManager = managers.register(SceneManager(this))
-    val renderer: Renderer = DeferredRenderer(this)
-
-    val physicsManager = PhysicsManager(renderer)
+    override val sceneManager = managerContext.managers.register(SceneManager(managerContext))
 
     init {
-        eventBus.register(this)
+        engineContext.eventBus.register(this)
         startSimulation()
-        eventBus.post(EngineInitializedEvent())
+        engineContext.eventBus.post(EngineInitializedEvent())
     }
 
     val fpsCounter: FPSCounter
@@ -70,8 +62,8 @@ class Engine private constructor(gameDirName: String) {
 
     fun update(deltaSeconds: Float) {
         try {
-            commandQueue.executeCommands()
-            managers.update(deltaSeconds)
+            engineContext.commandQueue.executeCommands()
+            managerContext.managers.update(deltaSeconds)
             updateRenderState()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -84,15 +76,12 @@ class Engine private constructor(gameDirName: String) {
         with(renderManager) {
             if (renderState.currentWriteState.gpuCommandSync.isSignaled) {
                 renderState.currentWriteState.cycle = drawCycle.get()
+                renderState.currentWriteState.deltaInS = renderManager.getDeltaInS().toFloat()
                 scene.extract(renderState.currentWriteState)
                 renderState.update()
             }
             drawCycle.getAndIncrement()
         }
-    }
-
-    fun actuallyDraw() {
-        renderManager.perFrameCommand.setReadyForExecution()
     }
 
     fun destroy() {
@@ -127,7 +116,8 @@ class Engine private constructor(gameDirName: String) {
                 e.printStackTrace()
             }
 
-            val engine = create(gameDir)
+            Config.getInstance().gameDir = gameDir
+            val engine = create()
             if (debug) {
                 DebugFrame(engine)
             }
@@ -135,6 +125,7 @@ class Engine private constructor(gameDirName: String) {
             try {
                 val initScript = JavaComponent(String(Files.readAllBytes(engine.directoryManager.gameInitScript.toPath())))
                 initScript.init(engine)
+                initScript.initWithEngine(engine)
                 println("InitScript initialized")
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -144,10 +135,8 @@ class Engine private constructor(gameDirName: String) {
 
         @JvmOverloads
         @JvmStatic
-        fun create(gameDirName: String = GAMEDIR_NAME) = Engine(gameDirName)
+        fun create() = EngineImpl()
     }
-
-    fun getScene() = sceneManager.scene
 
 }
 

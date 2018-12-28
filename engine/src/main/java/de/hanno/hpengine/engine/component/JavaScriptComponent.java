@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.util.script.ScriptManager;
 
 import javax.script.ScriptContext;
@@ -12,7 +12,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     private ScriptManager scriptManager;
     private ScriptContext context;
     private Map map = new HashMap();
-    private Engine engine;
+    private EngineContext engine;
 
     public JavaScriptComponent(String script, ScriptManager scriptManager) {
         super();
@@ -30,7 +30,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     @Override
-    public void init(Engine engine) {
+    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
         super.init(engine);
         this.engine = engine;
         context = scriptManager.createContext();

@@ -1,18 +1,21 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.SizedArray
+import de.hanno.hpengine.engine.backend.Backend
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
+import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -33,7 +36,7 @@ import java.io.File
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
 class VoxelConeTracingExtension
-constructor(private val engine: Engine, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension) : RenderExtension {
+(private val engine: EngineContext, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension, val renderer: Renderer) : RenderExtension {
 
     val voxelGrids = SizedArray(2) { VoxelGrid(it) }.apply {
         array[0].apply { gridSize = 256 }.apply {
@@ -110,7 +113,7 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         }
     }
 
-    val voxelGridBufferRef = engine.renderManager.renderState.registerState {
+    val voxelGridBufferRef = engine.renderStateManager.renderState.registerState {
         VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, voxelGrids.sizeInBytes))
     }
 
@@ -136,16 +139,16 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
         directionalLightShadowMapExtension.voxelConeTracingExtension = this
     }
 
-    override fun renderFirstPass(engine: Engine, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
         GPUProfiler.start("VCT first pass")
 //         TODO: Move to update somehow
 
         val movableGrid = voxelGrids[1]
-        val gridMoved = if(engine.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
+        val gridMoved = if(backend.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
             movableGrid.move(Vector3f(-1.5f, 0f, 0f))
             println(movableGrid.position.x)
             true
-        } else if(engine.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
+        } else if(backend.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
             movableGrid.move(Vector3f(1.5f, 0f, 0f))
             println(movableGrid.position.x)
             true
@@ -191,8 +194,8 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
                     with(injectLightComputeProgram) {
                         use()
                         GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                        setUniform("pointLightCount", engine.sceneManager.scene.getPointLights().size)
-                        bindShaderStorageBuffer(2, engine.getScene().getPointLightSystem().lightBuffer)
+                        setUniform("pointLightCount", renderState.lightState.pointLights.size)
+                        bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
                         bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
                         setUniform("bounces", bounces)
                         setUniformAsMatrix4("shadowMatrix", renderState.directionalLightViewProjectionMatrixAsBuffer)
@@ -338,24 +341,24 @@ constructor(private val engine: Engine, directionalLightShadowMapExtension: Dire
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         GPUProfiler.start("VCT second pass")
-        engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.renderer.gBuffer.positionMap)
-        engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.renderer.gBuffer.normalMap)
-        engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.renderer.gBuffer.colorReflectivenessMap)
-        engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.renderer.gBuffer.motionMap)
-        engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.renderer.gBuffer.visibilityMap)
-        engine.gpuContext.bindTexture(11, TEXTURE_2D, engine.renderer.gBuffer.ambientOcclusionScatteringMap)
+        engine.gpuContext.bindTexture(0, TEXTURE_2D, renderer.gBuffer.positionMap)
+        engine.gpuContext.bindTexture(1, TEXTURE_2D, renderer.gBuffer.normalMap)
+        engine.gpuContext.bindTexture(2, TEXTURE_2D, renderer.gBuffer.colorReflectivenessMap)
+        engine.gpuContext.bindTexture(3, TEXTURE_2D, renderer.gBuffer.motionMap)
+        engine.gpuContext.bindTexture(7, TEXTURE_2D, renderer.gBuffer.visibilityMap)
+        engine.gpuContext.bindTexture(11, TEXTURE_2D, renderer.gBuffer.ambientOcclusionScatteringMap)
 
         voxelConeTraceProgram.use()
         val camTranslation = Vector3f()
         voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
         voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.renderer.gBuffer.storageBuffer)
+        voxelConeTraceProgram.bindShaderStorageBuffer(0, renderer.gBuffer.storageBuffer)
         voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
         voxelConeTraceProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
         voxelConeTraceProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
-        voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", engine.getScene().materialManager.skyboxMaterial.materialIndex)
+        voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState.skyBoxMaterialIndex)
         voxelConeTraceProgram.setUniform("debugVoxels", Config.getInstance().isDebugVoxels)
         engine.gpuContext.fullscreenBuffer.draw()
         //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;

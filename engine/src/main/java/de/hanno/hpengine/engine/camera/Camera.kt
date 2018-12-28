@@ -1,9 +1,13 @@
 package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
@@ -247,7 +251,8 @@ open class Camera: Component {
 
 }
 
-class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {
+class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera>, RenderSystem {
+
     override val componentClass: Class<Camera> = Camera::class.java
     override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<Camera>()
@@ -260,4 +265,29 @@ class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera> {
         components.add(component)
     }
     override fun clear() = components.clear()
+
+    override fun render(result: DrawResult, state: RenderState) {
+        if (Config.getInstance().isDrawCameras) {
+            //            TODO: Use renderstate somehow?
+            for (i in components.indices) {
+                val camera = components[i]
+                val corners = camera.frustumCorners
+                val renderer = engine.renderManager.renderer
+                renderer.batchLine(corners[0], corners[1])
+                renderer.batchLine(corners[1], corners[2])
+                renderer.batchLine(corners[2], corners[3])
+                renderer.batchLine(corners[3], corners[0])
+
+                renderer.batchLine(corners[4], corners[5])
+                renderer.batchLine(corners[5], corners[6])
+                renderer.batchLine(corners[6], corners[7])
+                renderer.batchLine(corners[7], corners[4])
+
+                renderer.batchLine(corners[0], corners[6])
+                renderer.batchLine(corners[1], corners[7])
+                renderer.batchLine(corners[2], corners[4])
+                renderer.batchLine(corners[3], corners[5])
+            }
+        }
+    }
 }

@@ -4,6 +4,7 @@ import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.event.EntityAddedEvent
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.SimpleScene
 import net.engio.mbassy.listener.Handler
 
@@ -15,6 +16,7 @@ interface EntitySystem {
     }
 
     fun clear()
+    fun extract(renderState: RenderState) {}
 }
 
 interface EntitySystemRegistry {

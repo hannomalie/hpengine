@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import org.joml.Vector3f;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface Renderer extends RenderSystem {
 
@@ -30,6 +31,8 @@ public interface Renderer extends RenderSystem {
     default void startFrame() {}
 
     default void endFrame() {}
+
+    void drawAllLines(Consumer<Program> action);
 
     DeferredRenderingBuffer getGBuffer();
 

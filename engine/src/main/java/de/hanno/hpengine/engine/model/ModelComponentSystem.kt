@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuEntityStruct
@@ -93,7 +94,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
                 var target = this.gpuEntitiesArray.getAtIndex(counter)
 
                 for ((meshIndex, mesh) in meshes.withIndex()) {
-                    val materialIndex = engine.getScene().materialManager.materials.indexOf(mesh.material)
+                    val materialIndex = engine.scene.materialManager.materials.indexOf(mesh.material)
                     target.selected = entity.isSelected
                     target.materialIndex = materialIndex
                     target.update = entity.update.asDouble.toInt()
@@ -114,7 +115,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
                     for (instance in entity.instances) {
                         val instanceMatrix = instance.transformation
-                        val instanceMaterialIndex = engine.getScene().materialManager.materials.indexOf(instance.materials[meshIndex])
+                        val instanceMaterialIndex = engine.scene.materialManager.materials.indexOf(instance.materials[meshIndex])
 
                         target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex

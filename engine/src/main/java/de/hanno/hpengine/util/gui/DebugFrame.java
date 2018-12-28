@@ -26,6 +26,8 @@ import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.EngineImpl;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -87,8 +89,10 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -98,7 +102,7 @@ import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
 public class DebugFrame implements HostComponent {
 
-    private Engine engine;
+    private EngineImpl engine;
 
     private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
@@ -191,7 +195,7 @@ public class DebugFrame implements HostComponent {
     private Runnable setTitleRunnable = () -> {
         try {
             String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-					engine.getRenderManager().getCurrentFPS(), engine.getRenderManager().getMsPerFrame(), engine.getFpsCounter().getFPS(), engine.getFpsCounter().getMsPerFrame());
+					engine.getRenderManager().getCurrentFPS(), engine.getRenderManager().getMsPerFrame(), engine.getRenderManager().getFpsCounter().getFPS(), engine.getRenderManager().getMsPerFrame());
             frame.setTitle(titleString);
         } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
             frame.setTitle("HPEngine Renderer initializing...");
@@ -199,7 +203,7 @@ public class DebugFrame implements HostComponent {
     };
     private List<DirectTextureOutputItem> renderTargetTextures = new ArrayList<>();
 
-    public DebugFrame(Engine engine) {
+    public DebugFrame(EngineImpl engine) {
         this.engine = engine;
 
         init();
@@ -280,13 +284,13 @@ public class DebugFrame implements HostComponent {
             }
 
         };
-        pointsLightsTable = new JTable(new PointLightsTableModel(this.engine));
-        tubeLightsTable = new JTable(new TubeLightsTableModel(this.engine));
+        pointsLightsTable = new JTable(new PointLightsTableModel(engine));
+        tubeLightsTable = new JTable(new TubeLightsTableModel(engine));
 
 
         materialPane = new ReloadableScrollPane(materialTable);
         texturePane = new ReloadableScrollPane(textureTable);
-        mainLightPane = new ReloadableScrollPane(new MainLightView(this.engine));
+        mainLightPane = new ReloadableScrollPane(new MainLightView(engine));
         pointLightsPane = new ReloadableScrollPane(pointsLightsTable);
         tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
         areaLightsPane = new ReloadableScrollPane(areaLightsTable);
@@ -304,12 +308,12 @@ public class DebugFrame implements HostComponent {
         directTextureOutputTextureIndexSelection = new WebComboBox(renderTargetTextures.toArray(new DirectTextureOutputItem[0]));
 
 
-        sceneTree = new SceneTree(this.engine);
+        sceneTree = new SceneTree(engine);
         scenePane = new ReloadableScrollPane(sceneTree) {
             { engine.getEventBus().register(this); }
             @Subscribe @Handler public void handle(EntityAddedEvent e) { sceneTree.reload();viewport.setView((sceneTree)); }
         };
-        probesTree = new ProbesTree(this.engine);
+        probesTree = new ProbesTree(engine);
         probesPane = new ReloadableScrollPane(probesTree) {
             { engine.getEventBus().register(this); }
             @Subscribe @Handler public void handle(ProbeAddedEvent e) { probesTree.reload();viewport.setView((sceneTree)); }
@@ -404,7 +408,7 @@ public class DebugFrame implements HostComponent {
 					public Result doInBackground() throws Exception {
                         engine.getGpuContext().execute(() -> {
                             try {
-                                EnvironmentProbe probe = engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50);
+                                EnvironmentProbe probe = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50, engine.getRenderer());
                                 engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
                             } catch (Exception e1) {
                                 e1.printStackTrace();
@@ -541,7 +545,7 @@ public class DebugFrame implements HostComponent {
 
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-            CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
+            CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                 @Override
                 public Result execute() throws Exception {
                     GPUProfiler.reset();
@@ -581,7 +585,7 @@ public class DebugFrame implements HostComponent {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
+                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
                     @Override
                     public Result execute() throws Exception {
                         engine.getScene().getMaterialManager().getMaterial(chosenFile.getName());
@@ -612,7 +616,7 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable() {
+                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable<TextureResult>() {
                         @Override
                         public TextureResult execute() throws Exception {
                             return new AddTextureCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
@@ -801,7 +805,7 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 
-            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable<Boolean>() {
                 @Override
                 public Boolean execute() throws Exception {
                     GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
@@ -858,7 +862,7 @@ public class DebugFrame implements HostComponent {
 
 		toggleAmbientOcclusion.addActionListener(e -> {
 			Config.getInstance().setUseAmbientOcclusion(!Config.getInstance().isUseAmbientOcclusion());
-//			de.hanno.hpengine.engine.getEventBus().post(new GlobalDefineChangedEvent());
+//			de.hanno.hpengine.managerContext.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
         toggleFrustumCulling.addActionListener(e -> {
@@ -885,7 +889,7 @@ public class DebugFrame implements HostComponent {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
 		forceProbeGBufferRedraw.addActionListener(e -> {
-            engine.getSceneManager().getScene().getEnvironmentProbeManager().getProbes().forEach(probe -> {
+            engine.getScene().getEnvironmentProbeManager().getProbes().forEach(probe -> {
 				probe.getSampler().resetDrawing();
 			});
 		});
@@ -1041,7 +1045,7 @@ public class DebugFrame implements HostComponent {
 			if(toggleButtonsWithGroups.containsKey(adjustable.group())) {
 				groupList = toggleButtonsWithGroups.get(adjustable.group());
 			} else {
-				groupList = new ArrayList<Component>();
+				groupList = new ArrayList<>();
 				toggleButtonsWithGroups.put(adjustable.group(), groupList);
 			}
 			
@@ -1322,7 +1326,7 @@ public class DebugFrame implements HostComponent {
     @Handler
     public void handle(MeshSelectedEvent e) {
         entityViewFrame.getContentPane().removeAll();
-        entityViewFrame.add(new MeshView(engine, e.getMesh()));
+        entityViewFrame.add(new MeshView(engine, engine.getScene().getEntities().get(e.getEntityIndex()).getComponent(ModelComponent.class).getMeshes().get(e.getMeshIndex())));
         entityViewFrame.setVisible(true);
     }
 
