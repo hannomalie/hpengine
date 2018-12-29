@@ -1,15 +1,26 @@
 package de.hanno.hpengine.util.commandqueue;
 
+import kotlin.jvm.functions.Function0;
+
 import java.util.Iterator;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
-import static de.hanno.hpengine.engine.threads.UpdateThread.isUpdateThread;
-
-public class CommandQueue {
+public final class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
     private ConcurrentLinkedQueue<FutureCallable> workQueue = new ConcurrentLinkedQueue<>();
+
+    private Function0<Boolean> executeDirectly;
+
+    public CommandQueue() {
+        this(() -> false);
+    }
+
+    public CommandQueue(Function0<Boolean> executeDirectly) {
+        this.executeDirectly = executeDirectly;
+    }
 
     public boolean executeCommands() {
         boolean executedCommands = false;
@@ -39,7 +50,7 @@ public class CommandQueue {
         return addCommand(command);
     }
     public <RESULT_TYPE> CompletableFuture<RESULT_TYPE> addCommand(FutureCallable<RESULT_TYPE> command) {
-        if(executeDirectly()) {
+        if(executeDirectly.invoke()) {
             try {
                 command.getFuture().complete(command.execute());
                 return command.getFuture();
@@ -55,7 +66,7 @@ public class CommandQueue {
     public <RESULT_TYPE> RESULT_TYPE calculate(FutureCallable<RESULT_TYPE> command) {
         RESULT_TYPE result;
         try {
-            if(executeDirectly()) {
+            if(executeDirectly.invoke()) {
                 command.getFuture().complete(command.execute());
                 result = command.getFuture().get();
             } else {
@@ -70,7 +81,7 @@ public class CommandQueue {
     }
 
     public Exception execute(Runnable runnable, boolean andBlock) {
-        if(executeDirectly()) {
+        if(executeDirectly.invoke()) {
             runnable.run();
             return null;
         }
@@ -107,6 +118,4 @@ public class CommandQueue {
             return null;
         }
     }
-
-    protected boolean executeDirectly() { return false; }
 }

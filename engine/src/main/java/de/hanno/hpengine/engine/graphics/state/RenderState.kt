@@ -158,7 +158,7 @@ class RenderState(gpuContext: GpuContext) {
              areaLights: List<AreaLight>,
              tubeLights: List<TubeLight>,
              pointLightShadowMapStrategy: PointLightShadowMapStrategy,
-             areaLightDepthMaps: ArrayList<Int>) {
+             areaLightDepthMaps: List<Int>) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
         this.entitiesState.joints = joints // TODO: Fixme

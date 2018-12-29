@@ -30,7 +30,7 @@ import java.io.File
 import java.nio.FloatBuffer
 import java.util.*
 
-class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(theComponentClass = AreaLight::class.java, factory = { TODO("not implemented") })
+class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java, factory = { TODO("not implemented") })
 
 class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
@@ -93,13 +93,6 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
         GPUProfiler.end()
     }
 
-    fun copyGpuBuffers(currentWriteState: RenderState) {
-//        TODO: Use this stuff instead of uniforms, take a look at DrawUtils.java
-//        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredAreaLightBufferSize()
-//        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
-//        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
-    }
-
     fun getDepthMapForAreaLight(light: AreaLight): Int {
         return getDepthMapForAreaLight(getAreaLights(), areaLightDepthMaps, light)
     }
@@ -140,6 +133,11 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
     }
 
     override fun extract(renderState: RenderState) {
+//        TODO: Use this stuff instead of uniforms, take a look at DrawUtils.java
+//        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredAreaLightBufferSize()
+//        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
+//        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
+
         renderState.lightState.areaLights = getAreaLights()
         renderState.lightState.areaLightDepthMaps = areaLightDepthMaps
     }

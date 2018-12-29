@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.scene.SimpleScene
+import de.hanno.hpengine.engine.scene.Scene
 import net.engio.mbassy.listener.Handler
 
 interface EntitySystem {
@@ -63,7 +63,7 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
     }
 }
 
-abstract class SimpleEntitySystem(val engine: Engine, val simpleScene: SimpleScene, val componentClasses: List<Class<out Component>>) : EntitySystem {
+abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
     protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {
@@ -79,9 +79,9 @@ abstract class SimpleEntitySystem(val engine: Engine, val simpleScene: SimpleSce
     override fun gatherEntities() {
         entities.clear()
         if(componentClasses.isEmpty()) {
-            entities.addAll(simpleScene.entityManager.getEntities())
+            entities.addAll(scene.entityManager.getEntities())
         } else {
-            entities.addAll(simpleScene.entityManager.getEntities().filter { it.components.keys.containsAll(componentClasses) })
+            entities.addAll(scene.entityManager.getEntities().filter { it.components.keys.containsAll(componentClasses) })
         }
         gatherComponents()
     }

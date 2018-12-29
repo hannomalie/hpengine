@@ -29,7 +29,6 @@ import org.apache.commons.io.filefilter.TrueFileFilter
 import org.joml.Vector2f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.*
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.GL_RGBA32F
@@ -78,8 +77,8 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                     val iterator = textures.values.iterator()
                     while (iterator.hasNext()) {
                         val texture = iterator.next()
-                        val shoudlUnload = false
-                        if (shoudlUnload) {
+                        val shouldUnload = false
+                        if (shouldUnload) {
                             texture.unload()
                         }
                     }

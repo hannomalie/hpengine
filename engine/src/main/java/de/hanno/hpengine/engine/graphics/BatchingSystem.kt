@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ComponentMapper
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -25,13 +24,13 @@ class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySyst
 
     }
 
-    fun addRenderBatches(currentWriteState: RenderState) {
+    override fun extract(renderState: RenderState) {
         val camera = engine.scene.activeCamera
         val cameraWorldPosition = camera.entity.position
 
         val firstpassDefaultProgram = engine.programManager.firstpassDefaultProgram
 
-        addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, components[ModelComponent::class.java] as List<ModelComponent>)
+        addBatches(camera, renderState, cameraWorldPosition, firstpassDefaultProgram, components[ModelComponent::class.java] as List<ModelComponent>)
     }
 
     private fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, firstpassDefaultProgram: Program, modelComponents: List<ModelComponent>) {

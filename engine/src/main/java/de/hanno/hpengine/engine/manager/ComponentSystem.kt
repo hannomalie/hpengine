@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.state.RenderState
 
 interface ComponentSystem<T : Component> {
     fun update(deltaSeconds: Float) {
@@ -13,6 +14,7 @@ interface ComponentSystem<T : Component> {
     fun create(entity: Entity): T
     fun addComponent(component: T)
     fun clear()
+    fun extract(renderState: RenderState) {}
     fun onSceneSet() {
         clear()
     }
@@ -29,7 +31,7 @@ interface ComponentSystem<T : Component> {
     val componentClass: Class<T>
 }
 
-open class SimpleComponentSystem<T: Component>(theComponentClass: Class<T>, theComponents: List<T> = emptyList(), val factory: (Entity) -> T) : ComponentSystem<T> {
+open class SimpleComponentSystem<T: Component>(componentClass: Class<T>, theComponents: List<T> = emptyList(), val factory: (Entity) -> T) : ComponentSystem<T> {
     private val components = mutableListOf<T>().apply { addAll(theComponents) }
 
     override fun getComponents(): List<T> = components
@@ -44,6 +46,6 @@ open class SimpleComponentSystem<T: Component>(theComponentClass: Class<T>, theC
         components.clear()
     }
 
-    override val componentClass: Class<T> = theComponentClass
+    override val componentClass: Class<T> = componentClass
 
 }

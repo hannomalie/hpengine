@@ -1,6 +1,5 @@
 package de.hanno.hpengine.util.commandqueue;
 
-import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +13,7 @@ public class CommandQueueTest {
     private CommandQueue commandQueue;
     @Before
     public void setUp() {
-        commandQueue = new CommandQueue();
+        commandQueue = new CommandQueue(executeDirectly);
     }
 
     @Test

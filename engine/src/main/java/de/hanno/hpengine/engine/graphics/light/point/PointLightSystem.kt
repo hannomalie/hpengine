@@ -18,7 +18,7 @@ import de.hanno.struct.ResizableStructArray
 import de.hanno.struct.copyTo
 import org.joml.Vector4f
 
-class PointLightComponentSystem: SimpleComponentSystem<PointLight>(theComponentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
+class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
 
 class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 
@@ -86,10 +86,10 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
         }
     }
 
-    override fun extract(currentWriteState: RenderState) {
-        currentWriteState.lightState.pointLights = getPointLights()
-        currentWriteState.lightState.pointLightBuffer = lightBuffer
-        currentWriteState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
+    override fun extract(renderState: RenderState) {
+        renderState.lightState.pointLights = getPointLights()
+        renderState.lightState.pointLightBuffer = lightBuffer
+        renderState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
     }
 
     companion object {

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.RenderManager;
 import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;

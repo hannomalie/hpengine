@@ -147,9 +147,8 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
                     )
         }
 //        TODO: Make this generic
-        modelComponentSystem.copyGpuBuffers(currentWriteState)
-        batchingSystem.addRenderBatches(currentWriteState)
-        areaLightSystemX.copyGpuBuffers(currentWriteState)
+        modelComponentSystem.extract(currentWriteState)
+        batchingSystem.extract(currentWriteState)
         materialManager.extract(currentWriteState)
         environmentProbeManager.extract(currentWriteState)
         pointLightSystemX.extract(currentWriteState)

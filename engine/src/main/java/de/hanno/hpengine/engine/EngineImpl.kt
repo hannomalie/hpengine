@@ -33,9 +33,7 @@ interface Engine: ManagerContext {
         get() = sceneManager.scene
 }
 
-class EngineImpl private constructor(override val engineContext: EngineContextImpl = EngineContextImpl(object : CommandQueue() {
-                                         override fun executeDirectly() = isUpdateThread()
-                                     }),
+class EngineImpl private constructor(override val engineContext: EngineContextImpl = EngineContextImpl(CommandQueue({isUpdateThread()})),
                                      val materialManager: MaterialManager = MaterialManager(engineContext),
                                      val renderer: DeferredRenderer = DeferredRenderer(materialManager, engineContext),
                                      override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer),

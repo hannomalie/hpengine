@@ -193,7 +193,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         updateCache = true
     }
 
-    fun copyGpuBuffers(currentWriteState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
         currentWriteState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize() * GpuEntityStruct.getBytesPerInstance()
         gpuEntitiesArray.shrinkToBytes(currentWriteState.entitiesBuffer.buffer.capacity())
         gpuEntitiesArray.copyTo(currentWriteState.entitiesBuffer.buffer)
