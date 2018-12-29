@@ -60,7 +60,7 @@ public class DrawLinesExtension implements RenderExtension {
             firstPassResult.linesDrawn += renderer.drawLines(linesProgram);
 
 //            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            managerContext.getSceneManager().getSimpleScene().getEntityManager().drawDebug(Renderer.getInstance(), renderState.getCamera(), linesProgram);
+//            managerContext.getSceneManager().getScene().getEntityManager().drawDebug(Renderer.getInstance(), renderState.getCamera(), linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;

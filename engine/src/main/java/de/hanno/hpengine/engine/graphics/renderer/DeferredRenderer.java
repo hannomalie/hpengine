@@ -155,7 +155,7 @@ public class DeferredRenderer implements Renderer {
 		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
 		registerRenderExtension(new DrawLinesExtension(engineContext, this));
-		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
+//		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
 //        registerRenderExtension(new EvaluateProbeRenderExtension(managerContext));
 		registerRenderExtension(new PixelPerfectPickingExtension());
 
@@ -270,8 +270,8 @@ public class DeferredRenderer implements Renderer {
 		if (!Config.getInstance().isUseDirectTextureOutput()) {
 			GPUProfiler.start("Shadowmap pass");
 			directionalLightShadowMapExtension.renderFirstPass(backend, gpuContext, result.getFirstPassResult(), renderState);
-//            managerContext.getSimpleScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
-//            managerContext.getSimpleScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
+//            managerContext.getScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
+//            managerContext.getScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
 			GPUProfiler.end();
 
 			GPUProfiler.start("Second pass");
@@ -464,7 +464,7 @@ public class DeferredRenderer implements Renderer {
 		if (Config.getInstance().isDebugframeEnabled()) {
 			ArrayList<Texture> textures = new ArrayList<>(backend.getTextureManager().getTextures().values());
 			drawToQuad(backend.getTextureManager().getTexture("hp/assets/models/textures/gi_flag.png", true).getTextureId(), backend.getGpuContext().getDebugBuffer(), backend.getProgramManager().getDebugFrameProgram());
-//			drawToQuad(managerContext.getSimpleScene().getAreaLightSystem().getDepthMapForAreaLight(managerContext.getSimpleScene().getAreaLightSystem().getAreaLights().get(0)), managerContext.getGpuContext().getDebugBuffer(), managerContext.getProgramManager().getDebugFrameProgram());
+//			drawToQuad(managerContext.getScene().getAreaLightSystem().getDepthMapForAreaLight(managerContext.getScene().getAreaLightSystem().getAreaLights().get(0)), managerContext.getGpuContext().getDebugBuffer(), managerContext.getProgramManager().getDebugFrameProgram());
 
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(managerContext.getEnvironmentProbeManager().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));

@@ -36,7 +36,7 @@ import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-class SimpleScene @JvmOverloads constructor(override val name: String = "new-simpleScene-" + System.currentTimeMillis(), val engine: Engine) : Scene {
+class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : Scene {
     @Transient
     override var currentCycle: Long = 0
     @Transient
@@ -70,7 +70,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
     val pointLightSystemX = entitySystems.register(PointLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
     private val areaLightSystemX = entitySystems.register(AreaLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
     val probeSystem = entitySystems.register(ProbeSystem(engine, this))
-    //    TODO: Move this event/debug stuff outside of simpleScene class
+    //    TODO: Move this event/debug stuff outside of scene class
     val eventSystem = entitySystems.register(object : EntitySystem {
         override fun clear() {}
         override fun update(deltaSeconds: Float) {}
@@ -146,13 +146,16 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sim
                     areaLightDepthMaps = ArrayList()
                     )
         }
-//        TODO: Make this generic
-        modelComponentSystem.extract(currentWriteState)
-        batchingSystem.extract(currentWriteState)
-        materialManager.extract(currentWriteState)
-        environmentProbeManager.extract(currentWriteState)
-        pointLightSystemX.extract(currentWriteState)
-        areaLightSystemX.extract(currentWriteState)
+
+        for(system in componentSystems.getSystems()) {
+            system.extract(currentWriteState)
+        }
+        for(system in entitySystems.systems) {
+            system.extract(currentWriteState)
+        }
+        for(manager in managers.getManagers()) {
+            manager.extract(currentWriteState)
+        }
     }
 
     @Handler
