@@ -11,5 +11,5 @@ interface Manager {
     @JvmDefault
     fun afterUpdate(deltaSeconds: Float) {}
     @JvmDefault
-    fun extract(currentWriteState: RenderState) {}
+    fun extract(renderState: RenderState) {}
 }

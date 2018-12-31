@@ -223,12 +223,12 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
 //        bufferMaterialsActionRef.request(renderManager.drawCycle.get())
     }
 
-    override fun extract(currentWriteState: RenderState) {
+    override fun extract(renderState: RenderState) {
 //        TODO: Remove most of this
-        currentWriteState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
-        currentWriteState.entitiesState.materialBuffer.buffer.rewind()
+        renderState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
+        renderState.entitiesState.materialBuffer.buffer.rewind()
         for ((index, material) in materials.withIndex()) {
-//            material.putToBuffer(currentWriteState.materialBuffer.buffer)
+//            material.putToBuffer(renderState.materialBuffer.buffer)
             val target = materialsAsStructs[index]
             target.diffuse.set(material.materialInfo.diffuse)
             target.metallic = material.materialInfo.metallic
@@ -245,8 +245,8 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
             target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
             target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
         }
-        materialsAsStructs.buffer.copyTo(currentWriteState.entitiesState.materialBuffer.buffer)
-        currentWriteState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
+        materialsAsStructs.buffer.copyTo(renderState.entitiesState.materialBuffer.buffer)
+        renderState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
     }
 
 }

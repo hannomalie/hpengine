@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
@@ -86,6 +87,12 @@ class EntityManager(private val engine: EngineContext, eventBus: EventBus, val s
         for (entity in entityContainer.entities) {
             entity.isHasMoved = false
         }
+    }
+
+    override fun extract(renderState: RenderState) {
+        renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
+        renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
+        renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
     }
 
     fun setEntityMovedInCycleToCycle(currentCycle: Long) {

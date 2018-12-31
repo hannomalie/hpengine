@@ -111,41 +111,10 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     }
 
     override fun extract(currentWriteState: RenderState) {
-        with(entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()) {
-            currentWriteState.init(vertexIndexBufferStatic = engine.renderManager.vertexIndexBufferStatic,
-                    vertexIndexBufferAnimated = engine.renderManager.vertexIndexBufferAnimated,
-                    joints = componentSystems.get(ModelComponentSystem::class.java).joints,
-                    camera = activeCamera,
-                    entityMovedInCycle = entityManager.entityMovedInCycle,
-                    staticEntityMovedInCycle = entityManager.staticEntityMovedInCycle,
-                    directionalLightHasMovedInCycle = entitySystems.get(DirectionalLightSystem::class.java).directionalLightMovedInCycle,
-                    pointLightMovedInCycle = entitySystems.get(PointLightSystem::class.java).pointLightMovedInCycle,
-                    sceneInitiallyDrawn = isInitiallyDrawn,
-                    sceneMin = minMax.min,
-                    sceneMax = minMax.max,
-                    cycle = currentWriteState.cycle,
-                    directionalLightViewMatrixAsBuffer = viewMatrixAsBuffer,
-                    directionalLightProjectionMatrixAsBuffer = projectionMatrixAsBuffer,
-                    directionalLightViewProjectionMatrixAsBuffer = viewProjectionMatrixAsBuffer,
-                    directionalLightScatterFactor = scatterFactor,
-                    directionalLightDirection = direction,
-                    directionalLightColor = color,
-                    entityAddedInCycle = entityManager.entityAddedInCycle,
-                    environmentMapsArray0Id = -1,
-                    environmentMapsArray3Id = -1,
-                    activeProbeCount = 0,
-                    environmentMapMin = BufferUtils.createFloatBuffer(1),
-                    environmentMapMax = BufferUtils.createFloatBuffer(1),
-                    environmentMapWeights = BufferUtils.createFloatBuffer(1),
-                    skyBoxMaterialIndex = 0,
-                    pointLights = emptyList(),
-                    pointLightsBuffer = PersistentMappedBuffer(engine.gpuContext, 4),
-                    areaLights = emptyList(),
-                    tubeLights = emptyList(),
-                    pointLightShadowMapStrategy = pointLightSystemX.shadowMapStrategy,
-                    areaLightDepthMaps = ArrayList()
-                    )
-        }
+        currentWriteState.camera.init(activeCamera)
+        currentWriteState.sceneInitiallyDrawn = isInitiallyDrawn
+        currentWriteState.sceneMin = minMax.min
+        currentWriteState.sceneMax = minMax.max
 
         for(system in componentSystems.getSystems()) {
             system.extract(currentWriteState)

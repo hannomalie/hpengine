@@ -101,4 +101,9 @@ class RenderManager(val engineContext: EngineContext,
         GPUProfiler.endFrame()
         return result
     }
+
+    override fun extract(renderState: RenderState) {
+        renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
+        renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
+    }
 }

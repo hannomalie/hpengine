@@ -87,6 +87,8 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
     }
 
     override fun extract(renderState: RenderState) {
+        renderState.pointLightMovedInCycle = pointLightMovedInCycle
+
         renderState.lightState.pointLights = getPointLights()
         renderState.lightState.pointLightBuffer = lightBuffer
         renderState.lightState.pointLightShadowMapStrategy = shadowMapStrategy

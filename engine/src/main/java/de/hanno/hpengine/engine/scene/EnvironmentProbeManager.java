@@ -317,12 +317,12 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void extract(@NotNull RenderState currentWriteState) {
-		currentWriteState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getTextureID());
-		currentWriteState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getTextureID());
-		currentWriteState.getEnvironmentProbesState().setActiveProbeCount(getProbes().size());
-		currentWriteState.getEnvironmentProbesState().setEnvironmentMapMin(getMinPositions());
-		currentWriteState.getEnvironmentProbesState().setEnvironmentMapMax(getMaxPositions());
-		currentWriteState.getEnvironmentProbesState().setEnvironmentMapWeights(getWeights());
+	public void extract(@NotNull RenderState renderState) {
+		renderState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getTextureID());
+		renderState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getTextureID());
+		renderState.getEnvironmentProbesState().setActiveProbeCount(getProbes().size());
+		renderState.getEnvironmentProbesState().setEnvironmentMapMin(getMinPositions());
+		renderState.getEnvironmentProbesState().setEnvironmentMapMax(getMaxPositions());
+		renderState.getEnvironmentProbesState().setEnvironmentMapWeights(getWeights());
 	}
 }

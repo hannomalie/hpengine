@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.model
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuEntityStruct
@@ -85,6 +84,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
         gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
         gpuEntitiesArray.buffer.rewind()
+        val materials = engine.scene.materialManager.materials
 
         for(modelComponent in components) {
             if(counter < gpuEntitiesArray.size) {
@@ -94,7 +94,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
                 var target = this.gpuEntitiesArray.getAtIndex(counter)
 
                 for ((meshIndex, mesh) in meshes.withIndex()) {
-                    val materialIndex = engine.scene.materialManager.materials.indexOf(mesh.material)
+                    val materialIndex = materials.indexOf(mesh.material)
                     target.selected = entity.isSelected
                     target.materialIndex = materialIndex
                     target.update = entity.update.asDouble.toInt()
@@ -115,7 +115,7 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
 
                     for (instance in entity.instances) {
                         val instanceMatrix = instance.transformation
-                        val instanceMaterialIndex = engine.scene.materialManager.materials.indexOf(instance.materials[meshIndex])
+                        val instanceMaterialIndex = materials.indexOf(instance.materials[meshIndex])
 
                         target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex
@@ -193,15 +193,17 @@ class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent>
         updateCache = true
     }
 
-    override fun extract(currentWriteState: RenderState) {
-        currentWriteState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize() * GpuEntityStruct.getBytesPerInstance()
-        gpuEntitiesArray.shrinkToBytes(currentWriteState.entitiesBuffer.buffer.capacity())
-        gpuEntitiesArray.copyTo(currentWriteState.entitiesBuffer.buffer)
+    override fun extract(renderState: RenderState) {
+        renderState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize() * GpuEntityStruct.getBytesPerInstance()
+        gpuEntitiesArray.shrinkToBytes(renderState.entitiesBuffer.buffer.capacity())
+        gpuEntitiesArray.copyTo(renderState.entitiesBuffer.buffer)
 
-        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = joints.size * BufferableMatrix4f.getBytesPerInstance()
-        gpuJointsArray.shrinkToBytes(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
-        gpuJointsArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
+        renderState.entitiesState.jointsBuffer.sizeInBytes = joints.size * BufferableMatrix4f.getBytesPerInstance()
+        gpuJointsArray.shrinkToBytes(renderState.entitiesState.jointsBuffer.buffer.capacity())
+        gpuJointsArray.copyTo(renderState.entitiesState.jointsBuffer.buffer)
 
+//        TODO: Remove this with proper extraction
+        renderState.entitiesState.joints = joints
     }
 }
 

@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.light.directional
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.SimpleScene
 
 class DirectionalLightSystem(engine: Engine, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(engine, simpleScene, listOf(DirectionalLight::class.java)) {
@@ -24,4 +25,20 @@ class DirectionalLightSystem(engine: Engine, simpleScene: SimpleScene, val event
     }
 
     fun getDirectionalLight() = getComponents(DirectionalLight::class.java).first()
+
+    override fun extract(renderState: RenderState) {
+        renderState.directionalLightHasMovedInCycle = directionalLightMovedInCycle
+
+        with(getDirectionalLight()) {
+            renderState.directionalLightState.directionalLightViewMatrixAsBuffer = viewMatrixAsBuffer
+            renderState.directionalLightState.directionalLightViewMatrixAsBuffer.rewind()
+            renderState.directionalLightState.directionalLightProjectionMatrixAsBuffer = projectionMatrixAsBuffer
+            renderState.directionalLightState.directionalLightProjectionMatrixAsBuffer.rewind()
+            renderState.directionalLightState.directionalLightViewProjectionMatrixAsBuffer = viewProjectionMatrixAsBuffer
+            renderState.directionalLightState.directionalLightViewProjectionMatrixAsBuffer.rewind()
+            renderState.directionalLightState.directionalLightDirection.set(direction)
+            renderState.directionalLightState.directionalLightColor.set(color)
+            renderState.directionalLightState.directionalLightScatterFactor = scatterFactor
+        }
+    }
 }
