@@ -179,7 +179,6 @@ void main(void) {
         sampler2D _diffuseMap = sampler2D(material.handleDiffuse);
 
     	color = texture(_diffuseMap, UV);
-//    	color = textureLod(_diffuseMap, UV, 3.2);
         alpha *= color.a;
         if(color.a<0.1)
         {

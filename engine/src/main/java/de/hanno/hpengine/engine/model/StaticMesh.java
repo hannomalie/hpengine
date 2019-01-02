@@ -83,7 +83,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     public void init(MaterialManager materialManager) {
 
         if (material == null) {
-            LOGGER.log(Level.INFO, "No material found!!!");
+            LOGGER.log(Level.INFO, "No material found for mesh " + this.name + "!!!");
             material = materialManager.getDefaultMaterial();
         }
         compiledVertices.clear();

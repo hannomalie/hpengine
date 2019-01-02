@@ -14,7 +14,9 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.struct.ResizableStructArray
 import de.hanno.struct.StaticStructObjectArray
+import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import net.engio.mbassy.listener.Handler
 import org.apache.commons.io.FilenameUtils
@@ -38,7 +40,7 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
 
-    val materialsAsStructs = StaticStructObjectArray(null, 1000) { MaterialStruct(it) }
+    val materialsAsStructs = ResizableStructArray(null, 1000) { MaterialStruct(it) }
 
     init {
         defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f,0f,0f)).apply {
@@ -245,6 +247,7 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
             target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
             target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
         }
+        materialsAsStructs.shrinkToBytes(renderState.entitiesState.materialBuffer.buffer.capacity())
         materialsAsStructs.buffer.copyTo(renderState.entitiesState.materialBuffer.buffer)
         renderState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
     }
