@@ -1,22 +1,22 @@
 package de.hanno.hpengine.engine.graphics.state;
 
-import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.input.Input;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_R;
 
 public class SimpleRenderStateRecorder implements RenderStateRecorder {
-    private CopyOnWriteArrayList<RenderState> states = new CopyOnWriteArrayList();
-    private EngineContext engineContext;
+    private final Input input;
+    private CopyOnWriteArrayList<RenderState> states = new CopyOnWriteArrayList<>();
 
-    public SimpleRenderStateRecorder(EngineContext engineContext) {
-        this.engineContext = engineContext;
+    public SimpleRenderStateRecorder(Input input) {
+        this.input = input;
     }
 
     @Override
     public boolean add(RenderState state) {
-        if(engineContext.getInput().isKeyPressed(GLFW_KEY_R)) {
+        if(input.isKeyPressed(GLFW_KEY_R)) {
             keyRWasPressed = true;
             System.out.println("Pressed");
         } else if(keyRWasPressed) {

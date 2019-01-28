@@ -1,6 +1,7 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.EngineImpl;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -17,9 +18,8 @@ public class TestWithEngine {
 	@BeforeClass
 	public static void init() {
         // TODO: Make this work headless
-		Engine.create();
-        engine = Engine.create();
-        renderer = engine.getRenderer();
+        engine = new EngineImpl();
+        renderer = engine.getRenderManager().getRenderer();
 	}
 	
 	@AfterClass

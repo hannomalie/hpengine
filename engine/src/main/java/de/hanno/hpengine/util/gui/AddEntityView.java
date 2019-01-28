@@ -52,7 +52,12 @@ public class AddEntityView extends WebPanel {
 		Customizer<WebFileChooser> customizer = arg0 -> arg0.setFileFilter(new FileNameExtensionFilter("OBJ/MD5 models", "obj", "md5mesh"));
 		
 		saveButton.addActionListener(e -> {
-			List<File> chosenFiles = WebFileChooser.showMultiOpenDialog("./hp/assets/models/", customizer);
+			List<File> chosenFiles;
+			try {
+				chosenFiles = WebFileChooser.showMultiOpenDialog("./hp/assets/models/", customizer);
+			} catch (Exception ex) {
+				chosenFiles = WebFileChooser.showMultiOpenDialog();
+			}
 			if(chosenFiles != null) {
 				for (File chosenFile : chosenFiles) {
 					if (chosenFile != null) {

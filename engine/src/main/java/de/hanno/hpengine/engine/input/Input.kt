@@ -11,8 +11,8 @@ import org.lwjgl.glfw.GLFW.*
 
 class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) {
 
-    private val currentKeys = IntArrayList()
-    private val keysPressed = IntArrayList()
+    val keysPressed = IntArrayList()
+    private val keysPressedLastFrame = IntArrayList()
     private val keysReleased = IntArrayList()
 
     private val currentMouse = IntArrayList()
@@ -33,8 +33,6 @@ class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) 
 
     private var dxBeforeLast: Int = 0
     private var dyBeforeLast: Int = 0
-
-    private val HOLD_KEYS_AS_PRESSED_KEYS = true
 
     private var MOUSE_LEFT_PRESSED_LAST_FRAME: Boolean = false
     private var STRG_PRESSED_LAST_FRAME = false
@@ -76,31 +74,16 @@ class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) 
                 STRG_PRESSED_LAST_FRAME = false
             }
         }
-
+        keysPressedLastFrame.clear()
+        keysPressedLastFrame.addAll(keysPressed)
         keysPressed.clear()
         keysReleased.clear()
 
-        if (HOLD_KEYS_AS_PRESSED_KEYS) {
-            currentKeys.clear()
-        }
-
         for (i in FIRST_KEY until NUM_KEYS) {
-            if (isKeyDown(gpuContext, i) && !currentKeys.contains(i)) {
+            if (isKeyDown(gpuContext, i)) {
                 keysPressed.add(i)
-            }
-        }
-
-        for (i in FIRST_KEY until NUM_KEYS) {
-            if (!isKeyDown(gpuContext, i) && currentKeys.contains(i)) {
+            } else if (keysPressedLastFrame.contains(i)) {
                 keysReleased.add(i)
-            }
-        }
-
-        currentKeys.clear()
-
-        for (i in 0 until NUM_KEYS) {
-            if (isKeyDown(gpuContext, FIRST_KEY + i)) {
-                currentKeys.add(i)
             }
         }
     }
@@ -109,9 +92,7 @@ class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) 
         downMouse.clear()
         upMouse.clear()
 
-        if (HOLD_KEYS_AS_PRESSED_KEYS) {
-            currentMouse.clear()
-        }
+        currentMouse.clear()
 
         for (i in 0 until NUM_BUTTONS) {
             if (isMouseDown(i) && !currentMouse.contains(i)) {
@@ -146,17 +127,20 @@ class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) 
 
 
     private fun isKeyDown(gpuContext: GpuContext, keyCode: Int): Boolean {
-        return glfwGetKey(gpuContext.windowHandle, keyCode) == GLFW_PRESS
+        val action = glfwGetKey(gpuContext.windowHandle, keyCode)
+        return action == GLFW_PRESS || action == GLFW_REPEAT
+    }
+    private fun isKeyUp(gpuContext: GpuContext, keyCode: Int): Boolean {
+        return glfwGetKey(gpuContext.windowHandle, keyCode) == GLFW_RELEASE
     }
 
     fun isKeyPressed(keyCode: Int): Boolean {
-        return keysPressed.contains(keyCode)
+        return isKeyDown(gpuContext, keyCode)
     }
 
-    fun isKeyUp(keyCode: Int): Boolean {
+    fun isKeyReleased(keyCode: Int): Boolean {
         return keysReleased.contains(keyCode)
     }
-
 
     private fun isMouseDown(buttonCode: Int): Boolean {
         return glfwGetMouseButton(gpuContext.windowHandle, buttonCode) == GLFW_PRESS

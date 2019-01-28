@@ -181,4 +181,7 @@ public interface GpuContext {
 
     List<RenderTarget> getRegisteredRenderTargets();
 
+    void finishFrame(RenderState renderState);
+
+    void pollEvents();
 }

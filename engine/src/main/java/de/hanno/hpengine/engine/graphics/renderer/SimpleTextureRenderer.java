@@ -20,6 +20,7 @@ import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
@@ -131,15 +132,10 @@ public class SimpleTextureRenderer implements Renderer {
 
 
 	@Override
-	public void render(DrawResult result, RenderState renderState) {
+	public void render(@NotNull DrawResult result, @NotNull RenderState renderState) {
 		GPUProfiler.start("Frame");
 		drawToQuad(texture.getTextureId(), gpuContext.getFullscreenBuffer());
 		GPUProfiler.end();
-
-        GPUProfiler.start("Waiting for driver");
-		glfwPollEvents();
-        glfwSwapBuffers(gpuContext.getWindowHandle());
-        GPUProfiler.end();
 	}
 
 	@Override

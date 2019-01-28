@@ -1,12 +1,10 @@
 package de.hanno.hpengine.engine.model.material
 
-import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
-import de.hanno.hpengine.engine.event.TexturesChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
@@ -15,12 +13,10 @@ import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.struct.ResizableStructArray
-import de.hanno.struct.StaticStructObjectArray
-import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
-import net.engio.mbassy.listener.Handler
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
+import org.lwjgl.opengl.GL11
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -29,7 +25,8 @@ import java.util.*
 import java.util.logging.Logger
 import kotlin.collections.ArrayList
 
-class MaterialManager(private val backend: Backend, val textureManager: TextureManager = backend.textureManager) : Manager {
+class MaterialManager(private val backend: Backend) : Manager {
+    val textureManager = backend.textureManager
     val skyboxMaterial: SimpleMaterial
     private val eventBus: EventBus = backend.eventBus
 
@@ -44,7 +41,7 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
 
     init {
         defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f,0f,0f)).apply {
-          put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/default.dds", true))
+          put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/default.dds", true))
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
@@ -54,41 +51,43 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
         backend.eventBus.register(this)
     }
 
+    var xxx = false
     fun initDefaultMaterials() {
+        if(xxx) return
 
         getMaterial(SimpleMaterialInfo("stone").apply {
-            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
-            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/stone_normal.png"))
-            put(MAP.HEIGHT, backend.textureManager.getTexture("hp/assets/textures/stone_height.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
+            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/stone_normal.png"))
+            put(MAP.HEIGHT, textureManager.getTexture("hp/assets/textures/stone_height.png"))
         })
 
-//        getMaterial(SimpleMaterialInfo("stone2").apply {
-//            put(MAP.DIFFUSE, managerContext.textureManager.getTexture("hp/assets/textures/brick.png", true))
-//            put(MAP.NORMAL, managerContext.textureManager.getTexture("hp/assets/textures/brick_normal.png"))
-//        })
+        getMaterial(SimpleMaterialInfo("stone2").apply {
+            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/brick.png", true))
+            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/brick_normal.png"))
+        })
 
         getMaterial(SimpleMaterialInfo("brick").apply {
-            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/brick.png", true))
-            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/brick_normal.png"))
-            put(MAP.HEIGHT, backend.textureManager.getTexture("hp/assets/textures/brick_height.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/brick.png", true))
+            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/brick_normal.png"))
+            put(MAP.HEIGHT, textureManager.getTexture("hp/assets/textures/brick_height.png"))
         })
 
         getMaterial(SimpleMaterialInfo("wood").apply {
-            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/wood_diffuse.png", true))
-            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/wood_normal.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/wood_diffuse.png", true))
+            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/wood_normal.png"))
         })
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
-            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
-            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/stone_normal.png"))
-            put(MAP.REFLECTION, backend.textureManager.getTexture("hp/assets/textures/stone_reflection.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
+            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/stone_normal.png"))
+            put(MAP.REFLECTION, textureManager.getTexture("hp/assets/textures/stone_reflection.png"))
         })
         getMaterial(SimpleMaterialInfo(name = "mirror", diffuse = Vector3f(1f,1f,1f), metallic = 1f))
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
-            put(MAP.DIFFUSE, backend.textureManager.getTexture("hp/assets/textures/bricks_parallax.dds", true))
-            put(MAP.HEIGHT, backend.textureManager.getTexture("hp/assets/textures/bricks_parallax_height.dds"))
-            put(MAP.NORMAL, backend.textureManager.getTexture("hp/assets/textures/bricks_parallax_normal.dds"))
+            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/bricks_parallax.dds", true))
+            put(MAP.HEIGHT, textureManager.getTexture("hp/assets/textures/bricks_parallax_height.dds"))
+            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/bricks_parallax_normal.dds"))
         })
     }
 
@@ -178,28 +177,6 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
 
     }
 
-    @Subscribe
-    @Handler
-    fun handle(event: MaterialAddedEvent) {
-        requestMaterialBuffering()
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(event: TexturesChangedEvent) {
-        requestMaterialBuffering()
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(event: MaterialChangedEvent) {
-        if (event.material.isPresent) {
-            requestMaterialBuffering()
-        } else {
-            requestMaterialBuffering()
-        }
-    }
-
     companion object {
         private val LOGGER = Logger.getLogger(MaterialManager::class.java.name)
         val TEXTUREASSETSPATH = "assets/textures/"
@@ -217,12 +194,7 @@ class MaterialManager(private val backend: Backend, val textureManager: TextureM
 //            MATERIALS.remove(oldMaterial.name)
 //            getMaterial(changedMaterial)
         }
-        requestMaterialBuffering()
         eventBus.post(MaterialChangedEvent())
-    }
-
-    private fun requestMaterialBuffering() {
-//        bufferMaterialsActionRef.request(renderManager.drawCycle.get())
     }
 
     override fun extract(renderState: RenderState) {

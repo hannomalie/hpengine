@@ -2,15 +2,14 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.event.FrameFinishedEvent
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.engine.threads.RenderThread
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
@@ -23,17 +22,15 @@ class RenderStateManager(renderStateFactory: () -> RenderState) {
 }
 class RenderManager(val engineContext: EngineContext,
                     val renderStateManager: RenderStateManager,
-                    val renderer: Renderer) : Manager {
+                    var renderer: Renderer,
+                    val materialManager: MaterialManager) : Manager {
 
     inline val renderState: TripleBuffer<RenderState>
         get() = renderStateManager.renderState
     private var lastFrameTime = 0L
     val fpsCounter = FPSCounter()
 
-    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext)
-    var renderThread: RenderThread = RenderThread("Render") {
-        perFrameCommand.setReadyForExecution()
-    }
+    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
 
     val vertexIndexBufferStatic = VertexIndexBuffer(engineContext.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
     val vertexIndexBufferAnimated = VertexIndexBuffer(engineContext.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
@@ -50,7 +47,6 @@ class RenderManager(val engineContext: EngineContext,
             renderState.startRead()
 
             if (lastTimeSwapped) {
-                engineContext.input.update()
                 val drawResult = profilingFramed {
                     recorder.add(renderState.currentReadState)
                     val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
@@ -59,17 +55,23 @@ class RenderManager(val engineContext: EngineContext,
                         it.render(drawResult, renderState.currentReadState)
                     }
                     renderer.render(drawResult, renderState.currentReadState)
+                    engineContext.gpuContext.finishFrame(renderState.currentReadState)
                     drawResult.apply { GPUProfilingResult = GPUProfiler.dumpTimings() }
                 }
                 lastFrameTime = System.currentTimeMillis()
                 fpsCounter.update()
-
-                engineContext.eventBus.post(FrameFinishedEvent(drawResult))
             }
+//            engineContext.gpuContext.finishFrame(renderState.currentReadState)
             lastTimeSwapped = renderState.stopRead()
         }
     }
-    val perFrameCommand = SimpleProvider(drawRunnable).also { engineContext.gpuContext.registerPerFrameCommand(it) }
+    val perFrameCommand = object: SimpleProvider(drawRunnable){
+        override fun isReadyForExecution(): Boolean {
+            return true
+        }
+    }.also {
+        engineContext.gpuContext.registerPerFrameCommand(it)
+    }
 
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
 

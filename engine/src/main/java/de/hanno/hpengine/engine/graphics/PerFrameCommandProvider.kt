@@ -17,7 +17,7 @@ interface PerFrameCommandProvider {
     }
 }
 
-class SimpleProvider(command: Runnable): PerFrameCommandProvider {
+open class SimpleProvider(command: Runnable): PerFrameCommandProvider {
     override val drawCommand = command
 
     private val drawCounter = AtomicInteger(-1)

@@ -12,10 +12,10 @@ public class ProbeTest extends TestWithEngine {
 	
 	@Test
 	public void assignsProbesProperly() throws Exception {
-        EnvironmentProbe probeNear = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity(), new Vector3f(), 20, Update.STATIC, 1, engine.getScene().getEnvironmentProbeManager().engine.getRenderer());
+        EnvironmentProbe probeNear = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity(), new Vector3f(), 20, Update.STATIC, 1, engine.getRenderManager().getRenderer());
 		Entity farEntity = new Entity();
 		farEntity.translate(new Vector3f(10,0,0));
-		EnvironmentProbe probeFar = engine.getScene().getEnvironmentProbeManager().getProbe(farEntity, new Vector3f(10,0,0), 100, Update.STATIC, 1, engine.getScene().getEnvironmentProbeManager().engine.getRenderer());
+		EnvironmentProbe probeFar = engine.getScene().getEnvironmentProbeManager().getProbe(farEntity, new Vector3f(10,0,0), 100, Update.STATIC, 1, engine.getRenderManager().getRenderer());
 		
 		Entity centeredEntity = new Entity() {
 			@Override public void setSelected(boolean selected) { }

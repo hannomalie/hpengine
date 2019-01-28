@@ -297,4 +297,14 @@ public class MockContext implements GpuContext {
     public List<RenderTarget> getRegisteredRenderTargets() {
         return null;
     }
+
+    @Override
+    public void finishFrame(RenderState renderState) {
+
+    }
+
+    @Override
+    public void pollEvents() {
+
+    }
 }

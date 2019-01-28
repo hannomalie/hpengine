@@ -31,6 +31,9 @@ public class LoadModelCommand implements Command<EntityListResult> {
     public EntityListResult execute() {
         EntityListResult result = new EntityListResult();
         try {
+            System.out.println("Loading model " +  name);
+            long start = System.currentTimeMillis();
+
             List<Entity> entities = new ArrayList<>();
             Model model = getModel(materialManager);
             Entity entity = new Entity(name);
@@ -38,7 +41,10 @@ public class LoadModelCommand implements Command<EntityListResult> {
             entity.addComponent(modelComponent);
 
             entities.add(entity);
-            return new EntityListResult(entities);
+            EntityListResult entityListResult = new EntityListResult(entities);
+
+            System.out.println("Loading took " + (System.currentTimeMillis() - start));
+            return entityListResult;
 
         } catch (Exception e) {
             e.printStackTrace();

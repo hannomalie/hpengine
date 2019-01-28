@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 
 interface Backend {
@@ -29,7 +30,7 @@ interface Backend {
 class BackendImpl(override val eventBus: EventBus = MBassadorEventBus(),
                   override val gpuContext: GpuContext = OpenGLContext(),
                   override val programManager: ProgramManager = ProgramManager(gpuContext, eventBus),
-                  override val textureManager: TextureManager = TextureManager(eventBus, programManager, gpuContext),
+                  override val textureManager: TextureManager = TextureManager(programManager, gpuContext),
                   override val input: Input = Input(eventBus, gpuContext)) : Backend
 
 interface EngineContext: Backend {
@@ -51,7 +52,9 @@ interface EngineContext: Backend {
         get() = backend.input
 }
 
-class EngineContextImpl(override val commandQueue: CommandQueue,
+class UpdateCommandQueue: CommandQueue({ UpdateThread.isUpdateThread() })
+
+class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val backend: Backend = BackendImpl(),
                         override val config: Config = Config.getInstance(),
                         override val renderSystems: MutableList<RenderSystem> = mutableListOf(),

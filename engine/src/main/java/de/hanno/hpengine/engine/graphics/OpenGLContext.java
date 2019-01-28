@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -80,7 +81,7 @@ public final class OpenGLContext implements GpuContext {
 
     private TimeStepThread openGLThread;
 
-    private CommandQueue commandQueue = new CommandQueue();
+    private CommandQueue commandQueue = new CommandQueue(OpenGLContext::isOpenGLThread);
     private volatile boolean initialized = false;
     public volatile boolean errorOccured = false;
     private int maxTextureUnits;
@@ -201,6 +202,7 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public void update(float seconds) {
+        pollEvents();
         checkCommandSyncs();
         try {
             executePerFrameCommands();
@@ -412,26 +414,33 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public void execute(Runnable runnable, boolean andBlock) {
-        if(isOpenGLThread()) {
-            try {
-                runnable.run();
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "", e);
-            }
-            return;
+        if(andBlock) {
+            CompletableFuture<Object> future = commandQueue.addCommand(runnable);
+            future.join();
+        } else {
+            commandQueue.addCommand(runnable);
         }
 
-        if(andBlock) {
-            final Exception exception = commandQueue.execute(runnable, andBlock);
-            if(exception != null) {
-                exception.printStackTrace();
-            }
-        } else {
-            calculate(() -> {
-                runnable.run();
-                return null;
-            });
-        }
+//        if(isOpenGLThread()) {
+//            try {
+//                runnable.run();
+//            } catch (Exception e) {
+//                LOGGER.log(Level.SEVERE, "", e);
+//            }
+//            return;
+//        }
+//
+//        if(andBlock) {
+//            final Exception exception = commandQueue.execute(runnable, andBlock);
+//            if(exception != null) {
+//                exception.printStackTrace();
+//            }
+//        } else {
+//            calculate(() -> {
+//                runnable.run();
+//                return null;
+//            });
+//        }
     }
 
     @Override
@@ -452,17 +461,18 @@ public final class OpenGLContext implements GpuContext {
 
     @Override
     public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(FutureCallable<RETURN_TYPE> command) {
-        if(isOpenGLThread()) {
-            try {
-                command.getFuture().complete(command.execute());
-                return command.getFuture();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        } else {
-            return commandQueue.addCommand(command);
-        }
+//        if(isOpenGLThread()) {
+//            try {
+//                command.getFuture().complete(command.execute());
+//                return command.getFuture();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                return null;
+//            }
+//        } else {
+//            return commandQueue.addCommand(command);
+//        }
+        return commandQueue.addCommand(command);
     }
 
     @Override
@@ -555,12 +565,12 @@ public final class OpenGLContext implements GpuContext {
         });
         OpenGLContext.executorService.submit(this.openGLThread);
         System.out.println("OpenGLContext thread submitted with id " + OpenGLContext.OPENGL_THREAD_ID);
-        waitForInitialization(this);
+        waitForInitialization();
     }
 
-    static void waitForInitialization(GpuContext context) {
+    private void waitForInitialization() {
         OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization");
-        while(!context.isInitialized()) {
+        while(!isInitialized()) {
             OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization...");
             try {
                 Thread.sleep(400);
@@ -611,5 +621,26 @@ public final class OpenGLContext implements GpuContext {
     @Override
     public List<RenderTarget> getRegisteredRenderTargets() {
         return registeredRenderTargets;
+    }
+
+    @Override
+    public void finishFrame(RenderState renderState) {
+        GPUProfiler.start("Create new fence");
+        createNewGPUFenceForReadState(renderState);
+        GPUProfiler.end();
+//        GPUProfiler.start("Waiting for driver");
+//        TODO: Maybe move this out of the condition of buffer swapping to rendermanager?
+//        pollEvents();
+        GPUProfiler.start("Swap buffers");
+        glfwSwapBuffers(getWindowHandle());
+        GPUProfiler.end();
+//        GPUProfiler.end();
+    }
+
+    @Override
+    public void pollEvents() {
+        GPUProfiler.start("Poll events");
+        glfwPollEvents();
+        GPUProfiler.end();
     }
 }

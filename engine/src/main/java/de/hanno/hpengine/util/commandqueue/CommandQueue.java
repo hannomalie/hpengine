@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
-public final class CommandQueue {
+public class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
     private ConcurrentLinkedQueue<FutureCallable> workQueue = new ConcurrentLinkedQueue<>();
@@ -68,11 +68,10 @@ public final class CommandQueue {
         try {
             if(executeDirectly.invoke()) {
                 command.getFuture().complete(command.execute());
-                result = command.getFuture().get();
             } else {
                 workQueue.offer(command);
-                result = command.getFuture().get();
             }
+            result = command.getFuture().get();
         } catch (Exception e) {
             e.printStackTrace();
             result = null;

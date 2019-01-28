@@ -4,6 +4,7 @@ import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.WebButtonGroup;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.WebCheckBoxTree;
+import com.alee.laf.WebLookAndFeel;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.combobox.WebComboBox;
@@ -19,6 +20,7 @@ import com.alee.laf.slider.WebSlider;
 import com.alee.laf.splitpane.WebSplitPane;
 import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebTextField;
+import com.alee.managers.language.LanguageManager;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
@@ -89,6 +91,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -206,6 +209,12 @@ public class DebugFrame implements HostComponent {
     public DebugFrame(EngineImpl engine) {
         this.engine = engine;
 
+        try {
+            SwingUtils.invokeAndWait(WebLookAndFeel::install);
+        } catch (InterruptedException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+
         init();
 
         mainFrame.setLayout(new BorderLayout(5,5));
@@ -241,7 +250,7 @@ public class DebugFrame implements HostComponent {
         infoSplitPane.setDividerLocation(125);
         infoSplitPane.setContinuousLayout(true);
 
-        textureTable = new JTable(new TextureTableModel(engine)) {
+        textureTable = new TextureTable(engine) {
             { engine.getEventBus().register(this); }
             @Subscribe
             @Handler

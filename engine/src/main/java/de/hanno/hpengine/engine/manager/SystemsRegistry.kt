@@ -4,32 +4,31 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 
 interface ManagerRegistry {
-    fun getManagers(): Collection<Manager>
+    val managers: Map<Class<*>, Manager>
     fun <T : Manager> get(managerClass: Class<T>): T
     fun update(deltaSeconds: Float) {
-        getManagers().forEach{ it.update(deltaSeconds) }
+        managers.forEach{ it.value.update(deltaSeconds) }
     }
     fun <T : Manager> register(manager: T): T
     fun clearManagers() {
-        getManagers().forEach { it.clear() }
+        managers.forEach { it.value.clear() }
     }
 
     fun onEntityAdded(entities: List<Entity>) {
-        getManagers().forEach {
-            it.onEntityAdded(entities)
+        managers.forEach {
+            it.value.onEntityAdded(entities)
         }
     }
 
     fun afterUpdate(deltaSeconds: Float) {
-        getManagers().forEach {
-            it.afterUpdate(deltaSeconds)
+        managers.forEach {
+            it.value.afterUpdate(deltaSeconds)
         }
     }
 }
 
 class SimpleManagerRegistry: ManagerRegistry {
-    private val managers = mutableMapOf<Class<*>, Manager>()
-    override fun getManagers(): Collection<Manager> = managers.values
+    override val managers = mutableMapOf<Class<*>, Manager>()
     override fun <T : Manager> register(manager: T): T {
         managers[manager::class.java] = manager
         return manager

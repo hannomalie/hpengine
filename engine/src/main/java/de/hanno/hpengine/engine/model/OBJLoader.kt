@@ -8,13 +8,21 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import org.joml.Vector2f
 import org.joml.Vector3f
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
+import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.Vertex
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 
 import java.io.*
 import java.util.*
 import java.util.logging.Level
 
 import java.lang.Integer.parseInt
+import java.util.concurrent.CompletableFuture
+import java.util.function.Supplier
 
 class OBJLoader {
 
@@ -174,6 +182,8 @@ class OBJLoader {
         val parseMaterialName = ""
         var currentMaterialInfo: MaterialInfo? = null// = new SimpleMaterialInfo();
 
+        val textureJobs: MutableList<CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture<TextureDimension2D>>>> = mutableListOf()
+
         var materialLine: String?  = materialFileReader!!.readLine()
         try {
             while (materialLine != null) {
@@ -192,24 +202,26 @@ class OBJLoader {
                 } else if ("map_Kd" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.DIFFUSE)
+//                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.DIFFUSE)
 
                 } else if ("map_Ka" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.OCCLUSION)
+//                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.OCCLUSION)
 
                 } else if ("map_Disp" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR)
-                    //			    	  addHelper(currentMaterialInfo, name, map, MAP.ROUGHNESS );
 
                 } else if ("map_Ks" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR)
-                    //			    	  addHelper(currentMaterialInfo, name, map, MAP.ROUGHNESS );
+//                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.SPECULAR)
 
                 } else if ("map_Ns" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.ROUGHNESS)
+//                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.ROUGHNESS)
 
                 } else if ("map_bump" == firstToken) {
                     val map = rest
@@ -222,6 +234,7 @@ class OBJLoader {
                 } else if ("map_d" == firstToken) {
                     val map = rest
                     currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL)
+//                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.NORMAL)
 
                 } else if ("map_Kh" == firstToken) {
                     val map = rest
@@ -252,11 +265,20 @@ class OBJLoader {
             e.printStackTrace()
         }
 
+//        textureJobs.forEach {
+//            val result = it.get()
+//            materials[result.second.name] = materials[result.second.name]!!.put(result.first, result.third)
+//        }
         return materials
     }
 
     private fun addHelper(textureManager: TextureManager, currentMaterialInfo: MaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP): MaterialInfo {
         return currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE))
+    }
+    private fun addHelperXXX(textureManager: TextureManager, currentMaterialInfo: MaterialInfo, path: String, name: String, map: SimpleMaterial.MAP): CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture<TextureDimension2D>>> {
+        return CompletableFuture.supplyAsync {
+            Triple(map, currentMaterialInfo, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE))
+        }
     }
 
     private fun parseName(line: String, mesh: StaticMesh) {

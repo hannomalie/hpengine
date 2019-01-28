@@ -107,7 +107,7 @@ public class DeferredRenderer implements Renderer {
 
 	private FloatBuffer modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	public DeferredRenderer(EngineContext engineContext) throws Exception {
-		this(new MaterialManager(engineContext, engineContext.getTextureManager()), engineContext);
+		this(new MaterialManager(engineContext), engineContext);
 	}
 	public DeferredRenderer(MaterialManager materialManager, EngineContext engineContext) throws Exception {
 		if(!(engineContext.getGpuContext() instanceof OpenGLContext)) {
@@ -463,7 +463,7 @@ public class DeferredRenderer implements Renderer {
 		}
 		if (Config.getInstance().isDebugframeEnabled()) {
 			ArrayList<Texture> textures = new ArrayList<>(backend.getTextureManager().getTextures().values());
-			drawToQuad(backend.getTextureManager().getTexture("hp/assets/models/textures/gi_flag.png", true).getTextureId(), backend.getGpuContext().getDebugBuffer(), backend.getProgramManager().getDebugFrameProgram());
+			drawToQuad(textures.get(0).getTextureId(), backend.getGpuContext().getDebugBuffer(), backend.getProgramManager().getDebugFrameProgram());
 //			drawToQuad(managerContext.getScene().getAreaLightSystem().getDepthMapForAreaLight(managerContext.getScene().getAreaLightSystem().getAreaLights().get(0)), managerContext.getGpuContext().getDebugBuffer(), managerContext.getProgramManager().getDebugFrameProgram());
 
 //			for(int i = 0; i < 6; i++) {
@@ -498,21 +498,8 @@ public class DeferredRenderer implements Renderer {
 //                GL11.glDeleteTextures(faceViews[i]);
 //            }
 
+			GPUProfiler.end();
 		}
-
-		GPUProfiler.start("Create new fence");
-        backend.getGpuContext().createNewGPUFenceForReadState(renderState);
-		GPUProfiler.end();
-		GPUProfiler.start("Waiting for driver");
-		GPUProfiler.start("Poll events");
-		glfwPollEvents();
-		GPUProfiler.end();
-		GPUProfiler.start("Swap buffers");
-        glfwSwapBuffers(backend.getGpuContext().getWindowHandle());
-		GPUProfiler.end();
-		GPUProfiler.end();
-		GPUProfiler.end();
-
 	}
 
 	@Override

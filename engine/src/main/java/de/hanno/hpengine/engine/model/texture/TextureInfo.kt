@@ -8,6 +8,10 @@ data class TextureInfo(val srgba: Boolean,
                        val mipMapCount: Int,
                        val srcPixelFormat: Int,
                        val mipmapsGenerated: Boolean,
-                       val sourceDataCompressed: Boolean)
+                       val sourceDataCompressed: Boolean,
+                       val hasAlpha: Boolean) {
+}
 
-data class CompleteTextureInfo(val info: TextureInfo, val data: Array<Future<ByteArray>>)
+data class CompleteTextureInfo(val info: TextureInfo, val data: Array<Future<ByteArray>>) {
+    val hasAlpha: Boolean = info.hasAlpha
+}

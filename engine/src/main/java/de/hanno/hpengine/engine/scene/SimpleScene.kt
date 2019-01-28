@@ -62,7 +62,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         managers.register(it)
         engine.renderSystems.add(it)
     }
-    override val materialManager = managers.register(MaterialManager(engine, engine.textureManager))
+    override val materialManager = managers.register(MaterialManager(engine))
     val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
     val directionalLightSystem = entitySystems.register(DirectionalLightSystem(engine, this, engine.eventBus))
@@ -122,8 +122,8 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         for(system in entitySystems.systems) {
             system.extract(currentWriteState)
         }
-        for(manager in managers.getManagers()) {
-            manager.extract(currentWriteState)
+        for(manager in managers.managers) {
+            manager.value.extract(currentWriteState)
         }
     }
 

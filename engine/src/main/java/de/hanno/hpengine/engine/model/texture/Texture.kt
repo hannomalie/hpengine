@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine.model.texture
 
+import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.GL11
 
@@ -17,6 +16,10 @@ interface Texture<out DIMENSION: TextureDimension1D> {
     val wrapMode: Int
     var uploadState: UploadState
     fun unload() {}
+
+    companion object {
+        const val directory = DirectoryManager.WORKDIR_NAME + "/assets/textures/"
+    }
 }
 
 

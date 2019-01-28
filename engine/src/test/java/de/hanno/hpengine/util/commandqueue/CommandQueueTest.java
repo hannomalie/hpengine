@@ -13,7 +13,7 @@ public class CommandQueueTest {
     private CommandQueue commandQueue;
     @Before
     public void setUp() {
-        commandQueue = new CommandQueue(executeDirectly);
+        commandQueue = new CommandQueue();
     }
 
     @Test

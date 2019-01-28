@@ -1,15 +1,14 @@
 package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.event.TexturesChangedEvent
-import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -19,9 +18,8 @@ import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.buffer
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.getFullPathAsDDS
 import de.hanno.hpengine.engine.model.texture.OpenGlTexture.Companion.textureAvailableAsDDS
 import de.hanno.hpengine.engine.threads.TimeStepThread
-import de.hanno.hpengine.util.Util.*
+import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
-import de.hanno.hpengine.util.commandqueue.FutureCallable
 import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -41,19 +39,16 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-class TextureManager(private val eventBus: EventBus, programManager: ProgramManager,
-                     val gpuContext: GpuContext) : Manager {
+class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext) : Manager {
 
     val commandQueue = CommandQueue()
 
     /** The colour model including alpha for the GL image  */
-    private val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+    val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
             intArrayOf(8, 8, 8, 8),
             true,
             false,
@@ -61,12 +56,15 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             DataBuffer.TYPE_BYTE)
 
     /** The colour model for the GL image  */
-    private val glColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+    val glColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
             intArrayOf(8, 8, 8, 0),
             false,
             false,
             ComponentColorModel.OPAQUE,
             DataBuffer.TYPE_BYTE)
+
+    /** The table of textures that have been loaded in this loader  */
+    var textures: MutableMap<String, Texture<*>> = LinkedHashMap()
 
     init {
 //    	loadAllAvailableTextures();
@@ -95,9 +93,6 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    /** The table of textures that have been loaded in this loader  */
-    var textures: MutableMap<String, Texture<*>> = ConcurrentHashMap()
-
     val lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true)
     var cubeMap = getCubeMap("hp/assets/textures/skybox.png")
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("HORIZONTAL", true)))
@@ -116,7 +111,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
     }
 
     private fun loadAllAvailableTextures() {
-        val textureDir = File(OpenGlTexture.directory)
+        val textureDir = File(Texture.directory)
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
         GpuContext.exitOnGLError("Before loadAllAvailableTextures")
         for (file in files) {
@@ -143,61 +138,14 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
     @JvmOverloads
     fun getTexture(resourceName: String, srgba: Boolean = false): Texture<TextureDimension2D> {
-        if (textureLoaded(resourceName)) {
-            return (textures[resourceName] as Texture<TextureDimension2D>)
-        }
-        LOGGER.info("$resourceName requested")
-
-        return convertAndUpload(resourceName, srgba) ?: {
-            LOGGER.severe("No texture loaded for $resourceName")
-            defaultTexture
-        }()
-    }
-
-    private fun convertAndUpload(resourceName: String, srgba: Boolean): Texture<TextureDimension2D>? {
-        return commandQueue.calculate(object : FutureCallable<PathBasedOpenGlTexture>() {
-            override fun execute(): PathBasedOpenGlTexture? {
-                return getOpenGlTexture(resourceName, srgba)
-            }
-        }).apply {
-            textures[resourceName] = this
-        }
-    }
-
-    private fun getOpenGlTexture(path: String, srgba: Boolean): PathBasedOpenGlTexture {
-        return try {
-            val start = System.currentTimeMillis()
-            val imageExists = File(path).exists()
-            if (imageExists) {
-                val textureInfo = getCompleteTextureInfo(path, srgba)
-
-                PathBasedOpenGlTexture(textureManager = this@TextureManager,
-                    target = TEXTURE_2D,
-                    path = path,
-                    srgba = srgba,
-                    dimension = TextureDimension(textureInfo.info.width, textureInfo.info.height, 0),
-                    mipmapCount = textureInfo.info.mipMapCount,
-                    srcPixelFormat = textureInfo.info.srcPixelFormat,
-                    textureId = gpuContext.genTextures()).apply {
-
-                    upload(textureInfo)
-                }
-            } else {
-                throw IOException("Requested texture doesn't exist: $path")
-            }.apply {
-                LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading with mipmaps: " + path)
-                postTextureChangedEvent()
-
-            }
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
-
+        return textures.computeIfAbsent(resourceName) {
+            FileBasedSimpleTexture(gpuContext, resourceName, srgba)
+        } as Texture<TextureDimension2D>
     }
 
     fun getCompleteTextureInfo(resourceName: String, srgba: Boolean): CompleteTextureInfo {
         val ddsImageAvailable = textureAvailableAsDDS(resourceName)
-        LOGGER.info("$resourceName available as dds: $ddsImageAvailable")
+        LOGGER.fine("$resourceName available as dds: $ddsImageAvailable")
         return if (ddsImageAvailable) {
 //        return if (resourceName.endsWith(".dds")) {
             val ddsImage = DDSImage.read(File(getFullPathAsDDS(resourceName)))
@@ -206,16 +154,17 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             val data = (0 until ddsImage.allMipMaps.size).map {
                 val info = ddsImage.getMipMap(it)
-                //                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
-                //                        showAsTextureInFrame(mipmapImage);
-                //                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
+//
+//                val mipmapimage = DDSUtil.decompressTexture(info.data, info.width, info.height, info.compressionFormat)
+//                data[i] = TextureManager.getInstance().convertImageData(mipmapImage)
+//
                 val array = ByteArray(info.data.capacity())
                 info.data.get(array)
                 CompletableFuture.completedFuture(array)
             }
             val mipMapsGenerated = ddsImage.numMipMaps > 1
 
-            CompleteTextureInfo(TextureInfo(srgba, ddsImage.width, ddsImage.height, mipMapCount, GL11.GL_RGB, mipMapsGenerated, true), data.toTypedArray())
+            CompleteTextureInfo(TextureInfo(srgba, ddsImage.width, ddsImage.height, mipMapCount, GL11.GL_RGB, mipMapsGenerated, sourceDataCompressed = true, hasAlpha = false), data.toTypedArray())
         } else {
             val bufferedImage = loadImage(resourceName).apply {
                 handleDdsConversion(resourceName, this)
@@ -224,9 +173,10 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             val mipMapCountPlusOne = calculateMipMapCountPlusOne(bufferedImage.width, bufferedImage.height)
             val mipMapCount = mipMapCountPlusOne - 1
 
-            val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) GL11.GL_RGBA else GL11.GL_RGB
+            val hasAlpha = bufferedImage.colorModel.hasAlpha()
+            val srcPixelFormat = if (hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
             val data = listOf(CompletableFuture.completedFuture(convertImageData(bufferedImage)))
-            CompleteTextureInfo(TextureInfo(srgba, bufferedImage.width, bufferedImage.height, mipMapCount, srcPixelFormat, false, false), data.toTypedArray())
+            CompleteTextureInfo(TextureInfo(srgba, bufferedImage.width, bufferedImage.height, mipMapCount, srcPixelFormat, mipmapsGenerated = false, sourceDataCompressed = false, hasAlpha = hasAlpha), data.toTypedArray())
         }
     }
 
@@ -271,8 +221,6 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
 
         val bufferedImage: BufferedImage = loadImage(resourceName)
-                ?: throw IOException("Cannot load image $resourceName")
-
         val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) {
             GL11.GL_RGBA
         } else {
@@ -597,8 +545,16 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                 LOGGER.info("Mipmaps already generated")
                 uploadMipMaps(textureInfo, internalFormat)
             }
-            uploadWithPixelBuffer(gpuContext, textureInfo, buffer(textureInfo.data), internalFormat, dimension, 0, textureInfo.info.sourceDataCompressed, false)
-//            uploadWithoutPixelBuffer(gpuContext, textureInfo, buffer(textureInfo.data), internalFormat, dimension.width, dimension.height, 0, textureInfo.info.sourceDataCompressed, false)
+            uploadWithPixelBuffer(gpuContext = gpuContext,
+                    textureInfo = textureInfo,
+                    textureBuffer = buffer(textureInfo.data),
+                    internalFormat = internalFormat,
+                    dimension = dimension,
+                    mipLevel = 0,
+                    sourceDataCompressed = textureInfo.info.sourceDataCompressed,
+                    setMaxLevel = false)
+//            uploadWithoutPixelBuffer(gpuContext, textureInfo, buffer(textureInfo.data), internalFormat, dimension, 0, textureInfo.info.sourceDataCompressed, false)
+
             gpuContext.execute {
                 if (!textureInfo.info.mipmapsGenerated) {
                     gpuContext.bindTexture(15, this)
@@ -608,14 +564,14 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             }
             createTextureHandleAndMakeResident()
             uploadState = UploadState.UPLOADED
-            this@TextureManager.postTextureChangedEvent()
+            Unit
         }
-
         this@TextureManager.commandQueue.addCommand<Any>(uploadRunnable)
 //        uploadRunnable()
+//        gpuContext.execute(uploadRunnable)
     }
 
-    private fun PathBasedOpenGlTexture.uploadWithoutPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, width: Int, height: Int, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
+    private fun PathBasedOpenGlTexture.uploadWithoutPixelBuffer(gpuContext: GpuContext, textureInfo: CompleteTextureInfo, textureBuffer: ByteBuffer, internalFormat: Int, dimension: TextureDimension2D, mipLevel: Int, sourceDataCompressed: Boolean, setMaxLevel: Boolean) {
         gpuContext.execute {
 
             glActiveTexture(15)
@@ -623,10 +579,10 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
 
             if (sourceDataCompressed) {
 //                GL13.glCompressedTexSubImage2D(target.glTarget, 0, 0, 0, width, height, GL11.GL_UNSIGNED_BYTE, textureBuffer.capacity(), 0)
-                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, textureBuffer)
+                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, textureBuffer)
             } else {
 //                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, internalFormat, GL11.GL_UNSIGNED_BYTE, 0)
-                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer)
             }
             glBindTexture(target.glTarget, 0)
 
@@ -643,12 +599,12 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
             pbo.set(GL15.glGenBuffers())
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
             GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity().toLong(), GL15.GL_STREAM_COPY)
-            val theBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)
+            val theBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null)!!
             gpuContext.unbindTexture(15, this)
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
             theBuffer
         }
-        pixelUnpackBuffer!!.put(textureBuffer)
+        pixelUnpackBuffer.put(textureBuffer)
         gpuContext.execute {
             gpuContext.bindTexture(15, this)
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get())
@@ -659,7 +615,7 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
                 GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, textureBuffer.capacity(), 0)
             } else {
 //                GL11.glTexSubImage2D(target.glTarget, 0, 0, 0, width, height, internalFormat, GL11.GL_UNSIGNED_BYTE, 0)
-                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, 0)
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalFormat, dimension.width, dimension.height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0)
             }
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
             GL15.glDeleteBuffers(pbo.get())
@@ -714,10 +670,6 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         }
     }
 
-    fun postTextureChangedEvent() {
-        eventBus.post(TexturesChangedEvent())
-    }
-
     override fun clear() {
 
     }
@@ -741,8 +693,6 @@ class TextureManager(private val eventBus: EventBus, programManager: ProgramMana
         @JvmField
         var TEXTURE_UNLOAD_THRESHOLD_IN_MS: Long = 10000
         private val USE_TEXTURE_STREAMING = false
-
-        var executor = Executors.newFixedThreadPool(4)
 
         private fun convertCubeMapData(bufferedImage: BufferedImage, width: Int, height: Int, glAlphaColorModel: ColorModel, glColorModel: ColorModel): MutableList<ByteArray> {
             //        ByteBuffer imageBuffers[] = new ByteBuffer[6];
