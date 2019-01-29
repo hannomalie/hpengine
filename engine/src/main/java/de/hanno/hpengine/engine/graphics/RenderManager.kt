@@ -82,7 +82,7 @@ class RenderManager(val engineContext: EngineContext,
     fun getMsPerFrame() = fpsCounter.msPerFrame
 
     fun resetAllocations() {
-        engineContext.gpuContext.execute({
+        engineContext.gpuContext.execute(Runnable{
             StopWatch.getInstance().start("SimpleScene init")
             vertexIndexBufferStatic.resetAllocations()
             vertexIndexBufferAnimated.resetAllocations()

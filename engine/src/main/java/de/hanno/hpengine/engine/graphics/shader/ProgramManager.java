@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
@@ -86,7 +87,7 @@ public class ProgramManager implements Manager {
         return getComputeProgram(computeShaderLocation, new Defines());
     }
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, Defines defines) {
-        return gpuContext.calculate(() -> {
+        return gpuContext.calculate((Callable<ComputeShaderProgram>) () -> {
             ComputeShaderProgram program = new ComputeShaderProgram(this, getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
             eventBus.register(program);
@@ -98,7 +99,7 @@ public class ProgramManager implements Manager {
 		return getProgram(vertexShaderSource, null, fragmentShaderSource, defines);
 	}
 	public Program getProgram(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource, Defines defines) {
-        return gpuContext.calculate(() -> {
+        return gpuContext.calculate((Callable<Program>) () -> {
             Program program = new Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
             LOADED_PROGRAMS.add(program);
             eventBus.register(program);

@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.graphics.query;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.opengl.GL15;
 
+import java.util.concurrent.Callable;
+
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL33.glGetQueryObjectui64;
 
@@ -16,7 +18,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
 
     public GLSamplesPassedQuery(GpuContext gpuContext) {
         this.gpuContext = gpuContext;
-        query = this.gpuContext.calculate(() -> glGenQueries());
+        query = this.gpuContext.calculate((Callable<Integer>) () -> glGenQueries());
     }
 
     @Override
@@ -50,6 +52,6 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
         while(!resultsAvailable(gpuContext)) {
         }
 
-        return gpuContext.calculate( () -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
+        return gpuContext.calculate((Callable<Integer>) () -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
     }
 }

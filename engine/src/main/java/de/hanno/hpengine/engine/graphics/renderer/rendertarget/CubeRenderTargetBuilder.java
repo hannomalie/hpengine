@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.backend.Backend;
 
+import java.util.concurrent.Callable;
+
 public class CubeRenderTargetBuilder extends RenderTargetBuilder<CubeRenderTargetBuilder, RenderTarget> {
 
     private Backend engine;
@@ -13,7 +15,7 @@ public class CubeRenderTargetBuilder extends RenderTargetBuilder<CubeRenderTarge
 
     @Override
     public CubeRenderTarget build() {
-        return engine.getGpuContext().calculate(() -> new CubeRenderTarget(engine, this));
+        return engine.getGpuContext().calculate((Callable<CubeRenderTarget>) () -> new CubeRenderTarget(engine, this));
     }
 
 }

@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics.query;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
 
+import java.util.concurrent.Callable;
+
 import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT;
 import static org.lwjgl.opengl.GL15.glGenQueries;
 import static org.lwjgl.opengl.GL33.*;
@@ -22,7 +24,7 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     private int glGenQuery() {
-        return gpuContext.calculate( () -> glGenQueries());
+        return gpuContext.calculate((Callable<Integer>) () -> glGenQueries());
     }
 
     @Override
@@ -57,11 +59,11 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     public long getStartTime() {
-        return gpuContext.calculate( () -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
+        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
     }
 
     public long getEndTime() {
-        return gpuContext.calculate( () -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
+        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
     }
 
     @Override

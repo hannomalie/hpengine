@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR;
 
@@ -44,7 +45,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
                             6 * finalCubeMapIndex, 6);
 
                 });
-                long handle = this.gpuContext.calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+                long handle = this.gpuContext.calculate((Callable<Long>) () ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
                 currentList[cubeMapIndex] = handle;
                 this.gpuContext.execute(() -> {
                     ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);

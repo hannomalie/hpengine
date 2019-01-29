@@ -44,6 +44,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -191,7 +192,7 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		GpuContext.exitOnGLError("Before setupGBuffer");
 
-        gBuffer = backend.getGpuContext().calculate(() -> new DeferredRenderingBuffer(backend.getGpuContext()));
+        gBuffer = backend.getGpuContext().calculate((Callable<DeferredRenderingBuffer>) () -> new DeferredRenderingBuffer(backend.getGpuContext()));
 
         backend.getGpuContext().execute(() -> {
             backend.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);

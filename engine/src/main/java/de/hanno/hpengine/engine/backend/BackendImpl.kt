@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
+import java.util.concurrent.CopyOnWriteArrayList
 
 interface Backend {
     val eventBus: EventBus
@@ -57,7 +58,7 @@ class UpdateCommandQueue: CommandQueue({ UpdateThread.isUpdateThread() })
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val backend: Backend = BackendImpl(),
                         override val config: Config = Config.getInstance(),
-                        override val renderSystems: MutableList<RenderSystem> = mutableListOf(),
+                        override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext
 
 interface ManagerContext: EngineContext {
