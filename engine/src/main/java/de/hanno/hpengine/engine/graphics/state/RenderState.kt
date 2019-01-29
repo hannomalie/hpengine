@@ -1,16 +1,10 @@
 package de.hanno.hpengine.engine.graphics.state
 
-import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.engine.graphics.light.area.AreaLight
-import de.hanno.hpengine.engine.graphics.light.point.PointLight
-import de.hanno.hpengine.engine.graphics.light.point.PointLightShadowMapStrategy
-import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
@@ -78,6 +72,7 @@ class RenderState(gpuContext: GpuContext) {
     val staticEntityHasMoved: Boolean
         get() = entitiesState.staticEntityMovedInCycle == cycle
     var deltaInS: Float = 0.1f
+    var sceneInitialized: Boolean = false
 
     /**
      * Copy constructor
@@ -122,6 +117,7 @@ class RenderState(gpuContext: GpuContext) {
         latestDrawResult.set(latestDrawResult)
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
+        this.sceneInitialized = source.sceneInitialized
 
         //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
         //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());

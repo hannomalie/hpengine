@@ -77,4 +77,5 @@ interface Scene : LifeCycle, Serializable {
         managers.afterUpdate(deltaSeconds)
     }
 
+    var initialized: Boolean
 }

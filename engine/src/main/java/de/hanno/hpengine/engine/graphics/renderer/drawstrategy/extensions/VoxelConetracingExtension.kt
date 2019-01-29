@@ -46,31 +46,31 @@ class VoxelConeTracingExtension
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid = first
-                gridHandle = second
+                grid = textureId
+                gridHandle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid2 = first
-                grid2Handle = second
+                grid2 = textureId
+                grid2Handle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                albedoGrid = first
-                albedoGridHandle = second
+                albedoGrid = textureId
+                albedoGridHandle = handle
             }
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                normalGrid = first
-                normalGridHandle = second
+                normalGrid = textureId
+                normalGridHandle = handle
             }
 
 //             TODO: Add emissive
@@ -83,31 +83,31 @@ class VoxelConeTracingExtension
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid = first
-                gridHandle = second
+                grid = textureId
+                gridHandle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid2 = first
-                grid2Handle = second
+                grid2 = textureId
+                grid2Handle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                albedoGrid = first
-                albedoGridHandle = second
+                albedoGrid = textureId
+                albedoGridHandle = handle
             }
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     LINEAR_MIPMAP_LINEAR,
                     LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                normalGrid = first
-                normalGridHandle = second
+                normalGrid = textureId
+                normalGridHandle = handle
             }
 
         }
@@ -140,6 +140,8 @@ class VoxelConeTracingExtension
     }
 
     override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
+        if(!renderState.sceneInitialized) return
+
         GPUProfiler.start("VCT first pass")
 //         TODO: Move to update somehow
 
@@ -340,6 +342,7 @@ class VoxelConeTracingExtension
     }
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+        if(!renderState.sceneInitialized) return
         GPUProfiler.start("VCT second pass")
         engine.gpuContext.bindTexture(0, TEXTURE_2D, renderer.gBuffer.positionMap)
         engine.gpuContext.bindTexture(1, TEXTURE_2D, renderer.gBuffer.normalMap)

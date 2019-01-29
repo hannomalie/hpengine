@@ -5,6 +5,11 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.GL11
+import java.lang.Math.floor
+import java.lang.Math.max
+import kotlin.math.log2
+import kotlin.math.nextUp
+import kotlin.math.roundToInt
 
 interface Texture<out DIMENSION: TextureDimension1D> {
     val dimension: DIMENSION
@@ -19,6 +24,10 @@ interface Texture<out DIMENSION: TextureDimension1D> {
 
     companion object {
         const val directory = DirectoryManager.WORKDIR_NAME + "/assets/textures/"
+
+        fun getMipMapCountForDimension(w: Int, h: Int, d: Int): Int {
+            return 1 + floor(log2(max(w, max(h, d)).toDouble())).nextUp().toInt()
+        }
     }
 }
 

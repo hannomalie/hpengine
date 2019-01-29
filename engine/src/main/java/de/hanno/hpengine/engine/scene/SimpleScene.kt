@@ -97,6 +97,8 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)
 
 
+    override var initialized: Boolean = false
+
     init {
         engine.renderSystems.add(object : RenderSystem {
             override fun render(result: DrawResult, state: RenderState) {
@@ -104,6 +106,8 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             }
         })
         engine.eventBus.register(this)
+
+        initialized = true
     }
 
     override fun restoreWorldCamera() {
@@ -113,6 +117,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override fun extract(currentWriteState: RenderState) {
         currentWriteState.camera.init(activeCamera)
         currentWriteState.sceneInitiallyDrawn = isInitiallyDrawn
+        currentWriteState.sceneInitialized = initialized
         currentWriteState.sceneMin = minMax.min
         currentWriteState.sceneMax = minMax.max
 

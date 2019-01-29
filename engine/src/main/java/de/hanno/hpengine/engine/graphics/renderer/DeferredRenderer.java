@@ -155,6 +155,7 @@ public class DeferredRenderer implements Renderer {
 		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
 		registerRenderExtension(new DrawLinesExtension(engineContext, this));
+//		TODO: This seems to be broken with the new texture implementations
 //		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
 //        registerRenderExtension(new EvaluateProbeRenderExtension(managerContext));
 		registerRenderExtension(new PixelPerfectPickingExtension());

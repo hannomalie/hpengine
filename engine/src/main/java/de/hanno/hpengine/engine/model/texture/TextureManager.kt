@@ -463,19 +463,8 @@ class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext)
     }
 
 //    TODO: This doesn't work yet
-    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: MinFilter, magFilter: MagFilter, wrapMode: Int): Pair<Int, Long> {
-        return gpuContext.calculate {
-            OpenGlTexture(
-                textureManager = this,
-                target = TEXTURE_3D,
-                srgba = false,
-                internalFormat = internalFormat,
-                dimension = TextureDimension(gridResolution, gridResolution, gridResolution),
-                textureId = gpuContext.genTextures(),
-                textureFilterConfig = TextureFilterConfig(minFilter, magFilter),
-                wrapMode = wrapMode
-            ).let { Pair(it.textureId, it.handle) }
-        }
+    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: MinFilter, magFilter: MagFilter, wrapMode: Int): SimpleTexture3D {
+        return SimpleTexture3D(gpuContext, TextureDimension(gridResolution, gridResolution, gridResolution), TextureFilterConfig(minFilter, magFilter), internalFormat, wrapMode)
     }
 
     fun blur2DTextureRGBA16F(sourceTexture: Int, width: Int, height: Int, mipmapTarget: Int, mipmapSource: Int) {
