@@ -15,6 +15,7 @@ import org.lwjgl.opengl.GL43;
 
 import java.io.File;
 import java.util.StringJoiner;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -128,25 +129,15 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void reload() {
 		final ComputeShaderProgram self = this;
 
-		FutureCallable<Boolean> reloadShaderCallable = new FutureCallable() {
-			@Override
-			public Boolean execute() throws Exception {
-				detachShader(computeShader);
-				computeShader.reload();
-				self.load();
-				return true;
-			}
-		};
-        CompletableFuture<Boolean> future = programManager.getGpuContext().execute(reloadShaderCallable);
-
-		try {
-			Boolean result = future.get(5, TimeUnit.MINUTES);
-			if (result.equals(Boolean.TRUE)) {
-				LOGGER.info("Program reloaded");
-			} else {
-				LOGGER.severe("Program not reloaded");
-			}
-		} catch (Exception e1) {
+		Boolean result = programManager.getGpuContext().calculate((Callable<Boolean>) () -> {
+			detachShader(computeShader);
+			computeShader.reload();
+			self.load();
+			return true;
+		});
+		if (result.equals(Boolean.TRUE)) {
+			LOGGER.info("Program reloaded");
+		} else {
 			LOGGER.severe("Program not reloaded");
 		}
 	}

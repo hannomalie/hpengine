@@ -7,11 +7,9 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.util.commandqueue.FutureCallable
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.concurrent.Callable
-import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
 interface GpuContext {
@@ -127,7 +125,6 @@ interface GpuContext {
         return calculate(Callable(callable))
     }
 
-    fun <RETURN_TYPE> execute(command: FutureCallable<RETURN_TYPE>): CompletableFuture<RETURN_TYPE>
 
     fun blockUntilEmpty(): Long
 

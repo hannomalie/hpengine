@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
+import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.opengl.*;
@@ -151,16 +152,14 @@ public class VertexBuffer extends PersistentMappedBuffer {
 	}
 
     public CompletableFuture<VertexBuffer> upload() {
-        VertexBuffer self = this;
         buffer.rewind();
-        return gpuContext.execute(new FutureCallable<VertexBuffer>() {
-            @Override
-            public VertexBuffer execute() throws Exception {
-                bind();
-                setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
-                return self;
-            }
+        CompletableFuture<VertexBuffer> future = new CompletableFuture<>();
+        gpuContext.execute(() -> {
+            bind();
+            setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
+            future.complete(VertexBuffer.this);
         });
+        return future;
     }
 
     protected ByteBuffer mapBuffer(long capacityInBytes, int flags)  {

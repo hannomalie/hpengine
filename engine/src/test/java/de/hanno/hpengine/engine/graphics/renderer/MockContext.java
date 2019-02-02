@@ -224,18 +224,8 @@ public class MockContext implements GpuContext {
     }
 
     @Override
-    public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(FutureCallable<RETURN_TYPE> command) {
-        return null;
-    }
-
-    @Override
     public long blockUntilEmpty() {
         return 0;
-    }
-
-    @Override
-    public TimeStepThread getGpuThread() {
-        return null;
     }
 
     @Override
@@ -246,11 +236,6 @@ public class MockContext implements GpuContext {
     @Override
     public int getMaxTextureUnits() {
         return 0;
-    }
-
-    @Override
-    public CommandQueue getCommandQueue() {
-        return null;
     }
 
     @Override

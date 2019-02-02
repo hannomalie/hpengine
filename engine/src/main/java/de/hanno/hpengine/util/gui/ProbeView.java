@@ -14,6 +14,7 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
+import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -26,6 +27,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -62,26 +64,16 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable<Boolean>() {
-                @Override
-                public Boolean execute() throws Exception {
-                    return engine.getScene().getEnvironmentProbeManager().remove(probe);
-                }
+			Boolean result = engine.getGpuContext().calculate((Callable<Boolean>) () -> {
+				return engine.getScene().getEnvironmentProbeManager().remove(probe);
             });
     		
-    		Boolean result = null;
-    		try {
-    			result = future.get(1, TimeUnit.MINUTES);
-				if(result.equals(Boolean.TRUE)) {
-					showNotification(NotificationIcon.plus, "Probe removed");
-					engine.getEventBus().post(new ProbesChangedEvent());
-				} else {
-					showNotification(NotificationIcon.error, "Not able to remove probe");
-				}
-    		} catch (Exception e1) {
-    			e1.printStackTrace();
+			if(result) {
+				showNotification(NotificationIcon.plus, "Probe removed");
+				engine.getEventBus().post(new ProbesChangedEvent());
+			} else {
 				showNotification(NotificationIcon.error, "Not able to remove probe");
-    		}
+			}
         });
 
         webComponentPanel.addElement(removeProbeButton);

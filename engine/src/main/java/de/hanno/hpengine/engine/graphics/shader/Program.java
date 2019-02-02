@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -168,31 +169,24 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 
-        CompletableFuture<Boolean> future = gpuContext.execute(new FutureCallable() {
-            @Override
-            public Boolean execute() throws Exception {
-				detachShader(vertexShader);
-				if(fragmentShader != null) {
-					detachShader(fragmentShader);
-					fragmentShader.reload();
-				}
-				if (geometryShader != null) {
-					detachShader(geometryShader);
-					geometryShader.reload();
-				}
-				vertexShader.reload();
-				self.load();
-				return true;
+		Boolean result = gpuContext.calculate((Callable<Boolean>) () -> {
+			detachShader(vertexShader);
+			if (fragmentShader != null) {
+				detachShader(fragmentShader);
+				fragmentShader.reload();
 			}
-        });
-		try {
-			Boolean result = future.get(5, TimeUnit.MINUTES);
-			if (result.equals(Boolean.TRUE)) {
-				LOGGER.info("Program reloaded");
-			} else {
-				LOGGER.severe("Program not reloaded");
+			if (geometryShader != null) {
+				detachShader(geometryShader);
+				geometryShader.reload();
 			}
-		} catch (Exception e1) {
+			vertexShader.reload();
+			self.load();
+			return true;
+		});
+
+		if (result.equals(Boolean.TRUE)) {
+			LOGGER.info("Program reloaded");
+		} else {
 			LOGGER.severe("Program not reloaded");
 		}
 	}

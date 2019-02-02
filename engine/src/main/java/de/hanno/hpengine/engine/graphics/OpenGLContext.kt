@@ -335,22 +335,14 @@ class OpenGLContext : GpuContext {
         if(isOpenGLThread) {
             runnable.run()
         } else if(andBlock) {
-            val callable = object : FutureCallable<Unit>() {
-                override fun execute() {
+            runBlocking {
+                launch(dispatcher) {
                     runnable.run()
                 }
             }
-            runBlocking {
-                channel.send(callable)
-            }
-            callable.future.join()
         } else {
             GlobalScope.launch {
-                channel.send(object: FutureCallable<Unit>() {
-                    override fun execute() {
-                        runnable.run()
-                    }
-                })
+                runnable.run()
             }
         }
     }
@@ -359,26 +351,11 @@ class OpenGLContext : GpuContext {
         if(isOpenGLThread) {
             return callable.call()
         }
-        val callable = object : FutureCallable<RETURN_TYPE>() {
-            override fun execute(): RETURN_TYPE {
-                return callable.call()
+        return runBlocking {
+            withContext(dispatcher) {
+                callable.call()
             }
         }
-        GlobalScope.launch {
-            channel.send(callable)
-        }
-        return callable.future.get()
-    }
-
-    override fun <RETURN_TYPE> execute(command: FutureCallable<RETURN_TYPE>): CompletableFuture<RETURN_TYPE> {
-        if(isOpenGLThread) {
-            command.future.complete(command.execute())
-            return command.future
-        }
-        GlobalScope.launch {
-            channel.send(command)
-        }
-        return command.future
     }
 
     override fun blockUntilEmpty(): Long {
@@ -444,6 +421,7 @@ class OpenGLContext : GpuContext {
                         (callable.future as CompletableFuture<Any>).complete(result)
                         callable = channel.poll()
                     }
+                    yield()
                 } catch (e: Error) {
                     LOGGER.log(Level.SEVERE, "", e)
                 }

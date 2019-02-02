@@ -89,7 +89,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     }
 
     fun destroy() {
-        gpuContext.gpuThread.stopRequested = true
         System.exit(0)
     }
 

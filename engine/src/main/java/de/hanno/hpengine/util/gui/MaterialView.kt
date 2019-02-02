@@ -17,13 +17,11 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.graphics.renderer.command.GetMaterialCommand
 import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand
-import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand.MaterialResult
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
-import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.gui.input.*
 import org.apache.commons.io.FileUtils
 import org.joml.Vector3f
@@ -33,7 +31,6 @@ import java.awt.FlowLayout
 import java.io.File
 import java.io.IOException
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.Comparator
 
 class MaterialView(private val engine: Engine, var material: SimpleMaterial) : WebPanel() {
@@ -64,23 +61,16 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
             var toSave: SimpleMaterial = material
             if (nameField.text != material.materialInfo.name) {
                 val newInfo = SimpleMaterialInfo(nameField.text)
-                val future = engine.gpuContext.execute(object : FutureCallable<MaterialResult>() {
-                    @Throws(Exception::class)
-                    override fun execute(): MaterialResult {
-                        return GetMaterialCommand(newInfo, engine.scene.materialManager).execute()
-                    }
-                })
-                val result: MaterialResult
-                try {
-                    result = future.get(1, TimeUnit.MINUTES)
-                    if (result.material != null) {
-                        toSave = result.material
-                        showNotification(NotificationIcon.plus, "SimpleMaterial changed")
-                    } else {
-                        showNotification(NotificationIcon.error, "Not able to change materials")
-                    }
-                } catch (e1: Exception) {
-                    e1.printStackTrace()
+
+                val result = engine.gpuContext.calculate {
+                    GetMaterialCommand(newInfo, engine.scene.materialManager).execute()
+                }
+
+                if (result.material != null) {
+                    toSave = result.material
+                    showNotification(NotificationIcon.plus, "SimpleMaterial changed")
+                } else {
+                    showNotification(NotificationIcon.error, "Not able to change materials")
                 }
 
             } else {
@@ -363,29 +353,17 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
 
     private fun addMaterialInitCommand(material: SimpleMaterial) {
         init(material)
-        val future = engine.gpuContext.execute(object : FutureCallable<MaterialResult>() {
-            @Throws(Exception::class)
-            override fun execute(): MaterialResult {
-                return InitMaterialCommand(material, engine.scene.materialManager).execute()
-            }
-        })
+        val result = engine.gpuContext.calculate {
+            InitMaterialCommand(material, engine.scene.materialManager).execute()
+        }
+        if (result.isSuccessful) {
+            showNotification(NotificationIcon.plus, "SimpleMaterial changed")
 
-        val result: MaterialResult
-        try {
-            result = future.get(1, TimeUnit.MINUTES)
-            if (result.isSuccessful) {
-                showNotification(NotificationIcon.plus, "SimpleMaterial changed")
-
-                init(result.material)
-                engine.eventBus.post(MaterialChangedEvent(material))
-            } else {
-                showNotification(NotificationIcon.error, "Not able to change materials")
-            }
-        } catch (e1: Exception) {
-            e1.printStackTrace()
+            init(result.material)
+            engine.eventBus.post(MaterialChangedEvent(material))
+        } else {
             showNotification(NotificationIcon.error, "Not able to change materials")
         }
-
     }
 
     private fun showNotification(icon: NotificationIcon, text: String) {

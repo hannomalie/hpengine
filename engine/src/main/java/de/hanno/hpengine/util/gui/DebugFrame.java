@@ -473,22 +473,12 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable<Result<Boolean>>() {
-                    @Override
-                    public Result<Boolean> execute() throws Exception {
-                        Entity tubeLightEntity = new Entity("TubeLight" + System.currentTimeMillis());
-                        tubeLightEntity.addComponent(new TubeLight(tubeLightEntity, new Vector3f(1,1,1), 100, 50));
-                        engine.getSceneManager().getScene().add(tubeLightEntity);
-                        return new Result(true);
-                    }
+                Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
+                    Entity tubeLightEntity = new Entity("TubeLight" + System.currentTimeMillis());
+                    tubeLightEntity.addComponent(new TubeLight(tubeLightEntity, new Vector3f(1, 1, 1), 100, 50));
+                    engine.getSceneManager().getScene().add(tubeLightEntity);
+                    return new Result(true);
                 });
-
-        		Result result = null;
-				try {
-					result = future.get(5, TimeUnit.MINUTES);
-				} catch (Exception e1) {
-					showError("Failed to add light");
-				}
 
 				if (!result.isSuccessful()) {
 					showError("Failed to add light");
@@ -504,22 +494,13 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
-                    @Override
-                    public Result execute() throws Exception {
-                        Entity entity = new Entity("AreaLight" + System.currentTimeMillis());
-                        entity.addComponent(new AreaLight(entity, new Vector3f(1, 1, 1), new Vector3f(50, 50, 20)));
-                        engine.getSceneManager().getScene().add(entity);
-                        return new Result(true);
-                    }
-                });
 
-        		Result result = null;
-				try {
-					result = future.get(5, TimeUnit.MINUTES);
-				} catch (Exception e1) {
-					showError("Failed to add light");
-				}
+                Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
+                    Entity entity = new Entity("AreaLight" + System.currentTimeMillis());
+                    entity.addComponent(new AreaLight(entity, new Vector3f(1, 1, 1), new Vector3f(50, 50, 20)));
+                    engine.getSceneManager().getScene().add(entity);
+                    return new Result(true);
+                });
 
 				if (!result.isSuccessful()) {
 					showError("Failed to add light");
@@ -555,20 +536,11 @@ public class DebugFrame implements HostComponent {
 
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-            CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
-                @Override
-                public Result execute() throws Exception {
+
+            Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
                     GPUProfiler.reset();
                     return new Result(true);
-                }
             });
-
-    		Result result = null;
-			try {
-				result = future.get(5, TimeUnit.MINUTES);
-			} catch (Exception e1) {
-				showError("Failed to reset profiler");
-			}
 
 			if (!result.isSuccessful()) {
 				showError("Failed to reset profiler");
@@ -595,19 +567,10 @@ public class DebugFrame implements HostComponent {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-                CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable<Result>() {
-                    @Override
-                    public Result execute() throws Exception {
-                        engine.getScene().getMaterialManager().getMaterial(chosenFile.getName());
-                        return new Result(true);
-                    }
+                Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
+                    engine.getScene().getMaterialManager().getMaterial(chosenFile.getName());
+                    return new Result(true);
                 });
-				Result result = null;
-				try {
-					result = future.get(5, TimeUnit.SECONDS);
-				} catch (Exception e1) {
-					showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-				}
 
 				if (!result.isSuccessful()) {
 					showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
@@ -626,18 +589,10 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable<TextureResult>() {
-                        @Override
-                        public TextureResult execute() throws Exception {
-                            return new AddTextureCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
-                        }
+
+                    TextureResult result = engine.getGpuContext().calculate((Callable<TextureResult>) () -> {
+                        return new AddTextureCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
                     });
-					TextureResult result = null;
-					try {
-						result = future.get(5, TimeUnit.MINUTES);
-					} catch (Exception e1) {
-						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-					}
 
 					if (!result.isSuccessful()) {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
@@ -656,18 +611,9 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable() {
-                        @Override
-                        public TextureResult execute() throws Exception {
-                            return new AddTextureCommand(chosenFile.getPath(), true, engine.getTextureManager()).execute();
-                        }
+                    TextureResult result = engine.getGpuContext().calculate((Callable<TextureResult>) () -> {
+                        return new AddTextureCommand(chosenFile.getPath(), true, engine.getTextureManager()).execute();
                     });
-					TextureResult result = null;
-					try {
-						result = future.get(5, TimeUnit.MINUTES);
-					} catch (Exception e1) {
-						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-					}
 
 					if (!result.isSuccessful()) {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
@@ -688,19 +634,10 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = engine.getGpuContext().execute(new FutureCallable<TextureResult>() {
-                        @Override
-                        public TextureResult execute() throws Exception {
-                            return new AddCubeMapCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
-                        }
-                    });
 
-					TextureResult result = null;
-					try {
-						result = future.get(5, TimeUnit.MINUTES);
-					} catch (Exception e1) {
-						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-					}
+                    TextureResult result = engine.getGpuContext().calculate((Callable<TextureResult>) () -> {
+                        return new AddCubeMapCommand(chosenFile.getPath(), engine.getTextureManager()).execute();
+                    });
 
 					if (!result.isSuccessful()) {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
@@ -815,25 +752,15 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 
-            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable<Boolean>() {
-                @Override
-                public Boolean execute() throws Exception {
-                    GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
-                    return true;
-                }
+            Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
+                GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
+                return new Result<>(true);
             });
-			Boolean result = null;
-			try {
-				result = future.get(5, TimeUnit.MINUTES);
-				if (result.equals(Boolean.TRUE)) {
-					showSuccess("Printing switched");
-				} else {
-					showError("Printing can't be switched");
-				}
-			} catch (Exception e1) {
-				showError("Profiling can't be switched");
-			}
-			
+            if (result.equals(Boolean.TRUE)) {
+                showSuccess("Printing switched");
+            } else {
+                showError("Printing can't be switched");
+            }
 		});
 		//////////////////////////////
 		Map<String, List<Component>> toggleButtonsWithGroups = new HashMap<>();

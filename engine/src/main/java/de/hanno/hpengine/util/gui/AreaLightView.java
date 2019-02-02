@@ -9,14 +9,12 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector4f;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 
 public class AreaLightView extends EntityView {
 	private AreaLight light;
@@ -57,24 +55,13 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-            CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
-                @Override
-                public Boolean execute() throws Exception {
-                    return engine.getSceneManager().getScene().getAreaLights().remove(light);
-                }
-            });
+			Boolean result = engine.getGpuContext().calculate((Callable<Boolean>)() -> {
+				return engine.getSceneManager().getScene().getAreaLights().remove(light);
+			});
 
-			Boolean result;
-			try {
-				result = future.get(1, TimeUnit.MINUTES);
-
-				if(result.equals(Boolean.TRUE)) {
-					showNotification(NotificationIcon.plus, "Light removed");
-				} else {
-					showNotification(NotificationIcon.error, "Not able to remove lights");
-				}
-			} catch (Exception e1) {
-				e1.printStackTrace();
+			if(result.equals(Boolean.TRUE)) {
+				showNotification(NotificationIcon.plus, "Light removed");
+			} else {
 				showNotification(NotificationIcon.error, "Not able to remove lights");
 			}
 		});
