@@ -101,7 +101,7 @@ public interface Shader extends Reloadable {
         }
 
 		LOGGER.finer(resultingShaderSource);
-        GpuContext.exitOnGLError("loadShader");
+        GpuContext.exitOnGLError(() -> "loadShader: " + type.getSimpleName() + ": " + shaderSource.getFilename());
 
         return shader;
     }

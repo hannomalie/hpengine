@@ -64,6 +64,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
                 bind();
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
                 GL44.glBufferStorage(target, finalCapacityInBytes, flags);
+
                 buffer = mapBuffer(finalCapacityInBytes, flags);
                 intBuffer = buffer.asIntBuffer();
                 unbind();

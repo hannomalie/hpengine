@@ -36,7 +36,6 @@ out float clip;
 
 void main()
 {
-
     int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 

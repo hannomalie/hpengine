@@ -7,11 +7,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.threads.TimeStepThread
-import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import org.lwjgl.opengl.GL11
-
 import java.nio.IntBuffer
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
@@ -41,11 +38,7 @@ interface GpuContext {
 
     val isInitialized: Boolean
 
-    val gpuThread: TimeStepThread
-
     val maxTextureUnits: Int
-
-    val commandQueue: CommandQueue
 
     val fullscreenBuffer: VertexBuffer
     val debugBuffer: VertexBuffer
@@ -158,7 +151,7 @@ interface GpuContext {
     fun pollEvents()
 
     companion object {
-        val CHECKERRORS = false
+        val CHECKERRORS = false // TODO: Enable this as soon as possible
 
         val LOGGER = Logger.getLogger(GpuContext::class.java.name)
 
@@ -192,6 +185,39 @@ interface GpuContext {
 
                 RuntimeException("").printStackTrace()
                 System.exit(-1)
+            }
+        }
+        @JvmStatic
+        fun exitOnGLError(errorMessage: () -> String) {
+            if (!CHECKERRORS) {
+                return
+            }
+
+            val errorValue = GL11.glGetError()
+
+            if (errorValue != GL11.GL_NO_ERROR) {
+                val errorString = GLU.gluErrorString(errorValue)
+                System.err.println("ERROR: $errorString")
+                System.err.println(errorMessage())
+
+                RuntimeException("").printStackTrace()
+                System.exit(-1)
+            }
+        }
+        @JvmStatic
+        fun checkGLError(errorMessage: () -> String) {
+            if (!CHECKERRORS) {
+                return
+            }
+
+            val errorValue = GL11.glGetError()
+
+            if (errorValue != GL11.GL_NO_ERROR) {
+                val errorString = GLU.gluErrorString(errorValue)
+                System.err.println("ERROR: $errorString")
+                System.err.println(errorMessage())
+
+                RuntimeException("").printStackTrace()
             }
         }
     }

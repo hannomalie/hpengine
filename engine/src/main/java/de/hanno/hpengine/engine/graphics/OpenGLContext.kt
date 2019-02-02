@@ -5,13 +5,14 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.*
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
-import de.hanno.hpengine.engine.threads.TimeStepThread
-import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.glfw.GLFWErrorCallbackI
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
@@ -20,7 +21,10 @@ import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import java.nio.IntBuffer
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.Callable
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -33,18 +37,17 @@ class OpenGLContext : GpuContext {
     override var canvasWidth = Config.getInstance().width
     override var canvasHeight = Config.getInstance().height
 
-    override lateinit var gpuThread: TimeStepThread
+    private val openGlExecutor = Executors.newSingleThreadExecutor()
+    private val dispatcher = openGlExecutor.asCoroutineDispatcher()
+    private val channel = Channel<FutureCallable<*>>()
 
-    override val commandQueue = CommandQueue { isOpenGLThread }
     @Volatile
     override var isInitialized = false
         private set
-    @Volatile
-    var errorOccured = false
     override var maxTextureUnits: Int = 0
     private val perFrameCommandProviders = CopyOnWriteArrayList<PerFrameCommandProvider>()
     //     Don't make this a local field, we need a string reference
-    private var errorCallback: GLFWErrorCallback? = null
+    private var errorCallback: GLFWErrorCallbackI = GLFWErrorCallbackI { error: Int, description: Long -> GLFWErrorCallback.createPrint(System.err) }
     override var windowHandle: Long = 0
     // Don't remove these strong references
     private var framebufferSizeCallback: GLFWFramebufferSizeCallback? = null
@@ -114,7 +117,7 @@ class OpenGLContext : GpuContext {
     }
 
     private fun privateInit() {
-        glfwSetErrorCallback({ error: Int, description: Long -> GLFWErrorCallback.createPrint(System.err) })
+        glfwSetErrorCallback(errorCallback)
         glfwInit()
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
@@ -165,7 +168,6 @@ class OpenGLContext : GpuContext {
         checkCommandSyncs()
         try {
             executePerFrameCommands()
-            commandQueue.executeCommands()
         } catch (e: Error) {
             LOGGER.log(Level.SEVERE, "", e)
         }
@@ -330,55 +332,63 @@ class OpenGLContext : GpuContext {
         get() = calculate(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
 
     override fun execute(runnable: Runnable, andBlock: Boolean) {
-        if (andBlock) {
-            val future = commandQueue.addCommand<Any>(runnable)
-            future.join()
+        if(isOpenGLThread) {
+            runnable.run()
+        } else if(andBlock) {
+            val callable = object : FutureCallable<Unit>() {
+                override fun execute() {
+                    runnable.run()
+                }
+            }
+            runBlocking {
+                channel.send(callable)
+            }
+            callable.future.join()
         } else {
-            commandQueue.addCommand<Any>(runnable)
+            GlobalScope.launch {
+                channel.send(object: FutureCallable<Unit>() {
+                    override fun execute() {
+                        runnable.run()
+                    }
+                })
+            }
         }
     }
 
     override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        try {
-            return execute(object : FutureCallable<RETURN_TYPE>() {
-                @Throws(Exception::class)
-                override fun execute(): RETURN_TYPE {
-                    return callable.call()
-                }
-            }).get()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-            throw e
-        } catch (e: ExecutionException) {
-            e.printStackTrace()
-            throw e
+        if(isOpenGLThread) {
+            return callable.call()
         }
+        val callable = object : FutureCallable<RETURN_TYPE>() {
+            override fun execute(): RETURN_TYPE {
+                return callable.call()
+            }
+        }
+        GlobalScope.launch {
+            channel.send(callable)
+        }
+        return callable.future.get()
     }
 
     override fun <RETURN_TYPE> execute(command: FutureCallable<RETURN_TYPE>): CompletableFuture<RETURN_TYPE> {
-        //        if(isOpenGLThread()) {
-        //            try {
-        //                command.getFuture().complete(command.execute());
-        //                return command.getFuture();
-        //            } catch (Exception e) {
-        //                e.printStackTrace();
-        //                return null;
-        //            }
-        //        } else {
-        //            return commandQueue.addCommand(command);
-        //        }
-        return commandQueue.addCommand(command)
+        if(isOpenGLThread) {
+            command.future.complete(command.execute())
+            return command.future
+        }
+        GlobalScope.launch {
+            channel.send(command)
+        }
+        return command.future
     }
 
     override fun blockUntilEmpty(): Long {
         val start = System.currentTimeMillis()
-        while (commandQueue.size() > 0) {
+        while(!channel.isEmpty) {
             try {
                 Thread.sleep(0, 100)
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
-
         }
         return System.currentTimeMillis() - start
     }
@@ -396,10 +406,8 @@ class OpenGLContext : GpuContext {
 
 
     override fun destroy() {
-        gpuThread!!.stopRequested = true
         try {
-            executorService.shutdown()
-            executorService.awaitTermination(java.lang.Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+            openGlExecutor.shutdown()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -408,38 +416,39 @@ class OpenGLContext : GpuContext {
 
 
     private fun init() {
-        this.gpuThread = object : TimeStepThread(OpenGLContext.OPENGL_THREAD_NAME, 0.0f) {
+        runBlocking(dispatcher) {
+            Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
+            OpenGLContext.OPENGL_THREAD_ID = Thread.currentThread().id
+            try {
+                try {
+                    this@OpenGLContext.privateInit()
+                } catch (e: Exception) {
+                    OpenGLContext.LOGGER.severe("Exception during privateInit")
+                    e.printStackTrace()
+                }
 
-            override fun update(seconds: Float) {
-                if (!this@OpenGLContext.isInitialized) {
-                    Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
-                    OpenGLContext.OPENGL_THREAD_ID = Thread.currentThread().id
-                    println("OPENGL_THREAD_ID is " + OpenGLContext.OPENGL_THREAD_ID)
-                    try {
-                        try {
-                            this@OpenGLContext.privateInit()
-                        } catch (e: Exception) {
-                            OpenGLContext.LOGGER.severe("Exception during privateInit")
-                            e.printStackTrace()
-                        }
-
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        System.exit(-1)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                System.exit(-1)
+            }
+        }
+        GlobalScope.launch(dispatcher) {
+            while(true) {
+                pollEvents()
+                checkCommandSyncs()
+                try {
+                    executePerFrameCommands()
+                    var callable: FutureCallable<*>? = channel.poll()
+                    while(callable != null) {
+                        val result = callable.execute()
+                        (callable.future as CompletableFuture<Any>).complete(result)
+                        callable = channel.poll()
                     }
-
-                } else {
-                    try {
-                        this@OpenGLContext.update(seconds)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-
+                } catch (e: Error) {
+                    LOGGER.log(Level.SEVERE, "", e)
                 }
             }
         }
-        gpuThread!!.setUncaughtExceptionHandler { t, e -> LOGGER.log(Level.SEVERE, "", e) }
-        OpenGLContext.executorService.submit(this.gpuThread!!)
         println("OpenGLContext thread submitted with id " + OpenGLContext.OPENGL_THREAD_ID)
         waitForInitialization()
     }
@@ -509,8 +518,6 @@ class OpenGLContext : GpuContext {
             ZERO_BUFFER.put(0f)
             ZERO_BUFFER.rewind()
         }
-
-        private val executorService = Executors.newSingleThreadExecutor()
 
         internal val isOpenGLThread: Boolean
             get() {

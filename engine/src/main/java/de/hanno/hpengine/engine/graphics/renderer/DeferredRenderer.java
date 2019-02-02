@@ -116,9 +116,12 @@ public class DeferredRenderer implements Renderer {
 		}
 		this.backend = engineContext;
 		this.materialManager = materialManager;
+		this.gpuContext = engineContext.getGpuContext();
 
-		setupBuffers();
-		setUpGBuffer();
+		gpuContext.execute(() ->{
+			setupBuffers();
+			setUpGBuffer();
+		});
 
 		ProgramManager programManager = this.backend.getProgramManager();
 		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
