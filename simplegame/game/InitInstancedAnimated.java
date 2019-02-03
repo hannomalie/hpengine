@@ -1,4 +1,5 @@
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -17,8 +18,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 
-public class InitInstancedAnimated implements LifeCycle {
+public class InitInstancedAnimated implements EngineConsumer {
 
     private boolean initialized;
 
@@ -30,7 +32,8 @@ public class InitInstancedAnimated implements LifeCycle {
             new Vector3f(0, 0, 0),
             new Vector3f(-clusterDistance, 0, clusterDistance)};
 
-    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
+    @Override
+    public void consume(de.hanno.hpengine.engine.Engine engine) {
 
         try {
             loadLotsOfInstances(engine, "/assets/models/doom3monster/monster.md5mesh", 1, "hellknight");
@@ -45,7 +48,7 @@ public class InitInstancedAnimated implements LifeCycle {
     }
 
     protected void loadLotsOfInstances(final Engine engine, String assetPath, final int scale, String name) {
-        LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name).execute(engine);
+        LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name, engine.getScene().getMaterialManager()).execute();
         System.out.println("loaded entities : " + loaded.entities.size());
         for (final Entity entity : loaded.entities) {
 //                File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
