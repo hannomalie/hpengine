@@ -15,7 +15,7 @@ public class CommandQueueTest {
 
     @BeforeClass
     public static void init() {
-        commandQueue = new CommandQueue();
+        commandQueue = new CommandQueue(Executors.newSingleThreadExecutor());
     }
 
     @Test

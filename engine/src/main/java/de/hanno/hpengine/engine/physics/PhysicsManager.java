@@ -44,7 +44,7 @@ public class PhysicsManager implements Manager, RenderSystem {
     private final Renderer renderer;
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
-    private final CommandQueue commandQueue = new CommandQueue();
+    private final CommandQueue commandQueue = new CommandQueue(Executors.newSingleThreadExecutor());
 
     public PhysicsManager(Renderer renderer) {
 		this(new Vector3f(0,-20,0), renderer);

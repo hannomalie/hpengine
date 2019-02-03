@@ -154,7 +154,7 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     private static class QueueStatePair<T extends RenderState> {
-        private final CommandQueue queue = new CommandQueue();
+        private final CommandQueue queue = new CommandQueue(Executors.newSingleThreadExecutor());
         private final T state;
 
         private final List<Action> actions = new ArrayList<>();

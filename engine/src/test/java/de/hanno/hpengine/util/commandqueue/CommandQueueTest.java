@@ -13,7 +13,7 @@ public class CommandQueueTest {
     private CommandQueue commandQueue;
     @Before
     public void setUp() {
-        commandQueue = new CommandQueue();
+        commandQueue = new CommandQueue(Executors.newSingleThreadExecutor());
     }
 
     @Test

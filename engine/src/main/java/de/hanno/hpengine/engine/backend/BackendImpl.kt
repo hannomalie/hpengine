@@ -53,7 +53,7 @@ interface EngineContext: Backend {
         get() = backend.input
 }
 
-class UpdateCommandQueue: CommandQueue({ UpdateThread.isUpdateThread() })
+class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { UpdateThread.isUpdateThread() })
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val backend: Backend = BackendImpl(),

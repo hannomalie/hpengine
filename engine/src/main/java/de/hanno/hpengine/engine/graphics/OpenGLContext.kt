@@ -341,7 +341,7 @@ class OpenGLContext : GpuContext {
                 }
             }
         } else {
-            GlobalScope.launch {
+            GlobalScope.launch(dispatcher) {
                 runnable.run()
             }
         }
@@ -356,18 +356,6 @@ class OpenGLContext : GpuContext {
                 callable.call()
             }
         }
-    }
-
-    override fun blockUntilEmpty(): Long {
-        val start = System.currentTimeMillis()
-        while(!channel.isEmpty) {
-            try {
-                Thread.sleep(0, 100)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
-        return System.currentTimeMillis() - start
     }
 
     override fun createProgramId(): Int {

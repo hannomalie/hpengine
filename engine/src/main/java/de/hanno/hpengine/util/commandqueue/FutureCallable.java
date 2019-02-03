@@ -10,4 +10,5 @@ public abstract class FutureCallable<RETURN_TYPE> extends CompletableFuture<Call
     }
 
     public abstract RETURN_TYPE execute() throws Exception;
+
 }

@@ -113,7 +113,7 @@ abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val comp
     @Subscribe
     @Handler
     fun handle(e: EntityAddedEvent) {
-        engine.commandQueue.execute({
+        engine.commandQueue.execute( Runnable {
             gatherEntities()
             gatherComponents()
         }, false)

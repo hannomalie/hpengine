@@ -11,7 +11,7 @@ class SceneManager(val managerContext: ManagerContext): Manager {
     var scene: Scene = SimpleScene("InitScene", TempEngineImpl(managerContext, this@SceneManager))
         set(value) {
             onSetScene(value)
-            managerContext.commandQueue.execute({
+            managerContext.commandQueue.execute(Runnable {
                 field = value
             }, true)
             managerContext.eventBus.post(SceneInitEvent())

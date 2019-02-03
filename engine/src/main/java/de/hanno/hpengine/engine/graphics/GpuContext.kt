@@ -126,8 +126,6 @@ interface GpuContext {
     }
 
 
-    fun blockUntilEmpty(): Long
-
     fun createProgramId(): Int
 
     fun benchmark(runnable: Runnable)

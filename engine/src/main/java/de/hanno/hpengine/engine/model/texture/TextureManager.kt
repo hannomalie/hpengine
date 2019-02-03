@@ -42,7 +42,7 @@ import javax.imageio.ImageIO
 
 class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext) : Manager {
 
-    val commandQueue = CommandQueue()
+    val commandQueue = CommandQueue(executorService = Executors.newSingleThreadExecutor())
 
     /** The colour model including alpha for the GL image  */
     val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
