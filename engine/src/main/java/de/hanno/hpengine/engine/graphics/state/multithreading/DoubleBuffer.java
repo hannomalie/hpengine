@@ -76,7 +76,7 @@ public class DoubleBuffer<T> {
     }
 
     private static class QueueStatePair<T> {
-        private final CommandQueue queue = new CommandQueue(Executors.newSingleThreadExecutor());
+        private final CommandQueue queue = new CommandQueue();
         private final T state;
 
         public QueueStatePair(T state) {

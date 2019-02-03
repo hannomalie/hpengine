@@ -1,21 +1,28 @@
 package de.hanno.hpengine.util.commandqueue
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-open class CommandQueue @JvmOverloads constructor(executorService: ExecutorService, private val executeDirectly: () -> Boolean = { false }) {
+open class CommandQueue @JvmOverloads constructor(executorService: ExecutorService = Executors.newSingleThreadExecutor(), private val executeDirectly: () -> Boolean = { false }) {
     val executor = executorService
     val dispatcher = executor.asCoroutineDispatcher()
+    private val channel = Channel<Callable<*>>(Channel.UNLIMITED)
 
     fun executeCommands(): Boolean {
         runBlocking {
             launch(dispatcher) {
                 try {
-                    yield()
+                    var callable: Callable<*>? = channel.poll()
+                    while(callable != null) {
+                        callable.call()
+                        callable = channel.poll()
+                    }
                 } catch (e: Error) {
                     LOGGER.log(Level.SEVERE, "", e)
                 }
@@ -26,12 +33,21 @@ open class CommandQueue @JvmOverloads constructor(executorService: ExecutorServi
 
     fun addCommand(runnable: Runnable): CompletableFuture<Void> {
         val result = CompletableFuture<Void>()
-        execute(Runnable { runnable.run().apply { result.complete(null) } } , true)
+        if(executeDirectly()) {
+            return result.apply { runnable.run(); complete(null) }
+        }
+
+        GlobalScope.launch(dispatcher) {
+            channel.send(Callable {
+                runnable.run()
+                result.complete(null)
+            })
+        }
         return result
     }
 
     fun <RESULT_TYPE> addCommand(command: FutureCallable<RESULT_TYPE>): CompletableFuture<RESULT_TYPE> {
-        if (executeDirectly.invoke()) {
+        if (executeDirectly()) {
             try {
                 command.future.complete(command.execute())
             } catch (e: Exception) {
@@ -45,31 +61,35 @@ open class CommandQueue @JvmOverloads constructor(executorService: ExecutorServi
         return command.future
     }
 
-    fun <RESULT_TYPE> calculate(callable: Callable<RESULT_TYPE>): RESULT_TYPE? {
+    fun <RESULT_TYPE> calculate(callable: Callable<RESULT_TYPE>): RESULT_TYPE {
         if(executeDirectly()) {
             return callable.call()
         }
         return runBlocking {
-            withContext(dispatcher) {
-                callable.call()
-            }
+            val future = CompletableFuture<RESULT_TYPE>()
+            channel.send(Callable {
+                callable.call().apply {
+                    future.complete(this)
+                }
+            })
+            future.get()
         }
     }
 
     fun execute(runnable: Runnable, andBlock: Boolean) {
-        if (executeDirectly.invoke()) {
+        if (executeDirectly()) {
             runnable.run()
         }
-        if(andBlock) {
-            runBlocking {
-                withContext(dispatcher) {
-                    runnable.run()
-                }
-            }
-        } else {
-            GlobalScope.launch(dispatcher) {
+
+        val future = CompletableFuture<Void>()
+        GlobalScope.launch(dispatcher) {
+            channel.send(Callable {
                 runnable.run()
-            }
+                future.complete(null)
+            })
+        }
+        if(andBlock) {
+            future.join()
         }
     }
 

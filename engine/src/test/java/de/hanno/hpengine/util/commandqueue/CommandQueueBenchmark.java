@@ -16,7 +16,7 @@ public class CommandQueueBenchmark {
     }
 
     public void runForNPosts(int postCount) {
-        CommandQueue commandQueue = new CommandQueue(Executors.newSingleThreadExecutor());
+        CommandQueue commandQueue = new CommandQueue();
 
         long start = System.currentTimeMillis();
         for(int i = 0; i < postCount; i++) {

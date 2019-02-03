@@ -39,7 +39,7 @@ class OpenGLContext : GpuContext {
 
     private val openGlExecutor = Executors.newSingleThreadExecutor()
     private val dispatcher = openGlExecutor.asCoroutineDispatcher()
-    private val channel = Channel<FutureCallable<*>>()
+    private val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
 
     @Volatile
     override var isInitialized = false

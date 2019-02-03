@@ -13,7 +13,7 @@ public class CommandQueueTest {
     private CommandQueue commandQueue;
     @Before
     public void setUp() {
-        commandQueue = new CommandQueue(Executors.newSingleThreadExecutor());
+        commandQueue = new CommandQueue();
     }
 
     @Test
@@ -29,33 +29,9 @@ public class CommandQueueTest {
     public void executeCommand() throws Exception {
         List result = new ArrayList<>();
         commandQueue.addCommand(() -> result.add(new Object()));
-        Assert.assertTrue(commandQueue.executeCommand());
+        Assert.assertTrue(commandQueue.executeCommands());
 
         Assert.assertTrue(!result.isEmpty());
-    }
-
-    @Test
-    public void addCommand() throws Exception {
-        List result = new ArrayList<>();
-        CompletableFuture<Object> future = commandQueue.addCommand(() -> result.add(new Object()));
-        Assert.assertEquals("", 1, commandQueue.getWorkQueue().size());
-        commandQueue.executeCommands();
-        Assert.assertNotNull(future.get());
-    }
-
-    @Test
-    public void addCommand1() throws Exception {
-        List result = new ArrayList<>();
-        commandQueue.addCommand(() -> result.add(new Object()));
-        Assert.assertEquals("", 1, commandQueue.getWorkQueue().size());
-    }
-
-    @Test
-    public void execute() throws Exception {
-        List result = new ArrayList<>();
-        Exception exception = commandQueue.execute(() -> result.add(new Object()), false);
-        commandQueue.executeCommands();
-        Assert.assertNull(exception);
     }
 
 }

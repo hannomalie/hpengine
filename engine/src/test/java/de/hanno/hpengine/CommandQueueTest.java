@@ -8,6 +8,7 @@ import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 public class CommandQueueTest {
 
@@ -15,7 +16,7 @@ public class CommandQueueTest {
 
     @BeforeClass
     public static void init() {
-        commandQueue = new CommandQueue(Executors.newSingleThreadExecutor());
+        commandQueue = new CommandQueue();
     }
 
     @Test
@@ -30,7 +31,7 @@ public class CommandQueueTest {
         });
 
         Assert.assertFalse("The future is already done, even before processes.", future.isDone());
-        commandQueue.executeCommand();
+        commandQueue.executeCommands();
 
         Assert.assertTrue("The future is not completed but should have been.", future.isDone());
         Assert.assertEquals(10, future.get().x);

@@ -37,12 +37,13 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext) : Manager {
 
-    val commandQueue = CommandQueue(executorService = Executors.newSingleThreadExecutor())
+    val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
     /** The colour model including alpha for the GL image  */
     val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -81,13 +82,11 @@ class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext)
             }.start()
         }
 
-        for (i in 0 until 1 + TEXTURE_FACTORY_THREAD_COUNT) {
-            object : TimeStepThread("TextureManager$i", 0.01f) {
-                override fun update(seconds: Float) {
-                    commandQueue.executeCommands()
-                }
-            }.start()
-        }
+        object : TimeStepThread("TextureManager", 0.01f) {
+            override fun update(seconds: Float) {
+                commandQueue.executeCommands()
+            }
+        }.start()
     }
 
     val lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true)
