@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.FloatBuffer;
 
-public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline implements CustomState {
+public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 
     public GPUCulledMainPipeline(EngineContext engineContext, Renderer renderer) {
         super(engineContext, renderer, true, true, true);

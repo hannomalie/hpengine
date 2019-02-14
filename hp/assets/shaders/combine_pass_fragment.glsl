@@ -5,12 +5,13 @@ layout(binding=2) uniform sampler2D scatteringMap; // ao, reflectedColor
 layout(binding=3) uniform sampler2D motionMap; // motionVec, probeIndices
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
-layout(binding=6) uniform samplerCube globalEnvironmentMap;
-layout(binding=7) uniform samplerCubeArray probes;
+layout(binding=6) uniform sampler2D forwardRenderedMap;
+layout(binding=7) uniform sampler2D forwardRenderedRevealageMap;
 layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D refractedMap;
 layout(binding=11) uniform sampler2D aoScattering;
 layout(binding=13) uniform sampler3D grid;
+layout(binding=14) uniform samplerCube environmentMap;
 
 layout(std430, binding=0) buffer myBlock
 {
@@ -383,7 +384,12 @@ void main(void) {
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
-	
+
+	vec4 forwardRenderedAccum = textureLod(forwardRenderedMap, st, 0);
+	float revealage = forwardRenderedAccum.a;
+	forwardRenderedAccum.a = textureLod(forwardRenderedRevealageMap, st, 0).r;
+	vec4 forwardRendered = vec4(forwardRenderedAccum.rgb / clamp(forwardRenderedAccum.a, 1e-4, 5e4), revealage);
+
 	vec4 AOscattering = textureLod(aoScattering, st, 0);
 	vec3 scattering = AOscattering.gba;
 
@@ -392,10 +398,12 @@ void main(void) {
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
 	vec3 environmentLight = 4*environmentLightAO.rgb;
-	environmentLight += vec3(0.1) * color.rgb;
+	environmentLight += vec3(.1) * color.rgb;
 	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
-	
+
+//unused
+	vec3 constantAmbient = vec3(0.6f, 0.5f, 0.45f) * color.rgb*textureLod(environmentMap, normalWorld, 6*(roughness)).rgb;
 	vec3 ambientTerm = ambientColor*environmentLight;
 
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
@@ -405,21 +413,26 @@ void main(void) {
     if(useAmbientOcclusion) {
 	    out_color.rgb *= clamp(ao,0,1);
     }
+	out_color.rgb = out_color.rgb * forwardRendered.a + forwardRendered.rgb * (1 - forwardRendered.a);
+
 	out_color.rgb += (scattering.rgb); //scattering
-	
+
 	float autoExposure = exposure;
 	if(!AUTO_EXPOSURE_ENABLED) { autoExposure = worldExposure; }
 
 	out_color *= autoExposure;
-	
-	const float EXPOSURE_BIAS = 1;
-	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
-	const float maxValue = 11.2;
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(maxValue)); // whitescale marks the maximum value we can have before tone mapping
-	out_color.rgb = out_color.rgb * whiteScale;
 
+	const bool toneMap = true;
+	if(toneMap) {
+        const float EXPOSURE_BIAS = 1;
+        out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
+        const float maxValue = 4;
+        vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(maxValue)); // whitescale marks the maximum value we can have before tone mapping
+	    out_color.rgb = out_color.rgb * whiteScale;
+    }
 
-//    out_color.rgb = textureLod(scatteringMap, st, 0).rgb;
+//    out_color.rgb = vec3(0.1) + forwardRendered.rgb * (forwardRendered.a);
+//    out_color.rgb = vec3(revealage);
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;
 //	out_color.b = 0;
 

@@ -11,11 +11,12 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.CommandBuffer
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.struct.*
 
-open class SimplePipeline(private val engine: EngineContext,
+open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext,
                           private val useFrustumCulling: Boolean = true,
                           private val useBackFaceCulling: Boolean = true,
                           private val useLineDrawingIfActivated: Boolean = true) : Pipeline {
@@ -123,7 +124,8 @@ open class SimplePipeline(private val engine: EngineContext,
         for (i in renderBatches.indices) {
             val info = renderBatches[i]
             val culled = Config.getInstance().isUseCpuFrustumCulling && useFrustumCulling && !info.isVisibleForCamera
-            if (!info.isVisible || culled) {
+            val isForward = info.materialInfo.transparencyType.needsForwardRendering
+            if (!info.isVisible || culled || isForward) {
                 continue
             }
             commands.add(info.drawElementsIndirectCommand)
@@ -151,6 +153,10 @@ open class SimplePipeline(private val engine: EngineContext,
         gpuCommandsArray.buffer.copyTo(commandBuffer.buffer)
 
         commandBuffer.buffer.rewind()
+    }
+
+    override fun update(writeState: RenderState) {
+        prepare(writeState)
     }
 }
 

@@ -20,7 +20,7 @@ class MaterialStruct(parent: Struct?, val environmentMapType: ENVIRONMENTMAP_TYP
 
     var transparency by 0.0f
     var materialType by MaterialType::class.java
-    val dummy0 by 0.0f
+    val transparencyType by TransparencyType::class.java
     val dummy1 by 0.0f
 
     var diffuseMapHandle: Long by 0L
@@ -43,6 +43,7 @@ interface MaterialInfo {
     val parallaxScale: Float
     val parallaxBias: Float
     val materialType: MaterialType
+    val transparencyType: TransparencyType
     val textureLess: Boolean
     val maps: Map<MAP, Texture<TextureDimension2D>>
 
@@ -62,6 +63,7 @@ interface MaterialInfo {
                 parallaxScale: Float = this.parallaxScale,
                 parallaxBias: Float = this.parallaxBias,
                 materialType: MaterialType = this.materialType,
+                transparencyType: TransparencyType = this.transparencyType,
                 textureLess: Boolean = this.textureLess,
                 maps: Map<MAP, Texture<TextureDimension2D>> = this.maps,
                 environmentMapType: ENVIRONMENTMAP_TYPE = this.environmentMapType): MaterialInfo
@@ -77,10 +79,11 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
                                                         override val parallaxScale: Float = 0.04f,
                                                         override val parallaxBias: Float = 0.02f,
                                                         override val materialType: MaterialType = DEFAULT,
+                                                        override val transparencyType: TransparencyType = TransparencyType.BINARY,
                                                         private val mapsInternal: MutableMap<MAP, Texture<TextureDimension2D>> = hashMapOf(),
                                                         override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
 
-    override fun copyXXX(diffuse: Vector3f, roughness: Float, metallic: Float, ambient: Float, transparency: Float, parallaxScale: Float, parallaxBias: Float, materialType: MaterialType, textureLess: Boolean, maps: Map<MAP, Texture<TextureDimension2D>>, environmentMapType: ENVIRONMENTMAP_TYPE): MaterialInfo {
+    override fun copyXXX(diffuse: Vector3f, roughness: Float, metallic: Float, ambient: Float, transparency: Float, parallaxScale: Float, parallaxBias: Float, materialType: MaterialType, transparencyType: TransparencyType, textureLess: Boolean, maps: Map<MAP, Texture<TextureDimension2D>>, environmentMapType: ENVIRONMENTMAP_TYPE): MaterialInfo {
         return copy(
                 name = name,
                 diffuse = diffuse,
@@ -91,6 +94,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
                 parallaxScale = parallaxScale,
                 parallaxBias = parallaxBias,
                 materialType = materialType,
+                transparencyType = transparencyType,
                 mapsInternal = HashMap(maps),
                 environmentMapType = environmentMapType
         )

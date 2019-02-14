@@ -323,7 +323,18 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
                 engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(materialType = selected))
                 engine.eventBus.post(MaterialChangedEvent(material))
             }
-            val materialTypePanel = GroupPanel(4, WebLabel("Maeterial Type"), materialTypeInput)
+            val materialTypePanel = GroupPanel(4, WebLabel("Material Type"), materialTypeInput)
+            webComponentPanel.addElement(materialTypePanel)
+        }
+        run {
+            val values = EnumSet.allOf(SimpleMaterial.TransparencyType::class.java).toTypedArray()
+            val transparencyTypeInput = WebComboBox(values, values.indexOf(material.materialInfo.transparencyType))
+            transparencyTypeInput.addActionListener { e ->
+                val selected = transparencyTypeInput.selectedItem as SimpleMaterial.TransparencyType
+                engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(transparencyType = selected))
+                engine.eventBus.post(MaterialChangedEvent(material))
+            }
+            val materialTypePanel = GroupPanel(4, WebLabel("Transparency Type"), transparencyTypeInput)
             webComponentPanel.addElement(materialTypePanel)
         }
         run {
@@ -333,8 +344,8 @@ class MaterialView(private val engine: Engine, var material: SimpleMaterial) : W
                 val selected = environmentMapInput.selectedItem as SimpleMaterial.ENVIRONMENTMAP_TYPE
                 engine.scene.materialManager.changeMaterial(material.materialInfo.copyXXX(environmentMapType = selected))
             }
-            val groupPanelEnironmentMapType = GroupPanel(4, WebLabel("Environment map type"), environmentMapInput)
-            webComponentPanel.addElement(groupPanelEnironmentMapType)
+            val groupPanelEnvironmentMapType = GroupPanel(4, WebLabel("Environment map type"), environmentMapInput)
+            webComponentPanel.addElement(groupPanelEnvironmentMapType)
         }
 
         panels.add(webComponentPanel)

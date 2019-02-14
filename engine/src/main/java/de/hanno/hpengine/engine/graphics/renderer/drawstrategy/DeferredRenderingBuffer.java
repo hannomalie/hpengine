@@ -29,6 +29,7 @@ public class DeferredRenderingBuffer {
 
 	private RenderTarget gBuffer;
 	private RenderTarget reflectionBuffer;
+	private RenderTarget forwardBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
 	private RenderTarget halfScreenBuffer;
@@ -52,23 +53,29 @@ public class DeferredRenderingBuffer {
 				.build();
 
 		reflectionBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-						.setName("Reflection")
-						.add(new ColorAttachmentDefinitions(new String[]{"Diffuse", "Specular"}, GL30.GL_RGBA16F))
-						.setClearRGBA(0, 0, 0, 0)
-						.build();
+				.setName("Reflection")
+				.add(new ColorAttachmentDefinitions(new String[]{"Diffuse", "Specular"}, GL30.GL_RGBA16F))
+				.setClearRGBA(0, 0, 0, 0)
+				.build();
+		forwardBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+				.setName("Forward")
+				.add(new ColorAttachmentDefinitions(new String[]{"DiffuseSpecular"}, GL30.GL_RGBA16F))
+				.add(new ColorAttachmentDefinitions(new String[]{"Revealage"}, GL30.GL_RGBA16F)) // TODO: Make r instead of rgba
+				.setClearRGBA(0, 0, 0, 0)
+				.build();
 		laBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth())
-						.setName("LightAccum")
-						.setHeight(Config.getInstance().getHeight())
-						.add(new ColorAttachmentDefinitions(new String[]{"Diffuse", "Specular"}, GL30.GL_RGBA16F))
-						.build();
+				.setName("LightAccum")
+				.setHeight(Config.getInstance().getHeight())
+				.add(new ColorAttachmentDefinitions(new String[]{"Diffuse", "Specular"}, GL30.GL_RGBA16F))
+				.build();
 		finalBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-						.setName("Final Image")
-						.add(new ColorAttachmentDefinition("Color", GL11.GL_RGBA8))
-						.build();
+				.setName("Final Image")
+				.add(new ColorAttachmentDefinition("Color", GL11.GL_RGBA8))
+				.build();
 		halfScreenBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
-						.setName("Half Screen")
-						.add(new ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F))
-						.build();
+				.setName("Half Screen")
+				.add(new ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F))
+				.build();
 		new Matrix4f().get(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
@@ -158,4 +165,7 @@ public class DeferredRenderingBuffer {
 		return laBuffer;
 	}
 
+	public RenderTarget getForwardBuffer() {
+		return forwardBuffer;
+	}
 }

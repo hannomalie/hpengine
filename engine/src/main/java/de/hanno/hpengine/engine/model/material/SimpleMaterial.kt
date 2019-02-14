@@ -36,6 +36,10 @@ class SimpleMaterial(override var materialInfo: MaterialInfo): Material, Seriali
         FOLIAGE,
         UNLIT
     }
+    enum class TransparencyType(val needsForwardRendering: Boolean) {
+        BINARY(false),
+        FULL(true)
+    }
 
     enum class MAP(val shaderVariableName: String, val textureSlot: Int) {
         DIFFUSE("diffuseMap", 0),

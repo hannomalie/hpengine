@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.model.Update;
+import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.Vector3f;
 
@@ -25,11 +26,12 @@ public class RenderBatch {
     private boolean animated;
     private float boundingSphereRadius;
     private List<AABB> instanceMinMaxWorlds = new ArrayList();
+    private MaterialInfo materialInfo;
 
     public RenderBatch() {
     }
 
-    public RenderBatch init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<AABB> instanceMinMaxWorlds) {
+    public RenderBatch init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<AABB> instanceMinMaxWorlds, MaterialInfo materialInfo) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -46,6 +48,7 @@ public class RenderBatch {
         this.centerWorld = centerWorld;
         this.drawElementsIndirectCommand.init(indexCount, instanceCount, indexOffset, baseVertex, 0, entityBaseIndex);
         this.animated = animated;
+        this.materialInfo = materialInfo;
         return this;
     }
 
@@ -141,4 +144,7 @@ public class RenderBatch {
 
     }
 
+    public MaterialInfo getMaterialInfo() {
+        return materialInfo;
+    }
 }

@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.*;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.*;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -71,6 +72,7 @@ public class DeferredRenderer implements Renderer {
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
 	private DeferredRenderingBuffer gBuffer;
+	private ForwardRenderer forwardRenderer;
 
     private VertexBuffer buffer;
 
@@ -102,7 +104,7 @@ public class DeferredRenderer implements Renderer {
 	GpuContext gpuContext;
 	private final List<RenderExtension> renderExtensions = new ArrayList<>();
 	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
-	private StateRef<GPUCulledMainPipeline> mainPipelineRef;
+	private StateRef<Pipeline> mainPipelineRef;
 
 	private final RenderBatch skyBoxRenderBatch;
 
@@ -122,6 +124,7 @@ public class DeferredRenderer implements Renderer {
 			setupBuffers();
 			setUpGBuffer();
 		});
+		forwardRenderer = new ForwardRenderer(engineContext.getRenderStateManager().getRenderState(), gBuffer, engineContext);
 
 		ProgramManager programManager = this.backend.getProgramManager();
 		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
@@ -154,7 +157,7 @@ public class DeferredRenderer implements Renderer {
 		skyBoxEntity.init(engineContext);
 		skyboxVertexIndexBuffer = new VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS);
 		VertexIndexBuffer.VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(engineContext.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
-		skyBoxRenderBatch = new RenderBatch().init(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(), 1000, skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.getInstanceMinMaxWorlds());
+		skyBoxRenderBatch = new RenderBatch().init(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(), 1000, skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.getInstanceMinMaxWorlds(), skyBoxModelComponent.getMaterial(materialManager).getMaterialInfo());
 
 		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
@@ -162,6 +165,7 @@ public class DeferredRenderer implements Renderer {
 //		TODO: This seems to be broken with the new texture implementations
 //		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
 //        registerRenderExtension(new EvaluateProbeRenderExtension(managerContext));
+		registerRenderExtension(forwardRenderer);
 		registerRenderExtension(new PixelPerfectPickingExtension());
 
 		float[] points = {0f, 0f, 0f, 0f};
@@ -197,6 +201,7 @@ public class DeferredRenderer implements Renderer {
 
         gBuffer = backend.getGpuContext().calculate((Callable<DeferredRenderingBuffer>) () -> new DeferredRenderingBuffer(backend.getGpuContext()));
 
+
         backend.getGpuContext().execute(() -> {
             backend.getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -215,7 +220,7 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("First pass");
 		FirstPassResult firstPassResult = result.getFirstPassResult();
 
-		GPUCulledMainPipeline pipeline = renderState.getState(mainPipelineRef);
+		Pipeline pipeline = renderState.getState(mainPipelineRef);
 
 		Camera camera = renderState.getCamera();
 
@@ -236,6 +241,7 @@ public class DeferredRenderer implements Renderer {
 		skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformation().get(modelMatrixBuffer));
 		skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		gpuContext.bindTexture(6, backend.getTextureManager().getCubeMap());
 		DrawUtils.draw(gpuContext, skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, skyBoxProgram, false, false);
 
 		GPUProfiler.start("Set GPU state");
@@ -423,11 +429,13 @@ public class DeferredRenderer implements Renderer {
 			backend.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer2.getMotionMap());
 			backend.getGpuContext().bindTexture(4, TEXTURE_2D, gBuffer2.getPositionMap());
 			backend.getGpuContext().bindTexture(5, TEXTURE_2D, gBuffer2.getNormalMap());
-			backend.getGpuContext().bindTexture(6, backend.getTextureManager().getCubeMap());
-			backend.getGpuContext().bindTexture(7, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
+			backend.getGpuContext().bindTexture(6, TEXTURE_2D, gBuffer2.getForwardBuffer().getRenderedTexture(0));
+			backend.getGpuContext().bindTexture(7, TEXTURE_2D, gBuffer2.getForwardBuffer().getRenderedTexture(1));
+//			backend.getGpuContext().bindTexture(7, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
 			backend.getGpuContext().bindTexture(8, TEXTURE_2D, gBuffer2.getReflectionMap());
 			backend.getGpuContext().bindTexture(9, TEXTURE_2D, gBuffer2.getRefractedMap());
 			backend.getGpuContext().bindTexture(11, TEXTURE_2D, gBuffer2.getAmbientOcclusionScatteringMap());
+			backend.getGpuContext().bindTexture(14, TEXTURE_CUBE_MAP, backend.getTextureManager().getCubeMap().getTextureId());
 
 			gpuContext.getFullscreenBuffer().draw();
 
@@ -467,8 +475,8 @@ public class DeferredRenderer implements Renderer {
 			drawToQuad(Config.getInstance().getDirectTextureOutputTextureIndex());
 		}
 		if (Config.getInstance().isDebugframeEnabled()) {
-			ArrayList<Texture> textures = new ArrayList<>(backend.getTextureManager().getTextures().values());
-			drawToQuad(textures.get(0).getTextureId(), backend.getGpuContext().getDebugBuffer(), backend.getProgramManager().getDebugFrameProgram());
+//			ArrayList<Texture> textures = new ArrayList<>(backend.getTextureManager().getTextures().values());
+			drawToQuad(gBuffer.getForwardBuffer().getRenderedTexture(), backend.getGpuContext().getDebugBuffer(), backend.getProgramManager().getDebugFrameProgram());
 //			drawToQuad(managerContext.getScene().getAreaLightSystem().getDepthMapForAreaLight(managerContext.getScene().getAreaLightSystem().getAreaLights().get(0)), managerContext.getGpuContext().getDebugBuffer(), managerContext.getProgramManager().getDebugFrameProgram());
 
 //			for(int i = 0; i < 6; i++) {

@@ -11,7 +11,7 @@ struct Material {
 
 	float transparency;
 	int materialtype;
-	float dummy0;
+	int transparencyType;
 	float dummy1;
 
     uvec2 handleDiffuse;

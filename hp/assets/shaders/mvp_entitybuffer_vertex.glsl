@@ -4,6 +4,9 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 
 //include(globals_structs.glsl)
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
@@ -27,6 +30,9 @@ out vec4 pass_Position;
 out vec4 pass_WorldPosition;
 out vec3 normal_world;
 out vec2 texCoord;
+out vec4 position_clip;
+flat out Entity outEntity;
+flat out Material outMaterial;
 
 void main()
 {
@@ -38,6 +44,7 @@ void main()
 
 	pass_WorldPosition = modelMatrix * vec4(in_Position.xyz,1);
 	pass_Position = projectionMatrix * viewMatrix * pass_WorldPosition;
+	position_clip = pass_Position;
     gl_Position = pass_Position;
 	normal_world.x = dot(modelMatrix[0].xyz, in_Normal);
     normal_world.y = dot(modelMatrix[1].xyz, in_Normal);
@@ -47,4 +54,9 @@ void main()
 	
 	texCoord = in_TextureCoord;
 	texCoord.y = 1 - in_TextureCoord.y;
+
+    outEntity = entity;
+    int materialIndex = int(entity.materialIndex);
+    Material material = materials[materialIndex];
+    outMaterial = material;
 }

@@ -193,13 +193,16 @@ void main(void) {
 	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 	Material material = materials[materialIndex];
 	int materialType = int(material.materialtype);
-	if(materialType == 1) {
+	int DEFAULT = 0;
+	int FOLIAGE = 1;
+	int UNLIT = 2;
+	if(materialType == FOLIAGE) {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
 		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
 	    finalColor *= visibility;
-	} else if(materialType == 2) {
+	} else if(materialType == UNLIT) {
 	    finalColor = color;
 	} else {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
@@ -208,9 +211,9 @@ void main(void) {
 
 
 	out_DiffuseSpecular.rgb = 4 * finalColor; // TODO: Extract value 4 as global HDR scaler
-	
+
 	float ambient = normalAmbient.a;
-	ambient += 0.05;  // Boost ambient here
+	ambient += 0.1;  // Boost ambient here
 //	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 
