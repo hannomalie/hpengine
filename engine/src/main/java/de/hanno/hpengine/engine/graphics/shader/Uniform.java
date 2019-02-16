@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
 
@@ -39,6 +40,10 @@ public class Uniform {
 	public void setAsMatrix4(FloatBuffer values) {
 //		if(location == -1) { return; };
 		GL20.glUniformMatrix4fv(location, false, values);
+	}
+	public void setAsMatrix4(ByteBuffer values) {
+//		if(location == -1) { return; };
+		GL20.glUniformMatrix4fv(location, false, values.asFloatBuffer());
 	}
 
     public void set(LongBuffer values) {

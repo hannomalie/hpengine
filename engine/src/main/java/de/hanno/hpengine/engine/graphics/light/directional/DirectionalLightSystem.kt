@@ -3,15 +3,21 @@ package de.hanno.hpengine.engine.graphics.light.directional
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.SimpleScene
+import de.hanno.struct.copyTo
 
-class DirectionalLightSystem(engine: Engine, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(engine, simpleScene, listOf(DirectionalLight::class.java)) {
-
+class DirectionalLightSystem(engine: Engine, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(engine, simpleScene, listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
+
+    private var shadowMapExtension: DirectionalLightShadowMapExtension
 
     init {
         eventBus.register(this)
+        shadowMapExtension = DirectionalLightShadowMapExtension(engine)
     }
 
     override fun update(deltaSeconds: Float) {
@@ -30,15 +36,19 @@ class DirectionalLightSystem(engine: Engine, simpleScene: SimpleScene, val event
         renderState.directionalLightHasMovedInCycle = directionalLightMovedInCycle
 
         with(getDirectionalLight()) {
-            renderState.directionalLightState.directionalLightViewMatrixAsBuffer = viewMatrixAsBuffer
-            renderState.directionalLightState.directionalLightViewMatrixAsBuffer.rewind()
-            renderState.directionalLightState.directionalLightProjectionMatrixAsBuffer = projectionMatrixAsBuffer
-            renderState.directionalLightState.directionalLightProjectionMatrixAsBuffer.rewind()
-            renderState.directionalLightState.directionalLightViewProjectionMatrixAsBuffer = viewProjectionMatrixAsBuffer
-            renderState.directionalLightState.directionalLightViewProjectionMatrixAsBuffer.rewind()
-            renderState.directionalLightState.directionalLightDirection.set(direction)
-            renderState.directionalLightState.directionalLightColor.set(color)
-            renderState.directionalLightState.directionalLightScatterFactor = scatterFactor
+            renderState.directionalLightState.color.set(color)
+            renderState.directionalLightState.direction.set(direction)
+            renderState.directionalLightState.scatterFactor = scatterFactor
+            renderState.directionalLightState.viewMatrix.set(viewMatrix)
+            renderState.directionalLightState.projectionMatrix.set(projectionMatrix)
+            renderState.directionalLightState.viewProjectionMatrix.set(viewProjectionMatrix)
+            renderState.directionalLightState.shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
+            renderState.directionalLightState.shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
         }
+
+        renderState.directionalLightState.buffer.copyTo(renderState.directionalLightBuffer.buffer)
+    }
+    override fun render(result: DrawResult, state: RenderState) {
+        shadowMapExtension.renderFirstPass(engine.backend, engine.gpuContext, result.firstPassResult, state)
     }
 }

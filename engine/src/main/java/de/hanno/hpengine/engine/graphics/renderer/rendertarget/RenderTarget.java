@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.model.texture.SimpleTexture2D;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -26,6 +27,7 @@ public class RenderTarget {
     public int frameBuffer = -1;
     protected int depthBufferLocation = -1;
     protected int[] renderedTextures;
+    protected long[] renderedTextureHandles;
     protected int width;
     protected int height;
     protected float clearR;
@@ -53,6 +55,7 @@ public class RenderTarget {
             useDepthBuffer = renderTargetBuilder.useDepthBuffer;
 
             renderedTextures = new int[colorAttachments.size()];
+            renderedTextureHandles = new long[colorAttachments.size()];
             frameBuffer = GL30.glGenFramebuffers();
 
             gpuContext.bindFrameBuffer(frameBuffer);
@@ -77,6 +80,9 @@ public class RenderTarget {
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
                 GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
 
+                long handle = ARBBindlessTexture.glGetTextureHandleARB(renderedTextureTemp);
+                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+
                 FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
                 float[] borderColors = new float[]{0, 0, 0, 1};
                 borderColorBuffer.put(borderColors);
@@ -85,6 +91,7 @@ public class RenderTarget {
                 GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
                 scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0 + i);
                 renderedTextures[i] = renderedTextureTemp;
+                renderedTextureHandles[i] = handle;
             }
             GL20.glDrawBuffers(scratchBuffer);
 
@@ -184,6 +191,10 @@ public class RenderTarget {
 
     public int getRenderedTexture(int index) {
         return renderedTextures[index];
+    }
+
+    public long[] getRenderedTextureHandles() {
+        return renderedTextureHandles;
     }
 
     public int getDepthBufferTexture() {

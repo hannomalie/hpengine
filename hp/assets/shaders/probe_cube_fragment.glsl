@@ -10,6 +10,9 @@ layout(std430, binding=3) buffer _entities {
 layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
+layout(std430, binding=5) buffer _directionalLight {
+	DirectionalLightState directionalLight;
+};
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;

@@ -6,9 +6,6 @@ layout(binding=6) uniform sampler2D shadowMap;
 
 uniform mat4 shadowMatrix;
 
-uniform vec3 lightDirection;
-uniform vec3 lightColor;
-
 uniform int bounces = 1;
 //include(globals_structs.glsl)
 //include(globals.glsl)
@@ -16,6 +13,9 @@ uniform int bounces = 1;
 uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
 	PointLight pointLights[100];
+};
+layout(std430, binding=3) buffer _directionalLightState {
+	DirectionalLightState directionalLight;
 };
 
 layout(std430, binding=5) buffer _voxelGrids {
@@ -113,10 +113,10 @@ void main(void) {
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
     visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0, 1.0).r;
 
-    vec3 lightDirectionTemp = lightDirection;
+    vec3 lightDirectionTemp = directionalLight.direction;
     float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
-    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
+    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(directionalLight-color,1)*visibility*vec4(voxelColor,1)).rgb;
 
     for(int i = 0; i < pointLightCount; i++) {
         PointLight pointLight = pointLights[i];

@@ -50,11 +50,10 @@ class ForwardRenderer(renderState: TripleBuffer<RenderState>, val deferredRender
 
         programStatic.use()
         programStatic.bindShaderStorageBuffer(1, renderState.materialBuffer)
+        programStatic.bindShaderStorageBuffer(2, renderState.directionalLightBuffer)
         programStatic.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
         programStatic.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         programStatic.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-
-        programStatic.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection)
 
         for (batch in renderState.renderBatchesStatic) {
             if(!batch.materialInfo.transparencyType.needsForwardRendering) { continue }

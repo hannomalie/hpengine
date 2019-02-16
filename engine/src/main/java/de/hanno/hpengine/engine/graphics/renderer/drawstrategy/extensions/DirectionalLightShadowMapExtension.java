@@ -36,14 +36,16 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     public DirectionalLightShadowMapExtension(EngineContext engine) {
         gpuContext = engine.getGpuContext();
         this.engine = engine;
-        directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
+        directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "directional_shadowmap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
         renderTarget = new RenderTargetBuilder<>(engine.getGpuContext())
                 .setName("DirectionalLight Shadow")
                 .setWidth(SHADOWMAP_RESOLUTION)
                 .setHeight(SHADOWMAP_RESOLUTION)
                 .setClearRGBA(1f, 1f, 1f, 1f)
-                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
+//                Reflective shadowmaps?
+//                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
+                .add(new ColorAttachmentDefinitions(new String[]{"Shadow"}, GL30.GL_RGBA16F))
                 .build();
 
         engine.getEventBus().register(this);
@@ -73,9 +75,8 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         renderTarget.use(true);
         directionalShadowPassProgram.use();
         directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+        directionalShadowPassProgram.bindShaderStorageBuffer(2, renderState.getDirectionalLightBuffer());
         directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-        directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.getDirectionalLightViewMatrixAsBuffer());
-        directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.getDirectionalLightProjectionMatrixAsBuffer());
 
         for(int i = 0; i < visibles.size(); i++) {
             RenderBatch e = visibles.get(i);
@@ -87,6 +88,10 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
         renderedInCycle = renderState.getCycle();
 
+    }
+
+    public RenderTarget getRenderTarget() {
+        return renderTarget;
     }
 
     public int getShadowMapId() {

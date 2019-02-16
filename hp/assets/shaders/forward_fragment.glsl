@@ -11,7 +11,6 @@ uniform bool hasDiffuseMap;
 
 uniform float diffuseMapWidth = 1;
 uniform float diffuseMapHeight = 1;
-uniform vec3 lightDirection = vec3(1,0,0);
 
 //include(globals_structs.glsl)
 
@@ -27,11 +26,16 @@ flat in Material outMaterial;
 layout(location=0)out vec4 out_Color;
 layout(location=1)out vec4 out_Revealage;
 
-//include(globals.glsl)
-
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
+layout(std430, binding=2) buffer _directionalLight {
+	DirectionalLightState directionalLight;
+};
+
+//include(globals.glsl)
+
+//include(global_lighting.glsl)
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
@@ -108,8 +112,11 @@ void main()
 	int FOLIAGE = 1;
 	int UNLIT = 2;
 	if(materialType == DEFAULT) {
-        float NdotL = max(clamp(dot(-lightDirection, PN_world), 0, 1), 0.01);
+        float NdotL = max(clamp(dot(-directionalLight.direction, PN_world), 0, 1), 0.01);
         color.rgb *= NdotL;
+        float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
+        color.rgb *= max(visibility, 0.01);
+//        color.rgb *= directionalLight.color;
 	} else if(materialType == FOLIAGE) {
 //	UNLIT
 	} else {
@@ -132,7 +139,7 @@ void main()
     }
 
 //    if(color.a >= 0.99) {
-//        weight = 1;
+//        weight = 10;
 //        color.a = 1;
 //    }
     out_Color = vec4(4*color.rgb * weight, color.a);

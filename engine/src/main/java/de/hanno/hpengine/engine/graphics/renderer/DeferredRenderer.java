@@ -103,7 +103,7 @@ public class DeferredRenderer implements Renderer {
 
 	GpuContext gpuContext;
 	private final List<RenderExtension> renderExtensions = new ArrayList<>();
-	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
+//	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
 	private StateRef<Pipeline> mainPipelineRef;
 
 	private final RenderBatch skyBoxRenderBatch;
@@ -159,7 +159,7 @@ public class DeferredRenderer implements Renderer {
 		VertexIndexBuffer.VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(engineContext.getGpuContext(), skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
 		skyBoxRenderBatch = new RenderBatch().init(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), new Vector3f(), 1000, skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.getInstanceMinMaxWorlds(), skyBoxModelComponent.getMaterial(materialManager).getMaterialInfo());
 
-		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
+//		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
 		registerRenderExtension(new DrawLinesExtension(engineContext, this));
 //		TODO: This seems to be broken with the new texture implementations
@@ -234,7 +234,6 @@ public class DeferredRenderer implements Renderer {
 		skyBoxEntity.setTranslation(camera.getPosition());
 		skyBoxProgram.use();
 		skyBoxProgram.setUniform("eyeVec", camera.getViewDirection());
-		skyBoxProgram.setUniform("directionalLightColor", renderState.getDirectionalLightState().directionalLightColor);
 		Vector3f translation = new Vector3f();
 		skyBoxProgram.setUniform("eyePos_world", camera.getTranslation(translation));
 		skyBoxProgram.setUniform("materialIndex", materialManager.getSkyboxMaterial().getMaterialIndex());
@@ -262,7 +261,7 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.end();
 
 		if(!Config.getInstance().isUseDirectTextureOutput()) {
-			backend.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+			backend.getGpuContext().bindTexture(6, TEXTURE_2D, renderState.getDirectionalLightState().getShadowMapId());
 			for(RenderExtension extension : renderExtensions) {
 				GPUProfiler.start("RenderExtension " + extension.getClass().getSimpleName());
 				extension.renderFirstPass(backend, gpuContext, firstPassResult, renderState);
@@ -279,11 +278,11 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.end();
 
 		if (!Config.getInstance().isUseDirectTextureOutput()) {
-			GPUProfiler.start("Shadowmap pass");
-			directionalLightShadowMapExtension.renderFirstPass(backend, gpuContext, result.getFirstPassResult(), renderState);
+//			GPUProfiler.start("Shadowmap pass");
+//			directionalLightShadowMapExtension.renderFirstPass(backend, gpuContext, result.getFirstPassResult(), renderState);
 //            managerContext.getScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
 //            managerContext.getScene().getPointLightSystem().getShadowMapStrategy().renderPointLightShadowMaps(renderState);
-			GPUProfiler.end();
+//			GPUProfiler.end();
 
 			GPUProfiler.start("Second pass");
 			SecondPassResult secondPassResult = result.getSecondPassResult();
@@ -313,7 +312,7 @@ public class DeferredRenderer implements Renderer {
 			gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
 			gpuContext.bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
 			gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, backend.getTextureManager().getCubeMap().getTextureId());
-			gpuContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+			gpuContext.bindTexture(6, TEXTURE_2D, renderState.getDirectionalLightState().getShadowMapId());
 			gpuContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
 			gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray3Id());
 			GPUProfiler.end();
@@ -327,9 +326,7 @@ public class DeferredRenderer implements Renderer {
 			secondPassDirectionalProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
 			secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-			secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-			secondPassDirectionalProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
-			secondPassDirectionalProgram.setUniform("lightDiffuse", renderState.getDirectionalLightState().directionalLightColor);
+			secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.getDirectionalLightBuffer());
 			bindEnvironmentProbePositions(secondPassDirectionalProgram, renderState.getEnvironmentProbesState());
 			GPUProfiler.start("Draw fullscreen buffer");
 			backend.getGpuContext().getFullscreenBuffer().draw();
@@ -345,7 +342,7 @@ public class DeferredRenderer implements Renderer {
 
 			if(!Config.getInstance().isUseDirectTextureOutput()) {
 				GPUProfiler.start("Extensions");
-				gpuContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+				gpuContext.bindTexture(6, TEXTURE_2D, renderState.getDirectionalLightState().getShadowMapId());
 				for(RenderExtension extension : renderExtensions) {
 					extension.renderSecondPassFullScreen(renderState, secondPassResult);
 				}
@@ -700,13 +697,13 @@ public class DeferredRenderer implements Renderer {
 		backend.getGpuContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
 		backend.getGpuContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
 		backend.getGpuContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-		backend.getGpuContext().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+		backend.getGpuContext().bindTexture(6, TEXTURE_2D, renderState.getDirectionalLightState().getShadowMapId());
 		renderState.getLightState().getPointLightShadowMapStrategy().bindTextures();
 		backend.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray3Id());
 
-		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
-			gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getCurrentVoxelSource());
-		}
+//		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
+//			gpuContext.bindTexture(13, TEXTURE_3D, directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGrids().get(0).getCurrentVoxelSource());
+//		}
 
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
 		aoScatteringProgram.use();
@@ -718,19 +715,16 @@ public class DeferredRenderer implements Renderer {
 		aoScatteringProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight() / 2);
 		aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
 		aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
-		aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-		aoScatteringProgram.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
-		aoScatteringProgram.setUniform("lightDiffuse", renderState.getDirectionalLightState().directionalLightColor);
-		aoScatteringProgram.setUniform("scatterFactor", renderState.getDirectionalLightState().directionalLightScatterFactor);
 		aoScatteringProgram.setUniform("time", (int) System.currentTimeMillis());
-		aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
-		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
-			aoScatteringProgram.bindShaderStorageBuffer(5, renderState.getState(directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGridBufferRef()).getVoxelGridBuffer());
-		}
+//		aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
+//		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
+//			aoScatteringProgram.bindShaderStorageBuffer(5, renderState.getState(directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGridBufferRef()).getVoxelGridBuffer());
+//		}
 
 		aoScatteringProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS);
 		aoScatteringProgram.setUniform("pointLightCount", renderState.getLightState().getPointLights().size());
 		aoScatteringProgram.bindShaderStorageBuffer(2, renderState.getLightState().getPointLightBuffer());
+		aoScatteringProgram.bindShaderStorageBuffer(3, renderState.getDirectionalLightBuffer());
 
 		bindEnvironmentProbePositions(aoScatteringProgram, renderState.getEnvironmentProbesState());
 		gpuContext.getFullscreenBuffer().draw();

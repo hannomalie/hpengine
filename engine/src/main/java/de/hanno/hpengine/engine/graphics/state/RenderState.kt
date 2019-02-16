@@ -5,13 +5,16 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.struct.copyFrom
 import org.joml.Vector3f
+import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
 class RenderState(gpuContext: GpuContext) {
@@ -21,6 +24,7 @@ class RenderState(gpuContext: GpuContext) {
 
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
+    val directionalLightBuffer = PersistentMappedBuffer(gpuContext, 58 * java.lang.Float::BYTES.get())
     val directionalLightState = DirectionalLightState()
 
     val lightState = LightState(gpuContext)
@@ -60,15 +64,6 @@ class RenderState(gpuContext: GpuContext) {
     val materialBuffer: GPUBuffer
         get() = entitiesState.materialBuffer
 
-    val directionalLightViewMatrixAsBuffer: FloatBuffer
-        get() = directionalLightState.directionalLightViewMatrixAsBuffer
-
-    val directionalLightProjectionMatrixAsBuffer: FloatBuffer
-        get() = directionalLightState.directionalLightProjectionMatrixAsBuffer
-
-    val directionalLightViewProjectionMatrixAsBuffer: FloatBuffer
-        get() = directionalLightState.directionalLightViewProjectionMatrixAsBuffer
-
     val staticEntityHasMoved: Boolean
         get() = entitiesState.staticEntityMovedInCycle == cycle
     var deltaInS: Float = 0.1f
@@ -83,15 +78,12 @@ class RenderState(gpuContext: GpuContext) {
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
         entitiesState.joints = source.entitiesState.joints
         camera.init(source.camera)
-        directionalLightState.directionalLightViewMatrixAsBuffer = source.directionalLightState.directionalLightViewMatrixAsBuffer
-        directionalLightState.directionalLightViewMatrixAsBuffer.rewind()
-        directionalLightState.directionalLightProjectionMatrixAsBuffer = source.directionalLightState.directionalLightProjectionMatrixAsBuffer
-        directionalLightState.directionalLightProjectionMatrixAsBuffer.rewind()
-        directionalLightState.directionalLightViewProjectionMatrixAsBuffer = source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer
-        directionalLightState.directionalLightViewProjectionMatrixAsBuffer.rewind()
-        directionalLightState.directionalLightDirection.set(source.directionalLightState.directionalLightDirection)
-        directionalLightState.directionalLightColor.set(source.directionalLightState.directionalLightColor)
-        directionalLightState.directionalLightScatterFactor = source.directionalLightState.directionalLightScatterFactor
+        directionalLightState.viewMatrix.copyFrom(source.directionalLightState.viewMatrix)
+        directionalLightState.projectionMatrix.copyFrom(source.directionalLightState.projectionMatrix)
+        directionalLightState.viewProjectionMatrix.copyFrom(source.directionalLightState.viewProjectionMatrix)
+        directionalLightState.direction.copyFrom(source.directionalLightState.direction)
+        directionalLightState.color.copyFrom(source.directionalLightState.color)
+        directionalLightState.scatterFactor = source.directionalLightState.scatterFactor
         lightState.pointLights = source.lightState.pointLights
         lightState.pointLightBuffer = source.lightState.pointLightBuffer
         lightState.areaLights = source.lightState.areaLights

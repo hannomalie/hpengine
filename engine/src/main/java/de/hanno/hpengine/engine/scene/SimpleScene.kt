@@ -66,7 +66,10 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override val materialManager = managers.register(MaterialManager(engine))
     val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
-    val directionalLightSystem = entitySystems.register(DirectionalLightSystem(engine, this, engine.eventBus))
+    val directionalLightSystem = DirectionalLightSystem(engine, this, engine.eventBus).apply {
+        entitySystems.register(this)
+        engine.renderSystems.add(this)
+    }
     val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
     val pointLightSystemX = entitySystems.register(PointLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
     private val areaLightSystemX = entitySystems.register(AreaLightSystem(engine, this)).apply { engine.renderSystems.add(this) }

@@ -110,8 +110,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext) {
                 projectionMatrices[floatBufferIndex]!!.rewind()
                 probeProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex])
                 probeProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex])
-                probeProgram.setUniform("directionalLightDirection", renderState.directionalLightState.directionalLightDirection)
-                probeProgram.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor)
+                probeProgram.bindShaderStorageBuffer(5, renderState.directionalLightBuffer)
             }
 
             GPUProfiler.start("Probe entity rendering")

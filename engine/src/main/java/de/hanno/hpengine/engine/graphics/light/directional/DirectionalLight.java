@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.light.directional;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;

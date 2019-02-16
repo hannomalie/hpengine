@@ -39,8 +39,6 @@ layout(std430, binding=5) buffer _voxelGrids {
     VoxelGridArray voxelGridArray;
 };
 
-uniform mat4 shadowMatrix;
-
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
 

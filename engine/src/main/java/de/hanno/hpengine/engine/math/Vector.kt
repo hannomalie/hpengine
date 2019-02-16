@@ -21,6 +21,7 @@ class Vector3f(parent: Struct? = null) : Struct(parent) {
         this.z = target.z
     }
 }
+
 class Vector4f(parent: Struct? = null) : Struct(parent) {
     var x by 0.0f
     var y by 0.0f

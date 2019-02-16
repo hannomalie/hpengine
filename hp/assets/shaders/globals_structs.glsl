@@ -119,3 +119,20 @@ struct VoxelGridArray {
     int dummy2;
 	VoxelGrid voxelGrids[10];
 };
+
+struct DirectionalLightState {
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    mat4 viewProjectionMatrix;
+
+    vec3 color;
+    float dummy;
+
+    vec3 direction;
+    float scatterFactor;
+
+
+    uvec2 shadowMapHandle;
+    int shadowMapId;
+    float dummy0;
+};

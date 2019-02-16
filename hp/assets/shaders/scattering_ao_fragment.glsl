@@ -21,12 +21,8 @@ uniform int time = 0;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 shadowMatrix;
 
 uniform vec3 eyePosition;
-uniform vec3 lightDirection;
-uniform vec3 lightDiffuse;
-uniform float scatterFactor = 1;
 
 uniform bool useAmbientOcclusion = true;
 
@@ -40,6 +36,9 @@ uniform int maxPointLightShadowmaps;
 uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
 	PointLight pointLights[100];
+};
+layout(std430, binding=3) buffer _directionalLightState {
+	DirectionalLightState directionalLight;
 };
 layout(std430, binding=5) buffer _voxelGrids {
     VoxelGridArray voxelGridArray;
@@ -81,7 +80,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(-positionView);
 	//V = ViewVector;
- 	vec3 L = -normalize((vec4(lightDirection, 0)).xyz);
+ 	vec3 L = -normalize((vec4(directionalLight.direction, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
     vec3 P = position;
@@ -116,7 +115,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in
 	fresnel *= temp;
 	float F = fresnel + F0;
 	
-	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
+	vec3 diff = diffuseColor * directionalLight.color.rgb * NdotL;
 	
 	/////////////////////////
 	// OREN-NAYAR
@@ -138,7 +137,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	
-	return diff + cookTorrance * lightDiffuse.rgb * specularColor;
+	return diff + cookTorrance * directionalLight.color.rgb * specularColor;
 }
 
 ///////////////////// AO
@@ -274,7 +273,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	 
 	for (int i = 0; i < NB_STEPS; i++)
 	{
-		vec4 shadowPos = shadowMatrix * vec4(currentPosition, 1.0f);
+		vec4 shadowPos = directionalLight.viewProjectionMatrix * vec4(currentPosition, 1.0f);
 		vec4 worldInShadowCameraSpace = shadowPos;
 		worldInShadowCameraSpace /= worldInShadowCameraSpace.w;
     	vec2 shadowmapTexCoord = (worldInShadowCameraSpace.xy * 0.5 + 0.5);
@@ -283,7 +282,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
     	
 		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
 
-		 float NdotL = clamp(dot(rayDirection, lightDirection), 0, 1);
+		 float NdotL = clamp(dot(rayDirection, directionalLight.direction), 0, 1);
 		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
 		{
 			accumFog += ComputeScattering(NdotL);
@@ -319,7 +318,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		currentPosition += step;
 	}
 	accumFog /= NB_STEPS;
-	return (accumFog * lightDiffuse) + accumFogShadow;
+	return (accumFog * directionalLight.color) + accumFogShadow;
 }
 
 vec3 getPosition(in vec2 uv) {
@@ -430,7 +429,7 @@ void main(void) {
   		out_AOScattering.r = 1;
   	}
   	if(SCATTERING) {
-  		out_AOScattering.gba += 0.25*scatterFactor * scatter(positionWorld, eyePosition);
+  		out_AOScattering.gba += 0.25*directionalLight.scatterFactor * scatter(positionWorld, eyePosition);
   	} else {
   		out_AOScattering.gba = vec3(0,0,0);
   	}

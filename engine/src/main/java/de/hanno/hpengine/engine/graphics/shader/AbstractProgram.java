@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
 import java.util.HashMap;
@@ -71,6 +72,10 @@ public abstract class AbstractProgram {
     }
 
 	public void setUniformAsMatrix4(String name, FloatBuffer matrixBuffer) {
+		putInMapIfAbsent(name);
+		uniforms.get(name).setAsMatrix4(matrixBuffer);
+	}
+	public void setUniformAsMatrix4(String name, ByteBuffer matrixBuffer) {
 		putInMapIfAbsent(name);
 		uniforms.get(name).setAsMatrix4(matrixBuffer);
 	}

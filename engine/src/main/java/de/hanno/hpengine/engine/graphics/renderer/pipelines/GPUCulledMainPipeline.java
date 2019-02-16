@@ -62,7 +62,6 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
         program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
         program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
         program.setUniform("eyePosition", camera.getPosition());
-        program.setUniform("lightDirection", renderState.getDirectionalLightState().directionalLightDirection);
         program.setUniform("near", camera.getNear());
         program.setUniform("far", camera.getFar());
         program.setUniform("time", (int) System.currentTimeMillis());
