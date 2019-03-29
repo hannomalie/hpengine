@@ -385,10 +385,13 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
 
+	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
+	float additiveness = textureLod(forwardRenderedRevealageMap, st, 0).a;
 	vec4 forwardRenderedAccum = textureLod(forwardRenderedMap, st, 0);
-	float revealage = forwardRenderedAccum.a;
-	forwardRenderedAccum.a = textureLod(forwardRenderedRevealageMap, st, 0).r;
-	vec4 forwardRendered = vec4(forwardRenderedAccum.rgb / clamp(forwardRenderedAccum.a, 1e-4, 5e4), revealage);
+	vec4 averageColor = vec4(forwardRenderedAccum.rgb / max(forwardRenderedAccum.a, 0.00001), revealage);
+	float resultingRevealage = 1 - averageColor.a;
+	float resultingAdditiveness = ((additiveness * (1-resultingRevealage)) / 4) + additiveness * resultingRevealage;
+	resultingAdditiveness += min(2*(1-resultingRevealage), 1);
 
 	vec4 AOscattering = textureLod(aoScattering, st, 0);
 	vec3 scattering = AOscattering.gba;
@@ -402,8 +405,6 @@ void main(void) {
 	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 
-//unused
-	vec3 constantAmbient = vec3(0.6f, 0.5f, 0.45f) * color.rgb*textureLod(environmentMap, normalWorld, 6*(roughness)).rgb;
 	vec3 ambientTerm = ambientColor*environmentLight;
 
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
@@ -413,7 +414,7 @@ void main(void) {
     if(useAmbientOcclusion) {
 	    out_color.rgb *= clamp(ao,0,1);
     }
-	out_color.rgb = out_color.rgb * forwardRendered.a + forwardRendered.rgb * (1 - forwardRendered.a);
+	out_color.rgb = out_color.rgb * (1-resultingRevealage) + (resultingAdditiveness * averageColor.rgb);// * (1-resultingRevealage);
 
 	out_color.rgb += (scattering.rgb); //scattering
 
@@ -431,8 +432,8 @@ void main(void) {
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
 
-//    out_color.rgb = vec3(0.1) + forwardRendered.rgb * (forwardRendered.a);
-//    out_color.rgb = vec3(revealage);
+//    out_color.rgb = averageColor.rgb;
+//    out_color.rgb = 0.2*vec3(additiveness);
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;
 //	out_color.b = 0;
 

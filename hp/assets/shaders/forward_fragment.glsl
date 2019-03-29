@@ -92,7 +92,6 @@ void main()
 	}
 
     float opaqueness = 1-materialTransparency;
-	color.a *= opaqueness;
 
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
@@ -111,23 +110,25 @@ void main()
 	int DEFAULT = 0;
 	int FOLIAGE = 1;
 	int UNLIT = 2;
+	vec4 resultingColor = vec4(0,0,0,color.a * opaqueness);
 	if(materialType == DEFAULT) {
         float NdotL = max(clamp(dot(-directionalLight.direction, PN_world), 0, 1), 0.01);
-        color.rgb *= NdotL;
         float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
-        color.rgb *= max(visibility, 0.01);
-//        color.rgb *= directionalLight.color;
+        resultingColor.rgb = color.rgb * directionalLight.color * NdotL * max(visibility, 0.0);
+	    resultingColor.rgb = max(vec3(.005) * color.rgb, resultingColor.rgb);
 	} else if(materialType == FOLIAGE) {
-//	UNLIT
+        float NdotL = max(clamp(dot(-directionalLight.direction, PN_world), 0, 1), 0.01);
+        float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
+        resultingColor.rgb = color.rgb * directionalLight.color * NdotL * max(visibility, 0.0);
+	    resultingColor.rgb = max(vec3(.005) * color.rgb, resultingColor.rgb);
+		resultingColor += color.rgb * directionalLight.color * clamp(dot(-directionalLight.direction, -PN_world), 0, 1);
 	} else {
-//	FOLIAGE
+	    resultingColor.rgb = color.rgb;
 	}
 
-//    color.a = 1f;
-//    color.rgb *= 0.1f;
 //Color based weighting, dunno yet if this makes sense for me
 //https://github.com/lukexi/wboit/blob/master/test/renderPass.frag
-    float weight = max(min(1.0, max(max(color.r, color.g), color.b) * color.a), color.a)
+    float weight = max(min(1.0, max(max(resultingColor.r, resultingColor.g), resultingColor.b) * color.a), color.a)
                  * clamp(0.03 / (1e-5 + pow(pass_Position.z / 200, 4.0)), 1e-2, 3e3);
 
     const bool depthBasedWeight = true;
@@ -136,12 +137,16 @@ void main()
         weight = pow(color.a + 0.01f, 4.0f) + max(0.01f, min(3000.0f, 0.3f / (0.00001f + pow(abs(gl_FragCoord.z) / 200.0f, 4.0f))));
 //        http://jcgt.org/published/0002/02/09/paper.pdf
         weight = color.a * max(pow(10, -2), 3*pow(10,3)* pow((1-gl_FragCoord.z),3));
+
+//        https://www.gdcvault.com/play/1025400/Rendering-Technology-in-Agents-of
+        float a = min(8*color.a, 1) + 0.01;
+        a = min(3*color.a + 2 * luminance(color.rgb), 1);
+        const float k = 2;
+        float b = min(3*color.a + k * luminance(color.rgb), 1);
+        weight = min(pow(10, 4) * pow(b,3), 20) * pow(a,3);
     }
 
-//    if(color.a >= 0.99) {
-//        weight = 10;
-//        color.a = 1;
-//    }
-    out_Color = vec4(4*color.rgb * weight, color.a);
-    out_Revealage.r = color.a * weight;
+    out_Color = vec4(4*(resultingColor.rgb + color.rgb * materialAmbient) * weight, weight);
+    out_Revealage.r = resultingColor.a;
+    out_Revealage.a = min(10*luminance(4*color.rgb*materialAmbient), 1);
 }

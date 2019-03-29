@@ -19,10 +19,7 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.ARBClearTexture
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL40.*
 import java.io.File
 
@@ -34,19 +31,17 @@ class ForwardRenderer(renderState: TripleBuffer<RenderState>, val deferredRender
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, Defines())
 
     override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
-        engineContext.gpuContext.clearColor(0f,0f,0f,1f)
-        deferredRenderingBuffer.forwardBuffer.use(true)
+        deferredRenderingBuffer.forwardBuffer.use(false)
 
-//        ARBClearTexture.glClearTexImage(deferredRenderingBuffer.forwardBuffer.getRenderedTexture(0), 0, GL30.GL_RGBA, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-//        ARBClearTexture.glClearTexImage(deferredRenderingBuffer.forwardBuffer.getRenderedTexture(1), 0, GL30.GL_RGBA, GL11.GL_UNSIGNED_BYTE, ONE_BUFFER)
+        GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f,0f,0f,0f))
+        GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f,1f,1f,1f))
         GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
         engineContext.gpuContext.depthMask(false)
         engineContext.gpuContext.depthFunc(GlDepthFunc.LEQUAL)
         engineContext.gpuContext.enable(GlCap.BLEND)
         engineContext.gpuContext.blendEquation(BlendMode.FUNC_ADD)
-        GL14.glBlendFuncSeparate(BlendMode.Factor.ONE.glFactor, BlendMode.Factor.ONE.glFactor, BlendMode.Factor.ZERO.glFactor, BlendMode.Factor.ONE_MINUS_SRC_ALPHA.glFactor)
-//        glBlendFunc(BlendMode.Factor.ONE.glFactor, BlendMode.Factor.ONE.glFactor)
-//        glBlendFunci(1, BlendMode.Factor.ZERO.glFactor, BlendMode.Factor.ONE_MINUS_SRC_ALPHA.glFactor)
+        glBlendFunci(0, GL_ONE, GL_ONE)
+        glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
 
         programStatic.use()
         programStatic.bindShaderStorageBuffer(1, renderState.materialBuffer)

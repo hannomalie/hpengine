@@ -90,8 +90,6 @@ void main(void) {
 	vec3 lightDirectionView = (viewMatrix * vec4(-directionalLight.direction, 0)).xyz;
 	vec3 finalColor;
 
-	float visibility = getVisibility(positionWorld, directionalLight);
-
 	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 	Material material = materials[materialIndex];
 	int materialType = int(material.materialtype);
@@ -100,6 +98,7 @@ void main(void) {
 	int UNLIT = 2;
 	vec3 lightDiffuse = directionalLight.color;
 	if(materialType == FOLIAGE) {
+	    float visibility = getVisibility(positionWorld, directionalLight);
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
@@ -108,6 +107,7 @@ void main(void) {
 	} else if(materialType == UNLIT) {
 	    finalColor = color;
 	} else {
+	    float visibility = getVisibility(positionWorld, directionalLight);
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
     	finalColor *= visibility;
 	}

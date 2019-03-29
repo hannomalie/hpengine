@@ -764,3 +764,7 @@ vec4 traceVoxelsDiffuseTwoGrids(VoxelGridArray voxelGridArray, vec3 normalWorld,
 
     return voxelDiffuse;
 }
+
+float luminance(vec3 value) {
+    return 0.2126*value.r + 0.7152*value.g + 0.0722*value.b;
+}
