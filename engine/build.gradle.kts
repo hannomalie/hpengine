@@ -33,6 +33,14 @@ tasks.withType<KotlinCompile>().configureEachLater {
 }
 
 repositories {
+
+    maven {
+        name = "local-dir"
+        setUrl("libs")
+    }
+    flatDir {
+        dir("libs")
+    }
     maven {
         name = "java.net"
         setUrl("https://maven.java.net/content/repositories/public/")
@@ -48,10 +56,6 @@ repositories {
     maven {
         name = "kotlinx"
         setUrl("http://dl.bintray.com/kotlin/kotlinx")
-    }
-
-    flatDir {
-        dir("libs")
     }
     mavenCentral()
     mavenLocal()
@@ -98,7 +102,7 @@ dependencies {
     compile("set.sf.sociaal:jbullet:3.0.0.20130526")
     compile("com.google.guava:guava:10.0.1")
     compile("net.engio:mbassador:1.2.4")
-    compile("dahie:dds:1")
+    compile("", "dahie-dds", "1")
     compile("commons-io:commons-io:2.4")
     compile("de.ruedigermoeller:fst:2.33")
     compile("com.carrotsearch:hppc:0.7.2")

@@ -23,6 +23,10 @@ repositories {
         setUrl("http://dl.bintray.com/kotlin/kotlinx")
     }
 
+    maven {
+        name = "local-dir"
+        setUrl("engine/libs")
+    }
     flatDir {
         dir("../engine/libs")
     }
