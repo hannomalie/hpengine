@@ -41,6 +41,7 @@ repositories {
     flatDir {
         dir("libs")
     }
+    mavenLocal()
     maven {
         name = "java.net"
         setUrl("https://maven.java.net/content/repositories/public/")
@@ -57,8 +58,8 @@ repositories {
         name = "kotlinx"
         setUrl("http://dl.bintray.com/kotlin/kotlinx")
     }
+
     mavenCentral()
-    mavenLocal()
     jcenter()
 }
 val lwjgl_version = "3.2.0"
@@ -75,7 +76,6 @@ dependencies {
 
     compile("", "PNGDecoder")
     compile("", "dds", "1.0.1-SNAPSHOT")
-//    compile("", "DDSUtils")
 
     compile("org.lwjgl:lwjgl:$lwjgl_version")
     compile("org.lwjgl:lwjgl-glfw:$lwjgl_version")
@@ -92,7 +92,6 @@ dependencies {
     runtime("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
 
     compile("org.joml:joml:1.9.3")
-//    compile("org.slick2d:slick2d-core:1.0.1")
     compile("", "weblaf-complete", "1.28")
     compile("", "vecmath")
     compile("", "rsyntaxtextarea")
@@ -110,7 +109,7 @@ dependencies {
     compile("commons-beanutils:commons-beanutils:1.9.3")
     compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.23.4")
-    compile("de.hanno.structs:structs:1.0-SNAPSHOT")
+    compile("de.hanno.kotlin-structs:structs:1.0-SNAPSHOT")
 
     testCompile("junit:junit:4.12")
 //    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")

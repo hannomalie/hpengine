@@ -1,8 +1,11 @@
+plugins {
+    kotlin("jvm") version "1.3.21"
+}
 version = "1.0.0-SNAPSHOT"
 
 buildscript {
 
-    val kotlin_version by extra { "1.3.10" }//{ "1.1.3-2" }
+    val kotlin_version by extra { "1.3.20" }//{ "1.1.3-2" }
 
     repositories {
         mavenLocal()
@@ -10,10 +13,16 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.21")
     }
 }
 
 allprojects {
     group = "de.hanno.hpengine"
+}
+dependencies {
+    implementation(kotlin("stdlib"))
+}
+repositories {
+    mavenCentral()
 }
