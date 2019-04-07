@@ -13,7 +13,7 @@ import de.hanno.hpengine.util.Util;
 import javax.vecmath.AxisAngle4f;
 import javax.vecmath.Quat4f;
 
-public class BulletTest {
+public class VecMathJomlConversionsTest {
 
 	@Test
 	public void matrixConversionTranslationTest() {
