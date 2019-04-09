@@ -1,5 +1,6 @@
-package de.hanno.hpengine;
+package de.hanno.hpengine.engine.entity;
 
+import de.hanno.hpengine.TestWithEngine;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.entity.Entity;

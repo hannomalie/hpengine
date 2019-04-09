@@ -12,8 +12,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.model.Update
@@ -25,8 +25,8 @@ import java.io.File
 
 class ForwardRenderer(renderState: TripleBuffer<RenderState>, val deferredRenderingBuffer: DeferredRenderingBuffer, val engineContext: EngineContext): RenderExtension {
 
-    val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.getDirectory() + "mvp_entitybuffer_vertex.glsl"))
-    val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.getDirectory() + "forward_fragment.glsl"))
+    val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl"))
+    val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.directory + "forward_fragment.glsl"))
 
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, Defines())
 

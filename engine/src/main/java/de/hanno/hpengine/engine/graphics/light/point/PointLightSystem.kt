@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.PointLightMovedEvent
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -15,15 +14,16 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
-import de.hanno.struct.ResizableStructArray
+import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
+import de.hanno.struct.enlarge
 import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
 
 class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 
-    private val gpuPointLightArray = ResizableStructArray(size = 20) { PointLightStruct(it) }
+    private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
 
     var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
@@ -39,7 +39,7 @@ class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySy
         }
 
     private fun bufferLights() {
-        gpuPointLightArray.enlarge(getRequiredPointLightBufferSize())
+        gpuPointLightArray = gpuPointLightArray.enlarge(getRequiredPointLightBufferSize())
         val pointLights = getComponents(PointLight::class.java)
         for((index, pointLight) in pointLights.withIndex()) {
             val target = gpuPointLightArray.getAtIndex(index)

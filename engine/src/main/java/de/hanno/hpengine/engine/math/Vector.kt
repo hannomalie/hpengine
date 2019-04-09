@@ -4,7 +4,7 @@ import de.hanno.struct.Struct
 import org.joml.Matrix4f
 import org.joml.Vector4f
 
-class Vector3f(parent: Struct? = null) : Struct(parent) {
+class Vector3f : Struct() {
     var x by 0.0f
     var y by 0.0f
     var z by 0.0f
@@ -22,7 +22,7 @@ class Vector3f(parent: Struct? = null) : Struct(parent) {
     }
 }
 
-class Vector4f(parent: Struct? = null) : Struct(parent) {
+class Vector4f : Struct() {
     var x by 0.0f
     var y by 0.0f
     var z by 0.0f
@@ -35,7 +35,7 @@ class Vector4f(parent: Struct? = null) : Struct(parent) {
         this.w = target.w
     }
 }
-class Vector4i(parent: Struct? = null) : Struct(parent) {
+class Vector4i : Struct() {
     var x by 0
     var y by 0
     var z by 0
@@ -48,7 +48,7 @@ class Vector4i(parent: Struct? = null) : Struct(parent) {
         this.w = target.w
     }
 }
-class Vector2f(parent: Struct? = null) : Struct(parent) {
+class Vector2f : Struct() {
     var x by 0.0f
     var y by 0.0f
 
@@ -57,7 +57,7 @@ class Vector2f(parent: Struct? = null) : Struct(parent) {
         this.y = target.y
     }
 }
-class Matrix4f(parent: Struct? = null): Struct(parent) {
+class Matrix4f : Struct() {
     var m00 by 0.0f
     var m01 by 0.0f
     var m02 by 0.0f
@@ -86,25 +86,9 @@ class Matrix4f(parent: Struct? = null): Struct(parent) {
 
     fun <T: Matrix4f> set(source: T) {
         source.get(baseByteOffset.toInt(), buffer)
-//        this.m00 = source.m00()
-//        this.m01 = source.m01()
-//        this.m02 = source.m02()
-//        this.m03 = source.m03()
-//        this.m10 = source.m10()
-//        this.m11 = source.m11()
-//        this.m12 = source.m12()
-//        this.m13 = source.m13()
-//        this.m20 = source.m20()
-//        this.m21 = source.m21()
-//        this.m22 = source.m22()
-//        this.m23 = source.m23()
-//        this.m30 = source.m30()
-//        this.m31 = source.m31()
-//        this.m32 = source.m32()
-//        this.m33 = source.m33()
     }
 }
-class AABB(parent: Struct? = null): Struct(parent) {
-    val min by Vector3f(this)
-    val max by Vector3f(this)
+class AABB : Struct() {
+    val min by Vector3f()
+    val max by Vector3f()
 }

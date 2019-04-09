@@ -10,7 +10,7 @@ import de.hanno.hpengine.util.Util
 import de.hanno.struct.Struct
 import org.joml.Vector3f
 
-open class VoxelGrid(parent: Struct? = null): Struct(parent) {
+open class VoxelGrid : Struct() {
     var albedoGrid by 0
     var normalGrid by 0
     var grid by 0
@@ -30,9 +30,9 @@ open class VoxelGrid(parent: Struct? = null): Struct(parent) {
     val gridSizeHalf
         get() = _gridSizeHalf
 
-    val projectionMatrix by HpMatrix(this)
+    val projectionMatrix by HpMatrix()
 
-    var position by HpVector3f(this)
+    var position by HpVector3f()
     private var scaleProperty by 0f
 
     var albedoGridHandle by 0L

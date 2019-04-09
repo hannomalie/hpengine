@@ -22,6 +22,7 @@ import java.util.List;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
+import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 
 public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
@@ -36,7 +37,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     public DirectionalLightShadowMapExtension(EngineContext engine) {
         gpuContext = engine.getGpuContext();
         this.engine = engine;
-        directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "directional_shadowmap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
+        directionalShadowPassProgram = engine.getProgramManager().getProgram(getShaderSource(new File(Shader.directory + "directional_shadowmap_vertex.glsl")), getShaderSource(new File(Shader.directory + "shadowmap_fragment.glsl")), new Defines());
 
         renderTarget = new RenderTargetBuilder<>(engine.getGpuContext())
                 .setName("DirectionalLight Shadow")

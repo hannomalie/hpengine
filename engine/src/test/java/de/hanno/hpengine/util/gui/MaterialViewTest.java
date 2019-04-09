@@ -5,8 +5,8 @@ import org.junit.Test;
 
 public class MaterialViewTest extends ViewTest {
 
-    @Ignore
     @Test
+    @Ignore("Manual test only")
     public void showMaterialView() {
         openViewInFrame(new MaterialView(engine, engine.getScene().getMaterialManager().getDefaultMaterial()));
     }

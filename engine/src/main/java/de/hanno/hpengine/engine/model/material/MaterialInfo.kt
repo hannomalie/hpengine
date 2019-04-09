@@ -1,7 +1,10 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.*
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.ENVIRONMENTMAP_TYPE
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.HpVector3f
@@ -9,8 +12,8 @@ import de.hanno.struct.Struct
 import org.joml.Vector3f
 import java.io.Serializable
 
-class MaterialStruct(parent: Struct?, val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED): Struct(parent) {
-    val diffuse by HpVector3f(this)
+class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED): Struct() {
+    val diffuse by HpVector3f()
     var metallic by 0.0f
 
     var roughness by 0.0f

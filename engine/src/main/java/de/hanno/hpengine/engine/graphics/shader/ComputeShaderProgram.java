@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
@@ -16,12 +15,7 @@ import org.lwjgl.opengl.GL43;
 import java.io.File;
 import java.util.StringJoiner;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import static de.hanno.hpengine.engine.graphics.shader.Shader.getDirectory;
-
 
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
     private static final Logger LOGGER = Logger.getLogger(ComputeShaderProgram.class.getName());
@@ -42,7 +36,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
         this.computeShaderSource = computeShaderSource;
         this.defines = defines;
 
-		observerShader = new FileAlterationObserver(getDirectory());
+		observerShader = new FileAlterationObserver(Shader.directory);
 		load();
 		addFileListeners();
 	}
@@ -51,7 +45,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void load() {
 		clearUniforms();
 		try {
-            computeShader = ComputeShader.load(programManager.getGpuContext(), computeShaderSource, defines);
+            computeShader = ComputeShader.load(programManager, computeShaderSource, defines);
             LOGGER.info("Loaded computeshader " + computeShaderSource.getFilename());
 		} catch (Exception e) {
 			e.printStackTrace();

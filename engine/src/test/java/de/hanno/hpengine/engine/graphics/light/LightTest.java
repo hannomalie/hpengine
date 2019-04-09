@@ -1,5 +1,6 @@
-package de.hanno.hpengine;
+package de.hanno.hpengine.engine.graphics.light;
 
+import de.hanno.hpengine.TestWithEngine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;

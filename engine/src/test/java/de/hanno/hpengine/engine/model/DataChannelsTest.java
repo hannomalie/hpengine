@@ -1,4 +1,4 @@
-package de.hanno.hpengine;
+package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.DataChannels;

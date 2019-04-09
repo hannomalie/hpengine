@@ -3,7 +3,9 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.renderer.*
+import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
+import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -11,10 +13,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.CommandBuffer
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.struct.*
+import de.hanno.struct.Struct
+import de.hanno.struct.StructArray
+import de.hanno.struct.copyTo
 
 open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext,
                           private val useFrustumCulling: Boolean = true,
@@ -26,7 +29,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     protected open fun beforeDrawStatic(renderState: RenderState, program: Program) {}
     protected open fun beforeDrawAnimated(renderState: RenderState, program: Program) {}
 
-    private val gpuCommandsArray = ResizableStructArray(null, 1000) { Command(it) }
+    private var gpuCommandsArray = StructArray(1000) { Command() }
 
     override fun prepare(renderState: RenderState) {
         verticesCount = 0
@@ -160,7 +163,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 }
 
-class Command(parent: Structable?) : Struct(parent){
+class Command : Struct(){
     var count by 0
     var primCount by 0
     var firstIndex by 0

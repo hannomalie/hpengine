@@ -1,7 +1,7 @@
-package de.hanno.hpengine;
+package de.hanno.hpengine.engine.camera;
 
-import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.camera.Frustum;
+import de.hanno.hpengine.TestHelpers;
+import de.hanno.hpengine.TestWithRenderer;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.Util;
@@ -51,12 +51,12 @@ public class CameraTest extends TestWithRenderer {
 
 		camera.translateLocal(new Vector3f(0,0,5));
 		frustum.calculate(camera);
-		Helpers.assertEpsilonEqual(new Vector3f(0, 0, -1), camera.getViewDirection(), 0.01f);
+		TestHelpers.assertEpsilonEqual(new Vector3f(0, 0, -1), camera.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 
 		camera.setTranslation(new Vector3f());
 		camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180))); // cam is now at pos 0,0,0, rotated 180 degrees, looking in +z
-		Helpers.assertEpsilonEqual(new Vector3f(0, 0, 1), camera.getViewDirection(), 0.01f);
+		TestHelpers.assertEpsilonEqual(new Vector3f(0, 0, 1), camera.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.sphereInFrustum(0, 0, 1, 1));
 		Assert.assertTrue(frustum.cubeInFrustum(new Vector3f(0, 0, 1), 1));

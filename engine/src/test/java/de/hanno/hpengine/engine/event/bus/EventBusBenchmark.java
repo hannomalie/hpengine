@@ -1,4 +1,4 @@
-package de.hanno.hpengine;
+package de.hanno.hpengine.engine.event.bus;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;

@@ -29,6 +29,7 @@ tasks.withType<KotlinCompile>().configureEachLater {
     kotlinOptions {
         suppressWarnings = true
         freeCompilerArgs = listOf("-Xjvm-default=enable")
+        jvmTarget = "1.8"
     }
 }
 
@@ -72,7 +73,8 @@ val lwjgl_natives = when (OperatingSystem.current()) {
 
 dependencies {
     compile(kotlin("stdlib-jdk8"))
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1")
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
 
     compile("", "PNGDecoder")
     compile("", "dds", "1.0.1-SNAPSHOT")
@@ -108,7 +110,6 @@ dependencies {
     compile("de.hanno.compiler:java-compiler:1.4")
     compile("commons-beanutils:commons-beanutils:1.9.3")
     compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.23.4")
     compile("de.hanno.kotlin-structs:structs:1.0-SNAPSHOT")
 
     testCompile("junit:junit:4.12")

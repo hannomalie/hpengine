@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuild
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
@@ -22,13 +23,14 @@ import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.struct.ResizableStructArray
+import de.hanno.struct.StructArray
+import de.hanno.struct.enlarge
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
 import java.io.File
 import java.nio.FloatBuffer
-import java.util.*
+import java.util.ArrayList
 import java.util.concurrent.Callable
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java, factory = { TODO("not implemented") })
@@ -36,7 +38,7 @@ class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass 
 class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
-    private val gpuAreaLightArray = ResizableStructArray(size = 20) { AreaLightStruct(it) }
+    private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
 
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
@@ -49,7 +51,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
                     .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
             .build()
 
-    private val areaShadowPassProgram: Program = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "mvp_entitybuffer_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "shadowmap_fragment.glsl")), Defines())
+    private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")), Defines())
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         engine.gpuContext.execute{
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
@@ -110,7 +112,7 @@ class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySy
 
     override fun update(deltaSeconds: Float) {
 //        TODO: Resize with instance count
-        gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
+        gpuAreaLightArray = gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
         gpuAreaLightArray.buffer.rewind()
 
         for((index, areaLight) in getComponents(AreaLight::class.java).withIndex()) {

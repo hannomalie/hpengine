@@ -1,21 +1,25 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.graphics.shader.FragmentShader;
+import de.hanno.hpengine.engine.graphics.shader.GeometryShader;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.VertexShader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.junit.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.engine.graphics.shader.*;
 
 import java.io.IOException;
 
-import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
+import static de.hanno.hpengine.engine.graphics.shader.Shader.OpenGLShader;
+import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 
 public class ShaderTest extends TestWithEngine {
 
     @Test
-    public void loadsCorrectShaderTypes() throws IOException {
+    public void loadsCorrectShaderTypes() {
 
-        CodeSource shaderSource = ShaderSourceFactory.getShaderSource("void main() {}");
+        CodeSource shaderSource = getShaderSource("void main() {}");
 
         ProgramManager programManager = engine.getProgramManager();
         {

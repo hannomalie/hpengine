@@ -1,7 +1,15 @@
 package de.hanno.hpengine;
 
 import ddsutil.DDSUtil;
-import de.hanno.hpengine.engine.model.texture.*;
+import de.hanno.hpengine.engine.event.bus.MBassadorEventBus;
+import de.hanno.hpengine.engine.graphics.OpenGLContext;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.model.texture.CompleteTextureInfo;
+import de.hanno.hpengine.engine.model.texture.CubeMap;
+import de.hanno.hpengine.engine.model.texture.DDSConverter;
+import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.util.Util;
 import jogl.DDSImage;
 import org.junit.Assert;
@@ -20,17 +28,20 @@ import static de.hanno.hpengine.engine.model.texture.UploadState.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class TextureTest extends TestWithEngine {
+public class TextureTest {
 
     private static final Logger LOGGER = Logger.getLogger(TextureTest.class.getName());
+
+    OpenGLContext openGLContext = OpenGLContext.get();
+    TextureManager textureManager = new TextureManager(new ProgramManager(openGLContext, new MBassadorEventBus()), openGLContext);
 
     @Test
     public void testDDSLoad() throws IOException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
-        BufferedImage readTexture = engine.getTextureManager().loadImage(pathToSourceTexture);
+        BufferedImage readTexture = textureManager.loadImage(pathToSourceTexture);
         File targetFile = new File("hp/assets/textures/test_output_texture.dds");
 
-        readTexture = OpenGlTexture.rescaleToNextPowerOfTwo(readTexture);
+        readTexture = DDSConverter.INSTANCE.rescaleToNextPowerOfTwo(readTexture);
 
         if(targetFile.exists()) { assertTrue(targetFile.delete()); }
         writeFile(targetFile, readTexture, DDSImage.D3DFMT_DXT5, true);
@@ -55,13 +66,13 @@ public class TextureTest extends TestWithEngine {
     @Test(timeout = 30000L)
     public void testEqualityDdsAndRegularTexture() throws IOException, ExecutionException, InterruptedException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
-        File fileAsDds = new File(OpenGlTexture.getFullPathAsDDS(pathToSourceTexture));
-        Texture<TextureDimension2D> regularLoaded = engine.getTextureManager().getTexture(pathToSourceTexture);
-        CompleteTextureInfo textureInfo = engine.getTextureManager().getCompleteTextureInfo(pathToSourceTexture, false);
+        File fileAsDds = new File(DDSConverter.INSTANCE.getFullPathAsDDS(pathToSourceTexture));
+        Texture<TextureDimension2D> regularLoaded = textureManager.getTexture(pathToSourceTexture);
+        CompleteTextureInfo textureInfo = textureManager.getCompleteTextureInfo(pathToSourceTexture, false);
         byte[] regularLoadedData = textureInfo.getData()[0].get();
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
         DDSImage.ImageInfo highestMipMapOfDDSImage = allMipMaps[0];
-        byte[] ddsDecompressedData = engine.getTextureManager().convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
+        byte[] ddsDecompressedData = textureManager.convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
         float expectedFailurePercentage = 5f;
         float actualFailurePercentage = getFailurePercentageWithTolerance(regularLoadedData, ddsDecompressedData, 2f);
         boolean qualityAchieved = actualFailurePercentage < expectedFailurePercentage;
@@ -104,11 +115,11 @@ public class TextureTest extends TestWithEngine {
     @Test(timeout = 30000L)
     public void testEqualityDifferentTextures() throws IOException, ExecutionException, InterruptedException {
         String pathToFirstSourceTexture = "hp/assets/textures/stone_reflection.png";
-        Texture<TextureDimension2D> regularLoadedFirst = engine.getTextureManager().getTexture(pathToFirstSourceTexture);
-        CompleteTextureInfo textureInfoFirst = engine.getTextureManager().getCompleteTextureInfo(pathToFirstSourceTexture, false);
+        Texture<TextureDimension2D> regularLoadedFirst = textureManager.getTexture(pathToFirstSourceTexture);
+        CompleteTextureInfo textureInfoFirst = textureManager.getCompleteTextureInfo(pathToFirstSourceTexture, false);
         String pathToSecondSourceTexture = "hp/assets/textures/wood_diffuse.png";
-        Texture<TextureDimension2D> regularLoadedSecond = engine.getTextureManager().getTexture(pathToSecondSourceTexture);
-        CompleteTextureInfo textureInfoSecond = engine.getTextureManager().getCompleteTextureInfo(pathToSecondSourceTexture, false);
+        Texture<TextureDimension2D> regularLoadedSecond = textureManager.getTexture(pathToSecondSourceTexture);
+        CompleteTextureInfo textureInfoSecond = textureManager.getCompleteTextureInfo(pathToSecondSourceTexture, false);
         byte[] regularLoadedFirstData = textureInfoFirst.getData()[0].get();
         byte[] regularLoadedSecondData = textureInfoSecond.getData()[0].get();
 
@@ -120,19 +131,19 @@ public class TextureTest extends TestWithEngine {
 
 	@Test
 	public void loadsTexture() throws IOException {
-        Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("hp/assets/textures/test_test_test.png");
+        Texture<TextureDimension2D> texture = textureManager.getTexture("hp/assets/textures/test_test_test.png");
 	}
 
     @Test
     public void loadsTextureFromDDS() throws IOException {
-        Texture<TextureDimension2D> xxx = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
+        Texture<TextureDimension2D> xxx = textureManager.getTexture("hp/assets/textures/wood_diffuse.png");
         Assert.assertTrue(new File("hp/assets/textures/wood_diffuse.dds").exists());
-        Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.dds");
+        Texture<TextureDimension2D> texture = textureManager.getTexture("hp/assets/textures/wood_diffuse.dds");
     }
 
 	@Test
 	public void loadsCubeMap() throws IOException {
-        CubeMap cubeMap = engine.getTextureManager().getCubeMap("hp/assets/textures/wood_diffuse.png");
+        CubeMap cubeMap = textureManager.getCubeMap("hp/assets/textures/wood_diffuse.png");
 	}
 
     @Test
@@ -193,8 +204,8 @@ public class TextureTest extends TestWithEngine {
     public void testUnloadAndReloadTexture() throws Exception {
         String fileName = "testfolder/stone_normal_streaming_test.dds";
         Assert.assertTrue(new File(fileName).exists());
-        Assert.assertFalse(engine.getTextureManager().getTextures().containsKey(fileName));
-        Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture(fileName);
+        Assert.assertFalse(textureManager.getTextures().containsKey(fileName));
+        Texture<TextureDimension2D> texture = textureManager.getTexture(fileName);
         while(texture.getUploadState() != UPLOADING) {
             Thread.sleep(20);
         }
@@ -218,22 +229,22 @@ public class TextureTest extends TestWithEngine {
         @Test
         public void testPathHandlingDDS() {
             String fileName = "hp/assets/textures/wood_diffuse.dds";
-            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", OpenGlTexture.getFullPathAsDDS(fileName));
+            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", DDSConverter.INSTANCE.getFullPathAsDDS(fileName));
         }
         @Test
         public void testPathHandlingBackslashes() {
             String fileName = "hp/assets/textures/wood_diffuse.png";
-            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", OpenGlTexture.getFullPathAsDDS(fileName));
+            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", DDSConverter.INSTANCE.getFullPathAsDDS(fileName));
         }
         @Test
         public void testFilenameHandlingDDS() {
             String fileName = "wood_diffuse.dds";
-            Assert.assertEquals("wood_diffuse.dds", OpenGlTexture.getFullPathAsDDS(fileName));
+            Assert.assertEquals("wood_diffuse.dds", DDSConverter.INSTANCE.getFullPathAsDDS(fileName));
         }
         @Test
         public void testPathHandlingNonDDS() {
             String fileName = "hp/assets/textures/wood_diffuse.png";
-            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", OpenGlTexture.getFullPathAsDDS(fileName));
+            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", DDSConverter.INSTANCE.getFullPathAsDDS(fileName));
         }
         @Test
         public void testExistingDDS() {
@@ -242,7 +253,7 @@ public class TextureTest extends TestWithEngine {
             Assert.assertEquals("testfolder/stone_normal.png", fileAsPNG.getPath());
             Assert.assertTrue("Missing: " + fileAsPNG.getAbsolutePath(), fileAsPNG.exists());
 
-            File fileAsDDS = new File(OpenGlTexture.getFullPathAsDDS(fileName));
+            File fileAsDDS = new File(DDSConverter.INSTANCE.getFullPathAsDDS(fileName));
             String absolutePathToDDS = fileAsDDS.getAbsolutePath();
             Assert.assertEquals("testfolder/stone_normal.dds", fileAsDDS.getPath());
             Assert.assertTrue("Missing: " + absolutePathToDDS, fileAsDDS.exists());

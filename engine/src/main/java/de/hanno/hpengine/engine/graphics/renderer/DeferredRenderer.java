@@ -15,8 +15,14 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem;
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.*;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.*;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.PixelPerfectPickingExtension;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -28,16 +34,23 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.StateRef;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
-import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.QuadVertexBuffer;
+import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
-import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
 
 import javax.vecmath.Vector2f;
 import java.io.File;
@@ -56,12 +69,10 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.LESS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
-import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
+import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions;
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.glFinish;
 
 public class DeferredRenderer implements Renderer {
@@ -127,16 +138,16 @@ public class DeferredRenderer implements Renderer {
 		forwardRenderer = new ForwardRenderer(engineContext.getRenderStateManager().getRenderState(), gBuffer, engineContext);
 
 		ProgramManager programManager = this.backend.getProgramManager();
-		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
-		secondPassTubeProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")), new Defines());
-		secondPassAreaProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")), new Defines());
-		secondPassDirectionalProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_fragment.glsl")), new Defines());
-		instantRadiosityProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_instant_radiosity_fragment.glsl")), new Defines());
+		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_point_fragment.glsl")), new Defines());
+		secondPassTubeProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_tube_fragment.glsl")), new Defines());
+		secondPassAreaProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_area_fragment.glsl")), new Defines());
+		secondPassDirectionalProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_directional_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_directional_fragment.glsl")), new Defines());
+		instantRadiosityProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_instant_radiosity_fragment.glsl")), new Defines());
 
 		secondPassPointComputeProgram = programManager.getComputeProgram("second_pass_point_compute.glsl");
 
-		combineProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")), new Defines());
-		postProcessProgram = programManager.getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")), new Defines());
+		combineProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "combine_pass_vertex.glsl")), getShaderSource(new File(Shader.directory + "combine_pass_fragment.glsl")), new Defines());
+		postProcessProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.directory + "postprocess_fragment.glsl")), new Defines());
 
 		aoScatteringProgram = this.backend.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
 		reflectionProgram = this.backend.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());

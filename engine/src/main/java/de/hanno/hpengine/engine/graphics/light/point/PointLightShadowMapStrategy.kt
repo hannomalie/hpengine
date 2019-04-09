@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
@@ -21,6 +20,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuild
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
@@ -45,7 +45,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext, private val point
     private var pointCubeShadowPassProgram: Program? = null
     var pointLightDepthMapsArrayCube: Int = 0
     init {
-        this.pointCubeShadowPassProgram = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_cube_fragment.glsl")), Defines())
+        this.pointCubeShadowPassProgram = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_cube_fragment.glsl")), Defines())
 
         val cubeMapArray = CubeMapArray(engine.gpuContext, MAX_POINTLIGHT_SHADOWMAPS, LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION)
         pointLightDepthMapsArrayCube = cubeMapArray.textureID
@@ -125,7 +125,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine, private val po
             .build()
 
     init {
-        this.pointShadowPassProgram = engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "pointlight_shadow_fragment.glsl")), Defines())
+        this.pointShadowPassProgram = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_fragment.glsl")), Defines())
 
         pointLightDepthMapsArrayFront = GL11.glGenTextures()
         engine.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)

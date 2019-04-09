@@ -6,29 +6,29 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-public class Helpers {
+public class TestHelpers {
 
-	static void assertEpsilonEqual(Vector3f a, Vector3f b, float delta) {
+	public static void assertEpsilonEqual(Vector3f a, Vector3f b, float delta) {
 		Assert.assertEquals(a.x(), b.x(), delta);
 		Assert.assertEquals(a.y(), b.y(), delta);
 		Assert.assertEquals(a.z(), b.z(), delta);
 	}
 
-	private static void assertEpsilonEqual(Vector4f a, Vector4f b, float delta) {
-		Assert.assertEquals(a.x(), b.x(), delta);
-		Assert.assertEquals(a.y(), b.y(), delta);
-		Assert.assertEquals(a.z(), b.z(), delta);
-		Assert.assertEquals(a.w(), b.w(), delta);
-	}
-
-	static void assertEpsilonEqual(Quaternionf a, Quaternionf b, float delta) {
+	public static void assertEpsilonEqual(Vector4f a, Vector4f b, float delta) {
 		Assert.assertEquals(a.x(), b.x(), delta);
 		Assert.assertEquals(a.y(), b.y(), delta);
 		Assert.assertEquals(a.z(), b.z(), delta);
 		Assert.assertEquals(a.w(), b.w(), delta);
 	}
 
-	static boolean quaternionEqualsHelper(Quaternionf a, Quaternionf b) {
+	public static void assertEpsilonEqual(Quaternionf a, Quaternionf b, float delta) {
+		Assert.assertEquals(a.x(), b.x(), delta);
+		Assert.assertEquals(a.y(), b.y(), delta);
+		Assert.assertEquals(a.z(), b.z(), delta);
+		Assert.assertEquals(a.w(), b.w(), delta);
+	}
+
+	public static boolean quaternionEqualsHelper(Quaternionf a, Quaternionf b) {
 		return (a.x() == b.x() &&
 				a.y() == b.y() &&
 				a.z() == b.z() &&

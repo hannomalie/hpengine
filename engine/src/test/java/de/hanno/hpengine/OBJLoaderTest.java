@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
-import de.hanno.hpengine.engine.model.texture.PathBasedOpenGlTexture;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D;
 import de.hanno.hpengine.util.Util;

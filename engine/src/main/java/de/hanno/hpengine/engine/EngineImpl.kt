@@ -1,13 +1,13 @@
 package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
@@ -31,7 +31,7 @@ interface Engine: ManagerContext {
         get() = sceneManager.scene
 }
 
-class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContextImpl = EngineContextImpl(),
+class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext = EngineContextImpl(),
                                            val materialManager: MaterialManager = MaterialManager(engineContext),
                                            val renderer: Renderer = DeferredRenderer(materialManager, engineContext),
                                            override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer, materialManager),

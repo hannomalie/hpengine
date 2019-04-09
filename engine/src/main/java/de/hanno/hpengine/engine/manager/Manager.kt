@@ -5,11 +5,16 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 
 interface Manager {
     fun update(deltaSeconds: Float) {}
-    fun clear()
+
+    @JvmDefault
+    fun clear() {}
+
     @JvmDefault
     fun onEntityAdded(entities: List<Entity>) {}
+
     @JvmDefault
     fun afterUpdate(deltaSeconds: Float) {}
+
     @JvmDefault
     fun extract(renderState: RenderState) {}
 }

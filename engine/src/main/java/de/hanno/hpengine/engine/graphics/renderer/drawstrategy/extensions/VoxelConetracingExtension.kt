@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
@@ -21,6 +20,7 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
@@ -38,7 +38,7 @@ class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 class VoxelConeTracingExtension
 (private val engine: EngineContext, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension, val renderer: Renderer) : RenderExtension {
 
-    val voxelGrids = SizedArray(2) { VoxelGrid(it) }.apply {
+    val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
         array[0].apply { gridSize = 256 }.apply {
             setPosition(Vector3f(50f,0f,0f))
 
@@ -117,7 +117,7 @@ class VoxelConeTracingExtension
         VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, voxelGrids.sizeInBytes))
     }
 
-    private val voxelizer: Program = this.engine.programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(File(Shader.getDirectory() + "voxelize_fragment.glsl")), Defines())
+    private val voxelizer: Program = this.engine.programManager.getProgram(getShaderSource(File(Shader.directory + "voxelize_vertex.glsl")), getShaderSource(File(Shader.directory + "voxelize_geometry.glsl")), getShaderSource(File(Shader.directory + "voxelize_fragment.glsl")), Defines())
     private val voxelConeTraceProgram: Program = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", Defines())
     private val texture3DMipMapAlphaBlendComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
     private val texture3DMipMapComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")

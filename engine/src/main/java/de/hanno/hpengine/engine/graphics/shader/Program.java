@@ -2,11 +2,10 @@ package de.hanno.hpengine.engine.graphics.shader;
 
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
@@ -23,12 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static de.hanno.hpengine.engine.graphics.shader.Shader.getDirectory;
-import static de.hanno.hpengine.engine.graphics.shader.Shader.loadShader;
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 
 public class Program extends AbstractProgram implements Reloadable {
@@ -63,7 +58,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		this.vertexShaderSource = vertexShaderSource;
 		this.fragmentShaderSource = fragmentShaderSource;
 
-		observerFragmentShader = new FileAlterationObserver(getDirectory());
+		observerFragmentShader = new FileAlterationObserver(Shader.directory);
 
 		addFileListeners();
 		load();
@@ -80,14 +75,14 @@ public class Program extends AbstractProgram implements Reloadable {
 			}
 			try {
 				if(fragmentShaderSource != null) {
-					fragmentShader = loadShader(gpuContext, FragmentShader.class, fragmentShaderSource, defines);
+					fragmentShader = programManager.loadShader(FragmentShader.class, fragmentShaderSource, defines);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			if (geometryShaderSource != null) {
 				try {
-                    geometryShader = loadShader(gpuContext, GeometryShader.class, geometryShaderSource, defines);
+                    geometryShader = programManager.loadShader(GeometryShader.class, geometryShaderSource, defines);
 					printError("Attach geometryshader ");
 				} catch (Exception e) {
 					LOGGER.severe("Not able to load geometry de.hanno.hpengine.shader, so what else could be done...");

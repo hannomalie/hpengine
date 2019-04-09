@@ -32,8 +32,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
+import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 
 public class SimpleTextureRenderer implements Renderer {
 	private static Logger LOGGER = ConsoleLogger.getLogger();
@@ -118,7 +117,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		GpuContext.exitOnGLError("Before setupShaders");
 
-        renderToQuadProgram = programManager.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
+        renderToQuadProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.directory + "simpletexture_fragment.glsl")), new Defines());
 
 	}
 

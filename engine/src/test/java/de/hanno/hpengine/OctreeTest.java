@@ -182,8 +182,8 @@ public class OctreeTest extends TestWithEngine {
 
 		camera.translateLocal(new Vector3f(0, 0, -2));
 		camera.update(1);
-		Helpers.assertEpsilonEqual(new Vector3f(0,0,-2), camera.getPosition(), 0.001f);
-		Helpers.assertEpsilonEqual(new Vector3f(0,0,-1), camera.getViewDirection(), 0.001f);
+		TestHelpers.assertEpsilonEqual(new Vector3f(0,0,-2), camera.getPosition(), 0.001f);
+		TestHelpers.assertEpsilonEqual(new Vector3f(0,0,-1), camera.getViewDirection(), 0.001f);
 		camera.getFrustum().calculate(camera);
 		Assert.assertTrue(octree.rootNode.isVisible(camera));
 		Assert.assertTrue(octree.rootNode.children[0].isVisible(camera)); // left front

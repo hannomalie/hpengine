@@ -5,7 +5,7 @@ version = "1.0.0-SNAPSHOT"
 
 buildscript {
 
-    val kotlin_version by extra { "1.3.20" }//{ "1.1.3-2" }
+    val kotlin_version by extra { "1.3.21" }
 
     repositories {
         mavenLocal()

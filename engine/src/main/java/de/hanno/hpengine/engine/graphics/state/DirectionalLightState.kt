@@ -3,15 +3,14 @@ package de.hanno.hpengine.engine.graphics.state
 import de.hanno.hpengine.engine.graphics.HpMatrix
 import de.hanno.hpengine.engine.scene.HpVector3f
 import de.hanno.struct.Struct
-import de.hanno.struct.Structable
 
-class DirectionalLightState(parent: Structable? = null) : Struct(parent) {
-    val viewMatrix by HpMatrix(this)
-    val projectionMatrix by HpMatrix(this)
-    val viewProjectionMatrix by HpMatrix(this)
-    val color by HpVector3f(this)
+class DirectionalLightState : Struct() {
+    val viewMatrix by HpMatrix()
+    val projectionMatrix by HpMatrix()
+    val viewProjectionMatrix by HpMatrix()
+    val color by HpVector3f()
     val dummy by 0F
-    val direction by HpVector3f(this)
+    val direction by HpVector3f()
     var scatterFactor by 0F
     var shadowMapHandle by 0L
     var shadowMapId by 0

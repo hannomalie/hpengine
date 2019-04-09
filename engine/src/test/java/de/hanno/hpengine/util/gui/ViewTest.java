@@ -4,9 +4,6 @@ import de.hanno.hpengine.TestWithEngine;
 
 import javax.swing.*;
 
-/**
- * Created by pernpeintner on 01.06.2016.
- */
 public class ViewTest extends TestWithEngine {
     protected void openViewInFrame(JPanel panel) {
         JFrame frame = new JFrame();

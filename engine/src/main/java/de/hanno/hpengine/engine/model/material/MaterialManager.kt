@@ -11,19 +11,18 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
-import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.struct.ResizableStructArray
+import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
+import de.hanno.struct.shrinkToBytes
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.ObjectInputStream
-import java.util.*
+import java.util.HashMap
+import java.util.LinkedHashMap
 import java.util.logging.Logger
-import kotlin.collections.ArrayList
 
 class MaterialManager(private val backend: Backend) : Manager {
     val textureManager = backend.textureManager
@@ -37,7 +36,7 @@ class MaterialManager(private val backend: Backend) : Manager {
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
 
-    val materialsAsStructs = ResizableStructArray(null, 1000) { MaterialStruct(it) }
+    var materialsAsStructs = StructArray(1000) { MaterialStruct() }
 
     init {
         defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f,0f,0f)).apply {
@@ -219,7 +218,7 @@ class MaterialManager(private val backend: Backend) : Manager {
             target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
             target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
         }
-        materialsAsStructs.shrinkToBytes(renderState.entitiesState.materialBuffer.buffer.capacity())
+        materialsAsStructs = materialsAsStructs.shrinkToBytes(renderState.entitiesState.materialBuffer.buffer.capacity())
         materialsAsStructs.buffer.copyTo(renderState.entitiesState.materialBuffer.buffer)
         renderState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
     }

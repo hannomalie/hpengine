@@ -2,32 +2,29 @@ package de.hanno.hpengine.engine.scene
 
 import com.google.common.collect.ImmutableSet
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
-import de.hanno.hpengine.engine.model.DataChannelProvider
 import de.hanno.hpengine.engine.model.DataChannelComponent.FloatThree
 import de.hanno.hpengine.engine.model.DataChannelComponent.FloatTwo
+import de.hanno.hpengine.engine.model.DataChannelProvider
 import de.hanno.struct.Struct
-import de.hanno.struct.Structable
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.Vector4f
-import org.joml.Vector4i
 import java.nio.ByteBuffer
 
 typealias HpVector3f = de.hanno.hpengine.engine.math.Vector3f
 typealias HpVector4f = de.hanno.hpengine.engine.math.Vector4f
 typealias HpVector4i = de.hanno.hpengine.engine.math.Vector4i
 typealias HpVector2f = de.hanno.hpengine.engine.math.Vector2f
-class VertexStruct(parent: Structable?) : Struct(parent) {
-    val position by HpVector3f(this)
-    val texCoord by HpVector2f(this)
-    val normal by HpVector3f(this)
+class VertexStruct : Struct() {
+    val position by HpVector3f()
+    val texCoord by HpVector2f()
+    val normal by HpVector3f()
 }
-class AnimatedVertexStruct(parent: Structable?) : Struct(parent) {
-    val position by HpVector3f(this)
-    val texCoord by HpVector2f(this)
-    val normal by HpVector3f(this)
-    val weights by HpVector4f(this)
-    val jointIndices by HpVector4i(this)
+class AnimatedVertexStruct : Struct() {
+    val position by HpVector3f()
+    val texCoord by HpVector2f()
+    val normal by HpVector3f()
+    val weights by HpVector4f()
+    val jointIndices by HpVector4i()
 }
 
 data class Vertex (override val name: String = "Vertex",

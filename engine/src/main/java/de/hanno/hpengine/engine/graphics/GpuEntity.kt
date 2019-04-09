@@ -5,14 +5,13 @@ import de.hanno.hpengine.engine.math.Vector3f
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.struct.Struct
-import de.hanno.struct.copyFrom
 import org.joml.Matrix4f
 import java.nio.ByteBuffer
 
 typealias HpMatrix = de.hanno.hpengine.engine.math.Matrix4f
 
-class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
-    val trafo by HpMatrix(this)
+class GpuEntityStruct : Struct() {
+    val trafo by HpMatrix()
     var selected by false
     var materialIndex by 0
     var update by 0
@@ -29,9 +28,9 @@ class GpuEntityStruct(parent: Struct? = null): Struct(parent) {
     val dummy0 by 0
     val dummy1 by 0
     val dummy2 by 0
-    val min by Vector3f(this)
+    val min by Vector3f()
     var dummy3 by 0.0f
-    val max by Vector3f(this)
+    val max by Vector3f()
     var dummy4 by 0.0f
 
     fun setTrafoMinMax(source: Matrix4f, min: org.joml.Vector3f, max: org.joml.Vector3f) {

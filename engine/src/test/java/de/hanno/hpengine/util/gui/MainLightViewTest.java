@@ -5,8 +5,8 @@ import org.junit.Test;
 
 public class MainLightViewTest extends ViewTest {
 
-    @Ignore
     @Test
+    @Ignore("Manual test only")
     public void showMaterialView() {
         openViewInFrame(new MainLightView(engine));
     }
