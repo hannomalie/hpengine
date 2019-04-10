@@ -43,6 +43,8 @@ interface GpuContext {
 
     val registeredRenderTargets: List<RenderTarget>
 
+    val features: List<GpuFeature>
+
     fun createNewGPUFenceForReadState(currentReadState: RenderState)
 
     fun registerPerFrameCommand(perFrameCommandProvider: PerFrameCommandProvider)

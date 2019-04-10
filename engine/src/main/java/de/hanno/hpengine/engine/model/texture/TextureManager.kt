@@ -100,7 +100,7 @@ class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext)
 
 
     private fun loadDefaultTexture(): Pair<Texture<TextureDimension2D>, BufferedImage> {
-        val defaultTexturePath = "hp\\assets\\models/textures/____gi_flag.png"
+        val defaultTexturePath = "hp/assets/models/textures/____gi_flag.png"
         val defaultTexture = getTexture(defaultTexturePath, true)
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
         return Pair(defaultTexture, defaultTextureAsBufferedImage)

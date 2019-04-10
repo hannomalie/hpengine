@@ -13,7 +13,7 @@ public class Defines extends ArrayList<Define> {
         if(isEmpty()) {
             return "";
         }
-        StringBuilder result = new StringBuilder("");
+        StringBuilder result = new StringBuilder();
         for(int i = 0; i < size(); i++) {
             result.append(get(i).getDefineString());
         }

@@ -37,7 +37,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     public DirectionalLightShadowMapExtension(EngineContext engine) {
         gpuContext = engine.getGpuContext();
         this.engine = engine;
-        directionalShadowPassProgram = engine.getProgramManager().getProgram(getShaderSource(new File(Shader.directory + "directional_shadowmap_vertex.glsl")), getShaderSource(new File(Shader.directory + "shadowmap_fragment.glsl")), new Defines());
+        directionalShadowPassProgram = engine.getProgramManager().getProgram(getShaderSource(new File(Shader.directory + "directional_shadowmap_vertex.glsl")), getShaderSource(new File(Shader.directory + "shadowmap_fragment.glsl")));
 
         renderTarget = new RenderTargetBuilder<>(engine.getGpuContext())
                 .setName("DirectionalLight Shadow")

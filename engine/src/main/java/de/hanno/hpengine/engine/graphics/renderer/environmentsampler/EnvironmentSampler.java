@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer.environmentsampler;
 
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -26,7 +25,6 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.ShaderKt;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -86,6 +84,7 @@ public class EnvironmentSampler extends Entity {
 	private Program secondPassTubeProgram;
 	private Program secondPassAreaProgram;
 	private Program secondPassDirectionalProgram;
+	private Program firstPassDefaultProgram;
 	
 	private RenderTarget renderTarget;
 	private Camera camera;
@@ -113,16 +112,17 @@ public class EnvironmentSampler extends Entity {
 		rotate(cubeMapCamInitialOrientation);
 
         ProgramManager programManager = engine.getProgramManager();
-		cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl", new Defines());
-		depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl", new Defines());
-		cubeMapLightingProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl", new Defines());
+		cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		cubeMapLightingProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
 		tiledProbeLightingProgram = programManager.getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
 		cubemapRadianceProgram = programManager.getComputeProgram("cubemap_radiance_compute.glsl");
-		cubemapRadianceFragmentProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "cubemap_radiance_fragment.glsl", new Defines());
-		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), ShaderKt.getShaderSource(new File(Shader.directory + "second_pass_point_fragment.glsl")), new Defines());
-		secondPassTubeProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_tube_fragment.glsl")), new Defines());
-		secondPassAreaProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_area_fragment.glsl")), new Defines());
-		secondPassDirectionalProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_directional_vertex.glsl")), ShaderKt.getShaderSource(new File(Shader.directory + "second_pass_directional_fragment.glsl")), new Defines());
+		cubemapRadianceFragmentProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "cubemap_radiance_fragment.glsl");
+		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), ShaderKt.getShaderSource(new File(Shader.directory + "second_pass_point_fragment.glsl")));
+		secondPassTubeProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_tube_fragment.glsl")));
+		secondPassAreaProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_area_fragment.glsl")));
+		secondPassDirectionalProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_directional_vertex.glsl")), ShaderKt.getShaderSource(new File(Shader.directory + "second_pass_directional_fragment.glsl")));
+		firstPassDefaultProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "first_pass_vertex.glsl")), getShaderSource(new File(Shader.directory + "first_pass_fragment.glsl")));
 
         CubeMapArrayRenderTarget cubeMapArrayRenderTarget = environmentProbeManager.getCubeMapArrayRenderTarget();
 		cubeMapView = GL11.glGenTextures();
@@ -220,7 +220,7 @@ public class EnvironmentSampler extends Entity {
 					GPUProfiler.end();
 
 					GPUProfiler.start("Fill DeferredRenderingBuffer");
-					drawFirstPass(i, this.getCamera(), scene.getEntities(), extract);
+					drawFirstPass(i, this.getCamera(), extract);
 					environmentProbeManager.getCubeMapArrayRenderTarget().resetAttachments();
 
 					GPUProfiler.end();
@@ -305,7 +305,7 @@ public class EnvironmentSampler extends Entity {
 		GPUProfiler.end();
 	}
 	
-	void drawFirstPass(int sideIndex, Camera camera, List<Entity> entities, RenderState extract) {
+	void drawFirstPass(int sideIndex, Camera camera, RenderState extract) {
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, EnvironmentProbeManager.getInstance().getCubeMapArrayRenderTarget().getFrameBufferLocation());
 //		EnvironmentProbeManager.getInstance().getCubeMapArrayRenderTarget().resetAttachments();
         environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), sideIndex);
@@ -320,25 +320,25 @@ public class EnvironmentSampler extends Entity {
         engine.getGpuContext().disable(BLEND);
 
 		GPUProfiler.start("Draw entities");
-        Program firstpassDefaultProgram = engine.getProgramManager().getFirstpassDefaultProgram();
-        firstpassDefaultProgram.use();
-        firstpassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
-        firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
-        firstpassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
-        firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-        firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
-        firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        firstpassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().getViewDirection());
-        firstpassDefaultProgram.setUniform("near", camera.getNear());
-        firstpassDefaultProgram.setUniform("far", camera.getFar());
-        firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
+        firstPassDefaultProgram.use();
+        firstPassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
+        firstPassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+        firstPassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
+        firstPassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        firstPassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
+        firstPassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+        firstPassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
+        firstPassDefaultProgram.setUniform("lightDirection", engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().getViewDirection());
+        firstPassDefaultProgram.setUniform("near", camera.getNear());
+        firstPassDefaultProgram.setUniform("far", camera.getFar());
+        firstPassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
 
 		for (RenderBatch entity : extract.getRenderBatchesStatic()) {
-            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, entity.getProgram(), !entity.isVisible() || !entity.isVisibleForCamera(), true);
+            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
         }
 		for (RenderBatch entity : extract.getRenderBatchesAnimated()) {
-            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, entity.getProgram(), !entity.isVisible() || !entity.isVisibleForCamera(), true);
+//			TODO: program usage is wrong for animated things..
+            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
         }
 		GPUProfiler.end();
         engine.getGpuContext().enable(CULL_FACE);

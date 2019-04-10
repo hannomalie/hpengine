@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RenderBatch {
-    private Program program;
     private boolean isVisible;
     private boolean isSelected;
     private boolean drawLines;
@@ -31,8 +30,7 @@ public class RenderBatch {
     public RenderBatch() {
     }
 
-    public RenderBatch init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<AABB> instanceMinMaxWorlds, MaterialInfo materialInfo) {
-        this.program = program;
+    public RenderBatch init(int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<AABB> instanceMinMaxWorlds, MaterialInfo materialInfo) {
         this.isVisible = isVisible;
         this.isSelected = isSelected;
         this.drawLines = drawLines;
@@ -50,10 +48,6 @@ public class RenderBatch {
         this.animated = animated;
         this.materialInfo = materialInfo;
         return this;
-    }
-
-    public Program getProgram() {
-        return program;
     }
 
     public int getEntityBufferIndex() {

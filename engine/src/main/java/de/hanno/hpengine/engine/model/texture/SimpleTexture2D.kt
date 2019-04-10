@@ -33,7 +33,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
             val fileAsDds = File(path.split(".")[0] + ".dds")
             val file = /*if(fileAsDds.exists()) fileAsDds else*/ File(path)
             if(!file.exists() || !file.isFile) {
-                throw IllegalStateException("Cannot load file $file as texture")
+                throw IllegalStateException("Cannot load file $file as texture as it doesn't exist")
             }
             return if(file.extension == "dds") {
                 val ddsImage = DDSImage.read(file)

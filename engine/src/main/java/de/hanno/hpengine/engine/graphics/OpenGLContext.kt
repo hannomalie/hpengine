@@ -1,31 +1,67 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.renderer.constants.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
+import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
+import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
+import org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE
+import org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE
+import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
+import org.lwjgl.glfw.GLFW.GLFW_STICKY_KEYS
+import org.lwjgl.glfw.GLFW.glfwCreateWindow
+import org.lwjgl.glfw.GLFW.glfwInit
+import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
+import org.lwjgl.glfw.GLFW.glfwPollEvents
+import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
+import org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback
+import org.lwjgl.glfw.GLFW.glfwSetInputMode
+import org.lwjgl.glfw.GLFW.glfwSetWindowCloseCallback
+import org.lwjgl.glfw.GLFW.glfwShowWindow
+import org.lwjgl.glfw.GLFW.glfwSwapBuffers
+import org.lwjgl.glfw.GLFW.glfwSwapInterval
+import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback
-import org.lwjgl.opengl.*
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_EXTENSIONS
-import org.lwjgl.opengl.GL11.GL_FALSE
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL11.GL_VERSION
+import org.lwjgl.opengl.GL13
+import org.lwjgl.opengl.GL14
+import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
+import org.lwjgl.opengl.GL42
+import org.lwjgl.opengl.GL44
+import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
-import java.util.*
+import java.util.ArrayList
+import java.util.HashMap
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
@@ -51,7 +87,7 @@ class OpenGLContext private constructor() : GpuContext {
     override var maxTextureUnits: Int = 0
     private val perFrameCommandProviders = CopyOnWriteArrayList<PerFrameCommandProvider>()
     //     Don't make this a local field, we need a string reference
-    private var errorCallback: GLFWErrorCallbackI = GLFWErrorCallbackI { error: Int, description: Long -> GLFWErrorCallback.createPrint(System.err) }
+    private val errorCallback: GLFWErrorCallbackI = GLFWErrorCallbackI { error: Int, description: Long -> GLFWErrorCallback.createPrint(System.err) }
     override var windowHandle: Long = 0
     // Don't remove these strong references
     private var framebufferSizeCallback: GLFWFramebufferSizeCallback? = null
@@ -72,6 +108,8 @@ class OpenGLContext private constructor() : GpuContext {
 
     override lateinit var fullscreenBuffer: QuadVertexBuffer
     override lateinit var debugBuffer: QuadVertexBuffer
+
+    private lateinit var extensions: String
 
     override val isError: Boolean
         get() {
@@ -98,8 +136,24 @@ class OpenGLContext private constructor() : GpuContext {
     }
 
     init {
-        init()
+        Executor.launch {
+            try {
+                privateInit()
+            } catch (e: Exception) {
+                LOGGER.severe("Exception during privateInit")
+                e.printStackTrace()
+                System.exit(-1)
+            }
+            yield()
+        }
+ waitForInitialization()
+ startEndlessLoop()
+        fullscreenBuffer = QuadVertexBuffer(this, true)
+        debugBuffer = QuadVertexBuffer(this, false)
+        fullscreenBuffer.upload()
+        debugBuffer.upload()
     }
+    override val features = listOf(BindlessTextures)
 
     override fun createNewGPUFenceForReadState(currentReadState: RenderState) {
         currentReadState.gpuCommandSync = createCommandSync()
@@ -149,10 +203,10 @@ class OpenGLContext private constructor() : GpuContext {
         glfwShowWindow(windowHandle)
 
         println("OpenGL version: " + GL11.glGetString(GL_VERSION))
-//        println("OpenGL extensions: " + GL11.glGetString(GL_EXTENSIONS))
+        extensions = GL11.glGetString(GL_EXTENSIONS) ?: ""
 
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK)
-        //        GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
+//        GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
 
         enable(GlCap.DEPTH_TEST)
         enable(GlCap.CULL_FACE)
@@ -381,27 +435,6 @@ class OpenGLContext private constructor() : GpuContext {
 
     }
 
-
-    private fun init() {
-        Executor.launch {
-            try {
-                privateInit()
-            } catch (e: Exception) {
-                OpenGLContext.LOGGER.severe("Exception during privateInit")
-                e.printStackTrace()
-                System.exit(-1)
-            }
-            yield()
-        }
-        waitForInitialization()
-        startEndlessLoop()
-
-        fullscreenBuffer = QuadVertexBuffer(this, true)
-        debugBuffer = QuadVertexBuffer(this, false)
-
-        fullscreenBuffer.upload()
-        debugBuffer.upload()
-    }
 
     private fun startEndlessLoop() {
         Executor.launch {

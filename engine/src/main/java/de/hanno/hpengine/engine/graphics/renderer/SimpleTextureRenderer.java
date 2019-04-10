@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
@@ -45,7 +44,7 @@ public class SimpleTextureRenderer implements Renderer {
 
 	private OpenGLStopWatch glWatch;
 
-	private static Program renderToQuadProgram;
+	private Program renderToQuadProgram;
 
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
@@ -75,8 +74,11 @@ public class SimpleTextureRenderer implements Renderer {
             setupBuffers(gpuContext);
             GpuContext.exitOnGLError("After TextureManager");
             try {
-                setupShaders();
-                setUpGBuffer();
+				GpuContext.exitOnGLError("Before setupShaders");
+
+				renderToQuadProgram = this.programManager.getProgram(getShaderSource(new File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.directory + "simpletexture_fragment.glsl")));
+
+				setUpGBuffer();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.err.println("Cannot init DeferredRenderer");
@@ -112,13 +114,6 @@ public class SimpleTextureRenderer implements Renderer {
 
 			GpuContext.exitOnGLError("setupGBuffer");
 		});
-	}
-	
-	private void setupShaders() throws Exception {
-		GpuContext.exitOnGLError("Before setupShaders");
-
-        renderToQuadProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.directory + "simpletexture_fragment.glsl")), new Defines());
-
 	}
 
 	@Override

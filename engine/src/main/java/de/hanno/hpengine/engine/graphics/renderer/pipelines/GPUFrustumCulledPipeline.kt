@@ -38,9 +38,11 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
-    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling1_vertex.glsl")))
+    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling2_vertex.glsl")))
 
+    val appendDrawcommandsProgram = engine.programManager.getProgramFromFileNames("append_drawcommands_vertex.glsl")
+    val appendDrawCommandComputeProgram = engine.programManager.getComputeProgram("append_drawcommands_compute.glsl")
 
     var highZBuffer: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
             .setName("GPUCulledPipeline")
@@ -131,7 +133,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram: AbstractProgram = if(Config.getInstance().isUseComputeShaderDrawCommandAppend) engine.programManager.appendDrawCommandComputeProgram else engine.programManager.appendDrawcommandsProgram
+        val appendProgram: AbstractProgram = if(Config.getInstance().isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
 
         GPUProfiler.start("Buffer compaction")
         with(commandOrganization) {
@@ -157,7 +159,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                 bindShaderStorageBuffer(13, currentCompactedPointers)
                 setUniform("maxDrawCommands", commands.size)
                 if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
-                    engine.programManager.appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
+                    appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
                 } else {
                     val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
                     GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)

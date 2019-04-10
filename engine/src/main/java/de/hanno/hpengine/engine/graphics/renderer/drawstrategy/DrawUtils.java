@@ -24,8 +24,8 @@ public class DrawUtils {
         super();
     }
 
-    public static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch) {
-        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), true);
+    public static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch, Program program) {
+        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, program, !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), true);
     }
 
     public static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible, boolean drawLinesIfEnabled) {
