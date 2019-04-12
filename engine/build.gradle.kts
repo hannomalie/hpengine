@@ -28,7 +28,7 @@ tasks.withType<KotlinCompile>().configureEachLater {
     println("Configuring $name in project ${project.name}...")
     kotlinOptions {
         suppressWarnings = true
-        freeCompilerArgs = listOf("-Xjvm-default=enable")
+        freeCompilerArgs = listOf("-Xjvm-default=enable", "-Dkotlinx.coroutines.debug")
         jvmTarget = "1.8"
     }
 }
@@ -114,13 +114,4 @@ dependencies {
 
     testCompile("junit:junit:4.12")
 //    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")
-}
-
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    jvmTarget = "1.8"
-}
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.kotlinOptions {
-    jvmTarget = "1.8"
 }

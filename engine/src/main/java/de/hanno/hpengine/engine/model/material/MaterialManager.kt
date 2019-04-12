@@ -24,7 +24,7 @@ import java.util.HashMap
 import java.util.LinkedHashMap
 import java.util.logging.Logger
 
-class MaterialManager(private val backend: Backend) : Manager {
+class MaterialManager(private val backend: Backend<*>) : Manager {
     val textureManager = backend.textureManager
     val skyboxMaterial: SimpleMaterial
     private val eventBus: EventBus = backend.eventBus
@@ -50,9 +50,7 @@ class MaterialManager(private val backend: Backend) : Manager {
         backend.eventBus.register(this)
     }
 
-    var xxx = false
     fun initDefaultMaterials() {
-        if(xxx) return
 
         getMaterial(SimpleMaterialInfo("stone").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))

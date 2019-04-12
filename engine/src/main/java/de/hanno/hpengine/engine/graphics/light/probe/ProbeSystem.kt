@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.scene.SimpleScene
 
-class ProbeSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, emptyList()) {
+class ProbeSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, emptyList()) {
     override fun update(deltaSeconds: Float) { }
 
 }

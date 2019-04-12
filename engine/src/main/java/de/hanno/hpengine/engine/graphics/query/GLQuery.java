@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.query;
 
+import de.hanno.hpengine.engine.backend.OpenGlBackend;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 
 import java.util.concurrent.Callable;
@@ -13,7 +14,7 @@ public interface GLQuery<RESULT> {
 
     void end();
 
-    default boolean resultsAvailable(GpuContext gpuContext) {
+    default boolean resultsAvailable(GpuContext<OpenGlBackend> gpuContext) {
         return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT_AVAILABLE)) == GL_TRUE;
     }
 

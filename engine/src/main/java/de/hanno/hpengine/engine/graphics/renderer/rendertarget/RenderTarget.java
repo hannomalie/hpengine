@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
+import de.hanno.hpengine.engine.backend.OpenGlBackend;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.model.texture.SimpleTexture2D;
@@ -36,15 +37,15 @@ public class RenderTarget {
     protected float clearA;
     protected List<ColorAttachmentDefinition> colorAttachments;
     protected IntBuffer scratchBuffer;
-    protected GpuContext gpuContext;
+    protected GpuContext<OpenGlBackend> gpuContext;
     protected int mipMapCount = -1;
     private String name;
 
-    protected RenderTarget(GpuContext gpuContext) {
+    protected RenderTarget(GpuContext<OpenGlBackend> gpuContext) {
         this.gpuContext = gpuContext;
     }
 
-    public RenderTarget(GpuContext gpuContext, RenderTargetBuilder renderTargetBuilder) {
+    public RenderTarget(GpuContext<OpenGlBackend> gpuContext, RenderTargetBuilder renderTargetBuilder) {
         this(gpuContext);
 
         setName(renderTargetBuilder.name);

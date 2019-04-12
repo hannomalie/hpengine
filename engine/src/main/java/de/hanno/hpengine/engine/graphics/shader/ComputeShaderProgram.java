@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
     private static final Logger LOGGER = Logger.getLogger(ComputeShaderProgram.class.getName());
-	private final ProgramManager programManager;
+	private final OpenGlProgramManager programManager;
 
 	private CodeSource computeShaderSource;
     private ComputeShader computeShader;
@@ -27,10 +27,10 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	private ReloadOnFileChangeListener<ComputeShaderProgram> reloadOnFileChangeListener;
 	private FileAlterationObserver observerShader;
 
-	public ComputeShaderProgram(ProgramManager programManager, CodeSource computeShaderSource) {
+	public ComputeShaderProgram(OpenGlProgramManager programManager, CodeSource computeShaderSource) {
         this(programManager, computeShaderSource, new Defines());
     }
-	public ComputeShaderProgram(ProgramManager programManager, CodeSource computeShaderSource, Defines defines) {
+	public ComputeShaderProgram(OpenGlProgramManager programManager, CodeSource computeShaderSource, Defines defines) {
         super(programManager.getGpuContext().createProgramId());
         this.programManager = programManager;
         this.computeShaderSource = computeShaderSource;

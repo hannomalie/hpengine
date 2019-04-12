@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.OpenGlBackend;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -8,7 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 
-public class SimpleTextureRenderer implements Renderer {
+public class SimpleTextureRenderer implements Renderer<OpenGlBackend> {
 	private static Logger LOGGER = ConsoleLogger.getLogger();
 
 	private volatile boolean initialized = false;
@@ -49,7 +50,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
     private FPSCounter fpsCounter = new FPSCounter();
-	private ProgramManager programManager;
+	private OpenGlProgramManager programManager;
 	private GpuContext gpuContext;
 	private Texture texture;
 
@@ -60,12 +61,12 @@ public class SimpleTextureRenderer implements Renderer {
 		this.texture = texture;
 	}
 
-	public SimpleTextureRenderer(ProgramManager programManager, Texture texture) {
+	public SimpleTextureRenderer(OpenGlProgramManager programManager, Texture texture) {
 		this.texture = texture;
 		init(programManager);
 	}
 
-	private void init(ProgramManager programManager) {
+	private void init(OpenGlProgramManager programManager) {
 		this.programManager = programManager;
 		this.gpuContext = this.programManager.getGpuContext();
 
@@ -173,7 +174,7 @@ public class SimpleTextureRenderer implements Renderer {
 	}
 
 	@Override
-	public List<RenderExtension> getRenderExtensions() {
+	public List<RenderExtension<OpenGlBackend>> getRenderExtensions() {
 		return Collections.emptyList();
 	}
 

@@ -9,7 +9,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent(val engine: EngineContext, entity: Entity) : InputControllerComponent(entity) {
+class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -96,7 +96,7 @@ class MovableInputComponent(val engine: EngineContext, entity: Entity) : InputCo
     }
 }
 
-class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputControllerComponent> {
+class InputComponentSystem(val engine: EngineContext<*>): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
     override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
     private val components = mutableListOf<InputControllerComponent>()

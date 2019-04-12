@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.input
 
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.ClickEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -9,7 +10,8 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 
 import org.lwjgl.glfw.GLFW.*
 
-class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) {
+class Input(private val eventBus: EventBus,
+            private val gpuContext: GpuContext<*>) {
 
     val keysPressed = IntArrayList()
     private val keysPressedLastFrame = IntArrayList()
@@ -126,11 +128,11 @@ class Input(private val eventBus: EventBus, private val gpuContext: GpuContext) 
     }
 
 
-    private fun isKeyDown(gpuContext: GpuContext, keyCode: Int): Boolean {
+    private fun isKeyDown(gpuContext: GpuContext<*>, keyCode: Int): Boolean {
         val action = glfwGetKey(gpuContext.windowHandle, keyCode)
         return action == GLFW_PRESS || action == GLFW_REPEAT
     }
-    private fun isKeyUp(gpuContext: GpuContext, keyCode: Int): Boolean {
+    private fun isKeyUp(gpuContext: GpuContext<*>, keyCode: Int): Boolean {
         return glfwGetKey(gpuContext.windowHandle, keyCode) == GLFW_RELEASE
     }
 

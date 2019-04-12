@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.DirectoryManager
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -67,9 +68,9 @@ import java.util.function.Consumer
 import javax.vecmath.Vector2f
 
 class DeferredRenderer @Throws(Exception::class)
-constructor(private val materialManager: MaterialManager, engineContext: EngineContext) : Renderer {
-    private val backend: Backend = engineContext.backend
-    val gpuContext: GpuContext = engineContext.gpuContext
+constructor(private val materialManager: MaterialManager, engineContext: EngineContext<OpenGlBackend>) : Renderer<OpenGlBackend> {
+    private val backend: Backend<OpenGlBackend> = engineContext.backend
+    val gpuContext: GpuContext<OpenGlBackend> = engineContext.gpuContext
     val programManager = this.backend.programManager
     val renderState = engineContext.renderStateManager.renderState
 
@@ -120,7 +121,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
     private val tiledDirectLightingProgram = programManager.getComputeProgram("tiled_direct_lighting_compute.glsl")
     private val tiledProbeLightingProgram = programManager.getComputeProgram("tiled_probe_lighting_compute.glsl")
 
-    private val renderExtensions = ArrayList<RenderExtension>()
+    private val renderExtensions = ArrayList<RenderExtension<OpenGlBackend>>()
     //	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private val mainPipelineRef: StateRef<Pipeline>
 
@@ -144,11 +145,11 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         mainPipelineRef = renderState.registerState<Pipeline> { GPUCulledMainPipeline(engineContext, this) }
     }
 
-    private fun registerRenderExtension(extension: RenderExtension) {
+    private fun registerRenderExtension(extension: RenderExtension<OpenGlBackend>) {
         renderExtensions.add(extension)
     }
 
-    private fun GpuContext.setupBuffers(): ArrayList<VertexBuffer> {
+    private fun GpuContext<OpenGlBackend>.setupBuffers(): ArrayList<VertexBuffer> {
         return calculate {
             val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
                 init {
@@ -168,7 +169,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         }
     }
 
-    private fun GpuContext.setUpGBuffer(): DeferredRenderingBuffer {
+    private fun GpuContext<OpenGlBackend>.setUpGBuffer(): DeferredRenderingBuffer {
         GpuContext.exitOnGLError("Before setupGBuffer")
 
         execute {
@@ -178,7 +179,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         return backend.gpuContext.calculate { DeferredRenderingBuffer(backend.gpuContext) }
     }
 
-    override fun update(engine: Engine, seconds: Float) {}
+    override fun update(engine: Engine<OpenGlBackend>, seconds: Float) {}
 
 
     override fun render(result: DrawResult, renderState: RenderState) {
@@ -528,7 +529,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         return gBuffer
     }
 
-    override fun getRenderExtensions(): List<RenderExtension> {
+    override fun getRenderExtensions(): List<RenderExtension<OpenGlBackend>> {
         return renderExtensions
     }
 

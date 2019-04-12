@@ -3,7 +3,7 @@ package de.hanno.hpengine;
 import ddsutil.DDSUtil;
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.model.texture.CompleteTextureInfo;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.DDSConverter;
@@ -33,7 +33,7 @@ public class TextureTest {
     private static final Logger LOGGER = Logger.getLogger(TextureTest.class.getName());
 
     OpenGLContext openGLContext = OpenGLContext.get();
-    TextureManager textureManager = new TextureManager(new ProgramManager(openGLContext, new MBassadorEventBus()), openGLContext);
+    TextureManager textureManager = new TextureManager(new OpenGlProgramManager(openGLContext, new MBassadorEventBus()), openGLContext);
 
     @Test
     public void testDDSLoad() throws IOException {

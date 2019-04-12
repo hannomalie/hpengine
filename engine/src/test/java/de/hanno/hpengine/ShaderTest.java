@@ -2,14 +2,12 @@ package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.graphics.shader.FragmentShader;
 import de.hanno.hpengine.engine.graphics.shader.GeometryShader;
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.VertexShader;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static de.hanno.hpengine.engine.graphics.shader.Shader.OpenGLShader;
 import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
@@ -21,7 +19,7 @@ public class ShaderTest extends TestWithEngine {
 
         CodeSource shaderSource = getShaderSource("void main() {}");
 
-        ProgramManager programManager = engine.getProgramManager();
+        OpenGlProgramManager programManager = engine.getProgramManager();
         {
             VertexShader vertexShader = VertexShader.load(programManager, shaderSource, new Defines());
             Assert.assertTrue("", vertexShader.getShaderType().equals(OpenGLShader.VertexShader));

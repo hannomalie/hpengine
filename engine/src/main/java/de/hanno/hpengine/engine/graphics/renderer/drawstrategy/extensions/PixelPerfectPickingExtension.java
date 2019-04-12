@@ -1,14 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
-import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.backend.OpenGlBackend;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.MeshSelectedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
-import de.hanno.hpengine.engine.model.Mesh;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.joml.Vector2f;
@@ -16,7 +14,7 @@ import org.joml.Vector2f;
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
 
-public class PixelPerfectPickingExtension implements RenderExtension {
+public class PixelPerfectPickingExtension implements RenderExtension<OpenGlBackend> {
 
     private final FloatBuffer floatBuffer;
 
@@ -25,7 +23,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
         floatBuffer = BufferUtils.createFloatBuffer(4);
     }
     @Override
-    public void renderFirstPass(Backend backend, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Backend<OpenGlBackend> backend, GpuContext<OpenGlBackend> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
         if (backend.getInput().getPickingClick() == 1) {
             gpuContext.readBuffer(4);

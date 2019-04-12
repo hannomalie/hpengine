@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.instancing
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -12,10 +11,14 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.transform.*
+import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
+import de.hanno.hpengine.engine.transform.Spatial
+import de.hanno.hpengine.engine.transform.StaticTransformSpatial
+import de.hanno.hpengine.engine.transform.Transform
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ClustersComponent(val engine: EngineContext, private val eventBus: EventBus, private val entity: Entity): Component {
+class ClustersComponent(val engine: EngineContext<*>, private val eventBus: EventBus, private val entity: Entity): Component {
 
     private val instances = CopyOnWriteArrayList<Instance>()
     private val clusters = CopyOnWriteArrayList<Cluster>()
@@ -117,7 +120,7 @@ class ClustersComponent(val engine: EngineContext, private val eventBus: EventBu
 
 }
 
-class ClustersComponentSystem(val engine: EngineContext) : ComponentSystem<ClustersComponent> {
+class ClustersComponentSystem(val engine: EngineContext<*>) : ComponentSystem<ClustersComponent> {
     override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()

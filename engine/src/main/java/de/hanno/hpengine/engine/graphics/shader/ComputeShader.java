@@ -5,11 +5,11 @@ import de.hanno.hpengine.util.ressources.CodeSource;
 
 public class ComputeShader extends AbstractShader {
 
-    public static ComputeShader load(ProgramManager programManager, CodeSource sourceCode) {
+    public static ComputeShader load(OpenGlProgramManager programManager, CodeSource sourceCode) {
         return load(programManager, sourceCode, new Defines());
     }
 
-    public static ComputeShader load(ProgramManager programManager, CodeSource sourceCode, Defines defines) {
+    public static ComputeShader load(OpenGlProgramManager programManager, CodeSource sourceCode, Defines defines) {
         return programManager.loadShader(ComputeShader.class, sourceCode, defines);
     }
 

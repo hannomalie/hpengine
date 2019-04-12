@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_BRACKET
 import org.lwjgl.glfw.GLFW.GLFW_KEY_SLASH
@@ -21,7 +21,7 @@ fun main() {
     val xxx = SimpleTexture2D(gpuContext, "C:\\workspace\\hpengine\\hp\\assets\\models\\textures\\brick.png")
     val yyy = SimpleTexture2D(gpuContext, "C:\\workspace\\hpengine\\hp\\assets\\models\\textures\\kamen.dds")
 
-    val programManager = ProgramManager(gpuContext, eventBus)
+    val programManager = OpenGlProgramManager(gpuContext, eventBus)
     val textureManager = TextureManager(programManager, gpuContext)
     textureManager.textures["C:\\workspace\\hpengine\\hp\\assets\\models\\textures\\brick.png"] = xxx
     textureManager.textures["C:\\workspace\\hpengine\\hp\\assets\\models\\textures\\kamen.dds"] = yyy

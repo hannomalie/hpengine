@@ -63,7 +63,7 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
     }
 }
 
-abstract class SimpleEntitySystem(val engine: Engine, val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
+abstract class SimpleEntitySystem(val engine: Engine<*>, val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
     protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {

@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -21,14 +22,16 @@ import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL40.*
 import java.io.File
 
-class ForwardRenderer(renderState: TripleBuffer<RenderState>, val deferredRenderingBuffer: DeferredRenderingBuffer, val engineContext: EngineContext): RenderExtension {
+class ForwardRenderer(renderState: TripleBuffer<RenderState>,
+                      val deferredRenderingBuffer: DeferredRenderingBuffer,
+                      val engineContext: EngineContext<OpenGlBackend>): RenderExtension<OpenGlBackend> {
 
     val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.directory + "forward_fragment.glsl"))
 
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource)
 
-    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend<OpenGlBackend>, gpuContext: GpuContext<OpenGlBackend>, firstPassResult: FirstPassResult, renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(false)
 
         GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f,0f,0f,0f))

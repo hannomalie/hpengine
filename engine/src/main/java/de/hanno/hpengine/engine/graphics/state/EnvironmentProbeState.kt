@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.state
 import de.hanno.hpengine.engine.graphics.GpuContext
 import org.lwjgl.BufferUtils
 
-class EnvironmentProbeState(gpuContext: GpuContext) {
+class EnvironmentProbeState(gpuContext: GpuContext<*>) {
     var environmapsArray3Id: Int = -1
     var environmapsArray0Id: Int = -1
     var activeProbeCount = 0

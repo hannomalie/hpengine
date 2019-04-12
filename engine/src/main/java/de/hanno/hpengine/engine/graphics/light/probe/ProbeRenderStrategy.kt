@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.light.probe
 
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.ManagerContext
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
@@ -40,7 +41,7 @@ import java.io.File
 import java.nio.FloatBuffer
 
 
-class ProbeRenderStrategy(private val engine: ManagerContext) {
+class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
@@ -174,13 +175,13 @@ class ProbeRenderStrategy(private val engine: ManagerContext) {
     }
 }
 
-class EvaluateProbeRenderExtension(val engine: ManagerContext): RenderExtension {
+class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGlBackend>): RenderExtension<OpenGlBackend> {
 
     private val probeRenderStrategy = ProbeRenderStrategy(engine)
 
     val evaluateProbeProgram = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe_fragment.glsl", Defines())
 
-    override fun renderFirstPass(backend: Backend, gpuContext: GpuContext, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend<OpenGlBackend>, gpuContext: GpuContext<OpenGlBackend>, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)
 
     }

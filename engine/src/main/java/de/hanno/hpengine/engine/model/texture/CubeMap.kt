@@ -2,8 +2,6 @@ package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.EXTTextureCompressionS3TC
 import org.lwjgl.opengl.EXTTextureSRGB

@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CoarseCullingPhase.ONE
@@ -36,8 +38,8 @@ interface Pipeline: CustomState {
     companion object {
         val HIGHZ_FORMAT = GL30.GL_R32F
 
-        inline fun <reified T> create(engine: Engine,
-                                      renderer: Renderer,
+        inline fun <reified T> create(engine: Engine<OpenGlBackend>,
+                                      renderer: Renderer<OpenGlBackend>,
                                       useFrustumCulling: Boolean,
                                       useBackfaceCulling: Boolean,
                                       useLineDrawingIfActivated: Boolean,

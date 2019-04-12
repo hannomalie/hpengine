@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.graphics.query;
 
+import de.hanno.hpengine.engine.backend.OpenGlBackend;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.OpenGlCommandSync;
 
 import java.util.concurrent.Callable;
 
@@ -10,7 +12,7 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class GLTimerQuery implements GLQuery<Float> {
 
-    private GpuContext gpuContext;
+    private GpuContext<OpenGlBackend> gpuContext;
 
     private final int start;
     private final int end;

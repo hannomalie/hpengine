@@ -13,7 +13,7 @@ import java.awt.event.ActionListener
 import java.util.*
 import javax.swing.JScrollPane
 
-class MeshView(val engine: Engine, val mesh: Mesh<*>): WebPanel() {
+class MeshView(val engine: Engine<*>, val mesh: Mesh<*>): WebPanel() {
     init {
         isUndecorated = true
         this.setSize(600, 700)

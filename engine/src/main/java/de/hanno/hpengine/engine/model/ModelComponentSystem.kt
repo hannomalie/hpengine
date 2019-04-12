@@ -18,7 +18,7 @@ import de.hanno.struct.enlarge
 import de.hanno.struct.shrinkToBytes
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ModelComponentSystem(val engine: Engine) : ComponentSystem<ModelComponent> {
+class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
     private val entityIndices = IntArrayList()

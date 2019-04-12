@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -21,7 +22,7 @@ import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
 
-class PointLightSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
+class PointLightSystem(engine: Engine<OpenGlBackend>, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
 

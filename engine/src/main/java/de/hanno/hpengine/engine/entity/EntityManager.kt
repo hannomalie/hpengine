@@ -11,7 +11,7 @@ import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import java.util.logging.Logger
 
-class EntityManager(private val engine: EngineContext, eventBus: EventBus, val scene: Scene) : Manager {
+class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, val scene: Scene) : Manager {
     private val entityContainer: EntityContainer = SimpleContainer()
 
     var entityMovedInCycle: Long = 0

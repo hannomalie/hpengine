@@ -1,10 +1,12 @@
 package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
+import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
@@ -23,19 +25,19 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.logging.Logger
 
-interface Engine: ManagerContext {
-    val managerContext: ManagerContext
+interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
+    val managerContext: ManagerContext<TYPE>
     val sceneManager: SceneManager
 
     val scene
         get() = sceneManager.scene
 }
 
-class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext = EngineContextImpl(),
+class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGlBackend> = EngineContextImpl(),
                                            val materialManager: MaterialManager = MaterialManager(engineContext),
-                                           val renderer: Renderer = DeferredRenderer(materialManager, engineContext),
+                                           val renderer: Renderer<OpenGlBackend> = DeferredRenderer(materialManager, engineContext),
                                            override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer, materialManager),
-                                           override val managerContext: ManagerContextImpl = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext by managerContext, Engine {
+                                           override val managerContext: ManagerContext<OpenGlBackend> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGlBackend> by managerContext, Engine<OpenGlBackend> {
 
     val updateConsumer = Consumer<Float> { this@EngineImpl.update(it) }
     val updateThread: UpdateThread = UpdateThread(updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())

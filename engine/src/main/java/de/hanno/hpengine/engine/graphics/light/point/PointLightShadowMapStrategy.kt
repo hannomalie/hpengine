@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.light.point
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -38,7 +39,7 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-class CubeShadowMapStrategy(private val engine: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
+class CubeShadowMapStrategy(private val engine: EngineContext<*>, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget? = null
     private var pointCubeShadowPassProgram: Program? = null
@@ -108,7 +109,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext, private val point
     }
 }
 
-class DualParaboloidShadowMapStrategy(private val engine: Engine, private val pointLightSystem: PointLightSystem, val cameraEntity: Entity): PointLightShadowMapStrategy {
+class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGlBackend>, private val pointLightSystem: PointLightSystem, val cameraEntity: Entity): PointLightShadowMapStrategy {
     private var pointShadowPassProgram: Program? = null
 
     var pointLightDepthMapsArrayFront: Int = 0

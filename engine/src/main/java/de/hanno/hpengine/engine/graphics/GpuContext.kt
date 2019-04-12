@@ -12,7 +12,7 @@ import java.nio.IntBuffer
 import java.util.concurrent.Callable
 import java.util.logging.Logger
 
-interface GpuContext {
+interface GpuContext<T> {
 
     val frontBuffer: RenderTarget
 
@@ -152,7 +152,7 @@ interface GpuContext {
 
         val LOGGER = Logger.getLogger(GpuContext::class.java.name)
 
-        fun create(): GpuContext? {
+        fun create(): GpuContext<Any?>? {
             val gpuContextClass = Config.getInstance().gpuContextClass
             try {
                 LOGGER.info("GpuContext is being initialized")

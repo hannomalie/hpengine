@@ -1,13 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.util.Util
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 
 
-class CubeMapArrayBasedCubeRenderTarget(val engine: Engine, val cubeMapArray: CubeMapArray, useDepthBuffer: Boolean = true): RenderTarget(engine.gpuContext) {
+class CubeMapArrayBasedCubeRenderTarget(val engine: Engine<OpenGlBackend>, val cubeMapArray: CubeMapArray, useDepthBuffer: Boolean = true): RenderTarget(engine.gpuContext) {
     val cubeMapViews = IntArray(cubeMapArray.cubeMapCount)
     val cubeMapHandles = LongArray(cubeMapArray.cubeMapCount)
 
@@ -29,14 +30,14 @@ class CubeMapArrayBasedCubeRenderTarget(val engine: Engine, val cubeMapArray: Cu
 
         for (cubeMapIndex in 0 until cubeMapArray.cubeMapCount) {
 
-            val cubeMapView = this.gpuContext.genTextures()
+            val cubeMapView = gpuContext.genTextures()
             this.gpuContext.execute {
                 GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.textureID,
                         cubeMapArray.internalFormat, 0, Util.calculateMipMapCount(cubeMapArray.width),
                         6 * cubeMapIndex, 6)
 
             }
-            val handle = this.gpuContext.calculate { ARBBindlessTexture.glGetTextureHandleARB(cubeMapView) }
+            val handle = gpuContext.calculate { ARBBindlessTexture.glGetTextureHandleARB(cubeMapView) }
             cubeMapViews[cubeMapIndex] = cubeMapView
             cubeMapHandles[cubeMapIndex] = handle
             this.gpuContext.execute { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }

@@ -35,7 +35,7 @@ import java.util.concurrent.Callable
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java, factory = { TODO("not implemented") })
 
-class AreaLightSystem(engine: Engine, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }

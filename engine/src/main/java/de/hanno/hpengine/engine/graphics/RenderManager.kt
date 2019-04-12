@@ -20,9 +20,9 @@ class RenderStateManager(renderStateFactory: () -> RenderState) {
             renderStateFactory(),
             renderStateFactory())
 }
-class RenderManager(val engineContext: EngineContext,
+class RenderManager(val engineContext: EngineContext<*>,
                     val renderStateManager: RenderStateManager,
-                    var renderer: Renderer,
+                    var renderer: Renderer<*>,
                     val materialManager: MaterialManager) : Manager {
 
     inline val renderState: TripleBuffer<RenderState>

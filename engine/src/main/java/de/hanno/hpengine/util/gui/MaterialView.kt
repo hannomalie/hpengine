@@ -33,7 +33,7 @@ import java.io.IOException
 import java.util.*
 import kotlin.Comparator
 
-class MaterialView(private val engine: Engine, var material: SimpleMaterial) : WebPanel() {
+class MaterialView(private val engine: Engine<*>, var material: SimpleMaterial) : WebPanel() {
     private val nameField = WebTextField(material.materialInfo.name)
 
     private val allTexturesSorted: List<Texture<*>>

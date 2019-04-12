@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.scene.SimpleScene
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 
-class BatchingSystem(engine: Engine, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(ModelComponent::class.java)) {
+class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(ModelComponent::class.java)) {
 
     private val cameraMapper = ComponentMapper.forClass(Camera::class.java)
     private val tempDistVector = Vector3f()

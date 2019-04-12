@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
@@ -37,7 +38,7 @@ import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine) : Scene {
+class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine<OpenGlBackend>) : Scene {
     @Transient
     override var currentCycle: Long = 0
     @Transient

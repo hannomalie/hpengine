@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model.texture
 
 import ddsutil.DDSUtil
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
@@ -19,7 +20,7 @@ import javax.imageio.ImageIO
 
 data class SimpleTexture3D(override val dimension: TextureDimension3D, override val textureId: Int, override val target: GlTextureTarget, override val internalFormat: Int, override var handle: Long, override val textureFilterConfig: TextureFilterConfig, override val wrapMode: Int, override var uploadState: UploadState) : Texture<TextureDimension3D> {
     companion object {
-        operator fun invoke(gpuContext: GpuContext, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): SimpleTexture3D {
+        operator fun invoke(gpuContext: GpuContext<*>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): SimpleTexture3D {
             val (textureId, internalFormat, handle) = SimpleTexture2D.allocateTexture(gpuContext, Texture3DUploadInfo(TextureDimension(dimension.width, dimension.height, dimension.depth)), GL12.GL_TEXTURE_3D, filterConfig, internalFormat, wrapMode)
             return SimpleTexture3D(dimension, textureId, GlTextureTarget.TEXTURE_3D, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
@@ -29,7 +30,7 @@ data class SimpleTexture3D(override val dimension: TextureDimension3D, override 
 data class SimpleTexture2D(override val dimension: TextureDimension2D, override val textureId: Int, override val target: GlTextureTarget, override val internalFormat: Int, override var handle: Long, override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(), override val wrapMode: Int, override var uploadState: UploadState) : Texture<TextureDimension2D> {
 
     companion object {
-        operator fun invoke(gpuContext: GpuContext, path: String, srgba: Boolean = false): SimpleTexture2D {
+        operator fun invoke(gpuContext: GpuContext<OpenGlBackend>, path: String, srgba: Boolean = false): SimpleTexture2D {
             val fileAsDds = File(path.split(".")[0] + ".dds")
             val file = /*if(fileAsDds.exists()) fileAsDds else*/ File(path)
             if(!file.exists() || !file.isFile) {
@@ -48,7 +49,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
             } else SimpleTexture2D(gpuContext, ImageIO.read(file).apply { with(DDSConverter) {this@apply.rescaleToNextPowerOfTwo()} }, srgba)
 
         }
-        operator fun invoke(gpuContext: GpuContext, image: BufferedImage, srgba: Boolean = false): SimpleTexture2D {
+        operator fun invoke(gpuContext: GpuContext<OpenGlBackend>, image: BufferedImage, srgba: Boolean = false): SimpleTexture2D {
             return SimpleTexture2D(gpuContext, Texture2DUploadInfo(TextureDimension(image.width, image.height), image.toByteBuffer(), srgba = srgba))
         }
 
@@ -80,7 +81,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
             return buffer
         }
 
-        operator fun invoke(gpuContext: GpuContext, info: Texture2DUploadInfo): SimpleTexture2D {
+        operator fun invoke(gpuContext: GpuContext<OpenGlBackend>, info: Texture2DUploadInfo): SimpleTexture2D {
             return gpuContext.calculate {
                 val (textureId, internalFormat, handle) = allocateTexture(gpuContext, info, GL_TEXTURE_2D, TextureFilterConfig(), if (info.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL12.GL_REPEAT)
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
@@ -98,7 +99,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
             }
         }
 
-        fun allocateTexture(gpuContext: GpuContext, info: TextureUploadInfo, textureTarget: Int, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int): Triple<Int, Int, Long> {
+        fun allocateTexture(gpuContext: GpuContext<*>, info: TextureUploadInfo, textureTarget: Int, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int): Triple<Int, Int, Long> {
             return gpuContext.calculate {
                 val textureId = glGenTextures()
                 glBindTexture(textureTarget, textureId)
@@ -120,7 +121,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
             }
         }
 
-        private fun SimpleTexture2D.upload(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
+        private fun SimpleTexture2D.upload(gpuContext: GpuContext<OpenGlBackend>, info: Texture2DUploadInfo, internalFormat: Int) {
             val usePbo = true
             if(usePbo) {
                 uploadWithPixelBuffer(gpuContext, info, internalFormat)
@@ -128,7 +129,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
                 uploadWithoutPixelBuffer(gpuContext, info, internalFormat)
             }
         }
-        private fun SimpleTexture2D.uploadWithPixelBuffer(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
+        private fun SimpleTexture2D.uploadWithPixelBuffer(gpuContext: GpuContext<OpenGlBackend>, info: Texture2DUploadInfo, internalFormat: Int) {
             val pbo = gpuContext.calculate {
                 PixelBufferObject()
             }
@@ -147,7 +148,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
             }
         }
 
-        private fun SimpleTexture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext, info: Texture2DUploadInfo, internalFormat: Int) {
+        private fun SimpleTexture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext<*>, info: Texture2DUploadInfo, internalFormat: Int) {
             gpuContext.execute({
                 glBindTexture(GL_TEXTURE_2D, textureId)
                 if (info.dataCompressed) {
@@ -164,7 +165,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D, override 
 
 data class FileBasedSimpleTexture(val path: String, val backingTexture: SimpleTexture2D): Texture<TextureDimension2D> by backingTexture {
     companion object {
-        operator fun invoke(gpuContext: GpuContext, path: String, srgba: Boolean = false): FileBasedSimpleTexture {
+        operator fun invoke(gpuContext: GpuContext<OpenGlBackend>, path: String, srgba: Boolean = false): FileBasedSimpleTexture {
             return FileBasedSimpleTexture(path, SimpleTexture2D(gpuContext, path, srgba))
         }
     }

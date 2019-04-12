@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -21,22 +22,38 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
-interface Backend {
+interface Backend<Type: BackendType> {
     val eventBus: EventBus
-    val gpuContext: GpuContext
-    val programManager: ProgramManager
+    val gpuContext: GpuContext<Type>
+    val programManager: ProgramManager<Type>
     val textureManager: TextureManager
     val input: Input
 }
 
-class BackendImpl(override val eventBus: EventBus = MBassadorEventBus(),
-                  override val gpuContext: GpuContext = OpenGLContext(),
-                  override val programManager: ProgramManager = ProgramManager(gpuContext, eventBus),
-                  override val textureManager: TextureManager = TextureManager(programManager, gpuContext),
-                  override val input: Input = Input(eventBus, gpuContext)) : Backend
+interface BackendType
+interface OpenGlBackend: BackendType
 
-interface EngineContext: Backend {
-    val backend: Backend
+class BackendImpl(override val eventBus: EventBus,
+                  override val gpuContext: GpuContext<OpenGlBackend>,
+                  override val programManager: ProgramManager<OpenGlBackend>,
+                  override val textureManager: TextureManager,
+                  override val input: Input) : Backend<OpenGlBackend> {
+
+    companion object {
+        operator fun invoke(): BackendImpl {
+            val eventBus= MBassadorEventBus()
+            val gpuContext = OpenGLContext()
+            val programManager = OpenGlProgramManager(gpuContext, eventBus)
+            val textureManager = TextureManager(programManager, gpuContext)
+            val input = Input(eventBus, gpuContext)
+
+            return BackendImpl(eventBus, gpuContext, programManager, textureManager, input)
+        }
+    }
+}
+
+interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
+    val backend: Backend<TYPE>
     val commandQueue: CommandQueue
     val config: Config
     val renderSystems: MutableList<RenderSystem>
@@ -44,9 +61,9 @@ interface EngineContext: Backend {
 
     override val eventBus
         get() = backend.eventBus
-    override val gpuContext: GpuContext
+    override val gpuContext: GpuContext<TYPE>
         get() = backend.gpuContext
-    override val programManager: ProgramManager
+    override val programManager: ProgramManager<TYPE>
         get() = backend.programManager
     override val textureManager: TextureManager
         get() = backend.textureManager
@@ -57,19 +74,19 @@ interface EngineContext: Backend {
 class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { UpdateThread.isUpdateThread() })
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
-                        override val backend: Backend = BackendImpl(),
+                        override val backend: Backend<OpenGlBackend> = BackendImpl(),
                         override val config: Config = Config.getInstance(),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
-                        override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext
+                        override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext<OpenGlBackend>
 
-interface ManagerContext: EngineContext {
-    val engineContext: EngineContext
+interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
+    val engineContext: EngineContext<TYPE>
     val managers: ManagerRegistry
     val directoryManager: DirectoryManager
     val renderManager: RenderManager
     val physicsManager: PhysicsManager
 
-    override val backend: Backend
+    override val backend: Backend<TYPE>
         get() = engineContext.backend
     override val input: Input
         get() = engineContext.input
@@ -84,12 +101,12 @@ interface ManagerContext: EngineContext {
 }
 
 class ManagerContextImpl(
-        override val engineContext: EngineContext,
+        override val engineContext: EngineContext<OpenGlBackend>,
         override val managers: ManagerRegistry = SimpleManagerRegistry(),
         override val directoryManager: DirectoryManager = DirectoryManager(engineContext.config.gameDir),
         override val renderManager: RenderManager,
         override val physicsManager: PhysicsManager = PhysicsManager(renderManager.renderer)
-) : ManagerContext {
+) : ManagerContext<OpenGlBackend> {
     init {
         managers.register(directoryManager)
         managers.register(renderManager)

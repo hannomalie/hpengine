@@ -251,7 +251,7 @@ open class Camera: Component {
 
 }
 
-class CameraComponentSystem(val engine: Engine): ComponentSystem<Camera>, RenderSystem {
+class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, RenderSystem {
 
     override val componentClass: Class<Camera> = Camera::class.java
     override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }

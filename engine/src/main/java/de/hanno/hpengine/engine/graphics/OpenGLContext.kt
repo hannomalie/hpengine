@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
@@ -69,7 +70,7 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class OpenGLContext private constructor() : GpuContext {
+class OpenGLContext private constructor() : GpuContext<OpenGlBackend> {
 
     override lateinit var frontBuffer: RenderTarget
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
@@ -146,14 +147,20 @@ class OpenGLContext private constructor() : GpuContext {
             }
             yield()
         }
- waitForInitialization()
- startEndlessLoop()
+        waitForInitialization()
+        startEndlessLoop()
         fullscreenBuffer = QuadVertexBuffer(this, true)
         debugBuffer = QuadVertexBuffer(this, false)
         fullscreenBuffer.upload()
         debugBuffer.upload()
     }
-    override val features = listOf(BindlessTextures)
+
+    override val features = run {
+        val bindlessTextures = if(extensions.contains("bindless_textures")) BindlessTextures else null
+        val drawParameters = if(extensions.contains("shader_draw_parameters")) DrawParameters else null
+
+        listOfNotNull(bindlessTextures, drawParameters)
+    }
 
     override fun createNewGPUFenceForReadState(currentReadState: RenderState) {
         currentReadState.gpuCommandSync = createCommandSync()
@@ -502,6 +509,10 @@ class OpenGLContext private constructor() : GpuContext {
         glfwPollEvents()
         GPUProfiler.end()
     }
+
+    fun getOpenGlExtensionsDefine(): String =
+            "#extension GL_NV_gpu_shader5 : enable\n#extension GL_ARB_bindless_texture : enable\n"
+    fun getOpenGlVersionsDefine(): String = "#version 430 core\n"
 
     object Executor: CoroutineScope {
         internal var openGLThreadId: Long = -1

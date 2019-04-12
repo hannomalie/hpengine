@@ -4,7 +4,7 @@ import de.hanno.hpengine.util.ressources.CodeSource;
 
 public class FragmentShader extends AbstractShader {
 
-    public static FragmentShader load(ProgramManager programManager, CodeSource sourceCode) {
+    public static FragmentShader load(OpenGlProgramManager programManager, CodeSource sourceCode) {
         return programManager.loadShader(FragmentShader.class, sourceCode);
     }
 

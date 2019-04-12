@@ -22,7 +22,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.ShaderKt;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -111,7 +111,7 @@ public class EnvironmentSampler extends Entity {
 		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
 		rotate(cubeMapCamInitialOrientation);
 
-        ProgramManager programManager = engine.getProgramManager();
+        OpenGlProgramManager programManager = (OpenGlProgramManager) engine.getProgramManager();
 		cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		cubeMapLightingProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");

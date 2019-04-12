@@ -16,8 +16,10 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.*;
+import de.hanno.hpengine.engine.backend.BackendType;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -41,7 +43,7 @@ import java.util.logging.Logger;
 
 public class PhysicsManager implements Manager, RenderSystem {
 
-    private final Renderer renderer;
+    private final Renderer<? extends BackendType> renderer;
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
     private final CommandQueue commandQueue = new CommandQueue();

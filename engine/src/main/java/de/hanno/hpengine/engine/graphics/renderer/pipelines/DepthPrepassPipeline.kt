@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
@@ -13,8 +14,8 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 
-open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: Engine,
-                                                          renderer: Renderer,
+open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: Engine<OpenGlBackend>,
+                                                          renderer: Renderer<OpenGlBackend>,
                                                           useFrustumCulling: Boolean = true,
                                                           useBackFaceCulling: Boolean = true,
                                                           useLineDrawing: Boolean = true,
@@ -47,7 +48,7 @@ open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: En
         get() = getDebugCam()
 
     private fun getDebugCam(): Camera? {
-        val option = engine.sceneManager.scene.entityManager.getEntities().stream().filter { it -> it is Camera }.map { it -> it as Camera }.findFirst()
+        val option = engine.sceneManager.scene.entityManager.getEntities().stream().filter { it is Camera }.map { it as Camera }.findFirst()
         return if (option.isPresent) option.get() else null
     }
     fun setUniforms(renderState: RenderState, program: Program) {

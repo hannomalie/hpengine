@@ -1,7 +1,10 @@
 package de.hanno.hpengine.engine.model.texture
 
+import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
@@ -9,7 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
@@ -41,7 +44,7 @@ import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-class TextureManager(programManager: ProgramManager, val gpuContext: GpuContext) : Manager {
+class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenGLContext) : Manager {
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 

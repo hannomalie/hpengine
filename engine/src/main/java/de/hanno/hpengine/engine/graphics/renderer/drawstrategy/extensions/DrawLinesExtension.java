@@ -2,8 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.backend.EngineContext;
-import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.camera.CameraComponentSystem;
+import de.hanno.hpengine.engine.backend.OpenGlBackend;
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -23,7 +22,7 @@ import java.util.List;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 
-public class DrawLinesExtension implements RenderExtension {
+public class DrawLinesExtension implements RenderExtension<OpenGlBackend> {
 
     private final Program linesProgram;
     private final FloatBuffer identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
@@ -38,7 +37,7 @@ public class DrawLinesExtension implements RenderExtension {
     }
 
     @Override
-    public void renderFirstPass(Backend backend, GpuContext gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Backend<OpenGlBackend> backend, GpuContext<OpenGlBackend> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 

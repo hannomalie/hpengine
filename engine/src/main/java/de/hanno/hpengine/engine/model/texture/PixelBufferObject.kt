@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.texture
 
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.graphics.GpuContext
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL21
@@ -14,7 +15,7 @@ class PixelBufferObject(val id: Int) {
         }
     }
 
-    fun put(gpuContext: GpuContext, data: ByteBuffer) {
+    fun put(gpuContext: GpuContext<OpenGlBackend>, data: ByteBuffer) {
 
         val buffer = gpuContext.calculate {
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, id)

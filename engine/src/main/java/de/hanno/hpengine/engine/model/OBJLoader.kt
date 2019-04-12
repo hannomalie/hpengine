@@ -11,10 +11,6 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.Vertex
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
 
 import java.io.*
 import java.util.*
@@ -22,7 +18,6 @@ import java.util.logging.Level
 
 import java.lang.Integer.parseInt
 import java.util.concurrent.CompletableFuture
-import java.util.function.Supplier
 
 class OBJLoader {
 

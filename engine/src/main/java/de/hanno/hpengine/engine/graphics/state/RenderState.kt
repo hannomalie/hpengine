@@ -15,8 +15,8 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.copyFrom
 import org.joml.Vector3f
 
-class RenderState(gpuContext: GpuContext) {
-    private val gpuContext: GpuContext = gpuContext
+class RenderState(gpuContext: GpuContext<*>) {
+    private val gpuContext: GpuContext<*> = gpuContext
 
     val customState = CustomStateHolder()
 

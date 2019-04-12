@@ -13,6 +13,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.BackendType;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class ProbeView extends WebPanel {
 
 	private EnvironmentProbe probe;
-	private Engine engine;
+	private Engine<? extends BackendType> engine;
 	private WebFormattedTextField nameField;
 
 	public ProbeView(Engine engine, EnvironmentProbe selected) {

@@ -14,6 +14,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.BackendType;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -45,7 +46,7 @@ import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstances
 public class EntityView extends WebPanel {
 
 	protected Entity entity;
-	protected Engine engine;
+	protected Engine<? extends BackendType> engine;
 	protected WebFormattedTextField nameField;
 	protected Renderer renderer;
 
