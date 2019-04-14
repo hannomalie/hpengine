@@ -31,7 +31,9 @@ interface Backend<Type: BackendType> {
 }
 
 interface BackendType
-interface OpenGlBackend: BackendType
+interface OpenGlBackend: BackendType {
+    val gpuContext: OpenGLContext
+}
 
 class BackendImpl(override val eventBus: EventBus,
                   override val gpuContext: GpuContext<OpenGlBackend>,

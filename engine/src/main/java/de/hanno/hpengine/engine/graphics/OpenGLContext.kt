@@ -70,7 +70,11 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class OpenGLContext private constructor() : GpuContext<OpenGlBackend> {
+class OpenGLContext private constructor() : GpuContext<OpenGlBackend>, OpenGlBackend {
+    override val backend = object: OpenGlBackend {
+        override val gpuContext = this@OpenGLContext
+    }
+    override val gpuContext = this
 
     override lateinit var frontBuffer: RenderTarget
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
@@ -510,8 +514,17 @@ class OpenGLContext private constructor() : GpuContext<OpenGlBackend> {
         GPUProfiler.end()
     }
 
-    fun getOpenGlExtensionsDefine(): String =
-            "#extension GL_NV_gpu_shader5 : enable\n#extension GL_ARB_bindless_texture : enable\n"
+    fun getOpenGlExtensionsDefine(): String {
+
+        fun String.appendIfSupported(feature: GpuFeature, string: String): String {
+            return "${this} ${if(isSupported(feature)) string else ""}"
+        }
+        return "".appendIfSupported(DrawParameters, "#extension GL_NV_gpu_shader5 : enable\n")
+                 .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable\n")
+    }
+
+    override fun isSupported(feature: GpuFeature) = features.contains(feature)
+
     fun getOpenGlVersionsDefine(): String = "#version 430 core\n"
 
     object Executor: CoroutineScope {

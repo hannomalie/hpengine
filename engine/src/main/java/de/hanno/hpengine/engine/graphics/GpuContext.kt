@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
+import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.*
@@ -12,7 +13,9 @@ import java.nio.IntBuffer
 import java.util.concurrent.Callable
 import java.util.logging.Logger
 
-interface GpuContext<T> {
+interface GpuContext<T: BackendType> {
+
+    val backend: T
 
     val frontBuffer: RenderTarget
 
@@ -146,13 +149,14 @@ interface GpuContext<T> {
     fun finishFrame(renderState: RenderState)
 
     fun pollEvents()
+    fun isSupported(feature: GpuFeature): Boolean
 
     companion object {
         val CHECKERRORS = false // TODO: Enable this as soon as possible
 
         val LOGGER = Logger.getLogger(GpuContext::class.java.name)
 
-        fun create(): GpuContext<Any?>? {
+        fun create(): GpuContext<*>? {
             val gpuContextClass = Config.getInstance().gpuContextClass
             try {
                 LOGGER.info("GpuContext is being initialized")

@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -61,13 +62,13 @@ public class SimpleTextureRenderer implements Renderer<OpenGlBackend> {
 		this.texture = texture;
 	}
 
-	public SimpleTextureRenderer(OpenGlProgramManager programManager, Texture texture) {
+	public SimpleTextureRenderer(ProgramManager<OpenGlBackend> programManager, Texture texture) {
 		this.texture = texture;
 		init(programManager);
 	}
 
-	private void init(OpenGlProgramManager programManager) {
-		this.programManager = programManager;
+	private void init(ProgramManager<OpenGlBackend> programManager) {
+		this.programManager = (OpenGlProgramManager) programManager;
 		this.gpuContext = this.programManager.getGpuContext();
 
         if (!initialized) {
