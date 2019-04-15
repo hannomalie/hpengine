@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.backend.OpenGlBackend;
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.GLU;
@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 
 public class Program extends AbstractProgram implements Reloadable {
-	private final GpuContext<OpenGlBackend> gpuContext;
+	private final GpuContext<OpenGl> gpuContext;
 	private static Logger LOGGER = getLogger();
 	
 	private boolean needsTextures = true;

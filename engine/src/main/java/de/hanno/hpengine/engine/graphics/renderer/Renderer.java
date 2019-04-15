@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.backend.BackendType;
-import de.hanno.hpengine.engine.backend.OpenGlBackend;
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -17,7 +16,7 @@ public interface Renderer<TYPE extends BackendType> extends RenderSystem {
 
     default void destroy() { }
 
-    void update(Engine<TYPE> engine, float seconds);
+    default void update(Engine<TYPE> engine, float seconds) {}
 
     void batchLine(Vector3f from, Vector3f to);
 
@@ -293,5 +292,5 @@ public interface Renderer<TYPE extends BackendType> extends RenderSystem {
         }
     }
 
-    List<RenderExtension<OpenGlBackend>> getRenderExtensions();
+    List<RenderExtension<OpenGl>> getRenderExtensions();
 }

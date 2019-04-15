@@ -24,11 +24,10 @@ public class RenderBatch {
     private Vector3f centerWorld;
     private boolean animated;
     private float boundingSphereRadius;
-    private List<AABB> instanceMinMaxWorlds = new ArrayList();
+    private List<AABB> instanceMinMaxWorlds = new ArrayList<>();
     private MaterialInfo materialInfo;
 
-    public RenderBatch() {
-    }
+    public RenderBatch() { }
 
     public RenderBatch init(int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<AABB> instanceMinMaxWorlds, MaterialInfo materialInfo) {
         this.isVisible = isVisible;

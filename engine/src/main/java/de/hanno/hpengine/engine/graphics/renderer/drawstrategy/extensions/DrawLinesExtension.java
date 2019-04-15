@@ -1,9 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
-import de.hanno.hpengine.engine.backend.EngineContext;
-import de.hanno.hpengine.engine.backend.OpenGlBackend;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
+import de.hanno.hpengine.engine.backend.BackendType;
+import de.hanno.hpengine.engine.backend.OpenGl;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
@@ -22,28 +22,25 @@ import java.util.List;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 
-public class DrawLinesExtension implements RenderExtension<OpenGlBackend> {
+public class DrawLinesExtension implements RenderExtension<OpenGl> {
 
     private final Program linesProgram;
     private final FloatBuffer identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
-    private final EngineContext engine;
-    private final DeferredRenderer renderer;
+    private final Renderer<? extends BackendType> renderer;
 
-    public DrawLinesExtension(EngineContext engine, DeferredRenderer renderer) {
-        this.engine = engine;
-        this.renderer = renderer;
+    public DrawLinesExtension(Renderer<? extends BackendType> renderer, ProgramManager programManager) {
         new SimpleTransform().get(identityMatrix44Buffer);
-        linesProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
+        this.renderer = renderer;
+        linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl");
     }
 
     @Override
-    public void renderFirstPass(Backend<OpenGlBackend> backend, GpuContext<OpenGlBackend> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Backend<OpenGl> backend, GpuContext<OpenGl> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 
-            GpuContext context = backend.getGpuContext();
-            context.disable(CULL_FACE);
-            context.depthMask(false);
+            gpuContext.disable(CULL_FACE);
+            gpuContext.depthMask(false);
 
             linesProgram.use();
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));

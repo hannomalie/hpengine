@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
@@ -14,8 +14,8 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 
-open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: Engine<OpenGlBackend>,
-                                                          renderer: Renderer<OpenGlBackend>,
+open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: Engine<OpenGl>,
+                                                          renderer: Renderer<OpenGl>,
                                                           useFrustumCulling: Boolean = true,
                                                           useBackFaceCulling: Boolean = true,
                                                           useLineDrawing: Boolean = true,

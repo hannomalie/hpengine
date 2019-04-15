@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.EngineImpl
-import de.hanno.hpengine.engine.backend.BackendImpl
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
@@ -25,7 +25,7 @@ fun main() {
     val textureManager = TextureManager(programManager, gpuContext)
     textureManager.textures["C:\\workspace\\hpengine\\hp\\assets\\models\\textures\\brick.png"] = xxx
     textureManager.textures["C:\\workspace\\hpengine\\hp\\assets\\models\\textures\\kamen.dds"] = yyy
-    val backend = BackendImpl(eventBus, gpuContext, textureManager = textureManager)
+    val backend = OpenGlBackend(eventBus, gpuContext, textureManager = textureManager)
     val engineContext = EngineContextImpl(backend = backend)
     val materialManager = MaterialManager(engineContext)
     val texture = textureManager.textures.values.toList()[0]

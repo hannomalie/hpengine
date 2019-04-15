@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.backend.EngineContext;
-import de.hanno.hpengine.engine.backend.OpenGlBackend;
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils;
@@ -54,7 +54,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     private long renderedInCycle;
     @Override
-    public void renderFirstPass(Backend<OpenGlBackend> backend, GpuContext<OpenGlBackend> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
+    public void renderFirstPass(Backend<OpenGl> backend, GpuContext<OpenGl> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("Directional shadowmap");
         if(renderedInCycle < renderState.getDirectionalLightHasMovedInCycle() ||
                 renderedInCycle < renderState.getEntitiesState().entityMovedInCycle ||

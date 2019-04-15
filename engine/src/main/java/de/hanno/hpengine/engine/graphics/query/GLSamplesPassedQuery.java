@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.query;
 
-import de.hanno.hpengine.engine.backend.OpenGlBackend;
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.opengl.GL15;
 
@@ -13,7 +13,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
 
     private final int query;
     private final int target = GL15.GL_SAMPLES_PASSED;
-    private final GpuContext<OpenGlBackend> gpuContext;
+    private final GpuContext<OpenGl> gpuContext;
     private volatile boolean finished = false;
     private boolean started;
 

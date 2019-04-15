@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
@@ -48,7 +48,6 @@ import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_EXTENSIONS
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL11.GL_VERSION
 import org.lwjgl.opengl.GL13
@@ -70,11 +69,10 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class OpenGLContext private constructor() : GpuContext<OpenGlBackend>, OpenGlBackend {
-    override val backend = object: OpenGlBackend {
+class OpenGLContext private constructor() : GpuContext<OpenGl> {
+    override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
-    override val gpuContext = this
 
     override lateinit var frontBuffer: RenderTarget
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
@@ -160,10 +158,11 @@ class OpenGLContext private constructor() : GpuContext<OpenGlBackend>, OpenGlBac
     }
 
     override val features = run {
-        val bindlessTextures = if(extensions.contains("bindless_textures")) BindlessTextures else null
-        val drawParameters = if(extensions.contains("shader_draw_parameters")) DrawParameters else null
+        val bindlessTextures = if(extensions.contains("ARB_bindless_textures")) BindlessTextures else null
+        val drawParameters = if(extensions.contains("GL_ARB_shader_draw_parameters")) DrawParameters else null
+        val shader5 = if(extensions.contentEquals("GL_NV_gpu_shader5")) Shader5 else null
 
-        listOfNotNull(bindlessTextures, drawParameters)
+        listOfNotNull(bindlessTextures, drawParameters, shader5)
     }
 
     override fun createNewGPUFenceForReadState(currentReadState: RenderState) {
@@ -214,7 +213,10 @@ class OpenGLContext private constructor() : GpuContext<OpenGlBackend>, OpenGlBac
         glfwShowWindow(windowHandle)
 
         println("OpenGL version: " + GL11.glGetString(GL_VERSION))
-        extensions = GL11.glGetString(GL_EXTENSIONS) ?: ""
+        val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
+        val supportedExtensions = (0 until numExtensions).map { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
+
+        extensions = supportedExtensions.joinToString(" ")
 
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK)
 //        GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
@@ -519,8 +521,9 @@ class OpenGLContext private constructor() : GpuContext<OpenGlBackend>, OpenGlBac
         fun String.appendIfSupported(feature: GpuFeature, string: String): String {
             return "${this} ${if(isSupported(feature)) string else ""}"
         }
-        return "".appendIfSupported(DrawParameters, "#extension GL_NV_gpu_shader5 : enable\n")
-                 .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable\n")
+        return "".appendIfSupported(Shader5, "#extension GL_NV_gpu_shader5 : enable\n")
+                .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable\n")
+                .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable\n")
     }
 
     override fun isSupported(feature: GpuFeature) = features.contains(feature)

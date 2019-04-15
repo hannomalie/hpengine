@@ -1,14 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.util.Util
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 
 
-class CubeMapArrayBasedCubeRenderTarget(val engine: Engine<OpenGlBackend>, val cubeMapArray: CubeMapArray, useDepthBuffer: Boolean = true): RenderTarget(engine.gpuContext) {
+class CubeMapArrayBasedCubeRenderTarget(val engine: Engine<OpenGl>, val cubeMapArray: CubeMapArray, useDepthBuffer: Boolean = true): RenderTarget(engine.gpuContext) {
     val cubeMapViews = IntArray(cubeMapArray.cubeMapCount)
     val cubeMapHandles = LongArray(cubeMapArray.cubeMapCount)
 

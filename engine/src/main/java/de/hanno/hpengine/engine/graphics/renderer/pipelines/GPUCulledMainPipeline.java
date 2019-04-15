@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.state.CustomState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import org.jetbrains.annotations.NotNull;
 

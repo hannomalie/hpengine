@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
@@ -14,8 +14,6 @@ import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MeshSelectedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
-import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -36,9 +34,8 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
-import org.lwjgl.BufferUtils
 
-class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine<OpenGlBackend>) : Scene {
+class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine<OpenGl>) : Scene {
     @Transient
     override var currentCycle: Long = 0
     @Transient

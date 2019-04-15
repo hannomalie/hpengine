@@ -58,7 +58,7 @@ public enum ShaderDefine {
 		appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + Config.getInstance().isUseBloom());
 		appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + Config.getInstance().isUsePcf());
 		appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + Config.getInstance().isUseDpsm());
-		
+		builder.append("\n");
 		return builder.toString();
 	}
 	

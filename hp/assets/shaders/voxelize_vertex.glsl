@@ -1,5 +1,3 @@
-#extension GL_ARB_shader_draw_parameters : require
-
 uniform int entityIndex;
 uniform int entityBaseIndex;
 

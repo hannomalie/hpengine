@@ -151,6 +151,23 @@ interface GpuContext<T: BackendType> {
     fun pollEvents()
     fun isSupported(feature: GpuFeature): Boolean
 
+    @JvmDefault
+    fun isSupported(vararg features: GpuFeature) = isSupported(features.toList())
+
+    @JvmDefault
+    fun isSupported(features: List<GpuFeature>): SupportResult {
+        features.filter { !isSupported(it) }.let { unsupportedFeatures ->
+            return if(unsupportedFeatures.isEmpty()) {
+                SupportResult.Supported
+            } else SupportResult.UnSupported(unsupportedFeatures)
+        }
+    }
+
+    sealed class SupportResult {
+        object Supported: SupportResult()
+        data class UnSupported(val unsupportedFeatures: List<GpuFeature>): SupportResult()
+    }
+
     companion object {
         val CHECKERRORS = false // TODO: Enable this as soon as possible
 

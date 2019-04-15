@@ -3,12 +3,12 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.ManagerContext
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 
 private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>, override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext
-class SceneManager(val managerContext: ManagerContext<OpenGlBackend>): Manager {
+class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
 
     var scene: Scene = SimpleScene("InitScene", TempEngineImpl(managerContext, this@SceneManager))
         set(value) {

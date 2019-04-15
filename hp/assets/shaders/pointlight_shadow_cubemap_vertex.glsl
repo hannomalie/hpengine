@@ -1,5 +1,3 @@
-#extension GL_ARB_shader_draw_parameters : require
-
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];

@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
@@ -20,10 +20,10 @@ import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 
-open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGlBackend>,
-                          private val useFrustumCulling: Boolean = true,
-                          private val useBackFaceCulling: Boolean = true,
-                          private val useLineDrawingIfActivated: Boolean = true) : Pipeline {
+open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
+                                                    private val useFrustumCulling: Boolean = true,
+                                                    private val useBackFaceCulling: Boolean = true,
+                                                    private val useLineDrawingIfActivated: Boolean = true) : Pipeline {
 
     private var verticesCount = 0
     private var entitiesDrawn = 0

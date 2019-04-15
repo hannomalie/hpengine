@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.shader
 
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
@@ -13,7 +13,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 
-class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val eventBus: EventBus) : ProgramManager<OpenGlBackend> {
+class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val eventBus: EventBus) : ProgramManager<OpenGl> {
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
         val vertexShaderSource = getShaderSource(File(directory + vertexShaderFilename))
@@ -49,10 +49,9 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val e
         var resultingShaderSource = (gpuContext.getOpenGlVersionsDefine()
                 + gpuContext.getOpenGlExtensionsDefine()
                 + defines.toString()
-                + ShaderDefine.getGlobalDefinesString() + "\n")
+                + ShaderDefine.getGlobalDefinesString())
 
-        val findStr = "\n"
-        var newlineCount = resultingShaderSource.split(findStr.toRegex()).toTypedArray().size - 1
+        var newlineCount = resultingShaderSource.split("\n".toRegex()).toTypedArray().size - 1
 
         var actualShaderSource = shaderSource.source
 

@@ -5,7 +5,6 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsManager;

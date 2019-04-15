@@ -1,5 +1,3 @@
-#extension GL_ARB_shader_draw_parameters : require
-
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 

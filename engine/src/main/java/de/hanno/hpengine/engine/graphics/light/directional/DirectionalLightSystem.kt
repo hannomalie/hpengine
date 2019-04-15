@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.directional
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -11,7 +11,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.struct.copyTo
 
-class DirectionalLightSystem(val _engine: Engine<OpenGlBackend>, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(_engine, simpleScene, listOf(DirectionalLight::class.java)), RenderSystem {
+class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(_engine, simpleScene, listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
 
     private var shadowMapExtension: DirectionalLightShadowMapExtension

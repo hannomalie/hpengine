@@ -1,7 +1,5 @@
 package de.hanno.hpengine.engine.model.texture
 
-import de.hanno.hpengine.engine.backend.BackendType
-import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext

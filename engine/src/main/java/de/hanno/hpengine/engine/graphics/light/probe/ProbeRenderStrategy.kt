@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.light.probe
 
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.ManagerContext
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
@@ -175,13 +175,13 @@ class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
     }
 }
 
-class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGlBackend>): RenderExtension<OpenGlBackend> {
+class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGl>): RenderExtension<OpenGl> {
 
     private val probeRenderStrategy = ProbeRenderStrategy(engine)
 
     val evaluateProbeProgram = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe_fragment.glsl", Defines())
 
-    override fun renderFirstPass(backend: Backend<OpenGlBackend>, gpuContext: GpuContext<OpenGlBackend>, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)
 
     }

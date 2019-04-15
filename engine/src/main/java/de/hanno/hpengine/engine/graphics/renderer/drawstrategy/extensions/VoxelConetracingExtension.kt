@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.engine.SizedArray
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGlBackend
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
@@ -20,7 +20,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -37,7 +36,7 @@ import java.io.File
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
 class VoxelConeTracingExtension
-(private val engine: EngineContext<OpenGlBackend>, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension, val renderer: Renderer<OpenGlBackend>) : RenderExtension<OpenGlBackend> {
+(private val engine: EngineContext<OpenGl>, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension, val renderer: Renderer<OpenGl>) : RenderExtension<OpenGl> {
 
     val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
         array[0].apply { gridSize = 256 }.apply {
@@ -140,7 +139,7 @@ class VoxelConeTracingExtension
         directionalLightShadowMapExtension.voxelConeTracingExtension = this
     }
 
-    override fun renderFirstPass(backend: Backend<OpenGlBackend>, gpuContext: GpuContext<OpenGlBackend>, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         if(!renderState.sceneInitialized) return
 
         GPUProfiler.start("VCT first pass")

@@ -11,7 +11,7 @@ import com.alee.laf.panel.WebPanel;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.text.WebFormattedTextField;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.backend.OpenGlBackend;
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
@@ -186,7 +186,7 @@ public class MainLightView extends WebPanel {
         }});
         webComponentPanel.addElement(new WebButton("Use Voxelizer Cam") {{
             addActionListener(e -> {
-                Optional<RenderExtension<OpenGlBackend>> voxelConeTracingExtension = engine.getRenderManager().getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
+                Optional<RenderExtension<OpenGl>> voxelConeTracingExtension = engine.getRenderManager().getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
                 voxelConeTracingExtension.ifPresent(it -> {
                     engine.getSceneManager().getScene().setActiveCamera(((VoxelConeTracingExtension) it).getVoxelGrids().get(0).getOrthoCam());
                 });
