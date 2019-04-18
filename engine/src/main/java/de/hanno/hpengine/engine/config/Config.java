@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine.config;
 
+import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
@@ -19,7 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
+import static de.hanno.hpengine.engine.directory.DirectoryManager.GAMEDIR_NAME;
+import static de.hanno.hpengine.engine.directory.DirectoryManager.WORKDIR_NAME;
 
 public final class Config {
 
@@ -30,6 +30,7 @@ public final class Config {
         if(propertiesFile != null && propertiesFile.exists()) {
             try {
                 populateConfigurationWithProperties(instance, new FileInputStream(propertiesFile));
+				instance.directoryManager = new DirectoryManager(WORKDIR_NAME, instance.gameDir, instance.initFileName);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -56,10 +57,10 @@ public final class Config {
             e.printStackTrace();
         }
     }
-
 	@NotNull
-	private String gameDir = GAMEDIR_NAME;
+	private String gameDir = DirectoryManager.GAMEDIR_NAME;
 	private String initFileName = "Init.java";
+	private DirectoryManager directoryManager = new DirectoryManager(WORKDIR_NAME, gameDir, initFileName);
 	private Class<? extends GpuContext> gpuContextClass = OpenGLContext.class;
     private boolean useFileReloading = true;
 	private int width = 1280;
@@ -605,5 +606,10 @@ public final class Config {
 
 	public void setGameDir(@NotNull String gameDir) {
 		this.gameDir = gameDir;
+		this.directoryManager = new DirectoryManager(WORKDIR_NAME, gameDir, initFileName);
 	}
+
+    public DirectoryManager getDirectoryManager() {
+        return directoryManager;
+    }
 }

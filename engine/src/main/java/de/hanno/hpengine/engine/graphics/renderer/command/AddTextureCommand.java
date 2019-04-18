@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.model.texture.TextureManager;
@@ -24,7 +25,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	public TextureResult execute() {
 		Texture texture = null;
 		try {
-            texture = textureManager.getTexture(path, srgba);
+            texture = textureManager.getTexture(path, srgba, Config.getInstance().getDirectoryManager().getGameDir());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

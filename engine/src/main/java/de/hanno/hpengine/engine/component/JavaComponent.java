@@ -1,7 +1,8 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.compiler.RuntimeJavaCompiler;
-import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
@@ -13,6 +14,7 @@ import de.hanno.hpengine.util.ressources.Reloadable;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
+import javax.security.auth.login.Configuration;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -22,7 +24,7 @@ import java.util.Map;
 
 public class JavaComponent extends BaseComponent implements ScriptComponent, Reloadable {
 
-    public static final String WORKING_DIR = DirectoryManager.WORKDIR_NAME + "/java";
+    public static final String WORKING_DIR = Config.getInstance().getDirectoryManager().getGameDir().getJava().getPath();
     static {
         File workingDir = new File(WORKING_DIR);
         try {
@@ -158,7 +160,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     private static String getDirectory() {
-        return DirectoryManager.GAMEDIR_NAME + "/scripts/";
+        return Config.getInstance().getDirectoryManager().getGameDir().getScripts().getPath();
     }
 
     @Override

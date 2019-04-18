@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.model.texture
 
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
@@ -46,6 +48,8 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
+    val engineDir = Config.getInstance().directoryManager.engineDir
+
     /** The colour model including alpha for the GL image  */
     val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
             intArrayOf(8, 8, 8, 8),
@@ -90,8 +94,8 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
         }.start()
     }
 
-    val lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true)
-    var cubeMap = getCubeMap("hp/assets/textures/skybox.png")
+    val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)
+    var cubeMap = getCubeMap("assets/textures/skybox/skybox.png")
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("HORIZONTAL", true)))
     private val blur2dProgramSeparableVertical = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("VERTICAL", true)))
 
@@ -101,20 +105,20 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
 
 
     private fun loadDefaultTexture(): Pair<Texture<TextureDimension2D>, BufferedImage> {
-        val defaultTexturePath = "hp/assets/models/textures/____gi_flag.png"
-        val defaultTexture = getTexture(defaultTexturePath, true)
+        val defaultTexturePath = "assets/textures/default/gi_flag.png"
+        val defaultTexture = engineDir.getTexture(defaultTexturePath, true)
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
         return Pair(defaultTexture, defaultTextureAsBufferedImage)
     }
 
     private fun loadAllAvailableTextures() {
-        val textureDir = File(Texture.directory)
+        val textureDir = Config.getInstance().directoryManager.engineDir.textures
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
         GpuContext.exitOnGLError("Before loadAllAvailableTextures")
         for (file in files) {
             try {
                 if (FilenameUtils.isExtension(file.absolutePath, "hptexture")) {
-                    getTexture(file.absolutePath)
+                    getTexture(file.absolutePath, directory = Config.getInstance().directoryManager.gameDir)
                 } else {
                     getCubeMap(file.absolutePath)
                 }
@@ -133,10 +137,13 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
         return true
     }
 
+    fun AbstractDirectory.getTexture(resourceName: String, srgba: Boolean = false): Texture<TextureDimension2D> {
+        return getTexture(resourceName, srgba, this)
+    }
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false): Texture<TextureDimension2D> {
+    fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = Config.getInstance().directoryManager.gameDir): Texture<TextureDimension2D> {
         return textures.computeIfAbsent(resourceName) {
-            FileBasedSimpleTexture(gpuContext, resourceName, srgba)
+            FileBasedSimpleTexture(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
     }
 
@@ -181,7 +188,7 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
 
     private fun cubeMapPreCompiled(resourceName: String): Boolean {
         val fileName = FilenameUtils.getBaseName(resourceName)
-        val f = File(Texture.directory + fileName + ".hpcubemap")
+        val f = Config.getInstance().directoryManager.gameDir.resolve("$fileName.hpcubemap")
         return f.exists()
     }
 
@@ -282,15 +289,12 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
      */
     @Throws(IOException::class)
     fun loadImage(ref: String): BufferedImage {
-        val url = TextureManager::class.java.classLoader.getResource(ref) ?: return loadImageAsStream(ref)
-
-        val file = File(ref)
-        return ImageIO.read(file)
+        return loadImageAsStream(ref)
     }
 
     @Throws(IOException::class)
     fun loadImageAsStream(ref: String): BufferedImage {
-        val file = File(ref)
+        val file = Config.getInstance().directoryManager.engineDir.resolve(ref) // TODO: Inject dir
         return try {
             ImageIO.read(file)
         } catch (e: Exception) {

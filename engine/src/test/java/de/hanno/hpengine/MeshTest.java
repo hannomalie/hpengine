@@ -1,6 +1,6 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.OBJLoader;
@@ -16,7 +16,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void loadsPlaneCorrectly() throws Exception {
-        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/plane.obj"));
+        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/plane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(4, planeMesh.getFaces().size());
 
@@ -29,7 +29,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void calculatesLodsCorrectly() throws Exception {
-        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
+        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/doublePlane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(6, planeMesh.getFaces().size());
 
@@ -41,7 +41,7 @@ public class MeshTest extends TestWithEngine {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-        StaticModel sphere = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        StaticModel sphere = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/sphere.obj"));
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create("sphere");
 
         entity.setTranslation(new Vector3f(0, 0, 0));

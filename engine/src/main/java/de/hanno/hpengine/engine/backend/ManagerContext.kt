@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.backend
 
-import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager

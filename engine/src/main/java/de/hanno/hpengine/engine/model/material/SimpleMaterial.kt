@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D

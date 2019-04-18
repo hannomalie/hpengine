@@ -1,8 +1,10 @@
-group = "de.hanno.hpengine"
-
 plugins {
-    id("java")
+//    id("java")
+    java
 }
+
+group = "de.hanno.hpengine"
+//apply(plugin = "java")
 
 repositories {
 
@@ -37,6 +39,10 @@ repositories {
 
 dependencies {
     compileOnly(project(":engine"))
+}
+
+java.sourceSets["main"].java {
+    srcDir("game")
 }
 
 //TODO: Rework this concept completely

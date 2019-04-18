@@ -67,7 +67,7 @@ public class TextureTest {
     public void testEqualityDdsAndRegularTexture() throws IOException, ExecutionException, InterruptedException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
         File fileAsDds = new File(DDSConverter.INSTANCE.getFullPathAsDDS(pathToSourceTexture));
-        Texture<TextureDimension2D> regularLoaded = textureManager.getTexture(pathToSourceTexture);
+        Texture<TextureDimension2D> regularLoaded = textureManager.getTexture(pathToSourceTexture, Config.getInstance().directoryManager.gameDir);
         CompleteTextureInfo textureInfo = textureManager.getCompleteTextureInfo(pathToSourceTexture, false);
         byte[] regularLoadedData = textureInfo.getData()[0].get();
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
@@ -115,10 +115,10 @@ public class TextureTest {
     @Test(timeout = 30000L)
     public void testEqualityDifferentTextures() throws IOException, ExecutionException, InterruptedException {
         String pathToFirstSourceTexture = "hp/assets/textures/stone_reflection.png";
-        Texture<TextureDimension2D> regularLoadedFirst = textureManager.getTexture(pathToFirstSourceTexture);
+        Texture<TextureDimension2D> regularLoadedFirst = textureManager.getTexture(pathToFirstSourceTexture, Config.getInstance().directoryManager.gameDir);
         CompleteTextureInfo textureInfoFirst = textureManager.getCompleteTextureInfo(pathToFirstSourceTexture, false);
         String pathToSecondSourceTexture = "hp/assets/textures/wood_diffuse.png";
-        Texture<TextureDimension2D> regularLoadedSecond = textureManager.getTexture(pathToSecondSourceTexture);
+        Texture<TextureDimension2D> regularLoadedSecond = textureManager.getTexture(pathToSecondSourceTexture, Config.getInstance().directoryManager.gameDir);
         CompleteTextureInfo textureInfoSecond = textureManager.getCompleteTextureInfo(pathToSecondSourceTexture, false);
         byte[] regularLoadedFirstData = textureInfoFirst.getData()[0].get();
         byte[] regularLoadedSecondData = textureInfoSecond.getData()[0].get();
@@ -131,14 +131,14 @@ public class TextureTest {
 
 	@Test
 	public void loadsTexture() throws IOException {
-        Texture<TextureDimension2D> texture = textureManager.getTexture("hp/assets/textures/test_test_test.png");
+        Texture<TextureDimension2D> texture = textureManager.getTexture("hp/assets/textures/test_test_test.png", Config.getInstance().directoryManager.gameDir);
 	}
 
     @Test
     public void loadsTextureFromDDS() throws IOException {
-        Texture<TextureDimension2D> xxx = textureManager.getTexture("hp/assets/textures/wood_diffuse.png");
+        Texture<TextureDimension2D> xxx = textureManager.getTexture("hp/assets/textures/wood_diffuse.png", Config.getInstance().directoryManager.gameDir);
         Assert.assertTrue(new File("hp/assets/textures/wood_diffuse.dds").exists());
-        Texture<TextureDimension2D> texture = textureManager.getTexture("hp/assets/textures/wood_diffuse.dds");
+        Texture<TextureDimension2D> texture = textureManager.getTexture("hp/assets/textures/wood_diffuse.dds", Config.getInstance().directoryManager.gameDir);
     }
 
 	@Test
@@ -205,7 +205,7 @@ public class TextureTest {
         String fileName = "testfolder/stone_normal_streaming_test.dds";
         Assert.assertTrue(new File(fileName).exists());
         Assert.assertFalse(textureManager.getTextures().containsKey(fileName));
-        Texture<TextureDimension2D> texture = textureManager.getTexture(fileName);
+        Texture<TextureDimension2D> texture = textureManager.getTexture(fileName, Config.getInstance().directoryManager.gameDir);
         while(texture.getUploadState() != UPLOADING) {
             Thread.sleep(20);
         }

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.shader
 
-import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource

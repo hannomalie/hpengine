@@ -1,6 +1,7 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
@@ -15,6 +16,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.engine.scene.Scene;
+import kotlin.io.FilesKt;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -35,7 +37,7 @@ public class TestSceneUtil {
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, FilesKt.resolve(Config.getInstance().getDirectoryManager().getEngineDir().getModels(), "sphere.obj"));
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {

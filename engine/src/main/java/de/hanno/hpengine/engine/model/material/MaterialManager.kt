@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.DirectoryManager
+import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
@@ -33,6 +33,8 @@ class MaterialManager(private val backend: Backend<*>) : Manager {
 
     val defaultMaterial: SimpleMaterial
 
+    val engineDir = Config.getInstance().directoryManager.engineDir
+
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
 
@@ -40,7 +42,7 @@ class MaterialManager(private val backend: Backend<*>) : Manager {
 
     init {
         defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f,0f,0f)).apply {
-          put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/default.dds", true))
+          put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, engineDir))
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
@@ -53,38 +55,38 @@ class MaterialManager(private val backend: Backend<*>) : Manager {
     fun initDefaultMaterials() {
 
         getMaterial(SimpleMaterialInfo("stone").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
-            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/stone_normal.png"))
-            put(MAP.HEIGHT, textureManager.getTexture("hp/assets/textures/stone_height.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
+            put(MAP.HEIGHT, textureManager.getTexture("assets/textures/stone_height.png", directory = engineDir))
         })
 
         getMaterial(SimpleMaterialInfo("stone2").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/brick.png", true))
-            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/brick_normal.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
         })
 
         getMaterial(SimpleMaterialInfo("brick").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/brick.png", true))
-            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/brick_normal.png"))
-            put(MAP.HEIGHT, textureManager.getTexture("hp/assets/textures/brick_height.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
+            put(MAP.HEIGHT, textureManager.getTexture("assets/textures/brick_height.png", directory = engineDir))
         })
 
         getMaterial(SimpleMaterialInfo("wood").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/wood_diffuse.png", true))
-            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/wood_normal.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/wood_diffuse.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getTexture("assets/textures/wood_normal.png", directory = engineDir))
         })
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/stone_diffuse.png", true))
-            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/stone_normal.png"))
-            put(MAP.REFLECTION, textureManager.getTexture("hp/assets/textures/stone_reflection.png"))
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
+            put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
+            put(MAP.REFLECTION, textureManager.getTexture("assets/textures/stone_reflection.png", directory = engineDir))
         })
         getMaterial(SimpleMaterialInfo(name = "mirror", diffuse = Vector3f(1f,1f,1f), metallic = 1f))
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
-            put(MAP.DIFFUSE, textureManager.getTexture("hp/assets/textures/bricks_parallax.dds", true))
-            put(MAP.HEIGHT, textureManager.getTexture("hp/assets/textures/bricks_parallax_height.dds"))
-            put(MAP.NORMAL, textureManager.getTexture("hp/assets/textures/bricks_parallax_normal.dds"))
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/bricks_parallax.dds", true, engineDir))
+            put(MAP.HEIGHT, textureManager.getTexture("assets/textures/bricks_parallax_height.dds", directory = engineDir))
+            put(MAP.NORMAL, textureManager.getTexture("assets/textures/bricks_parallax_normal.dds", directory = engineDir))
         })
     }
 
@@ -122,7 +124,7 @@ class MaterialManager(private val backend: Backend<*>) : Manager {
         val textures = mutableMapOf<MAP, Texture<TextureDimension2D>>()
 
         hashMap.forEach { map, value ->
-            textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE)
+            textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE, engineDir)
         }
         val info = SimpleMaterialInfo(name = name, mapsInternal = textures)
         return getMaterial(info)

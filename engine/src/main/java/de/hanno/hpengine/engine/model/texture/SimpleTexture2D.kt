@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.model.texture
 
 import ddsutil.DDSUtil
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -45,9 +47,9 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
                            override var uploadState: UploadState) : Texture<TextureDimension2D> {
 
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, srgba: Boolean = false): SimpleTexture2D {
+        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory = Config.getInstance().directoryManager.gameDir, srgba: Boolean = false): SimpleTexture2D {
             val fileAsDds = File(path.split(".")[0] + ".dds")
-            val file = /*if(fileAsDds.exists()) fileAsDds else*/ File(path)
+            val file = /*if(fileAsDds.exists()) fileAsDds else*/ directory.resolve(path)
             if(!file.exists() || !file.isFile) {
                 throw IllegalStateException("Cannot load file $file as texture as it doesn't exist")
             }
@@ -61,7 +63,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
                         with(DDSConverter) { this@apply.rescaleToNextPowerOfTwo() }
                     })
                 }
-            } else SimpleTexture2D(gpuContext, ImageIO.read(file).apply { with(DDSConverter) {this@apply.rescaleToNextPowerOfTwo()} }, srgba)
+            } else SimpleTexture2D(gpuContext, ImageIO.read(file).apply { with(DDSConverter) { this@apply.rescaleToNextPowerOfTwo() } }, srgba)
 
         }
         operator fun invoke(gpuContext: GpuContext<OpenGl>, image: BufferedImage, srgba: Boolean = false): SimpleTexture2D {
@@ -180,8 +182,8 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
 
 data class FileBasedSimpleTexture(val path: String, val backingTexture: SimpleTexture2D): Texture<TextureDimension2D> by backingTexture {
     companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, srgba: Boolean = false): FileBasedSimpleTexture {
-            return FileBasedSimpleTexture(path, SimpleTexture2D(gpuContext, path, srgba))
+        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedSimpleTexture {
+            return FileBasedSimpleTexture(path, SimpleTexture2D(gpuContext, path, directory, srgba))
         }
     }
 }

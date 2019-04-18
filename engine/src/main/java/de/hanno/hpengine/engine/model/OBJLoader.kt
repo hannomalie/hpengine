@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -268,11 +269,11 @@ class OBJLoader {
     }
 
     private fun addHelper(textureManager: TextureManager, currentMaterialInfo: MaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP): MaterialInfo {
-        return currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE))
+        return currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE, Config.getInstance().directoryManager.gameDir))
     }
     private fun addHelperXXX(textureManager: TextureManager, currentMaterialInfo: MaterialInfo, path: String, name: String, map: SimpleMaterial.MAP): CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture<TextureDimension2D>>> {
         return CompletableFuture.supplyAsync {
-            Triple(map, currentMaterialInfo, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE))
+            Triple(map, currentMaterialInfo, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE, Config.getInstance().directoryManager.gameDir))
         }
     }
 

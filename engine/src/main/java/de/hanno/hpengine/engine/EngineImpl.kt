@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.EngineContextImpl
@@ -9,10 +8,10 @@ import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleLinesRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -21,7 +20,6 @@ import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
-import sun.java2d.pipe.SpanShapeRenderer
 import java.io.IOException
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -104,12 +102,12 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         @JvmStatic
         fun main(args: Array<String>) {
 
-            var gameDir = GAMEDIR_NAME
+            var gameDir = DirectoryManager.GAMEDIR_NAME
             var debug = true
             for (string in args) {
                 when {
                     "debug=false" == string -> debug = false
-                    string.startsWith("gameDir=") -> gameDir = string.replace("gameDir=", "")
+                    string.startsWith("gameDir=", true) -> gameDir = string.replace("gameDir=", "", true)
                     "fullhd" == string -> {
                         Config.getInstance().width = 1920
                         Config.getInstance().height = 1080
@@ -123,13 +121,16 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 DebugFrame(engine)
             }
 
-            try {
-                val initScript = JavaComponent(String(Files.readAllBytes(engine.directoryManager.gameInitScript.toPath())))
-                initScript.init(engine)
-                initScript.initWithEngine(engine)
-                println("InitScript initialized")
-            } catch (e: IOException) {
-                e.printStackTrace()
+            val initScriptFile = Config.getInstance().directoryManager.gameDir.initScript
+            initScriptFile?.let {
+                try {
+                    val initScript = JavaComponent(String(Files.readAllBytes(it.toPath())))
+                    initScript.init(engine)
+                    initScript.initWithEngine(engine)
+                    println("InitScript initialized")
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
             }
 
         }

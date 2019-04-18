@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.entity;
 
-import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -197,9 +197,6 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 		return name;
 	}
 
-	public static String getDirectory() {
-		return DirectoryManager.WORKDIR_NAME + "/assets/entities/";
-	}
 	public boolean equals(Object other) {
 		if (!(other instanceof Entity)) {
 			return false;

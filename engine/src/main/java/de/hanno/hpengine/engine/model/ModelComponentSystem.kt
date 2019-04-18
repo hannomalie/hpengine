@@ -85,7 +85,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
     private fun updateGpuEntitiesArray() {
         var counter = 0
 
-        gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
+        gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
         gpuEntitiesArray.buffer.rewind()
         val materials = engine.scene.materialManager.materials
 
