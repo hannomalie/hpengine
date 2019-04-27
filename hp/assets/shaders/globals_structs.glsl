@@ -136,3 +136,31 @@ struct DirectionalLightState {
     int shadowMapId;
     float dummy0;
 };
+
+struct VertexShaderFlatOutput {
+    int entityBufferIndex;
+    int entityIndex;
+    Entity entity;
+    int materialIndex;
+    Material material;
+    mat3 TBN;
+};
+
+struct VertexShaderOutput {
+    vec4 color;
+    vec2 texCoord;
+    vec3 normalVec;
+    vec3 normal_model;
+    vec3 normal_world;
+    vec3 normal_view;
+    vec3 tangent_world;
+    vec3 bitangent_world;
+    vec4 position_clip;
+    vec4 position_clip_last;
+    vec4 position_clip_uv;
+    vec4 position_world;
+    vec3 lightVec;
+    vec3 halfVec;
+    vec3 eyeVec;
+    vec3 eyePos_world;
+};
