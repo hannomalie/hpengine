@@ -14,6 +14,9 @@ import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 
 class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val eventBus: EventBus) : ProgramManager<OpenGl> {
+    init {
+        gpuContext.exitOnGLError { "OpenGlProgramManager init" }
+    }
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
         val vertexShaderSource = getShaderSource(File(directory + vertexShaderFilename))
@@ -92,11 +95,11 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val e
         }
 
         if (shaderLoadFailed[0]) {
-            throw Shader.ShaderLoadException(shaderSource)
+            throw Shader.ShaderLoadException(finalResultingShaderSource)
         }
 
         Shader.LOGGER.finer(resultingShaderSource)
-        GpuContext.exitOnGLError { "loadShader: " + type.simpleName + ": " + shaderSource.filename }
+        gpuContext.exitOnGLError { "loadShader: " + type.simpleName + ": " + shaderSource.filename }
 
         return shader
     }

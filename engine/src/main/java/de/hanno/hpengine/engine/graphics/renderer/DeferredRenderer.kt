@@ -73,7 +73,7 @@ import javax.vecmath.Vector2f
 class DeferredRenderer @Throws(Exception::class)
 constructor(private val materialManager: MaterialManager, engineContext: EngineContext<OpenGl>) : Renderer<OpenGl> {
     private val backend: Backend<OpenGl> = engineContext.backend
-    val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
+    val gpuContext = engineContext.gpuContext.backend.gpuContext
     val programManager = backend.programManager
     val renderState = engineContext.renderStateManager.renderState
     init {
@@ -181,17 +181,17 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
                 }
             }
 
-            GpuContext.exitOnGLError("setupBuffers")
+            gpuContext.exitOnGLError("setupBuffers")
             sixDebugBuffers
         }
     }
 
     private fun GpuContext<OpenGl>.setUpGBuffer(): DeferredRenderingBuffer {
-        GpuContext.exitOnGLError("Before setupGBuffer")
+        gpuContext.exitOnGLError("Before setupGBuffer")
 
         execute {
             backend.gpuContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
-            GpuContext.exitOnGLError("setupGBuffer")
+            gpuContext.exitOnGLError("setupGBuffer")
         }
         return backend.gpuContext.calculate { DeferredRenderingBuffer(backend.gpuContext) }
     }

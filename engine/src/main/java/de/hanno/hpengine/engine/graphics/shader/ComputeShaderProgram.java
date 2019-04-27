@@ -17,6 +17,9 @@ import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
+import static org.lwjgl.opengl.GL20.glGetProgramInfoLog;
+import static org.lwjgl.opengl.GL20.glGetShaderInfoLog;
+
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
     private static final Logger LOGGER = Logger.getLogger(ComputeShaderProgram.class.getName());
 	private final OpenGlProgramManager programManager;
@@ -44,20 +47,16 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	@Override
 	public void load() {
 		clearUniforms();
-		try {
-            computeShader = ComputeShader.load(programManager, computeShaderSource, defines);
-            LOGGER.info("Loaded computeshader " + computeShaderSource.getFilename());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		printIfError("Pre load ");
-		printIfError("Create program ");
+		computeShader = ComputeShader.load(programManager, computeShaderSource, defines);
+		printIfError("ComputeShader load " + computeShaderSource.getName());
+		LOGGER.info("Loaded computeshader " + computeShaderSource.getName());
+		printIfError("Create program " + computeShaderSource.getName());
 		attachShader(computeShader);
-		printIfError("Attach shader ");
+		printIfError("Attach shader " + computeShaderSource.getName());
 		GL20.glLinkProgram(id);
-		printIfError("Link program ");
+		printIfError("Link program " + computeShaderSource.getName());
 		GL20.glValidateProgram(id);
-		printIfError("Validate program ");
+		printIfError("Validate program " + computeShaderSource.getName());
 
 		if (GL20.glGetProgrami(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not link shader: " + computeShaderSource.getFilename());
@@ -67,11 +66,15 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		printIfError("ComputeShader load ");
 	}
 
-	private void printIfError(String message) {
+	private boolean printIfError(String text) {
 		int error = GL11.glGetError();
-		if(error != GL11.GL_NO_ERROR) {
-			LOGGER.severe(message + GLU.gluErrorString(GL11.glGetError()));
+		boolean isError = error != GL11.GL_NO_ERROR;
+		if(isError) {
+			LOGGER.severe(text + " " + GLU.gluErrorString(error));
+			LOGGER.info(glGetProgramInfoLog(id));
 		}
+
+		return isError;
 	}
 
     private void attachShader(Shader shader) {

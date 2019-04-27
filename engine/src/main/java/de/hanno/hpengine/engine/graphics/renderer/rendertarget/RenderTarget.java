@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.backend.OpenGl;
+import de.hanno.hpengine.engine.graphics.BindlessTextures;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.util.Util;
@@ -67,21 +68,32 @@ public class RenderTarget {
             for (int i = 0; i < colorAttachments.size(); i++) {
                 ColorAttachmentDefinition currentAttachment = colorAttachments.get(i);
 
+                gpuContext.getBackend().getGpuContext().exitOnGLError("");
                 int renderedTextureTemp = GL11.glGenTextures();
 
                 gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
-                GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.getInternalFormat(), width, height, 0, getComponentsForFormat(currentAttachment.getInternalFormat()), GL11.GL_FLOAT, (FloatBuffer) null);
 
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
-                GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
+                gpuContext.execute(() -> {
+                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
+                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                    GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                    GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
 
-                long handle = ARBBindlessTexture.glGetTextureHandleARB(renderedTextureTemp);
-                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                    GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.getInternalFormat(), width, height, 0, getComponentsForFormat(currentAttachment.getInternalFormat()), GL11.GL_FLOAT, (FloatBuffer) null);
+
+                    GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
+                });
+
+
+                if(gpuContext.isSupported(BindlessTextures.INSTANCE)) {
+                    long handle = ARBBindlessTexture.glGetTextureHandleARB(renderedTextureTemp);
+                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                    renderedTextureHandles[i] = handle;
+                } else {
+                    renderedTextureHandles[i] = -1;
+                }
 
                 FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
                 float[] borderColors = new float[]{0, 0, 0, 1};
@@ -91,7 +103,6 @@ public class RenderTarget {
                 GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
                 scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0 + i);
                 renderedTextures[i] = renderedTextureTemp;
-                renderedTextureHandles[i] = handle;
             }
             GL20.glDrawBuffers(scratchBuffer);
 

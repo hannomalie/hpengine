@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model.texture
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -241,7 +242,9 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[5]))
 
             this@TextureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMap.textureId)
-            cubeMap.createTextureHandleAndMakeResident() // TODO: Can this be placed into the init of the texture?
+            if(gpuContext.isSupported(BindlessTextures)) {
+                cubeMap.createTextureHandleAndMakeResident() // TODO: Can this be placed into the init of the texture?
+            }
         }
     }
 

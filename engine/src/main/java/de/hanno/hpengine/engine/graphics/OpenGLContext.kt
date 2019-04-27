@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -13,6 +14,7 @@ import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -406,19 +408,39 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
         when {
             isOpenGLThread -> {
                 runnable.run()
+                executeExitOnGlErrorFunction { "Error in runnable" }
             }
             andBlock -> Executor.future {
                 runnable.run()
+//                executeExitOnGlErrorFunction { "Error in runnable" }()
             }.join()
             else -> Executor.launch {
                 runnable.run()
+//                executeExitOnGlErrorFunction { "Error in runnable" }()
+            }
+        }
+    }
+
+    fun executeExitOnGlErrorFunction(errorMessage: () -> String) {
+        if (GpuContext.CHECKERRORS) {
+            val errorValue = GL11.glGetError()
+
+            if (errorValue != GL11.GL_NO_ERROR) {
+                val errorString = GLU.gluErrorString(errorValue)
+                System.err.println("ERROR: $errorString")
+                System.err.println(errorMessage())
+
+                RuntimeException("").printStackTrace()
+                System.exit(-1)
             }
         }
     }
 
     override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
         if(isOpenGLThread) {
-            return callable.call()
+            return callable.call().apply {
+                exitOnGLError { "Error in command" }
+            }
         }
         return runBlocking {
             withContext(Executor.coroutineContext) {
@@ -453,15 +475,20 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
         Executor.launch {
             while (true) {
                 pollEvents()
+                exitOnGLError("")
                 checkCommandSyncs()
+                exitOnGLError("")
                 executePerFrameCommands()
+                exitOnGLError("")
                 var callable: FutureCallable<*>? = channel.poll()
                 while (callable != null) {
                     val result = callable.execute()
+                    exitOnGLError("")
                     (callable.future as CompletableFuture<Any>).complete(result)
                     callable = channel.poll()
                 }
                 yield()
+                exitOnGLError("")
             }
         }
         println("OpenGLContext thread submitted with id ${Executor.openGLThreadId}")
@@ -530,6 +557,31 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
 
     fun getOpenGlVersionsDefine(): String = "#version 430 core\n"
 
+
+    fun exitOnGLError(errorMessage: String) {
+        exitOnGLError { errorMessage }
+    }
+    fun exitOnGLError(errorMessage: () -> String) {
+        execute {
+            executeExitOnGlErrorFunction(errorMessage)
+        }
+    }
+
+    fun checkGLError(errorMessage: () -> String) = execute {
+        if (GpuContext.CHECKERRORS) {
+
+            val errorValue = GL11.glGetError()
+
+            if (errorValue != GL11.GL_NO_ERROR) {
+                val errorString = GLU.gluErrorString(errorValue)
+                System.err.println("ERROR: $errorString")
+                System.err.println(errorMessage())
+
+                RuntimeException("").printStackTrace()
+            }
+        }
+    }
+
     object Executor: CoroutineScope {
         internal var openGLThreadId: Long = -1
 
@@ -545,6 +597,27 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
 //        override val coroutineContext = dispatcher + job
         override val coroutineContext
             get() = dispatcher + Job()
+
+        fun launch(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> Unit): Job {
+            val enhancedBlock: suspend CoroutineScope.() -> Unit = { block(); executeExitOnGlErrorFunction(); }
+            return (CoroutineScope::launch)(this, coroutineContext, start, enhancedBlock)
+        }
+
+        // duplicate code, because I had compilation issues with coroutines and this function somehow
+        private fun executeExitOnGlErrorFunction(errorMessage: () -> String = {""}) {
+            if (GpuContext.CHECKERRORS) {
+                val errorValue = GL11.glGetError()
+
+                if (errorValue != GL11.GL_NO_ERROR) {
+                    val errorString = GLU.gluErrorString(errorValue)
+                    System.err.println("ERROR: $errorString")
+                    System.err.println(errorMessage())
+
+                    RuntimeException("").printStackTrace()
+                    System.exit(-1)
+                }
+            }
+        }
     }
 
     companion object {
@@ -567,6 +640,22 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
 
         @JvmStatic @JvmName("get") operator fun invoke(): OpenGLContext {
             return openGLContextSingleton
+        }
+
+
+        fun getExitOnGlErrorFunction(errorMessage: () -> String = { "" }): () -> Unit = {
+            if (GpuContext.CHECKERRORS) {
+                val errorValue = GL11.glGetError()
+
+                if (errorValue != GL11.GL_NO_ERROR) {
+                    val errorString = GLU.gluErrorString(errorValue)
+                    System.err.println("ERROR: $errorString")
+                    System.err.println(errorMessage())
+
+                    RuntimeException("").printStackTrace()
+                    System.exit(-1)
+                }
+            }
         }
 
     }

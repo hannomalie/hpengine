@@ -27,10 +27,11 @@ interface Shader : Reloadable {
         ComputeShader(GL43.GL_COMPUTE_SHADER)
     }
 
-    class ShaderLoadException(private val shaderSource: CodeSource) : RuntimeException() {
+    class ShaderLoadException(private val shaderSource: String) : RuntimeException() {
 
         override fun toString(): String {
-            return shaderSource.filename + "\n" + shaderSource.source
+            val source = shaderSource.lines().mapIndexed { index, it -> "$index:$it\n" }.fold("", {a,b -> a+b})
+            return source
         }
 
     }

@@ -34,10 +34,14 @@ class GpuEntityStruct : Struct() {
     var dummy4 by 0.0f
 
     fun setTrafoMinMax(source: Matrix4f, min: org.joml.Vector3f, max: org.joml.Vector3f) {
-        val baseByteOffset = baseByteOffset
-        source.get((baseByteOffset + trafo.localByteOffset).toInt(), buffer)
-        min.get((baseByteOffset + this.min.localByteOffset).toInt(), buffer)
-        max.get((baseByteOffset + this.max.localByteOffset).toInt(), buffer)
+//        val baseByteOffset = baseByteOffset
+//        source.get((baseByteOffset + trafo.localByteOffset).toInt(), buffer)
+//        min.get((baseByteOffset + this.min.localByteOffset).toInt(), buffer)
+//        max.get((baseByteOffset + this.max.localByteOffset).toInt(), buffer)
+
+        trafo.set(source)
+        this.min.set(min)
+        this.max.set(max)
     }
 
     override fun toString(): String {

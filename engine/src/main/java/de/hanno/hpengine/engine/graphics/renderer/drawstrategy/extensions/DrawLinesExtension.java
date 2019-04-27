@@ -21,6 +21,7 @@ import java.nio.FloatBuffer;
 import java.util.List;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 
 public class DrawLinesExtension implements RenderExtension<OpenGl> {
 
@@ -39,17 +40,12 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 
-            gpuContext.disable(CULL_FACE);
-            gpuContext.depthMask(false);
 
             linesProgram.use();
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
             linesProgram.setUniformAsMatrix4("viewMatrix", renderState.getCamera().getViewMatrixAsBuffer());
             linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.getCamera().getProjectionMatrixAsBuffer());
-        }
-
-        if(Config.getInstance().isDrawBoundingVolumes()) {
 
             renderBatches(renderState.getRenderBatchesStatic());
             renderBatches(renderState.getRenderBatchesAnimated());
@@ -80,9 +76,8 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
             renderer.batchLine(new Vector3f(0,0,0), renderState.getCamera().getViewDirection().mul(15));
             linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
             linesDrawn += renderer.drawLines(linesProgram);
-//            firstPassResult.linesDrawn += linesDrawn;
 
-            firstPassResult.linesDrawn += renderer.drawLines(linesProgram);
+            firstPassResult.linesDrawn += linesDrawn;
         }
     }
 

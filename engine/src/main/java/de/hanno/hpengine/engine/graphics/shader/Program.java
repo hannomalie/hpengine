@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
+import static org.lwjgl.opengl.GL20.glGetProgramInfoLog;
 
 public class Program extends AbstractProgram implements Reloadable {
 	private final GpuContext<OpenGl> gpuContext;
@@ -93,7 +94,7 @@ public class Program extends AbstractProgram implements Reloadable {
             attachShader(vertexShader);
 			if(printError("Attach shader")) {
 //				throw new RuntimeException("Attach shader failed for " + vertexShader.getName());
-				LOGGER.severe("Attach shader failed for " + vertexShader.getName());
+				LOGGER.severe("Attach shader failed for " + vertexShader.getName() + ", " + fragmentShader.getName());
 			}
             if(fragmentShader != null) attachShader(fragmentShader);
             if(geometryShader != null) attachShader(geometryShader);
@@ -123,7 +124,9 @@ public class Program extends AbstractProgram implements Reloadable {
 		boolean isError = error != GL11.GL_NO_ERROR;
 		if(isError) {
 			LOGGER.severe(text + " " + GLU.gluErrorString(error));
+			LOGGER.info(glGetProgramInfoLog(id));
 		}
+
 		return isError;
 	}
 

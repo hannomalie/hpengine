@@ -10,11 +10,16 @@ import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
+import de.hanno.hpengine.engine.graphics.BindlessTextures
+import de.hanno.hpengine.engine.graphics.DrawParameters
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.GpuContext.SupportResult.Supported
 import de.hanno.hpengine.engine.graphics.RenderManager
+import de.hanno.hpengine.engine.graphics.Shader5
 import de.hanno.hpengine.engine.graphics.SimpleProvider
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
-import de.hanno.hpengine.engine.graphics.renderer.SimpleLinesRenderer
-import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.SimpleColorRenderer
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -36,7 +41,7 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl> = EngineContextImpl(),
                                            val materialManager: MaterialManager = MaterialManager(engineContext),
-                                           val renderer: Renderer<OpenGl> = SimpleLinesRenderer(engineContext.programManager),//DeferredRenderer(materialManager, engineContext),
+                                           val renderer: Renderer<OpenGl> = DeferredRenderer(materialManager, engineContext),
                                            override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer, materialManager),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
@@ -116,7 +121,15 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             }
 
             Config.getInstance().gameDir = gameDir
-            val engine = EngineImpl()
+            val engineContext = EngineContextImpl()
+            val materialManager = MaterialManager(engineContext)
+            val renderer: Renderer<OpenGl> = getRendererForPlatform(engineContext, materialManager)
+            println("Using renderer class ${renderer.javaClass.simpleName}")
+            val engine = EngineImpl(
+                    engineContext = engineContext,
+                    materialManager = materialManager,
+                    renderer = renderer
+            )
             if (debug) {
                 DebugFrame(engine)
             }
@@ -135,9 +148,17 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 
         }
 
-        @JvmStatic
-        fun create() = EngineImpl()
+        private fun getRendererForPlatform(
+                engineContext: EngineContext<OpenGl>,
+                materialManager: MaterialManager
+        ): Renderer<OpenGl> {
+            return when {
+                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
+                    DeferredRenderer(materialManager, engineContext)
+                }
+                else -> SimpleColorRenderer(engineContext.programManager, engineContext.textureManager)
+            }
+        }
     }
-
 }
 

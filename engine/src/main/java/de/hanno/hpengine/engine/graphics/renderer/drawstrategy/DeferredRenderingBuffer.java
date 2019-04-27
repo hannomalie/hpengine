@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.StorageBuffer;
@@ -45,6 +47,9 @@ public class DeferredRenderingBuffer {
 
     public DeferredRenderingBuffer(GpuContext gpuContext) {
 
+		OpenGLContext openglContext = ((GpuContext<OpenGl>) gpuContext).getBackend().getGpuContext(); // TODO: Remove this hack
+		openglContext.exitOnGLError("before rendertarget creation");
+
 		gBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 				.setName("GBuffer")
 				.add(new ColorAttachmentDefinitions(new String[]{"PositionView/Roughness","Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"}, GL30.GL_RGBA16F, GL11.GL_LINEAR))
@@ -84,7 +89,7 @@ public class DeferredRenderingBuffer {
          storageBuffer = new PersistentMappedBuffer(gpuContext, 4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
-        GpuContext.exitOnGLError("grid de.hanno.hpengine.texture creation");
+		openglContext.exitOnGLError("rendertarget creation");
 	}
 	
 	public int getLightAccumulationMapOneId() {

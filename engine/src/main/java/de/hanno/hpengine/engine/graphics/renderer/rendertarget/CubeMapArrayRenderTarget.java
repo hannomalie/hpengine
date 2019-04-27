@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
+import de.hanno.hpengine.engine.graphics.BindlessTextures;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -45,11 +46,13 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
                             6 * finalCubeMapIndex, 6);
 
                 });
-                long handle = this.gpuContext.calculate((Callable<Long>) () ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
-                currentList[cubeMapIndex] = handle;
-                this.gpuContext.execute(() -> {
-                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-                });
+                if(gpuContext.isSupported(BindlessTextures.INSTANCE)) {
+					long handle = this.gpuContext.calculate((Callable<Long>) () ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+					currentList[cubeMapIndex] = handle;
+					this.gpuContext.execute(() -> {
+						ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+					});
+				}
             }
 		}
 		int colorBufferCount = cubeMapArrays.size();

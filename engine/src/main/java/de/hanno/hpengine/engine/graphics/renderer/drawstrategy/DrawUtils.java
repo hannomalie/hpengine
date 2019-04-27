@@ -36,6 +36,7 @@ public class DrawUtils {
         if (program == null) {
             return 0;
         }
+
         program.setUniform("entityBaseIndex", 0);
         program.setUniform("entityIndex", renderBatch.getEntityBufferIndex());
         program.setUniform("indirect", false);

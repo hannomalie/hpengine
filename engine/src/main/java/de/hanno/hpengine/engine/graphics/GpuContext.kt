@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.*
@@ -169,7 +171,7 @@ interface GpuContext<T: BackendType> {
     }
 
     companion object {
-        val CHECKERRORS = false // TODO: Enable this as soon as possible
+        val CHECKERRORS = true
 
         val LOGGER = Logger.getLogger(GpuContext::class.java.name)
 
@@ -203,39 +205,6 @@ interface GpuContext<T: BackendType> {
 
                 RuntimeException("").printStackTrace()
                 System.exit(-1)
-            }
-        }
-        @JvmStatic
-        fun exitOnGLError(errorMessage: () -> String) {
-            if (!CHECKERRORS) {
-                return
-            }
-
-            val errorValue = GL11.glGetError()
-
-            if (errorValue != GL11.GL_NO_ERROR) {
-                val errorString = GLU.gluErrorString(errorValue)
-                System.err.println("ERROR: $errorString")
-                System.err.println(errorMessage())
-
-                RuntimeException("").printStackTrace()
-                System.exit(-1)
-            }
-        }
-        @JvmStatic
-        fun checkGLError(errorMessage: () -> String) {
-            if (!CHECKERRORS) {
-                return
-            }
-
-            val errorValue = GL11.glGetError()
-
-            if (errorValue != GL11.GL_NO_ERROR) {
-                val errorString = GLU.gluErrorString(errorValue)
-                System.err.println("ERROR: $errorString")
-                System.err.println(errorMessage())
-
-                RuntimeException("").printStackTrace()
             }
         }
     }
