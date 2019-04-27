@@ -24,7 +24,7 @@ import java.util.ArrayList
 import java.util.EnumSet
 import java.util.function.Consumer
 
-open class AbstractRenderer(programManager: ProgramManager<OpenGl>) : Renderer<OpenGl> {
+open class AbstractDeferredRenderer(programManager: ProgramManager<OpenGl>) : Renderer<OpenGl> {
     protected val programManager: ProgramManager<OpenGl> = programManager
     protected val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
