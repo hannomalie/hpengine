@@ -3,6 +3,18 @@
 #else
 layout(binding=0) uniform sampler2D diffuseMap;
 uniform bool hasDiffuseMap = false;
+layout(binding=1) uniform sampler2D normalMap;
+uniform bool hasNormalMap = false;
+layout(binding=2) uniform sampler2D specularMap;
+uniform bool hasSpecularMap = false;
+layout(binding=3) uniform sampler2D occlusionMap;
+uniform bool hasOcclusionMap = false;
+layout(binding=4) uniform sampler2D heightMap;
+uniform bool hasHeightMap = false;
+////
+layout(binding=7) uniform sampler2D roughnessMap;
+uniform bool hasRoughnessMap = false;
+
 #endif
 layout(binding=6) uniform samplerCube environmentMap;
 
@@ -61,6 +73,8 @@ void main(void) {
 	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;
 	vec2 motionVec = (position_clip_post_w.xy) - (position_clip_last_post_w.xy);
 
+	float depth = (position_clip.z / position_clip.w);
+
 //	motionVec.x = length(distance(position_clip_last.xyz, position_clip.xyz));
 
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
@@ -69,103 +83,88 @@ void main(void) {
 
 	vec2 positionTextureSpace = position_clip_post_w.xy * 0.5 + 0.5;
 
-	out_positionRoughness = viewMatrix * position_world;
+	out_positionRoughness = vec4((viewMatrix * position_world).xyz, material.roughness);
 
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
 
 	vec4 color = vec4(material.diffuse, 1);
+	vec2 uvParallax = vec2(0,0);
+	float alpha = material.transparency;
 
-	#ifdef BINDLESSTEXTURES
-		if(useNormalMaps && uint64_t(material.handleNormal) > 0) {
-			sampler2D _normalMap = sampler2D((material.handleNormal));
-			PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
-			PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
-		}
+#ifdef BINDLESSTEXTURES
 
+	sampler2D diffuseMap;
+	bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
+	if(hasDiffuseMap) { diffuseMap = sampler2D(material.handleDiffuse); }
 
-		vec2 uvParallax = vec2(0,0);
-		if(uint64_t(material.handleHeight) > 0) {
-			sampler2D _heightMap = sampler2D((material.handleHeight));
+	sampler2D normalMap;
+	bool hasNormalMap = uint64_t(material.handleNormal) > 0;
+	if(hasNormalMap) { normalMap = sampler2D(material.handleNormal); }
 
-			float height = (texture(_heightMap, UV).rgb).r;
+	sampler2D specularMap;
+	bool hasSpecularMap = uint64_t(material.handleSpecular) > 0;
+	if(hasSpecularMap) { specularMap = sampler2D(material.handleSpecular); }
 
-			mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-			vec3 viewVectorTangentSpace = -normalize((TBN) * (V));
-			float v = height * material.parallaxScale - material.parallaxBias;
-			v = clamp(0, v, v);
+	sampler2D heightMap;
+	bool hasHeightMap = uint64_t(material.handleHeight) > 0;
+	if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
 
-			uvParallax = (v * viewVectorTangentSpace.xy);
-			vec3 viewPositionTanget = TBN * eyePosition;
-			vec3 fragmentPositionTangent = TBN * position_world.xyz;
-			vec3 viewDirTanget = normalize(viewPositionTanget - fragmentPositionTangent);
-			//		UV = parallaxMapping(_heightMap, UV, viewDirTanget, material.parallaxScale, material.parallaxBias);
-			UV = UV + uvParallax;
-		}
+	sampler2D occlusionMap;
+	bool hasOcclusionMap = uint64_t(material.handleOcclusion) > 0;
+	if(hasOcclusionMap) { occlusionMap = sampler2D(material.handleOcclusion); }
 
+	sampler2D roughnessMap;
+	bool hasRoughnessMap = uint64_t(material.handleRoughness) != 0;
+	if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
 
-		float depth = (position_clip.z / position_clip.w);
+#endif
 
-		out_normalAmbient = vec4(PN_view, materialAmbient);
+	if(hasDiffuseMap) {
+		color = texture(diffuseMap, UV);
+		alpha *= color.a;
+	}
 
-		float alpha = material.transparency;
-		if(uint64_t(material.handleDiffuse) > 0) {
-			sampler2D _diffuseMap = sampler2D(material.handleDiffuse);
+	if(useNormalMaps && hasNormalMap) {
+		PN_world = normalize(perturb_normal(old_PN_world, V, UV, normalMap));
+		PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
+	}
 
-			color = texture(_diffuseMap, UV);
-			alpha *= color.a;
-			if(color.a<0.1)
-			{
-				discard;
-			}
-		}
-		out_colorMetallic = color;
-		out_colorMetallic.w = material.metallic;
+	if(hasHeightMap) {
+		float height = (texture(heightMap, UV).rgb).r;
 
-		if(uint64_t(material.handleOcclusion) > 0) {
-			//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
-		}
+		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
+		vec3 viewVectorTangentSpace = -normalize((TBN) * (V));
+		float v = height * material.parallaxScale - material.parallaxBias;
+		v = clamp(0, v, v);
 
-		out_positionRoughness.w = material.roughness;
-		if(uint64_t(material.handleRoughness) != 0) {
-			sampler2D _roughnessMap = sampler2D((material.handleRoughness));
-			float r = texture(_roughnessMap, UV).x;
-			out_positionRoughness.w = material.roughness*r;
-		}
+		uvParallax = (v * viewVectorTangentSpace.xy);
+		vec3 viewPositionTanget = TBN * eyePosition;
+		vec3 fragmentPositionTangent = TBN * position_world.xyz;
+		vec3 viewDirTanget = normalize(viewPositionTanget - fragmentPositionTangent);
+		//		UV = parallaxMapping(heightMap, UV, viewDirTanget, material.parallaxScale, material.parallaxBias);
+		UV = UV + uvParallax;
+	}
 
+	if(hasRoughnessMap) {
+		float r = texture(roughnessMap, UV).x;
+		out_positionRoughness.w = material.roughness*r;
+	}
 
-		if(uint64_t(material.handleSpecular) > 0) {
-			//	UV.x = texCoord.x * specular;
-			//	UV.y = texCoord.y * specular;
-			//	UV = texCoord + uvParallax;
-			//	vec3 specularSample = texture2D(specularMap, UV).xyz;
-			//	float glossiness = length(specularSample)/length(vec3(1,1,1));
-			//	const float glossinessBias = 1.5;
-			//	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (material.roughness);
-		}
+	if(hasSpecularMap) {
+		//	UV.x = texCoord.x * specular;
+		//	UV.y = texCoord.y * specular;
+		//	UV = texCoord + uvParallax;
+		//	vec3 specularSample = texture2D(specularMap, UV).xyz;
+		//	float glossiness = length(specularSample)/length(vec3(1,1,1));
+		//	const float glossinessBias = 1.5;
+		//	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (material.roughness);
+	}
 
-		out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
-		out_depthAndIndices = vec4(float(outEntity.entityIndexWithoutMeshIndex), depth, outMaterialIndex, float(outEntity.meshIndex));
-
-		if(RAINEFFECT) {
-			float n = surface3(vec3(UV, 0.01));
-			float n2 = surface3(vec3(UV, 0.1), 2);
-			float waterEffect = rainEffect * clamp(3 * n2 * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0)*clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
-			float waterEffect2 = rainEffect * clamp(3 * n * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
-			out_positionRoughness.w *= 1-waterEffect2;
-			out_colorMetallic.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
-			out_colorMetallic.w = waterEffect2;
-		}
-
-		//	out_colorMetallic.rgb = vec3(1,0,0);
-		//	out_colorMetallic.rgb = position_world.rgb/100.0;
-		//out_normal.a = 1;
-	#else
-		if(hasDiffuseMap) {
-			color = texture(diffuseMap, UV);
-		}
-	#endif
+	if(hasOcclusionMap) {
+		//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
+	}
 
 	if(color.a<0.1)
 	{
@@ -176,5 +175,17 @@ void main(void) {
 		color.rgb = vec3(1,0,0);
 	}
 	out_colorMetallic = vec4(color.rgb, material.metallic);
+	out_normalAmbient = vec4(PN_view, material.ambient);
+	out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
+	out_depthAndIndices = vec4(float(entity.entityIndexWithoutMeshIndex), depth, entity.materialIndex, float(entity.meshIndex));
 
+	if(RAINEFFECT) {
+		float n = surface3(vec3(UV, 0.01));
+		float n2 = surface3(vec3(UV, 0.1), 2);
+		float waterEffect = rainEffect * clamp(3 * n2 * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0)*clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
+		float waterEffect2 = rainEffect * clamp(3 * n * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
+		out_positionRoughness.w *= 1-waterEffect2;
+		out_colorMetallic.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
+		out_colorMetallic.w = waterEffect2;
+	}
 }

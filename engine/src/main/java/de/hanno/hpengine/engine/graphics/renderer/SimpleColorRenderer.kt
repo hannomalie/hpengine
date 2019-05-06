@@ -17,7 +17,6 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
     val simpleColorProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
 
     override fun render(result: DrawResult, state: RenderState) {
-        finalImage = deferredRenderingBuffer.colorReflectivenessMap
         deferredRenderingBuffer.use(true)
 
         simpleColorProgram.use()
@@ -41,11 +40,10 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
 
 
         for(batch in state.entitiesState.renderBatchesStatic) {
-            simpleColorProgram.setUniform("hasDiffuseMap", batch.materialInfo.getHasDiffuseMap())
-            if(batch.materialInfo.getHasDiffuseMap()) {
-                gpuContext.bindTexture(0, batch.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE]!!)
-            } else {
-                gpuContext.bindTexture(0, textureManager.defaultTexture)
+            for(map in batch.materialInfo.maps) {
+                gpuContext.bindTexture(map.key.textureSlot, map.value)
+                val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
+                simpleColorProgram.setUniform(uniformKey, batch.materialInfo.getHasDiffuseMap())
             }
             DrawUtils.draw(gpuContext, state, batch, simpleColorProgram)
         }
@@ -54,6 +52,11 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
             drawlinesExtension.renderFirstPass(null, gpuContext, result.firstPassResult, state)
         }
 
+        if(Config.getInstance().isUseDirectTextureOutput) {
+            finalImage = Config.getInstance().directTextureOutputTextureIndex
+        } else {
+            finalImage = deferredRenderingBuffer.colorReflectivenessMap
+        }
         super.render(result, state)
     }
 }
