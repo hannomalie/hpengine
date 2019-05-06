@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.event.bus.EventBus
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.shader.Shader.Companion.directory
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -72,30 +71,27 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val e
             }
 
         val shaderID = IntArray(1)
-        val finalResultingShaderSource = resultingShaderSource
         gpuContext.execute {
             shaderID[0] = GL20.glCreateShader(shader.shaderType.glShaderType)
             shader.id = shaderID[0]
-            GL20.glShaderSource(shaderID[0], finalResultingShaderSource)
+            GL20.glShaderSource(shaderID[0], resultingShaderSource)
             GL20.glCompileShader(shaderID[0])
         }
 
         shaderSource.resultingShaderSource = resultingShaderSource
 
-        val shaderLoadFailed = BooleanArray(1)
-        val finalNewlineCount = newlineCount
-        gpuContext.execute {
+        val shaderLoadFailed = gpuContext.calculate {
             if (GL20.glGetShaderi(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.simpleName + ": " + shaderSource.filename)
                 var shaderInfoLog = GL20.glGetShaderInfoLog(shaderID[0], 10000)
-                shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, finalNewlineCount)
+                shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, newlineCount)
                 System.err.println(shaderInfoLog)
-                shaderLoadFailed[0] = true
-            }
+                true
+            } else false
         }
 
-        if (shaderLoadFailed[0]) {
-            throw Shader.ShaderLoadException(finalResultingShaderSource)
+        if (shaderLoadFailed) {
+            throw Shader.ShaderLoadException(resultingShaderSource)
         }
 
         Shader.LOGGER.finer(resultingShaderSource)

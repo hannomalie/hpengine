@@ -67,7 +67,8 @@ interface Shader : Reloadable {
             while (loCMatcher.find()) {
                 val oldLineNumber = loCMatcher.group(1)
                 val newLineNumber = Integer.parseInt(oldLineNumber) - newlineCount
-                shaderInfoLog = shaderInfoLog.replace(String.format("\\(%s\\) :", oldLineNumber).toRegex(), String.format("(%d) :", newLineNumber))
+                val regex = String.format("\\($oldLineNumber\\) :", oldLineNumber).toRegex()
+                shaderInfoLog = shaderInfoLog.replace(regex, "(ln $newLineNumber) :")
             }
 
             return shaderInfoLog

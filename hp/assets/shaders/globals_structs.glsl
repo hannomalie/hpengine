@@ -1,8 +1,6 @@
 struct Material {
-	float diffuseR;
-	float diffuseG;
-	float diffuseB;
-	float metallic;
+    vec3 diffuse;
+    float metallic;
 
 	float roughness;
 	float ambient;
@@ -153,14 +151,8 @@ struct VertexShaderOutput {
     vec3 normal_model;
     vec3 normal_world;
     vec3 normal_view;
-    vec3 tangent_world;
-    vec3 bitangent_world;
     vec4 position_clip;
     vec4 position_clip_last;
     vec4 position_clip_uv;
     vec4 position_world;
-    vec3 lightVec;
-    vec3 halfVec;
-    vec3 eyeVec;
-    vec3 eyePos_world;
 };

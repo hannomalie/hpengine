@@ -14,7 +14,7 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
     init {
     }
     val drawlinesExtension = DrawLinesExtension(this, programManager)
-    val simpleColorProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_simple_color_fragment.glsl")
+    val simpleColorProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
 
     override fun render(result: DrawResult, state: RenderState) {
         finalImage = deferredRenderingBuffer.colorReflectivenessMap
@@ -41,6 +41,7 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
 
 
         for(batch in state.entitiesState.renderBatchesStatic) {
+            simpleColorProgram.setUniform("hasDiffuseMap", batch.materialInfo.getHasDiffuseMap())
             if(batch.materialInfo.getHasDiffuseMap()) {
                 gpuContext.bindTexture(0, batch.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE]!!)
             } else {

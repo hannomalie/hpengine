@@ -28,7 +28,7 @@ tasks.withType<KotlinCompile>().configureEachLater {
     println("Configuring $name in project ${project.name}...")
     kotlinOptions {
         suppressWarnings = true
-        freeCompilerArgs = listOf("-Xjvm-default=enable", "-Dkotlinx.coroutines.debug")
+        freeCompilerArgs = listOf("-Xjvm-default=enable")
         jvmTarget = "1.8"
     }
 }

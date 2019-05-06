@@ -546,11 +546,14 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
     fun getOpenGlExtensionsDefine(): String {
 
         fun String.appendIfSupported(feature: GpuFeature, string: String): String {
-            return "${this} ${if(isSupported(feature)) string else ""}"
+            val supported = isSupported(feature)
+            val defineString = if (supported) "#define ${feature.toString().toUpperCase()} true\n" else ""
+            val featureStringOrEmpty = if (supported) " $string\n" else ""
+            return "${this}$featureStringOrEmpty$defineString"
         }
-        return "".appendIfSupported(Shader5, "#extension GL_NV_gpu_shader5 : enable\n")
-                .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable\n")
-                .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable\n")
+        return "".appendIfSupported(Shader5, "#extension GL_NV_gpu_shader5 : enable")
+                .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable")
+                .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable")
     }
 
     override fun isSupported(feature: GpuFeature) = features.contains(feature)
