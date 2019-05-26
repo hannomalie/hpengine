@@ -60,10 +60,6 @@ struct ProbeSample {
 	vec3 refractedColor;
 };
 
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
-
 struct Ray {
 	vec3 orig, direction;
 	float tmin, tmax;
@@ -177,29 +173,6 @@ TraceResult traceCubes(vec3 positionWorld, vec3 dir, vec3 V, float roughness, fl
 	return result;
 }
 
-// if a direction is very strong, it is taken unless it is the world y axis. Vertical interpolation doesnt work well.
-vec3 findMainAxis(vec3 inputVector) {
-	if(abs(inputVector.x) > abs(inputVector.z)) {
-		return vec3(1,0,0);
-	} else {
-		return vec3(0,0,1);
-	}
-	
-	// y shouldn't be the main axis ever, I guess
-	/*if(abs(input.x) > abs(input.y)) {
-		if(abs(input.x) > abs(input.z)) {
-			return vec3(1,0,0);
-		} else {
-			return vec3(0,0,1);
-		}
-	} else { // y is greater than x
-		if(abs(input.y) > abs(input.z)) {
-			return vec3(0,1,0);
-		} else {
-			return vec3(0,0,1);
-		}
-	}*/
-}
 vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
 	vec3 nrdir = normalize(texCoords3d);
 	vec3 envMapMin = vec3(-300,-300,-300);
@@ -314,11 +287,11 @@ vec2 _cartesianToSpherical(vec3 cartCoords){
     return vec2(outPolar, outElevation);
 }
 
-vec3 _sphericalToCartesian(vec2 input){
+vec3 _sphericalToCartesian(vec2 theInput){
 	vec3 outCart;
-    outCart.x = cos(input.x) * sin(input.y);
-    outCart.y = sin(input.x) * sin(input.y);
-    outCart.z = cos(input.y);
+    outCart.x = cos(theInput.x) * sin(theInput.y);
+    outCart.y = sin(theInput.x) * sin(theInput.y);
+    outCart.z = cos(theInput.y);
     
     return outCart;
 }
@@ -1177,7 +1150,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 		float[k] blendFactors;
 		for(int i = 0; i < k; i++) {
 			indices[i] = -1;
-			distances[i] = 100000f;
+			distances[i] = 100000.0f;
 			weights[i] = 0.0f;
 			blendFactors[i] = 0.0f;
 			customWeights[i] = 1.0;

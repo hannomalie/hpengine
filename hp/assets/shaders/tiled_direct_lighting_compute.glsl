@@ -14,8 +14,6 @@ layout(binding = 7) uniform sampler2D lastFrameReflectionBuffer;
 layout(binding = 8) uniform samplerCubeArray probes;
 layout(binding = 9) uniform samplerCube environmentProbe;
 
-
-
 uniform float screenWidth;
 uniform float screenHeight;
 uniform vec3 environmentMapMin[100];
@@ -24,6 +22,9 @@ uniform int activeProbeCount;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
+
+//include(globals_structs.glsl)
+//include(globals.glsl)
 
 struct ProbeSample {
 	vec3 diffuseColor;
@@ -136,35 +137,6 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 	return probeColor;
 }
 
-vec3 findMainAxis(vec3 input) {
-	if(abs(input.x) > abs(input.z)) {
-		return vec3(1,0,0);
-	} else {
-		return vec3(0,0,1);
-	}
-}
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
-
-vec2 cartesianToSpherical(vec3 cartCoords){
-	float a = atan(cartCoords.y/cartCoords.x);
-	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
-	return vec2(a, b);
-}
-
-float radicalInverse_VdC(uint bits) {
-     bits = (bits << 16u) | (bits >> 16u);
-     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-     
-     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
-vec2 hammersley2d(uint i, int N) {
-	return vec2(float(i)/float(N), radicalInverse_VdC(i));
-}
 
 // http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
 float p(vec2 spherical_coords, float roughness) {
@@ -294,12 +266,12 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   
   if(roughness < 0.01) {
   	reflected = boxProjection(positionWorld, reflected, index);
-	vec4 SampleColor = texture(probes, vec4(reflected, index), 1);
+	vec4 SampleColor = textureLod(probes, vec4(reflected, index), 1);
 	//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(reflected, 0), 1).rgb, 1-SampleColor.a);
 	
     result.specularColor = SpecularColor * SampleColor.rgb;
   	normal = boxProjection(positionWorld, normal, index);
-  	result.diffuseColor = diffuseColor * texture(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+  	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
   	return result;
   }
   

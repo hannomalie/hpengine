@@ -21,7 +21,7 @@ public class ShaderTest extends TestWithEngine {
 
         OpenGlProgramManager programManager = engine.getProgramManager();
         {
-            VertexShader vertexShader = VertexShader.load(programManager, shaderSource, new Defines());
+            VertexShader vertexShader = programManager.loadShader(VertexShader.class, shaderSource, new Defines());
             Assert.assertTrue("", vertexShader.getShaderType().equals(OpenGLShader.VertexShader));
             Assert.assertTrue(vertexShader.getId() > 0);
         }

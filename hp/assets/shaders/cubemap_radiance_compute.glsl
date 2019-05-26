@@ -85,16 +85,6 @@ struct TileProbes {
 	int[10] indices;
 };
 
-vec3 findMainAxis(vec3 input) {
-	if(abs(input.x) > abs(input.z)) {
-		return vec3(1,0,0);
-	} else {
-		return vec3(0,0,1);
-	}
-}
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
 
 vec2 cartesianToSpherical(vec3 cartCoords){
 	float a = atan(cartCoords.y/cartCoords.x);

@@ -53,6 +53,7 @@ layout(location=3)out vec4 out_motionDepthTransparency;
 layout(location=4)out vec4 out_depthAndIndices;
 
 //include(globals.glsl)
+//include(normals.glsl)
 
 void main(void) {
 
@@ -74,8 +75,6 @@ void main(void) {
 	vec2 motionVec = (position_clip_post_w.xy) - (position_clip_last_post_w.xy);
 
 	float depth = (position_clip.z / position_clip.w);
-
-//	motionVec.x = length(distance(position_clip_last.xyz, position_clip.xyz));
 
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
@@ -118,7 +117,6 @@ void main(void) {
 	sampler2D roughnessMap;
 	bool hasRoughnessMap = uint64_t(material.handleRoughness) != 0;
 	if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
-
 #endif
 
 	if(hasDiffuseMap) {
@@ -153,17 +151,9 @@ void main(void) {
 	}
 
 	if(hasSpecularMap) {
-		//	UV.x = texCoord.x * specular;
-		//	UV.y = texCoord.y * specular;
-		//	UV = texCoord + uvParallax;
-		//	vec3 specularSample = texture2D(specularMap, UV).xyz;
-		//	float glossiness = length(specularSample)/length(vec3(1,1,1));
-		//	const float glossinessBias = 1.5;
-		//	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (material.roughness);
 	}
 
 	if(hasOcclusionMap) {
-		//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
 	}
 
 	if(color.a<0.1)

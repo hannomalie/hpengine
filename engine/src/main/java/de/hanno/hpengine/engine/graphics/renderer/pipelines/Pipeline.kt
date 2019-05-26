@@ -47,7 +47,10 @@ interface Pipeline: CustomState {
             return when(T::class) {
                 is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
                 is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
-                else -> SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                else -> SimplePipeline(engine,
+                        useFrustumCulling = useFrustumCulling,
+                        useBackFaceCulling = useBackfaceCulling,
+                        useLineDrawingIfActivated = useLineDrawingIfActivated)
             }
         }
     }

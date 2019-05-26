@@ -22,8 +22,8 @@ uniform int time = 0;
 uniform bool useRainEffect = false;
 uniform float rainEffect = 0.0;
 
-uniform float sceneScale = 1f;
-uniform float inverseSceneScale = 1f;
+uniform float sceneScale = 1.0f;
+uniform float inverseSceneScale = 1.0f;
 uniform int gridSize;
 
 uniform bool useNormalMaps = true;
@@ -65,8 +65,7 @@ layout(location=4)out vec4 out_visibility; // visibility
 
 void main(void) {
 
-	float depth = (position_clip.z / position_clip.w);
-
+    float depth = 0;
     out_position = pass_WorldPosition;
     out_position.w = 0;
     out_normal = vec4(normal_view, depth);

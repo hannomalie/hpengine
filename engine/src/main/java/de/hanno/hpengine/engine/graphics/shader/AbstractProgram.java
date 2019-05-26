@@ -39,9 +39,9 @@ public abstract class AbstractProgram {
 		uniforms.get(name).set(value);
 	}
 	public void setUniform(String name, boolean value) {
-		int valueAsInd = value == true ? 1 : 0;
+		int valueAsInt = value ? 1 : 0;
 		putInMapIfAbsent(name);
-		uniforms.get(name).set(valueAsInd);
+		uniforms.get(name).set(valueAsInt);
 	}
     public void setUniform(String name, float value) {
         putInMapIfAbsent(name);

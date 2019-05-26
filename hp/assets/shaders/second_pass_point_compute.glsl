@@ -82,7 +82,7 @@ shared uint minDepth = 0xFFFFFFFF;
 shared uint maxDepth = 0;
 
 bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
-	return all(distance(positionSphere, positionToTest) < radius);
+	return distance(positionSphere, positionToTest) < radius;
 }
 
 
@@ -147,8 +147,6 @@ float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight poi
 //		moments.w = 1;
 //		depthToCompareWith = moments.z;
 	}
-
-
 
 	float litFactor = (depthToCompareWith + bias) < currentDepth ? 0.0 : 1;
 	return litFactor;

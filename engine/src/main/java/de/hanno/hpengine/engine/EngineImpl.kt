@@ -152,12 +152,13 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 engineContext: EngineContext<OpenGl>,
                 materialManager: MaterialManager
         ): Renderer<OpenGl> {
-            return when {
-                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
-                    DeferredRenderer(materialManager, engineContext)
-                }
-                else -> SimpleColorRenderer(engineContext.programManager, engineContext.textureManager)
-            }
+            return DeferredRenderer(materialManager, engineContext)
+//            return when {
+//                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
+//                    DeferredRenderer(materialManager, engineContext)
+//                }
+//                else -> SimpleColorRenderer(engineContext.programManager, engineContext.textureManager)
+//            }
         }
     }
 }

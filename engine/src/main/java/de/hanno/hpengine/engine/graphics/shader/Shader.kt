@@ -30,7 +30,7 @@ interface Shader : Reloadable {
     class ShaderLoadException(private val shaderSource: String) : RuntimeException() {
 
         override fun toString(): String {
-            val source = shaderSource.lines().mapIndexed { index, it -> "$index:$it\n" }.fold("", {a,b -> a+b})
+            val source = shaderSource.lines().mapIndexed { index, it -> "${index+1}:$it\n" }.fold("", { a, b -> a+b})
             return source
         }
 

@@ -9,6 +9,11 @@ layout(binding=7) uniform sampler2D visibilityMap;
 
 layout(binding=8) uniform samplerCubeArray probes;
 
+#ifdef BINDLESSTEXTURES
+#else
+layout(binding=8) uniform sampler2D directionalLightShadowMap;
+#endif
+
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
@@ -97,8 +102,14 @@ void main(void) {
 	int FOLIAGE = 1;
 	int UNLIT = 2;
 	vec3 lightDiffuse = directionalLight.color;
+
+	#if BINDLESS_TEXTURES
+	float visibility = getVisibility(positionWorld, directionalLight);
+	#else
+	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap);
+
+	#endif
 	if(materialType == FOLIAGE) {
-	    float visibility = getVisibility(positionWorld, directionalLight);
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
@@ -107,7 +118,6 @@ void main(void) {
 	} else if(materialType == UNLIT) {
 	    finalColor = color;
 	} else {
-	    float visibility = getVisibility(positionWorld, directionalLight);
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
     	finalColor *= visibility;
 	}

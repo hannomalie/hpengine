@@ -1,5 +1,22 @@
 
+#ifdef BINDLESSTEXTURES
+#else
 layout(binding=0) uniform sampler2D diffuseMap;
+uniform bool hasDiffuseMap = false;
+layout(binding=1) uniform sampler2D normalMap;
+uniform bool hasNormalMap = false;
+layout(binding=2) uniform sampler2D specularMap;
+uniform bool hasSpecularMap = false;
+layout(binding=3) uniform sampler2D occlusionMap;
+uniform bool hasOcclusionMap = false;
+layout(binding=4) uniform sampler2D heightMap;
+uniform bool hasHeightMap = false;
+////
+layout(binding=7) uniform sampler2D roughnessMap;
+uniform bool hasRoughnessMap = false;
+
+layout(binding=8) uniform sampler2D directionalLightShadowMap;
+#endif
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -7,7 +24,6 @@ uniform mat4 viewMatrix;
 uniform float near = 0.1;
 uniform float far = 100.0;
 uniform vec3 color = vec3(0,0,0);
-uniform bool hasDiffuseMap;
 
 uniform float diffuseMapWidth = 1;
 uniform float diffuseMapHeight = 1;
@@ -34,49 +50,17 @@ layout(std430, binding=2) buffer _directionalLight {
 };
 
 //include(globals.glsl)
+//include(normals.glsl)
 
 //include(global_lighting.glsl)
 
-mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
-{
-	vec3 dp1 = dFdx( p );
-	vec3 dp2 = dFdy( p );
-	vec2 duv1 = dFdx( uv );
-	vec2 duv2 = dFdy( uv );
-
-	vec3 dp2perp = cross( dp2, N );
-	vec3 dp1perp = cross( N, dp1 );
-	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
-	return mat3( T * invmax, B * invmax, N );
-}
-vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
-{
-	vec3 map = (texture(normalMap, texcoord)).xyz;
-	map = map * 2 - 1;
-	mat3 TBN = cotangent_frame( N, V, texcoord );
-	return normalize( TBN * map );
-}
-vec2 parallaxMapping(sampler2D heightMap, vec2 texCoords, vec3 viewDir, float height_scale, float parallaxBias)
-{
-    float height =  texture(heightMap, texCoords).r;
-    if(height < parallaxBias) {
-        height = 0;
-    };
-    vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
-    return texCoords - p;
-}
 void main()
 {
 	vec2 UV = texCoord;
 	vec4 position_clip_post_w = position_clip/position_clip.w;
 	Material material = outMaterial;
 
-    vec3 materialDiffuseColor = vec3(material.diffuseR,
-                                     material.diffuseG,
-                                     material.diffuseB);
+    vec3 materialDiffuseColor = material.diffuse.rgb;
     float materialRoughness = float(material.roughness);
     float materialMetallic = float(material.metallic);
     float materialAmbient = float(material.ambient);
@@ -85,10 +69,42 @@ void main()
     float materialTransparency = float(material.transparency);
 
     vec4 color = vec4(materialDiffuseColor, 1);
-	if(uint64_t(material.handleDiffuse) > 0) {
-        sampler2D _diffuseMap = sampler2D(material.handleDiffuse);
 
-    	color = texture(_diffuseMap, UV);
+
+
+#ifdef BINDLESSTEXTURES
+    float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
+
+    sampler2D diffuseMap;
+    bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
+    if(hasDiffuseMap) { diffuseMap = sampler2D(material.handleDiffuse); }
+
+    sampler2D normalMap;
+    bool hasNormalMap = uint64_t(material.handleNormal) > 0;
+    if(hasNormalMap) { normalMap = sampler2D(material.handleNormal); }
+
+    sampler2D specularMap;
+    bool hasSpecularMap = uint64_t(material.handleSpecular) > 0;
+    if(hasSpecularMap) { specularMap = sampler2D(material.handleSpecular); }
+
+    sampler2D heightMap;
+    bool hasHeightMap = uint64_t(material.handleHeight) > 0;
+    if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
+
+    sampler2D occlusionMap;
+    bool hasOcclusionMap = uint64_t(material.handleOcclusion) > 0;
+    if(hasOcclusionMap) { occlusionMap = sampler2D(material.handleOcclusion); }
+
+    sampler2D roughnessMap;
+    bool hasRoughnessMap = uint64_t(material.handleRoughness) != 0;
+    if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
+
+#else
+    float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight, directionalLightShadowMap);
+#endif
+
+	if(hasDiffuseMap) {
+    	color = texture(diffuseMap, UV);
 	}
 
     float opaqueness = 1-materialTransparency;
@@ -97,13 +113,10 @@ void main()
 	dir.w = 0.0;
 	vec3 V = (inverse(viewMatrix) * dir).xyz;
 
-//	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
-	if(uint64_t(material.handleNormal) > 0) {
-        sampler2D _normalMap = sampler2D((material.handleNormal));
-        PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
-//        PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
+	if(hasNormalMap) {
+        PN_world = normalize(perturb_normal(old_PN_world, V, UV, normalMap));
     }
 
 	int materialType = int(material.materialtype);
@@ -113,15 +126,13 @@ void main()
 	vec4 resultingColor = vec4(0,0,0,color.a * opaqueness);
 	if(materialType == DEFAULT) {
         float NdotL = max(clamp(dot(-directionalLight.direction, PN_world), 0, 1), 0.01);
-        float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
         resultingColor.rgb = color.rgb * directionalLight.color * NdotL * max(visibility, 0.0);
 	    resultingColor.rgb = max(vec3(.005) * color.rgb, resultingColor.rgb);
 	} else if(materialType == FOLIAGE) {
         float NdotL = max(clamp(dot(-directionalLight.direction, PN_world), 0, 1), 0.01);
-        float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
         resultingColor.rgb = color.rgb * directionalLight.color * NdotL * max(visibility, 0.0);
 	    resultingColor.rgb = max(vec3(.005) * color.rgb, resultingColor.rgb);
-		resultingColor += color.rgb * directionalLight.color * clamp(dot(-directionalLight.direction, -PN_world), 0, 1);
+		resultingColor.rgb += color.rgb * directionalLight.color * clamp(dot(-directionalLight.direction, -PN_world), 0, 1);
 	} else {
 	    resultingColor.rgb = color.rgb;
 	}

@@ -68,7 +68,7 @@ public class RenderTarget {
             for (int i = 0; i < colorAttachments.size(); i++) {
                 ColorAttachmentDefinition currentAttachment = colorAttachments.get(i);
 
-                gpuContext.getBackend().getGpuContext().exitOnGLError("");
+                gpuContext.getBackend().getGpuContext().getExceptionOnError("");
                 int renderedTextureTemp = GL11.glGenTextures();
 
                 gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);

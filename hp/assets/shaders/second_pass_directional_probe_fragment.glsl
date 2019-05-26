@@ -328,9 +328,6 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	return accumFog * lightDiffuse;
 }
 
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
 void main(void) {
 	
 	vec2 st;

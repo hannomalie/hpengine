@@ -36,36 +36,11 @@ open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: En
         renderHighZMap()
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program) {
-        setUniforms(renderState, program)
-    }
-
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program) {
-        setUniforms(renderState, program)
-    }
-
     override val cullCam: Camera?
         get() = getDebugCam()
 
     private fun getDebugCam(): Camera? {
         val option = engine.sceneManager.scene.entityManager.getEntities().stream().filter { it is Camera }.map { it as Camera }.findFirst()
         return if (option.isPresent) option.get() else null
-    }
-    fun setUniforms(renderState: RenderState, program: Program) {
-
-        val camera = cullCam ?: renderCam ?: renderState.camera
-        val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
-        val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
-        val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
-
-        program.use()
-        program.bindShaderStorageBuffer(1, renderState.materialBuffer)
-        program.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-        program.setUniform("useRainEffect", if (Config.getInstance().rainEffect.toDouble() == 0.0) false else true)
-        program.setUniform("rainEffect", Config.getInstance().rainEffect)
-        program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)
-        program.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer)
-        program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer)
-        program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer)
     }
 }

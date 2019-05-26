@@ -26,28 +26,9 @@ uniform int N = 12;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
-const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
-				2.0/16.0, 4.0/16.0, 2.0/16.0,
-				1.0/16.0, 2.0/16.0, 1.0/16.0 };
-				
+//include(globals_structs.glsl)
+//include(globals.glsl)
 
-vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
-	vec4 result = vec4(0,0,0,0);
-	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipLevel);
-	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
-	result += kernel[2] * textureLod(sampler, texCoords + vec2(blurDistance, -blurDistance), mipLevel);
-	
-	result += kernel[3] * textureLod(sampler, texCoords + vec2(-blurDistance), mipLevel);
-	result += kernel[4] * textureLod(sampler, texCoords + vec2(0, 0), mipLevel);
-	result += kernel[5] * textureLod(sampler, texCoords + vec2(blurDistance, 0), mipLevel);
-	
-	result += kernel[6] * textureLod(sampler, texCoords + vec2(-blurDistance, blurDistance), mipLevel);
-	result += kernel[7] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
-	result += kernel[8] * textureLod(sampler, texCoords + vec2(blurDistance, blurDistance), mipLevel);
-	
-	return result;
-}
 struct ProbeSample {
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -82,9 +63,6 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-float rand(vec2 co){
-	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
-}
 float getAmbientOcclusion(vec2 st) {
 	
 	float ao = 1;
@@ -211,9 +189,6 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 	return probeColor;
 }
 
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
 struct Ray {
 	vec3 orig, direction;
 	float tmin, tmax;
@@ -328,32 +303,6 @@ TraceResult traceCubes(vec3 positionWorld, vec3 dir, vec3 V, float roughness, fl
 	return result;
 }
 
-vec3 findMainAxis(vec3 input) {
-	if(abs(input.x) > abs(input.z)) {
-		return vec3(1,0,0);
-	} else {
-		return vec3(0,0,1);
-	}
-}
-
-vec2 cartesianToSpherical(vec3 cartCoords){
-	float a = atan(cartCoords.y/cartCoords.x);
-	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
-	return vec2(a, b);
-}
-
-float radicalInverse_VdC(uint bits) {
-     bits = (bits << 16u) | (bits >> 16u);
-     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-     
-     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
-vec2 hammersley2d(uint i, int N) {
-	return vec2(float(i)/float(N), radicalInverse_VdC(i));
-}
 
 // http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
 float p(vec2 spherical_coords, float roughness) {
@@ -364,24 +313,6 @@ float p(vec2 spherical_coords, float roughness) {
 	float result = (a2 * cos(spherical_coords.x) * sin(spherical_coords.x)) /
 					(PI * pow((pow(cos(spherical_coords.x), 2) * (a2 - 1)) + 1, 2));
 	return result;
-}
-
-// http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
-vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
-     float phi = u * 2.0 * PI;
-     float cosTheta = 1.0 - v;
-     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-     vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-     
-	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-	vec3 TangentX = normalize( cross( UpVector, N ) );
-	vec3 TangentY = cross( N, TangentX );
-	 // Tangent to world space
-	 result = TangentX * result.x + TangentY * result.y + N * result.z;
-     //mat3 transform = createOrthonormalBasis(N);
-	 //result = (transform) * result;
-	 
-     return result;
 }
 
 vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
@@ -704,66 +635,66 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(TileP
 	return result;
 }
 
-const int k = 5;
-const int n = 3;
-float[k] knotsX;
-float[k] knotsY;
-
-float f_u(int i, int n, float u) {
-	return (u-knotsX[i]) / (knotsX[i+n]-knotsX[i]);
-}
-float g_u(int i, int n, float u) {
-	return (knotsX[i+n] - u) / (knotsX[i+n]-knotsX[i]);
-}
-float f_v(int i, int n, float u) {
-	return (u-knotsY[i]) / (knotsY[i+n]-knotsX[i]);
-}
-float g_v(int i, int n, float u) {
-	return (knotsY[i+n] - u) / (knotsY[i+n]-knotsY[i]);
-}
-
-vec3 N_u(int i, int n, float u) {
-	return f_u(i, n, u)*N_u(i, n-1, u) + g_u(i+1, n, u)*N_u(i+1, n-1, u);
-}
-vec3 N_v(int i, int n, float u) {
-	return f_v(i, n, u)*N_v(i, n-1, u) + g_v(i+1, n, u)*N_v(i+1, n-1, u);
-}
-
-float R(int i, int j, float u, float v, int k, int n) {
-	float denom_float;
-	vec3 denom = vec3(denom_float, denom_float, denom_float);
-	
-	for(int p = 1; p <= k; p++) {
-		for(int q = 1; q <= k; q++) {
-			denom += N_u(p, n, u)*N_v(q, n, v);
-		}
-	}
-	
-	return ((N_u(i, n, u) * N_v(j, n, v)) / denom).r; // TODO CHECK THIS .r
-}
-
-float __calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {
-	vec3 intersectionAreaMinimum = vec3(max(minimum2.x, minimum.x), max(minimum2.y, minimum.y), max(minimum2.z, minimum.z));
-	vec3 intersectionAreaMaximum = vec3(min(maximum2.x, maximum.x), min(maximum2.y, maximum.y), min(maximum2.z, maximum.z));
-	vec3 intersectionAreaExtends = (intersectionAreaMaximum - intersectionAreaMinimum);
-	vec3 intersectionAreaHalfExtends = intersectionAreaExtends/2.0;
-	
-	vec3 result;
-	float u_length = intersectionAreaExtends.x / k;
-	float v_length = intersectionAreaExtends.y / k;
-	for(int i = 0; i < k; i++) {
-		knotsX[i] = intersectionAreaMinimum.x + i*u_length;
-		knotsY[i] = intersectionAreaMinimum.y + i*v_length;
-	}
-	
-	for(int i = 1; i <= k; i++) {
-		for(int j = 1; j <= k; j++) {
-			result += R(i,j,positionWorld.x, positionWorld.y, k, n) * vec3(knotsX[i+1], knotsY[j+1],1);
-		}
-	}
-	
-	return result.z;
-}
+//const int k = 5;
+//const int n = 3;
+//float[k] knotsX;
+//float[k] knotsY;
+//
+//float f_u(int i, int n, float u) {
+//	return (u-knotsX[i]) / (knotsX[i+n]-knotsX[i]);
+//}
+//float g_u(int i, int n, float u) {
+//	return (knotsX[i+n] - u) / (knotsX[i+n]-knotsX[i]);
+//}
+//float f_v(int i, int n, float u) {
+//	return (u-knotsY[i]) / (knotsY[i+n]-knotsX[i]);
+//}
+//float g_v(int i, int n, float u) {
+//	return (knotsY[i+n] - u) / (knotsY[i+n]-knotsY[i]);
+//}
+//
+//vec3 N_u(int i, int n, float u) {
+//	return f_u(i, n, u)*N_u(i, n-1, u) + g_u(i+1, n, u)*N_u(i+1, n-1, u);
+//}
+//vec3 N_v(int i, int n, float u) {
+//	return f_v(i, n, u)*N_v(i, n-1, u) + g_v(i+1, n, u)*N_v(i+1, n-1, u);
+//}
+//
+//float R(int i, int j, float u, float v, int k, int n) {
+//	float denom_float = 0.0f;
+//	vec3 denom = vec3(denom_float, denom_float, denom_float);
+//
+//	for(int p = 1; p <= k; p++) {
+//		for(int q = 1; q <= k; q++) {
+//			denom += N_u(p, n, u)*N_v(q, n, v);
+//		}
+//	}
+//
+//	return ((N_u(i, n, u) * N_v(j, n, v)) / denom).r; // TODO CHECK THIS .r
+//}
+//
+//float _calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {
+//	vec3 intersectionAreaMinimum = vec3(max(minimum2.x, minimum.x), max(minimum2.y, minimum.y), max(minimum2.z, minimum.z));
+//	vec3 intersectionAreaMaximum = vec3(min(maximum2.x, maximum.x), min(maximum2.y, maximum.y), min(maximum2.z, maximum.z));
+//	vec3 intersectionAreaExtends = (intersectionAreaMaximum - intersectionAreaMinimum);
+//	vec3 intersectionAreaHalfExtends = intersectionAreaExtends/2.0;
+//
+//	vec3 result;
+//	float u_length = intersectionAreaExtends.x / k;
+//	float v_length = intersectionAreaExtends.y / k;
+//	for(int i = 0; i < k; i++) {
+//		knotsX[i] = intersectionAreaMinimum.x + i*u_length;
+//		knotsY[i] = intersectionAreaMinimum.y + i*v_length;
+//	}
+//
+//	for(int i = 1; i <= k; i++) {
+//		for(int j = 1; j <= k; j++) {
+//			result += R(i,j,positionWorld.x, positionWorld.y, k, n) * vec3(knotsX[i+1], knotsY[j+1],1);
+//		}
+//	}
+//
+//	return result.z;
+//}
 float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {
 	vec3 centerNearest = minimum + (maximum - minimum)/2.0;
 	vec3 centerSecondNearest = minimum2 + (maximum2 - minimum2)/2.0;

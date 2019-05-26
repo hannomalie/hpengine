@@ -22,27 +22,27 @@ public class Uniform {
 	}
 
 	public void set(int value) {
-//		if(location == -1) { return; };
+		if(location == -1) { return; }
 		GL20.glUniform1i(location, value);
 	}
 	public void set(float value) {
-//		if(location == -1) { return; };
+		if(location == -1) { return; }
 		GL20.glUniform1f(location, value);
 	}
     public void set(long value) {
-//		if(location == -1) { return; };
+		if(location == -1) { return; }
         ARBBindlessTexture.glUniformHandleui64ARB(location, value);
     }
 	public void set(float x, float y, float z) {
-//		if(location == -1) { return; };
+		if(location == -1) { return; }
 		GL20.glUniform3f(location, x, y, z);
 	}
 	public void setAsMatrix4(FloatBuffer values) {
-//		if(location == -1) { return; };
+		if(location == -1) { return; }
 		GL20.glUniformMatrix4fv(location, false, values);
 	}
 	public void setAsMatrix4(ByteBuffer values) {
-//		if(location == -1) { return; };
+		if(location == -1) { return; }
 		GL20.glUniformMatrix4fv(location, false, values.asFloatBuffer());
 	}
 

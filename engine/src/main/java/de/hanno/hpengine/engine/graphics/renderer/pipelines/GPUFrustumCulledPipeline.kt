@@ -34,8 +34,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
                                                               useLineDrawing: Boolean = true,
-                                                              open val renderCam: Camera? = null,
-                                                              open val cullCam: Camera? = renderCam) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+                                                              renderCam: Camera? = null,
+                                                              cullCam: Camera? = renderCam) : SimplePipeline(engine, cullCam, renderCam, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
@@ -230,4 +230,5 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         }
         GPUProfiler.end()
     }
+
 }

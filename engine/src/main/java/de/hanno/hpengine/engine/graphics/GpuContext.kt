@@ -165,6 +165,8 @@ interface GpuContext<T: BackendType> {
         }
     }
 
+    fun getExceptionOnError(errorMessage: String = ""): RuntimeException?
+
     sealed class SupportResult {
         object Supported: SupportResult()
         data class UnSupported(val unsupportedFeatures: List<GpuFeature>): SupportResult()

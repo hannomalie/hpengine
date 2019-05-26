@@ -54,16 +54,6 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 findMainAxis(vec3 input) {
-	if(abs(input.x) > abs(input.z)) {
-		return vec3(1,0,0);
-	} else {
-		return vec3(0,0,1);
-	}
-}
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
 struct Ray {
 	vec3 orig, direction;
 	float tmin, tmax;

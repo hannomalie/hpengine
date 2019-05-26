@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.model.texture
 
-import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.util.Util

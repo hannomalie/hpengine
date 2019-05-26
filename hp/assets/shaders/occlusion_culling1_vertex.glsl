@@ -349,15 +349,13 @@ void main(){
 
         bool isVisible = true;
 
-        if(FRUSTUM_CULLING)
-        {
-            isVisible = isVisible && inFrustum;
-        }
+#ifdef FRUSTUM_CULLING
+        isVisible = isVisible && inFrustum;
+#endif
 
-        if(OCCLUSION_CULLING)
-        {
-            isVisible = isVisible && !allOccluded;
-        }
+#ifdef OCCLUSION_CULLING
+        isVisible = isVisible && !allOccluded;
+#endif
 
 isVisible = true;
 

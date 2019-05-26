@@ -147,6 +147,12 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
             FileBasedSimpleTexture(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
     }
+    @JvmOverloads
+    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> {
+        return textures.computeIfAbsent(resourceName) {
+            FileBasedSimpleTexture(gpuContext, resourceName, file, srgba)
+        } as Texture<TextureDimension2D>
+    }
 
     fun getCompleteTextureInfo(resourceName: String, srgba: Boolean): CompleteTextureInfo {
         val ddsImageAvailable = availableAsDDS(resourceName)

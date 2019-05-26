@@ -21,10 +21,20 @@ layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 
+#ifdef ANIMATED
+layout(std430, binding=6) buffer _joints {
+	mat4 joints[2000];
+};
+#endif
+
 in vec3 in_Position;
 in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
+#ifdef ANIMATED
+in vec4 in_Weights;
+in ivec4 in_JointIndices;
+#endif
 
 flat out VertexShaderFlatOutput vertexShaderFlatOutput;
 out VertexShaderOutput vertexShaderOutput;
@@ -44,6 +54,32 @@ void main(void) {
     mat4 modelMatrix = entity.modelMatrix;
 
 	vec4 positionModel = vec4(in_Position.xyz,1);
+
+#ifdef ANIMATED
+
+	vec4 initPos = vec4(0, 0, 0, 0);
+	int count = 0;
+	const int MAX_WEIGHTS = 4;
+	int frameIndex = entity.animationFrame0;
+	int currentJoint = 150 * frameIndex; // MAX_JOINTS per animation frame is 150
+	for(int i = 0; i < MAX_WEIGHTS; i++)
+	{
+		float weight = in_Weights[i];
+		if(weight > 0) {
+			count++;
+			int jointIndex = entity.baseJointIndex + currentJoint + in_JointIndices[i];
+			vec4 tmpPos = joints[jointIndex] * vec4(positionModel.xyz, 1.0);
+			initPos += weight * tmpPos;
+		}
+	}
+	if (count == 0)
+	{
+		initPos = vec4(positionModel.xyz, 1.0);
+	}
+
+	positionModel = initPos;
+#endif
+
 
 	vec4 position_world = modelMatrix * positionModel;
 

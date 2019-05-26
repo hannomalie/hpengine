@@ -35,6 +35,9 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     fun getProgram(vertexShaderSource: CodeSource,
                    fragmentShaderSource: CodeSource?) = getProgram(vertexShaderSource, fragmentShaderSource, null, Defines())
     @JvmDefault
+    fun getProgram(vertexShaderSource: CodeSource,
+                   fragmentShaderSource: CodeSource?, defines: Defines) = getProgram(vertexShaderSource, fragmentShaderSource, null, defines)
+    @JvmDefault
     fun getProgram(vertexShaderSource: CodeSource) = getProgram(vertexShaderSource, null, null, Defines())
 
 

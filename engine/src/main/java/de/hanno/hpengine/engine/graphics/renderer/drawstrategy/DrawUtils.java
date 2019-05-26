@@ -37,6 +37,15 @@ public class DrawUtils {
             return 0;
         }
 
+        int result = actuallyDraw(gpuContext, vertexBuffer, indexBuffer, renderBatch, program, drawLinesIfEnabled);
+        RuntimeException exceptionOrNull = gpuContext.getExceptionOnError("");
+        if(exceptionOrNull != null) {
+            exceptionOrNull.printStackTrace();
+        }
+        return result;
+    }
+
+    private static int actuallyDraw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean drawLinesIfEnabled) {
         program.setUniform("entityBaseIndex", 0);
         program.setUniform("entityIndex", renderBatch.getEntityBufferIndex());
         program.setUniform("indirect", false);

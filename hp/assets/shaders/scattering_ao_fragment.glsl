@@ -48,7 +48,7 @@ layout(location=0)out vec4 out_AOScattering;
 
 
 bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
-	return all(distance(positionSphere, positionToTest) < radius);
+	return distance(positionSphere, positionToTest) < radius;
 }
 
 float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
@@ -240,11 +240,6 @@ float ComputeScattering(float lightDotView)
 	return result;
 }
 
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
-
-
 float[16] ditherPattern = { 0.0f, 0.5f, 0.125f, 0.625f,
 							0.75f, 0.22f, 0.875f, 0.375f,
 							0.1875f, 0.6875f, 0.0625f, 0.5625,
@@ -297,12 +292,17 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		}
 		{
 			if(useVoxelGrid == 1) {
-			    float mipLevel = 2.5;
-                float rand = (surface3(currentPosition.xyz/30f + 0.0003*vec3(time%1000000), 0.5f));
-                for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+			    float mipLevel = 2.5f;
+				vec3 randomPosition = currentPosition/30.0f;
+				float rand = surface3(randomPosition + vec3(0.0003f)*vec3(time%1000000), 0.5f);
+				for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
                     VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
-		            vec4 voxel = voxelFetch(voxelGrid, toSampler(voxelGrid.gridHandle), currentPosition, mipLevel);
-//		            voxel += voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), currentPosition, mipLevel);
+#ifdef BINDLESS_TEXTURES
+					sampler3D gridSampler = toSampler(voxelGrid.gridHandle);
+					vec4 voxel = voxelFetch(voxelGrid, gridSampler, currentPosition, mipLevel);
+#else
+					vec4 voxel = voxelFetch(voxelGrid, grid, currentPosition, mipLevel);
+#endif
                     accumFogShadow += 3.5*rand*voxel.rgb;
                 }
 

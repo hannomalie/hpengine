@@ -127,7 +127,10 @@ class VoxelConeTracingExtension
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val pipeline = SimplePipeline(engine, false, false, false)
+    private val pipeline = SimplePipeline(engine,
+            useFrustumCulling = false,
+            useBackFaceCulling = false,
+            useLineDrawingIfActivated = false)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
     private var voxelizedInCycle: Long = -1

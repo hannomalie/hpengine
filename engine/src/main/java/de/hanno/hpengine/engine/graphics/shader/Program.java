@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
-import static org.lwjgl.opengl.GL20.glGetProgramInfoLog;
+import static org.lwjgl.opengl.GL20.*;
 
 public class Program extends AbstractProgram implements Reloadable {
 	private final GpuContext<OpenGl> gpuContext;
@@ -71,7 +71,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			clearUniforms();
 
 			try {
-                vertexShader = VertexShader.load(programManager, vertexShaderSource, defines);
+				vertexShader = programManager.loadShader(VertexShader.class, vertexShaderSource, defines);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -85,35 +85,50 @@ public class Program extends AbstractProgram implements Reloadable {
 			if (geometryShaderSource != null) {
 				try {
                     geometryShader = programManager.loadShader(GeometryShader.class, geometryShaderSource, defines);
-					printError("Attach geometryshader ");
+					gpuContext.getBackend().getGpuContext().exceptionOnError();
 				} catch (Exception e) {
-					LOGGER.severe("Not able to load geometry de.hanno.hpengine.shader, so what else could be done...");
+					LOGGER.severe("Not able to load geometry shader, so what else could be done...");
 				}
 			}
 
+			gpuContext.getBackend().getGpuContext().exceptionOnError();
             attachShader(vertexShader);
-			if(printError("Attach shader")) {
-//				throw new RuntimeException("Attach shader failed for " + vertexShader.getName());
-				LOGGER.severe("Attach shader failed for " + vertexShader.getName() + ", " + fragmentShader.getName());
-			}
             if(fragmentShader != null) attachShader(fragmentShader);
             if(geometryShader != null) attachShader(geometryShader);
 			bindShaderAttributeChannels();
+			gpuContext.getBackend().getGpuContext().exceptionOnError();
 
-			GL20.glLinkProgram(id);
-			if(printError("Link program")) {
-				throw new RuntimeException("Linking failed");
-			}
-			GL20.glValidateProgram(id);
-			printError("Validate program");
+			linkProgram();
+			validateProgram();
 
-//		use(); // CAN CAUSE INVALID OPERATION - TODO: CHECK OUT WHY
+			gpuContext.getBackend().getGpuContext().exceptionOnError();
+
 			addFileListeners();
 		});
 	}
 
-    private void attachShader(Shader shader) {
+	private void validateProgram() {
+		GL20.glValidateProgram(id);
+		int validationResult = GL20.glGetProgrami(id, GL_VALIDATE_STATUS);
+		if(GL_FALSE == validationResult) {
+			System.err.println(GL20.glGetProgramInfoLog(id));
+			throw new IllegalStateException("Program invalid: " + getName());
+		}
+	}
+
+	private void linkProgram() {
+		GL20.glLinkProgram(id);
+		int linkResult = GL20.glGetProgrami(id, GL_LINK_STATUS);
+		if(GL_FALSE == linkResult) {
+			System.err.println(GL20.glGetProgramInfoLog(id));
+			throw new IllegalStateException("Program not linked: " + getName());
+		}
+	}
+
+	private void attachShader(Shader shader) {
         GL20.glAttachShader(getId(), shader.getId());
+		gpuContext.getBackend().getGpuContext().exceptionOnError(shader.getName());
+
     }
     private void detachShader(Shader shader) {
         GL20.glDetachShader(getId(), shader.getId());

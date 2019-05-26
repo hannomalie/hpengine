@@ -18,8 +18,8 @@ layout(std430, binding=4) buffer _ambientCubes {
 	AmbientCube ambientCubes[1000];
 };
 
-uniform float sceneScale = 1;
-uniform float inverseSceneScale = 1;
+uniform float sceneScale = 1.0f;
+uniform float inverseSceneScale = 1.0f;
 uniform int gridSize;
 
 uniform float extent = 20f;

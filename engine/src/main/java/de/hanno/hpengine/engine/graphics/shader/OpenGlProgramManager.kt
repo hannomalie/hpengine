@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val eventBus: EventBus) : ProgramManager<OpenGl> {
     init {
-        gpuContext.exitOnGLError { "OpenGlProgramManager init" }
+//        gpuContext.getExceptionOnError { "OpenGlProgramManager init" }
     }
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
@@ -70,20 +70,21 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val e
                 this.shaderSource = shaderSource
             }
 
-        val shaderID = IntArray(1)
-        gpuContext.execute {
-            shaderID[0] = GL20.glCreateShader(shader.shaderType.glShaderType)
-            shader.id = shaderID[0]
-            GL20.glShaderSource(shaderID[0], resultingShaderSource)
-            GL20.glCompileShader(shaderID[0])
+        val shaderId: Int = gpuContext.calculate {
+            GL20.glCreateShader(shader.shaderType.glShaderType).also { shaderId ->
+                GL20.glShaderSource(shaderId, resultingShaderSource)
+                GL20.glCompileShader(shaderId)
+            }
         }
+        shader.id = shaderId
 
         shaderSource.resultingShaderSource = resultingShaderSource
 
         val shaderLoadFailed = gpuContext.calculate {
-            if (GL20.glGetShaderi(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+            val shaderStatus = GL20.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS)
+            if (shaderStatus == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.simpleName + ": " + shaderSource.filename)
-                var shaderInfoLog = GL20.glGetShaderInfoLog(shaderID[0], 10000)
+                var shaderInfoLog = GL20.glGetShaderInfoLog(shaderId, 10000)
                 shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, newlineCount)
                 System.err.println(shaderInfoLog)
                 true
@@ -95,7 +96,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val e
         }
 
         Shader.LOGGER.finer(resultingShaderSource)
-        gpuContext.exitOnGLError { "loadShader: " + type.simpleName + ": " + shaderSource.filename }
+        gpuContext.getExceptionOnError { "loadShader: " + type.simpleName + ": " + shaderSource.filename }
 
         return shader
     }

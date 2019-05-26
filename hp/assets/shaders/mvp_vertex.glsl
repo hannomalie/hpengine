@@ -8,14 +8,11 @@ in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
 
-//in vec4 in_position;
-//in vec2 in_TextureCoord;
-//in vec3 in_Normal;
-
 out vec4 pass_Position;
 out vec4 pass_WorldPosition;
 out vec3 normal_world;
 out vec2 texCoord;
+out vec3 normal_view;
 
 void main()
 {
@@ -27,6 +24,7 @@ void main()
     normal_world.z = dot(modelMatrix[2].xyz, in_Normal);
 	normal_world = (inverse(transpose(modelMatrix)) * vec4(in_Normal,0)).xyz;
 	//normal_world = modelMatrix * vec4(in_Normal,0)).xyz;
+	normal_view = (viewMatrix * vec4(normal_world.xyz, 0)).xyz;
 	
 	texCoord = in_TextureCoord;
 	texCoord.y = 1 - in_TextureCoord.y;

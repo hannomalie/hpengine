@@ -17,8 +17,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class DeferredRenderingBuffer {
@@ -48,7 +46,7 @@ public class DeferredRenderingBuffer {
     public DeferredRenderingBuffer(GpuContext gpuContext) {
 
 		OpenGLContext openglContext = ((GpuContext<OpenGl>) gpuContext).getBackend().getGpuContext(); // TODO: Remove this hack
-		openglContext.exitOnGLError("before rendertarget creation");
+		openglContext.getExceptionOnError("before rendertarget creation");
 
 		gBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 				.setName("GBuffer")
@@ -89,7 +87,7 @@ public class DeferredRenderingBuffer {
          storageBuffer = new PersistentMappedBuffer(gpuContext, 4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
-		openglContext.exitOnGLError("rendertarget creation");
+		openglContext.getExceptionOnError("rendertarget creation");
 	}
 	
 	public int getLightAccumulationMapOneId() {

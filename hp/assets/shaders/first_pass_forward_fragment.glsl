@@ -22,8 +22,8 @@ uniform int time = 0;
 uniform bool useRainEffect = false;
 uniform float rainEffect = 0.0;
 
-uniform float sceneScale = 1f;
-uniform float inverseSceneScale = 1f;
+uniform float sceneScale = 1.0f;
+uniform float inverseSceneScale = 1.0f;
 uniform int gridSize;
 
 uniform bool useNormalMaps = true;
