@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.libc.LibCStdlib;
 
@@ -163,7 +164,8 @@ public class VertexBuffer extends PersistentMappedBuffer {
     }
 
     protected ByteBuffer mapBuffer(long capacityInBytes, int flags)  {
-        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes));
+//        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes));
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer((int) capacityInBytes));
         if(buffer != null) {
             buffer.rewind();
             byteBuffer.put(buffer);

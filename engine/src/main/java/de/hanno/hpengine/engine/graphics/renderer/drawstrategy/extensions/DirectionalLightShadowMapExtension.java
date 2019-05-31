@@ -81,7 +81,6 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
         for(int i = 0; i < visibles.size(); i++) {
             RenderBatch e = visibles.get(i);
-            directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
             DrawUtils.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible(), true);
         }
         engine.getTextureManager().generateMipMaps(TEXTURE_2D, getShadowMapId());

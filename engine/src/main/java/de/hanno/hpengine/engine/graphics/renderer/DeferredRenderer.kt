@@ -313,6 +313,9 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             if(state.environmentProbesState.environmapsArray3Id > 0) {
                 gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, state.environmentProbesState.environmapsArray3Id)
             }
+            if(!gpuContext.isSupported(BindlessTextures)) {
+                gpuContext.bindTexture(8, TEXTURE_2D, state.directionalLightState.shadowMapId)
+            }
             GPUProfiler.end()
 
             secondPassDirectionalProgram.use()

@@ -107,8 +107,8 @@ void main(void) {
 	float visibility = getVisibility(positionWorld, directionalLight);
 	#else
 	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap);
-
 	#endif
+
 	if(materialType == FOLIAGE) {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
