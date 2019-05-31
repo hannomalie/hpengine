@@ -4,8 +4,7 @@ plugins {
 version = "1.0.0-SNAPSHOT"
 
 buildscript {
-
-    val kotlin_version by extra { "1.3.21" }
+    val kotlinVersion by rootProject.extra { "1.3.21" }
 
     repositories {
         mavenLocal()

@@ -60,9 +60,14 @@ repositories {
         setUrl("http://dl.bintray.com/kotlin/kotlinx")
     }
 
+    maven {
+        setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
+    }
+    
     mavenCentral()
     jcenter()
 }
+val kotlinVersion: String by rootProject.extra
 val lwjgl_version = "3.2.0"
 val lwjgl_natives = when (OperatingSystem.current()) {
     OperatingSystem.LINUX   -> "natives-linux"
@@ -70,11 +75,13 @@ val lwjgl_natives = when (OperatingSystem.current()) {
     OperatingSystem.WINDOWS -> "natives-windows"
     else -> throw Error("Unrecognized or unsupported Operating system. Please set \"lwjglNatives\" manually")
 }
-
 dependencies {
     compile(kotlin("stdlib-jdk8"))
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
+    
+    compile("de.swirtz:ktsRunner:0.0.7")
+
 
     compile("", "PNGDecoder")
     compile("", "dds", "1.0.1-SNAPSHOT")

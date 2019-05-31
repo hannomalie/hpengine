@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.JavaComponent
+import de.hanno.hpengine.engine.component.KotlinComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
@@ -25,6 +26,7 @@ import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
+import de.hanno.hpengine.util.ressources.CodeSource
 import java.io.IOException
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -136,13 +138,27 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 
             val initScriptFile = Config.getInstance().directoryManager.gameDir.initScript
             initScriptFile?.let {
-                try {
-                    val initScript = JavaComponent(String(Files.readAllBytes(it.toPath())))
-                    initScript.init(engine)
-                    initScript.initWithEngine(engine)
-                    println("InitScript initialized")
-                } catch (e: IOException) {
-                    e.printStackTrace()
+                when(it.extension) {
+                    "java" -> {
+                        try {
+                            val initScript = JavaComponent(String(Files.readAllBytes(it.toPath())))
+                            initScript.init(engine)
+                            initScript.initWithEngine(engine)
+                            println("InitScript initialized")
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        }
+                    }
+                    "kt" -> {
+                        try {
+                            val initScript = KotlinComponent(CodeSource(it))
+                            initScript.init(engine)
+                            initScript.initWithEngine(engine)
+                            println("InitScript initialized")
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        }
+                    }
                 }
             }
 

@@ -1,6 +1,8 @@
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+
 plugins {
-//    id("java")
     java
+    kotlin("jvm")
 }
 
 group = "de.hanno.hpengine"
@@ -44,6 +46,7 @@ dependencies {
 java.sourceSets["main"].java {
     srcDir("game")
 }
+kotlin.sourceSets["main"].kotlin.srcDirs("game")
 
 //TODO: Rework this concept completely
 val copyJarToDistribution = tasks.create<Copy>("copyJarToDistribution"){

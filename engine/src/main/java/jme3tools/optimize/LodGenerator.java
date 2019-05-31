@@ -747,7 +747,7 @@ public class LodGenerator {
         dst.triangles.add(triangle);
         // NOTE: triangle is not removed from src. This is implementation specific optimization.
 
-        // Its up to the compiler to unroll everything.
+        // Its up to the objectLoader to unroll everything.
         for (int i = 0; i < 3; i++) {
             if (triangle.vertexId[i] == oldID) {
                 for (int n = 0; n < 3; n++) {
