@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -70,30 +71,30 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
     fun renderAreaLightShadowMaps(renderState: RenderState) {
         val areaLights = getComponents(AreaLight::class.java)
 
-        GPUProfiler.start("Arealight shadowmaps")
-        engine.gpuContext.depthMask(true)
-        engine.gpuContext.enable(GlCap.DEPTH_TEST)
-        engine.gpuContext.disable(GlCap.CULL_FACE)
-        renderTarget.use(true)
+        profiled("Arealight shadowmaps") {
+            engine.gpuContext.depthMask(true)
+            engine.gpuContext.enable(GlCap.DEPTH_TEST)
+            engine.gpuContext.disable(GlCap.CULL_FACE)
+            renderTarget.use(true)
 
-        for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
+            for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 
-            renderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
+                renderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
 
-            engine.gpuContext.clearDepthAndColorBuffer()
+                engine.gpuContext.clearDepthAndColorBuffer()
 
-            val light = areaLights[i]
+                val light = areaLights[i]
 
-            areaShadowPassProgram.use()
-            areaShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-            areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.camera.viewMatrixAsBuffer)
-            areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
+                areaShadowPassProgram.use()
+                areaShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.camera.viewMatrixAsBuffer)
+                areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
-            for (e in renderState.renderBatchesStatic) {
-                DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
+                for (e in renderState.renderBatchesStatic) {
+                    DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
+                }
             }
         }
-        GPUProfiler.end()
     }
 
     fun getDepthMapForAreaLight(light: AreaLight): Int {

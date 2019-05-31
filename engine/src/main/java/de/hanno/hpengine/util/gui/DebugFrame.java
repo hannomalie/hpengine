@@ -34,6 +34,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.*;
+import de.hanno.hpengine.engine.graphics.SimpleProvider;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
@@ -241,6 +242,12 @@ public class DebugFrame implements HostComponent {
                 SwingUtilities.invokeLater(getSetTitleRunnable());
             }
         }.start();
+        engine.getGpuContext().registerPerFrameCommand(new SimpleProvider(() -> {}) {
+            @Override
+            public void executeAfterFrame() {
+                handle(new FrameFinishedEvent(engine.getRenderManager().getRenderState().getCurrentReadState().getLatestDrawResult()));
+            }
+        });
     }
 
     private void init() {

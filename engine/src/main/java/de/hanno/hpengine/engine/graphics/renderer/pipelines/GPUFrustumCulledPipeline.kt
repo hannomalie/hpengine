@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
@@ -56,13 +57,13 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, VoxelConeTracingExtension.ZERO_BUFFER)
         val cullAndRender = { profilerString: String,
                               phase: Pipeline.CoarseCullingPhase ->
-            GPUProfiler.start(profilerString)
-            cullAndRender(drawDescriptionStatic, { beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program) }, phase.staticPhase)
-            debugPrintPhase1(drawDescriptionStatic, Pipeline.CullingPhase.STATIC_ONE)
-            cullAndRender(drawDescriptionAnimated, { beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program) }, phase.animatedPhase)
-            debugPrintPhase1(drawDescriptionAnimated, Pipeline.CullingPhase.ANIMATED_ONE)
-            renderHighZMap()
-            GPUProfiler.end()
+            profiled(profilerString) {
+                cullAndRender(drawDescriptionStatic, { beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program) }, phase.staticPhase)
+                debugPrintPhase1(drawDescriptionStatic, Pipeline.CullingPhase.STATIC_ONE)
+                cullAndRender(drawDescriptionAnimated, { beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program) }, phase.animatedPhase)
+                debugPrintPhase1(drawDescriptionAnimated, Pipeline.CullingPhase.ANIMATED_ONE)
+                renderHighZMap()
+            }
         }
         cullAndRender("Cull&Render Phase1", Pipeline.CoarseCullingPhase.ONE)
     }
@@ -129,52 +130,62 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         }
     }
 
-    private fun cullPhase(renderState: RenderState, commandOrganization: CommandOrganization, drawCountBuffer: AtomicCounterBuffer, targetCommandBuffer: CommandBuffer, phase: Pipeline.CullingPhase) {
-        GPUProfiler.start("Culling Phase")
+    private fun cullPhase(renderState: RenderState,
+                          commandOrganization: CommandOrganization,
+                          drawCountBuffer: AtomicCounterBuffer,
+                          targetCommandBuffer: CommandBuffer,
+                          phase: Pipeline.CullingPhase) = profiled("Culling Phase") {
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
         val appendProgram: AbstractProgram = if(Config.getInstance().isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
 
-        GPUProfiler.start("Buffer compaction")
-        with(commandOrganization) {
-            commandBuffers.sizeInBytes = commandBuffer.sizeInBytes
-            val instanceCount = commands.map { it.primCount }.reduce({ a, b -> a + b })
-            visibilityBuffers.sizeInBytes = instanceCount * java.lang.Integer.BYTES
-            commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * ModelComponent.getBytesPerInstance()
-            val entitiesCountersToUse = entitiesCounters
-            entitiesCountersToUse.sizeInBytes = commands.size * java.lang.Integer.BYTES
-            with(appendProgram) {
-                use()
-                bindShaderStorageBuffer(1, entitiesCounters)
-                bindShaderStorageBuffer(2, drawCountBuffer)
-                bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
-                bindShaderStorageBuffer(4, entityOffsetBuffer)
-                bindShaderStorageBuffer(5, commandBuffer)
-                bindShaderStorageBuffer(7, targetCommandBuffer)
-                bindShaderStorageBuffer(8, entityOffsetBuffersCulled)
-                bindShaderStorageBuffer(9, visibilityBuffers)
-                bindShaderStorageBuffer(10, entitiesBuffersCompacted)
-                bindShaderStorageBuffer(11, entitiesCompactedCounter)
-                bindShaderStorageBuffer(12, commandOffsets)
-                bindShaderStorageBuffer(13, currentCompactedPointers)
-                setUniform("maxDrawCommands", commands.size)
-                if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
-                    appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
-                } else {
-                    val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
-                    GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)
+        profiled("Buffer compaction") {
+
+            with(commandOrganization) {
+                commandBuffers.sizeInBytes = commandBuffer.sizeInBytes
+                val instanceCount = commands.map { it.primCount }.reduce({ a, b -> a + b })
+                visibilityBuffers.sizeInBytes = instanceCount * java.lang.Integer.BYTES
+                commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * ModelComponent.getBytesPerInstance()
+                val entitiesCountersToUse = entitiesCounters
+                entitiesCountersToUse.sizeInBytes = commands.size * java.lang.Integer.BYTES
+                with(appendProgram) {
+                    use()
+                    bindShaderStorageBuffer(1, entitiesCounters)
+                    bindShaderStorageBuffer(2, drawCountBuffer)
+                    bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
+                    bindShaderStorageBuffer(4, entityOffsetBuffer)
+                    bindShaderStorageBuffer(5, commandBuffer)
+                    bindShaderStorageBuffer(7, targetCommandBuffer)
+                    bindShaderStorageBuffer(8, entityOffsetBuffersCulled)
+                    bindShaderStorageBuffer(9, visibilityBuffers)
+                    bindShaderStorageBuffer(10, entitiesBuffersCompacted)
+                    bindShaderStorageBuffer(11, entitiesCompactedCounter)
+                    bindShaderStorageBuffer(12, commandOffsets)
+                    bindShaderStorageBuffer(13, currentCompactedPointers)
+                    setUniform("maxDrawCommands", commands.size)
+                    if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
+                        appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
+                    } else {
+                        val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
+                        GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commands.size)
+                    }
+                    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT or GL42.GL_TEXTURE_FETCH_BARRIER_BIT or GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL42.GL_COMMAND_BARRIER_BIT)
+                    GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
                 }
-                GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT or GL42.GL_TEXTURE_FETCH_BARRIER_BIT or GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL42.GL_COMMAND_BARRIER_BIT)
-                GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
             }
         }
-        GPUProfiler.end()
-        GPUProfiler.end()
     }
 
-    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
-        GPUProfiler.start("Actually render")
+    private fun render(renderState: RenderState,
+                       program: Program,
+                       commandOrganization: CommandOrganization,
+                       vertexIndexBuffer: VertexIndexBuffer,
+                       drawCountBuffer: AtomicCounterBuffer,
+                       commandBuffer: CommandBuffer,
+                       offsetBuffer: IndexBuffer,
+                       beforeRender: () -> Unit,
+                       phase: Pipeline.CullingPhase) = profiled("Actually render") {
         program.use()
         beforeRender()
         program.setUniform("entityIndex", 0)
@@ -193,11 +204,9 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
         drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commands.size, drawCountBufferToUse)
-        GPUProfiler.end()
     }
 
-    private fun cull(renderState: RenderState, commandOrganization: CommandOrganization, phase: Pipeline.CullingPhase) {
-        GPUProfiler.start("Visibility detection")
+    private fun cull(renderState: RenderState, commandOrganization: CommandOrganization, phase: Pipeline.CullingPhase) = profiled("Visibility detection") {
         val occlusionCullingPhase = if (phase.coarsePhase == Pipeline.CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
         with(occlusionCullingPhase) {
 //            commandOrganization.commands.map { it.primCount }.reduce({ a, b -> a + b })
@@ -228,7 +237,6 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT)
             GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
         }
-        GPUProfiler.end()
     }
 
 }

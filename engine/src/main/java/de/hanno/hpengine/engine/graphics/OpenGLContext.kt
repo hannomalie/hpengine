@@ -262,6 +262,11 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
             executePerFrameCommand(provider)
         }
     }
+    internal fun executeAfterFrameActions() {
+        for (i in perFrameCommandProviders.indices) {
+            perFrameCommandProviders[i].executeAfterFrame()
+        }
+    }
 
     internal fun executePerFrameCommand(perFrameCommandProvider: PerFrameCommandProvider) {
         if (perFrameCommandProvider.isReadyForExecution()) {
@@ -502,6 +507,7 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
                     callable = channel.poll()
                 }
                 yield()
+                executeAfterFrameActions()
                 getExceptionOnError("Error in undefined operation")
             }
         }
@@ -539,22 +545,18 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
     }
 
     override fun finishFrame(renderState: RenderState) {
-        GPUProfiler.start("Create new fence")
-        createNewGPUFenceForReadState(renderState)
-        GPUProfiler.end()
-        //        GPUProfiler.start("Waiting for driver");
-        //        TODO: Maybe move this out of the condition of buffer swapping to rendermanager?
-        //        pollEvents();
-        GPUProfiler.start("Swap buffers")
-        glfwSwapBuffers(windowHandle)
-        GPUProfiler.end()
-        //        GPUProfiler.end();
+        profiled("Create new fence") {
+            createNewGPUFenceForReadState(renderState)
+        }
+        profiled("Swap buffers") {
+            glfwSwapBuffers(windowHandle)
+        }
     }
 
     override fun pollEvents() {
-        GPUProfiler.start("Poll events")
-        glfwPollEvents()
-        GPUProfiler.end()
+        profiled("Poll events") {
+            glfwPollEvents()
+        }
     }
 
     fun getOpenGlExtensionsDefine(): String {

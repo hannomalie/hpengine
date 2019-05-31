@@ -91,12 +91,6 @@ class RenderManager(val engineContext: EngineContext<*>,
     }
     override fun clear() = resetAllocations()
 
-    inline fun <T> profiled(name: String, action: () -> T): T {
-        GPUProfiler.start(name)
-        val result = action()
-        GPUProfiler.end()
-        return result
-    }
     inline fun <T> profilingFramed(action: () -> T): T {
         GPUProfiler.startFrame()
         val result: T = action()
@@ -108,4 +102,11 @@ class RenderManager(val engineContext: EngineContext<*>,
         renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
     }
+}
+
+inline fun <T> profiled(name: String, action: () -> T): T {
+    GPUProfiler.start(name)
+    val result = action()
+    GPUProfiler.end()
+    return result
 }

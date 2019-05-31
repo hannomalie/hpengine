@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
@@ -56,8 +57,10 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
 
-    override fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
-        GPUProfiler.start("Actual draw entities")
+    override fun draw(renderState: RenderState,
+                      programStatic: Program,
+                      programAnimated: Program,
+                      firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
         with(renderState) {
             drawStaticAndAnimated(DrawDescription(renderState, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic),
                     DrawDescription(renderState, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated))
@@ -65,11 +68,16 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
             firstPassResult.verticesDrawn += verticesCount
             firstPassResult.entitiesDrawn += entitiesDrawn
         }
-        GPUProfiler.end()
     }
 
-    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit) {
-        GPUProfiler.start("Actually render")
+    private fun render(renderState: RenderState,
+                       program: Program,
+                       commandOrganization: CommandOrganization,
+                       vertexIndexBuffer: VertexIndexBuffer,
+                       drawCountBuffer: AtomicCounterBuffer,
+                       commandBuffer: CommandBuffer,
+                       offsetBuffer: IndexBuffer,
+                       beforeRender: () -> Unit) = profiled("Actually render") {
         program.use()
         beforeRender()
         if (Config.getInstance().isIndirectRendering) {
@@ -90,7 +98,6 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                         .drawInstancedBaseVertex(vertexIndexBuffer.indexBuffer, command.count, command.primCount, command.firstIndex, command.baseVertex)
             }
         }
-        GPUProfiler.end()
     }
     protected open fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
         if(!engine.gpuContext.isSupported(BindlessTextures)) {

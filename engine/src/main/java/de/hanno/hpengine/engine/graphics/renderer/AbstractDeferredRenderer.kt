@@ -2,13 +2,11 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Shader
@@ -16,7 +14,6 @@ import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.VertexBuffer
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import java.io.File
@@ -86,14 +83,8 @@ open class AbstractDeferredRenderer(programManager: ProgramManager<OpenGl>) : Re
         linePoints.add(from)
         linePoints.add(to)
     }
-    override fun endFrame() {
-        GPUProfiler.endFrame()
-    }
 
     override fun drawAllLines(action: Consumer<Program>) { }
-    override fun startFrame() {
-        GPUProfiler.startFrame()
-    }
 
     override fun getGBuffer() = deferredRenderingBuffer
 }

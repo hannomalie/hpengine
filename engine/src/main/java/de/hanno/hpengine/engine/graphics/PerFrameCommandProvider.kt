@@ -15,6 +15,8 @@ interface PerFrameCommandProvider {
         drawCommand.run()
         postRun()
     }
+
+    fun executeAfterFrame() {}
 }
 
 open class SimpleProvider(command: Runnable): PerFrameCommandProvider {

@@ -28,10 +28,6 @@ public interface Renderer<TYPE extends BackendType> extends RenderSystem {
 
     int drawLines(Program firstPassProgram);
 
-    default void startFrame() {}
-
-    default void endFrame() {}
-
     void drawAllLines(Consumer<Program> action);
 
     DeferredRenderingBuffer getGBuffer();
