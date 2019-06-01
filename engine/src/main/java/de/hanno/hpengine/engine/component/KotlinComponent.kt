@@ -79,8 +79,8 @@ class KotlinComponent(private val kotlinCodeSource: CodeSource) : BaseComponent(
         return map[key] ?: throw IllegalArgumentException("No entry for key $key")
     }
 
-    override fun put(key: Any, value: Any): Any? {
-        return map.put(key, value)
+    override fun put(key: Any, value: Any): Any {
+        return map.put(key, value)!!
     }
 
     private fun initWrappingComponent() {

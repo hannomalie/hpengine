@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.component.KotlinComponent
+import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
@@ -138,27 +139,11 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 
             val initScriptFile = Config.getInstance().directoryManager.gameDir.initScript
             initScriptFile?.let {
-                when(it.extension) {
-                    "java" -> {
-                        try {
-                            val initScript = JavaComponent(String(Files.readAllBytes(it.toPath())))
-                            initScript.init(engine)
-                            initScript.initWithEngine(engine)
-                            println("InitScript initialized")
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }
-                    "kt" -> {
-                        try {
-                            val initScript = KotlinComponent(CodeSource(it))
-                            initScript.init(engine)
-                            initScript.initWithEngine(engine)
-                            println("InitScript initialized")
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }
+                try {
+                    ScriptComponentFileLoader.getLoaderForFileExtension(it.extension).load(engine, it)
+                    println("InitScript initialized")
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
             }
 
