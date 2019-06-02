@@ -30,11 +30,8 @@ uniform float diffuseMapHeight = 1;
 
 //include(globals_structs.glsl)
 
-in vec4 pass_Position;
-in vec4 pass_WorldPosition;
-in vec3 normal_world;
-in vec2 texCoord;
-in vec4 position_clip;
+flat in VertexShaderFlatOutput vertexShaderFlatOutput;
+in VertexShaderOutput vertexShaderOutput;
 
 flat in Entity outEntity;
 flat in Material outMaterial;
@@ -56,24 +53,23 @@ layout(std430, binding=2) buffer _directionalLight {
 
 void main()
 {
-	vec2 UV = texCoord;
-	vec4 position_clip_post_w = position_clip/position_clip.w;
-	Material material = outMaterial;
+	vec4 position_clip_post_w = vertexShaderOutput.position_clip/vertexShaderOutput.position_clip.w;
+	Material material = vertexShaderFlatOutput.material;
 
     vec3 materialDiffuseColor = material.diffuse.rgb;
-    float materialRoughness = float(material.roughness);
-    float materialMetallic = float(material.metallic);
-    float materialAmbient = float(material.ambient);
-    float parallaxBias = float(material.parallaxBias);
-    float parallaxScale = float(material.parallaxScale);
-    float materialTransparency = float(material.transparency);
+    float materialRoughness = material.roughness;
+    float materialMetallic = material.metallic;
+    float materialAmbient = material.ambient;
+    float parallaxBias = material.parallaxBias;
+    float parallaxScale = material.parallaxScale;
+    float materialTransparency = material.transparency;
 
     vec4 color = vec4(materialDiffuseColor, 1);
 
 
 
 #ifdef BINDLESSTEXTURES
-    float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight);
+    float visibility = getVisibility(vertexShaderOutput.position_world.xyz, directionalLight);
 
     sampler2D diffuseMap;
     bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
@@ -100,11 +96,11 @@ void main()
     if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
 
 #else
-    float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight, directionalLightShadowMap);
+    float visibility = getVisibility(vertexShaderOutput.position_world.xyz, directionalLight, directionalLightShadowMap);
 #endif
 
 	if(hasDiffuseMap) {
-    	color = texture(diffuseMap, UV);
+    	color = texture(diffuseMap, vertexShaderOutput.texCoord);
 	}
 
     float opaqueness = 1-materialTransparency;
@@ -113,10 +109,10 @@ void main()
 	dir.w = 0.0;
 	vec3 V = (inverse(viewMatrix) * dir).xyz;
 
-	vec3 PN_world = normalize(normal_world);
+	vec3 PN_world = normalize(vertexShaderOutput.normal_world);
 	vec3 old_PN_world = PN_world;
 	if(hasNormalMap) {
-        PN_world = normalize(perturb_normal(old_PN_world, V, UV, normalMap));
+        PN_world = normalize(perturb_normal(old_PN_world, V, vertexShaderOutput.texCoord, normalMap));
     }
 
 	int materialType = int(material.materialtype);
@@ -134,13 +130,13 @@ void main()
 	    resultingColor.rgb = max(vec3(.005) * color.rgb, resultingColor.rgb);
 		resultingColor.rgb += color.rgb * directionalLight.color * clamp(dot(-directionalLight.direction, -PN_world), 0, 1);
 	} else {
-	    resultingColor.rgb = color.rgb;
+	    resultingColor.rgb = color.rgb * opaqueness;
 	}
 
 //Color based weighting, dunno yet if this makes sense for me
 //https://github.com/lukexi/wboit/blob/master/test/renderPass.frag
     float weight = max(min(1.0, max(max(resultingColor.r, resultingColor.g), resultingColor.b) * color.a), color.a)
-                 * clamp(0.03 / (1e-5 + pow(pass_Position.z / 200, 4.0)), 1e-2, 3e3);
+                 * clamp(0.03 / (1e-5 + pow(vertexShaderOutput.position_clip.z / 200, 4.0)), 1e-2, 3e3);
 
     const bool depthBasedWeight = true;
     if(depthBasedWeight) {

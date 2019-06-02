@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
@@ -18,8 +19,10 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.CommandBuffer
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
@@ -100,20 +103,16 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         }
     }
     protected open fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
+
         if(!engine.gpuContext.isSupported(BindlessTextures)) {
 
             fun DrawDescription.drawHelper() {
                 program.use()
                 for(batch in renderState.entitiesState.renderBatchesStatic) {
-                    for(map in batch.materialInfo.maps) {
-                        val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
-                        if(map.value.textureId > 0) {
-                            engine.gpuContext.bindTexture(map.key.textureSlot, map.value)
-                            program.setUniform(uniformKey, true)
-                        } else {
-                            program.setUniform(uniformKey, false)
-                        }
-                    }
+                    if(batch.materialInfo.transparencyType.needsForwardRendering) continue
+
+                    val maps = batch.materialInfo.maps
+                    program.setTextureUniforms(engine.gpuContext, maps)
                     DrawUtils.draw(engine.gpuContext, renderState, batch, program)
                 }
             }
@@ -231,6 +230,18 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         program.setUniform("time", System.currentTimeMillis().toInt())
         program.setUniform("useParallax", Config.getInstance().isUseParallax)
         program.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax)
+    }
+}
+
+fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>, maps: Map<SimpleMaterial.MAP, Texture<TextureDimension2D>>) {
+    for (map in maps) {
+        val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
+        if (map.value.textureId > 0) {
+            gpuContext.bindTexture(map.key.textureSlot, map.value)
+            setUniform(uniformKey, true)
+        } else {
+            setUniform(uniformKey, false)
+        }
     }
 }
 

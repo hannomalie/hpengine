@@ -361,7 +361,8 @@ void main(void) {
   	float glossiness = (1-roughness);
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
-  	vec4 normalView = vec4(textureLod(normalMap,st, 0).rgb, 0);
+	vec4 normalAmbient = textureLod(normalMap,st, 0);
+  	vec4 normalView = vec4(normalAmbient.rgb, 0);
   	vec3 normalWorld = normalize(inverse(viewMatrix) * normalView).xyz;
 	vec3 V = -normalize((positionWorld.xyz - camPosition.xyz).xyz);
 	vec4 position_clip = (projectionMatrix * viewMatrix * vec4(positionWorld,1));

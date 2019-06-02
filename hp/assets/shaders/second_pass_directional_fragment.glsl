@@ -127,7 +127,7 @@ void main(void) {
 
 	float ambient = normalAmbient.a;
 	ambient += 0.1;  // Boost ambient here
-//	out_DiffuseSpecular.rgb += ambient * color.rgb;
+	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 
 //	out_DiffuseSpecular = vec4(1,0.1,0, 1);

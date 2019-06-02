@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -25,7 +26,7 @@ class ForwardRenderExtension(renderState: TripleBuffer<RenderState>,
                              val deferredRenderingBuffer: DeferredRenderingBuffer,
                              val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
 
-    val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl"))
+    val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "first_pass_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.directory + "forward_fragment.glsl"))
 
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource)
@@ -49,17 +50,14 @@ class ForwardRenderExtension(renderState: TripleBuffer<RenderState>,
         programStatic.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
         programStatic.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         programStatic.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+        programStatic.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.viewProjectionMatrixAsBuffer)
 
         for (batch in renderState.renderBatchesStatic) {
             if(!batch.materialInfo.transparencyType.needsForwardRendering) { continue }
             val isStatic = batch.update == Update.STATIC
+            programStatic.setTextureUniforms(gpuContext, batch.materialInfo.maps)
             val currentVerticesCount = DrawUtils.draw(engineContext.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, batch, programStatic, false, false)
 
-            //                TODO: Count this somehow?
-            //                firstPassResult.verticesDrawn += currentVerticesCount;
-            //                if (currentVerticesCount > 0) {
-            //                    firstPassResult.entitiesDrawn++;
-            //                }
         }
         engineContext.gpuContext.disable(GlCap.BLEND)
         deferredRenderingBuffer.forwardBuffer.unuse()
