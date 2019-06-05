@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.hpengine.util.stopwatch.GPUProfiler.currentTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -264,7 +265,7 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
     }
     internal fun executeAfterFrameActions() {
         for (i in perFrameCommandProviders.indices) {
-            perFrameCommandProviders[i].executeAfterFrame()
+            perFrameCommandProviders[i].postFrame()
         }
     }
 
@@ -493,22 +494,26 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
     private fun startEndlessLoop() {
         Executor.launch {
             while (true) {
-                pollEvents()
-                getExceptionOnError("")
-                checkCommandSyncs()
-                getExceptionOnError("")
-                executePerFrameCommands()
-                getExceptionOnError("")
-                var callable: FutureCallable<*>? = channel.poll()
-                while (callable != null) {
-                    val result = callable.execute()
+                profiled("Frame") {
+                    pollEvents()
                     getExceptionOnError("")
-                    (callable.future as CompletableFuture<Any>).complete(result)
-                    callable = channel.poll()
+                    checkCommandSyncs()
+                    getExceptionOnError("")
+                    executePerFrameCommands()
+                    getExceptionOnError("")
+                    var callable: FutureCallable<*>? = channel.poll()
+                    while (callable != null) {
+                        val result = callable.execute()
+                        getExceptionOnError("")
+                        (callable.future as CompletableFuture<Any>).complete(result)
+                        callable = channel.poll()
+                    }
+                    yield()
+                    GPUProfiler.currentTimings = GPUProfiler.currentTask?.dumpTimings() ?: ""
+                    GPUProfiler.currentAverages = GPUProfiler.dumpAverages()
+                    executeAfterFrameActions()
+                    getExceptionOnError("Error in undefined operation")
                 }
-                yield()
-                executeAfterFrameActions()
-                getExceptionOnError("Error in undefined operation")
             }
         }
         println("OpenGLContext thread submitted with id ${Executor.openGLThreadId}")

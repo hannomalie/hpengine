@@ -334,8 +334,8 @@ public class DefaultCompletionProvider extends AbstractCompletionProvider {
 		} catch (ParserConfigurationException pce) {
 			throw new IOException(pce.toString());
 		} finally {
-			//long time = System.currentTimeMillis() - start;
-			//System.out.println("XML loaded in: " + time + "ms");
+			//long timeGpu = System.currentTimeMillis() - start;
+			//System.out.println("XML loaded in: " + timeGpu + "ms");
 			bin.close();
 		}
 

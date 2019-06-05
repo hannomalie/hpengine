@@ -511,7 +511,7 @@ public class AutoCompletion {
 
 
 	/**
-	 * Inserts a completion.  Any time a code completion event occurs, the
+	 * Inserts a completion.  Any timeGpu a code completion event occurs, the
 	 * actual text insertion happens through this method.
 	 *
 	 * @param c A completion to insert.  This cannot be <code>null</code>.
@@ -522,7 +522,7 @@ public class AutoCompletion {
 
 
 	/**
-	 * Inserts a completion.  Any time a code completion event occurs, the
+	 * Inserts a completion.  Any timeGpu a code completion event occurs, the
 	 * actual text insertion happens through this method.
 	 *
 	 * @param c A completion to insert.  This cannot be <code>null</code>.

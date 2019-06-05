@@ -20,7 +20,6 @@ import com.alee.laf.slider.WebSlider;
 import com.alee.laf.splitpane.WebSplitPane;
 import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebTextField;
-import com.alee.managers.language.LanguageManager;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
@@ -144,8 +143,8 @@ public class DebugFrame implements HostComponent {
 	"}");
 	private RTextScrollPane consolePane;
 
-	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
-	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
+	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.INSTANCE.getPROFILING_ENABLED());
+	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.INSTANCE.getPRINTING_ENABLED());
 	private WebToggleButton dumpAverages = new WebToggleButton("Dump Averages");
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.getInstance().isUseParallax());
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.getInstance().isUseSteepParallax());
@@ -244,7 +243,7 @@ public class DebugFrame implements HostComponent {
         }.start();
         engine.getGpuContext().registerPerFrameCommand(new SimpleProvider(() -> {}) {
             @Override
-            public void executeAfterFrame() {
+            public void postFrame() {
                 handle(new FrameFinishedEvent(engine.getRenderManager().getRenderState().getCurrentReadState().getLatestDrawResult()));
             }
         });
@@ -545,7 +544,7 @@ public class DebugFrame implements HostComponent {
         resetProfiling.addActionListener(e -> {
 
             Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
-                    GPUProfiler.reset();
+                    GPUProfiler.INSTANCE.reset();
                     return new Result(true);
             });
 
@@ -743,7 +742,7 @@ public class DebugFrame implements HostComponent {
 		toggleProfiler.addActionListener( e -> {
 
             Boolean result = engine.getGpuContext().calculate((Callable<Boolean>) () -> {
-				GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
+				GPUProfiler.INSTANCE.setPROFILING_ENABLED(!GPUProfiler.INSTANCE.getPROFILING_ENABLED());
 				return true;
 			});
 			try {
@@ -760,7 +759,7 @@ public class DebugFrame implements HostComponent {
 		toggleProfilerPrint.addActionListener( e -> {
 
             Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
-                GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
+                GPUProfiler.INSTANCE.setPRINTING_ENABLED(!GPUProfiler.INSTANCE.getPRINTING_ENABLED());
                 return new Result<>(true);
             });
             if (result.equals(Boolean.TRUE)) {
@@ -790,7 +789,7 @@ public class DebugFrame implements HostComponent {
 		
 		dumpAverages.addActionListener(e -> {
             engine.getGpuContext().execute(() -> {
-                GPUProfiler.DUMP_AVERAGES = ! GPUProfiler.DUMP_AVERAGES;
+                GPUProfiler.INSTANCE.setDUMP_AVERAGES(!GPUProfiler.INSTANCE.getDUMP_AVERAGES());
 			});
 		});
 		
@@ -1277,15 +1276,15 @@ public class DebugFrame implements HostComponent {
     @Subscribe
     @Handler
     public void handle(FrameFinishedEvent event) {
-        if(GPUProfiler.PROFILING_ENABLED) {
+        if(GPUProfiler.INSTANCE.getPROFILING_ENABLED()) {
             SwingUtils.invokeLater(() -> {
 				DrawResult drawResult1 = event.getDrawResult();
 				String drawResult = drawResult1.toString();
-				if(GPUProfiler.DUMP_AVERAGES) {
-					drawResult += new String(GPUProfiler.getAveragesString());
+				if(GPUProfiler.INSTANCE.getDUMP_AVERAGES()) {
+					drawResult += GPUProfiler.INSTANCE.getCurrentAverages();
 				}
 				infoLeft.setText(drawResult);
-				infoRight.setText(event.getLatestGPUProfilingResult());
+				infoRight.setText(GPUProfiler.INSTANCE.getCurrentTimings());
             });
         }
     }

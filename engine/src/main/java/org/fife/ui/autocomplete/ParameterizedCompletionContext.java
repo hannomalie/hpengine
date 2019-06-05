@@ -224,7 +224,7 @@ class ParameterizedCompletionContext {
 		}
 
 		listener.install(tc);
-		// First time through, we'll need to create this window.
+		// First timeGpu through, we'll need to create this window.
 		if (paramChoicesWindow==null) {
 			paramChoicesWindow = createParamChoicesWindow();
 		}

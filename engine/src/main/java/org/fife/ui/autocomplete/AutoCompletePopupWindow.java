@@ -666,7 +666,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener,
 					descWindow = createDescriptionWindow();
 					positionDescWindow();
 				}
-				// descWindow needs a kick-start the first time it's displayed.
+				// descWindow needs a kick-start the first timeGpu it's displayed.
 				// Also, the newly-selected item in the choices list is
 				// probably different from the previous one anyway.
 				if (descWindow!=null) {
@@ -697,7 +697,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener,
 				model.clear();
 			}
 
-			// Must set descWindow's visibility one way or the other each time,
+			// Must set descWindow's visibility one way or the other each timeGpu,
 			// because of the way child JWindows' visibility is handled - in
 			// some ways it's dependent on the parent, in other ways it's not.
 			if (descWindow!=null) {

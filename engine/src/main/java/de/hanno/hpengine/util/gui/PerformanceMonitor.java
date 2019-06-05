@@ -214,7 +214,7 @@ public class PerformanceMonitor {
 		}
 
 		public void actionPerformed(ActionEvent event) {
-			Map<String, GPUProfiler.AverageHelper> averages = GPUProfiler.calculateAverages(1000);
+			Map<String, GPUProfiler.AverageHelper> averages = GPUProfiler.INSTANCE.calculateAverages(1000);
 			actualizeBreakdownDataset(averages);
 		}
 

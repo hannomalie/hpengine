@@ -26,7 +26,7 @@ import javax.swing.plaf.basic.BasicListUI;
  * width and height of list items.  This allows HTML renderers to be used (such
  * as {@link CompletionCellRenderer}), with thousands of completion choices,
  * with no performance penalty.  With standard BasicListUI subclasses, this can
- * cause very poor performance <b>each time</b> the list is displayed, which
+ * cause very poor performance <b>each timeGpu</b> the list is displayed, which
  * is bad for lists that are repeatedly hidden and re-displayed, such as
  * completion choices.  This is all because the calculation to get the
  * preferred size of each list item, when it is displayed with HTML, is slow.

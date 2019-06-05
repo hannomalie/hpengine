@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import de.hanno.hpengine.util.stopwatch.ProfilingTask;
 import org.lwjgl.opengl.GL15;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
@@ -65,7 +66,7 @@ public class DrawUtils {
     }
 
     public static void renderHighZMap(GpuContext gpuContext, int baseDepthTexture, int baseWidth, int baseHeight, int highZTexture, ComputeShaderProgram highZProgram) {
-        GPUProfiler.start("HighZ map calculation");
+        ProfilingTask task = GPUProfiler.INSTANCE.start("HighZ map calculation");
         highZProgram.use();
         int lastWidth = baseWidth;
         int lastHeight = baseHeight;
@@ -94,7 +95,7 @@ public class DrawUtils {
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 //            glMemoryBarrier(GL_ALL_BARRIER_BITS);
         }
-        GPUProfiler.end();
+        if(task != null) task.end();
     }
 
 

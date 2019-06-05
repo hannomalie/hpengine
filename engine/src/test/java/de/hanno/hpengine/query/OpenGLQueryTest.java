@@ -26,7 +26,7 @@ public class OpenGLQueryTest extends TestWithEngine {
         query.end();
         Float result = query.getResult();
         LOGGER.info("Uploading " + floatValueCount + " float values took " + result + " ms");
-        Assert.assertTrue("Query should take some time", result > 1.0);
+        Assert.assertTrue("Query should take some timeGpu", result > 1.0);
     }
 
     @Test(expected = IllegalStateException.class)

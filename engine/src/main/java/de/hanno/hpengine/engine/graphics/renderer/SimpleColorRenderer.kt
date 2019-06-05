@@ -34,7 +34,7 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
         simpleColorProgram.setUniform("eyePosition", state.camera.getPosition())
         simpleColorProgram.setUniform("near", state.camera.getNear())
         simpleColorProgram.setUniform("far", state.camera.getFar())
-        simpleColorProgram.setUniform("time", System.currentTimeMillis().toInt())
+        simpleColorProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
         simpleColorProgram.setUniform("useParallax", Config.getInstance().isUseParallax)
         simpleColorProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax)
 

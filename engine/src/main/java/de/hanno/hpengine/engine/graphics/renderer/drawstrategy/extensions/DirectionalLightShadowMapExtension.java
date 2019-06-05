@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import de.hanno.hpengine.util.stopwatch.ProfilingTask;
 import org.lwjgl.opengl.GL30;
 
 import java.io.File;
@@ -55,13 +56,13 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     private long renderedInCycle;
     @Override
     public void renderFirstPass(Backend<OpenGl> backend, GpuContext<OpenGl> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
-        GPUProfiler.start("Directional shadowmap");
+        ProfilingTask task = GPUProfiler.INSTANCE.start("Directional shadowmap");
         if(renderedInCycle < renderState.getDirectionalLightHasMovedInCycle() ||
                 renderedInCycle < renderState.getEntitiesState().entityMovedInCycle ||
                 renderedInCycle < renderState.getEntitiesState().entityAddedInCycle) {
             drawShadowMap(renderState, firstPassResult);
         }
-        GPUProfiler.end();
+        if(task != null) task.end();
     }
 
     private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {

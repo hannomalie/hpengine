@@ -76,7 +76,7 @@ public class LanguageAwareCompletionProvider extends CompletionProviderBase
 
 	/**
 	 * Constructor subclasses can use when they don't have their default
-	 * provider created at construction time.  They should call
+	 * provider created at construction timeGpu.  They should call
 	 * {@link #setDefaultCompletionProvider(CompletionProvider)} in this
 	 * constructor.
 	 */

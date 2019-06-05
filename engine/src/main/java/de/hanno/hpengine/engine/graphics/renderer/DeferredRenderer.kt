@@ -701,7 +701,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         aoScatteringProgram.setUniform("screenHeight", Config.getInstance().height.toFloat() / 2)
         aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        aoScatteringProgram.setUniform("time", System.currentTimeMillis().toInt())
+        aoScatteringProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
         //		aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
         //		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
         //			aoScatteringProgram.bindShaderStorageBuffer(5, renderState.getState(directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGridBufferRef()).getVoxelGridBuffer());

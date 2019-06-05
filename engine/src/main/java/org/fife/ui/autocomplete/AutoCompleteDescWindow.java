@@ -118,7 +118,7 @@ class AutoCompleteDescWindow extends JWindow implements HyperlinkListener,
 	private ResourceBundle bundle;
 
 	/**
-	 * The amount of time to wait after the user changes the selected
+	 * The amount of timeGpu to wait after the user changes the selected
 	 * completion to refresh the description.  This delay is in place to help
 	 * performance for {@link Completion}s that may be slow to compute their
 	 * summary text.

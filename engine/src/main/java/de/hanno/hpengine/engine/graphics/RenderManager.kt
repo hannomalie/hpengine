@@ -47,21 +47,17 @@ class RenderManager(val engineContext: EngineContext<*>,
             renderState.startRead()
 
             if (lastTimeSwapped) {
-                val drawResult = profilingFramed {
-                    recorder.add(renderState.currentReadState)
-                    val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                recorder.add(renderState.currentReadState)
+                val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                    engineContext.renderSystems.forEach {
-                        it.render(drawResult, renderState.currentReadState)
-                    }
-                    renderer.render(drawResult, renderState.currentReadState)
-                    engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                    drawResult.apply { GPUProfilingResult = GPUProfiler.dumpTimings() }
+                engineContext.renderSystems.forEach {
+                    it.render(drawResult, renderState.currentReadState)
                 }
+                renderer.render(drawResult, renderState.currentReadState)
+                engineContext.gpuContext.finishFrame(renderState.currentReadState)
                 lastFrameTime = System.currentTimeMillis()
                 fpsCounter.update()
             }
-//            engineContext.gpuContext.finishFrame(renderState.currentReadState)
             lastTimeSwapped = renderState.stopRead()
         }
     }
@@ -91,13 +87,6 @@ class RenderManager(val engineContext: EngineContext<*>,
     }
     override fun clear() = resetAllocations()
 
-    inline fun <T> profilingFramed(action: () -> T): T {
-        GPUProfiler.startFrame()
-        val result: T = action()
-        GPUProfiler.endFrame()
-        return result
-    }
-
     override fun extract(renderState: RenderState) {
         renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
@@ -105,8 +94,8 @@ class RenderManager(val engineContext: EngineContext<*>,
 }
 
 inline fun <T> profiled(name: String, action: () -> T): T {
-    GPUProfiler.start(name)
+    val task = GPUProfiler.start(name)
     val result = action()
-    GPUProfiler.end()
+    task?.end()
     return result
 }

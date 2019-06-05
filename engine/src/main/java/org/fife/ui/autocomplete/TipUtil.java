@@ -161,7 +161,7 @@ class TipUtil {
 						"; color: " + Util.getHexString(fg) + "; }");
 
 		// Always add link foreground rule.  Unfortunately these CSS rules
-		// stack each time the LaF is changed (how can we overwrite them
+		// stack each timeGpu the LaF is changed (how can we overwrite them
 		// without clearing out the important "standard" ones?).
 		Color linkFG = Util.getHyperlinkForeground();
 		doc.getStyleSheet().addRule(

@@ -461,7 +461,7 @@ public class LodGenerator {
                     if (neighbor != dest && edge.refCount == 1) {
                         Vector3f otherBorderEdge = new Vector3f(src.position).sub(neighbor.position);
                         otherBorderEdge.normalize();
-                        // This time, the nearer the dot is to -1, the better, because that means
+                        // This timeGpu, the nearer the dot is to -1, the better, because that means
                         // the edges are opposite each other, therefore less kinkiness
                         // Scale into [0..1]
                         float kinkiness = (otherBorderEdge.dot(collapseEdge) + 1.002f) * 0.5f;

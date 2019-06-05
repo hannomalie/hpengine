@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
 import de.hanno.hpengine.engine.scene.Vertex;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
@@ -258,7 +259,11 @@ public class VertexBuffer extends PersistentMappedBuffer {
         return indexCount/3;
     }
 
-    public static void multiDrawElementsIndirectCount(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, AtomicCounterBuffer drawCountBuffer, int maxDrawCount) {
+    public static void multiDrawElementsIndirectCount(VertexBuffer vertexBuffer,
+                                                      IndexBuffer indexBuffer,
+                                                      CommandBuffer commandBuffer,
+                                                      AtomicCounterBuffer drawCountBuffer,
+                                                      int maxDrawCount) {
         drawCountBuffer.bindAsParameterBuffer();
         vertexBuffer.bind();
         indexBuffer.bind();
@@ -268,12 +273,24 @@ public class VertexBuffer extends PersistentMappedBuffer {
         indexBuffer.unbind();
     }
 
+    public static void multiDrawElementsIndirectCount(VertexIndexBuffer vertexIndexBuffer,
+                                                      CommandBuffer commandBuffer,
+                                                      AtomicCounterBuffer drawCountBuffer,
+                                                      int maxDrawCount) {
+        multiDrawElementsIndirectCount(vertexIndexBuffer.getVertexBuffer(),
+                vertexIndexBuffer.getIndexBuffer(), commandBuffer, drawCountBuffer, maxDrawCount);
+    }
+
     public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         indexBuffer.bind();
         commandBuffer.bind();
         glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);
         indexBuffer.unbind();
+    }
+
+    public static void drawLinesInstancedIndirectBaseVertex(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
+        drawLinesInstancedIndirectBaseVertex(vertexIndexBuffer.getVertexBuffer(), vertexIndexBuffer.getIndexBuffer(), commandBuffer, primitiveCount);
     }
 
     public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
