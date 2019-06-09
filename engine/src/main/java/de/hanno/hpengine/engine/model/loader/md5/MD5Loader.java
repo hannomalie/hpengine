@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
-import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.directory.AbstractDirectory;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
@@ -27,17 +27,18 @@ public class MD5Loader {
      * @param materialManager
      * @param md5Model The MD5 StaticModel
      * @param animModel The MD5 Animation
+     * @param textureDir
      * @return
      * @throws Exception
      */
-    public static AnimatedModel process(MaterialManager materialManager, MD5Model md5Model, MD5AnimModel animModel) throws Exception {
+    public static AnimatedModel process(MaterialManager materialManager, MD5Model md5Model, MD5AnimModel animModel, AbstractDirectory textureDir) throws Exception {
         List<Matrix4f> invJointMatrices = calcInJointMatrices(md5Model);
         List<AnimatedFrame> animatedFrames = processAnimationFrames(md5Model, animModel, invJointMatrices);
 
         List<MD5Mesh> list = new ArrayList<>();
         for (MD5Mesh md5Mesh : md5Model.getMeshes()) {
             MD5Mesh mesh = generateMesh(md5Model, md5Mesh);
-            handleTexture(materialManager, mesh, md5Mesh);
+            handleTexture(materialManager, mesh, md5Mesh, textureDir);
             list.add(mesh);
         }
 
@@ -256,13 +257,13 @@ public class MD5Loader {
         return result;
     }
 
-    private static void handleTexture(MaterialManager materialManager, Mesh mesh, MD5Mesh md5Mesh) throws Exception {
+    private static void handleTexture(MaterialManager materialManager, Mesh mesh, MD5Mesh md5Mesh, AbstractDirectory textureDir) throws Exception {
         String texturePath = md5Mesh.getDiffuseTexture();
         if (texturePath != null && texturePath.length() > 0) {
             try {
 
                 SimpleMaterialInfo materialInfo = new SimpleMaterialInfo(texturePath);
-                materialInfo = materialInfo.put(SimpleMaterial.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath, false, Config.getInstance().getDirectoryManager().getGameDir()));
+                materialInfo = materialInfo.put(SimpleMaterial.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath, false, textureDir));
 
                 // Handle normal Maps;
                 int pos = texturePath.lastIndexOf(".");
@@ -271,17 +272,17 @@ public class MD5Loader {
                     String extension = texturePath.substring(pos, texturePath.length());
                     String normalMapFileName = basePath + "_local" + extension;
                     if (new File(normalMapFileName).exists()) {
-                        Texture normalMap = materialManager.getTextureManager().getTexture(normalMapFileName, false, Config.getInstance().getDirectoryManager().getGameDir());
+                        Texture normalMap = materialManager.getTextureManager().getTexture(normalMapFileName, false, textureDir);
                         materialInfo = materialInfo.put(SimpleMaterial.MAP.NORMAL, normalMap);
                     }
                     String heightMapFileName = basePath + "_h" + extension;
                     if (new File(heightMapFileName).exists()) {
-                        Texture heightMap = materialManager.getTextureManager().getTexture(heightMapFileName, false, Config.getInstance().getDirectoryManager().getGameDir());
+                        Texture heightMap = materialManager.getTextureManager().getTexture(heightMapFileName, false, textureDir);
                         materialInfo = materialInfo.put(SimpleMaterial.MAP.HEIGHT, heightMap);
                     }
                     String specularMapFile = basePath + "_s" + extension;
                     if (new File(specularMapFile).exists()) {
-                        Texture specularMap = materialManager.getTextureManager().getTexture(specularMapFile, false, Config.getInstance().getDirectoryManager().getGameDir());
+                        Texture specularMap = materialManager.getTextureManager().getTexture(specularMapFile, false, textureDir);
                         materialInfo = materialInfo.put(SimpleMaterial.MAP.SPECULAR, specularMap);
                     }
                 }

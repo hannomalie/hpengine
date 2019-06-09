@@ -6,7 +6,8 @@ import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
 public class FileMonitor {
-	
+
+//    TODO: Make this non-global
 	private static FileMonitor instance;
 	
 	public FileAlterationMonitor monitor;
@@ -16,7 +17,7 @@ public class FileMonitor {
     static {
 		instance = new FileMonitor(500);
 		try {
-            if(Config.getInstance().isUseFileReloading()) {
+            if(Config.isUseFileReloadXXX()) {
                 instance.monitor.start();
                 instance.running = true;
             }
@@ -33,7 +34,7 @@ public class FileMonitor {
 	}
 	
 	public void add(FileAlterationObserver observer) {
-        if(!Config.getInstance().isUseFileReloading()) {
+        if(!Config.isUseFileReloadXXX()) {
             return;
         }
 		if (running) {
@@ -47,7 +48,7 @@ public class FileMonitor {
 	}
 	
 	public void checkAndNotify() {
-        if(!Config.getInstance().isUseFileReloading()) {
+        if(!Config.isUseFileReloadXXX()) {
             return;
         }
 		if (!FileMonitor.getInstance().running) { return; }

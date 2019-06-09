@@ -31,7 +31,7 @@ public class TextureTable extends JTable {
             textureView.setSize(600, 600);
             textureView.pack(); // TODO: Reenable
             String path = (String) getModel().getValueAt(TextureTable.this.getSelectedRow(), 0);
-            Texture<?> valueAt = engine.getTextureManager().getTexture(path, false, Config.getInstance().getDirectoryManager().getGameDir());
+            Texture<?> valueAt = engine.getTextureManager().getTexture(path, false, engine.getConfig().getDirectoryManager().getGameDir());
 //            showTexture(valueAt);
             textureView.setVisible(true);
         });

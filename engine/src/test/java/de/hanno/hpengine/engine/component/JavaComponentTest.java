@@ -23,7 +23,7 @@ public class JavaComponentTest extends TestWithEngine {
                 "\tpublic void run() {\n" +
                 "\t\tSystem.out.println(\"ran the yyy runnable\");\n" +
                 "\t}\n" +
-                "}");
+                "}", gameDir);
 
         component.init(engine);
         Assert.assertTrue(component.getCompiledClass().getSimpleName().equals("Test"));
@@ -35,7 +35,7 @@ public class JavaComponentTest extends TestWithEngine {
         Entity entity = engine.getSceneManager().getScene().getEntityManager().create();
         entity.addComponent(new JavaComponent("public class Bla implements de.hanno.hpengine.managerContext.lifecycle.LifeCycle {" +
                 "public void update(float seconds) { System.out.println(\"blubb\"); }" +
-                "}"));
+                "}", gameDir));
         engine.getSceneManager().getScene().add(entity);
     }
 }

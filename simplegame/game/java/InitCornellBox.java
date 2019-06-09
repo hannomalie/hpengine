@@ -5,8 +5,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
-import static de.hanno.hpengine.engine.config.Config.getInstance;
-
 public class InitCornellBox implements EngineConsumer {
 
     private boolean initialized;
@@ -16,7 +14,7 @@ public class InitCornellBox implements EngineConsumer {
 
         try {
             {
-                File file = FilesKt.resolve(getInstance().getDirectoryManager().getGameDir(), "assets/models/cornellbox.obj");
+                File file = FilesKt.resolve(engine.getConfig().getDirectoryManager().getGameDir(), "assets/models/cornellbox.obj");
                 LoadModelCommand.EntityListResult loaded = new LoadModelCommand(file, "cornell", engine.getScene().getMaterialManager()).execute();
                 System.out.println("loaded entities : " + loaded.entities.size());
                 engine.getSceneManager().getScene().addAll(loaded.entities);

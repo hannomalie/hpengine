@@ -44,6 +44,8 @@ class Input(private val eventBus: EventBus,
     private val mouseY = DoubleArray(1)
     private val mouseXLast = DoubleArray(1)
     private val mouseYLast = DoubleArray(1)
+    private val width = IntArray(1)
+    private val height = IntArray(1)
 
     val dxSmooth: Int
         get() = (dx + dxLast + dxBeforeLast) / 3
@@ -123,6 +125,7 @@ class Input(private val eventBus: EventBus,
         mouseXLast[0] = mouseX[0]
         mouseYLast[0] = mouseY[0]
         glfwGetCursorPos(gpuContext.windowHandle, mouseX, mouseY)
+        glfwGetFramebufferSize(gpuContext.windowHandle, width, height)
         dx = (-(mouseXLast[0] - mouseX[0])).toInt()
         dy = (mouseYLast[0] - mouseY[0]).toInt()
     }
@@ -161,7 +164,7 @@ class Input(private val eventBus: EventBus,
     }
 
     fun getMouseY(): Int {
-        return Config.getInstance().height - mouseY[0].toInt()
+        return height[0] - mouseY[0].toInt()
     }
 
 }

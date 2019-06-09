@@ -137,7 +137,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		draw(false);
 	}
 	public void draw(boolean urgent) {
-		if(!Config.getInstance().isDrawProbes()) { return; }
+		if(!engine.getConfig().isDrawProbes()) { return; }
 		
 		prepareProbeRendering();
 		
@@ -152,7 +152,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 	
 	public void drawAlternating(Entity camera) {
-		if(!Config.getInstance().isDrawProbes()) { return; }
+		if(!engine.getConfig().isDrawProbes()) { return; }
 
 		prepareProbeRendering();
 		

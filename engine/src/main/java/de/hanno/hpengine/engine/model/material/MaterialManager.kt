@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.directory.DirectoryManager
-import de.hanno.hpengine.engine.backend.Backend
-import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -24,16 +23,16 @@ import java.util.HashMap
 import java.util.LinkedHashMap
 import java.util.logging.Logger
 
-class MaterialManager(private val backend: Backend<*>) : Manager {
-    val textureManager = backend.textureManager
+class MaterialManager(val engineContext: EngineContext<*>) : Manager {
+    val textureManager = engineContext.textureManager
     val skyboxMaterial: SimpleMaterial
-    private val eventBus: EventBus = backend.eventBus
+    private val eventBus: EventBus = engineContext.eventBus
 
     var MATERIALS: MutableMap<String, SimpleMaterial> = LinkedHashMap()
 
     val defaultMaterial: SimpleMaterial
 
-    val engineDir = Config.getInstance().directoryManager.engineDir
+    val engineDir = engineContext.config.directoryManager.engineDir
 
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
@@ -46,10 +45,10 @@ class MaterialManager(private val backend: Backend<*>) : Manager {
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
-        if (Config.getInstance().isLoadDefaultMaterials) {
+        if (engineContext.config.isLoadDefaultMaterials) {
             initDefaultMaterials()
         }
-        backend.eventBus.register(this)
+        engineContext.eventBus.register(this)
     }
 
     fun initDefaultMaterials() {

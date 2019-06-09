@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.util.ressources.CodeSource
@@ -13,9 +12,6 @@ import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.monitor.FileAlterationObserver
 import java.io.File
-import java.io.IOException
-import java.lang.IllegalArgumentException
-import java.nio.file.Files
 import java.util.HashMap
 
 class KotlinComponent(private val kotlinCodeSource: CodeSource) : BaseComponent(), ScriptComponent, Reloadable {
@@ -44,7 +40,7 @@ class KotlinComponent(private val kotlinCodeSource: CodeSource) : BaseComponent(
     }
 
     override fun init(engine: EngineContext<*>) {
-        observerKotlinFile = FileAlterationObserver(if (kotlinCodeSource.isFileBased) kotlinCodeSource.file.parent else directory)
+        observerKotlinFile = if (kotlinCodeSource.isFileBased) FileAlterationObserver(kotlinCodeSource.file.parent) else null
         addFileListeners()
         initWrappingComponent()
         super.init(engine)
@@ -135,24 +131,6 @@ class KotlinComponent(private val kotlinCodeSource: CodeSource) : BaseComponent(
     }
 
     companion object {
-
-        val WORKING_DIR = Config.getInstance().directoryManager.gameDir.java.path
-
-        init {
-            val workingDir = File(WORKING_DIR)
-            try {
-                if (!workingDir.exists()) {
-                    Files.createDirectory(workingDir.toPath())
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-
-        }
-
         internal val objectLoader = KtsObjectLoader()
-
-        private val directory: String
-            get() = Config.getInstance().directoryManager.gameDir.scripts.path
     }
 }

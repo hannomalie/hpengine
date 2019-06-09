@@ -35,7 +35,7 @@ object KotlinComponentLoader: ScriptComponentFileLoader() {
 }
 object JavaComponentLoader: ScriptComponentFileLoader() {
     override fun load(engine: Engine<*>, codeFile: File) {
-        val initScript = JavaComponent(CodeSource(codeFile))
+        val initScript = JavaComponent(CodeSource(codeFile), engine.config.directoryManager.gameDir)
         initScript.init(engine)
         initScript.initWithEngine(engine)
     }

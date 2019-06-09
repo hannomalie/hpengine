@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.DrawParameters
@@ -54,7 +53,6 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
@@ -65,7 +63,6 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.io.File
-import java.lang.IllegalArgumentException
 import java.nio.FloatBuffer
 import java.util.ArrayList
 import java.util.EnumSet
@@ -73,7 +70,7 @@ import java.util.function.Consumer
 import javax.vecmath.Vector2f
 
 class DeferredRenderer @Throws(Exception::class)
-constructor(private val materialManager: MaterialManager, engineContext: EngineContext<OpenGl>) : Renderer<OpenGl> {
+constructor(private val materialManager: MaterialManager, val engineContext: EngineContext<OpenGl>) : Renderer<OpenGl> {
     private val backend: Backend<OpenGl> = engineContext.backend
     val gpuContext = engineContext.gpuContext.backend.gpuContext
     val programManager = backend.programManager
@@ -95,7 +92,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
 
     private val sixDebugBuffers: ArrayList<VertexBuffer> = gpuContext.setupBuffers()
 
-    private val gBuffer: DeferredRenderingBuffer = gpuContext.setUpGBuffer()
+    private val gBuffer: DeferredRenderingBuffer = gpuContext.setUpGBuffer(engineContext)
     private val forwardRenderer = ForwardRenderExtension(engineContext.renderStateManager.renderState, gBuffer, engineContext)
 
     private val buffer = VertexBuffer(engineContext.gpuContext, floatArrayOf(0f, 0f, 0f, 0f), EnumSet.of(DataChannels.POSITION3)).apply {
@@ -103,7 +100,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
     }
     private val skyBoxEntity = Entity("Skybox")
 
-    private val skyBox = OBJLoader().loadTexturedModel(this.materialManager, Config.getInstance().directoryManager.engineDir.resolve("assets/models/skybox.obj"))
+    private val skyBox = OBJLoader().loadTexturedModel(this.materialManager, engineContext.config.directoryManager.engineDir.resolve("assets/models/skybox.obj"))
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox).apply {
         skyBoxEntity.addComponent(this)
         skyBoxEntity.init(engineContext)
@@ -156,7 +153,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         }
         //		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
-        registerRenderExtension(DrawLinesExtension(this, programManager))
+        registerRenderExtension(DrawLinesExtension(engineContext, this, programManager))
         //		TODO: This seems to be broken with the new texture implementations
         //		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
         //        registerRenderExtension(new EvaluateProbeRenderExtension(managerContext));
@@ -196,14 +193,14 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         }
     }
 
-    private fun GpuContext<OpenGl>.setUpGBuffer(): DeferredRenderingBuffer {
-        gpuContext.getExceptionOnError("Before setupGBuffer")
+    private fun GpuContext<OpenGl>.setUpGBuffer(engineContext: EngineContext<OpenGl>): DeferredRenderingBuffer {
+        this@setUpGBuffer.getExceptionOnError("Before setupGBuffer")
 
         execute {
-            backend.gpuContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
-            gpuContext.getExceptionOnError("setupGBuffer")
+            this@setUpGBuffer.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
+            this@setUpGBuffer.getExceptionOnError("setupGBuffer")
         }
-        return backend.gpuContext.calculate { DeferredRenderingBuffer(backend.gpuContext) }
+        return this@setUpGBuffer.calculate { DeferredRenderingBuffer(this@setUpGBuffer, engineContext.config.width, engineContext.config.height) }
     }
 
     override fun update(engine: Engine<OpenGl>, seconds: Float) {}
@@ -249,12 +246,12 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             gpuContext.exceptionOnError("Before draw entities")
 
             profiled("Draw entities") {
-                if (Config.getInstance().isDrawScene) {
+                if (engineContext.config.isDrawScene) {
                     pipeline.draw(state, firstpassProgram, firstpassProgramAnimated, firstPassResult)
                 }
             }
 
-            if (!Config.getInstance().isUseDirectTextureOutput) {
+            if (!engineContext.config.isUseDirectTextureOutput) {
                 backend.gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState.shadowMapId)
                 for (extension in renderExtensions) {
                     profiled("RenderExtension " + extension.javaClass.simpleName) {
@@ -270,7 +267,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             }
         }
 
-        if (!Config.getInstance().isUseDirectTextureOutput) {
+        if (!engineContext.config.isUseDirectTextureOutput) {
             //			GPUProfiler.start("Shadowmap pass");
             //			directionalLightShadowMapExtension.renderFirstPass(backend, gpuContext, result.getFirstPassResult(), renderState);
             //            managerContext.getScene().getAreaLightSystem().renderAreaLightShadowMaps(renderState);
@@ -318,10 +315,10 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
                     secondPassDirectionalProgram.use()
                     val camTranslation = Vector3f()
                     secondPassDirectionalProgram.setUniform("eyePosition", camera1.getTranslation(camTranslation))
-                    secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Config.getInstance().ambientocclusionRadius)
-                    secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().ambientocclusionTotalStrength)
-                    secondPassDirectionalProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-                    secondPassDirectionalProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+                    secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", engineContext.config.ambientocclusionRadius)
+                    secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", engineContext.config.ambientocclusionTotalStrength)
+                    secondPassDirectionalProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+                    secondPassDirectionalProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
                     secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
                     secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
                     secondPassDirectionalProgram.bindShaderStorageBuffer(2, state.directionalLightBuffer)
@@ -338,7 +335,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
 
                 doPointLights(state, viewMatrix, projectionMatrix)
 
-                if (!Config.getInstance().isUseDirectTextureOutput) {
+                if (!engineContext.config.isUseDirectTextureOutput) {
                     profiled("Extensions") {
                         gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState.shadowMapId)
                         for (extension in renderExtensions) {
@@ -357,7 +354,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
                     backend.textureManager.generateMipMaps(TEXTURE_2D, gBuffer.lightAccumulationMapOneId)
                 }
 
-                if (Config.getInstance().isUseGi) {
+                if (engineContext.config.isUseGi) {
                     GL11.glDepthMask(false)
                     backend.gpuContext.disable(DEPTH_TEST)
                     backend.gpuContext.disable(BLEND)
@@ -374,18 +371,18 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
 
                 profiled("Blurring") {
                     //        GPUProfiler.start("LightAccumulationMap");
-                    //        TextureManager.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), Config.getInstance().WIDTH, Config.getInstance().HEIGHT, 7, 8);
+                    //        TextureManager.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), engine.getConfig().WIDTH, engine.getConfig().HEIGHT, 7, 8);
                     //        GPUProfiler.end();
                     profiled("Scattering texture") {
-                        if (Config.getInstance().isScattering || Config.getInstance().isUseAmbientOcclusion) {
-                            backend.textureManager.blur2DTextureRGBA16F(gBuffer.halfScreenBuffer.renderedTexture, Config.getInstance().width / 2, Config.getInstance().height / 2, 0, 0)
+                        if (engineContext.config.isScattering || engineContext.config.isUseAmbientOcclusion) {
+                            backend.textureManager.blur2DTextureRGBA16F(gBuffer.halfScreenBuffer.renderedTexture, engineContext.config.width / 2, engineContext.config.height / 2, 0, 0)
                         }
                     }
-                    //        TextureManager.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().WIDTH / 2, Config.getInstance().HEIGHT / 2, 0, 0);
-                    //        Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, Config.getInstance().WIDTH / 2, Config.getInstance().HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
-                    //		renderer.blur2DTexture(gBuffer.getLightAccumulationMapOneId(), 0, Config.getInstance().WIDTH, Config.getInstance().HEIGHT, GL30.GL_RGBA16F, false, 1);
-                    //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.getInstance().WIDTH*SECONDPASSSCALE), (int)(Config.getInstance().HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
-                    //		Renderer.getInstance().blur2DTexture(gBuffer.getAmbientOcclusionMapId(), 0, (int)(Config.getInstance().WIDTH), (int)(Config.getInstance().HEIGHT), GL30.GL_RGBA16F, false, 1);
+                    //        TextureManager.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), engine.getConfig().WIDTH / 2, engine.getConfig().HEIGHT / 2, 0, 0);
+                    //        Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, engine.getConfig().WIDTH / 2, engine.getConfig().HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
+                    //		renderer.blur2DTexture(gBuffer.getLightAccumulationMapOneId(), 0, engine.getConfig().WIDTH, engine.getConfig().HEIGHT, GL30.GL_RGBA16F, false, 1);
+                    //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(engine.getConfig().WIDTH*SECONDPASSSCALE), (int)(engine.getConfig().HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+                    //		Renderer.getInstance().blur2DTexture(gBuffer.getAmbientOcclusionMapId(), 0, (int)(engine.getConfig().WIDTH), (int)(engine.getConfig().HEIGHT), GL30.GL_RGBA16F, false, 1);
                     //		renderer.blur2DTextureBilateral(getLightAccumulationMapOneId(), 0, (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 
                     //		renderer.blur2DTexture(halfScreenTarget.getRenderedTexture(0), (int)(renderer.WIDTH*0.5), (int)(renderer.HEIGHT*0.5), GL11.GL_RGBA8, false, 1);
@@ -403,13 +400,13 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
                 combineProgram.use()
                 combineProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
                 combineProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                combineProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-                combineProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+                combineProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+                combineProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
                 combineProgram.setUniform("camPosition", state.camera.getPosition())
-                combineProgram.setUniform("ambientColor", Config.getInstance().ambientLight)
-                combineProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
-                combineProgram.setUniform("worldExposure", Config.getInstance().exposure)
-                combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled)
+                combineProgram.setUniform("ambientColor", engineContext.config.ambientLight)
+                combineProgram.setUniform("useAmbientOcclusion", engineContext.config.isUseAmbientOcclusion)
+                combineProgram.setUniform("worldExposure", engineContext.config.exposure)
+                combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.isAutoExposureEnabled)
                 combineProgram.setUniform("fullScreenMipmapCount", getGBuffer().fullScreenMipmapCount)
                 combineProgram.setUniform("activeProbeCount", state.environmentProbesState.activeProbeCount)
                 combineProgram.bindShaderStorageBuffer(0, getGBuffer().storageBuffer)
@@ -439,11 +436,11 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             profiled("Post processing") {
                 postProcessProgram.use()
                 backend.gpuContext.bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0))
-                postProcessProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-                postProcessProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
-                postProcessProgram.setUniform("worldExposure", Config.getInstance().exposure)
-                postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled)
-                postProcessProgram.setUniform("usePostProcessing", Config.getInstance().isEnablePostprocessing)
+                postProcessProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+                postProcessProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
+                postProcessProgram.setUniform("worldExposure", engineContext.config.exposure)
+                postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.isAutoExposureEnabled)
+                postProcessProgram.setUniform("usePostProcessing", engineContext.config.isEnablePostprocessing)
                 try {
                     postProcessProgram.setUniform("cameraRightDirection", state.camera.getRightDirection())
                     postProcessProgram.setUniform("cameraViewDirection", state.camera.getViewDirection())
@@ -464,9 +461,9 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         } else {
             backend.gpuContext.disable(DEPTH_TEST)
             backend.gpuContext.frontBuffer.use(true)
-            drawToQuad(Config.getInstance().directTextureOutputTextureIndex)
+            drawToQuad(engineContext.config.directTextureOutputTextureIndex)
         }
-        if (Config.getInstance().isDebugframeEnabled) {
+        if (engineContext.config.isDebugframeEnabled) {
             //			ArrayList<Texture> textures = new ArrayList<>(backend.getTextureManager().getTextures().values());
             drawToQuad(gBuffer.forwardBuffer.renderedTexture, backend.gpuContext.debugBuffer, debugFrameProgram)
             //			drawToQuad(managerContext.getScene().getAreaLightSystem().getDepthMapForAreaLight(managerContext.getScene().getAreaLightSystem().getAreaLights().get(0)), managerContext.getGpuContext().getDebugBuffer(), managerContext.getProgramManager().getDebugFrameProgram());
@@ -575,14 +572,14 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             GL42.glBindImageTexture(4, getGBuffer()!!.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
             secondPassPointComputeProgram.use()
             secondPassPointComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
-            secondPassPointComputeProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-            secondPassPointComputeProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+            secondPassPointComputeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+            secondPassPointComputeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS)
             secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
             secondPassPointComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-            secondPassPointComputeProgram.dispatchCompute(Config.getInstance().width / 16, Config.getInstance().height / 16, 1)
+            secondPassPointComputeProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
         }
     }
 
@@ -596,8 +593,8 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         }
 
         secondPassTubeProgram.use()
-        secondPassTubeProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-        secondPassTubeProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+        secondPassTubeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+        secondPassTubeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
         secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
         secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
         for (tubeLight in tubeLights) {
@@ -632,8 +629,8 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         profiled("Area light: " + areaLights.size) {
 
             secondPassAreaProgram.use()
-            secondPassAreaProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-            secondPassAreaProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+            secondPassAreaProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+            secondPassAreaProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             for (areaLight in areaLights) {
@@ -672,7 +669,7 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
     }
 
     private fun renderAOAndScattering(renderState: RenderState) = profiled("Scattering and AO") {
-        if (!Config.getInstance().isUseAmbientOcclusion && !Config.getInstance().isScattering) {
+        if (!engineContext.config.isUseAmbientOcclusion && !engineContext.config.isScattering) {
             return
         }
         gBuffer.halfScreenBuffer.use(true)
@@ -694,11 +691,11 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
         //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
         aoScatteringProgram.use()
         aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition())
-        aoScatteringProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
-        aoScatteringProgram.setUniform("ambientOcclusionRadius", Config.getInstance().ambientocclusionRadius)
-        aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().ambientocclusionTotalStrength)
-        aoScatteringProgram.setUniform("screenWidth", Config.getInstance().width.toFloat() / 2)
-        aoScatteringProgram.setUniform("screenHeight", Config.getInstance().height.toFloat() / 2)
+        aoScatteringProgram.setUniform("useAmbientOcclusion", engineContext.config.isUseAmbientOcclusion)
+        aoScatteringProgram.setUniform("ambientOcclusionRadius", engineContext.config.ambientocclusionRadius)
+        aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", engineContext.config.ambientocclusionTotalStrength)
+        aoScatteringProgram.setUniform("screenWidth", engineContext.config.width.toFloat() / 2)
+        aoScatteringProgram.setUniform("screenHeight", engineContext.config.height.toFloat() / 2)
         aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
         aoScatteringProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
@@ -752,10 +749,10 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             reflectionBuffer.use(true)
             reflectionProgram.use()
             reflectionProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT)
-            reflectionProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
-            reflectionProgram.setUniform("useSSR", Config.getInstance().isUseSSR)
-            reflectionProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-            reflectionProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+            reflectionProgram.setUniform("useAmbientOcclusion", engineContext.config.isUseAmbientOcclusion)
+            reflectionProgram.setUniform("useSSR", engineContext.config.isUseSSR)
+            reflectionProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+            reflectionProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             bindEnvironmentProbePositions(reflectionProgram, renderState.environmentProbesState)
@@ -767,10 +764,10 @@ constructor(private val materialManager: MaterialManager, engineContext: EngineC
             GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
             tiledProbeLightingProgram.use()
             tiledProbeLightingProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT)
-            tiledProbeLightingProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
-            tiledProbeLightingProgram.setUniform("useSSR", Config.getInstance().isUseSSR)
-            tiledProbeLightingProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-            tiledProbeLightingProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+            tiledProbeLightingProgram.setUniform("useAmbientOcclusion", engineContext.config.isUseAmbientOcclusion)
+            tiledProbeLightingProgram.setUniform("useSSR", engineContext.config.isUseSSR)
+            tiledProbeLightingProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+            tiledProbeLightingProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             tiledProbeLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             tiledProbeLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             tiledProbeLightingProgram.setUniform("activeProbeCount", renderState.environmentProbesState.activeProbeCount)

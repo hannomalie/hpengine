@@ -36,7 +36,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     private var verticesCount = 0
     private var entitiesDrawn = 0
 
-    private val useIndirectRendering = Config.getInstance().isIndirectRendering && engine.gpuContext.isSupported(BindlessTextures)
+    private val useIndirectRendering = engine.config.isIndirectRendering && engine.gpuContext.isSupported(BindlessTextures)
 
     private var gpuCommandsArray = StructArray(1000) { Command() }
 
@@ -115,7 +115,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                 if (batch.shouldBeSkipped()) continue
 
                 program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                DrawUtils.draw(engine.gpuContext, renderState, batch, program)
+                DrawUtils.draw(engine.gpuContext, renderState, batch, program, engine.config.isDrawLines)
             }
         }
         beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program)
@@ -130,7 +130,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                                commandCount: Int,
                                drawCountBuffer: AtomicCounterBuffer) {
 
-        if (Config.getInstance().isDrawLines && useLineDrawingIfActivated) {
+        if (engine.config.isDrawLines && useLineDrawingIfActivated) {
             engine.gpuContext.disable(GlCap.CULL_FACE)
             VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexIndexBuffer, commandBuffer, commandCount)
         } else {
@@ -168,7 +168,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     fun RenderBatch.shouldBeSkipped(): Boolean {
-        val culled = Config.getInstance().isUseCpuFrustumCulling && useFrustumCulling && !isVisibleForCamera
+        val culled = engine.config.isUseCpuFrustumCulling && useFrustumCulling && !isVisibleForCamera
         val isForward = materialInfo.transparencyType.needsForwardRendering
         return !isVisible || culled || isForward
     }
@@ -190,12 +190,12 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
             engine.gpuContext.enable(GlCap.CULL_FACE)
         }
         program.use()
-        program.setUniforms(renderState, cullCam ?: renderCam ?: renderState.camera)
+        program.setUniforms(renderState, cullCam ?: renderCam ?: renderState.camera, engine.config)
     }
 
 }
 
-fun Program.setUniforms(renderState: RenderState, camera: Camera) = profiled("setUniforms") {
+fun Program.setUniforms(renderState: RenderState, camera: Camera, config: Config) = profiled("setUniforms") {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
     val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
@@ -204,8 +204,8 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera) = profiled("se
     use()
     bindShaderStorageBuffer(1, renderState.materialBuffer)
     bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-    setUniform("useRainEffect", Config.getInstance().rainEffect != 0.0f)
-    setUniform("rainEffect", Config.getInstance().rainEffect)
+    setUniform("useRainEffect", config.rainEffect != 0.0f)
+    setUniform("rainEffect", config.rainEffect)
     setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)
     setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer)
     setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer)
@@ -215,8 +215,8 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera) = profiled("se
     setUniform("near", camera.getNear())
     setUniform("far", camera.getFar())
     setUniform("timeGpu", System.currentTimeMillis().toInt())
-    setUniform("useParallax", Config.getInstance().isUseParallax)
-    setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax)
+    setUniform("useParallax", config.isUseParallax)
+    setUniform("useSteepParallax", config.isUseSteepParallax)
 }
 
 fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,

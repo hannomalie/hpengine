@@ -1,8 +1,7 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
+import de.hanno.hpengine.engine.directory.EngineDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.graphics.GpuContext;
@@ -20,12 +19,16 @@ import kotlin.io.FilesKt;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TestSceneUtil {
-    public static List<Entity> loadTestScene(MaterialManager materialManager, PhysicsManager physicsManager, EntityManager entityManager, DirectionalLightSystem directionalLightSystem, Scene scene, ModelComponentSystem modelComponentSystem) {
+    public static List<Entity> loadTestScene(MaterialManager materialManager,
+                                             PhysicsManager physicsManager,
+                                             EntityManager entityManager,
+                                             DirectionalLightSystem directionalLightSystem,
+                                             Scene scene,
+                                             ModelComponentSystem modelComponentSystem, EngineDirectory engineDir) {
         List<Entity> entities = new ArrayList<>();
         int entityCount = 3;
 
@@ -37,7 +40,7 @@ public class TestSceneUtil {
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, FilesKt.resolve(Config.getInstance().getDirectoryManager().getEngineDir().getModels(), "sphere.obj"));
+            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, FilesKt.resolve(engineDir.getModels(), "sphere.obj"));
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {

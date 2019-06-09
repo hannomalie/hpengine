@@ -49,7 +49,7 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
             turbo = 3f
         }
 
-        val rotationAmount = 10.1f * turbo * seconds * rotationDelta * Config.getInstance().cameraSpeed
+        val rotationAmount = 10.1f * turbo * seconds * rotationDelta * engine.config.cameraSpeed
         if (engine.input.isMouseClicked(0)) {
             val pitchAmount = Math.toRadians((engine.input.dySmooth * rotationAmount % 360).toDouble())
             pitchAccel = Math.max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
@@ -69,7 +69,7 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
             getEntity().translateLocal(oldTranslation)
         }
 
-        val moveAmount = turbo * posDelta * seconds * Config.getInstance().cameraSpeed
+        val moveAmount = turbo * posDelta * seconds * engine.config.cameraSpeed
         if (engine.input.isKeyPressed(GLFW_KEY_W)) {
             getEntity().translate(Vector3f(0f, 0f, -moveAmount))
         }

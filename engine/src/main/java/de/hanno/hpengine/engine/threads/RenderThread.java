@@ -5,10 +5,12 @@ import de.hanno.hpengine.engine.config.Config;
 public class RenderThread extends TimeStepThread {
 
     private final Runnable action;
+    private final Config config;
 
-    public RenderThread(String name, Runnable action) {
+    public RenderThread(String name, Runnable action, Config config) {
         super(name, 0.016f);
         this.action = action;
+        this.config = config;
     }
 
     @Override
@@ -18,6 +20,6 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Config.getInstance().isLockFps() ? minimumCycleTimeInSeconds : 0f;
+        return config.isLockFps() ? minimumCycleTimeInSeconds : 0f;
     }
 }

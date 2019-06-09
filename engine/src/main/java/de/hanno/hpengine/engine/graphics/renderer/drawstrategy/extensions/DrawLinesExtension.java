@@ -2,34 +2,32 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.backend.BackendType;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.backend.OpenGl;
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
-import de.hanno.hpengine.engine.transform.AABB;
-import de.hanno.hpengine.engine.transform.SimpleTransform;
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.transform.AABB;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.util.List;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
-
 public class DrawLinesExtension implements RenderExtension<OpenGl> {
 
     private final Program linesProgram;
     private final FloatBuffer identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
     private final Renderer<? extends BackendType> renderer;
+    private final EngineContext<?> engine;
 
-    public DrawLinesExtension(Renderer<? extends BackendType> renderer, ProgramManager programManager) {
+    public DrawLinesExtension(EngineContext<?> engineContext, Renderer<? extends BackendType> renderer, ProgramManager programManager) {
+        this.engine = engineContext;
         new SimpleTransform().get(identityMatrix44Buffer);
         this.renderer = renderer;
         linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl");
@@ -38,7 +36,7 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
     @Override
     public void renderFirstPass(Backend<OpenGl> backend, GpuContext<OpenGl> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
-        if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
+        if(engine.getConfig().isDrawBoundingVolumes() || engine.getConfig().isDrawCameras()) {
 
 
             linesProgram.use();
@@ -83,7 +81,7 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
 
     private void renderBatches(List<RenderBatch> batches) {
         for (RenderBatch batch : batches) {
-            if(Config.getInstance().isDrawBoundingVolumes()) {
+            if(engine.getConfig().isDrawBoundingVolumes()) {
                 boolean renderAABBs = true;
                 if(renderAABBs) {
                     batchAABBLines(renderer, batch.getMinWorld(), batch.getMaxWorld());

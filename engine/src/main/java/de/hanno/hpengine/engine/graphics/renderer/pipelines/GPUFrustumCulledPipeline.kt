@@ -48,7 +48,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     var highZBuffer: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
             .setName("GPUCulledPipeline")
-            .setWidth(Config.getInstance().width / 2).setHeight(Config.getInstance().height / 2)
+            .setWidth(engine.config.width / 2).setHeight(engine.config.height / 2)
             .add(ColorAttachmentDefinition("HighZ").setInternalFormat(Pipeline.HIGHZ_FORMAT)
                     .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
             .build()
@@ -71,13 +71,13 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     private val highZProgram = engine.programManager.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
 
     open fun renderHighZMap() {
-        DrawUtils.renderHighZMap(engine.gpuContext, depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
+        DrawUtils.renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
     }
 
     open var depthMap = renderer.gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
-        if (Config.getInstance().isPrintPipelineDebugOutput) {
+        if (engine.config.isPrintPipelineDebugOutput) {
             GL11.glFinish()
             println("########### $phase ")
 
@@ -138,7 +138,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram: AbstractProgram = if(Config.getInstance().isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
+        val appendProgram: AbstractProgram = if(engine.config.isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
 
         profiled("Buffer compaction") {
 
@@ -164,7 +164,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                     bindShaderStorageBuffer(12, commandOffsets)
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                     setUniform("maxDrawCommands", commands.size)
-                    if(Config.getInstance().isUseComputeShaderDrawCommandAppend) {
+                    if(engine.config.isUseComputeShaderDrawCommandAppend) {
                         appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
                     } else {
                         val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
@@ -192,7 +192,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.setUniform("entityBaseIndex", 0)
         program.setUniform("indirect", true)
         val drawCountBufferToUse = drawCountBuffer
-        if(Config.getInstance().isUseGpuOcclusionCulling) {
+        if(engine.config.isUseGpuOcclusionCulling) {
             program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
             program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         } else {

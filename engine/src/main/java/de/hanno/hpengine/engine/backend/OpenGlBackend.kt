@@ -33,11 +33,11 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val input: Input) : Backend<OpenGl> {
 
     companion object {
-        operator fun invoke(): OpenGlBackend {
+        operator fun invoke(config: Config): OpenGlBackend {
             val eventBus= MBassadorEventBus()
-            val gpuContext = OpenGLContext()
-            val programManager = OpenGlProgramManager(gpuContext, eventBus)
-            val textureManager = TextureManager(programManager, gpuContext)
+            val gpuContext = OpenGLContext(config.width, config.height)
+            val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
+            val textureManager = TextureManager(config, programManager, gpuContext)
             val input = Input(eventBus, gpuContext)
 
             return OpenGlBackend(eventBus, gpuContext, programManager, textureManager, input)
@@ -48,8 +48,8 @@ class OpenGlBackend(override val eventBus: EventBus,
 class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { UpdateThread.isUpdateThread() })
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
-                        override val backend: Backend<OpenGl> = OpenGlBackend(),
-                        override val config: Config = Config.getInstance(),
+                        override val config: Config,
+                        override val backend: Backend<OpenGl> = OpenGlBackend(config),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext<OpenGl>
 
@@ -58,7 +58,7 @@ class ManagerContextImpl(
         override val managers: ManagerRegistry = SimpleManagerRegistry(),
         override val directoryManager: DirectoryManager = DirectoryManager(gameDir = engineContext.config.gameDir, initFileName = engineContext.config.initFileName),
         override val renderManager: RenderManager,
-        override val physicsManager: PhysicsManager = PhysicsManager(renderManager.renderer)
+        override val physicsManager: PhysicsManager = PhysicsManager(renderManager.renderer, engineContext.config)
 ) : ManagerContext<OpenGl> {
     init {
         managers.register(directoryManager)

@@ -1,10 +1,9 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.compiler.RuntimeJavaCompiler;
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.util.ressources.CodeSource;
@@ -14,30 +13,21 @@ import de.hanno.hpengine.util.ressources.Reloadable;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
-import javax.security.auth.login.Configuration;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
 public class JavaComponent extends BaseComponent implements ScriptComponent, Reloadable {
 
-    public static final String WORKING_DIR = Config.getInstance().getDirectoryManager().getGameDir().getJava().getPath();
-    static {
-        File workingDir = new File(WORKING_DIR);
-        try {
-            if(!workingDir.exists()) {
-                Files.createDirectory(workingDir.toPath());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private static RuntimeJavaCompiler compiler = null;
+    RuntimeJavaCompiler getCompiler(GameDirectory gameDirectory) {
+        compiler = new RuntimeJavaCompiler(gameDirectory.getJava().getPath());
+        return compiler;
     }
 
-    static final RuntimeJavaCompiler compiler = new RuntimeJavaCompiler(WORKING_DIR);
     private final CodeSource javaCodeSource;
+    private final GameDirectory gameDirectory;
     private FileAlterationObserver observerJavaFile;
     private ReloadOnFileChangeListener<JavaComponent> reloadOnFileChangeListener;
 
@@ -48,13 +38,14 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private boolean isEngineConsumer;
     private Object instance;
 
-    public JavaComponent(String sourceCode) {
-        this(new CodeSource(sourceCode));
+    public JavaComponent(String sourceCode, GameDirectory gameDir) {
+        this(new CodeSource(sourceCode), gameDir);
     }
 
-    public JavaComponent(CodeSource codeSource) {
+    public JavaComponent(CodeSource codeSource, GameDirectory gameDirectory) {
         super();
         this.javaCodeSource = codeSource;
+        this.gameDirectory = gameDirectory;
     }
 
     @Override
@@ -64,9 +55,11 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @Override
     public void init(EngineContext engine) {
-        observerJavaFile = new FileAlterationObserver(javaCodeSource.isFileBased() ? javaCodeSource.getFile().getParent() : JavaComponent.getDirectory());
+        if(javaCodeSource.isFileBased()) {
+            observerJavaFile = new FileAlterationObserver(javaCodeSource.getFile().getParent());
+        }
         addFileListeners();
-        initWrappingComponent();
+        initWrappingComponent(engine.getConfig().getDirectoryManager().getGameDir());
         super.init(engine);
         if(isLifeCycle) {
             ((LifeCycle) instance).init(engine);
@@ -111,9 +104,9 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         return map.put(key, value);
     }
 
-    private void initWrappingComponent() {
+    private void initWrappingComponent(GameDirectory gameDir) {
         try {
-            compiledClass = compiler.compile(javaCodeSource.getSource());
+            compiledClass = getCompiler(gameDir).compile(javaCodeSource.getSource());
             instance = compiledClass.getConstructors()[0].newInstance();
             try {
                 Field entityField = instance.getClass().getDeclaredField("entity");
@@ -159,14 +152,10 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         return instance;
     }
 
-    private static String getDirectory() {
-        return Config.getInstance().getDirectoryManager().getGameDir().getScripts().getPath();
-    }
-
     @Override
     public void load() {
         javaCodeSource.load();
-        initWrappingComponent();
+        initWrappingComponent(gameDirectory);
     }
 
     @Override

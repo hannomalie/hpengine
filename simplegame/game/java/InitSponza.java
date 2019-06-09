@@ -16,7 +16,7 @@ public class InitSponza implements EngineConsumer {
     public void consume(@NotNull de.hanno.hpengine.engine.Engine engine) {
 
         try {
-            File modelFile = FilesKt.resolve(Config.getInstance().getDirectoryManager().getGameDir(), "assets/models/sponza.obj");
+            File modelFile = FilesKt.resolve(engine.getConfig().getDirectoryManager().getGameDir(), "assets/models/sponza.obj");
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(modelFile, "sponza", engine.getScene().getMaterialManager()).execute();
             System.out.println("loaded entities : " + loaded.entities.size());
             for (Entity entity : loaded.entities) {

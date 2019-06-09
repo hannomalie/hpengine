@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
@@ -40,7 +39,7 @@ public class InitCubeClusters implements LifeCycle {
             System.out.println("loaded entities : " + loaded.entities.size());
             for(final Entity current : loaded.entities) {
                 File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
-                current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
+                current.addComponent(new JavaComponent(new CodeSource(componentScriptFile), gameDir));
 
                 List clusters = new ArrayList<Cluster>();
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {

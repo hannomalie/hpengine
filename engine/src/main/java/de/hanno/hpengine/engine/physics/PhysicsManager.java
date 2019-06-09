@@ -15,18 +15,21 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
-import com.bulletphysics.linearmath.*;
+import com.bulletphysics.linearmath.DebugDrawModes;
+import com.bulletphysics.linearmath.DefaultMotionState;
+import com.bulletphysics.linearmath.IDebugDraw;
+import com.bulletphysics.linearmath.MotionState;
+import com.bulletphysics.linearmath.Transform;
 import de.hanno.hpengine.engine.backend.BackendType;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
-import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -44,15 +47,17 @@ import java.util.logging.Logger;
 public class PhysicsManager implements Manager, RenderSystem {
 
     private final Renderer<? extends BackendType> renderer;
+    private final Config config;
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
     private final CommandQueue commandQueue = new CommandQueue();
 
-    public PhysicsManager(Renderer renderer) {
-		this(new Vector3f(0,-20,0), renderer);
+    public PhysicsManager(Renderer renderer, Config config) {
+		this(new Vector3f(0,-20,0), renderer, config);
 	}
-	public PhysicsManager(Vector3f gravity, Renderer renderer) {
+	public PhysicsManager(Vector3f gravity, Renderer renderer, Config config) {
         this.renderer = renderer;
+        this.config = config;
         setupBullet(renderer, gravity);
         new TimeStepThread("Physics", 0.001f) {
 
@@ -190,7 +195,7 @@ public class PhysicsManager implements Manager, RenderSystem {
 
     @Override
     public void render(@NotNull DrawResult result, @NotNull RenderState state) {
-        if (Config.getInstance().isDrawLines()) {
+        if (config.isDrawLines()) {
             renderer.drawAllLines((program) -> {
                 program.setUniform("diffuseColor", new org.joml.Vector3f(1,1,0));
                 debugDrawWorld();
@@ -255,7 +260,7 @@ public class PhysicsManager implements Manager, RenderSystem {
 //                        & DebugDrawModes.DRAW_CONTACT_POINTS
 //                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
                         ;
-                return Config.getInstance().isDrawLines() ? flags : 0;
+                return config.isDrawLines() ? flags : 0;
 			}
 			
 			@Override

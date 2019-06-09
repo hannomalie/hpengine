@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
@@ -13,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.hpengine.util.stopwatch.GPUProfiler.currentTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -63,8 +61,6 @@ import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
 import org.lwjgl.opengl.NVXGPUMemoryInfo
-import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
@@ -77,7 +73,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 
-class OpenGLContext private constructor() : GpuContext<OpenGl> {
+class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<OpenGl> {
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
@@ -87,8 +83,8 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
     override val registeredRenderTargets = ArrayList<RenderTarget>()
 
 
-    override var canvasWidth = Config.getInstance().width
-    override var canvasHeight = Config.getInstance().height
+    override var canvasWidth = width
+    override var canvasHeight = height
 
     internal val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
 
@@ -196,7 +192,7 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-        windowHandle = glfwCreateWindow(Config.getInstance().width, Config.getInstance().height, "HPEngine", 0, 0)
+        windowHandle = glfwCreateWindow(canvasWidth, canvasHeight, "HPEngine", 0, 0)
         if (windowHandle == 0L) {
             throw RuntimeException("Failed to create windowHandle")
         }
@@ -233,7 +229,7 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
         enable(GlCap.CULL_FACE)
 
         // Map the internal OpenGL coordinate system to the entire screen
-        viewPort(0, 0, Config.getInstance().width, Config.getInstance().height)
+        viewPort(0, 0, canvasWidth, canvasHeight)
         maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
 
         frontBuffer = createFrontBuffer()
@@ -659,13 +655,14 @@ class OpenGLContext private constructor() : GpuContext<OpenGl> {
             rewind()
         }
 
-        inline val dispatcher
-            get() = Executor.dispatcher
+        private var openGLContextSingleton: OpenGLContext? = null
 
-        private val openGLContextSingleton = OpenGLContext()
-
-        @JvmStatic @JvmName("get") operator fun invoke(): OpenGLContext {
-            return openGLContextSingleton
+        @JvmStatic @JvmName("create") operator fun invoke(width: Int, height: Int): OpenGLContext {
+            if(openGLContextSingleton != null) {
+                throw IllegalStateException("Can only instantiate one OpenGLContext!")
+            } else {
+                return OpenGLContext(width, height)
+            }
         }
 
 

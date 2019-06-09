@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -19,9 +18,9 @@ import java.nio.FloatBuffer
 
 open class Camera: Component {
 
-    constructor(entity: Entity) {
+    @JvmOverloads constructor(entity: Entity, ratio: Float = 1280f/720f) {
         this.entity = entity
-        init(Util.createPerspective(45f, Config.getInstance().width.toFloat() / Config.getInstance().height.toFloat(), this.near, this.far), this.near, this.far, 60f, Config.getInstance().width.toFloat() / Config.getInstance().height.toFloat())
+        init(Util.createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio)
         //this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
     }
 
@@ -72,7 +71,7 @@ open class Camera: Component {
     private var near = 1f
     private var far = 7000f
     private var fov = 30f
-    private var ratio = Config.getInstance().width.toFloat() / Config.getInstance().height.toFloat()
+    private var ratio = 1280f/720f
     var width = 1600f
         set(width) {
             field = width
@@ -258,7 +257,7 @@ class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, Ren
     private val components = mutableListOf<Camera>()
     override fun getComponents(): List<Camera> = components
 
-    override fun create(entity: Entity) = Camera(entity)
+    override fun create(entity: Entity) = Camera(entity, engine.config.width.toFloat() / engine.config.height.toFloat())
     fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean) = Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { components.add(it); }
 
     override fun addComponent(component: Camera) {
@@ -267,7 +266,7 @@ class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, Ren
     override fun clear() = components.clear()
 
     override fun render(result: DrawResult, state: RenderState) {
-        if (Config.getInstance().isDrawCameras) {
+        if (engine.config.isDrawCameras) {
             //            TODO: Use renderstate somehow?
             for (i in components.indices) {
                 val camera = components[i]

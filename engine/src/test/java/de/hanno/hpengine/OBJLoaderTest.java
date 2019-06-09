@@ -57,7 +57,7 @@ public class OBJLoaderTest extends TestWithEngine {
     @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
-		Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("C://default.png", Config.getInstance().directoryManager.gameDir);
+		Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("C://default.png", engine.getConfig().directoryManager.gameDir);
 		Assert.assertEquals(1, texture.getDimension().getHeight());
 	}
 

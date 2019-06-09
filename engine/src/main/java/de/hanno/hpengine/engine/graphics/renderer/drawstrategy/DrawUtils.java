@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -25,11 +23,11 @@ public class DrawUtils {
         super();
     }
 
-    public static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch, Program program) {
-        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, program, !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), true);
+    public static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch, Program program, boolean drawLines) {
+        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, program, !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), drawLines);
     }
 
-    public static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible, boolean drawLinesIfEnabled) {
+    public static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible, boolean drawLines) {
         if(invisible) {
             return 0;
         }
@@ -38,7 +36,7 @@ public class DrawUtils {
             return 0;
         }
 
-        int result = actuallyDraw(gpuContext, vertexBuffer, indexBuffer, renderBatch, program, drawLinesIfEnabled);
+        int result = actuallyDraw(gpuContext, vertexBuffer, indexBuffer, renderBatch, program, drawLines);
         RuntimeException exceptionOrNull = gpuContext.getExceptionOnError("");
         if(exceptionOrNull != null) {
             exceptionOrNull.printStackTrace();
@@ -46,18 +44,13 @@ public class DrawUtils {
         return result;
     }
 
-    private static int actuallyDraw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean drawLinesIfEnabled) {
+    private static int actuallyDraw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean drawLines) {
         program.setUniform("entityBaseIndex", 0);
         program.setUniform("entityIndex", renderBatch.getEntityBufferIndex());
         program.setUniform("indirect", false);
 
 
-//        if(material.getMaterialType().equals(SimpleMaterial.MaterialType.FOLIAGE))
-        {
-            gpuContext.disable(GlCap.CULL_FACE);
-        }
-
-        if (Config.getInstance().isDrawLines() && drawLinesIfEnabled) {
+        if (drawLines) {
             return vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, renderBatch.getIndexCount(), renderBatch.getInstanceCount(), renderBatch.getIndexOffset(), renderBatch.getBaseVertex());
         } else {
             return vertexBuffer
@@ -107,7 +100,7 @@ public class DrawUtils {
 //        EnvironmentProbeManager.getInstance().bindEnvironmentProbePositions(probeFirstpassProgram);
 //        OpenGLContext.getInstance().activeTexture(8);
 //        EnvironmentProbeManager.getInstance().getEnvironmentMapsArray(3).bind();
-//        probeFirstpassProgram.setUniform("showContent", Config.getInstance().DEBUGDRAW_PROBES_WITH_CONTENT);
+//        probeFirstpassProgram.setUniform("showContent", engine.getConfig().DEBUGDRAW_PROBES_WITH_CONTENT);
 //
 //        Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getComponent(ModelComponent.class).getMaterials().getDiffuse());
 //

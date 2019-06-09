@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.shader.Shader.Companion.directory
@@ -12,7 +13,9 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 
-class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val eventBus: EventBus) : ProgramManager<OpenGl> {
+class OpenGlProgramManager(override val gpuContext: OpenGLContext,
+                           private val eventBus: EventBus,
+                           val config: Config) : ProgramManager<OpenGl> {
     init {
 //        gpuContext.getExceptionOnError { "OpenGlProgramManager init" }
     }
@@ -51,7 +54,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext, private val e
         var resultingShaderSource = (gpuContext.getOpenGlVersionsDefine()
                 + gpuContext.getOpenGlExtensionsDefine()
                 + defines.toString()
-                + ShaderDefine.getGlobalDefinesString())
+                + ShaderDefine.getGlobalDefinesString(config))
 
         var newlineCount = resultingShaderSource.split("\n".toRegex()).toTypedArray().size - 1
 

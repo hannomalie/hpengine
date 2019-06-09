@@ -15,7 +15,7 @@ public class CameraTest extends TestWithRenderer {
 	
 	@Test
 	public void rotation() {
-		Camera camera = new Camera(new Entity());
+		Camera camera = new Camera(new Entity(), engine.config);
         Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
         Assert.assertEquals(new Vector3f(1,0,0), camera.getRightDirection());
         Assert.assertEquals(new Vector3f(0,0,-1), camera.getViewDirection());

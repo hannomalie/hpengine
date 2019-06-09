@@ -91,7 +91,11 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
                 areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
                 for (e in renderState.renderBatchesStatic) {
-                    DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, areaShadowPassProgram, !e.isVisible, true)
+                    val drawLines = false
+                    DrawUtils.draw(engine.gpuContext,
+                            renderState.vertexIndexBufferStatic.vertexBuffer,
+                            renderState.vertexIndexBufferStatic.indexBuffer,
+                            e, areaShadowPassProgram, !e.isVisible, drawLines)
                 }
             }
         }

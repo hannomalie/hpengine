@@ -1,20 +1,15 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
-import com.google.common.collect.Lists;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.util.AbstractBuilder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import static java.util.Arrays.asList;
 
 public class RenderTargetBuilder<BUILDER_TYPE extends RenderTargetBuilder, TARGET_TYPE extends RenderTarget> extends AbstractBuilder<TARGET_TYPE> {
     String name = "Unnamed";
-    int width = Config.getInstance().getWidth();
-    int height = Config.getInstance().getHeight();
+    int width = 1280;
+    int height = 720;
     float clearR = 0.0f;
     float clearG = 0.0f;
     float clearB = 0.0f;

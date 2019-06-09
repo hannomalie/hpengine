@@ -33,7 +33,7 @@ class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): Simple
 //    TODO: This has to be part of a custom renderstate!
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
-    val shadowMapStrategy = if (Config.getInstance().isUseDpsm) {
+    val shadowMapStrategy = if (engine.config.isUseDpsm) {
             DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
         } else {
             CubeShadowMapStrategy(engine, this)

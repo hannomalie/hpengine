@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.directory.AbstractDirectory;
+import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
@@ -15,9 +17,11 @@ public class LoadModelCommand implements Command<EntityListResult> {
     private final File file;
     private final String name;
     private MaterialManager materialManager;
+    private final GameDirectory gameDir;
 
-    public LoadModelCommand(File file, String name, MaterialManager materialManager) {
+    public LoadModelCommand(File file, String name, MaterialManager materialManager, GameDirectory gameDir) {
         this.materialManager = materialManager;
+        this.gameDir = gameDir;
         if(file == null) {
             throw new IllegalArgumentException("Passed file is null!");
         }
@@ -35,7 +39,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
             long start = System.currentTimeMillis();
 
             List<Entity> entities = new ArrayList<>();
-            Model model = getModel(materialManager);
+            Model model = getModel(materialManager, gameDir);
             Entity entity = new Entity(name);
             ModelComponent modelComponent = new ModelComponent(entity, model);
             entity.addComponent(modelComponent);
@@ -52,12 +56,12 @@ public class LoadModelCommand implements Command<EntityListResult> {
         }
     }
 
-    protected Model getModel(MaterialManager materialManager) throws Exception {
+    protected Model getModel(MaterialManager materialManager, AbstractDirectory textureDir) throws Exception {
         Model model;
         if(file.getAbsolutePath().endsWith("md5mesh")) {
             MD5Model parsedModel = MD5Model.parse(file.getAbsolutePath());
             MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
-            model = MD5Loader.process(materialManager, parsedModel, parsedAnimModel);
+            model = MD5Loader.process(materialManager, parsedModel, parsedAnimModel, textureDir);
         } else {
             model = new OBJLoader().loadTexturedModel(materialManager, file);
         }

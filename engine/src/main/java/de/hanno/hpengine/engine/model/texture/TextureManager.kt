@@ -7,7 +7,10 @@ import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
@@ -28,28 +31,52 @@ import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
 import org.joml.Vector2f
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL13.*
+import org.lwjgl.opengl.ARBBindlessTexture
+import org.lwjgl.opengl.EXTTextureCompressionS3TC
+import org.lwjgl.opengl.EXTTextureSRGB
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL12
+import org.lwjgl.opengl.GL13
+import org.lwjgl.opengl.GL13.GL_RGBA8
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+import org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+import org.lwjgl.opengl.GL14
+import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.GL_RGBA32F
+import org.lwjgl.opengl.GL42
+import org.lwjgl.opengl.GL43
 import java.awt.Color
 import java.awt.color.ColorSpace
-import java.awt.image.*
+import java.awt.image.BufferedImage
+import java.awt.image.ColorModel
+import java.awt.image.ComponentColorModel
+import java.awt.image.DataBuffer
+import java.awt.image.DataBufferByte
+import java.awt.image.Raster
+import java.awt.image.WritableRaster
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.util.*
+import java.util.ArrayList
+import java.util.Hashtable
+import java.util.LinkedHashMap
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenGLContext) : Manager {
+class TextureManager(val config: Config, programManager: OpenGlProgramManager, val gpuContext: OpenGLContext) : Manager {
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
-    val engineDir = Config.getInstance().directoryManager.engineDir
+    val engineDir = config.directoryManager.engineDir
 
     /** The colour model including alpha for the GL image  */
     val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -113,13 +140,13 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
     }
 
     private fun loadAllAvailableTextures() {
-        val textureDir = Config.getInstance().directoryManager.engineDir.textures
+        val textureDir = config.directoryManager.engineDir.textures
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
         GpuContext.exitOnGLError("Before loadAllAvailableTextures")
         for (file in files) {
             try {
                 if (FilenameUtils.isExtension(file.absolutePath, "hptexture")) {
-                    getTexture(file.absolutePath, directory = Config.getInstance().directoryManager.gameDir)
+                    getTexture(file.absolutePath, directory = config.directoryManager.gameDir)
                 } else {
                     getCubeMap(file.absolutePath)
                 }
@@ -142,7 +169,7 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
         return getTexture(resourceName, srgba, this)
     }
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = Config.getInstance().directoryManager.gameDir): Texture<TextureDimension2D> {
+    fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = config.directoryManager.gameDir): Texture<TextureDimension2D> {
         return textures.computeIfAbsent(resourceName) {
             FileBasedSimpleTexture(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
@@ -195,7 +222,7 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
 
     private fun cubeMapPreCompiled(resourceName: String): Boolean {
         val fileName = FilenameUtils.getBaseName(resourceName)
-        val f = Config.getInstance().directoryManager.gameDir.resolve("$fileName.hpcubemap")
+        val f = config.directoryManager.gameDir.resolve("$fileName.hpcubemap")
         return f.exists()
     }
 
@@ -303,7 +330,7 @@ class TextureManager(programManager: OpenGlProgramManager, val gpuContext: OpenG
 
     @Throws(IOException::class)
     fun loadImageAsStream(ref: String): BufferedImage {
-        val file = Config.getInstance().directoryManager.engineDir.resolve(ref) // TODO: Inject dir
+        val file = config.directoryManager.engineDir.resolve(ref) // TODO: Inject dir
         return try {
             ImageIO.read(file)
         } catch (e: Exception) {

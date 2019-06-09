@@ -275,11 +275,6 @@ class OBJLoader {
     private fun addHelper(textureManager: TextureManager, currentMaterialInfo: MaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP, file: File): MaterialInfo {
         return currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE, file))
     }
-    private fun addHelperXXX(textureManager: TextureManager, currentMaterialInfo: MaterialInfo, path: String, name: String, map: SimpleMaterial.MAP): CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture<TextureDimension2D>>> {
-        return CompletableFuture.supplyAsync {
-            Triple(map, currentMaterialInfo, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE, Config.getInstance().directoryManager.gameDir))
-        }
-    }
 
     private fun parseName(line: String, mesh: StaticMesh) {
         val name = line.replace("o ", "")

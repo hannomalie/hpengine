@@ -6,30 +6,22 @@ import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.JavaComponent
-import de.hanno.hpengine.engine.component.KotlinComponent
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
-import de.hanno.hpengine.engine.graphics.BindlessTextures
-import de.hanno.hpengine.engine.graphics.DrawParameters
-import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.GpuContext.SupportResult.Supported
 import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.Shader5
 import de.hanno.hpengine.engine.graphics.SimpleProvider
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
-import de.hanno.hpengine.engine.graphics.renderer.SimpleColorRenderer
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
-import de.hanno.hpengine.util.ressources.CodeSource
+import java.io.File
 import java.io.IOException
-import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.logging.Logger
@@ -42,14 +34,14 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
         get() = sceneManager.scene
 }
 
-class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl> = EngineContextImpl(),
+class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
                                            val materialManager: MaterialManager = MaterialManager(engineContext),
                                            val renderer: Renderer<OpenGl> = DeferredRenderer(materialManager, engineContext),
                                            override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer, materialManager),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
     val updateConsumer = Consumer<Float> { this@EngineImpl.update(it) }
-    val updateThread: UpdateThread = UpdateThread(updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
+    val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
 
     override val sceneManager = managerContext.managers.register(SceneManager(managerContext))
 
@@ -111,20 +103,28 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         fun main(args: Array<String>) {
 
             var gameDir = DirectoryManager.GAMEDIR_NAME
+            var width = 1280
+            var height = 720
+
             var debug = true
             for (string in args) {
                 when {
                     "debug=false" == string -> debug = false
                     string.startsWith("gameDir=", true) -> gameDir = string.replace("gameDir=", "", true)
-                    "fullhd" == string -> {
-                        Config.getInstance().width = 1920
-                        Config.getInstance().height = 1080
+                    "fullhd" == string -> { // TODO: Remove this possibility to set resolution
+                        width = 1920
+                        height = 1080
                     }
                 }
             }
 
-            Config.getInstance().gameDir = gameDir
-            val engineContext = EngineContextImpl()
+            val config = Config()
+            config.populateConfigurationWithProperties(File(gameDir))
+            config.gameDir = gameDir
+            config.width = width
+            config.height = height
+
+            val engineContext = EngineContextImpl(config = config)
             val materialManager = MaterialManager(engineContext)
             val renderer: Renderer<OpenGl> = getRendererForPlatform(engineContext, materialManager)
             println("Using renderer class ${renderer.javaClass.simpleName}")
@@ -137,7 +137,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 DebugFrame(engine)
             }
 
-            val initScriptFile = Config.getInstance().directoryManager.gameDir.initScript
+            val initScriptFile = engineContext.config.directoryManager.gameDir.initScript
             initScriptFile?.let {
                 try {
                     ScriptComponentFileLoader.getLoaderForFileExtension(it.extension).load(engine, it)
@@ -158,7 +158,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 //                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
 //                    DeferredRenderer(materialManager, engineContext)
 //                }
-//                else -> SimpleColorRenderer(engineContext.programManager, engineContext.textureManager)
+//                else -> SimpleColorRenderer(engineContext, engineContext.programManager, engineContext.textureManager)
 //            }
         }
     }

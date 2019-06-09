@@ -20,7 +20,7 @@ public class DirectionalLight extends Camera {
 	public Entity entity;
 
 	public DirectionalLight(Entity entity) {
-		super(entity);
+		super(entity, 1f);
 		this.entity = entity;
 		setPerspective(false);
 		setColor(new Vector3f(1f, 0.76f, 0.49f));

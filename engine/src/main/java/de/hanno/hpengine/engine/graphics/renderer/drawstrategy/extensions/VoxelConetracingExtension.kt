@@ -139,7 +139,7 @@ class VoxelConeTracingExtension
     private var litInCycle: Long = -1
 
     init {
-        Config.getInstance().isUseAmbientOcclusion = false
+        engine.config.isUseAmbientOcclusion = false
         directionalLightShadowMapExtension.voxelConeTracingExtension = this
     }
 
@@ -176,7 +176,7 @@ class VoxelConeTracingExtension
             val clearVoxels = true
             val bounces = 2
 
-            val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || Config.getInstance().isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
+            val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || engine.config.isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
 
             if (needsRevoxelization || directionalLightMoved || pointlightMoved) {
                 lightInjectedFramesAgo = 0
@@ -241,7 +241,7 @@ class VoxelConeTracingExtension
             val currentVoxelGrid = voxelGrids[voxelGridIndex]
             if (needsRevoxelization && clearVoxels) {
                 profiled("Clear voxels") {
-                    if (Config.getInstance().isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
+                    if (engine.config.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.grid2, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
@@ -279,13 +279,13 @@ class VoxelConeTracingExtension
                     engine.gpuContext.disable(CULL_FACE)
                     GL11.glColorMask(false, false, false, false)
 
-                    if (useIndirectDrawing && Config.getInstance().isIndirectRendering) {
+                    if (useIndirectDrawing && engine.config.isIndirectRendering) {
                         firstPassResult.reset()
                         pipeline.prepareAndDraw(renderState, voxelizer, voxelizer, firstPassResult)
                     } else {
                         for (entity in renderState.renderBatchesStatic) {
                             val isStatic = entity.update == Update.STATIC
-                            if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
+                            if (renderState.sceneInitiallyDrawn && !engine.config.isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
                                 continue
                             }
                             val currentVerticesCount = DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
@@ -301,7 +301,7 @@ class VoxelConeTracingExtension
 
                 engine.textureManager.generateMipMaps(TEXTURE_3D, currentVoxelGrid.albedoGrid)
 
-                if(Config.getInstance().isDebugVoxels) {
+                if(engine.config.isDebugVoxels) {
                     GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
                     mipmapGrid(currentVoxelGrid.currentVoxelSource, texture3DMipMapAlphaBlendComputeProgram)
                 }
@@ -355,11 +355,11 @@ class VoxelConeTracingExtension
             voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
             voxelConeTraceProgram.bindShaderStorageBuffer(0, renderer.gBuffer.storageBuffer)
             voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
-            voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion)
-            voxelConeTraceProgram.setUniform("screenWidth", Config.getInstance().width.toFloat())
-            voxelConeTraceProgram.setUniform("screenHeight", Config.getInstance().height.toFloat())
+            voxelConeTraceProgram.setUniform("useAmbientOcclusion", engine.config.isUseAmbientOcclusion)
+            voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat())
+            voxelConeTraceProgram.setUniform("screenHeight", engine.config.height.toFloat())
             voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState.skyBoxMaterialIndex)
-            voxelConeTraceProgram.setUniform("debugVoxels", Config.getInstance().isDebugVoxels)
+            voxelConeTraceProgram.setUniform("debugVoxels", engine.config.isDebugVoxels)
             engine.gpuContext.fullscreenBuffer.draw()
             //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
             //        if(entityOrDirectionalLightHasMoved)

@@ -1,16 +1,18 @@
 package de.hanno.hpengine.engine.threads;
 
-import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.backend.EngineContext;
 
 import java.util.function.Consumer;
 
 public class UpdateThread extends FpsCountedTimeStepThread {
     private static long UPDATE_THREAD_ID = -1;
+    private final EngineContext<?> engineContext;
     private final Consumer<Float> action;
 
 
-    public UpdateThread(Consumer<Float> action, String name, float minCycleTimeInS) {
+    public UpdateThread(EngineContext<?> engineContext, Consumer<Float> action, String name, float minCycleTimeInS) {
         super(name, minCycleTimeInS);
+        this.engineContext = engineContext;
         this.action = action;
     }
 
@@ -28,7 +30,7 @@ public class UpdateThread extends FpsCountedTimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Config.getInstance().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.f;
+        return engineContext.getConfig().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.f;
     }
 
     public static boolean isUpdateThread() {

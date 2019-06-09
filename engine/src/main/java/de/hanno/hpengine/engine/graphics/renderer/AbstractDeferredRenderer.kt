@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -21,11 +22,11 @@ import java.util.ArrayList
 import java.util.EnumSet
 import java.util.function.Consumer
 
-open class AbstractDeferredRenderer(programManager: ProgramManager<OpenGl>) : Renderer<OpenGl> {
+open class AbstractDeferredRenderer(programManager: ProgramManager<OpenGl>, config: Config) : Renderer<OpenGl> {
     protected val programManager: ProgramManager<OpenGl> = programManager
     protected val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
-    protected val deferredRenderingBuffer = DeferredRenderingBuffer(gpuContext)
+    protected val deferredRenderingBuffer = DeferredRenderingBuffer(gpuContext, config.width, config.height)
     protected open var finalImage = deferredRenderingBuffer.finalBuffer.renderedTexture
     protected val renderToQuadProgram: Program = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "simpletexture_fragment.glsl")))
 

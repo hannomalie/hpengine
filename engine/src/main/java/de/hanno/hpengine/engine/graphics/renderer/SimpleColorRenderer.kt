@@ -1,19 +1,19 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
 
-class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureManager: TextureManager) : AbstractDeferredRenderer(programManager) {
+class SimpleColorRenderer(val engineContext: EngineContext<*>, programManager: ProgramManager<OpenGl>,
+                          val textureManager: TextureManager) : AbstractDeferredRenderer(programManager, engineContext.config) {
     init {
     }
-    val drawlinesExtension = DrawLinesExtension(this, programManager)
+    val drawlinesExtension = DrawLinesExtension(engineContext, this, programManager)
     val simpleColorProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
 
     override fun render(result: DrawResult, state: RenderState) {
@@ -35,8 +35,8 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
         simpleColorProgram.setUniform("near", state.camera.getNear())
         simpleColorProgram.setUniform("far", state.camera.getFar())
         simpleColorProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
-        simpleColorProgram.setUniform("useParallax", Config.getInstance().isUseParallax)
-        simpleColorProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax)
+        simpleColorProgram.setUniform("useParallax", engineContext.config.isUseParallax)
+        simpleColorProgram.setUniform("useSteepParallax", engineContext.config.isUseSteepParallax)
 
 
         for(batch in state.entitiesState.renderBatchesStatic) {
@@ -45,15 +45,15 @@ class SimpleColorRenderer(programManager: ProgramManager<OpenGl>, val textureMan
                 val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
                 simpleColorProgram.setUniform(uniformKey, batch.materialInfo.getHasDiffuseMap())
             }
-            DrawUtils.draw(gpuContext, state, batch, simpleColorProgram)
+            DrawUtils.draw(gpuContext, state, batch, simpleColorProgram, true)
         }
 
-        if(Config.getInstance().isDrawBoundingVolumes) {
+        if(engineContext.config.isDrawBoundingVolumes) {
             drawlinesExtension.renderFirstPass(null, gpuContext, result.firstPassResult, state)
         }
 
-        if(Config.getInstance().isUseDirectTextureOutput) {
-            finalImage = Config.getInstance().directTextureOutputTextureIndex
+        if(engineContext.config.isUseDirectTextureOutput) {
+            finalImage = engineContext.config.directTextureOutputTextureIndex
         } else {
             finalImage = deferredRenderingBuffer.colorReflectivenessMap
         }

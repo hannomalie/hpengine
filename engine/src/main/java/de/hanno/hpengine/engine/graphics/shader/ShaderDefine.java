@@ -40,24 +40,24 @@ public enum ShaderDefine {
 		return builder.toString();
 	}
 
-	public static String getGlobalDefinesString() {
+	public static String getGlobalDefinesString(Config config) {
 		StringBuilder builder = new StringBuilder();
 
-		appendWithSemicolonAndNewLine(builder, "const bool RAINEFFECT = " + (Config.getInstance().getRainEffect() != 0.0));
-		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES = " + Config.getInstance().isUseMultipleDiffuseSamples());
-		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES_PROBES = " + Config.getInstance().isUseMultipleDiffuseSamplesProbes());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE = " + Config.getInstance().isUseConetracingForDiffuse());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + Config.getInstance().isUseConetracingForDiffuseProbes());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR = " + Config.getInstance().isUseConetracingForSpecular());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR_PROBES = " + Config.getInstance().isUseConetracingForSpecularProbes());
-		appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + Config.getInstance().isUsePrecomputedRadiance());
-		appendWithSemicolonAndNewLine(builder, "const bool SCATTERING = " + Config.getInstance().isScattering());
-		appendWithSemicolonAndNewLine(builder, "const bool CALCULATE_ACTUAL_RADIANCE = " + Config.getInstance().isCalculateActualRadiance());
-		appendWithSemicolonAndNewLine(builder, "const bool SSR_FADE_TO_SCREEN_BORDERS = " + Config.getInstance().isSsrFadeToScreenBorders());
-		appendWithSemicolonAndNewLine(builder, "const bool SSR_TEMPORAL_FILTERING = " + Config.getInstance().isSsrTemporalFiltering());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + Config.getInstance().isUseBloom());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + Config.getInstance().isUsePcf());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + Config.getInstance().isUseDpsm());
+		appendWithSemicolonAndNewLine(builder, "const bool RAINEFFECT = " + (config.getRainEffect() != 0.0));
+		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES = " + config.isUseMultipleDiffuseSamples());
+		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES_PROBES = " + config.isUseMultipleDiffuseSamplesProbes());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE = " + config.isUseConetracingForDiffuse());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + config.isUseConetracingForDiffuseProbes());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR = " + config.isUseConetracingForSpecular());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR_PROBES = " + config.isUseConetracingForSpecularProbes());
+		appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + config.isUsePrecomputedRadiance());
+		appendWithSemicolonAndNewLine(builder, "const bool SCATTERING = " + config.isScattering());
+		appendWithSemicolonAndNewLine(builder, "const bool CALCULATE_ACTUAL_RADIANCE = " + config.isCalculateActualRadiance());
+		appendWithSemicolonAndNewLine(builder, "const bool SSR_FADE_TO_SCREEN_BORDERS = " + config.isSsrFadeToScreenBorders());
+		appendWithSemicolonAndNewLine(builder, "const bool SSR_TEMPORAL_FILTERING = " + config.isSsrTemporalFiltering());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + config.isUseBloom());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + config.isUsePcf());
+		appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + config.isUseDpsm());
 		builder.append("\n");
 		return builder.toString();
 	}

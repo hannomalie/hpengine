@@ -177,22 +177,6 @@ interface GpuContext<T: BackendType> {
 
         val LOGGER = Logger.getLogger(GpuContext::class.java.name)
 
-        fun create(): GpuContext<*>? {
-            val gpuContextClass = Config.getInstance().gpuContextClass
-            try {
-                LOGGER.info("GpuContext is being initialized")
-                return gpuContextClass.newInstance()
-            } catch (e: IllegalAccessException) {
-                LOGGER.severe("GpuContext class " + gpuContextClass.canonicalName + " probably doesn't feature a public no args constructor")
-                e.printStackTrace()
-            } catch (e: InstantiationException) {
-                LOGGER.severe("GpuContext class " + gpuContextClass.canonicalName + " probably doesn't feature a public no args constructor")
-                e.printStackTrace()
-            }
-
-            return null
-        }
-
         @JvmStatic
         fun exitOnGLError(errorMessage: String) {
             if (!CHECKERRORS) {

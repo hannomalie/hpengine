@@ -14,7 +14,7 @@ public class ConfigTest {
         Config config = new Config();
         String propertiesString = "useParallax=true\nwidth=22";
         InputStream stream = new ByteArrayInputStream(propertiesString.getBytes(StandardCharsets.UTF_8));
-        Config.populateConfigurationWithProperties(config, stream);
+        Config.Companion.populateConfigurationWithProperties(config, stream);
         Assert.assertTrue(config.isUseParallax());
         Assert.assertEquals(22, config.getWidth());
     }
