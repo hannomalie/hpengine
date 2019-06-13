@@ -1,6 +1,6 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.directory.DirectoryManager;
+import de.hanno.hpengine.engine.directory.Directories;
 import de.hanno.hpengine.engine.model.Face;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
@@ -57,13 +57,13 @@ public class OBJLoaderTest extends TestWithEngine {
     @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
-		Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("C://default.png", engine.getConfig().directoryManager.gameDir);
+		Texture<TextureDimension2D> texture = engine.getTextureManager().getTexture("C://default.png", engine.getConfig().directories.gameDir);
 		Assert.assertEquals(1, texture.getDimension().getHeight());
 	}
 
     @Test
     public void loadsMaterial() throws Exception {
-        StaticModel sibenik = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/sibenik.obj"));
+        StaticModel sibenik = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(Directories.engineDir + "/assets/models/sibenik.obj"));
         SimpleMaterial material = sibenik.getMesh(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getMaterialInfo().getName());
@@ -75,14 +75,14 @@ public class OBJLoaderTest extends TestWithEngine {
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-		Model sponza = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/sponza.obj"));
+		Model sponza = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(Directories.engineDir + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
 	}
 
 	@Test
 	public void loadCornellBoxTest() throws Exception {
-		StaticModel cornellBox = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/cornellbox.obj"));
+		StaticModel cornellBox = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(Directories.engineDir + "/assets/models/cornellbox.obj"));
 		Assert.assertEquals(9, cornellBox.getMeshes().size());
 	}
 

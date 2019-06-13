@@ -36,7 +36,7 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
     @Override
     public void renderFirstPass(Backend<OpenGl> backend, GpuContext<OpenGl> gpuContext, FirstPassResult firstPassResult, RenderState renderState) {
 
-        if(engine.getConfig().isDrawBoundingVolumes() || engine.getConfig().isDrawCameras()) {
+        if(engine.getConfig().getDebug().isDrawBoundingVolumes() || engine.getConfig().getDebug().isDrawCameras()) {
 
 
             linesProgram.use();
@@ -81,7 +81,7 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
 
     private void renderBatches(List<RenderBatch> batches) {
         for (RenderBatch batch : batches) {
-            if(engine.getConfig().isDrawBoundingVolumes()) {
+            if(engine.getConfig().getDebug().isDrawBoundingVolumes()) {
                 boolean renderAABBs = true;
                 if(renderAABBs) {
                     batchAABBLines(renderer, batch.getMinWorld(), batch.getMaxWorld());

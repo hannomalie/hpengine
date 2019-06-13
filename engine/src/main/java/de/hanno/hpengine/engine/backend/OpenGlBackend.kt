@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.backend
 
-import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
@@ -56,12 +55,14 @@ class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQ
 class ManagerContextImpl(
         override val engineContext: EngineContext<OpenGl>,
         override val managers: ManagerRegistry = SimpleManagerRegistry(),
-        override val directoryManager: DirectoryManager = DirectoryManager(gameDir = engineContext.config.gameDir, initFileName = engineContext.config.initFileName),
         override val renderManager: RenderManager,
         override val physicsManager: PhysicsManager = PhysicsManager(renderManager.renderer, engineContext.config)
 ) : ManagerContext<OpenGl> {
+
+    override val directories = engineContext.config.directories
+
     init {
-        managers.register(directoryManager)
+        managers.register(directories)
         managers.register(renderManager)
         managers.register(physicsManager)
         engineContext.renderSystems.add(physicsManager)

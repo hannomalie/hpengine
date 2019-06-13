@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.directory.DirectoryManager
+import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
@@ -144,7 +144,7 @@ class SimpleMaterial(override var materialInfo: MaterialInfo): Material, Seriali
         }
 
         val directory: String
-            get() = DirectoryManager.WORKDIR_NAME + "/assets/materials/"
+            get() = Directories.WORKDIR_NAME + "/assets/materials/"
 
         fun debugPrintFromBufferStatic(buffer: ByteBuffer): String {
             val builder = StringBuilder()

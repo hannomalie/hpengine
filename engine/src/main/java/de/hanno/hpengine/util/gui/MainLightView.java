@@ -65,7 +65,7 @@ public class MainLightView extends WebPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 Color color = ambientLightColorChooserPanel.getColor();
-                engine.getConfig().getAmbientLight().set(new Vector3f(color.getRed() / 255.f,
+                engine.getConfig().getEffects().getAmbientLight().set(new Vector3f(color.getRed() / 255.f,
                         color.getGreen() / 255.f,
                         color.getBlue() / 255.f));
             }

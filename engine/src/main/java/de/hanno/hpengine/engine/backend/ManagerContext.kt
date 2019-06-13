@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.backend
 
-import de.hanno.hpengine.engine.directory.DirectoryManager
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -13,7 +13,7 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue
 interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
     val engineContext: EngineContext<TYPE>
     val managers: ManagerRegistry
-    val directoryManager: DirectoryManager
+    val directories: Directories
     val renderManager: RenderManager
     val physicsManager: PhysicsManager
 

@@ -51,7 +51,7 @@ public class InitInstancedAnimated implements EngineConsumer {
         LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + assetPath), name, engine.getScene().getMaterialManager()).execute();
         System.out.println("loaded entities : " + loaded.entities.size());
         for (final Entity entity : loaded.entities) {
-//                File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
+//                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
 //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
             List<Cluster> clusters = new ArrayList<Cluster>();
             ClustersComponent clustersComponent = new ClustersComponent(engine, engine.getEventBus(), entity);

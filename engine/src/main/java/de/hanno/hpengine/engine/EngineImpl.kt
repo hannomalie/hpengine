@@ -7,9 +7,9 @@ import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
-import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
-import de.hanno.hpengine.engine.directory.DirectoryManager
+import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
@@ -19,7 +19,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.fps.FPSCounter
-import de.hanno.hpengine.util.gui.DebugFrame
+import de.hanno.hpengine.util.gui.Editor
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -102,7 +102,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         @JvmStatic
         fun main(args: Array<String>) {
 
-            var gameDir = DirectoryManager.GAMEDIR_NAME
+            var gameDir = Directories.GAMEDIR_NAME
             var width = 1280
             var height = 720
 
@@ -118,7 +118,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 }
             }
 
-            val config = Config()
+            val config = SimpleConfig()
             config.populateConfigurationWithProperties(File(gameDir))
             config.gameDir = gameDir
             config.width = width
@@ -134,10 +134,10 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                     renderer = renderer
             )
             if (debug) {
-                DebugFrame(engine)
+                Editor(engine, config)
             }
 
-            val initScriptFile = engineContext.config.directoryManager.gameDir.initScript
+            val initScriptFile = engineContext.config.directories.gameDir.initScript
             initScriptFile?.let {
                 try {
                     ScriptComponentFileLoader.getLoaderForFileExtension(it.extension).load(engine, it)

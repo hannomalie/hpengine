@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.directory.DirectoryManager
+import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
@@ -32,7 +32,7 @@ class MaterialManager(val engineContext: EngineContext<*>) : Manager {
 
     val defaultMaterial: SimpleMaterial
 
-    val engineDir = engineContext.config.directoryManager.engineDir
+    val engineDir = engineContext.config.directories.engineDir
 
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
@@ -45,9 +45,6 @@ class MaterialManager(val engineContext: EngineContext<*>) : Manager {
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
-        if (engineContext.config.isLoadDefaultMaterials) {
-            initDefaultMaterials()
-        }
         engineContext.eventBus.register(this)
     }
 
@@ -181,7 +178,7 @@ class MaterialManager(val engineContext: EngineContext<*>) : Manager {
         var count = 0
 
         fun getDirectory(): String {
-            return DirectoryManager.WORKDIR_NAME + "/assets/materials/"
+            return Directories.WORKDIR_NAME + "/assets/materials/"
         }
     }
 

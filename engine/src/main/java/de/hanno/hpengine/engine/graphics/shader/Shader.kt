@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.shader
 
-import de.hanno.hpengine.engine.directory.DirectoryManager
+import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
@@ -74,7 +74,7 @@ interface Shader : Reloadable {
             return shaderInfoLog
         }
 
-        const val directory: String = DirectoryManager.WORKDIR_NAME + "/assets/shaders/"
+        const val directory: String = Directories.WORKDIR_NAME + "/assets/shaders/"
     }
 }
 

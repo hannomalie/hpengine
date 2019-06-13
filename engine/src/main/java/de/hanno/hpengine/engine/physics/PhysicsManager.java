@@ -195,7 +195,7 @@ public class PhysicsManager implements Manager, RenderSystem {
 
     @Override
     public void render(@NotNull DrawResult result, @NotNull RenderState state) {
-        if (config.isDrawLines()) {
+        if (config.getDebug().isDrawLines()) {
             renderer.drawAllLines((program) -> {
                 program.setUniform("diffuseColor", new org.joml.Vector3f(1,1,0));
                 debugDrawWorld();
@@ -260,7 +260,7 @@ public class PhysicsManager implements Manager, RenderSystem {
 //                        & DebugDrawModes.DRAW_CONTACT_POINTS
 //                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
                         ;
-                return config.isDrawLines() ? flags : 0;
+                return config.getDebug().isDrawLines() ? flags : 0;
 			}
 			
 			@Override

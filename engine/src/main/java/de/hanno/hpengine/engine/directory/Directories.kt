@@ -3,9 +3,9 @@ package de.hanno.hpengine.engine.directory
 import de.hanno.hpengine.engine.manager.Manager
 import java.io.File
 
-class DirectoryManager constructor(engineDir: String = WORKDIR_NAME,
-                                     gameDir: String = GAMEDIR_NAME,
-                                     initFileName: String) : Manager {
+class Directories constructor(engineDir: String = WORKDIR_NAME,
+                              gameDir: String = GAMEDIR_NAME,
+                              initFileName: String) : Manager {
 
     val engineDir = EngineDirectory(engineDir)
     val gameDir = GameDirectory(gameDir, File(gameDir).resolve(initFileName))
@@ -15,7 +15,6 @@ class DirectoryManager constructor(engineDir: String = WORKDIR_NAME,
             folder.mkdir()
         } else true
     }
-
 
     companion object {
         const val WORKDIR_NAME = "hp"

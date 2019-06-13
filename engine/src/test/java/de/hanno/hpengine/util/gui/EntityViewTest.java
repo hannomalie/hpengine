@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.gui;
 
 import de.hanno.hpengine.TestWithEngine;
-import de.hanno.hpengine.engine.directory.DirectoryManager;
+import de.hanno.hpengine.engine.directory.Directories;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
 import org.junit.Ignore;
@@ -15,7 +15,7 @@ public class EntityViewTest extends TestWithEngine {
     @Test
     @Ignore("Manual test only")
     public void testEntityViewGui() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(DirectoryManager.engineDir + "/assets/models/sphere.obj"));
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getScene().getMaterialManager(), new File(Directories.engineDir + "/assets/models/sphere.obj"));
         Entity parentEntity = engine.getSceneManager().getScene().getEntityManager().create("parent");
 
         JFrame frame = new JFrame();

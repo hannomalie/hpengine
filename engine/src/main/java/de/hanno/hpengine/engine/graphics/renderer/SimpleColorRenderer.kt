@@ -35,8 +35,8 @@ class SimpleColorRenderer(val engineContext: EngineContext<*>, programManager: P
         simpleColorProgram.setUniform("near", state.camera.getNear())
         simpleColorProgram.setUniform("far", state.camera.getFar())
         simpleColorProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
-        simpleColorProgram.setUniform("useParallax", engineContext.config.isUseParallax)
-        simpleColorProgram.setUniform("useSteepParallax", engineContext.config.isUseSteepParallax)
+        simpleColorProgram.setUniform("useParallax", engineContext.config.quality.isUseParallax)
+        simpleColorProgram.setUniform("useSteepParallax", engineContext.config.quality.isUseSteepParallax)
 
 
         for(batch in state.entitiesState.renderBatchesStatic) {
@@ -48,12 +48,12 @@ class SimpleColorRenderer(val engineContext: EngineContext<*>, programManager: P
             DrawUtils.draw(gpuContext, state, batch, simpleColorProgram, true)
         }
 
-        if(engineContext.config.isDrawBoundingVolumes) {
+        if(engineContext.config.debug.isDrawBoundingVolumes) {
             drawlinesExtension.renderFirstPass(null, gpuContext, result.firstPassResult, state)
         }
 
-        if(engineContext.config.isUseDirectTextureOutput) {
-            finalImage = engineContext.config.directTextureOutputTextureIndex
+        if(engineContext.config.debug.isUseDirectTextureOutput) {
+            finalImage = engineContext.config.debug.directTextureOutputTextureIndex
         } else {
             finalImage = deferredRenderingBuffer.colorReflectivenessMap
         }

@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
@@ -47,6 +48,16 @@ java.sourceSets["main"].java {
     srcDir("game")
 }
 kotlin.sourceSets["main"].kotlin.srcDirs("game")
+
+tasks.withType<KotlinCompile>().configureEachLater {
+    println("Configuring $name in project ${project.name}...")
+    kotlinOptions {
+        suppressWarnings = true
+        freeCompilerArgs = listOf("-Xjvm-default=enable")
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+}
+
 
 //TODO: Rework this concept completely
 val copyJarToDistribution = tasks.create<Copy>("copyJarToDistribution"){

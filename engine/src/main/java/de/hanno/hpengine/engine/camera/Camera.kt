@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -266,7 +265,7 @@ class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, Ren
     override fun clear() = components.clear()
 
     override fun render(result: DrawResult, state: RenderState) {
-        if (engine.config.isDrawCameras) {
+        if (engine.config.debug.isDrawCameras) {
             //            TODO: Use renderstate somehow?
             for (i in components.indices) {
                 val camera = components[i]

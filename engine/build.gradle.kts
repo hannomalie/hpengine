@@ -8,7 +8,7 @@ plugins {
 }
 
 application {
-    mainClassName = "de.hanno.hpengine.engine.Engine"
+    mainClassName = "de.hanno.hpengine.engine.EngineImpl"
 }
 application.applicationDistribution.into("bin/hp") {
     from("../hp")
@@ -29,7 +29,7 @@ tasks.withType<KotlinCompile>().configureEachLater {
     kotlinOptions {
         suppressWarnings = true
         freeCompilerArgs = listOf("-Xjvm-default=enable")
-        jvmTarget = "1.8"
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
 
@@ -77,6 +77,7 @@ val lwjgl_natives = when (OperatingSystem.current()) {
 }
 dependencies {
     compile(kotlin("stdlib-jdk8"))
+    compile(kotlin("kotlin-reflect"))
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
     

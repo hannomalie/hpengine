@@ -311,8 +311,8 @@ public class EnvironmentSampler extends Entity {
 
         firstPassDefaultProgram.use();
         firstPassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
-        firstPassDefaultProgram.setUniform("useRainEffect", engine.getConfig().getRainEffect() == 0.0 ? false : true);
-        firstPassDefaultProgram.setUniform("rainEffect", engine.getConfig().getRainEffect());
+        firstPassDefaultProgram.setUniform("useRainEffect", engine.getConfig().getEffects().getRainEffect() != 0.0);
+        firstPassDefaultProgram.setUniform("rainEffect", engine.getConfig().getEffects().getRainEffect());
         firstPassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         firstPassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstPassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
@@ -352,8 +352,8 @@ public class EnvironmentSampler extends Entity {
 
 		secondPassDirectionalProgram.use();
 		secondPassDirectionalProgram.setUniform("eyePosition", getPosition());
-		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", engine.getConfig().getAmbientocclusionRadius());
-		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", engine.getConfig().getAmbientocclusionTotalStrength());
+		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", engine.getConfig().getEffects().getAmbientocclusionRadius());
+		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", engine.getConfig().getEffects().getAmbientocclusionTotalStrength());
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeManager.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeManager.RESOLUTION);
 		FloatBuffer viewMatrix = getCamera().getViewMatrixAsBuffer();
@@ -421,7 +421,7 @@ public class EnvironmentSampler extends Entity {
 		DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
 		program.setUniform("lightDirection", light.getEntity().getViewDirection());
 		program.setUniform("lightDiffuse", light.getColor());
-		program.setUniform("lightAmbient", engine.getConfig().getAmbientLight());
+		program.setUniform("lightAmbient", engine.getConfig().getEffects().getAmbientLight());
 		program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 		program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
 		program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
@@ -429,11 +429,11 @@ public class EnvironmentSampler extends Entity {
 	}
 
 	private void generateCubeMapMipMaps() {
-		if(engine.getConfig().isUsePrecomputedRadiance()) {
+		if(engine.getConfig().getQuality().isUsePrecomputedRadiance()) {
 			
 			_generateCubeMapMipMaps();
 			
-			if (engine.getConfig().isCalculateActualRadiance()) {
+			if (engine.getConfig().getQuality().isCalculateActualRadiance()) {
 
                 CubeMapArray cubeMapArray = environmentProbeManager.getEnvironmentMapsArray(3);
 				int internalFormat = cubeMapArray.getInternalFormat();

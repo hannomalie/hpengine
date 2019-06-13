@@ -1,12 +1,10 @@
 package de.hanno.hpengine.util.gui;
 
 import com.alee.extended.panel.GridPanel;
-import com.alee.extended.panel.WebButtonGroup;
+import com.alee.extended.panel.WebTitledPanel;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.laf.WebLookAndFeel;
-import com.alee.laf.button.WebButton;
-import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.filechooser.WebFileChooser;
 import com.alee.laf.label.WebLabel;
@@ -16,7 +14,6 @@ import com.alee.laf.menu.WebMenuItem;
 import com.alee.laf.progressbar.WebProgressBar;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
-import com.alee.laf.slider.WebSlider;
 import com.alee.laf.splitpane.WebSplitPane;
 import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebTextField;
@@ -26,13 +23,21 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.EngineImpl;
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.container.Octree;
+import de.hanno.hpengine.engine.config.SimpleConfig;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.event.*;
+import de.hanno.hpengine.engine.event.EngineInitializedEvent;
+import de.hanno.hpengine.engine.event.EntityAddedEvent;
+import de.hanno.hpengine.engine.event.EntitySelectedEvent;
+import de.hanno.hpengine.engine.event.FrameFinishedEvent;
+import de.hanno.hpengine.engine.event.LightChangedEvent;
+import de.hanno.hpengine.engine.event.MaterialAddedEvent;
+import de.hanno.hpengine.engine.event.MaterialChangedEvent;
+import de.hanno.hpengine.engine.event.MeshSelectedEvent;
+import de.hanno.hpengine.engine.event.ProbeAddedEvent;
+import de.hanno.hpengine.engine.event.SceneInitEvent;
+import de.hanno.hpengine.engine.event.TexturesChangedEvent;
 import de.hanno.hpengine.engine.graphics.SimpleProvider;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
@@ -41,15 +46,11 @@ import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
-import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;
-import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.SimpleScene;
@@ -58,9 +59,14 @@ import de.hanno.hpengine.util.TestSceneUtil;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane;
 import de.hanno.hpengine.util.gui.container.ReloadableTabbedPane;
-import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.TitledPanel;
-import de.hanno.hpengine.util.gui.structure.*;
+import de.hanno.hpengine.util.gui.structure.AreaLightsTableModel;
+import de.hanno.hpengine.util.gui.structure.MaterialTable;
+import de.hanno.hpengine.util.gui.structure.PointLightsTableModel;
+import de.hanno.hpengine.util.gui.structure.ProbesTree;
+import de.hanno.hpengine.util.gui.structure.SceneTree;
+import de.hanno.hpengine.util.gui.structure.TextureTable;
+import de.hanno.hpengine.util.gui.structure.TubeLightsTableModel;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
@@ -75,11 +81,7 @@ import org.joml.Vector4f;
 
 import javax.script.ScriptException;
 import javax.swing.*;
-import javax.swing.border.LineBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
@@ -87,13 +89,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -101,12 +98,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
+import static de.hanno.hpengine.util.gui.DebugFrameUtilsKt.getButtons;
 
 
-public class DebugFrame implements HostComponent {
+public class Editor implements HostComponent {
 
     private EngineImpl engine;
+    private final SimpleConfig config;
 
     private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
@@ -143,52 +141,6 @@ public class DebugFrame implements HostComponent {
 	"}");
 	private RTextScrollPane consolePane;
 
-	private WebToggleButton toggleProfiler;
-	private WebToggleButton toggleProfilerPrint;
-	private WebToggleButton dumpAverages;
-	private WebToggleButton toggleParallax;
-	private WebToggleButton toggleSteepParallax;
-	private WebToggleButton toggleAmbientOcclusion;
-    private WebToggleButton toggleFrustumCulling;
-    private WebToggleButton toggleOcclusionCulling;
-	private WebToggleButton toggleInstantRadiosity;
-	private WebToggleButton toggleForceRevoxelization;
-	private WebToggleButton toggleDrawLines;
-	private WebToggleButton toggleDrawScene;
-	private WebToggleButton toggleDrawOctree;
-	private WebToggleButton toggleDrawProbes;
-	private WebButton forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
-	private WebToggleButton toggleUseGI;
-	private WebToggleButton toggleUseSSR;
-	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", DeferredRenderingBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
-	private WebToggleButton toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
-	private WebToggleButton toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
-
-	private WebToggleButton toggleSampleCount2 = new WebToggleButton("2", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 2);
-	private WebToggleButton toggleSampleCount4 = new WebToggleButton("4", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 4);
-	private WebToggleButton toggleSampleCount8 = new WebToggleButton("8", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 8);
-	private WebToggleButton toggleSampleCount16 = new WebToggleButton("16", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 16);
-	private WebToggleButton toggleSampleCount32 = new WebToggleButton("32", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 32);
-	private WebToggleButton toggleSampleCount64 = new WebToggleButton("64", DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT == 64);
-	private WebButtonGroup sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
-	
-	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
-	private WebToggleButton toggleDirectTextureOutput;
-    private WebComboBox directTextureOutputTextureIndexSelection;
-    private WebToggleButton toggleDebugFrame;
-	private WebToggleButton toggleDrawLights;
-	private WebToggleButton toggleVSync;
-	private WebToggleButton toggleAutoExposure;
-
-	private WebToggleButton toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
-	private WebToggleButton toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
-	private WebToggleButton toggleProbeDrawCountThree = new WebToggleButton("3", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 3);
-	private WebToggleButton toggleProbeDrawCountFour = new WebToggleButton("4", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 4);
-	private WebButtonGroup probeDrawCountGroup = new WebButtonGroup(true, toggleProbeDrawCountOne, toggleProbeDrawCountTwo, toggleProbeDrawCountThree, toggleProbeDrawCountFour);
-	
-	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
-	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
-
 	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<>();
 	private static WebTextField sceneViewFilterField = new WebTextField(15);
 	private WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
@@ -207,8 +159,9 @@ public class DebugFrame implements HostComponent {
     };
     private List<DirectTextureOutputItem> renderTargetTextures = new ArrayList<>();
 
-    public DebugFrame(EngineImpl engine) {
+    public Editor(EngineImpl engine, SimpleConfig config) {
         this.engine = engine;
+        this.config = config;
 
         try {
             SwingUtils.invokeAndWait(WebLookAndFeel::install);
@@ -225,29 +178,6 @@ public class DebugFrame implements HostComponent {
 
         mainFrame.setJMenuBar(getWebMenuBar());
         mainFrame.add(tabbedPane);
-
-        toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.INSTANCE.getPROFILING_ENABLED());
-        toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.INSTANCE.getPRINTING_ENABLED());
-        dumpAverages = new WebToggleButton("Dump Averages");
-        Config config = engine.getConfig();
-        toggleParallax = new WebToggleButton("Parallax", config.isUseParallax());
-        toggleSteepParallax = new WebToggleButton("Steep Parallax", config.isUseSteepParallax());
-        toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", config.isUseAmbientOcclusion());
-        toggleFrustumCulling = new WebToggleButton("CPU Frustum Culling", config.isUseCpuFrustumCulling());
-        toggleOcclusionCulling = new WebToggleButton("Occlusion Culling", config.isUseGpuOcclusionCulling());
-        toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", config.isUseInstantRadiosity());
-        toggleForceRevoxelization = new WebToggleButton("Force Revoxelization", config.isForceRevoxelization());
-        toggleDrawLines = new WebToggleButton("Draw Lines", config.isDrawLines());
-        toggleDrawScene = new WebToggleButton("Draw Scene", config.isDrawScene());
-        toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
-        toggleDrawProbes = new WebToggleButton("Draw Probes", config.isDrawProbes());
-        toggleUseGI = new WebToggleButton("GI", config.isUseGi());
-        toggleUseSSR = new WebToggleButton("SSR", config.isUseSSR());
-        toggleDebugFrame = new WebToggleButton("Debug Frame", config.isDebugframeEnabled());
-        toggleDrawLights = new WebToggleButton("Draw Lights", config.isDrawlightsEnabled());
-        toggleVSync = new WebToggleButton("VSync", config.isVsync());
-        toggleAutoExposure = new WebToggleButton("Auto Exposure", config.isAutoExposureEnabled());
-        toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", config.isUseDirectTextureOutput());
 
         initActionListeners();
         addTabs();
@@ -337,16 +267,6 @@ public class DebugFrame implements HostComponent {
         infoPane = new ReloadableScrollPane(infoSplitPane);
         consolePane = new RTextScrollPane(console);
 
-        for(RenderTarget target: engine.getGpuContext().getRegisteredRenderTargets()) {
-            for(int i = 0; i < target.getColorAttachments().size(); i++) {
-                ColorAttachmentDefinition attachmentDefinition = target.getColorAttachments().get(i);
-                String name = target.getName() + " - " + attachmentDefinition.getName();
-                renderTargetTextures.add(new DirectTextureOutputItem(target, name, target.getRenderedTexture(i)));
-            }
-        }
-        directTextureOutputTextureIndexSelection = new WebComboBox(renderTargetTextures.toArray(new DirectTextureOutputItem[0]));
-
-
         sceneTree = new SceneTree(engine);
         scenePane = new ReloadableScrollPane(sceneTree) {
             { engine.getEventBus().register(this); }
@@ -366,7 +286,6 @@ public class DebugFrame implements HostComponent {
 		createAreaLightsTab();
 
 		initPerformanceChart();
-//		redirectSystemStreams();
 	}
 
     private void addTabs() {
@@ -403,7 +322,7 @@ public class DebugFrame implements HostComponent {
                                 engine.getScene().getEntitySystems().get(DirectionalLightSystem.class),
                                 engine.getSceneManager().getScene(),
                                 engine.getSceneManager().getScene().getComponentSystems().get(ModelComponentSystem.class),
-                                engine.getConfig().getDirectoryManager().getEngineDir());
+                                engine.getConfig().getDirectories().getEngineDir());
                         engine.getSceneManager().getScene().addAll(entities);
                         engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
@@ -627,7 +546,7 @@ public class DebugFrame implements HostComponent {
 	    		if(chosenFile != null) {
 
                     TextureResult result = engine.getGpuContext().calculate((Callable<TextureResult>) () -> {
-                        return new AddTextureCommand(chosenFile.getPath(), engine.getTextureManager(), engine.getConfig().getDirectoryManager().getGameDir()).execute();
+                        return new AddTextureCommand(chosenFile.getPath(), engine.getTextureManager(), engine.getConfig().getDirectories().getGameDir()).execute();
                     });
 
 					if (!result.isSuccessful()) {
@@ -648,7 +567,7 @@ public class DebugFrame implements HostComponent {
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
                     TextureResult result = engine.getGpuContext().calculate((Callable<TextureResult>) () -> {
-                        return new AddTextureCommand(chosenFile.getPath(), true, engine.getTextureManager(), engine.getConfig().getDirectoryManager().getGameDir()).execute();
+                        return new AddTextureCommand(chosenFile.getPath(), true, engine.getTextureManager(), engine.getConfig().getDirectories().getGameDir()).execute();
                     });
 
 					if (!result.isSuccessful()) {
@@ -672,7 +591,7 @@ public class DebugFrame implements HostComponent {
 	    		if(chosenFile != null) {
 
                     TextureResult result = engine.getGpuContext().calculate((Callable<TextureResult>) () -> {
-                        return new AddCubeMapCommand(chosenFile.getPath(), engine.getTextureManager(), engine.getConfig().getDirectoryManager().getGameDir()).execute();
+                        return new AddCubeMapCommand(chosenFile.getPath(), engine.getTextureManager(), engine.getConfig().getDirectories().getGameDir()).execute();
                     });
 
 					if (!result.isSuccessful()) {
@@ -769,434 +688,46 @@ public class DebugFrame implements HostComponent {
 	private void initActionListeners() {
         List<Component> mainButtonElements = new ArrayList<>();
 
-		toggleProfiler.addActionListener( e -> {
+        Map<String, List<JComponent>> toggleButtonsWithGroups = getButtons(config, engine);
 
-            Boolean result = engine.getGpuContext().calculate((Callable<Boolean>) () -> {
-				GPUProfiler.INSTANCE.setPROFILING_ENABLED(!GPUProfiler.INSTANCE.getPROFILING_ENABLED());
-				return true;
-			});
-			try {
-				if (result.equals(Boolean.TRUE)) {
-					showSuccess("Profiling switched");
-				} else {
-					showError("Profiling not switched");
-				}
-			} catch (Exception e1) {
-				showError("Profiling can't be switched");
-			}
-			
-		});
-		toggleProfilerPrint.addActionListener( e -> {
-
-            Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
-                GPUProfiler.INSTANCE.setPRINTING_ENABLED(!GPUProfiler.INSTANCE.getPRINTING_ENABLED());
-                return new Result<>(true);
-            });
-            if (result.equals(Boolean.TRUE)) {
-                showSuccess("Printing switched");
-            } else {
-                showError("Printing can't be switched");
+        for(RenderTarget target: engine.getGpuContext().getRegisteredRenderTargets()) {
+            for(int i = 0; i < target.getColorAttachments().size(); i++) {
+                ColorAttachmentDefinition attachmentDefinition = target.getColorAttachments().get(i);
+                String name = target.getName() + " - " + attachmentDefinition.getName();
+                renderTargetTextures.add(new DirectTextureOutputItem(target, name, target.getRenderedTexture(i)));
             }
-		});
-		//////////////////////////////
-		Map<String, List<Component>> toggleButtonsWithGroups = new HashMap<>();
-		for (Field field : Config.class.getDeclaredFields()) {
-			for (Annotation annotation : field.getDeclaredAnnotations()) {
-				if(annotation instanceof Toggable) {
-					createWebToggableButton(toggleButtonsWithGroups, field, annotation);
-				} else if(annotation instanceof Adjustable) {
-// TODO: FEINSCHLIFF
-//					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
-				}
-			}
-		}
-		for (Entry<String, List<Component>> groupAndButtons : toggleButtonsWithGroups.entrySet()) {
+        }
+        WebComboBox directTextureOutputTextureIndexSelection = new WebComboBox(renderTargetTextures.toArray(new DirectTextureOutputItem[0]));
+        WebTitledPanel indirectTextureOutputIndexPanel = new WebTitledPanel();
+        indirectTextureOutputIndexPanel.setContent(directTextureOutputTextureIndexSelection);
+        indirectTextureOutputIndexPanel.setTitle(new WebLabel("Direct texture output"));
+        directTextureOutputTextureIndexSelection.addActionListener(e -> {
+            int selectedIndex = directTextureOutputTextureIndexSelection.getSelectedIndex();
+            DirectTextureOutputItem selected = renderTargetTextures.get(selectedIndex);
+            config.getDebug().setDirectTextureOutputTextureIndex(selected.getTextureId());
+        });
+        toggleButtonsWithGroups.get("debug").add(indirectTextureOutputIndexPanel);
+
+        for (Entry<String, List<JComponent>> groupAndButtons : toggleButtonsWithGroups.entrySet()) {
 			Component[] toggleButtonsArray = new Component[groupAndButtons.getValue().size()];
 			groupAndButtons.getValue().toArray(toggleButtonsArray);
 			mainButtonElements.add(new TitledPanel(groupAndButtons.getKey(), toggleButtonsArray));
 		}
-		/////////////////////
-		
-		dumpAverages.addActionListener(e -> {
-            engine.getGpuContext().execute(() -> {
-                GPUProfiler.INSTANCE.setDUMP_AVERAGES(!GPUProfiler.INSTANCE.getDUMP_AVERAGES());
-			});
-		});
-		
-		toggleParallax.addActionListener( e -> {
-			engine.getConfig().setUseParallax(!engine.getConfig().isUseParallax());
-			engine.getConfig().setUseSteepParallax(false);
-		});
-		
-		toggleSteepParallax.addActionListener(e -> {
-			engine.getConfig().setUseSteepParallax(!engine.getConfig().isUseSteepParallax());
-			engine.getConfig().setUseParallax(false);
-		});
 
-		toggleAmbientOcclusion.addActionListener(e -> {
-			engine.getConfig().setUseAmbientOcclusion(!engine.getConfig().isUseAmbientOcclusion());
-//			de.hanno.hpengine.managerContext.getEventBus().post(new GlobalDefineChangedEvent());
-		});
-
-        toggleFrustumCulling.addActionListener(e -> {
-            engine.getConfig().setUseCpuFrustumCulling(!engine.getConfig().isUseCpuFrustumCulling());
-        });
-        toggleOcclusionCulling.addActionListener(e -> {
-            engine.getConfig().setUseGpuOcclusionCulling(!engine.getConfig().isUseGpuOcclusionCulling());
-        });
-		toggleInstantRadiosity.addActionListener(e -> {
-			engine.getConfig().setUseInstantRadiosity(!engine.getConfig().isUseInstantRadiosity());
-		});
-		toggleForceRevoxelization.addActionListener(e -> {
-			engine.getConfig().setForceRevoxelization(!engine.getConfig().isForceRevoxelization());
-		});
-
-		toggleDrawLines.addActionListener(e -> {
-			engine.getConfig().setDrawLines(!engine.getConfig().isDrawLines());
-		});
-		toggleDrawScene.addActionListener(e -> {
-			engine.getConfig().setDrawScene(!engine.getConfig().isDrawScene());
-		});
-
-		toggleDrawOctree.addActionListener(e -> {
-			Octree.DRAW_LINES = !Octree.DRAW_LINES;
-		});
-		forceProbeGBufferRedraw.addActionListener(e -> {
-            engine.getScene().getEnvironmentProbeManager().getProbes().forEach(probe -> {
-				probe.getSampler().resetDrawing();
-			});
-		});
-		toggleDrawProbes.addActionListener(e -> {
-			engine.getConfig().setDrawProbes(!engine.getConfig().isDrawProbes());
-		});
-		toggleUseGI.addActionListener(e -> {
-			engine.getConfig().setUseGi(!engine.getConfig().isUseGi());
-		});
-		toggleUseSSR.addActionListener(e -> {
-			engine.getConfig().setUseSSR(!engine.getConfig().isUseSSR());
-		});
-		toggleUseDeferredRenderingForProbes.addActionListener(e -> {
-			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
-		});
-		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
-			DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
-			engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
-		});
-		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
-			DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
-			engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom de.hanno.hpengine.event class...should redraw probes
-		});
-		toggleUseComputeShaderForReflections.addActionListener(e -> {
-			DeferredRenderingBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !DeferredRenderingBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
-		});
-		toggleDirectTextureOutput.addActionListener(e -> {
-			engine.getConfig().setUseDirectTextureOutput(!engine.getConfig().isUseDirectTextureOutput());
-		});
-        directTextureOutputTextureIndexSelection.addActionListener(e -> {
-            int selectedIndex = directTextureOutputTextureIndexSelection.getSelectedIndex();
-            DirectTextureOutputItem selected = renderTargetTextures.get(selectedIndex);
-            engine.getConfig().setDirectTextureOutputTextureIndex(selected.getTextureId());
-        });
-
-		toggleDebugFrame.addActionListener(e -> {
-			engine.getConfig().setDebugframeEnabled(!engine.getConfig().isDebugframeEnabled());
-		});
-
-		toggleDrawLights.addActionListener(e -> {
-			engine.getConfig().setDrawlightsEnabled(!engine.getConfig().isDrawlightsEnabled());
-		});
-		toggleVSync.addActionListener(e -> {
-			engine.getConfig().setVsync(!engine.getConfig().isVsync());
-            engine.getGpuContext().execute(() -> {
-				if(engine.getConfig().isVsync()) {
-					glfwSwapInterval(1);
-				} else {
-					glfwSwapInterval(0);
-				}
-			});
-		});
-		toggleAutoExposure.addActionListener(e -> {
-			engine.getConfig().setAutoExposureEnabled(!engine.getConfig().isAutoExposureEnabled());
-			if(!engine.getConfig().isAutoExposureEnabled()) { engine.getConfig().setExposure(5); }
-		});
-
-	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
-	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
-	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
-	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
-	    ambientOcclusionRadiusSlider.setValue((int) (engine.getConfig().getAmbientocclusionRadius() * 10000f));
-	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
-	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
-	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				WebSlider slider = (WebSlider) e.getSource();
-				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 10000;
-				engine.getConfig().setAmbientocclusionRadius(valueAsFactor);
-			}
-		});
-
-		ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
-		ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
-		ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
-		ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
-		ambientOcclusionTotalStrengthSlider.setValue((int) (engine.getConfig().getAmbientocclusionTotalStrength() * 100f));
-		ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
-		ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
-		ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				WebSlider slider = (WebSlider) e.getSource();
-				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 100;
-				engine.getConfig().setAmbientocclusionTotalStrength(valueAsFactor);
-			}
-		});
-
-////////////////
-	    
-	    toggleSampleCount2.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount2.getLabel()); });
-	    toggleSampleCount4.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount4.getLabel()); });
-	    toggleSampleCount8.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount8.getLabel()); });
-	    toggleSampleCount16.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount16.getLabel()); });
-	    toggleSampleCount32.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount32.getLabel()); });
-	    toggleSampleCount64.addActionListener(e -> { DeferredRenderingBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount64.getLabel()); });
-		
-	    toggleProbeDrawCountOne.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountOne.getLabel()); });
-	    toggleProbeDrawCountTwo.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountTwo.getLabel()); });
-	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
-	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
-		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexSelection));
-		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
-		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleOcclusionCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
-			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) engine.getConfig().getExposure()) {
-			@Override public void onValueChange(int value, int delta) {
-				engine.getConfig().setExposure(value);
-			}},
-			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
-				@Override public void onValueChange(int value, int delta) {
-                    engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().setScatterFactor((float)value);
-				}
-			},
-			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* engine.getConfig().getRainEffect())) {
-				@Override public void onValueChange(int value, int delta) {
-					engine.getConfig().setRainEffect((float) value/100);
-					engine.getEventBus().post(new GlobalDefineChangedEvent());
-				}
-			},
-			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* engine.getConfig().getCameraSpeed())) {
-				@Override public void onValueChange(int value, int delta) {
-					engine.getConfig().setCameraSpeed((float) value/100);
-				}
-			},
-			new SliderInput("Texture Streaming Threshold (MS)", WebSlider.HORIZONTAL, 0, 10000, (int) (TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS)) {
-				@Override public void onValueChange(int value, int delta) {
-					TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS = value;
-				}
-			}
-		));
         Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
         mainButtonElements.toArray(mainButtonsElementsArray);
         GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length/2, 2, 5, mainButtonsElementsArray);
-////////////////
-	    
+
         mainPane = new WebScrollPane(buttonGridPanel);
         mainPane.getVerticalScrollBar().setUnitIncrement(32);
 	}
 
-	private void createWebSlider(Engine engine,
-                                 Map<String, List<Component>> toggleButtonsWithGroups, Field field,
-                                 Annotation annotation) {
-		try {
-			float f = field.getFloat(engine);
-			Adjustable adjustable = (Adjustable) annotation;
-			
-			List<Component> groupList;
-			if(toggleButtonsWithGroups.containsKey(adjustable.group())) {
-				groupList = toggleButtonsWithGroups.get(adjustable.group());
-			} else {
-				groupList = new ArrayList<>();
-				toggleButtonsWithGroups.put(adjustable.group(), groupList);
-			}
-			
-			WebSlider slider = new WebSlider(WebSlider.HORIZONTAL);
-			slider.setMinimum ( adjustable.minimum() );
-			slider.setMaximum ( adjustable.maximum() );
-			slider.setMinorTickSpacing ( adjustable.minorTickSpacing() );
-			slider.setMajorTickSpacing ( adjustable.majorTickSpacing() );
-			slider.setValue((int) (engine.getConfig().getAmbientocclusionRadius() * adjustable.factor()));
-			slider.setPaintTicks ( true );
-			slider.setPaintLabels ( true );
-			slider.addChangeListener(new ChangeListener() {
-				
-				@Override
-				public void stateChanged(ChangeEvent e) {
-					try {
-						float currentValue = field.getFloat(engine);
-					} catch (IllegalArgumentException | IllegalAccessException e2) {
-						e2.printStackTrace();
-					}
-					
-					WebSlider slider = (WebSlider) e.getSource();
-					int value = slider.getValue();
-					float valueAsFactor = ((float) value) / adjustable.factor();
-					try {
-						field.setFloat(engine, valueAsFactor);
-						engine.getEventBus().post(new GlobalDefineChangedEvent());
-					} catch (IllegalArgumentException | IllegalAccessException e1) {
-						e1.printStackTrace();
-					}
-				}
-			});
-			groupList.add(new WebLabel(field.getName()));
-			groupList.add(slider);
-			
-		} catch (IllegalArgumentException | IllegalAccessException e1) {
-			e1.printStackTrace();
-		}
-	}
-
-	private void createWebToggableButton(Map<String, List<Component>> toggleButtonsWithGroups,
-										 Field field, Annotation annotation) {
-		try {
-			field.setAccessible(true);
-			boolean b = field.getBoolean(engine.getConfig());
-			Toggable toggable = (Toggable) annotation;
-			List<Component> groupList;
-			if(toggleButtonsWithGroups.containsKey(toggable.group())) {
-				groupList = toggleButtonsWithGroups.get(toggable.group());
-			} else {
-				groupList = new ArrayList<>();
-				toggleButtonsWithGroups.put(toggable.group(), groupList);
-			}
-			
-			WebToggleButton button = new WebToggleButton(field.getName(), b, e -> {
-				boolean currentValue;
-				try {
-					currentValue = field.getBoolean(engine.getConfig());
-					field.setBoolean(engine.getConfig(), !currentValue);
-					engine.getEventBus().post(new GlobalDefineChangedEvent());
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-			});
-			groupList.add(button);
-			
-		} catch (IllegalArgumentException | IllegalAccessException e1) {
-			e1.printStackTrace();
-		}
-	}
-
-	private void initPerformanceChart() {
+    private void initPerformanceChart() {
 		if(performanceMonitor == null) {
             performanceMonitor = new PerformanceMonitor(engine);
 		}
 		performanceMonitor.init();
 	}
-	
-	private void redirectSystemStreams() {
-		outputPane.setBorder(new LineBorder(Color.black, 1));
-		DefaultCaret caret = (DefaultCaret) output.getCaret();
-		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-		output.setEditable(false);
-		output.setBackground(Color.BLACK);
-		output.setForeground(Color.WHITE);
-		final Font currFont = consolePane.getFont();
-		output.setFont(new Font("Courier New", currFont.getStyle(), currFont.getSize()));
-		
-		  OutputStream out = new OutputStream() {
-			  StyleContext sc = StyleContext.getDefaultStyleContext();
-			    javax.swing.text.AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.GREEN);
-
-			    
-			    @Override
-			    public void write(int b) throws IOException {
-
-			    	Document doc = output.getDocument();
-			    	shrinkDocument(doc);
-			    	try {
-						doc.insertString(doc.getLength(), String.valueOf((char) b), aset);
-					} catch (BadLocationException e) {
-						e.printStackTrace();
-					}
-			    }
-
-				private void shrinkDocument(Document doc) {
-					if(doc.getLength() > 10000) {
-			    		try {
-							doc.remove(0, 5000);
-						} catch (BadLocationException e) {
-							e.printStackTrace();
-						}
-			    	}
-				}
-			 
-			    @Override
-			    public void write(byte[] b, int off, int len) throws IOException {
-			    	Document doc = output.getDocument();
-			    	shrinkDocument(doc);
-			    	try {
-						doc.insertString(doc.getLength(), new String(b, off, len), aset);
-					} catch (BadLocationException e) {
-						e.printStackTrace();
-					}
-			    }
-			 
-			    @Override
-			    public void write(byte[] b) throws IOException {
-			      write(b, 0, b.length);
-			    }
-			  };
-		  
-		  OutputStream outErr = new OutputStream() {
-			  StyleContext sc = StyleContext.getDefaultStyleContext();
-			    javax.swing.text.AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.RED);
-
-			    
-			    @Override
-			    public void write(int b) throws IOException {
-			    	Document doc = output.getDocument();
-			    	shrinkDocument(doc);
-			    	try {
-						doc.insertString(doc.getLength(), String.valueOf((char) b), aset);
-					} catch (BadLocationException e) {
-						e.printStackTrace();
-					}
-			    }
-			 
-			    @Override
-			    public void write(byte[] b, int off, int len) throws IOException {
-			    	Document doc = output.getDocument();
-			    	shrinkDocument(doc);
-			    	try {
-						doc.insertString(doc.getLength(), new String(b, off, len), aset);
-					} catch (BadLocationException e) {
-						e.printStackTrace();
-					}
-			    }
-			 
-			    @Override
-			    public void write(byte[] b) throws IOException {
-			      write(b, 0, b.length);
-			    }
-
-				private void shrinkDocument(Document doc) {
-					if(doc.getLength() > 10000) {
-			    		try {
-							doc.remove(0, 5000);
-						} catch (BadLocationException e) {
-							e.printStackTrace();
-						}
-			    	}
-				}
-			  };
-		  		 
-		  System.setOut(new PrintStream(out, true));
-		  System.setErr(new PrintStream(outErr, true));
-		}
 
     private void createPointLightsTab() {
         ListSelectionModel pointLightsCellSelectionModel = pointsLightsTable.getSelectionModel();

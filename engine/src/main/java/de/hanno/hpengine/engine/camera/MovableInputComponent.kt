@@ -25,8 +25,8 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
     var position = Vector3f(0f, 0f, 10f)
     var rotation = Quaternionf()
 
-    private var pitch = 0f;
-    private var yaw = 0f;
+    private var pitch = 0f
+    private var yaw = 0f
 
     private var pitchAccel = 0f
     private var yawAccel = 0f
@@ -34,6 +34,9 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
     init {
         this.entity = entity
     }
+
+//    TODO: Make this adjustable through editor
+    private val cameraSpeed: Float = 1.0f
 
     override fun update(seconds: Float) {
         //                             linearVel.fma(seconds, linearAcc);
@@ -49,7 +52,7 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
             turbo = 3f
         }
 
-        val rotationAmount = 10.1f * turbo * seconds * rotationDelta * engine.config.cameraSpeed
+        val rotationAmount = 10.1f * turbo * seconds * rotationDelta * cameraSpeed
         if (engine.input.isMouseClicked(0)) {
             val pitchAmount = Math.toRadians((engine.input.dySmooth * rotationAmount % 360).toDouble())
             pitchAccel = Math.max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
@@ -69,7 +72,7 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
             getEntity().translateLocal(oldTranslation)
         }
 
-        val moveAmount = turbo * posDelta * seconds * engine.config.cameraSpeed
+        val moveAmount = turbo * posDelta * seconds * cameraSpeed
         if (engine.input.isKeyPressed(GLFW_KEY_W)) {
             getEntity().translate(Vector3f(0f, 0f, -moveAmount))
         }

@@ -68,7 +68,7 @@ public class AddEntityView extends WebPanel {
 								EntityListResult result = new LoadModelCommand(chosenFile,
 										nameField.getText(),
 										engine.getScene().getMaterialManager(),
-										engine.getConfig().getDirectoryManager().getGameDir()).execute();
+										engine.getConfig().getDirectories().getGameDir()).execute();
 								System.out.println("result.entities.size() = " + result.entities.size());
 								engine.getSceneManager().getScene().addAll(result.entities);
                                 Thread.sleep(100);

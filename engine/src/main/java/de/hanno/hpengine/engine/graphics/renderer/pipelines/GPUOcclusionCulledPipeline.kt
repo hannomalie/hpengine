@@ -15,5 +15,5 @@ open class GPUOcclusionCulledPipeline @JvmOverloads constructor(val engineContex
                                                                 useLineDrawing: Boolean,
                                                                 renderCam: Camera? = null,
                                                                 cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(engineContext, renderer, useFrustumCulling, useBackFaceCulling, useLineDrawing, renderCam, cullCam) {
-    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", engineContext.config.isUseGpuOcclusionCulling))
+    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", engineContext.config.debug.isUseGpuOcclusionCulling))
 }

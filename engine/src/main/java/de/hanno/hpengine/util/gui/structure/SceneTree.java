@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.util.Parentable;
 import de.hanno.hpengine.util.gui.SetVisibilityCheckStateListener;
-import de.hanno.hpengine.util.gui.DebugFrame;
+import de.hanno.hpengine.util.gui.Editor;
 import de.hanno.hpengine.util.gui.SetSelectedListener;
 
 import javax.swing.*;
@@ -90,7 +90,7 @@ public class SceneTree extends WebCheckBoxTree {
             }
 
             private boolean matchesFilter(DefaultMutableTreeNode node) {
-                String filterText = DebugFrame.getCurrentFilter();
+                String filterText = Editor.getCurrentFilter();
                 return "".equals(filterText) || (node.getUserObject().toString()).startsWith(filterText);
             }
 

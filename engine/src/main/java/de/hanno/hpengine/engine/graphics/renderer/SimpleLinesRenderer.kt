@@ -8,9 +8,6 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 
 class SimpleLinesRenderer(engineContext: EngineContext<*>, programManager: ProgramManager<OpenGl>) : AbstractDeferredRenderer(programManager, engineContext.config) {
-    init {
-        engineContext.config.isDrawBoundingVolumes = true
-    }
     val drawlinesExtension = DrawLinesExtension(engineContext, this, programManager)
 
     override fun render(result: DrawResult, state: RenderState) {

@@ -2,13 +2,10 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.laf.rootpane.WebFrame;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.texture.FileBasedSimpleTexture;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public class TextureTable extends JTable {
 
@@ -31,7 +28,7 @@ public class TextureTable extends JTable {
             textureView.setSize(600, 600);
             textureView.pack(); // TODO: Reenable
             String path = (String) getModel().getValueAt(TextureTable.this.getSelectedRow(), 0);
-            Texture<?> valueAt = engine.getTextureManager().getTexture(path, false, engine.getConfig().getDirectoryManager().getGameDir());
+            Texture<?> valueAt = engine.getTextureManager().getTexture(path, false, engine.getConfig().getDirectories().getGameDir());
 //            showTexture(valueAt);
             textureView.setVisible(true);
         });

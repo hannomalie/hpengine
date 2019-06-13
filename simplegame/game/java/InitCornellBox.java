@@ -14,7 +14,7 @@ public class InitCornellBox implements EngineConsumer {
 
         try {
             {
-                File file = FilesKt.resolve(engine.getConfig().getDirectoryManager().getGameDir(), "assets/models/cornellbox.obj");
+                File file = FilesKt.resolve(engine.getConfig().getDirectories().getGameDir(), "assets/models/cornellbox.obj");
                 LoadModelCommand.EntityListResult loaded = new LoadModelCommand(file, "cornell", engine.getScene().getMaterialManager()).execute();
                 System.out.println("loaded entities : " + loaded.entities.size());
                 engine.getSceneManager().getScene().addAll(loaded.entities);

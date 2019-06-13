@@ -30,7 +30,7 @@ public class UpdateThread extends FpsCountedTimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return engineContext.getConfig().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.f;
+        return engineContext.getConfig().getDebug().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.f;
     }
 
     public static boolean isUpdateThread() {

@@ -20,6 +20,6 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return config.isLockFps() ? minimumCycleTimeInSeconds : 0f;
+        return config.getPerformance().isLockFps() ? minimumCycleTimeInSeconds : 0f;
     }
 }

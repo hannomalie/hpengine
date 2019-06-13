@@ -1,5 +1,3 @@
-import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
@@ -16,7 +14,7 @@ public class InitSponza implements EngineConsumer {
     public void consume(@NotNull de.hanno.hpengine.engine.Engine engine) {
 
         try {
-            File modelFile = FilesKt.resolve(engine.getConfig().getDirectoryManager().getGameDir(), "assets/models/sponza.obj");
+            File modelFile = FilesKt.resolve(engine.getConfig().getDirectories().getGameDir(), "assets/models/sponza.obj");
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(modelFile, "sponza", engine.getScene().getMaterialManager()).execute();
             System.out.println("loaded entities : " + loaded.entities.size());
             for (Entity entity : loaded.entities) {

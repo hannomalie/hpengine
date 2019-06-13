@@ -76,7 +76,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
-    val engineDir = config.directoryManager.engineDir
+    val engineDir = config.directories.engineDir
 
     /** The colour model including alpha for the GL image  */
     val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -140,13 +140,13 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     }
 
     private fun loadAllAvailableTextures() {
-        val textureDir = config.directoryManager.engineDir.textures
+        val textureDir = config.directories.engineDir.textures
         val files = FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE) as List<File>
         GpuContext.exitOnGLError("Before loadAllAvailableTextures")
         for (file in files) {
             try {
                 if (FilenameUtils.isExtension(file.absolutePath, "hptexture")) {
-                    getTexture(file.absolutePath, directory = config.directoryManager.gameDir)
+                    getTexture(file.absolutePath, directory = config.directories.gameDir)
                 } else {
                     getCubeMap(file.absolutePath)
                 }
@@ -169,7 +169,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         return getTexture(resourceName, srgba, this)
     }
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = config.directoryManager.gameDir): Texture<TextureDimension2D> {
+    fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> {
         return textures.computeIfAbsent(resourceName) {
             FileBasedSimpleTexture(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
@@ -222,7 +222,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     private fun cubeMapPreCompiled(resourceName: String): Boolean {
         val fileName = FilenameUtils.getBaseName(resourceName)
-        val f = config.directoryManager.gameDir.resolve("$fileName.hpcubemap")
+        val f = config.directories.gameDir.resolve("$fileName.hpcubemap")
         return f.exists()
     }
 
@@ -330,7 +330,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     @Throws(IOException::class)
     fun loadImageAsStream(ref: String): BufferedImage {
-        val file = config.directoryManager.engineDir.resolve(ref) // TODO: Inject dir
+        val file = config.directories.engineDir.resolve(ref) // TODO: Inject dir
         return try {
             ImageIO.read(file)
         } catch (e: Exception) {

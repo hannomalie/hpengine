@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.directory
 
-import de.hanno.hpengine.engine.config.Config
 import java.io.File
 
 

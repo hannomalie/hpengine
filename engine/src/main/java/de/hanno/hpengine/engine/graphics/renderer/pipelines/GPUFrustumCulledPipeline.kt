@@ -77,7 +77,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     open var depthMap = renderer.gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
-        if (engine.config.isPrintPipelineDebugOutput) {
+        if (engine.config.debug.isPrintPipelineDebugOutput) {
             GL11.glFinish()
             println("########### $phase ")
 
@@ -138,7 +138,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram: AbstractProgram = if(engine.config.isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
+        val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
 
         profiled("Buffer compaction") {
 
@@ -164,7 +164,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                     bindShaderStorageBuffer(12, commandOffsets)
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                     setUniform("maxDrawCommands", commands.size)
-                    if(engine.config.isUseComputeShaderDrawCommandAppend) {
+                    if(engine.config.debug.isUseComputeShaderDrawCommandAppend) {
                         appendDrawCommandComputeProgram.dispatchCompute(commands.size, 1, 1)
                     } else {
                         val invocationsPerCommand : Int = commands.map { it.primCount }.max()!!//4096
@@ -192,7 +192,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.setUniform("entityBaseIndex", 0)
         program.setUniform("indirect", true)
         val drawCountBufferToUse = drawCountBuffer
-        if(engine.config.isUseGpuOcclusionCulling) {
+        if(engine.config.debug.isUseGpuOcclusionCulling) {
             program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
             program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         } else {

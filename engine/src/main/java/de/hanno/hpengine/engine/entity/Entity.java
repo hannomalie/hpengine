@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.entity;
 
-import de.hanno.hpengine.engine.directory.DirectoryManager;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;

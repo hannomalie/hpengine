@@ -59,7 +59,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
             observerJavaFile = new FileAlterationObserver(javaCodeSource.getFile().getParent());
         }
         addFileListeners();
-        initWrappingComponent(engine.getConfig().getDirectoryManager().getGameDir());
+        initWrappingComponent(engine.getConfig().getDirectories().getGameDir());
         super.init(engine);
         if(isLifeCycle) {
             ((LifeCycle) instance).init(engine);

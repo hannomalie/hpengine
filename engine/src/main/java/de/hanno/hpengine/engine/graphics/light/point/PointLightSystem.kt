@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics.light.point
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.PointLightMovedEvent
@@ -33,7 +32,7 @@ class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): Simple
 //    TODO: This has to be part of a custom renderstate!
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
-    val shadowMapStrategy = if (engine.config.isUseDpsm) {
+    val shadowMapStrategy = if (engine.config.quality.isUseDpsm) {
             DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
         } else {
             CubeShadowMapStrategy(engine, this)
