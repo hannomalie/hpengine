@@ -104,7 +104,8 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 			}
 		};
 		observerShader.addListener(reloadOnFileChangeListener);
-		FileMonitor.getInstance().add(observerShader);
+//		TODO: Reimplement somewhere else
+//		FileMonitor.getInstance().add(observerShader);
 	}
 
 	private void clearListeners() {

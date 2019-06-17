@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm") version "1.3.21"
 }
@@ -18,6 +20,12 @@ buildscript {
 
 allprojects {
     group = "de.hanno.hpengine"
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xjvm-default=enable")
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
+    }
 }
 dependencies {
     implementation(kotlin("stdlib"))

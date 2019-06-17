@@ -28,3 +28,5 @@ nbactions.xml
 **/*.class
 *.orig
 */out
+
+*META-INF

@@ -1,10 +1,12 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
@@ -46,6 +48,8 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override val managers: ManagerRegistry = SimpleManagerRegistry()
     override val entitySystems = SimpleEntitySystemRegistry()
 
+    private val customComponentSystem = componentSystems.register(CustomComponentSystem())
+    private val scriptComponentSystem = componentSystems.register(ScriptComponentSystem(engine))
     private val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
     private val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine)).also {
         engine.renderSystems.add(it)

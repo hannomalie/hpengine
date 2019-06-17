@@ -68,8 +68,12 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 		if(isAnonymous) {
 			clazz = (Class<Component>) clazz.getSuperclass();
 		}
-		getComponents().put(clazz, component);
+		addComponent(component, clazz);
 		return this;
+	}
+
+	public void addComponent(Component component, Class<Component> clazz) {
+		getComponents().put(clazz, component);
 	}
 
 	public void removeComponent(Component component) {

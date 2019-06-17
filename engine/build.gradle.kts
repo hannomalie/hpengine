@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.internal.os.OperatingSystem
 
 plugins {
@@ -22,15 +20,6 @@ java.sourceSets {
 kotlin.sourceSets {
     getByName("main").kotlin.srcDirs("src/main/java")
     getByName("test").kotlin.srcDirs("src/test/java")
-}
-
-tasks.withType<KotlinCompile>().configureEachLater {
-    println("Configuring $name in project ${project.name}...")
-    kotlinOptions {
-        suppressWarnings = true
-        freeCompilerArgs = listOf("-Xjvm-default=enable")
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
 }
 
 repositories {
@@ -80,7 +69,9 @@ dependencies {
     compile(kotlin("kotlin-reflect"))
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
-    
+    compile(kotlin("kotlin-compiler-embeddable"))
+
+
     compile("de.swirtz:ktsRunner:0.0.7")
 
 

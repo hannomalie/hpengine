@@ -3,8 +3,6 @@ package de.hanno.hpengine.util.ressources;
 import java.io.File;
 import java.util.logging.Logger;
 
-import org.apache.commons.io.monitor.FileAlterationObserver;
-
 public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChangeListener {
 
     private static final Logger LOGGER = Logger.getLogger(ReloadOnFileChangeListener.class.getName());
@@ -28,12 +26,4 @@ public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChan
 		return true;
 	}
 
-	public static void createAndAddToMonitor(String path, Reloadable loadable) {
-		createAndAddToMonitor(new File(path), loadable);
-	}
-	public static void createAndAddToMonitor(File directory, Reloadable loadable) {
-		FileAlterationObserver observer = new FileAlterationObserver(directory);
-		observer.addListener(new ReloadOnFileChangeListener<>(loadable));
-		FileMonitor.getInstance().add(observer);
-	}
 }

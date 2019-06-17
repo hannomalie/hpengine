@@ -69,6 +69,8 @@ interface Scene : LifeCycle, Serializable {
         return Optional.ofNullable(candidate)
     }
     fun restoreWorldCamera()
+
+    @JvmDefault
     override fun update(deltaSeconds: Float) {
         managers.update(deltaSeconds)
         componentSystems.update(deltaSeconds)

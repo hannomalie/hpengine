@@ -7,13 +7,10 @@ import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.util.ressources.CodeSource;
-import de.hanno.hpengine.util.ressources.FileMonitor;
-import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
 import de.hanno.hpengine.util.ressources.Reloadable;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,19 +25,12 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     private final CodeSource javaCodeSource;
     private final GameDirectory gameDirectory;
-    private FileAlterationObserver observerJavaFile;
-    private ReloadOnFileChangeListener<JavaComponent> reloadOnFileChangeListener;
-
 
     private Map map = new HashMap<>();
     private Class<?> compiledClass;
     private boolean isLifeCycle;
     private boolean isEngineConsumer;
     private Object instance;
-
-    public JavaComponent(String sourceCode, GameDirectory gameDir) {
-        this(new CodeSource(sourceCode), gameDir);
-    }
 
     public JavaComponent(CodeSource codeSource, GameDirectory gameDirectory) {
         super();
@@ -55,10 +45,6 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @Override
     public void init(EngineContext engine) {
-        if(javaCodeSource.isFileBased()) {
-            observerJavaFile = new FileAlterationObserver(javaCodeSource.getFile().getParent());
-        }
-        addFileListeners();
         initWrappingComponent(engine.getConfig().getDirectories().getGameDir());
         super.init(engine);
         if(isLifeCycle) {
@@ -86,7 +72,6 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @Override
     public void reload() {
-        Reloadable.super.reload();
     }
 
     @Override
@@ -122,28 +107,6 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         }
     }
 
-    private void addFileListeners() {
-
-        clearListeners();
-
-        reloadOnFileChangeListener = new ReloadOnFileChangeListener(this) {
-            @Override
-            public boolean shouldReload(File changedFile) {
-                String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());
-                return javaCodeSource.isFileBased() && javaCodeSource.getFilename().startsWith(fileName);
-            }
-        };
-
-        observerJavaFile.addListener(reloadOnFileChangeListener);
-        FileMonitor.getInstance().add(observerJavaFile);
-    }
-
-    private void clearListeners() {
-        if(observerJavaFile != null) {
-            observerJavaFile.removeListener(reloadOnFileChangeListener);
-        }
-    }
-
     public Class<?> getCompiledClass() {
         return compiledClass;
     }
@@ -161,5 +124,11 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     @Override
     public void unload() {
 
+    }
+
+    @NotNull
+    @Override
+    public CodeSource getCodeSource() {
+        return javaCodeSource;
     }
 }

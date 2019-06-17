@@ -167,7 +167,8 @@ public class Program extends AbstractProgram implements Reloadable {
 			}
 		};
 		observerFragmentShader.addListener(reloadOnFileChangeListener);
-		FileMonitor.getInstance().add(observerFragmentShader);
+//		TODO: Reimplement somewhere else
+//		FileMonitor.getInstance().add(observerFragmentShader);
 	}
 
 	private void clearListeners() {

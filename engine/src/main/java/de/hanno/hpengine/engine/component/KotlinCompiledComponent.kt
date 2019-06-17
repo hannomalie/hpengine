@@ -5,12 +5,17 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.util.ressources.CodeSource
-import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener
 import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
-import org.apache.commons.io.monitor.FileAlterationObserver
+import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import org.jetbrains.kotlin.config.Services
+import java.io.File
+import java.net.URLClassLoader
 import java.util.HashMap
 
-class KotlinComponent(override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
+class KotlinCompiledComponent(override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
     init {
         require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
     }
@@ -71,9 +76,38 @@ class KotlinComponent(override val codeSource: CodeSource) : BaseComponent(), Sc
 
     private fun initWrappingComponent() {
         try {
-            objectLoader.engine.eval(codeSource.source)
-            instance = objectLoader.engine.eval("${codeSource.filename}()")
-            compiledClass = instance!!::class.java
+            val output = codeSource.file.parentFile
+
+            kotlinCompiler.run {
+                val args = K2JVMCompilerArguments().apply {
+                    freeArgs = listOf(codeSource.file.absolutePath)
+                    loadBuiltInsFromDependencies = true
+                    destination = output.absolutePath
+                    classpath = System.getProperty("java.class.path")
+                            .split(System.getProperty("path.separator"))
+                            .filter {
+                                File(it).exists() && File(it).canRead()
+                            }.joinToString(":")
+                    noStdlib = true
+                    noReflect = true
+                    skipRuntimeVersionCheck = true
+                    reportPerf = true
+                }
+                execImpl(
+                        PrintingMessageCollector(
+                                System.out,
+                                MessageRenderer.WITHOUT_PATHS, true),
+                        Services.EMPTY,
+                        args)
+            }
+            val resolvedClassFile = output.resolve(codeSource.filename + ".class")
+            if(!resolvedClassFile.exists()) throw IllegalStateException("Compiled class file doesn't exist: $resolvedClassFile")
+
+            val classLoader = URLClassLoader(arrayOf(resolvedClassFile.parentFile.toURI().toURL()))
+            compiledClass = classLoader.loadClass(codeSource.filename.replace(".kt", "")).apply {
+                instance = newInstance()
+            }
+
             try {
                 val entityField = instance!!.javaClass.getDeclaredField("entity")
                 entityField.set(instance, getEntity())
@@ -101,5 +135,7 @@ class KotlinComponent(override val codeSource: CodeSource) : BaseComponent(), Sc
 
     companion object {
         internal val objectLoader = KtsObjectLoader()
+
+        private val kotlinCompiler = K2JVMCompiler()
     }
 }
