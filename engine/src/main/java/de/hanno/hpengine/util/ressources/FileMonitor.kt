@@ -1,61 +1,38 @@
 package de.hanno.hpengine.util.ressources
 
-
-import de.hanno.hpengine.engine.config.SimpleConfig
+import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
+import java.io.File
 
-class FileMonitor constructor(interval: Int) {
 
-    var monitor: FileAlterationMonitor
-    @Volatile
-    var running = false
-
-    init {
-        monitor = FileAlterationMonitor(interval.toLong())
+object FileMonitor {
+    private val directoryObservers = mutableMapOf<File, FileAlterationObserver>()
+    val monitor: FileAlterationMonitor = FileAlterationMonitor(500).apply {
+        start()
     }
 
-    fun add(observer: FileAlterationObserver) {
-        if (!SimpleConfig.isUseFileReloadXXX) {
-            return
+    @JvmOverloads
+    fun addOnFileChangeListener(file: File, overwriteShouldReload: (File) -> Boolean = { false }, action: (File) -> Unit) {
+        val fileObserver = directoryObservers.getOrPut(file.parentFile) {
+            FileAlterationObserver(file.parent).apply {
+                initialize()
+                monitor.addObserver(this)
+            }
         }
-        if (running) {
-            try {
-                observer.initialize()
-                monitor.addObserver(observer)
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+        val listener: OnFileChangeListener = object: OnFileChangeListener() {
+            fun shouldReload(changedFile: File): Boolean {
+                val fileName = FilenameUtils.getBaseName(changedFile.absolutePath)
+                return file.name.startsWith(fileName)
             }
 
-        }
-    }
-
-    fun checkAndNotify() {
-        if (!SimpleConfig.isUseFileReloadXXX) {
-            return
-        }
-        if (!FileMonitor.instance!!.running) {
-            return
-        }
-        monitor.observers.forEach { o -> o.checkAndNotify() }
-    }
-
-    companion object {
-
-        @JvmField var instance: FileMonitor? = null
-
-        init {
-            instance = FileMonitor(500)
-            try {
-                if (SimpleConfig.isUseFileReloadXXX) {
-                    instance!!.monitor.start()
-                    instance!!.running = true
+            override fun onFileChangeAction(arg0: File) {
+                if(overwriteShouldReload(arg0) || shouldReload(arg0)) {
+                    action(arg0)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
-
         }
+        fileObserver.addListener(listener)
     }
-
 }

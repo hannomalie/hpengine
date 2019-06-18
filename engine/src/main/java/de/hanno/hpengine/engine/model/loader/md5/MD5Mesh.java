@@ -45,11 +45,11 @@ public class MD5Mesh implements Mesh {
 
     private String diffuseTexture;
 
-    private List<MD5Vertex> vertices;
+    private List<MD5Vertex> vertices = new ArrayList<>();
 
-    private List<MD5Triangle> triangles;
+    private List<MD5Triangle> triangles = new ArrayList<>();
 
-    private List<MD5Weight> weights;
+    private List<MD5Weight> weights = new ArrayList<>();
     private float[] vertexBufferValuesArray;
     private IntArrayList indicesList = new IntArrayList();
     private SimpleMaterial material;

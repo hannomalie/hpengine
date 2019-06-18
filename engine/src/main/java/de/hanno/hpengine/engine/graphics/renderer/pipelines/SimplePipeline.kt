@@ -204,6 +204,7 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera, config: Config
     use()
     bindShaderStorageBuffer(1, renderState.materialBuffer)
     bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+    bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
     setUniform("useRainEffect", config.effects.rainEffect != 0.0f)
     setUniform("rainEffect", config.effects.rainEffect)
     setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)

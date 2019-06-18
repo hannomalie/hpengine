@@ -15,6 +15,6 @@ class SimpleCustomComponent : CustomComponent {
     }
 
     override fun update(seconds: Float) {
-        println("Update called in SimpleCustomComponent")
+//        println("Update called in SimpleCustomComponent")
     }
 }

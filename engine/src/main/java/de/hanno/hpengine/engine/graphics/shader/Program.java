@@ -11,6 +11,7 @@ import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
 import de.hanno.hpengine.util.ressources.Reloadable;
+import kotlin.Unit;
 import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
@@ -18,12 +19,15 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 import static org.lwjgl.opengl.GL20.*;
@@ -44,9 +48,6 @@ public class Program extends AbstractProgram implements Reloadable {
     private GeometryShader geometryShader;
     private FragmentShader fragmentShader;
 
-	private ReloadOnFileChangeListener<Program> reloadOnFileChangeListener;
-
-	private FileAlterationObserver observerFragmentShader;
 	private OpenGlProgramManager programManager;
 
 	protected Program(OpenGlProgramManager programManager, CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource,
@@ -59,8 +60,6 @@ public class Program extends AbstractProgram implements Reloadable {
 		this.geometryShaderSource = geometryShaderSource;
 		this.vertexShaderSource = vertexShaderSource;
 		this.fragmentShaderSource = fragmentShaderSource;
-
-		observerFragmentShader = new FileAlterationObserver(Shader.directory);
 
 		addFileListeners();
 		load();
@@ -146,35 +145,14 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 
 	private void addFileListeners() {
-		
-		clearListeners();
-
-		reloadOnFileChangeListener = new ReloadOnFileChangeListener<Program>(this) {
-
-			@Override
-			public boolean shouldReload(File changedFile) {
-				String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());
-				if(fileName.startsWith("globals")) {
-					return true;
-				}
-
-				if(fragmentShaderSource != null && fragmentShaderSource.getFilename().startsWith(fileName) ||
-					vertexShaderSource != null && vertexShaderSource.getFilename().startsWith(fileName) ||
-					geometryShaderSource != null && geometryShaderSource.getFilename().startsWith(fileName)) {
-					return true;
-				}
-				return false;
-			}
-		};
-		observerFragmentShader.addListener(reloadOnFileChangeListener);
-//		TODO: Reimplement somewhere else
-//		FileMonitor.getInstance().add(observerFragmentShader);
-	}
-
-	private void clearListeners() {
-		if(observerFragmentShader != null) {
-			observerFragmentShader.removeListener(reloadOnFileChangeListener);
-		}
+		Stream.of(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
+				.filter(Objects::nonNull)
+				.forEach(codeSource -> {
+					FileMonitor.INSTANCE.addOnFileChangeListener(
+							codeSource.getFile(),
+							file -> file.getName().startsWith("globals"), file -> { this.reload(); return Unit.INSTANCE; }
+					);
+				});
 	}
 
 	public void unload() {
