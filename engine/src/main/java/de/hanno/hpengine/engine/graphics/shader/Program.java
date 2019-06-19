@@ -66,7 +66,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 
 	public void load() {
-        gpuContext.execute(() -> {
+        gpuContext.execute("Program.load", () -> {
 			clearUniforms();
 
 			try {

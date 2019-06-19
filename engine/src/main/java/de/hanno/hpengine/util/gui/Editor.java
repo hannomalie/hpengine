@@ -371,7 +371,7 @@ public class Editor implements HostComponent {
                 new SwingWorkerWithProgress<Result>(this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-                        engine.getGpuContext().execute(() -> {
+                        engine.getGpuContext().execute("probeAddMenuItem", () -> {
                             try {
                                 EnvironmentProbe probe = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50, engine.getRenderer());
                                 engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);

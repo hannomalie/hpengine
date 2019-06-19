@@ -49,7 +49,7 @@ public class RenderTarget {
         this(gpuContext);
 
         setName(renderTargetBuilder.name);
-        gpuContext.execute(() -> {
+        gpuContext.execute("RenderTarget", () -> {
             width = renderTargetBuilder.width;
             height = renderTargetBuilder.height;
             colorAttachments = renderTargetBuilder.colorAttachments;
@@ -73,18 +73,16 @@ public class RenderTarget {
 
                 gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
 
-                gpuContext.execute(() -> {
-                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
-                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-                    GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-                    GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                    GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.getTextureFilter());
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                GL11.glTexParameteri(GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
 
-                    GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.getInternalFormat(), width, height, 0, getComponentsForFormat(currentAttachment.getInternalFormat()), GL11.GL_FLOAT, (FloatBuffer) null);
+                GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.getInternalFormat(), width, height, 0, getComponentsForFormat(currentAttachment.getInternalFormat()), GL11.GL_FLOAT, (FloatBuffer) null);
 
-                    GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
-                });
+                GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
 
 
                 if(gpuContext.isSupported(BindlessTextures.INSTANCE)) {

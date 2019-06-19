@@ -31,7 +31,7 @@ public class CubeRenderTarget extends RenderTarget {
 
 		scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 
-		engine.getGpuContext().execute(() -> {
+		engine.getGpuContext().execute("CubeRenderTarget", () -> {
 			for (int i = 0; i < colorBufferCount; i++) {
 				ColorAttachmentDefinition currentAttachment = builder.colorAttachments.get(i);
 				int internalFormat = currentAttachment.getInternalFormat();

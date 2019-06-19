@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.ProfilingTask;
@@ -23,8 +24,8 @@ public class DrawUtils {
         super();
     }
 
-    public static int draw(GpuContext gpuContext, RenderState renderState, RenderBatch renderBatch, Program program, boolean drawLines) {
-        return draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, program, !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), drawLines);
+    public static int draw(GpuContext gpuContext, RenderBatch renderBatch, Program program, boolean drawLines, VertexIndexBuffer vertexIndexBuffer) {
+        return draw(gpuContext, vertexIndexBuffer.getVertexBuffer(), vertexIndexBuffer.getIndexBuffer(), renderBatch, program, !renderBatch.isVisible() || !renderBatch.isVisibleForCamera(), drawLines);
     }
 
     public static int draw(GpuContext gpuContext, VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible, boolean drawLines) {

@@ -149,7 +149,8 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
                 PixelBufferObject()
             }
             pbo.put(gpuContext, info.buffer)
-            gpuContext.execute {
+            gpuContext.execute("SimpleTexture2D.uploadWithPixelBuffer") {
+                pbo.unmap(gpuContext)
                 pbo.bind()
                 glBindTexture(GL_TEXTURE_2D, textureId)
                 if (info.dataCompressed) {
@@ -157,6 +158,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
                 } else {
                     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, GL_RGBA, GL_UNSIGNED_BYTE, 0)
                 }
+                gpuContext.getExceptionOnError("After glTexSubImage")
                 GL30.glGenerateMipmap(GL_TEXTURE_2D)
                 pbo.unbind()
                 uploadState = UploadState.UPLOADED
@@ -164,7 +166,7 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
         }
 
         private fun SimpleTexture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext<*>, info: Texture2DUploadInfo, internalFormat: Int) {
-            gpuContext.execute({
+            gpuContext.execute("SimpleTexture2D.uploadWithoutPixelBuffer", {
                 glBindTexture(GL_TEXTURE_2D, textureId)
                 if (info.dataCompressed) {
                     glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, internalFormat, info.buffer)

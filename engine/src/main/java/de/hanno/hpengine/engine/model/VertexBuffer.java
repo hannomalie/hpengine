@@ -71,7 +71,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
     private void setInternals(GpuContext gpuContext, float[] values, EnumSet<DataChannels> channels) {
         this.gpuContext = gpuContext;
         this.channels = channels;
-        gpuContext.execute(() -> {
+        gpuContext.execute("VertexBuffer.setInternals", () -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
         });
@@ -156,7 +156,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
     public CompletableFuture<VertexBuffer> upload() {
         buffer.rewind();
         CompletableFuture<VertexBuffer> future = new CompletableFuture<>();
-        gpuContext.execute(() -> {
+        gpuContext.execute("VertexBuffer.upload", () -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
             future.complete(VertexBuffer.this);

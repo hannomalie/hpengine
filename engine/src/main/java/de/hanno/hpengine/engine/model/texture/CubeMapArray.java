@@ -31,7 +31,7 @@ public class CubeMapArray {
 	 */
 	public CubeMapArray(GpuContext gpuContext, int textureCount, TextureFilterConfig.MinFilter minFilter, int internalFormat, int resolution) {
         this.resolution = resolution;
-        gpuContext.execute(() -> {
+        gpuContext.execute("CubeMapArray", () -> {
 			textureId = GL11.glGenTextures();
 			bind(gpuContext);
 

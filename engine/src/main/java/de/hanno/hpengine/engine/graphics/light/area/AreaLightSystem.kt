@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -23,7 +22,6 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import org.lwjgl.opengl.GL11
@@ -54,7 +52,7 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
 
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
     private val areaLightDepthMaps = ArrayList<Int>().apply {
-        engine.gpuContext.execute{
+        engine.gpuContext.execute("areaLightDepthMaps") {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = engine.gpuContext.genTextures()
                 engine.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)

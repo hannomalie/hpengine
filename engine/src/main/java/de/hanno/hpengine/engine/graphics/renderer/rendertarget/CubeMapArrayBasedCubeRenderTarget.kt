@@ -31,7 +31,7 @@ class CubeMapArrayBasedCubeRenderTarget(val engine: Engine<OpenGl>, val cubeMapA
         for (cubeMapIndex in 0 until cubeMapArray.cubeMapCount) {
 
             val cubeMapView = gpuContext.genTextures()
-            this.gpuContext.execute {
+            this.gpuContext.execute("CubeMapArrayBasedCubeRenderTarget0") {
                 GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.textureID,
                         cubeMapArray.internalFormat, 0, Util.calculateMipMapCount(cubeMapArray.width),
                         6 * cubeMapIndex, 6)
@@ -40,10 +40,10 @@ class CubeMapArrayBasedCubeRenderTarget(val engine: Engine<OpenGl>, val cubeMapA
             val handle = gpuContext.calculate { ARBBindlessTexture.glGetTextureHandleARB(cubeMapView) }
             cubeMapViews[cubeMapIndex] = cubeMapView
             cubeMapHandles[cubeMapIndex] = handle
-            this.gpuContext.execute { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+            this.gpuContext.execute("CubeMapArrayBasedCubeRenderTarget1") { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         }
 
-        gpuContext.execute {
+        gpuContext.execute("CubeMapArrayBasedCubeRenderTarget2") {
             GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, cubeMapArray.textureID, 0)
         }
         renderedTextures[0] = cubeMapArray.textureID
@@ -51,7 +51,7 @@ class CubeMapArrayBasedCubeRenderTarget(val engine: Engine<OpenGl>, val cubeMapA
         scratchBuffer.put(0, GL30.GL_COLOR_ATTACHMENT0)
 
 
-        gpuContext.execute {
+        gpuContext.execute("CubeMapArrayBasedCubeRenderTarget3") {
             if (useDepthBuffer) {
                 val depthCubeMap = engine.textureManager.getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24)
                 GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMap, 0)

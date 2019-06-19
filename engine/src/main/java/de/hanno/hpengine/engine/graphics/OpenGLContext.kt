@@ -47,20 +47,12 @@ import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback
+import org.lwjgl.opengl.*
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
-import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_TRUE
 import org.lwjgl.opengl.GL11.GL_VERSION
-import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
-import org.lwjgl.opengl.GL42
-import org.lwjgl.opengl.GL44
-import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
@@ -223,7 +215,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
         extensions = supportedExtensions.joinToString(" ")
 
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK)
-//        GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
+//        val debugProc = GLUtil.setupDebugMessageCallback()
 
         enable(GlCap.DEPTH_TEST)
         enable(GlCap.CULL_FACE)
@@ -284,7 +276,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
 //        TODO: Use this
 //        if(activeTexture != textureIndexGLInt)
-        execute(Runnable { GL13.glActiveTexture(textureIndexGLInt) })
+        execute("activeTexture", Runnable { GL13.glActiveTexture(textureIndexGLInt) })
     }
 
     private fun getCleanedTextureUnitValue(textureUnit: Int): Int {
@@ -297,7 +289,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
 // TODO: Save combination of activeTexture and bindTexture
     override fun bindTexture(target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
-        execute(Runnable {
+        execute("bindTexture0", Runnable {
             GL11.glBindTexture(target.glTarget, textureId)
             textureBindings[getCleanedTextureUnitValue(activeTexture)] = textureId
             getExceptionOnError("")?.let{ throw it }
@@ -312,7 +304,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
 
     override fun bindTexture(textureUnitIndex: Int, target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
-        execute(Runnable {
+        execute("bindTexture1", Runnable {
             getExceptionOnError("beforeBindTexture")?.let{ throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
@@ -323,15 +315,15 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
     }
 
     override fun bindTextures(textureIds: IntBuffer) {
-        execute(Runnable { GL44.glBindTextures(0, textureIds) })
+        execute("bindTextures0", Runnable { GL44.glBindTextures(0, textureIds) })
     }
 
     override fun bindTextures(count: Int, textureIds: IntBuffer) {
-        execute(Runnable { GL44.glBindTextures(0, textureIds) })
+        execute("bindTextures1", Runnable { GL44.glBindTextures(0, textureIds) })
     }
 
     override fun bindTextures(firstUnit: Int, count: Int, textureIds: IntBuffer) {
-        execute(Runnable { GL44.glBindTextures(firstUnit, textureIds) })
+        execute("bindTextures2", Runnable { GL44.glBindTextures(firstUnit, textureIds) })
     }
 
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
@@ -353,7 +345,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
 
     override fun bindFrameBuffer(frameBuffer: Int) {
         //        if(currentFrameBuffer != frameBuffer) {
-        execute(Runnable{
+        execute("bindFrameBuffer", Runnable{
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer)
             currentFrameBuffer = frameBuffer
         })
@@ -418,22 +410,19 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
     override val evictionCount: Int
         get() = calculate(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
 
-    override fun execute(runnable: Runnable, andBlock: Boolean) {
+    override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean) {
         val runtimeException: RuntimeException? = when {
             isOpenGLThread -> {
-                getExceptionOnError { "Error before runnable $runnable" }.apply {
-                    runnable.run()
-                }
+                runnable.run()
+                getExceptionOnError { "Error in action $actionName in $runnable" }
             }
             andBlock -> Executor.future {
-                getExceptionOnError { "Error before runnable $runnable" }.apply {
-                    runnable.run()
-                }
+                runnable.run()
+                getExceptionOnError { "Error in action $actionName in $runnable" }
             }.get()
             else -> Executor.async {
-                getExceptionOnError { "Error before runnable $runnable" }.apply {
-                    runnable.run()
-                }
+                runnable.run()
+                getExceptionOnError { "Error in action $actionName in $runnable" }
             }.getCompleted()
         }
         runtimeException?.printStackTrace()
@@ -582,7 +571,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
         return this.getExceptionOnError { errorMessage }
     }
 
-    fun checkGLError(errorMessage: () -> String) = execute {
+    fun checkGLError(errorMessage: () -> String) = execute("checkGLError") {
         if (GpuContext.CHECKERRORS) {
 
             val errorValue = GL11.glGetError()

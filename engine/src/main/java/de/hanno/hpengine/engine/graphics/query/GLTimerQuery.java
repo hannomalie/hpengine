@@ -31,7 +31,7 @@ public class GLTimerQuery implements GLQuery<Float> {
     @Override
     public GLTimerQuery begin() {
         finished = false;
-        gpuContext.execute(() -> {
+        gpuContext.execute("GLTimerQuery.begin", () -> {
             glQueryCounter(start, GL_TIMESTAMP);
         }, true);
         started = true;
@@ -43,7 +43,7 @@ public class GLTimerQuery implements GLQuery<Float> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        gpuContext.execute(() -> {
+        gpuContext.execute("GLTimerQuery.end", () -> {
             glQueryCounter(end, GL_TIMESTAMP);
         }, true);
         finished = true;

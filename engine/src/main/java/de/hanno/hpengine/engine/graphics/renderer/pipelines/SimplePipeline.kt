@@ -109,20 +109,20 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
     private fun drawStaticAndAnimatedDirect(drawDescriptionStatic: DrawDescription,
                                             drawDescriptionAnimated: DrawDescription) {
-        fun DrawDescription.drawHelper(renderBatches: RenderBatch.RenderBatches) {
+        fun DrawDescription.drawHelper(renderBatches: RenderBatch.RenderBatches, vertexIndexBuffer: VertexIndexBuffer) {
             program.use()
             for (batch in renderBatches) {
                 if (batch.shouldBeSkipped()) continue
 
                 program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                DrawUtils.draw(engine.gpuContext, renderState, batch, program, engine.config.debug.isDrawLines)
+                DrawUtils.draw(engine.gpuContext, batch, program, engine.config.debug.isDrawLines, vertexIndexBuffer)
             }
         }
         beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program)
-        drawDescriptionStatic.drawHelper(drawDescriptionStatic.renderState.entitiesState.renderBatchesStatic)
+        drawDescriptionStatic.drawHelper(drawDescriptionStatic.renderState.entitiesState.renderBatchesStatic, drawDescriptionStatic.renderState.vertexIndexBufferStatic)
 
         beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program)
-        drawDescriptionAnimated.drawHelper(drawDescriptionAnimated.renderState.entitiesState.renderBatchesAnimated)
+        drawDescriptionAnimated.drawHelper(drawDescriptionAnimated.renderState.entitiesState.renderBatchesAnimated, drawDescriptionAnimated.renderState.vertexIndexBufferAnimated)
     }
 
     protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer,

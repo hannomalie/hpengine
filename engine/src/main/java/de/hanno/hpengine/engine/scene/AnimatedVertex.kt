@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.scene
 
 import com.google.common.collect.ImmutableSet
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
-import de.hanno.hpengine.engine.model.DataChannelComponent
 import de.hanno.hpengine.engine.model.DataChannelComponent.*
 import de.hanno.hpengine.engine.model.DataChannelProvider
 import org.joml.Vector2f
@@ -10,7 +9,6 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.Vector4i
 import java.nio.ByteBuffer
-import java.util.ArrayList
 
 data class AnimatedVertex (override val name: String = "Vertex",
                   val position: Vector3f = Vector3f(),
@@ -19,9 +17,7 @@ data class AnimatedVertex (override val name: String = "Vertex",
                   val weights: Vector4f,
                   val jointIndices: Vector4i) : Bufferable, DataChannelProvider {
 
-    override fun getBytesPerObject(): Int {
-        return byteSize
-    }
+    override fun getBytesPerObject(): Int = Companion.sizeInBytes
 
     override fun putToBuffer(buffer: ByteBuffer?) {
         buffer?.let {
@@ -67,16 +63,22 @@ data class AnimatedVertex (override val name: String = "Vertex",
         }
     }
 
-    override val channels by lazy {
-        ImmutableSet.of(
+    override val channels = Companion.channels
+
+    private val byteSize by lazy {
+        channels.map { it.byteSize }.reduce { a, b -> a + b }
+    }
+
+    companion object {
+
+        val channels = ImmutableSet.of(
             FloatThree("position", "vec3"),
             FloatTwo("texCoord", "vec2"),
             FloatThree("normal", "vec3"),
             FloatFour("weights", "vec4"),
-            IntFour("jointIndices", "ivec4"))
-    }
+            IntFour("jointIndices", "ivec4")
+        )
 
-    private val byteSize by lazy {
-        channels.map { it.byteSize }.reduce { a, b -> a + b }
+        val sizeInBytes = channels.map { it.byteSize }.reduce { a, b -> a + b }
     }
 }

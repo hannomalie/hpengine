@@ -80,7 +80,6 @@ void main(void) {
 	positionModel = initPos;
 #endif
 
-
 	vec4 position_world = modelMatrix * positionModel;
 
 	mat4 mvp = (viewProjectionMatrix * modelMatrix);

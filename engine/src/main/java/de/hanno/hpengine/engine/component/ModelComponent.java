@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.*;
 import static de.hanno.struct.ArrayKt.copyTo;
+import static de.hanno.struct.ArrayKt.shrinkToBytes;
 
 
 public class ModelComponent extends BaseComponent implements Serializable, Bufferable {
@@ -151,6 +152,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         }
 
         StructArray result;
+        int bytesPerObject;
         if(model.isStatic()) {
             StructArray<VertexStruct> converted = new StructArray<>(compiledVertices.size(), VertexStruct::new);
             for(int i = 0; i < compiledVertices.size(); i++) {
@@ -161,6 +163,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                 target.getNormal().set(source.getNormal());
             }
             result = converted;
+            bytesPerObject = Vertex.Companion.getSizeInBytes();
         } else {
             StructArray<AnimatedVertexStruct> converted = new StructArray<>(compiledVertices.size(), AnimatedVertexStruct::new);
             for(int i = 0; i < compiledVertices.size(); i++) {
@@ -173,12 +176,13 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
                 target.getJointIndices().set(source.getJointIndices());
             }
             result = converted;
+            bytesPerObject = AnimatedVertex.Companion.getSizeInBytes();
         }
 
-        gpuContext.execute(() -> {
-            int bytesPerObject = Vertex.Companion.getSizeInBytes();
+        gpuContext.execute("ModelComponent.putToBuffer", () -> {
             vertexIndexBuffer.getVertexBuffer().setCapacityInBytes(bytesPerObject * compiledVertices.size());
-            copyTo(result.getBuffer(), vertexIndexBuffer.getVertexBuffer().getBuffer(), true, vertexIndexOffsets.vertexOffset*bytesPerObject);
+            StructArray shrunk = shrinkToBytes(result, vertexIndexBuffer.getVertexBuffer().getBuffer().capacity(), true);
+            copyTo(shrunk.getBuffer(), vertexIndexBuffer.getVertexBuffer().getBuffer(), true, vertexIndexOffsets.vertexOffset*bytesPerObject);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);

@@ -33,7 +33,7 @@ open class CubeMap(protected val textureManager: TextureManager,
         setupTextureParameters()
     }
 
-    fun setupTextureParameters() = textureManager.gpuContext.execute {
+    fun setupTextureParameters() = textureManager.gpuContext.execute("setupTextureParameters") {
         glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, textureFilterConfig.minFilter.glValue)
         glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, textureFilterConfig.magFilter.glValue)
         glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, wrapMode)

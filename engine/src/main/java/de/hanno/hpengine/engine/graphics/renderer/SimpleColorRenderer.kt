@@ -39,13 +39,14 @@ class SimpleColorRenderer(val engineContext: EngineContext<*>, programManager: P
         simpleColorProgram.setUniform("useSteepParallax", engineContext.config.quality.isUseSteepParallax)
 
 
+//        TODO Reuse pipeline for animated stuff too
         for(batch in state.entitiesState.renderBatchesStatic) {
             for(map in batch.materialInfo.maps) {
                 gpuContext.bindTexture(map.key.textureSlot, map.value)
                 val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
                 simpleColorProgram.setUniform(uniformKey, batch.materialInfo.getHasDiffuseMap())
             }
-            DrawUtils.draw(gpuContext, state, batch, simpleColorProgram, true)
+            DrawUtils.draw(gpuContext, batch, simpleColorProgram, true, state.vertexIndexBufferStatic)
         }
 
         if(engineContext.config.debug.isDrawBoundingVolumes) {

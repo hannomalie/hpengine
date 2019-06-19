@@ -262,7 +262,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     fun upload(cubeMap: CubeMap) {
 
-        gpuContext.execute {
+        gpuContext.execute("upload(cubeMap: CubeMap)") {
             gpuContext.bindTexture(cubeMap)
 
             val perFaceBuffer = ByteBuffer.allocateDirect(cubeMap.getData()[0].size)
@@ -342,7 +342,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     @JvmOverloads
     fun generateMipMaps(glTextureTarget: GlTextureTarget = TEXTURE_2D, textureId: Int) {
-        gpuContext.execute {
+        gpuContext.execute("generateMipMaps") {
             gpuContext.bindTexture(glTextureTarget, textureId)
             GL30.glGenerateMipmap(glTextureTarget.glTarget)
         }
@@ -397,7 +397,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         gpuContext.bindTexture(target, textureId)
 
 
-        gpuContext.execute {
+        gpuContext.execute("getTexture") {
             setupTextureParameters(target)
             texStorage(target, format, width, height, depth, 1)
         }
@@ -405,14 +405,14 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         return textureId
     }
 
-    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute {
+    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute("texStorage") {
         when (target) {
             TEXTURE_CUBE_MAP_ARRAY -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, 6 * depth)
             TEXTURE_3D -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, depth)
             else -> GL42.glTexStorage2D(target.glTarget, mipMapCount, internalFormat, width, height)
         }
     }
-    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute("texImage") {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         when {
             target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
@@ -424,7 +424,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     }
 
     //    TODO: The data buffer mustn't be null
-    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute("texSubImage") {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         //null as FloatBuffer?)
         when (target) {
@@ -434,7 +434,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         }
     }
     //    TODO: The data buffer mustn't be null
-    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute {
+    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute("compressedTexSubImage") {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         //null as FloatBuffer?)
         when (target) {
@@ -485,7 +485,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.execute {
+        gpuContext.execute("blur2DTextureRGBA16F") {
             blur2dProgramSeparableHorizontal.use()
             gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
             gpuContext.bindImageTexture(1, sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F)
@@ -515,7 +515,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.execute {
+        gpuContext.execute("blurHorinzontal2DTextureRGBA16F") {
             blur2dProgramSeparableHorizontal.use()
             gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
             gpuContext.bindImageTexture(1, sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F)

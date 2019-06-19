@@ -43,9 +43,9 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
         if(buffer != null) {
             boolean needsResize = buffer.capacity()  <= capacityInBytes;
             if(needsResize) {
-                gpuContext.execute(() -> {
+                gpuContext.execute("AbstractPersistentMappedBuffer.setCapacityInBytes0", () -> {
                     bind();
-                    if(GL15.glGetBufferParameteri(target, GL15.GL_BUFFER_MAPPED) == 1) {
+                    if(GL15.glGetBufferParameteri(target, GL15.GL_BUFFER_MAPPED) == GL_TRUE) {
                         glUnmapBuffer(target);
                     }
                     if(id > 0) {
@@ -60,7 +60,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
         }
         {
             int finalCapacityInBytes = 2*capacityInBytes;
-            gpuContext.execute(() -> {
+            gpuContext.execute("AbstractPersistentMappedBuffer.setCapacityInBytes1", () -> {
                 bind();
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
                 GL44.glBufferStorage(target, finalCapacityInBytes, flags);
@@ -78,7 +78,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
     public void bind() {
 //        TODO: Make this somehow possible
 //        if(bound) {return;}
-        gpuContext.execute(bindBufferRunnable);
+        gpuContext.execute("AbstractPersistentMappedBuffer.bind", bindBufferRunnable);
         bound = true;
     }
 
@@ -91,7 +91,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
 
     @Override
     public void unbind() {
-        gpuContext.execute(() -> glBindBuffer(target, 0));
+        gpuContext.execute("AbstractPersistentMappedBuffer.unbind", () -> glBindBuffer(target, 0));
         bound = false;
     }
 

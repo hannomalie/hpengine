@@ -20,17 +20,17 @@ public class VertexArrayObject {
     private VertexArrayObject(GpuContext gpuContext, EnumSet<DataChannels> channels) {
         this.gpuContext = gpuContext;
         this.channels = channels.clone();
-        gpuContext.execute(() -> setId(GL30.glGenVertexArrays()));
+        gpuContext.execute("VertexArrayObject", () -> setId(GL30.glGenVertexArrays()));
         setUpAttributes();
     }
 
     private void unbind() {
-        gpuContext.execute(() -> GL30.glBindVertexArray(0));
+        gpuContext.execute("VertexArrayObject.unbind", () -> GL30.glBindVertexArray(0));
     }
 
     public void bind() {
 //        if(CURRENTLY_BOUND_VAO == id) { return; }
-        gpuContext.execute(bindRunnable);
+        gpuContext.execute("VertexArrayObject.bind", bindRunnable);
     }
 
     private Runnable bindRunnable = () -> {
@@ -42,7 +42,7 @@ public class VertexArrayObject {
 
     private void setUpAttributes() {
         if(attributesSetUp) { return; }
-        gpuContext.execute(() -> {
+        gpuContext.execute("VertexArrayObject.setUpAttributes", () -> {
             bind();
             int currentOffset = 0;
             for (DataChannels channel : channels) {

@@ -97,7 +97,7 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-                engine.getGpuContext().execute(() -> {
+                engine.getGpuContext().execute("ProbeWeightSlider", () -> {
                     engine.getScene().getEnvironmentProbeManager().updateBuffers();
 				});
 			}

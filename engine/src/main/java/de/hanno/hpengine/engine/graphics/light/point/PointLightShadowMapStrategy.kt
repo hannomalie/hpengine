@@ -180,7 +180,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                         pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
                         val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.update, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds, modelComponent.getMaterial(engine.sceneManager.scene.materialManager).materialInfo)
-                        DrawUtils.draw(gpuContext, renderState, batch, pointShadowPassProgram, true)
+                        DrawUtils.draw(gpuContext, batch, pointShadowPassProgram, true, renderState.vertexIndexBufferStatic)
                     }
                 }
 
@@ -194,7 +194,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                         pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
                         val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.update, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds, modelComponent.getMaterial(engine.sceneManager.scene.materialManager).materialInfo)
-                        DrawUtils.draw(gpuContext, renderState, batch, pointShadowPassProgram, true)
+                        DrawUtils.draw(gpuContext, batch, pointShadowPassProgram, true, renderState.vertexIndexBufferStatic)
                     }
                 }
             }

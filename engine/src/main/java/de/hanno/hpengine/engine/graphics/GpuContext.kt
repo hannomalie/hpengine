@@ -1,9 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
-import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.OpenGlBackend
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.*
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
@@ -115,16 +112,16 @@ interface GpuContext<T: BackendType> {
 
     fun genTextures(): Int
 
-    fun execute(runnable: Runnable) {
-        execute(runnable, true)
+    fun execute(actionName: String, runnable: Runnable) {
+        execute(actionName, runnable, true)
     }
-    fun execute(runnable: () -> Unit) {
-        execute(Runnable(runnable), true)
+    fun execute(actionName: String, runnable: () -> Unit) {
+        execute(actionName, Runnable(runnable), true)
     }
 
-    fun execute(runnable: Runnable, andBlock: Boolean)
-    fun execute(runnable: () -> Unit, andBlock: Boolean) {
-        return execute(Runnable(runnable), andBlock)
+    fun execute(actionName: String, runnable: Runnable, andBlock: Boolean)
+    fun execute(actionName: String, runnable: () -> Unit, andBlock: Boolean) {
+        return execute(actionName, Runnable(runnable), andBlock)
     }
 
     fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE

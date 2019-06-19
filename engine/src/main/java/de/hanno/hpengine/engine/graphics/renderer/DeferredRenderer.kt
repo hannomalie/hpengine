@@ -195,7 +195,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
     private fun GpuContext<OpenGl>.setUpGBuffer(engineContext: EngineContext<OpenGl>): DeferredRenderingBuffer {
         this@setUpGBuffer.getExceptionOnError("Before setupGBuffer")
 
-        execute {
+        execute("GpuContext<OpenGl>.setUpGBuffer") {
             this@setUpGBuffer.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
             this@setUpGBuffer.getExceptionOnError("setupGBuffer")
         }

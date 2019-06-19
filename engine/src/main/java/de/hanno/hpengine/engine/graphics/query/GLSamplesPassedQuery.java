@@ -24,7 +24,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
 
     @Override
     public GLTimerQuery begin() {
-        gpuContext.execute(() -> {
+        gpuContext.execute("GLSamplesPassedQuery.begin", () -> {
             glBeginQuery(GL15.GL_SAMPLES_PASSED, query);
         });
         started = true;
@@ -36,7 +36,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        gpuContext.execute(() -> {
+        gpuContext.execute("GLSamplesPassedQuery.end", () -> {
             glEndQuery(target);
         });
         finished = true;
