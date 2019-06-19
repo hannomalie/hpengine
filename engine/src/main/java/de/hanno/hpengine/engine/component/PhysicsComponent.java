@@ -29,13 +29,9 @@ public class PhysicsComponent extends BaseComponent {
 		this.info = meshShapeInfo;
         this.physicsManager = physicsManager;
         owner.addComponent(this);
-	}
-
-    @Override
-    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
         initialTransform = Util.toBullet(owner);
-        actuallyCreatePhysicsObject();
-    }
+        actuallyCreatePhysicsObject(); // This probably has to be moved to physsicsmanaqger/physicssystem
+	}
 
     private void actuallyCreatePhysicsObject() {
         MotionState motionState = new DefaultMotionState(initialTransform);

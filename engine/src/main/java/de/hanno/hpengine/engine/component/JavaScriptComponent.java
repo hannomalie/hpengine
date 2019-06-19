@@ -10,33 +10,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JavaScriptComponent extends BaseComponent implements ScriptComponent {
-    String script = "";
+    String script;
     private ScriptManager scriptManager;
     private ScriptContext context;
     private Map map = new HashMap();
-    private EngineContext engine;
 
     public JavaScriptComponent(String script, ScriptManager scriptManager) {
         super();
         this.script = script;
         this.scriptManager = scriptManager;
+        create(scriptManager);
     }
 
-    public JavaScriptComponent() {
-        super();
+    private void create(ScriptManager scriptManager) {
+        context = scriptManager.createContext();
+        scriptManager.evalInit(this);
     }
 
     @Override
     public String getIdentifier() {
         return "JavaScriptComponent";
-    }
-
-    @Override
-    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
-        super.init(engine);
-        this.engine = engine;
-        context = scriptManager.createContext();
-        scriptManager.evalInit(this);
     }
 
     @Override
@@ -62,7 +55,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
 
     @Override
     public void reload() {
-        init(engine);
+        create(scriptManager);
     }
 
     @Override

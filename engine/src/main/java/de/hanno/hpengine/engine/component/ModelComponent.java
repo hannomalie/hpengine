@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -128,11 +129,6 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         for(Entity child : entity.getChildren()) {
             child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(materialManager, materialName));
         }
-    }
-
-    @Override
-    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
-        super.init(engine);
     }
 
     public VertexIndexOffsets putToBuffer(GpuContext gpuContext, VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {

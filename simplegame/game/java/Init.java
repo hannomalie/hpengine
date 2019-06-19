@@ -2,7 +2,7 @@ import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
@@ -10,7 +10,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Init implements LifeCycle {
+public class Init implements Updatable {
 
     private boolean initialized;
 

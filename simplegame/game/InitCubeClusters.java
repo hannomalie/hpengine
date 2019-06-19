@@ -1,28 +1,28 @@
+import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
+import de.hanno.hpengine.engine.model.Cluster;
+import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
-import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.component.JavaComponent;
-import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.Cluster;
-import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.util.ressources.CodeSource;
+import kotlin.io.FilesKt;
 import org.joml.Vector3f;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class InitCubeClusters implements LifeCycle {
-
-    private boolean initialized;
+public class InitCubeClusters implements Updatable {
 
     int maxDistance = 15;
     int clusterDistance = 10*maxDistance;
@@ -32,14 +32,13 @@ public class InitCubeClusters implements LifeCycle {
             new Vector3f(0, 0, 0),
             new Vector3f(-clusterDistance, 0, clusterDistance)};
 
-    @Override public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
-
+    public @Inject  InitCubeClusters(Engine<?> engine) {
         try {
-            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"), "cube").execute(engine);
+            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(FilesKt.resolve(engine.getDirectories().getGameDir(), "assets/models/cube.obj"), "cube", engine.getScene().getMaterialManager(), engine.getDirectories().getGameDir()).execute();
             System.out.println("loaded entities : " + loaded.entities.size());
             for(final Entity current : loaded.entities) {
-                File componentScriptFile = new File(engine.getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
-                current.addComponent(new JavaComponent(new CodeSource(componentScriptFile), gameDir));
+                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
+                current.addComponent(new JavaComponent(engine, new CodeSource(componentScriptFile), engine.getDirectories().getGameDir()));
 
                 List clusters = new ArrayList<Cluster>();
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
@@ -75,14 +74,10 @@ public class InitCubeClusters implements LifeCycle {
 
             engine.getSceneManager().getScene().addAll(loaded.entities);
             Thread.sleep(500);
-            initialized = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
-    public boolean isInitialized() {
-        return initialized;
-    }
 }

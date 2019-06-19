@@ -3,14 +3,14 @@ package scripts;
 import com.carrotsearch.hppc.IntFloatHashMap;
 import com.carrotsearch.hppc.IntFloatMap;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.Instance;
 import org.joml.Vector3f;
 
 import java.util.Random;
 
-public class SimpleMoveComponent implements LifeCycle {
+public class SimpleMoveComponent implements Updatable {
     public Entity entity;
     private Vector3f temp = new Vector3f();
 

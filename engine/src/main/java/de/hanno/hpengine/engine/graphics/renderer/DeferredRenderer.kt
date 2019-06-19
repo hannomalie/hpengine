@@ -103,7 +103,6 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
     private val skyBox = OBJLoader().loadTexturedModel(this.materialManager, engineContext.config.directories.engineDir.resolve("assets/models/skybox.obj"))
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox).apply {
         skyBoxEntity.addComponent(this)
-        skyBoxEntity.init(engineContext)
     }
     private val skyboxVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
 

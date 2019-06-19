@@ -1,11 +1,10 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
-import de.hanno.hpengine.engine.lifecycle.LifeCycle
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.util.ressources.CodeSource
-import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
@@ -14,16 +13,18 @@ import org.jetbrains.kotlin.config.Services
 import java.io.File
 import java.net.URLClassLoader
 import java.util.HashMap
+import javax.inject.Inject
 
-class KotlinCompiledComponent(override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
+class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
     init {
         require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
+        initWrappingComponent()
     }
 
     private val map = HashMap<Any, Any>()
     var compiledClass: Class<*>? = null
         private set
-    private var isLifeCycle: Boolean = false
+    private var isUpdatable: Boolean = false
     private var isEngineConsumer: Boolean = false
     var instance: Any? = null
         private set
@@ -35,25 +36,9 @@ class KotlinCompiledComponent(override val codeSource: CodeSource) : BaseCompone
         return "KotlinComponent"
     }
 
-    override fun init(engine: EngineContext<*>) {
-        initWrappingComponent()
-//        TODO Reimplement me
-//        super.init(engine)
-        if (isLifeCycle) {
-            (instance as LifeCycle).init(engine)
-        }
-    }
-
-    //    TODO: Make this better
-    fun initWithEngine(engine: Engine<*>) {
-        if (isEngineConsumer) {
-            (instance as EngineConsumer).consume(engine)
-        }
-    }
-
     override fun update(seconds: Float) {
-        if (isLifeCycle) {
-            (instance as LifeCycle).update(seconds)
+        if (isUpdatable) {
+            (instance as Updatable).update(seconds)
         }
     }
 
@@ -104,18 +89,37 @@ class KotlinCompiledComponent(override val codeSource: CodeSource) : BaseCompone
             if(!resolvedClassFile.exists()) throw IllegalStateException("Compiled class file doesn't exist: $resolvedClassFile")
 
             val classLoader = URLClassLoader(arrayOf(resolvedClassFile.parentFile.toURI().toURL()))
+            fun Array<Annotation>.containsInject(): Boolean = map { it.annotationClass.java }.contains(Inject::class.java)
             compiledClass = classLoader.loadClass(codeSource.filename.replace(".kt", "")).apply {
-                instance = newInstance()
+                val firstConstructor = declaredConstructors.first()
+                instance = if(firstConstructor.parameters.isEmpty()) {
+                    newInstance()
+                } else if(firstConstructor.annotations.containsInject()) {
+
+                    val resolvedParams: List<Any> = firstConstructor.parameters.map {
+                        when {
+                            it.type.isAssignableFrom(Engine::class.java) -> { engine }
+                            it.type.isAssignableFrom(Entity::class.java) -> { getEntity() }
+                            else -> {
+                                throw IllegalStateException("Cannot inject parameter $it in code file ${codeSource.file}")
+                            }
+                        }
+                    }
+                    firstConstructor.newInstance(*resolvedParams.toTypedArray())
+                } else {
+                    throw IllegalStateException("Non empty constructor without @Inject found in code file ${codeSource.file}. Not a good practice.")
+                }
             }
 
-            try {
-                val entityField = instance!!.javaClass.getDeclaredField("entity")
-                entityField.set(instance, getEntity())
-            } catch (e: Exception) {
+//            TODO: Find out where this is used and replace with construtor injection
+//            try {
+//                val entityField = instance!!.javaClass.getDeclaredField("entity")
+//                entityField.set(instance, getEntity())
+//            } catch (e: Exception) {
+//
+//            }
 
-            }
-
-            isLifeCycle = instance is LifeCycle
+            isUpdatable = instance is Updatable
             isEngineConsumer = instance is EngineConsumer
 
         } catch (e: Exception) {
@@ -134,8 +138,6 @@ class KotlinCompiledComponent(override val codeSource: CodeSource) : BaseCompone
     }
 
     companion object {
-        internal val objectLoader = KtsObjectLoader()
-
         private val kotlinCompiler = K2JVMCompiler()
     }
 }

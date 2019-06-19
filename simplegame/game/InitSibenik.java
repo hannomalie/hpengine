@@ -1,12 +1,11 @@
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 
 import java.io.File;
 
-public class InitSibenik implements LifeCycle {
+public class InitSibenik implements Updatable {
 
     private boolean initialized;
 

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.lifecycle.LifeCycle
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.transform.AABB
@@ -15,7 +15,7 @@ open class Instance
                               var materials: List<SimpleMaterial> = listOf(),
                               val animationController: AnimationController? = null,
                               open val spatial: Spatial = SimpleSpatial())
-    : Transform<Transform<*>>(), LifeCycle, Spatial by spatial {
+    : Transform<Transform<*>>(), Updatable, Spatial by spatial {
 
     private val children = ArrayList<Instance>()
 

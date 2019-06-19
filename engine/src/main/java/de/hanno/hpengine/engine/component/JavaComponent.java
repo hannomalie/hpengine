@@ -2,13 +2,11 @@ package de.hanno.hpengine.engine.component;
 
 import de.hanno.compiler.RuntimeJavaCompiler;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.Reloadable;
-import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -23,6 +21,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         return compiler;
     }
 
+    private Engine<?> engine;
     private final CodeSource javaCodeSource;
     private final GameDirectory gameDirectory;
 
@@ -32,10 +31,12 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private boolean isEngineConsumer;
     private Object instance;
 
-    public JavaComponent(CodeSource codeSource, GameDirectory gameDirectory) {
+    public JavaComponent(Engine<?> engine, CodeSource codeSource, GameDirectory gameDirectory) {
         super();
+        this.engine = engine;
         this.javaCodeSource = codeSource;
         this.gameDirectory = gameDirectory;
+        initWrappingComponent(engine.getConfig().getDirectories().getGameDir());
     }
 
     @Override
@@ -44,25 +45,9 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public void init(EngineContext engine) {
-        initWrappingComponent(engine.getConfig().getDirectories().getGameDir());
-        super.init(engine);
-        if(isLifeCycle) {
-            ((LifeCycle) instance).init(engine);
-        }
-    }
-
-//    TODO: Make this better
-    public void initWithEngine(Engine engine) {
-        if(isEngineConsumer) {
-            ((EngineConsumer) instance).consume(engine);
-        }
-    }
-
-    @Override
     public void update(float seconds) {
         if(isLifeCycle) {
-            ((LifeCycle) instance).update(seconds);
+            ((Updatable) instance).update(seconds);
         }
     }
 
@@ -99,7 +84,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
             } catch (Exception e) {
 
             }
-            isLifeCycle = instance instanceof LifeCycle;
+            isLifeCycle = instance instanceof Updatable;
             isEngineConsumer= instance instanceof EngineConsumer;
 
         } catch (Exception e) {

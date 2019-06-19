@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.lifecycle.LifeCycle
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
@@ -8,7 +8,7 @@ import org.joml.Vector3f
 import java.util.*
 
 
-class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), LifeCycle, Spatial by spatial {
+class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), Updatable, Spatial by spatial {
 
     override fun update(seconds: Float) {
         for (i in 0 until size) {

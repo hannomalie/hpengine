@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Update;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-public class Entity extends Transform<Entity> implements LifeCycle {
+public class Entity extends Transform<Entity> implements Updatable {
 	private static final long serialVersionUID = 1;
 	public final SimpleSpatial spatial = new SimpleSpatial() {
 		@Override
@@ -53,13 +53,6 @@ public class Entity extends Transform<Entity> implements LifeCycle {
 	public Entity(String name, Vector3f position) {
 		this.name = name;
 		setTranslation(position);
-    }
-
-	@Override
-	public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
-		for(Component component : components.values()) {
-			component.init(engine);
-		}
     }
 
 	public Entity addComponent(Component component) {

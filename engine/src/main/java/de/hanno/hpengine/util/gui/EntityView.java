@@ -114,7 +114,6 @@ public class EntityView extends WebPanel {
                 WebButton addMeshPhysicsComponentButton = new WebButton("Add StaticMesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
                     PhysicsComponent physicsComponent = engine.getPhysicsManager().addMeshPhysicsComponent(entity, 0.0f);
-                    physicsComponent.init(engine);
                     physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
                 });
                 physicsPanel.addElement(addMeshPhysicsComponentButton);

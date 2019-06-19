@@ -10,8 +10,9 @@ import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.joml.Vector3f
 import java.util.ArrayList
 import java.util.Random
+import javax.inject.Inject
 
-class InitInstancedAnimatedKotlin : EngineConsumer {
+class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
 
     var isInitialized: Boolean = false
         private set
@@ -20,18 +21,14 @@ class InitInstancedAnimatedKotlin : EngineConsumer {
     internal var clusterDistance = 3 * maxDistance
     internal var clusterLocations = arrayOf(Vector3f(clusterDistance.toFloat(), 0f, clusterDistance.toFloat()), Vector3f(clusterDistance.toFloat(), 0f, (-clusterDistance).toFloat()), Vector3f((-clusterDistance).toFloat(), 0f, (-clusterDistance).toFloat()), Vector3f(0f, 0f, 0f), Vector3f((-clusterDistance).toFloat(), 0f, clusterDistance.toFloat()))
 
-    override fun consume(engine: Engine<*>) {
-
+    init {
         try {
             loadLotsOfInstances(engine, "assets/models/doom3monster/monster.md5mesh", 1, "hellknight")
-            Thread.sleep(500)
-            //            loadLotsOfInstances("/assets/models/cube.obj", 100, "cube");
-            //            Thread.sleep(500);
+//            loadLotsOfInstances(engine, "assets/models/cube.obj", 100, "cube")
             isInitialized = true
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
     }
 
     protected fun loadLotsOfInstances(engine: Engine<*>, assetPath: String, scale: Int, name: String) {

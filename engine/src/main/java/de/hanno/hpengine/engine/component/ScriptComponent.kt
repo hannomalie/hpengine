@@ -28,25 +28,16 @@ sealed class ScriptComponentFileLoader<out T: ScriptComponent> {
 
 object KotlinComponentLoader: ScriptComponentFileLoader<KotlinComponent>() {
     override fun load(engine: Engine<*>, codeFile: File): KotlinComponent {
-        val script = KotlinComponent(CodeSource(codeFile))
-        script.init(engine)
-        script.initWithEngine(engine)
-        return script
+        return KotlinComponent(engine, CodeSource(codeFile))
     }
 }
 object KotlinCompiledComponentLoader: ScriptComponentFileLoader<KotlinCompiledComponent>() {
     override fun load(engine: Engine<*>, codeFile: File): KotlinCompiledComponent {
-        val script = KotlinCompiledComponent(CodeSource(codeFile))
-        script.init(engine)
-        script.initWithEngine(engine)
-        return script
+        return KotlinCompiledComponent(engine, CodeSource(codeFile))
     }
 }
 object JavaComponentLoader: ScriptComponentFileLoader<JavaComponent>() {
     override fun load(engine: Engine<*>, codeFile: File): JavaComponent {
-        val script = JavaComponent(CodeSource(codeFile), engine.config.directories.gameDir)
-        script.init(engine)
-        script.initWithEngine(engine)
-        return script
+        return JavaComponent(engine, CodeSource(codeFile), engine.config.directories.gameDir)
     }
 }

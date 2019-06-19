@@ -1,18 +1,16 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
-import de.hanno.hpengine.engine.lifecycle.LifeCycle
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.util.ressources.CodeSource
-import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener
 import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
-import org.apache.commons.io.monitor.FileAlterationObserver
 import java.util.HashMap
 
-class KotlinComponent(override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
+class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
     init {
         require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
+        initWrappingComponent()
     }
 
     private val map = HashMap<Any, Any>()
@@ -30,25 +28,9 @@ class KotlinComponent(override val codeSource: CodeSource) : BaseComponent(), Sc
         return "KotlinComponent"
     }
 
-    override fun init(engine: EngineContext<*>) {
-        initWrappingComponent()
-//        TODO Reimplement me
-//        super.init(engine)
-        if (isLifeCycle) {
-            (instance as LifeCycle).init(engine)
-        }
-    }
-
-    //    TODO: Make this better
-    fun initWithEngine(engine: Engine<*>) {
-        if (isEngineConsumer) {
-            (instance as EngineConsumer).consume(engine)
-        }
-    }
-
     override fun update(seconds: Float) {
         if (isLifeCycle) {
-            (instance as LifeCycle).update(seconds)
+            (instance as Updatable).update(seconds)
         }
     }
 
@@ -81,7 +63,7 @@ class KotlinComponent(override val codeSource: CodeSource) : BaseComponent(), Sc
 
             }
 
-            isLifeCycle = instance is LifeCycle
+            isLifeCycle = instance is Updatable
             isEngineConsumer = instance is EngineConsumer
 
         } catch (e: Exception) {

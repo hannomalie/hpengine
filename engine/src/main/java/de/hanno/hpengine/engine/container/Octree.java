@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Octree implements LifeCycle, Serializable, EntityContainer {
+public class Octree implements Updatable, Serializable, EntityContainer {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
@@ -65,16 +65,14 @@ public class Octree implements LifeCycle, Serializable, EntityContainer {
 		this.maxDeepness = maxDeepness;
 		this.center = center;
 		this.size = size;
+		init();
 	}
 
-	@Override
-    public void init(de.hanno.hpengine.engine.backend.EngineContext engine) {
-		LifeCycle.super.init(engine);
+    public void init() {
 		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors()/2);
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
-        engine.getEventBus().register(this);
 	}
 
 	public List<Entity> getEntitiesForNode(Node node) { return Collections.unmodifiableList(entityNodeMappings.entrySet().stream().filter(pair -> pair.getValue().equals(node))
