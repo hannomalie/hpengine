@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import kotlinx.coroutines.CoroutineScope
 import java.util.*
 
 open class Instance
@@ -32,9 +33,9 @@ open class Instance
         return children
     }
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         animationController?.update(deltaSeconds)
-        spatial.update(deltaSeconds)
+        with(spatial) { update(deltaSeconds) }
     }
 
     override fun getMinMax(): AABB {

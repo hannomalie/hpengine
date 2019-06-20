@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -22,6 +21,7 @@ import de.hanno.hpengine.engine.scene.VertexStruct;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.struct.StructArray;
+import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
@@ -97,11 +97,11 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     }
 
     public ModelComponent(Entity entity) {
-        this.entity = entity;
+        super(entity);
+//        this.setEntity(entity);
     }
     public ModelComponent(Entity entity, Model model) {
-        super();
-        this.entity = entity;
+        super(entity);
         this.model = model;
         if(!model.isStatic()) {
             AnimatedModel animatedModel = (AnimatedModel) model;
@@ -127,7 +127,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     public void setMaterial(MaterialManager materialManager, String materialName) {
         this.materialName = materialName;
         model.setMaterial(materialManager.getMaterial(materialName));
-        for(Entity child : entity.getChildren()) {
+        for(Entity child : getEntity().getChildren()) {
             child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(materialManager, materialName));
         }
     }
@@ -323,9 +323,9 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
 
 
     @Override
-    public void update(float seconds) {
+    public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
         if(model instanceof AnimatedModel) {
-            animationController.update(seconds);
+            animationController.update(deltaSeconds);
         }
     }
 
@@ -377,10 +377,10 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         for(Mesh mesh : meshes) {
             int materialIndex = mesh.getMaterial().getMaterialIndex();
             {
-                putValues(buffer, entity.getTransformation(), meshIndex, materialIndex, getAnimationFrame0(), getMinMax(entity, mesh));
+                putValues(buffer, getEntity().getTransformation(), meshIndex, materialIndex, getAnimationFrame0(), getMinMax(getEntity(), mesh));
             }
 
-            for(Cluster cluster : getClusters(entity)) {
+            for(Cluster cluster : getClusters(getEntity())) {
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
@@ -390,10 +390,10 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
             }
 
             // TODO: This has to be the outer loop i think?
-            if(entity.hasParent()) {
-                for(Instance instance : getInstances(entity)) {
+            if(getEntity().hasParent()) {
+                for(Instance instance : getInstances(getEntity())) {
                     Matrix4f instanceMatrix = instance.getTransformation();
-                    putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex(), entity.getMinMaxWorld());
+                    putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex(), getEntity().getMinMaxWorld());
                 }
             }
             meshIndex++;
@@ -418,12 +418,12 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
         buffer.putFloat(mm.m32());
         buffer.putFloat(mm.m33());
 
-        buffer.putInt(entity.isSelected() ? 1 : 0);
+        buffer.putInt(getEntity().isSelected() ? 1 : 0);
         buffer.putInt(materialIndex);
-        buffer.putInt((int) entity.getUpdate().getAsDouble());
+        buffer.putInt((int) getEntity().getUpdateType().getAsDouble());
         buffer.putInt(entityBufferIndex + meshIndex);
 
-        buffer.putInt(entity.getIndex());
+        buffer.putInt(getEntity().getIndex());
         buffer.putInt(meshIndex);
         buffer.putInt(getBaseVertex(meshIndex));
         buffer.putInt(getBaseJointIndex());
@@ -509,7 +509,7 @@ public class ModelComponent extends BaseComponent implements Serializable, Buffe
     }
     @Override
     public int getBytesPerObject() {
-        return getBytesPerInstance() * getMeshes().size() * getInstanceCount(entity);
+        return getBytesPerInstance() * getMeshes().size() * getInstanceCount(getEntity());
     }
 
     public static int getBytesPerInstance() {

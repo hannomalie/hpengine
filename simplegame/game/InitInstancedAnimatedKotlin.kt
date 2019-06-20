@@ -39,7 +39,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
             //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
             val clusters = ArrayList<Cluster>()
             val clustersComponent = ClustersComponent(engine, engine.eventBus, entity)
-            for (clusterIndex in 0..4) {
+            for (clusterIndex in 0..2) {
                 val cluster = Cluster()
                 val random = Random()
                 val count = 6

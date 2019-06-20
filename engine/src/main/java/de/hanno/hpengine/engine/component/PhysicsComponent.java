@@ -10,6 +10,8 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import kotlinx.coroutines.CoroutineScope;
+import org.jetbrains.annotations.NotNull;
 
 import javax.vecmath.Matrix4f;
 import java.util.concurrent.ExecutionException;
@@ -25,7 +27,8 @@ public class PhysicsComponent extends BaseComponent {
     private final PhysicsManager physicsManager;
 
     public PhysicsComponent(Entity owner, PhysicsManager.MeshShapeInfo meshShapeInfo, PhysicsManager physicsManager) {
-		this.owner = owner;
+        super(owner);
+        this.owner = owner;
 		this.info = meshShapeInfo;
         this.physicsManager = physicsManager;
         owner.addComponent(this);
@@ -56,7 +59,7 @@ public class PhysicsComponent extends BaseComponent {
         }
     }
 
-    public void update(float seconds) {
+    public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
 		com.bulletphysics.linearmath.Transform out = new com.bulletphysics.linearmath.Transform();
 		rigidBody.getWorldTransform(out);
 		Matrix4f temp = new Matrix4f();

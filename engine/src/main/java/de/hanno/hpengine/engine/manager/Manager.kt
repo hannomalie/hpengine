@@ -2,9 +2,10 @@ package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import kotlinx.coroutines.CoroutineScope
 
 interface Manager {
-    fun update(deltaSeconds: Float) {}
+    fun CoroutineScope.update(deltaSeconds: Float) {}
 
     @JvmDefault
     fun clear() {}
@@ -13,7 +14,7 @@ interface Manager {
     fun onEntityAdded(entities: List<Entity>) {}
 
     @JvmDefault
-    fun afterUpdate(deltaSeconds: Float) {}
+    fun CoroutineScope.afterUpdate(deltaSeconds: Float) {}
 
     @JvmDefault
     fun extract(renderState: RenderState) {}

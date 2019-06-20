@@ -20,6 +20,7 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
+import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
@@ -295,8 +296,8 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void update(float deltaSeconds) {
-		probes.forEach(p -> p.update(deltaSeconds));
+	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+		probes.forEach(p -> p.update(scope, deltaSeconds));
 		probes.stream().filter(probe -> probe.getEntity().hasMoved()).findFirst().ifPresent(first -> updateBuffers());
 	}
 
@@ -312,7 +313,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void afterUpdate(float deltaSeconds) {
+	public void afterUpdate(@NotNull CoroutineScope scope, float deltaSeconds) {
 
 	}
 

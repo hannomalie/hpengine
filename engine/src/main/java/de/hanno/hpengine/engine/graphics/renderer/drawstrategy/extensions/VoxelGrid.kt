@@ -75,7 +75,7 @@ open class VoxelGrid : Struct() {
         orthoCam.height = gridSizeScaled.toFloat()
         orthoCam.setFar(gridSizeScaled.toFloat())
         orthoCam.setNear(-gridSizeScaled.toFloat())
-        orthoCam.update(0.000001f)
+//        orthoCam.update(0.000001f)
         projectionMatrix.set(orthoCam.projectionMatrix)
         return orthoCam
     }

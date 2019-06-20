@@ -222,11 +222,15 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera, config: Config
 
 fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,
                                maps: Map<SimpleMaterial.MAP, Texture<TextureDimension2D>>) {
-    for (map in maps) {
-        val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
-        if (map.value.textureId > 0) {
-            gpuContext.bindTexture(map.key.textureSlot, map.value)
-            setUniform(uniformKey, true)
+    for (mapEnumEntry in SimpleMaterial.MAP.values()) {
+        val uniformKey = "has" + mapEnumEntry.shaderVariableName[0].toUpperCase() + mapEnumEntry.shaderVariableName.substring(1)
+
+        if(maps.contains(mapEnumEntry)) {
+            val map = maps[mapEnumEntry]!!
+            if (map.textureId > 0) {
+                gpuContext.bindTexture(mapEnumEntry.textureSlot, map)
+                setUniform(uniformKey, true)
+            }
         } else {
             setUniform(uniformKey, false)
         }

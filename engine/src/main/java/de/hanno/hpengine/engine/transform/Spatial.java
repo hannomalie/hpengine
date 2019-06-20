@@ -1,12 +1,13 @@
 package de.hanno.hpengine.engine.transform;
 
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.lifecycle.Updatable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import static java.lang.Float.MAX_VALUE;
 
-public interface Spatial {
+public interface Spatial extends Updatable {
     Vector3fc MIN = new Vector3f(MAX_VALUE, MAX_VALUE, MAX_VALUE);
     Vector3fc MAX = new Vector3f(-MAX_VALUE, -MAX_VALUE, -MAX_VALUE);
 
@@ -38,6 +39,4 @@ public interface Spatial {
     float getBoundingSphereRadius();
 
     AABB getMinMaxWorld();
-
-    default void update(float deltaSeconds) {}
 }

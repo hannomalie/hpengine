@@ -26,6 +26,7 @@ import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import jogl.DDSImage
+import kotlinx.coroutines.CoroutineScope
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
@@ -534,7 +535,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     }
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
 
     }
 
@@ -542,7 +543,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     }
 
-    override fun afterUpdate(deltaSeconds: Float) {
+    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
 
     }
 

@@ -15,10 +15,8 @@ import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.backend.BackendType;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.MovablePanel;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
@@ -29,8 +27,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class ProbeView extends WebPanel {
 
@@ -109,7 +105,7 @@ public class ProbeView extends WebPanel {
             	Update selected = (Update) updateSelection.getSelectedItem();
             	probe.setUpdate(selected);
             });
-            updateSelection.setSelectedItem(probe.getEntity().getUpdate());
+            updateSelection.setSelectedItem(probe.getEntity().getUpdateType());
             GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Update type"), updateSelection );
             webComponentPanel.addElement(groupPanelEnironmentMapType);
         }

@@ -2,12 +2,15 @@ package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
+import kotlinx.coroutines.CoroutineScope
 
 interface ManagerRegistry {
     val managers: Map<Class<*>, Manager>
     fun <T : Manager> get(managerClass: Class<T>): T
-    fun update(deltaSeconds: Float) {
-        managers.forEach{ it.value.update(deltaSeconds) }
+    fun CoroutineScope.update(deltaSeconds: Float) {
+        this@ManagerRegistry.managers.forEach{
+            with(it.value) { update(deltaSeconds) }
+        }
     }
     fun <T : Manager> register(manager: T): T
     fun clearManagers() {
@@ -20,9 +23,9 @@ interface ManagerRegistry {
         }
     }
 
-    fun afterUpdate(deltaSeconds: Float) {
-        managers.forEach {
-            it.value.afterUpdate(deltaSeconds)
+    fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
+        managers.forEach { manager ->
+            with(manager.value) { afterUpdate(deltaSeconds) }
         }
     }
 }
@@ -42,15 +45,20 @@ interface SystemsRegistry {
     fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T>
 
     fun getSystems(): List<ComponentSystem<*>>
-    fun update(deltaSeconds: Float)
+    fun CoroutineScope.update(deltaSeconds: Float)
     fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
     fun clearSystems() {
         getSystems().forEach { it.clear() }
     }
 
     fun onEntityAdded(entities: List<Entity>) {
+        val matchedComponents = mutableMapOf<Class<Component>, Component>()
         getSystems().forEach {
-            it.onEntityAdded(entities)
+            matchedComponents += it.onEntityAdded(entities)
+        }
+        val leftOvers = matchedComponents.keys.filter { !matchedComponents.keys.contains(it) }
+        if(leftOvers.isNotEmpty()) {
+            throw IllegalStateException("Cannot find system for components: ${leftOvers.map { it::class.java }}")
         }
     }
 }
@@ -76,9 +84,11 @@ class ComponentSystemRegistry : SystemsRegistry {
         return systems[componentClass] as ComponentSystem<T>
     }
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         for (system in systems.values) {
-            system.update(deltaSeconds)
+            with(system) {
+                update(deltaSeconds)
+            }
         }
     }
 

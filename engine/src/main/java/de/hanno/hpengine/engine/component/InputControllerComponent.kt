@@ -3,14 +3,9 @@ package de.hanno.hpengine.engine.component
 import de.hanno.hpengine.engine.entity.Entity
 import java.io.Serializable
 
-abstract class InputControllerComponent(entity: Entity) : BaseComponent(), Serializable {
-    init {
-        this.entity = entity
-    }
+abstract class InputControllerComponent(entity: Entity) : BaseComponent(entity), Serializable {
 
-    override fun getIdentifier(): String {
-        return "InputControllerComponent"
-    }
+    override val identifier: String = "InputControllerComponent"
 
     companion object {
 

@@ -3,11 +3,17 @@ package de.hanno.hpengine.engine.manager
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 interface ComponentSystem<T : Component> {
-    fun update(deltaSeconds: Float) {
+    fun CoroutineScope.update(deltaSeconds: Float) {
         for(component in getComponents()) {
-            component.update(deltaSeconds)
+            launch {
+                with(component) {
+                    update(deltaSeconds)
+                }
+            }
         }
     }
     fun getComponents(): List<T>
@@ -18,14 +24,18 @@ interface ComponentSystem<T : Component> {
     fun onSceneSet() {
         clear()
     }
-    fun onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(entities: List<Entity>): MutableMap<Class<Component>, Component> {
+        val matchedComponents = mutableMapOf<Class<Component>, Component>()
         for(entity in entities) {
-            addCorrespondingComponents(entity.components)
+            matchedComponents += addCorrespondingComponents(entity.components)
         }
+        return matchedComponents
     }
 
-    fun addCorrespondingComponents(components: Map<Class<Component>, Component>) {
-        components.filter { it.key == componentClass }.forEach { addComponent(it.value as T) }
+    fun addCorrespondingComponents(components: Map<Class<Component>, Component>): Map<Class<Component>, Component> {
+        val correspondingComponents = components.filter { it.key == componentClass }
+        correspondingComponents.forEach { addComponent(it.value as T) }
+        return correspondingComponents
     }
 
     val componentClass: Class<T>

@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
+import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
@@ -113,13 +114,13 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
 
     fun getAreaLights() = getComponents(AreaLight::class.java)
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
 //        TODO: Resize with instance count
-        gpuAreaLightArray = gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
-        gpuAreaLightArray.buffer.rewind()
+        this@AreaLightSystem.gpuAreaLightArray = this@AreaLightSystem.gpuAreaLightArray.enlarge(this@AreaLightSystem.getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
+        this@AreaLightSystem.gpuAreaLightArray.buffer.rewind()
 
-        for((index, areaLight) in getComponents(AreaLight::class.java).withIndex()) {
-            val target = gpuAreaLightArray.getAtIndex(index)
+        for((index, areaLight) in this@AreaLightSystem.getComponents(AreaLight::class.java).withIndex()) {
+            val target = this@AreaLightSystem.gpuAreaLightArray.getAtIndex(index)
             target.trafo.set(areaLight.entity)
             target.color.set(areaLight.color)
             target.dummy0 = -1
@@ -128,7 +129,7 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
             target.widthHeightRange.z = areaLight.range
             target.dummy1 = -1
         }
-        gpuAreaLightArray
+        this@AreaLightSystem.gpuAreaLightArray
     }
     private fun getRequiredAreaLightBufferSize() =
             getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount }

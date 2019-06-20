@@ -1,6 +1,5 @@
 package de.hanno.hpengine.util.ressources
 
-import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
 import java.io.File
@@ -23,8 +22,7 @@ object FileMonitor {
 
         val listener: OnFileChangeListener = object: OnFileChangeListener() {
             fun shouldReload(changedFile: File): Boolean {
-                val fileName = FilenameUtils.getBaseName(changedFile.absolutePath)
-                return file.name.startsWith(fileName)
+                return "${file.name}.${file.extension}".startsWith("${changedFile.name}.${changedFile.extension}")
             }
 
             override fun onFileChangeAction(arg0: File) {

@@ -1,20 +1,10 @@
-//package scripts
-
 import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.entity.Entity
+import kotlinx.coroutines.CoroutineScope
 
-class SimpleCustomComponent : CustomComponent {
-    private lateinit var entity: Entity
+class SimpleCustomComponent(override val entity: Entity) : CustomComponent {
 
-    override fun getEntity(): Entity {
-        return entity
-    }
-
-    override fun init(engine: de.hanno.hpengine.engine.backend.EngineContext<*>) {
-        println("Init called in SimpleCustomComponent")
-    }
-
-    override fun update(seconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
 //        println("Update called in SimpleCustomComponent")
     }
 }

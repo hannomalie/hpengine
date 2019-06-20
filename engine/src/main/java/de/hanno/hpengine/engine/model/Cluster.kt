@@ -4,15 +4,20 @@ import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.joml.Vector3f
 import java.util.*
 
 
 class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), Updatable, Spatial by spatial {
 
-    override fun update(seconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        with(spatial) { update(deltaSeconds) }
         for (i in 0 until size) {
-            get(i).update(seconds)
+            launch {
+                with(get(i)) { update(deltaSeconds) }
+            }
         }
     }
 

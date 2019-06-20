@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.struct.copyTo
+import kotlinx.coroutines.CoroutineScope
 
 class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(_engine, simpleScene, listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
@@ -21,13 +22,14 @@ class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleSce
         shadowMapExtension = DirectionalLightShadowMapExtension(engine)
     }
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
 
-        getDirectionalLight().update(deltaSeconds)
-
-        if (getDirectionalLight().getEntity().hasMoved()) {
-            directionalLightMovedInCycle = engine.scene.currentCycle
-            getDirectionalLight().entity.isHasMoved = false
+        with(getDirectionalLight()) {
+            update(deltaSeconds)
+        }
+        if (this@DirectionalLightSystem.getDirectionalLight().entity.hasMoved()) {
+            this@DirectionalLightSystem.directionalLightMovedInCycle = this@DirectionalLightSystem.engine.scene.currentCycle
+            this@DirectionalLightSystem.getDirectionalLight().entity.isHasMoved = false
         }
     }
 

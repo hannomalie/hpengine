@@ -12,6 +12,8 @@ import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Spatial;
 import de.hanno.hpengine.engine.transform.Transform;
+import kotlinx.coroutines.CoroutineScope;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -33,7 +35,7 @@ public class Entity extends Transform<Entity> implements Updatable {
 	};
     private int index = -1;
 
-	private Update update = Update.DYNAMIC;
+	private Update updateType = Update.DYNAMIC;
 
 	protected String name = "Entity_" + System.currentTimeMillis();
 
@@ -134,13 +136,13 @@ public class Entity extends Transform<Entity> implements Updatable {
 	}
 
 	@Override
-	public void update(float seconds) {
+	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
 		if(hasParent()) {
 			return;
 		}
 		recalculateIfDirty();
 		for(int i = 0; i < getChildren().size(); i++) {
-			getChildren().get(i).update(seconds);
+			getChildren().get(i).update(scope, deltaSeconds);
 		}
 	}
 
@@ -244,19 +246,19 @@ public class Entity extends Transform<Entity> implements Updatable {
         return false;
 	}
 
-	public Update getUpdate() {
+	public Update getUpdateType() {
         if((hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class).isDynamic())
 				|| (hasComponent(ModelComponent.class) && !getComponent(ModelComponent.class).getModel().isStatic())) {
             return Update.DYNAMIC;
         }
-		return update;
+		return updateType;
 	}
 
-	public void setUpdate(Update update) {
-		this.update = update;
+	public void setUpdateType(Update updateType) {
+		this.updateType = updateType;
 		if (hasChildren()) {
 			for (Entity child : getChildren()) {
-				child.setUpdate(update);
+				child.setUpdateType(updateType);
 			}
 		}
 	}

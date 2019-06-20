@@ -34,6 +34,7 @@ import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
+import kotlinx.coroutines.CoroutineScope
 import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
 
@@ -79,7 +80,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     //    TODO: Move this event/debug stuff outside of scene class
     val eventSystem = entitySystems.register(object : EntitySystem {
         override fun clear() {}
-        override fun update(deltaSeconds: Float) {}
+        override fun CoroutineScope.update(deltaSeconds: Float) {}
         override fun gatherEntities() {}
         override fun onEntityAdded(entities: List<Entity>) {
             engine.eventBus.post(MaterialAddedEvent())

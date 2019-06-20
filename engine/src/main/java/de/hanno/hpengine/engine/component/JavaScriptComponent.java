@@ -1,8 +1,9 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.script.ScriptManager;
+import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 
 import javax.script.ScriptContext;
@@ -16,7 +17,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     private Map map = new HashMap();
 
     public JavaScriptComponent(String script, ScriptManager scriptManager) {
-        super();
+        super(new Entity());
         this.script = script;
         this.scriptManager = scriptManager;
         create(scriptManager);
@@ -33,8 +34,8 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     @Override
-    public void update(float seconds) {
-        scriptManager.evalUpdate(this, seconds);
+    public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+        scriptManager.evalUpdate(this, deltaSeconds);
     }
 
     public void setInt(String name, int value) {

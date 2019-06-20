@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -16,12 +17,8 @@ public class DirectionalLight extends Camera {
 	private Vector3f color = new Vector3f(1,1,1);
 	private float scatterFactor = 1f;
 
-	@NotNull
-	public Entity entity;
-
 	public DirectionalLight(Entity entity) {
 		super(entity, 1f);
-		this.entity = entity;
 		setPerspective(false);
 		setColor(new Vector3f(1f, 0.76f, 0.49f));
 		setScatterFactor(1f);
@@ -32,8 +29,8 @@ public class DirectionalLight extends Camera {
 	}
 
 	@Override
-	public void update(float seconds) {
-        super.update(seconds);
+	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+        super.update(scope, deltaSeconds);
 	}
 
 	public void drawDebug(Program program) {
@@ -44,7 +41,7 @@ public class DirectionalLight extends Camera {
 	}
 
 	public Vector3f getDirection () {
-		return entity.getViewDirection();
+		return getEntity().getViewDirection();
 	}
 
 	public Vector3f getColor() {
@@ -63,7 +60,7 @@ public class DirectionalLight extends Camera {
 
 
 	public void translate(Vector3f offset) {
-		entity.translate(offset);
+		getEntity().translate(offset);
 	}
 
 	public static class DirectionalLightController extends InputControllerComponent {
@@ -76,11 +73,11 @@ public class DirectionalLight extends Camera {
 		}
 
 		@Override
-		public void update(float seconds) {
+		public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
 
-			float moveAmount = 100 * seconds;
+			float moveAmount = 100 * deltaSeconds;
 			float degreesPerSecond = 45;
-			float rotateAmount = (float) Math.toRadians(degreesPerSecond) * seconds;
+			float rotateAmount = (float) Math.toRadians(degreesPerSecond) * deltaSeconds;
 
 			if (engine.getInput().isKeyPressed(GLFW_KEY_UP)) {
 				getEntity().rotateAround(new Vector3f(0, 1, 0), rotateAmount, new Vector3f());

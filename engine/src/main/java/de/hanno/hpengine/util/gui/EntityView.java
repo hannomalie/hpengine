@@ -199,9 +199,9 @@ public class EntityView extends WebPanel {
 
         webComponentPanel.addElement(new TransformablePanel<>(engine, entity));
 
-        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Update.class).toArray(), entity.getUpdate());
+        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Update.class).toArray(), entity.getUpdateType());
         updateComboBox.addActionListener(e -> {
-            entity.setUpdate((Update) updateComboBox.getSelectedItem());
+            entity.setUpdateType((Update) updateComboBox.getSelectedItem());
             engine.getEventBus().post(new UpdateChangedEvent(entity));
             engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         });

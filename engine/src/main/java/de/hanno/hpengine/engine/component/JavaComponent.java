@@ -3,10 +3,12 @@ package de.hanno.hpengine.engine.component;
 import de.hanno.compiler.RuntimeJavaCompiler;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.directory.GameDirectory;
+import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.Reloadable;
+import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -32,7 +34,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private Object instance;
 
     public JavaComponent(Engine<?> engine, CodeSource codeSource, GameDirectory gameDirectory) {
-        super();
+        super(new Entity());
         this.engine = engine;
         this.javaCodeSource = codeSource;
         this.gameDirectory = gameDirectory;
@@ -45,9 +47,9 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public void update(float seconds) {
+    public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
         if(isLifeCycle) {
-            ((Updatable) instance).update(seconds);
+            ((Updatable) instance).update(scope, deltaSeconds);
         }
     }
 

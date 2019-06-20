@@ -33,6 +33,7 @@ import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 
 import javax.vecmath.Matrix4f;
@@ -174,7 +175,7 @@ public class PhysicsManager implements Manager, RenderSystem {
     }
 
     @Override
-    public void update(float deltaSeconds) {
+    public void update(@NotNull CoroutineScope scop, float deltaSeconds) {
 
     }
 
@@ -189,7 +190,7 @@ public class PhysicsManager implements Manager, RenderSystem {
     }
 
     @Override
-    public void afterUpdate(float deltaSeconds) {
+    public void afterUpdate(@NotNull CoroutineScope scope, float deltaSeconds) {
 
     }
 

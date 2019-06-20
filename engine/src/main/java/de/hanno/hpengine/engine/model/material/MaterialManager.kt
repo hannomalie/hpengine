@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
+import kotlinx.coroutines.CoroutineScope
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import java.io.File
@@ -168,7 +169,7 @@ class MaterialManager(val engineContext: EngineContext<*>) : Manager {
 
     }
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
 
     }
 

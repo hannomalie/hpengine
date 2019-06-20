@@ -5,6 +5,8 @@ import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.transform.AABB;
+import kotlinx.coroutines.CoroutineScope;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -49,7 +51,7 @@ public class TubeLight implements Component {
 	}
 
 	@Override
-	public void update(float seconds) {
+	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
 	}
 
 	@Override

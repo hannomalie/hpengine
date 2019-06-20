@@ -6,10 +6,11 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
+import kotlinx.coroutines.CoroutineScope
 import net.engio.mbassy.listener.Handler
 
 interface EntitySystem {
-    fun update(deltaSeconds: Float)
+    fun CoroutineScope.update(deltaSeconds: Float)
     fun gatherEntities()
     fun onEntityAdded(entities: List<Entity>) {
         gatherEntities()
@@ -21,8 +22,12 @@ interface EntitySystem {
 
 interface EntitySystemRegistry {
     fun getSystems(): Collection<EntitySystem>
-    fun update(deltaSeconds: Float) {
-        for(system in getSystems()){ system.update(deltaSeconds) }
+    fun CoroutineScope.update(deltaSeconds: Float) {
+        for(system in this@EntitySystemRegistry.getSystems()){
+            with(system) {
+                update(deltaSeconds)
+            }
+        }
     }
     fun <T : EntitySystem> register(system: T): T
     fun gatherEntities() {

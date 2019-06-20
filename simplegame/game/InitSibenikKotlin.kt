@@ -13,7 +13,7 @@ class InitSibenikKotlin : EngineConsumer {
         println("loaded entities : " + loaded.entities.size)
         for (entity in loaded.entities) {
             val codeFile = engine.directories.gameDir.resolve("scripts").resolve("SimpleCustomComponent.kt")
-            val component = KotlinComponentLoader.load(engine, codeFile)
+            val component = KotlinComponentLoader.load(engine, codeFile, Entity())
             println("Loaded $component")
             entity.addComponent(component, ScriptComponent::class.java as Class<Component>)
             entity.init(engine)

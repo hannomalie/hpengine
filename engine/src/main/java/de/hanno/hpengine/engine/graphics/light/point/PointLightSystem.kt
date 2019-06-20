@@ -17,6 +17,7 @@ import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
@@ -55,25 +56,27 @@ class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): Simple
 
     fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
 
-    override fun update(deltaSeconds: Float) {
-        val pointLights = getComponents(PointLight::class.java)
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        val pointLights = this@PointLightSystem.getComponents(PointLight::class.java)
 
         for (i in 0 until pointLights.size) {
             val pointLight = pointLights[i]
             if (!pointLight.entity.hasMoved()) {
                 continue
             }
-            pointLightMovedInCycle = engine.renderManager.drawCycle.get()
-            engine.eventBus.post(PointLightMovedEvent())
+            this@PointLightSystem.pointLightMovedInCycle = this@PointLightSystem.engine.renderManager.drawCycle.get()
+            this@PointLightSystem.engine.eventBus.post(PointLightMovedEvent())
             pointLight.entity.isHasMoved = false
         }
 
         val pointLightsIterator = pointLights.iterator()
         while (pointLightsIterator.hasNext()) {
-            pointLightsIterator.next().update(deltaSeconds)
+            with(pointLightsIterator.next()) {
+                update(deltaSeconds)
+            }
         }
 
-        bufferLights()
+        this@PointLightSystem.bufferLights()
     }
 
     fun getPointLights(): List<PointLight> = getComponents(PointLight::class.java)

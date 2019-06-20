@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import kotlinx.coroutines.CoroutineScope;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.jetbrains.annotations.NotNull;
@@ -114,7 +115,7 @@ public class ScriptManager implements Manager {
 	}
 
 	@Override
-	public void update(float deltaSeconds) {
+	public void update(@NotNull CoroutineScope scop, float deltaSeconds) {
 
 	}
 
@@ -124,7 +125,7 @@ public class ScriptManager implements Manager {
 	}
 
 	@Override
-	public void afterUpdate(float deltaSeconds) {
+	public void afterUpdate(@NotNull CoroutineScope scope, float deltaSeconds) {
 
 	}
 }

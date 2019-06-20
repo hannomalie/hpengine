@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuEntityStruct
@@ -16,6 +17,7 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
 import de.hanno.struct.shrinkToBytes
+import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelComponent> {
@@ -39,9 +41,11 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
     override fun create(entity: Entity) = ModelComponent(entity)
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         for (component in getComponents()) {
-            component.update(deltaSeconds)
+            with(component) {
+                update(deltaSeconds)
+            }
         }
         cacheEntityIndices()
         updateGpuEntitiesArray()
@@ -100,7 +104,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
                     val materialIndex = materials.indexOf(mesh.material)
                     target.selected = entity.isSelected
                     target.materialIndex = materialIndex
-                    target.update = entity.update.asDouble.toInt()
+                    target.update = entity.updateType.asDouble.toInt()
                     target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
                     target.entityIndex = entity.index
                     target.meshIndex = meshIndex
@@ -118,11 +122,11 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
                     for (instance in entity.instances) {
                         val instanceMatrix = instance.transformation
-                        val instanceMaterialIndex = materials.indexOf(instance.materials[meshIndex])
+                        val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
 
                         target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex
-                        target.update = entity.update.ordinal
+                        target.update = entity.updateType.ordinal
                         target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
                         target.entityIndex = entity.index
                         target.meshIndex = meshIndex
@@ -144,7 +148,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
                             target.selected = entity.isSelected
                             target.materialIndex = materialIndex
-                            target.update = entity.update.ordinal
+                            target.update = entity.updateType.ordinal
                             target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
                             target.entityIndex = entity.index
                             target.meshIndex = meshIndex
@@ -190,10 +194,11 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
     }
     override fun clear() = components.clear()
 
-    override fun onEntityAdded(entities: List<Entity>) {
-        super.onEntityAdded(entities)
+    override fun onEntityAdded(entities: List<Entity>): MutableMap<Class<Component>, Component> {
+        val result = super.onEntityAdded(entities)
         allocateVertexIndexBufferSpace(entities)
         updateCache = true
+        return result
     }
 
     override fun extract(renderState: RenderState) {

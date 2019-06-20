@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.transform
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.util.Util
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.Serializable
@@ -82,7 +83,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
 open class SimpleSpatial(override val minMaxProperty: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : AbstractSpatial()
 
 open class TransformSpatial(val transform: Transform<*>, override val minMaxProperty: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : SimpleSpatial() {
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         super.recalculateIfNotClean(transform)
     }
 }
@@ -92,12 +93,12 @@ open class StaticTransformSpatial(val transform: Transform<*>, val modelComponen
         return modelComponent.minMax
     }
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         super.recalculateIfNotClean(transform)
     }
 }
 open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent) {
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         recalculate(transform)
     }
 }

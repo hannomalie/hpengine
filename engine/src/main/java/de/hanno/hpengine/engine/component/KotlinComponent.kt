@@ -1,13 +1,15 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
+import kotlinx.coroutines.CoroutineScope
 import java.util.HashMap
 
-class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
+class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(Entity()), ScriptComponent {
     init {
         require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
         initWrappingComponent()
@@ -24,13 +26,13 @@ class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource
     val sourceCode: String
         get() = codeSource.source
 
-    override fun getIdentifier(): String {
-        return "KotlinComponent"
-    }
+    override val identifier: String = "KotlinComponent"
 
-    override fun update(seconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         if (isLifeCycle) {
-            (instance as Updatable).update(seconds)
+            with(instance as Updatable) {
+                update(deltaSeconds)
+            }
         }
     }
 
@@ -58,7 +60,7 @@ class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource
             compiledClass = instance!!::class.java
             try {
                 val entityField = instance!!.javaClass.getDeclaredField("entity")
-                entityField.set(instance, getEntity())
+                entityField.set(instance, entity)
             } catch (e: Exception) {
 
             }

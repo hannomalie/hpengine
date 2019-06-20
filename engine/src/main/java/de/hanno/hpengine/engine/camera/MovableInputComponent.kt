@@ -2,14 +2,14 @@ package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.InputControllerComponent
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : InputControllerComponent(entity) {
+class MovableInputComponent(val engine: EngineContext<*>, override val entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -31,28 +31,25 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
     private var pitchAccel = 0f
     private var yawAccel = 0f
 
-    init {
-        this.entity = entity
-    }
 
 //    TODO: Make this adjustable through editor
     private val cameraSpeed: Float = 1.0f
 
-    override fun update(seconds: Float) {
-        //                             linearVel.fma(seconds, linearAcc);
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        //                             linearVel.fma(deltaSeconds, linearAcc);
         //                             // update angular velocity based on angular acceleration
-        //                             angularVel.fma(seconds, angularAcc);
+        //                             angularVel.fma(deltaSeconds, angularAcc);
         //                             // update the rotation based on the angular velocity
-        //                             rotation.integrate(seconds, angularVel.x, angularVel.y, angularVel.z);
+        //                             rotation.integrate(deltaSeconds, angularVel.x, angularVel.y, angularVel.z);
         //                             // update position based on linear velocity
-        //                             position.fma(seconds, linearVel);
+        //                             position.fma(deltaSeconds, linearVel);
 
         var turbo = 1f
         if (engine.input.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
             turbo = 3f
         }
 
-        val rotationAmount = 10.1f * turbo * seconds * rotationDelta * cameraSpeed
+        val rotationAmount = 10.1f * turbo * deltaSeconds * rotationDelta * cameraSpeed
         if (engine.input.isMouseClicked(0)) {
             val pitchAmount = Math.toRadians((engine.input.dySmooth * rotationAmount % 360).toDouble())
             pitchAccel = Math.max(2 * Math.PI, pitchAccel + pitchAmount).toFloat()
@@ -65,31 +62,31 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
             yaw += yawAmount.toFloat()
             pitch += pitchAmount.toFloat()
 
-            val oldTranslation = getEntity().getTranslation(Vector3f())
-            getEntity().setTranslation(Vector3f(0f,0f,0f))
-            getEntity().rotateLocalY((-yawAmount).toFloat())
-            getEntity().rotateX(pitchAmount.toFloat())
-            getEntity().translateLocal(oldTranslation)
+            val oldTranslation = entity.getTranslation(Vector3f())
+            entity.setTranslation(Vector3f(0f,0f,0f))
+            entity.rotateLocalY((-yawAmount).toFloat())
+            entity.rotateX(pitchAmount.toFloat())
+            entity.translateLocal(oldTranslation)
         }
 
-        val moveAmount = turbo * posDelta * seconds * cameraSpeed
+        val moveAmount = turbo * posDelta * deltaSeconds * cameraSpeed
         if (engine.input.isKeyPressed(GLFW_KEY_W)) {
-            getEntity().translate(Vector3f(0f, 0f, -moveAmount))
+            entity.translate(Vector3f(0f, 0f, -moveAmount))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_S)) {
-            getEntity().translate(Vector3f(0f, 0f, moveAmount))
+            entity.translate(Vector3f(0f, 0f, moveAmount))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_A)) {
-            getEntity().translate(Vector3f(-moveAmount, 0f, 0f))
+            entity.translate(Vector3f(-moveAmount, 0f, 0f))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_D)) {
-            getEntity().translate(Vector3f(moveAmount, 0f, 0f))
+            entity.translate(Vector3f(moveAmount, 0f, 0f))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_Q)) {
-            getEntity().translate(Vector3f(0f, -moveAmount, 0f))
+            entity.translate(Vector3f(0f, -moveAmount, 0f))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_E)) {
-            getEntity().translate(Vector3f(0f, moveAmount, 0f))
+            entity.translate(Vector3f(0f, moveAmount, 0f))
         }
 
     }
@@ -101,7 +98,13 @@ class MovableInputComponent(val engine: EngineContext<*>, entity: Entity) : Inpu
 
 class InputComponentSystem(val engine: EngineContext<*>): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
-    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        getComponents().forEach {
+            with(it) {
+                update(deltaSeconds)
+            }
+        }
+    }
     private val components = mutableListOf<InputControllerComponent>()
     override fun getComponents(): List<InputControllerComponent> = components
 

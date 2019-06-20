@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
@@ -16,21 +17,26 @@ import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ClustersComponent(val engine: EngineContext<*>, private val eventBus: EventBus, private val entity: Entity): Component {
+class ClustersComponent(val engine: EngineContext<*>, private val eventBus: EventBus, override val entity: Entity): Component {
 
     private val instances = CopyOnWriteArrayList<Instance>()
     private val clusters = CopyOnWriteArrayList<Cluster>()
 
     fun getInstances(): List<Instance> = instances
-    fun getInstancesMinMaxWorlds(): List<AABB> = instances.map{it -> it.minMaxWorld }
+    fun getInstancesMinMaxWorlds(): List<AABB> = instances.map{ it.minMaxWorld }
 
-    override fun getEntity() = entity
-    override fun getIdentifier(): String = ClustersComponent::class.java.simpleName
-    override fun update(seconds: Float) {
+    override val identifier: String = ClustersComponent::class.java.simpleName
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         for (cluster in clusters) {
-            cluster.update(seconds)
+            launch {
+                with(cluster as Updatable) {
+                    update(deltaSeconds)
+                }
+            }
         }
     }
 
@@ -129,9 +135,11 @@ class ClustersComponentSystem(val engine: EngineContext<*>) : ComponentSystem<Cl
 
     override fun getComponents() = components
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         components.forEach{
-            it.update(deltaSeconds)
+            with(it) {
+                update(deltaSeconds)
+            }
         }
     }
 

@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
+import kotlinx.coroutines.CoroutineScope
 import org.joml.*
 import org.lwjgl.BufferUtils
 import java.io.IOException
@@ -16,6 +17,8 @@ import java.io.ObjectOutputStream
 import java.nio.FloatBuffer
 
 open class Camera: Component {
+
+    override var entity: Entity
 
     @JvmOverloads constructor(entity: Entity, ratio: Float = 1280f/720f) {
         this.entity = entity
@@ -38,13 +41,8 @@ open class Camera: Component {
         init(projectionMatrix, near, far, fov, ratio)
     }
 
-    override fun getIdentifier() = this.javaClass.simpleName
+    override val identifier = this.javaClass.simpleName
 
-    private var entity: Entity
-
-    override fun getEntity(): Entity {
-        return entity
-    }
 
     @Transient
     var viewProjectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
@@ -127,13 +125,13 @@ open class Camera: Component {
         storeMatrices()
     }
 
-    override fun update(seconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         saveViewMatrixAsLastViewMatrix()
         projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
         frustum.frustumIntersection.set(viewProjectionMatrix)
 //        TODO: Fix this, doesn't work
 //        if (entity.hasMoved())
-        run {
+        this@Camera.run {
             transform()
             storeMatrices()
         }
@@ -252,7 +250,13 @@ open class Camera: Component {
 class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, RenderSystem {
 
     override val componentClass: Class<Camera> = Camera::class.java
-    override fun update(deltaSeconds: Float) { getComponents().forEach { it.update(deltaSeconds) } }
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        getComponents().forEach {
+            with(it) {
+                update(deltaSeconds)
+            }
+        }
+    }
     private val components = mutableListOf<Camera>()
     override fun getComponents(): List<Camera> = components
 

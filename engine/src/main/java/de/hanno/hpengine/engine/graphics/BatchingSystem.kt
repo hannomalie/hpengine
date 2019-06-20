@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.SimpleScene
+import kotlinx.coroutines.CoroutineScope
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 
@@ -18,7 +19,7 @@ class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntityS
     private val cameraMapper = ComponentMapper.forClass(Camera::class.java)
     private val tempDistVector = Vector3f()
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
 
     }
 
@@ -52,7 +53,7 @@ class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntityS
                 val meshBufferIndex = entityIndexOf + i * entity.instanceCount
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
-                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.update, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo)
+                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo)
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)
                 } else {

@@ -197,7 +197,7 @@ public class EnvironmentSampler extends Entity {
 					.filter(e -> probe.getBox().containsOrIntersectsSphere(e.getEntity().getPosition(), e.getRadius()))
 					.filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !engine.getScene().getAreaLightSystem().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
-			boolean reRenderLightingRequired = light.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
+			boolean reRenderLightingRequired = light.getEntity().hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullReRenderRequired && !reRenderLightingRequired;
 
 			if (noNeedToRedraw) {  // early exit if only static objects visible and lights didn't change

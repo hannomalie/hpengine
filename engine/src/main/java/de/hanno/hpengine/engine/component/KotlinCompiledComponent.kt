@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.util.ressources.CodeSource
+import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
@@ -15,7 +16,7 @@ import java.net.URLClassLoader
 import java.util.HashMap
 import javax.inject.Inject
 
-class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(), ScriptComponent {
+class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: CodeSource, entity: Entity) : BaseComponent(entity), ScriptComponent {
     init {
         require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
         initWrappingComponent()
@@ -32,13 +33,13 @@ class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: Co
     val sourceCode: String
         get() = codeSource.source
 
-    override fun getIdentifier(): String {
-        return "KotlinComponent"
-    }
+    override val identifier: String = "KotlinComponent"
 
-    override fun update(seconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         if (isUpdatable) {
-            (instance as Updatable).update(seconds)
+            with(instance as Updatable) {
+                update(deltaSeconds)
+            }
         }
     }
 
@@ -67,6 +68,8 @@ class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: Co
                 val args = K2JVMCompilerArguments().apply {
                     freeArgs = listOf(codeSource.file.absolutePath)
                     loadBuiltInsFromDependencies = true
+                    jvmDefault = "enable"
+                    jvmTarget = "1.8"
                     destination = output.absolutePath
                     classpath = System.getProperty("java.class.path")
                             .split(System.getProperty("path.separator"))
@@ -99,7 +102,9 @@ class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: Co
                     val resolvedParams: List<Any> = firstConstructor.parameters.map {
                         when {
                             it.type.isAssignableFrom(Engine::class.java) -> { engine }
-                            it.type.isAssignableFrom(Entity::class.java) -> { getEntity() }
+                            it.type.isAssignableFrom(Entity::class.java) -> {
+                                entity
+                            }
                             else -> {
                                 throw IllegalStateException("Cannot inject parameter $it in code file ${codeSource.file}")
                             }

@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
+import kotlinx.coroutines.CoroutineScope
 
 private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>, override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext
 class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
@@ -19,12 +20,13 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
             managerContext.eventBus.post(SceneInitEvent())
         }
 
-    override fun update(deltaSeconds: Float) {
-        super.update(deltaSeconds)
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+//        super.update(deltaSeconds)
         val newDrawCycle = managerContext.renderManager.drawCycle.get()
         scene.currentCycle = newDrawCycle
-        scene.update(deltaSeconds)
-
+        with(scene) {
+            update(deltaSeconds)
+        }
     }
 
     private fun onSetScene(nextScene: Scene) {

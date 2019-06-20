@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import kotlinx.coroutines.CoroutineScope
 import java.io.Serializable
 import java.util.*
 
@@ -69,12 +70,19 @@ interface Scene : Updatable, Serializable {
     fun restoreWorldCamera()
 
     @JvmDefault
-    override fun update(deltaSeconds: Float) {
-        managers.update(deltaSeconds)
-        componentSystems.update(deltaSeconds)
-        entitySystems.update(deltaSeconds)
-
-        managers.afterUpdate(deltaSeconds)
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        with(managers) {
+            update(deltaSeconds)
+        }
+        with(componentSystems) {
+            update(deltaSeconds)
+        }
+        with(entitySystems) {
+            update(deltaSeconds)
+        }
+        with(managers) {
+            afterUpdate(deltaSeconds)
+        }
     }
 
     var initialized: Boolean

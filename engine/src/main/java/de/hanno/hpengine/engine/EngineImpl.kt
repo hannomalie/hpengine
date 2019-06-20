@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
@@ -20,8 +21,12 @@ import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.Editor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.logging.Logger
@@ -40,7 +45,12 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                                            override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer, materialManager),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
-    val updateConsumer = Consumer<Float> { this@EngineImpl.update(it) }
+    private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
+    val updateConsumer = Consumer<Float> {
+        with(this@EngineImpl) {
+            runBlocking(updateScope) { update(it) }
+        }
+    }
     val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
 
     override val sceneManager = managerContext.managers.register(SceneManager(managerContext))
@@ -63,12 +73,14 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         updateThread.start()
     }
 
-    fun update(deltaSeconds: Float) {
+    fun CoroutineScope.update(deltaSeconds: Float) {
         try {
             engineContext.commandQueue.executeCommands()
             inputUpdater.setReadyForExecution()
             while(inputUpdater.isReadyForExecution()){ }
-            managerContext.managers.update(deltaSeconds)
+            with(managerContext.managers) {
+                update(deltaSeconds)
+            }
             updateRenderState()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -140,7 +152,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             val initScriptFile = engineContext.config.directories.gameDir.initScript
             initScriptFile?.let {
                 try {
-                    ScriptComponentFileLoader.getLoaderForFileExtension(it.extension).load(engine, it)
+                    ScriptComponentFileLoader.getLoaderForFileExtension(it.extension).load(engine, it, Entity())
                     println("InitScript initialized")
                 } catch (e: IOException) {
                     e.printStackTrace()

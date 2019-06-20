@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.logging.Logger
 
@@ -55,13 +56,15 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         entityContainer.clear()
     }
 
-    private fun onUpdate(deltaSeconds: Float) {
+    private fun CoroutineScope.onUpdate(deltaSeconds: Float) {
         entityHasMoved = false
         staticEntityHasMoved = false
 
         for (i in entityContainer.entities.indices) {
             try {
-                entityContainer.entities[i].update(deltaSeconds)
+                with(entityContainer.entities[i]) {
+                    update(deltaSeconds)
+                }
             } catch (e: Exception) {
                 LOGGER.warning(e.message)
             }
@@ -74,7 +77,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             entityMovedInCycle = scene.currentCycle
             entityHasMoved = true
-            if (entity.update == Update.STATIC) {
+            if (entity.updateType == Update.STATIC) {
                 staticEntityHasMoved = true
                 staticEntityMovedInCycle = scene.currentCycle
             }
@@ -82,7 +85,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         }
     }
 
-    override fun afterUpdate(deltaSeconds: Float) {
+    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
         onUpdate(deltaSeconds)
         for (entity in entityContainer.entities) {
             entity.isHasMoved = false

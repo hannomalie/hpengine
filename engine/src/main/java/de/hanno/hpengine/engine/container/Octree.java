@@ -11,6 +11,8 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
+import kotlinx.coroutines.CoroutineScope;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -161,7 +163,12 @@ public class Octree implements Updatable, Serializable, EntityContainer {
         }
     }
 
-    /**
+	@Override
+	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+
+	}
+
+	/**
 	 * children: index is clockwise 0-3 for top: left front, left back, right back, right front and 4-7 bottom: right back, right front, left front, left back 
 	 * 
 	 *

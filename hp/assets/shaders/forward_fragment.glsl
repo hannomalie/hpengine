@@ -155,5 +155,5 @@ void main()
 
     out_Color = vec4(4*(resultingColor.rgb + color.rgb * materialAmbient) * weight, weight);
     out_Revealage.r = resultingColor.a;
-    out_Revealage.a = min(10*luminance(4*color.rgb*materialAmbient), 1);
+    out_Revealage.a = min(10*luminance(color.rgb)*materialAmbient, 1);
 }
