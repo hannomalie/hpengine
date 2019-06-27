@@ -11,6 +11,7 @@ import kotlin.random.Random
 
 class SimpleMoveComponentKotlin @Inject constructor(override val entity: Entity) : CustomComponent {
     val randoms = entity.instances.map { Random.nextFloat() }
+    val reversedRandoms = randoms.reversed()
     val lifeTimes = entity.instances.map { 0f }.toFloatArray()
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
@@ -18,7 +19,7 @@ class SimpleMoveComponentKotlin @Inject constructor(override val entity: Entity)
         for((index, instance) in entity.instances.withIndex()) {
             with(ParticleSystem) {
                 val lifeTime = lifeTimes[index]
-                instance.update(randoms[index], randoms.reversed()[index], lifeTime, deltaSeconds)
+                instance.update(randoms[index], reversedRandoms[index], lifeTime, deltaSeconds)
                 lifeTimes[index] += deltaSeconds
                 if(getMaxLifeTime(randoms[index]) > maxLifeTime) {
                     lifeTimes[index] = 0f
