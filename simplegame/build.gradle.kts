@@ -1,5 +1,5 @@
 plugins {
-    java
+//    java
     kotlin("jvm")
 }
 
@@ -40,9 +40,9 @@ dependencies {
     compileOnly(project(":engine"))
 }
 
-java.sourceSets["main"].java {
-    srcDir("game")
-}
+//java.sourceSets["main"].java {
+//    srcDir("game")
+//}
 kotlin.sourceSets["main"].kotlin.srcDirs("game")
 
 //TODO: Rework this concept completely

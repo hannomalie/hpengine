@@ -13,11 +13,11 @@ application.applicationDistribution.into("bin/hp") {
     from("../hp")
     include("**/*")
 }
-
-java.sourceSets {
-    getByName("main").java.srcDirs("src/main/java")
-    getByName("test").java.srcDirs("src/test/java")
-}
+//
+//java.sourceSets {
+//    getByName("main").java.srcDirs("src/main/java")
+//    getByName("test").java.srcDirs("src/test/java")
+//}
 kotlin.sourceSets {
     getByName("main").kotlin.srcDirs("src/main/java")
     getByName("test").kotlin.srcDirs("src/test/java")
@@ -71,7 +71,7 @@ dependencies {
     compile("javax.inject:javax.inject:1")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
-    compile(kotlin("kotlin-compiler-embeddable"))
+    compile(kotlin("compiler-embeddable"))
 
 
     compile("de.swirtz:ktsRunner:0.0.7")
