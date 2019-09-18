@@ -130,6 +130,7 @@ public class EnvironmentSampler extends Entity {
 		cubeMapView1 = GL11.glGenTextures();
 		cubeMapView2 = GL11.glGenTextures();
 		GpuContext.exitOnGLError("EnvironmentSampler before view creation");
+		int diffuseInternalFormat = cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat();
 		for (int z = 0; z < 6; z++) {
 			cubeMapFaceViews[0][z] = GL11.glGenTextures();
 			cubeMapFaceViews[1][z] = GL11.glGenTextures();
@@ -139,7 +140,7 @@ public class EnvironmentSampler extends Entity {
 			GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
 			GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
             GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
-            GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+            GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).getTextureID(), diffuseInternalFormat, 0, 1, 6 * probeIndex + z, 1);
 		}
         GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
         GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
@@ -150,7 +151,7 @@ public class EnvironmentSampler extends Entity {
 								.setName("Environment Sampler")
 								.setHeight(EnvironmentProbeManager.RESOLUTION )
 								.add(new ColorAttachmentDefinition("Environment Diffuse")
-										.setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat()))
+										.setInternalFormat(diffuseInternalFormat))
 								.build();
 
 		fullscreenBuffer = new QuadVertexBuffer(engine.getGpuContext(), true);

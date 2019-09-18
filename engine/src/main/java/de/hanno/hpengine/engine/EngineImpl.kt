@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.Editor
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -30,6 +31,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.logging.Logger
+import kotlin.coroutines.CoroutineContext
 
 interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
@@ -66,9 +68,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         engineContext.eventBus.post(EngineInitializedEvent())
     }
 
-    val fpsCounter: FPSCounter
-        get() = updateThread.fpsCounter
-
     fun startSimulation() {
         updateThread.start()
     }
@@ -103,13 +102,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         }
     }
 
-    fun destroy() {
-        System.exit(0)
-    }
-
     companion object {
-
-        private val LOGGER = Logger.getLogger(Engine::class.java.name)
 
         @JvmStatic
         fun main(args: Array<String>) {

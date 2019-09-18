@@ -1,8 +1,9 @@
 import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.entity.Entity
 import kotlinx.coroutines.CoroutineScope
+import javax.inject.Inject
 
-class SimpleCustomComponent(override val entity: Entity) : CustomComponent {
+class SimpleCustomComponent @Inject constructor(override val entity: Entity) : CustomComponent {
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
 //        println("Update called in SimpleCustomComponent")

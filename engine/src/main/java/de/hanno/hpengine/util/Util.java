@@ -396,15 +396,6 @@ public class Util {
 		return result;
     }
 	
-	/**
-	 *
-	 * @author Aleksandr Dubinsky
-	 */
-      public static ByteBuffer asByteBuffer (FloatBuffer floatBuffer) {
-    	  ByteBuffer byteBuffer = (ByteBuffer) ((sun.nio.ch.DirectBuffer)floatBuffer).attachment();
-    	  return byteBuffer;
-      }
-
 	public static float[] getArray(FloatBuffer values) {
 		float[] array = new float[values.capacity()];
 		values.get(array);

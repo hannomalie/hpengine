@@ -95,7 +95,9 @@ dependencies {
     runtime("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
 
     compile("org.joml:joml:1.9.3")
+//    TODO: Use ether of them
     compile("", "weblaf-complete", "1.28")
+//    compile("org.pushing-pixels:radiance-substance:2.5.1")
     compile("", "vecmath")
     compile("", "rsyntaxtextarea")
     compile("jfree:jfreechart:1.0.13")

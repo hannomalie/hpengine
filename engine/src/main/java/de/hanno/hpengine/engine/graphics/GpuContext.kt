@@ -18,11 +18,7 @@ interface GpuContext<T: BackendType> {
 
     val frontBuffer: RenderTarget
 
-    val windowHandle: Long
-
-    var canvasWidth: Int
-
-    var canvasHeight: Int
+    val window: Window<T>
 
     val isError: Boolean
 

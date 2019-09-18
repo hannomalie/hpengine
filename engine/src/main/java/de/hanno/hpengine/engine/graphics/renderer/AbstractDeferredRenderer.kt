@@ -56,7 +56,7 @@ open class AbstractDeferredRenderer(programManager: ProgramManager<OpenGl>, conf
         program.use()
 
         gpuContext.bindFrameBuffer(0)
-        gpuContext.viewPort(0, 0, gpuContext.canvasWidth, gpuContext.canvasHeight)
+        gpuContext.viewPort(0, 0, gpuContext.window.width, gpuContext.window.height)
         gpuContext.disable(GlCap.DEPTH_TEST)
 
         gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, texture)

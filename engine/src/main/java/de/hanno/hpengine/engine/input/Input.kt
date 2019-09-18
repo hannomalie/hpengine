@@ -1,9 +1,6 @@
 package de.hanno.hpengine.engine.input
 
 import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.BackendType
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.ClickEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -124,19 +121,20 @@ class Input(private val eventBus: EventBus,
         dyLast = dy
         mouseXLast[0] = mouseX[0]
         mouseYLast[0] = mouseY[0]
-        glfwGetCursorPos(gpuContext.windowHandle, mouseX, mouseY)
-        glfwGetFramebufferSize(gpuContext.windowHandle, width, height)
+//        TODO: Move temp buffers to window instance
+        gpuContext.window.getCursorPosition(mouseX, mouseY)
+        gpuContext.window.getFrameBufferSize(width, height)
         dx = (-(mouseXLast[0] - mouseX[0])).toInt()
         dy = (mouseYLast[0] - mouseY[0]).toInt()
     }
 
 
     private fun isKeyDown(gpuContext: GpuContext<*>, keyCode: Int): Boolean {
-        val action = glfwGetKey(gpuContext.windowHandle, keyCode)
+        val action = gpuContext.window.getKey(keyCode)
         return action == GLFW_PRESS || action == GLFW_REPEAT
     }
     private fun isKeyUp(gpuContext: GpuContext<*>, keyCode: Int): Boolean {
-        return glfwGetKey(gpuContext.windowHandle, keyCode) == GLFW_RELEASE
+        return gpuContext.window.getKey(keyCode) == GLFW_RELEASE
     }
 
     fun isKeyPressed(keyCode: Int): Boolean {
@@ -148,7 +146,7 @@ class Input(private val eventBus: EventBus,
     }
 
     private fun isMouseDown(buttonCode: Int): Boolean {
-        return glfwGetMouseButton(gpuContext.windowHandle, buttonCode) == GLFW_PRESS
+        return gpuContext.window.getMouseButton(buttonCode) == GLFW_PRESS
     }
 
     fun isMouseClicked(buttonCode: Int): Boolean {

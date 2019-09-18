@@ -67,7 +67,7 @@ class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: Co
             kotlinCompiler.run {
                 val args = K2JVMCompilerArguments().apply {
                     freeArgs = listOf(codeSource.file.absolutePath)
-                    loadBuiltInsFromDependencies = true
+//                    loadBuiltInsFromDependencies = true
                     jvmDefault = "enable"
                     jvmTarget = "1.8"
                     destination = output.absolutePath

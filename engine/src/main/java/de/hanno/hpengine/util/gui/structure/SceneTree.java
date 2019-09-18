@@ -14,6 +14,7 @@ import de.hanno.hpengine.util.gui.SetSelectedListener;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -89,13 +90,14 @@ public class SceneTree extends WebCheckBoxTree {
                 }
             }
 
-            private boolean matchesFilter(DefaultMutableTreeNode node) {
+            private boolean matchesFilter(TreeNode node) {
                 String filterText = Editor.getCurrentFilter();
-                return "".equals(filterText) || (node.getUserObject().toString()).startsWith(filterText);
+                DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) node;
+                return "".equals(filterText) || (treeNode.getUserObject().toString()).startsWith(filterText);
             }
 
             private boolean containsMatchingChild(DefaultMutableTreeNode node) {
-                Enumeration<DefaultMutableTreeNode> e = node.breadthFirstEnumeration();
+                Enumeration<TreeNode> e = node.breadthFirstEnumeration();
                 while (e.hasMoreElements()) {
                     if (matchesFilter(e.nextElement())) {
                         return true;

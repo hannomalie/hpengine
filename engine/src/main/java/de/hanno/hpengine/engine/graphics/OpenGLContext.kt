@@ -26,33 +26,26 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR
-import org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR
-import org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE
-import org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE
-import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
-import org.lwjgl.glfw.GLFW.GLFW_STICKY_KEYS
-import org.lwjgl.glfw.GLFW.glfwCreateWindow
-import org.lwjgl.glfw.GLFW.glfwInit
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
 import org.lwjgl.glfw.GLFW.glfwPollEvents
-import org.lwjgl.glfw.GLFW.glfwSetErrorCallback
-import org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback
-import org.lwjgl.glfw.GLFW.glfwSetInputMode
-import org.lwjgl.glfw.GLFW.glfwSetWindowCloseCallback
-import org.lwjgl.glfw.GLFW.glfwShowWindow
 import org.lwjgl.glfw.GLFW.glfwSwapBuffers
-import org.lwjgl.glfw.GLFW.glfwSwapInterval
-import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback
-import org.lwjgl.opengl.*
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
-import org.lwjgl.opengl.GL11.GL_TRUE
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_VERSION
+import org.lwjgl.opengl.GL13
+import org.lwjgl.opengl.GL14
+import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
+import org.lwjgl.opengl.GL42
+import org.lwjgl.opengl.GL44
+import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
@@ -64,8 +57,11 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.exitProcess
 
-class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<OpenGl> {
+class OpenGLContext private constructor(val width: Int,
+                                        val height: Int,
+                                        override val window: GlfwWindow) : GpuContext<OpenGl> {
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
@@ -74,10 +70,6 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     override val registeredRenderTargets = ArrayList<RenderTarget>()
 
-
-    override var canvasWidth = width
-    override var canvasHeight = height
-
     internal val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
 
     @Volatile
@@ -85,12 +77,6 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
         private set
     override var maxTextureUnits: Int = 0
     private val perFrameCommandProviders = CopyOnWriteArrayList<PerFrameCommandProvider>()
-    //     Don't make this a local field, we need a string reference
-    private val errorCallback: GLFWErrorCallbackI = GLFWErrorCallbackI { error: Int, description: Long -> GLFWErrorCallback.createPrint(System.err) }
-    override var windowHandle: Long = 0
-    // Don't remove these strong references
-    private var framebufferSizeCallback: GLFWFramebufferSizeCallback? = null
-    private val closeCallback = { l: Long -> System.exit(0) }
 
     private val activeTexture = -1
 
@@ -119,11 +105,11 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
     fun createFrontBuffer(): RenderTarget {
         val frontBuffer = object : RenderTarget(this) {
             override fun getWidth(): Int {
-                return canvasWidth
+                return window.width
             }
 
             override fun getHeight(): Int {
-                return canvasHeight
+                return window.height
             }
 
             override fun use(clear: Boolean) {
@@ -141,7 +127,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
             } catch (e: Exception) {
                 LOGGER.severe("Exception during privateInit")
                 e.printStackTrace()
-                System.exit(-1)
+                exitProcess(-1)
             }
             yield()
         }
@@ -178,35 +164,9 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
     internal fun privateInit() {
         Executor.openGLThreadId = Thread.currentThread().id
 
-        glfwSetErrorCallback(errorCallback)
-        glfwInit()
-        glfwWindowHint(GLFW_RESIZABLE, GL_TRUE)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-        windowHandle = glfwCreateWindow(canvasWidth, canvasHeight, "HPEngine", 0, 0)
-        if (windowHandle == 0L) {
-            throw RuntimeException("Failed to create windowHandle")
-        }
+        glfwMakeContextCurrent(window.handle)
 
-        glfwMakeContextCurrent(windowHandle)
-        framebufferSizeCallback = object : GLFWFramebufferSizeCallback() {
-            override fun invoke(window: Long, width: Int, height: Int) {
-                try {
-                    this@OpenGLContext.canvasWidth = width
-                    this@OpenGLContext.canvasHeight = height
-                } catch (e: Exception) { e.printStackTrace() }
-
-            }
-        }
-        glfwSetFramebufferSizeCallback(windowHandle, framebufferSizeCallback)
-        glfwSetWindowCloseCallback(windowHandle, closeCallback)
-
-        glfwSetInputMode(windowHandle, GLFW_STICKY_KEYS, 1)
-        glfwSwapInterval(1)
         GL.createCapabilities()
-//        glfwWindowHint(GLFW_VISIBLE, GL_FALSE)
-        glfwShowWindow(windowHandle)
 
         println("OpenGL version: " + GL11.glGetString(GL_VERSION))
         val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
@@ -221,7 +181,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
         enable(GlCap.CULL_FACE)
 
         // Map the internal OpenGL coordinate system to the entire screen
-        viewPort(0, 0, canvasWidth, canvasHeight)
+        viewPort(0, 0, window.width, window.height)
         maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
 
         frontBuffer = createFrontBuffer()
@@ -539,7 +499,7 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
             createNewGPUFenceForReadState(renderState)
         }
         profiled("Swap buffers") {
-            glfwSwapBuffers(windowHandle)
+            glfwSwapBuffers(window.handle)
         }
     }
 
@@ -647,10 +607,12 @@ class OpenGLContext private constructor(width: Int, height: Int) : GpuContext<Op
         private var openGLContextSingleton: OpenGLContext? = null
 
         @JvmStatic @JvmName("create") operator fun invoke(width: Int, height: Int): OpenGLContext {
-            if(openGLContextSingleton != null) {
+            return if(openGLContextSingleton != null) {
                 throw IllegalStateException("Can only instantiate one OpenGLContext!")
             } else {
-                return OpenGLContext(width, height)
+                OpenGLContext(width, height, GlfwWindow(width, height, "HPEngine")).apply {
+                    openGLContextSingleton = this
+                }
             }
         }
 
