@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.model;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommandXXX;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -105,7 +107,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
 		buffer.rewind();
 		return buffer.asFloatBuffer();
 	}
-	
+
 	public int getVerticesCount() {
 //		verticesCount = calculateVerticesCount(channels);
         triangleCount = verticesCount / 3;
@@ -115,7 +117,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
 	private int calculateVerticesCount(EnumSet<DataChannels> channels) {
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		validate(totalElementsPerVertex);
-		
+
 		int verticesCount = buffer.capacity() / Float.BYTES / totalElementsPerVertex;
         triangleCount = verticesCount / 3;
 		return verticesCount;
@@ -139,7 +141,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
 
     public int totalElementsPerVertex() {
 		return DataChannels.totalElementsPerVertex(this.channels);
-		
+
 	}
 
 	// TODO: Mach irgendwas....
@@ -261,7 +263,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
 
     public static void multiDrawElementsIndirectCount(VertexBuffer vertexBuffer,
                                                       IndexBuffer indexBuffer,
-                                                      CommandBuffer commandBuffer,
+                                                      PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX> commandBuffer,
                                                       AtomicCounterBuffer drawCountBuffer,
                                                       int maxDrawCount) {
         drawCountBuffer.bindAsParameterBuffer();
@@ -274,14 +276,14 @@ public class VertexBuffer extends PersistentMappedBuffer {
     }
 
     public static void multiDrawElementsIndirectCount(VertexIndexBuffer vertexIndexBuffer,
-                                                      CommandBuffer commandBuffer,
+                                                      PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX> commandBuffer,
                                                       AtomicCounterBuffer drawCountBuffer,
                                                       int maxDrawCount) {
         multiDrawElementsIndirectCount(vertexIndexBuffer.getVertexBuffer(),
                 vertexIndexBuffer.getIndexBuffer(), commandBuffer, drawCountBuffer, maxDrawCount);
     }
 
-    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
+    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX> commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         indexBuffer.bind();
         commandBuffer.bind();
@@ -289,11 +291,11 @@ public class VertexBuffer extends PersistentMappedBuffer {
         indexBuffer.unbind();
     }
 
-    public static void drawLinesInstancedIndirectBaseVertex(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
+    public static void drawLinesInstancedIndirectBaseVertex(VertexIndexBuffer vertexIndexBuffer, PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX> commandBuffer, int primitiveCount) {
         drawLinesInstancedIndirectBaseVertex(vertexIndexBuffer.getVertexBuffer(), vertexIndexBuffer.getIndexBuffer(), commandBuffer, primitiveCount);
     }
 
-    public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
+    public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX> commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         indexBuffer.bind();
         commandBuffer.bind();
@@ -380,14 +382,14 @@ public class VertexBuffer extends PersistentMappedBuffer {
 
     public float[] getVertexData() {
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-	
+
 		float[] result = new float[totalElementsPerVertex * verticesCount];
-		
+
 		buffer.rewind();
 		buffer.asFloatBuffer().get(result);
 		return result;
 	}
-	
+
 	public float[] getValues(DataChannels forChannel) {
 		int stride = 0;
 
@@ -398,12 +400,12 @@ public class VertexBuffer extends PersistentMappedBuffer {
 				stride += channel.getSize();
 			}
 		}
-		
+
 		int elementCountAfterPositions = totalElementsPerVertex() - (stride + forChannel.getSize());
-		
+
 		float[] result = new float[verticesCount * forChannel.getSize()];
 		int resultIndex = 0;
-		
+
 		int elementsPerChannel = forChannel.getSize();
         FloatBuffer floatBuffer = buffer.asFloatBuffer();
         int vertexCounter = 0;
@@ -415,9 +417,9 @@ public class VertexBuffer extends PersistentMappedBuffer {
 			}
             vertexCounter++;
 		}
-		
+
 		return result;
-		
+
 	}
 
     private void setVertexArrayObject(VertexArrayObject vertexArrayObject) {

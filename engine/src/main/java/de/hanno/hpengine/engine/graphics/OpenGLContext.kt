@@ -45,6 +45,7 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
+import org.lwjgl.opengl.GLUtil
 import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
@@ -175,7 +176,11 @@ class OpenGLContext private constructor(val width: Int,
         extensions = supportedExtensions.joinToString(" ")
 
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK)
-//        val debugProc = GLUtil.setupDebugMessageCallback()
+
+        val debug = true
+        if(debug) {
+            val debugProc = GLUtil.setupDebugMessageCallback()
+        }
 
         enable(GlCap.DEPTH_TEST)
         enable(GlCap.CULL_FACE)

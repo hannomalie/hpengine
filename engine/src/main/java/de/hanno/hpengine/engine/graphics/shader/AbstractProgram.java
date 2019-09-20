@@ -4,6 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import net.engio.mbassy.listener.Handler;
 import org.joml.Vector3f;
@@ -125,6 +126,9 @@ public abstract class AbstractProgram {
 
 	public void bindShaderStorageBuffer(int index, GPUBuffer block) {
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, block.getId());
+	}
+	public void bindShaderStorageBuffer(int index, PersistentMappedStructBuffer buffer) {
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, buffer.getId());
 	}
 	public void bindAtomicCounterBufferBuffer(int index, GPUBuffer block) {
 		GL30.glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, index, block.getId());

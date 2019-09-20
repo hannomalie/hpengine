@@ -25,6 +25,7 @@ kotlin.sourceSets {
 
 repositories {
 
+    mavenLocal()
     maven {
         name = "local-dir"
         setUrl("libs")
@@ -32,7 +33,6 @@ repositories {
     flatDir {
         dir("libs")
     }
-    mavenLocal()
     maven {
         name = "java.net"
         setUrl("https://maven.java.net/content/repositories/public/")
@@ -67,7 +67,7 @@ val lwjgl_natives = when (OperatingSystem.current()) {
 }
 dependencies {
     compile(kotlin("stdlib-jdk8"))
-    compile(kotlin("kotlin-reflect"))
+    compile(kotlin("reflect"))
     compile("javax.inject:javax.inject:1")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
@@ -113,7 +113,7 @@ dependencies {
     compile("de.hanno.compiler:java-compiler:1.4")
     compile("commons-beanutils:commons-beanutils:1.9.3")
     compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
-    compile("de.hanno.kotlin-structs:structs:1.0-SNAPSHOT")
+    compile("de.hanno.structs:structs:1.0.1-SNAPSHOT")
 
     testCompile("junit:junit:4.12")
 //    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")

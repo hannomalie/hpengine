@@ -25,6 +25,8 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static de.hanno.hpengine.engine.math.VectorKt.toHp;
+
 public class Octree implements Updatable, Serializable, EntityContainer {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
@@ -159,7 +161,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
                 batchLines(renderer, child);
             }
         } else if(node.hasEntities()){
-            DrawLinesExtension.batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
+            DrawLinesExtension.batchAABBLines(renderer, toHp(node.looseAabb.getMin()), toHp(node.looseAabb.getMax()));
         }
     }
 

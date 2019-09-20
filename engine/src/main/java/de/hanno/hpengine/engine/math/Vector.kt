@@ -20,6 +20,14 @@ class Vector3f : Struct() {
         this.y = target.y
         this.z = target.z
     }
+
+    fun toJoml(): org.joml.Vector3f = org.joml.Vector3f(x, y, z)
+}
+
+fun org.joml.Vector3f.toHp() = Vector3f().apply {
+    x = x()
+    y = y()
+    z = z()
 }
 
 class Vector4f : Struct() {

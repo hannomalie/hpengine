@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
@@ -21,13 +20,16 @@ import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.CommandBuffer
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.ARBClearTexture
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL31
+import org.lwjgl.opengl.GL42
+import org.lwjgl.opengl.GL43
 import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
@@ -84,22 +86,22 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             fun printPhase1(commandOrganization: CommandOrganization) {
                 with(commandOrganization) {
                     println("Visibilities")
-                    Util.printIntBuffer(visibilityBuffers.intBufferView, if (commands.isEmpty()) 0 else commands.map { it.primCount }.reduce({ a, b -> a + b }), 1)
+                    Util.printIntBuffer(visibilityBuffers.buffer.asIntBuffer(), if (commands.isEmpty()) 0 else commands.map { it.primCount }.reduce({ a, b -> a + b }), 1)
                     println("Entity instance counts")
-                    Util.printIntBuffer(entitiesCounters.intBufferView, commands.size, 1)
+                    Util.printIntBuffer(entitiesCounters.buffer.asIntBuffer(), commands.size, 1)
                     println("DrawCountBuffer")
                     println(drawCountBuffer.intBufferView.get(0))
                     println("Entities compacted counter")
                     println(entitiesCompactedCounter.intBufferView.get(0))
                     println("Offsets culled")
-                    Util.printIntBuffer(entityOffsetBuffersCulled.intBufferView, commands.size, 1)
+                    Util.printIntBuffer(entityOffsetBuffersCulled.buffer.asIntBuffer(), commands.size, 1)
                     println("CurrentCompactedPointers")
-                    Util.printIntBuffer(currentCompactedPointers.intBufferView, commands.size, 1)
+                    Util.printIntBuffer(currentCompactedPointers.buffer.asIntBuffer(), commands.size, 1)
                     println("CommandOffsets")
-                    Util.printIntBuffer(commandOffsets.intBufferView, commands.size, 1)
-                    if(!commands.isEmpty()) {
+                    Util.printIntBuffer(commandOffsets.buffer.asIntBuffer(), commands.size, 1)
+                    if(commands.isNotEmpty()) {
                         println("Commands")
-                        Util.printIntBuffer(commandBuffers.intBufferView, 5, drawCountBuffers.intBufferView.get(0))
+                        Util.printIntBuffer(commandBuffer.buffer.asIntBuffer(), 5, drawCountBuffers.intBufferView.get(0))
                         println("Entities")
                         Util.printModelComponents(drawDescription.renderState.entitiesBuffer.buffer, 10)
                         println("Entities compacted")
@@ -121,7 +123,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             if (commands.isEmpty()) {
                 return
             }
-            val targetCommandBuffer = commandBuffers
+            val targetCommandBuffer = commandBuffer
 
             with(drawDescription) {
                 cullPhase(renderState, commandOrganization, drawCountBuffer, targetCommandBuffer, phase)
@@ -133,7 +135,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     private fun cullPhase(renderState: RenderState,
                           commandOrganization: CommandOrganization,
                           drawCountBuffer: AtomicCounterBuffer,
-                          targetCommandBuffer: CommandBuffer,
+                          targetCommandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX>,
                           phase: Pipeline.CullingPhase) = profiled("Culling Phase") {
         cull(renderState, commandOrganization, phase)
 
@@ -143,12 +145,11 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         profiled("Buffer compaction") {
 
             with(commandOrganization) {
-                commandBuffers.sizeInBytes = commandBuffer.sizeInBytes
                 val instanceCount = commands.map { it.primCount }.reduce({ a, b -> a + b })
-                visibilityBuffers.sizeInBytes = instanceCount * java.lang.Integer.BYTES
+                visibilityBuffers.resize(instanceCount)
                 commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * ModelComponent.getBytesPerInstance()
                 val entitiesCountersToUse = entitiesCounters
-                entitiesCountersToUse.sizeInBytes = commands.size * java.lang.Integer.BYTES
+                entitiesCountersToUse.resize(commands.size)
                 with(appendProgram) {
                     use()
                     bindShaderStorageBuffer(1, entitiesCounters)
@@ -182,8 +183,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                        commandOrganization: CommandOrganization,
                        vertexIndexBuffer: VertexIndexBuffer,
                        drawCountBuffer: AtomicCounterBuffer,
-                       commandBuffer: CommandBuffer,
-                       offsetBuffer: IndexBuffer,
+                       commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX>,
+                       offsetBuffer: PersistentMappedStructBuffer<IntStruct>,
                        beforeRender: () -> Unit,
                        phase: Pipeline.CullingPhase) = profiled("Actually render") {
         program.use()

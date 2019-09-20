@@ -15,7 +15,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.CommandBuffer
+import de.hanno.hpengine.engine.model.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
@@ -45,7 +45,6 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         entitiesDrawn = 0
         fun addCommands(commandOrganization: CommandOrganization, batches: List<RenderBatch>) = with(commandOrganization) {
             commands.clear()
-            offsets.clear()
             addCommands(batches, commands, commandBuffer, entityOffsetBuffer)
         }
 
@@ -126,7 +125,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer,
-                               commandBuffer: CommandBuffer,
+                               commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX>,
                                commandCount: Int,
                                drawCountBuffer: AtomicCounterBuffer) {
 
@@ -139,18 +138,20 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     private fun addCommands(renderBatches: List<RenderBatch>,
-                            commands: MutableList<CommandBuffer.DrawElementsIndirectCommand>,
-                            commandBuffer: CommandBuffer,
-                            entityOffsetBuffer: IndexBuffer) {
+                            commands: MutableList<DrawElementsIndirectCommandXXX>,
+                            commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX>,
+                            entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
 
-        for((index, batch) in renderBatches.filter { !it.shouldBeSkipped() }.withIndex()) {
+        val filteredRenderBatches = renderBatches.filter { !it.shouldBeSkipped() }
+        entityOffsetBuffer.resize(filteredRenderBatches.size)
+        for((index, batch) in filteredRenderBatches.withIndex()) {
             commands.add(batch.drawElementsIndirectCommand)
             verticesCount += batch.vertexCount * batch.instanceCount
             entitiesDrawn += batch.instanceCount
-            entityOffsetBuffer.put(index, batch.drawElementsIndirectCommand.entityOffset)
+            entityOffsetBuffer[index].value = batch.drawElementsIndirectCommand.entityOffset
         }
 
-        commandBuffer.setCapacityInBytes((commands.size) * CommandBuffer.DrawElementsIndirectCommand.sizeInBytes())
+        commandBuffer.enlarge((commands.size) * DrawElementsIndirectCommand.sizeInBytes())
         commandBuffer.buffer.rewind()
 
         for ((i, command) in commands.withIndex()) {
