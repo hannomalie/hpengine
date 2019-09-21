@@ -56,6 +56,8 @@ repositories {
     
     mavenCentral()
     jcenter()
+
+    maven { setUrl("https://jitpack.io") }
 }
 val kotlinVersion: String by rootProject.extra
 val lwjgl_version = "3.2.0"
@@ -113,7 +115,8 @@ dependencies {
     compile("de.hanno.compiler:java-compiler:1.4")
     compile("commons-beanutils:commons-beanutils:1.9.3")
     compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
-    compile("de.hanno.structs:structs:1.0.1-SNAPSHOT")
+//    compile("de.hanno.structs:structs:1.0.1-SNAPSHOT")
+    compile("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
 
     testCompile("junit:junit:4.12")
 //    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")
