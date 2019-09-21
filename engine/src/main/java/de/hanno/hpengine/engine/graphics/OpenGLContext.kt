@@ -73,24 +73,10 @@ class OpenGLContext private constructor(val width: Int,
 
     internal val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
 
-    @Volatile
     override var isInitialized = false
         private set
     override var maxTextureUnits: Int = 0
     private val perFrameCommandProviders = CopyOnWriteArrayList<PerFrameCommandProvider>()
-
-    private val activeTexture = -1
-
-    private val textureBindings = HashMap<Int, Int>()
-
-    private var currentFrameBuffer = -1
-
-    private var depthMask = false
-
-    internal var currentReadBuffer = -1
-
-    private val currentBlendMode = BlendMode.FUNC_ADD
-
 
     override lateinit var fullscreenBuffer: QuadVertexBuffer
     override lateinit var debugBuffer: QuadVertexBuffer
@@ -175,8 +161,6 @@ class OpenGLContext private constructor(val width: Int,
 
         extensions = supportedExtensions.joinToString(" ")
 
-        this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK)
-
         val debug = true
         if(debug) {
             val debugProc = GLUtil.setupDebugMessageCallback()
@@ -251,20 +235,12 @@ class OpenGLContext private constructor(val width: Int,
     private fun getOpenGLTextureUnitValue(textureUnitIndex: Int): Int {
         return GL13.GL_TEXTURE0 + textureUnitIndex
     }
-// TODO: Save combination of activeTexture and bindTexture
     override fun bindTexture(target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
         execute("bindTexture0", Runnable {
             GL11.glBindTexture(target.glTarget, textureId)
-            textureBindings[getCleanedTextureUnitValue(activeTexture)] = textureId
             getExceptionOnError("")?.let{ throw it }
         })
-    }
-
-    private fun printTextureBindings() {
-        for ((key, value) in textureBindings) {
-            LOGGER.info("Slot $key -> Texture $value")
-        }
     }
 
     override fun bindTexture(textureUnitIndex: Int, target: GlTextureTarget, textureId: Int) {
@@ -274,7 +250,6 @@ class OpenGLContext private constructor(val width: Int,
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
             GL11.glBindTexture(target.glTarget, textureId)
-            textureBindings[getCleanedTextureUnitValue(activeTexture)] = textureId
             getExceptionOnError("bindTexture")?.let{ throw it }
         })
     }
@@ -309,19 +284,13 @@ class OpenGLContext private constructor(val width: Int,
     }
 
     override fun bindFrameBuffer(frameBuffer: Int) {
-        //        if(currentFrameBuffer != frameBuffer) {
         execute("bindFrameBuffer", Runnable{
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer)
-            currentFrameBuffer = frameBuffer
         })
-        //        }
     }
 
     override fun depthMask(flag: Boolean) {
-        if (depthMask != flag) {
-            GL11.glDepthMask(flag)
-            depthMask = flag
-        }
+        GL11.glDepthMask(flag)
     }
 
     override fun depthFunc(func: GlDepthFunc) {
@@ -330,9 +299,7 @@ class OpenGLContext private constructor(val width: Int,
 
     override fun readBuffer(colorAttachmentIndex: Int) {
         val colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex
-        if (currentReadBuffer != colorAttachment) {
-            GL11.glReadBuffer(colorAttachment)
-        }
+        GL11.glReadBuffer(colorAttachment)
     }
 
     override fun blendEquation(mode: BlendMode) {
@@ -422,14 +389,6 @@ class OpenGLContext private constructor(val width: Int,
     override fun createProgramId(): Int {
         return calculate(Callable{ GL20.glCreateProgram() })!!
     }
-
-    override fun benchmark(runnable: Runnable) {
-        //        GLTimerQuery.getInstance().begin();
-        //        runnable.run();
-        //        GLTimerQuery.getInstance().end();
-        //        LOGGER.info(GLTimerQuery.getInstance().getResult().toString());
-    }
-
 
     override fun destroy() {
         try {

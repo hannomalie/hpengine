@@ -128,8 +128,6 @@ interface GpuContext<T: BackendType> {
 
     fun createProgramId(): Int
 
-    fun benchmark(runnable: Runnable)
-
     fun destroy()
 
 
