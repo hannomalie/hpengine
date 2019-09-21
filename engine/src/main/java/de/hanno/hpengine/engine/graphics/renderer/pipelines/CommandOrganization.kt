@@ -7,9 +7,10 @@ import org.lwjgl.BufferUtils.createIntBuffer
 import java.util.ArrayList
 
 class CommandOrganization(gpuContext: GpuContext<*>) {
-
-    val commands: MutableList<DrawElementsIndirectCommandXXX> = ArrayList()
+    var commandCount = 0
+    var primitiveCount = 0
     val commandBuffer = CommandBuffer(gpuContext, 10000)
+
     val offsets = IndexBuffer(gpuContext, 10000)
     val entityOffsetBuffer = IndexBuffer(gpuContext, 10000)
     val drawCountBuffer = AtomicCounterBuffer(gpuContext, 1)

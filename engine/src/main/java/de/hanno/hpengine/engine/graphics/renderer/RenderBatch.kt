@@ -1,30 +1,27 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommandXXX
-import de.hanno.hpengine.engine.model.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.struct.Struct
 import org.joml.Vector3f
 
 import java.util.ArrayList
 
-class RenderBatch: Struct() {
-    var isVisible by false
-    var isSelected by false
-    var isDrawLines by false
-    var minWorld by de.hanno.hpengine.engine.math.Vector3f()
-    var maxWorld by de.hanno.hpengine.engine.math.Vector3f()
-    var cameraWorldPosition by de.hanno.hpengine.engine.math.Vector3f()
-    var isInReachForTextureLoading by false
-    var isVisibleForCamera by false
-    var update by Update::class.java
-    val drawElementsIndirectCommand by DrawElementsIndirectCommandXXX()
-    var centerWorld by de.hanno.hpengine.engine.math.Vector3f()
-    private var animated by false
-    var boundingSphereRadius by 0.0f
+class RenderBatch {
+    var isVisible = false
+    var isSelected = false
+    var isDrawLines = false
+    var minWorld = Vector3f()
+    var maxWorld = Vector3f()
+    var cameraWorldPosition = Vector3f()
+    var isInReachForTextureLoading = false
+    var isVisibleForCamera = false
+    var update = Update.STATIC
+    val drawElementsIndirectCommand = de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand()
+    var centerWorld = Vector3f()
+    private var animated = false
+    var boundingSphereRadius = 0.0f
     private val instanceMinMaxWorlds = ArrayList<AABB>()
     var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy")
         private set

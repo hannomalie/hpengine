@@ -88,11 +88,11 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
                 if(renderAABBs) {
                     batchAABBLines(renderer, batch.getMinWorld(), batch.getMaxWorld());
                     for(AABB minMax : batch.getInstanceMinMaxWorlds()) {
-                        batchAABBLines(renderer, toHp(minMax.getMin()), toHp(minMax.getMax()));
+                        batchAABBLines(renderer, minMax.getMin(), minMax.getMax());
                     }
                 } else {
                     float radius = batch.getBoundingSphereRadius();
-                    Vector3f center = batch.getCenterWorld().toJoml();
+                    Vector3f center = batch.getCenterWorld();
                     renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(radius, 0, 0)));
                     renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(-radius, 0, 0)));
                     renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(0, 0, radius)));
@@ -115,67 +115,67 @@ public class DrawLinesExtension implements RenderExtension<OpenGl> {
         }
     }
 
-    public static void batchAABBLines(Renderer renderer, de.hanno.hpengine.engine.math.Vector3f minWorld, de.hanno.hpengine.engine.math.Vector3f maxWorld) {
+    public static void batchAABBLines(Renderer renderer, Vector3f minWorld, Vector3f maxWorld) {
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), maxWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
 
 
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), minWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
             renderer.batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
             renderer.batchLine(min, max);
         }
     }

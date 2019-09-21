@@ -161,7 +161,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
                 batchLines(renderer, child);
             }
         } else if(node.hasEntities()){
-            DrawLinesExtension.batchAABBLines(renderer, toHp(node.looseAabb.getMin()), toHp(node.looseAabb.getMax()));
+            DrawLinesExtension.batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
         }
     }
 

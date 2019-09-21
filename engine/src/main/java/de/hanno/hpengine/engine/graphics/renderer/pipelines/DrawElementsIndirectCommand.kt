@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL44.GL_MAP_COHERENT_BIT
 import org.lwjgl.opengl.GL44.GL_MAP_PERSISTENT_BIT
 import java.nio.ByteBuffer
 
-class DrawElementsIndirectCommandXXX : Struct() {
+class DrawElementsIndirectCommand : Struct() {
     var count by 0
     var primCount by 0
     var firstIndex by 0
@@ -144,8 +144,8 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
     }
 }
 
-fun CommandBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX> {
-    return PersistentMappedStructBuffer(size, { DrawElementsIndirectCommandXXX() }, gpuContext, GL40.GL_DRAW_INDIRECT_BUFFER)
+fun CommandBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<DrawElementsIndirectCommand> {
+    return PersistentMappedStructBuffer(size, { DrawElementsIndirectCommand() }, gpuContext, GL40.GL_DRAW_INDIRECT_BUFFER)
 }
 
 class IntStruct: Struct() {
@@ -155,3 +155,4 @@ class IntStruct: Struct() {
 fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<IntStruct> {
     return PersistentMappedStructBuffer(size, { IntStruct() }, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER)
 }
+

@@ -16,15 +16,13 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.DrawElementsIndirectCommand
-import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.Struct
-import de.hanno.struct.StructArray
-import de.hanno.struct.copyTo
+import de.hanno.struct.copyFrom
 
 open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
                                                     open val renderCam: Camera? = null,
@@ -38,18 +36,15 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
     private val useIndirectRendering = engine.config.performance.isIndirectRendering && engine.gpuContext.isSupported(BindlessTextures)
 
-    private var gpuCommandsArray = StructArray(1000) { Command() }
-
     override fun prepare(renderState: RenderState) {
         verticesCount = 0
         entitiesDrawn = 0
-        fun addCommands(commandOrganization: CommandOrganization, batches: List<RenderBatch>) = with(commandOrganization) {
-            commands.clear()
-            addCommands(batches, commands, commandBuffer, entityOffsetBuffer)
+        fun CommandOrganization.addCommands(batches: List<RenderBatch>) {
+            addCommands(batches, commandBuffer, entityOffsetBuffer)
         }
 
-        addCommands(renderState.commandOrganizationStatic, renderState.renderBatchesStatic)
-        addCommands(renderState.commandOrganizationAnimated, renderState.renderBatchesAnimated)
+        renderState.commandOrganizationStatic.addCommands(renderState.renderBatchesStatic)
+        renderState.commandOrganizationAnimated.addCommands(renderState.renderBatchesAnimated)
     }
 
     override fun prepareAndDraw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
@@ -85,7 +80,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         val drawCountBuffer = drawDescriptionStatic.commandOrganization.drawCountBuffer
         fun DrawDescription.drawIndirect() {
             with(commandOrganization) {
-                drawCountBuffer.put(0, commands.size)
+                drawCountBuffer.put(0, commandCount)
                 profiled("Actually render") {
                     program.setUniform("entityIndex", 0)
                     program.setUniform("entityBaseIndex", 0)
@@ -93,7 +88,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                     program.bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
                     program.bindShaderStorageBuffer(4, entityOffsetBuffer)
                     program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-                    drawIndirect(vertexIndexBuffer, commandBuffer, commands.size, drawCountBuffer)
+                    drawIndirect(vertexIndexBuffer, commandBuffer, commandCount, drawCountBuffer)
                 }
             }
         }
@@ -125,7 +120,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer,
-                               commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX>,
+                               commandBuffer: PersistentMappedStructBuffer<de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand>,
                                commandCount: Int,
                                drawCountBuffer: AtomicCounterBuffer) {
 
@@ -138,32 +133,19 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     private fun addCommands(renderBatches: List<RenderBatch>,
-                            commands: MutableList<DrawElementsIndirectCommandXXX>,
-                            commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommandXXX>,
+                            commandBuffer: PersistentMappedStructBuffer<de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand>,
                             entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
 
         val filteredRenderBatches = renderBatches.filter { !it.shouldBeSkipped() }
         entityOffsetBuffer.resize(filteredRenderBatches.size)
+        commandBuffer.enlarge((filteredRenderBatches.size) * DrawElementsIndirectCommand.sizeInBytes())
+        commandBuffer.buffer.rewind()
         for((index, batch) in filteredRenderBatches.withIndex()) {
-            commands.add(batch.drawElementsIndirectCommand)
+            commandBuffer[index].copyFrom(batch.drawElementsIndirectCommand)
             verticesCount += batch.vertexCount * batch.instanceCount
             entitiesDrawn += batch.instanceCount
             entityOffsetBuffer[index].value = batch.drawElementsIndirectCommand.entityOffset
         }
-
-        commandBuffer.enlarge((commands.size) * DrawElementsIndirectCommand.sizeInBytes())
-        commandBuffer.buffer.rewind()
-
-        for ((i, command) in commands.withIndex()) {
-            val target = gpuCommandsArray.getAtIndex(i)
-            target.baseInstance = command.baseInstance
-            target.baseVertex = command.baseVertex
-            target.count = command.count
-            target.firstIndex = command.firstIndex
-            target.primCount = command.primCount
-        }
-
-        gpuCommandsArray.buffer.copyTo(commandBuffer.buffer)
 
         commandBuffer.buffer.rewind()
     }
