@@ -26,6 +26,15 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
                  closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl> {
 
+//     TODO: Avoid this somehow, move to update, but only when update is called before all the
+//    contexts and stuff, or the fresh window will get a message dialog that it doesnt respond
+    private val pollEventsThread = Thread({
+        while(true) {
+            pollEvents()
+            Thread.sleep(16)
+        }
+    }, "PollWindowEvents").apply { start() }
+
     override fun pollEvents() = glfwPollEvents()
 
     // Don't remove this strong reference

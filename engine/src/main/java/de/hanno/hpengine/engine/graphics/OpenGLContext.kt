@@ -170,10 +170,7 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
 //        LOGGER.info("OpenGLContext isInitialized")
     }
 
-    override fun update(seconds: Float) {
-//        This is currently executed in gpu thread, i have to change this
-//        pollEvents()
-    }
+    override fun update(seconds: Float) { }
 
     internal fun checkCommandSyncs() {
         commandSyncs = checkCommandSyncsReturnUnsignaled(commandSyncs)
@@ -387,8 +384,6 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         Executor.launch {
             while (true) {
                 profiled("Frame") {
-                    pollEvents() // Move to update, see above
-
                     checkCommandSyncs()
                     getExceptionOnError("")
                     executePerFrameCommands()
@@ -449,8 +444,6 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
             glfwSwapBuffers(window.handle)
         }
     }
-
-    override fun pollEvents() = window.pollEvents()
 
     fun getOpenGlExtensionsDefine(): String {
 

@@ -141,7 +141,6 @@ interface GpuContext<T: BackendType> {
 
     fun finishFrame(renderState: RenderState)
 
-    fun pollEvents()
     fun isSupported(feature: GpuFeature): Boolean
 
     @JvmDefault

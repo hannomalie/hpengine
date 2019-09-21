@@ -15,5 +15,4 @@ interface Window<T: BackendType> {
     fun showWindow()
     fun hideWindow()
     fun pollEvents()
-    fun update(deltaSeconds: Float) = pollEvents()
 }
