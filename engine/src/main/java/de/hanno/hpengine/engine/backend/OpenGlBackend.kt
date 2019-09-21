@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
+import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
@@ -32,9 +33,9 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val input: Input) : Backend<OpenGl> {
 
     companion object {
-        operator fun invoke(config: Config): OpenGlBackend {
+        operator fun invoke(window: GlfwWindow, config: Config): OpenGlBackend {
             val eventBus= MBassadorEventBus()
-            val gpuContext = OpenGLContext(config.width, config.height)
+            val gpuContext = OpenGLContext(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
             val textureManager = TextureManager(config, programManager, gpuContext)
             val input = Input(eventBus, gpuContext)
@@ -48,7 +49,7 @@ class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { Up
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val config: Config,
-                        override val backend: Backend<OpenGl> = OpenGlBackend(config),
+                        override val backend: Backend<OpenGl> = OpenGlBackend(GlfwWindow(config.width, config.height, "HPEngine"), config),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext<OpenGl>
 

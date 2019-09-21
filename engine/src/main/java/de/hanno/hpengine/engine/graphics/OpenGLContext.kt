@@ -26,13 +26,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
-import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwSwapBuffers
-import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.glfw.GLFWErrorCallbackI
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
@@ -50,19 +45,15 @@ import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
-import java.util.HashMap
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
-import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
-class OpenGLContext private constructor(val width: Int,
-                                        val height: Int,
-                                        override val window: GlfwWindow) : GpuContext<OpenGl> {
+class OpenGLContext private constructor(override val window: GlfwWindow) : GpuContext<OpenGl> {
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
@@ -180,14 +171,8 @@ class OpenGLContext private constructor(val width: Int,
     }
 
     override fun update(seconds: Float) {
-        pollEvents()
-        checkCommandSyncs()
-        try {
-            executePerFrameCommands()
-        } catch (e: Error) {
-            LOGGER.log(Level.SEVERE, "", e)
-        }
-
+//        This is currently executed in gpu thread, i have to change this
+//        pollEvents()
     }
 
     internal fun checkCommandSyncs() {
@@ -223,8 +208,6 @@ class OpenGLContext private constructor(val width: Int,
     override fun activeTexture(textureUnitIndex: Int) {
         if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
-//        TODO: Use this
-//        if(activeTexture != textureIndexGLInt)
         execute("activeTexture", Runnable { GL13.glActiveTexture(textureIndexGLInt) })
     }
 
@@ -404,8 +387,8 @@ class OpenGLContext private constructor(val width: Int,
         Executor.launch {
             while (true) {
                 profiled("Frame") {
-                    pollEvents()
-                    getExceptionOnError("")
+                    pollEvents() // Move to update, see above
+
                     checkCommandSyncs()
                     getExceptionOnError("")
                     executePerFrameCommands()
@@ -467,11 +450,7 @@ class OpenGLContext private constructor(val width: Int,
         }
     }
 
-    override fun pollEvents() {
-        profiled("Poll events") {
-            glfwPollEvents()
-        }
-    }
+    override fun pollEvents() = window.pollEvents()
 
     fun getOpenGlExtensionsDefine(): String {
 
@@ -570,32 +549,15 @@ class OpenGLContext private constructor(val width: Int,
 
         private var openGLContextSingleton: OpenGLContext? = null
 
-        @JvmStatic @JvmName("create") operator fun invoke(width: Int, height: Int): OpenGLContext {
+        @JvmStatic @JvmName("create") operator fun invoke(glfwWindow: GlfwWindow): OpenGLContext {
             return if(openGLContextSingleton != null) {
                 throw IllegalStateException("Can only instantiate one OpenGLContext!")
             } else {
-                OpenGLContext(width, height, GlfwWindow(width, height, "HPEngine")).apply {
+                OpenGLContext(glfwWindow).apply {
                     openGLContextSingleton = this
                 }
             }
         }
-
-
-        fun getExitOnGlErrorFunction(errorMessage: () -> String = { "" }): () -> Unit = {
-            if (GpuContext.CHECKERRORS) {
-                val errorValue = GL11.glGetError()
-
-                if (errorValue != GL11.GL_NO_ERROR) {
-                    val errorString = GLU.gluErrorString(errorValue)
-                    System.err.println("ERROR: $errorString")
-                    System.err.println(errorMessage())
-
-                    RuntimeException("").printStackTrace()
-                    System.exit(-1)
-                }
-            }
-        }
-
     }
 
     fun onError(block: (errorString: String) -> Unit) {

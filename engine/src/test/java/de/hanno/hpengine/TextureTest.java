@@ -2,6 +2,7 @@ package de.hanno.hpengine;
 
 import ddsutil.DDSUtil;
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus;
+import de.hanno.hpengine.engine.graphics.GlfwWindow;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.model.texture.CompleteTextureInfo;
@@ -32,7 +33,7 @@ public class TextureTest {
 
     private static final Logger LOGGER = Logger.getLogger(TextureTest.class.getName());
 
-    OpenGLContext openGLContext = OpenGLContext.create();
+    OpenGLContext openGLContext = OpenGLContext.create(new GlfwWindow(256, 256, "HPEngine"));
     TextureManager textureManager = new TextureManager(new OpenGlProgramManager(openGLContext, new MBassadorEventBus(), ), openGLContext);
 
     @Test

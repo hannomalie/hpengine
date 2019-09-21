@@ -12,4 +12,8 @@ interface Window<T: BackendType> {
     fun getFrameBufferSize(width: IntArray, height: IntArray)
     fun getKey(keyCode: Int): Int
     fun getMouseButton(buttonCode: Int): Int
+    fun showWindow()
+    fun hideWindow()
+    fun pollEvents()
+    fun update(deltaSeconds: Float) = pollEvents()
 }

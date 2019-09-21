@@ -2,12 +2,13 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFW.glfwSetWindowCloseCallback
+import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback
 import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_FALSE
 import kotlin.system.exitProcess
 
 //     Don't make this a local field, we need a strong reference
@@ -19,11 +20,13 @@ private val exitOnCloseCallback = GLFWWindowCloseCallbackI { l: Long ->
     exitProcess(0)
 }
 
-class GlfwWindow(override var width: Int,
+class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  override var height: Int,
                  override val title: String,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
                  closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl> {
+
+    override fun pollEvents() = glfwPollEvents()
 
     // Don't remove this strong reference
     private var framebufferSizeCallback: GLFWFramebufferSizeCallback = object : GLFWFramebufferSizeCallback() {
@@ -38,42 +41,50 @@ class GlfwWindow(override var width: Int,
 
     val handle: Long
     init {
-        GLFW.glfwSetErrorCallback(errorCallback)
-        GLFW.glfwInit()
-        GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL11.GL_TRUE)
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4)
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5)
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE)
-        handle = GLFW.glfwCreateWindow(width, height, title, 0, 0)
+        glfwSetErrorCallback(errorCallback)
+        glfwInit()
+        glfwWindowHint(GLFW_RESIZABLE, GL11.GL_TRUE)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+        glfwWindowHint(GLFW_VISIBLE, GL_FALSE)
+        handle = glfwCreateWindow(width, height, title, 0, 0)
         if (handle == 0L) {
             throw RuntimeException("Failed to create windowHandle")
         }
 
-        GLFW.glfwMakeContextCurrent(handle)
+        glfwMakeContextCurrent(handle)
 
-        GLFW.glfwSetInputMode(handle, GLFW.GLFW_STICKY_KEYS, 1)
-        GLFW.glfwSwapInterval(1)
-//        glfwWindowHint(GLFW_VISIBLE, GL_FALSE)
+        glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
+        glfwSwapInterval(1)
 
         setCallbacks(framebufferSizeCallback, closeCallback)
-        GLFW.glfwShowWindow(handle)
+        glfwMakeContextCurrent(handle)
+        glfwShowWindow(handle)
+    }
+
+    override fun showWindow() {
+        glfwShowWindow(handle)
+    }
+    override fun hideWindow() {
+        glfwHideWindow(handle)
     }
 
     private fun setCallbacks(framebufferSizeCallback: GLFWFramebufferSizeCallback, closeCallback: GLFWWindowCloseCallbackI) {
-        GLFW.glfwMakeContextCurrent(handle)
-        GLFW.glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
+        glfwMakeContextCurrent(handle)
+        glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
         glfwSetWindowCloseCallback(handle, closeCallback)
     }
     override fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray) {
-        GLFW.glfwGetCursorPos(handle, mouseX, mouseY)
+        glfwGetCursorPos(handle, mouseX, mouseY)
     }
     override fun getFrameBufferSize(width: IntArray, height: IntArray) {
-        GLFW.glfwGetFramebufferSize(handle, width, height)
+        glfwGetFramebufferSize(handle, width, height)
     }
     override fun getKey(keyCode: Int): Int {
-        return GLFW.glfwGetKey(handle, keyCode)
+        return glfwGetKey(handle, keyCode)
     }
     override fun getMouseButton(buttonCode: Int): Int {
-        return GLFW.glfwGetMouseButton(handle, buttonCode)
+        return glfwGetMouseButton(handle, buttonCode)
     }
 }

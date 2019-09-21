@@ -19,10 +19,8 @@ import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
-import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.Editor
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -30,8 +28,6 @@ import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
-import java.util.logging.Logger
-import kotlin.coroutines.CoroutineContext
 
 interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
@@ -72,18 +68,17 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         updateThread.start()
     }
 
-    fun CoroutineScope.update(deltaSeconds: Float) {
-        try {
-            engineContext.commandQueue.executeCommands()
-            inputUpdater.setReadyForExecution()
-            while(inputUpdater.isReadyForExecution()){ }
-            with(managerContext.managers) {
-                update(deltaSeconds)
-            }
-            updateRenderState()
-        } catch (e: Exception) {
-            e.printStackTrace()
+    fun CoroutineScope.update(deltaSeconds: Float) = try {
+        gpuContext.update(deltaSeconds)
+        engineContext.commandQueue.executeCommands()
+        inputUpdater.setReadyForExecution()
+        while(inputUpdater.isReadyForExecution()){ }
+        with(managerContext.managers) {
+            update(deltaSeconds)
         }
+        updateRenderState()
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 
     private fun updateRenderState() {
