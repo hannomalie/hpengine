@@ -9,8 +9,8 @@ import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
@@ -71,7 +71,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     private val highZProgram = engine.programManager.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
 
     open fun renderHighZMap() {
-        DrawUtils.renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
+        renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
     }
 
     open var depthMap = renderer.gBuffer.visibilityMap

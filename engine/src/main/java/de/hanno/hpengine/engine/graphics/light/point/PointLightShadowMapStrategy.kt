@@ -13,7 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
@@ -40,17 +40,11 @@ interface PointLightShadowMapStrategy {
 
 class CubeShadowMapStrategy(private val engine: EngineContext<*>, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    var cubemapArrayRenderTarget: CubeMapArrayRenderTarget? = null
-    private var pointCubeShadowPassProgram: Program? = null
-    var pointLightDepthMapsArrayCube: Int = 0
-    init {
-        this.pointCubeShadowPassProgram = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_cube_fragment.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
-
-        val cubeMapArray = CubeMapArray(engine.gpuContext, MAX_POINTLIGHT_SHADOWMAPS, LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION)
-        pointLightDepthMapsArrayCube = cubeMapArray.textureID
-        this.cubemapArrayRenderTarget = CubeMapArrayRenderTarget(
-                engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray)
-    }
+    private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_cube_fragment.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
+    private val cubeMapArray = CubeMapArray(engine.gpuContext, MAX_POINTLIGHT_SHADOWMAPS, LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION)
+    val pointLightDepthMapsArrayCube = cubeMapArray.textureID
+    var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
+            engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray)
 
     override fun bindTextures() {
         engine.gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
@@ -100,7 +94,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<*>, private val po
 
                 profiled("PointLight shadowmap entity rendering") {
                     for (e in renderState.renderBatchesStatic) {
-                        DrawUtils.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, pointCubeShadowPassProgram, !e.isVisible, true)
+                        draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, pointCubeShadowPassProgram, !e.isVisible, true)
                     }
                 }
             }
@@ -110,7 +104,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<*>, private val po
 }
 
 class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, private val pointLightSystem: PointLightSystem, val cameraEntity: Entity): PointLightShadowMapStrategy {
-    private var pointShadowPassProgram: Program? = null
+    private var pointShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_fragment.glsl")))
 
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0
@@ -125,8 +119,6 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
             .build()
 
     init {
-        this.pointShadowPassProgram = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_fragment.glsl")))
-
         pointLightDepthMapsArrayFront = GL11.glGenTextures()
         engine.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
         GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS)
@@ -180,7 +172,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                         pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
                         val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds, modelComponent.getMaterial(engine.sceneManager.scene.materialManager).materialInfo)
-                        DrawUtils.draw(gpuContext, batch, pointShadowPassProgram, true, renderState.vertexIndexBufferStatic)
+                        draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }
 
@@ -194,7 +186,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                         pointShadowPassProgram!!.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
                         val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds, modelComponent.getMaterial(engine.sceneManager.scene.materialManager).materialInfo)
-                        DrawUtils.draw(gpuContext, batch, pointShadowPassProgram, true, renderState.vertexIndexBufferStatic)
+                        draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }
             }

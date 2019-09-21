@@ -241,6 +241,11 @@ public class VertexBuffer extends PersistentMappedBuffer {
 
         return indexCount;
     }
+
+    public int drawInstancedBaseVertex(IndexBuffer indexBuffer, DrawElementsIndirectCommand command) {
+        return drawInstancedBaseVertex(indexBuffer, command.getCount(), command.getPrimCount(), command.getFirstIndex(), command.getBaseVertex());
+    }
+
     public int drawLinesInstancedBaseVertex(IndexBuffer indexBuffer, int indexCount, int instanceCount, int indexOffset, int baseVertexIndex) {
         if(!uploaded) { return 0; }
         bind();
@@ -256,6 +261,10 @@ public class VertexBuffer extends PersistentMappedBuffer {
         }
 
         return indexCount/3;
+    }
+
+    public int drawLinesInstancedBaseVertex(IndexBuffer indexBuffer, DrawElementsIndirectCommand command) {
+        return drawLinesInstancedBaseVertex(indexBuffer, command.getCount(), command.getPrimCount(), command.getFirstIndex(), command.getBaseVertex());
     }
 
     public static void multiDrawElementsIndirectCount(VertexBuffer vertexBuffer,

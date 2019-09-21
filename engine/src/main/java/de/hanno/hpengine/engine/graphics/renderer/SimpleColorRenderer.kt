@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -46,7 +46,7 @@ class SimpleColorRenderer(val engineContext: EngineContext<*>, programManager: P
                 val uniformKey = "has" + map.key.shaderVariableName[0].toUpperCase() + map.key.shaderVariableName.substring(1)
                 simpleColorProgram.setUniform(uniformKey, batch.materialInfo.getHasDiffuseMap())
             }
-            DrawUtils.draw(gpuContext, batch, simpleColorProgram, true, state.vertexIndexBufferStatic)
+            draw(state.vertexIndexBufferStatic, batch, simpleColorProgram, true)
         }
 
         if(engineContext.config.debug.isDrawBoundingVolumes) {

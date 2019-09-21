@@ -11,18 +11,16 @@ import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.struct.Struct
-import de.hanno.struct.copyFrom
+import de.hanno.struct.copyTo
 
 open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
                                                     open val renderCam: Camera? = null,
@@ -32,26 +30,22 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                                                     private val useLineDrawingIfActivated: Boolean = true) : Pipeline {
 
     private var verticesCount = 0
-    private var entitiesDrawn = 0
+    private var entitiesCount = 0
 
     private val useIndirectRendering = engine.config.performance.isIndirectRendering && engine.gpuContext.isSupported(BindlessTextures)
 
     override fun prepare(renderState: RenderState) {
         verticesCount = 0
-        entitiesDrawn = 0
-        fun CommandOrganization.addCommands(batches: List<RenderBatch>) {
-            addCommands(batches, commandBuffer, entityOffsetBuffer)
+        entitiesCount = 0
+        fun CommandOrganization.prepare(batches: List<RenderBatch>) {
+            filteredRenderBatches = batches.filter { !it.shouldBeSkipped() }
+            commandCount = filteredRenderBatches.size
+            addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
         }
 
-        renderState.commandOrganizationStatic.addCommands(renderState.renderBatchesStatic)
-        renderState.commandOrganizationAnimated.addCommands(renderState.renderBatchesAnimated)
+        renderState.commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
+        renderState.commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
     }
-
-    override fun prepareAndDraw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
-        prepare(renderState)
-        draw(renderState, programStatic, programAnimated, firstPassResult)
-    }
-
 
     override fun draw(renderState: RenderState,
                       programStatic: Program,
@@ -63,7 +57,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                     DrawDescription(renderState, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated))
 
             firstPassResult.verticesDrawn += verticesCount
-            firstPassResult.entitiesDrawn += entitiesDrawn
+            firstPassResult.entitiesDrawn += entitiesCount
         }
     }
 
@@ -78,7 +72,8 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     private fun drawStaticAndAnimatedIndirect(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
         // This can be reused ?? To be checked...
         val drawCountBuffer = drawDescriptionStatic.commandOrganization.drawCountBuffer
-        fun DrawDescription.drawIndirect() {
+        fun DrawDescription.drawIndirect(beforeDrawAction: (RenderState, Program) -> Unit) {
+            beforeDrawAction(renderState, program)
             with(commandOrganization) {
                 drawCountBuffer.put(0, commandCount)
                 profiled("Actually render") {
@@ -92,35 +87,27 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                 }
             }
         }
-        fun DrawDescription.prepareAndDrawIndirect(beforeDrawAction: (RenderState, Program) -> Unit) {
-            beforeDrawAction(renderState, program)
-            drawIndirect()
-        }
 
-        drawDescriptionStatic.prepareAndDrawIndirect(::beforeDrawStatic)
-        drawDescriptionAnimated.prepareAndDrawIndirect(::beforeDrawAnimated)
+        drawDescriptionStatic.drawIndirect(::beforeDrawStatic)
+        drawDescriptionAnimated.drawIndirect(::beforeDrawAnimated)
     }
 
     private fun drawStaticAndAnimatedDirect(drawDescriptionStatic: DrawDescription,
                                             drawDescriptionAnimated: DrawDescription) {
-        fun DrawDescription.drawHelper(renderBatches: RenderBatch.RenderBatches, vertexIndexBuffer: VertexIndexBuffer) {
+        fun DrawDescription.drawDirect(beforeDrawAction: (RenderState, Program) -> Unit) {
+            beforeDrawAction(renderState, program)
             program.use()
-            for (batch in renderBatches) {
-                if (batch.shouldBeSkipped()) continue
-
+            for (batch in commandOrganization.filteredRenderBatches) {
                 program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                DrawUtils.draw(engine.gpuContext, batch, program, engine.config.debug.isDrawLines, vertexIndexBuffer)
+                draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
             }
         }
-        beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program)
-        drawDescriptionStatic.drawHelper(drawDescriptionStatic.renderState.entitiesState.renderBatchesStatic, drawDescriptionStatic.renderState.vertexIndexBufferStatic)
-
-        beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program)
-        drawDescriptionAnimated.drawHelper(drawDescriptionAnimated.renderState.entitiesState.renderBatchesAnimated, drawDescriptionAnimated.renderState.vertexIndexBufferAnimated)
+        drawDescriptionStatic.drawDirect(::beforeDrawStatic)
+        drawDescriptionAnimated.drawDirect(::beforeDrawAnimated)
     }
 
     protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer,
-                               commandBuffer: PersistentMappedStructBuffer<de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand>,
+                               commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                                commandCount: Int,
                                drawCountBuffer: AtomicCounterBuffer) {
 
@@ -133,21 +120,18 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     private fun addCommands(renderBatches: List<RenderBatch>,
-                            commandBuffer: PersistentMappedStructBuffer<de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand>,
+                            commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                             entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
 
-        val filteredRenderBatches = renderBatches.filter { !it.shouldBeSkipped() }
-        entityOffsetBuffer.resize(filteredRenderBatches.size)
-        commandBuffer.enlarge((filteredRenderBatches.size) * DrawElementsIndirectCommand.sizeInBytes())
-        commandBuffer.buffer.rewind()
-        for((index, batch) in filteredRenderBatches.withIndex()) {
-            commandBuffer[index].copyFrom(batch.drawElementsIndirectCommand)
-            verticesCount += batch.vertexCount * batch.instanceCount
-            entitiesDrawn += batch.instanceCount
-            entityOffsetBuffer[index].value = batch.drawElementsIndirectCommand.entityOffset
-        }
+        entityOffsetBuffer.enlarge(renderBatches.size)
+        commandBuffer.enlarge(renderBatches.size)
 
-        commandBuffer.buffer.rewind()
+        for((index, batch) in renderBatches.withIndex()) {
+            batch.drawElementsIndirectCommand.copyTo(commandBuffer[index])
+            entityOffsetBuffer[index].value = batch.entityBufferIndex
+            verticesCount += batch.vertexCount * batch.instanceCount
+            entitiesCount += batch.instanceCount
+        }
     }
 
     fun RenderBatch.shouldBeSkipped(): Boolean {
@@ -178,7 +162,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
 }
 
-fun Program.setUniforms(renderState: RenderState, camera: Camera, config: Config) = profiled("setUniforms") {
+fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.camera, config: Config) = profiled("setUniforms") {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
     val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
@@ -218,13 +202,5 @@ fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,
             setUniform(uniformKey, false)
         }
     }
-}
-
-class Command : Struct() {
-    var count by 0
-    var primCount by 0
-    var firstIndex by 0
-    var baseVertex by 0
-    var baseInstance by 0
 }
 

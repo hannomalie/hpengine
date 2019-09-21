@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
@@ -91,10 +91,10 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
 
                 for (e in renderState.renderBatchesStatic) {
                     val drawLines = false
-                    DrawUtils.draw(engine.gpuContext,
-                            renderState.vertexIndexBufferStatic.vertexBuffer,
+                    draw(renderState.vertexIndexBufferStatic.vertexBuffer,
                             renderState.vertexIndexBufferStatic.indexBuffer,
-                            e, areaShadowPassProgram, !e.isVisible, drawLines)
+                            e,
+                            areaShadowPassProgram, !e.isVisible, drawLines)
                 }
             }
         }

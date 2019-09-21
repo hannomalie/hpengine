@@ -29,7 +29,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXT
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.PixelPerfectPickingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -114,8 +114,9 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
 
     private val firstpassProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "first_pass_vertex.glsl")), getShaderSource(File(Shader.directory + "first_pass_fragment.glsl")))
     private val firstpassProgramAnimated = programManager.getProgram(
-            getShaderSource(File(Shader.directory + "first_pass_vertex.glsl")),
-            getShaderSource(File(Shader.directory + "first_pass_fragment.glsl")), Defines(Define.getDefine("ANIMATED", true)))
+        getShaderSource(File(Shader.directory + "first_pass_vertex.glsl")),
+        getShaderSource(File(Shader.directory + "first_pass_fragment.glsl")), Defines(Define.getDefine("ANIMATED", true))
+    )
 
     private val secondPassPointProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_point_fragment.glsl")))
     private val secondPassTubeProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_tube_fragment.glsl")))
@@ -232,7 +233,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
             skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
             skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             gpuContext.bindTexture(6, backend.textureManager.cubeMap!!)
-            DrawUtils.draw(gpuContext, skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
+            draw(skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
 
             profiled("Set GPU state") {
                 gpuContext.enable(CULL_FACE)

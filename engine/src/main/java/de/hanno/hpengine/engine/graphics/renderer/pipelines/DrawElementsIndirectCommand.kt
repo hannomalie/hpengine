@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.struct.Array
 import de.hanno.struct.SlidingWindow
 import de.hanno.struct.Struct
+import de.hanno.struct.copyTo
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL15.glBindBuffer
@@ -24,7 +25,6 @@ class DrawElementsIndirectCommand : Struct() {
     var firstIndex by 0
     var baseVertex by 0
     var baseInstance by 0
-    var entityOffset: Int = 0
 }
 
 private val bufferFlags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
@@ -70,7 +70,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
                     0, nonZeroCapacityInBytes,
                     bufferFlags, null) ?: throw IllegalStateException("Cannot create mapped buffer")
 
-            buffer?.let { byteBuffer.put(it) }
+            buffer?.let { copyTo(byteBuffer) }
             byteBuffer.rewind()
             byteBuffer
         }

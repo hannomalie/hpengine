@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics.light.probe
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
@@ -16,7 +15,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXT
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTarget
@@ -29,14 +28,19 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.DynamicCubeMap
 import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL30.GL_LINEAR
+import org.lwjgl.opengl.GL30.GL_LINEAR_MIPMAP_LINEAR
+import org.lwjgl.opengl.GL30.GL_RG
+import org.lwjgl.opengl.GL30.GL_RG16F
+import org.lwjgl.opengl.GL30.GL_RGBA
+import org.lwjgl.opengl.GL30.GL_RGBA16F
+import org.lwjgl.opengl.GL30.glFinish
 import org.lwjgl.opengl.GL43
 import java.io.File
 import java.nio.FloatBuffer
@@ -118,27 +122,16 @@ class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
 
                 profiled("Probe entity rendering") {
                     for (e in renderState.renderBatchesStatic) {
-                        DrawUtils.draw(gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
+                        draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
                     }
                 }
                 engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
 
-                val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z), {
+                val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z)) {
                     val cubeMap: CubeMap = DynamicCubeMap(engine, 1, GL30.GL_RGBA16F, GL11.GL_FLOAT, TextureFilterConfig.MinFilter.LINEAR, GL_RGBA, colorValueBuffers)
                     val distanceCubeMap = DynamicCubeMap(engine, resolution, GL30.GL_RG16F, GL11.GL_FLOAT, TextureFilterConfig.MinFilter.LINEAR, GL_RG, visibilityValueBuffers)
                     AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
-                })
-
-                glFinish()
-//            floatBuffer.rewind()
-//            floatBuffer.put(0, 0f)
-//            floatBuffer.put(1, 0f)
-//            floatBuffer.put(2, 0f)
-//            floatBuffer.put(3, 0f)
-//            glActiveTexture(0)
-//            gpuContext.bindTexture(0, TEXTURE_CUBE_MAP, ambientCube.cubeMap.textureId)
-//            GL45.glGetTextureSubImage(cubeMapRenderTarget.renderedTexture, 4, 0, 0, 0, 1, 1, 6, GL_RGBA, GL11.GL_FLOAT, floatBuffer)
-//            Util.printFloatBuffer(floatBuffer)
+                }
 
                 glFinish()
                 GL43.glCopyImageSubData(cubeMapRenderTarget.renderedTexture, GL13.GL_TEXTURE_CUBE_MAP, mipmapCount-1, 0, 0, 0,

@@ -4,19 +4,20 @@ import de.hanno.hpengine.engine.SizedArray
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -25,19 +26,24 @@ import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.ARBClearTexture
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL12
+import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL42
 import java.io.File
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
-class VoxelConeTracingExtension
-(private val engine: EngineContext<OpenGl>, directionalLightShadowMapExtension: DirectionalLightShadowMapExtension, val renderer: Renderer<OpenGl>) : RenderExtension<OpenGl> {
+class VoxelConeTracingExtension(
+        private val engine: EngineContext<OpenGl>,
+        directionalLightShadowMapExtension: DirectionalLightShadowMapExtension,
+        val renderer: Renderer<OpenGl>) : RenderExtension<OpenGl> {
 
     val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
         array[0].apply { gridSize = 256 }.apply {
@@ -280,14 +286,14 @@ class VoxelConeTracingExtension
 
                     if (useIndirectDrawing && engine.config.performance.isIndirectRendering) {
                         firstPassResult.reset()
-                        pipeline.prepareAndDraw(renderState, voxelizer, voxelizer, firstPassResult)
+                        pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
                     } else {
                         for (entity in renderState.renderBatchesStatic) {
                             val isStatic = entity.update == Update.STATIC
                             if (renderState.sceneInitiallyDrawn && !engine.config.debug.isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
                                 continue
                             }
-                            val currentVerticesCount = DrawUtils.draw(engine.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
+                            val currentVerticesCount = draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
 
                             //                TODO: Count this somehow?
                             //                firstPassResult.verticesDrawn += currentVerticesCount;
@@ -307,6 +313,8 @@ class VoxelConeTracingExtension
             }
         }
     }
+
+    override fun update() = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)

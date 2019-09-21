@@ -8,8 +8,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.Shader
@@ -56,7 +56,7 @@ class ForwardRenderExtension(renderState: TripleBuffer<RenderState>,
             if(!batch.materialInfo.transparencyType.needsForwardRendering) { continue }
             val isStatic = batch.update == Update.STATIC
             programStatic.setTextureUniforms(gpuContext, batch.materialInfo.maps)
-            val currentVerticesCount = DrawUtils.draw(engineContext.gpuContext, renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, batch, programStatic, false, false)
+            val currentVerticesCount = draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, batch, programStatic, false, false)
 
         }
         engineContext.gpuContext.disable(GlCap.BLEND)

@@ -26,8 +26,7 @@ class RenderBatch {
     var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy")
         private set
 
-    val entityBufferIndex: Int
-        get() = drawElementsIndirectCommand.entityOffset
+    var entityBufferIndex: Int = 0
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount
@@ -48,7 +47,7 @@ class RenderBatch {
     val isStatic: Boolean
         get() = !animated
 
-    fun init(entityBaseIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, instanceMinMaxWorlds: List<AABB>, materialInfo: MaterialInfo): RenderBatch {
+    fun init(entityBufferIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, instanceMinMaxWorlds: List<AABB>, materialInfo: MaterialInfo): RenderBatch {
         this.isVisible = isVisible
         this.isSelected = isSelected
         this.isDrawLines = drawLines
@@ -67,7 +66,7 @@ class RenderBatch {
         this.drawElementsIndirectCommand.firstIndex = indexOffset
         this.drawElementsIndirectCommand.baseVertex = baseVertex
         this.drawElementsIndirectCommand.baseInstance = 0
-        this.drawElementsIndirectCommand.entityOffset = entityBaseIndex
+        this.entityBufferIndex = entityBufferIndex
         this.animated = animated
         this.materialInfo = materialInfo
         return this

@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.lwjgl.opengl.*
 
 interface Pipeline: CustomState {
-    fun prepareAndDraw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
     fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
     fun prepare(renderState: RenderState)
 

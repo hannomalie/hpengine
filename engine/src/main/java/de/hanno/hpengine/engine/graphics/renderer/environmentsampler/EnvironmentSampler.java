@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtils;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -56,6 +55,7 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.L
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.LESS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
+import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtilsKt.draw;
 import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 
 public class EnvironmentSampler extends Entity {
@@ -292,7 +292,7 @@ public class EnvironmentSampler extends Entity {
 			if (!Spatial.isInFrustum(getCamera(), e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
 //				continue;
 			}
-			DrawUtils.draw(engine.getGpuContext(), renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false, true);
+			draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false, true);
 		}
 	}
 	
@@ -324,11 +324,11 @@ public class EnvironmentSampler extends Entity {
         firstPassDefaultProgram.setUniform("timeGpu", (int)System.currentTimeMillis());
 
 		for (RenderBatch entity : extract.getRenderBatchesStatic()) {
-            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
+            draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
         }
 		for (RenderBatch entity : extract.getRenderBatchesAnimated()) {
 //			TODO: program usage is wrong for animated things..
-            DrawUtils.draw(engine.getGpuContext(), extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
+            draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
         }
         engine.getGpuContext().enable(CULL_FACE);
 	}
