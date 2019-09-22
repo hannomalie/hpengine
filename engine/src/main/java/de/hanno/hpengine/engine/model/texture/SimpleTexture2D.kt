@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model.texture
 
 import ddsutil.DDSUtil
+import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.graphics.BindlessTextures
@@ -19,6 +20,9 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
+import javax.swing.Spring.height
+
+
 
 data class SimpleTexture3D(override val dimension: TextureDimension3D,
                            override val textureId: Int,
@@ -44,7 +48,6 @@ data class SimpleTexture2D(override val dimension: TextureDimension2D,
                            override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
                            override val wrapMode: Int,
                            override var uploadState: UploadState) : Texture<TextureDimension2D> {
-
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, file: File, path: String, srgba: Boolean = false): SimpleTexture2D {
             val fileAsDds = File(path.split(".")[0] + ".dds")
