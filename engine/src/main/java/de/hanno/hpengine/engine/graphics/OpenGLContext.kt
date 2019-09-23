@@ -40,6 +40,7 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
+import org.lwjgl.opengl.GLCapabilities
 import org.lwjgl.opengl.GLUtil
 import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
@@ -54,6 +55,12 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
 class OpenGLContext private constructor(override val window: GlfwWindow) : GpuContext<OpenGl> {
+    init {
+        privateInit()
+        startEndlessLoop()
+    }
+
+    private lateinit var capabilities: GLCapabilities
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
@@ -69,8 +76,8 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
     override var maxTextureUnits: Int = 0
     private val perFrameCommandProviders = CopyOnWriteArrayList<PerFrameCommandProvider>()
 
-    override lateinit var fullscreenBuffer: QuadVertexBuffer
-    override lateinit var debugBuffer: QuadVertexBuffer
+    override val fullscreenBuffer = QuadVertexBuffer(this, true).apply { upload() }
+    override val debugBuffer = QuadVertexBuffer(this, false).apply { upload() }
 
     private lateinit var extensions: String
 
@@ -98,29 +105,10 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         return frontBuffer
     }
 
-    init {
-        Executor.launch {
-            try {
-                privateInit()
-            } catch (e: Exception) {
-                LOGGER.severe("Exception during privateInit")
-                e.printStackTrace()
-                exitProcess(-1)
-            }
-            yield()
-        }
-        waitForInitialization()
-        startEndlessLoop()
-        fullscreenBuffer = QuadVertexBuffer(this, true)
-        debugBuffer = QuadVertexBuffer(this, false)
-        fullscreenBuffer.upload()
-        debugBuffer.upload()
-    }
-
     override val features = run {
-        val bindlessTextures = if(extensions.contains("ARB_bindless_textures")) BindlessTextures else null
-        val drawParameters = if(extensions.contains("GL_ARB_shader_draw_parameters")) DrawParameters else null
-        val shader5 = if(extensions.contentEquals("GL_NV_gpu_shader5")) Shader5 else null
+        val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
+        val drawParameters = if(capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
+        val shader5 = if(capabilities.GL_NV_gpu_shader5) Shader5 else null
 
         listOfNotNull(bindlessTextures, drawParameters, shader5)
     }
@@ -139,35 +127,37 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         this.perFrameCommandProviders.add(perFrameCommandProvider)
     }
 
-    internal fun privateInit() {
-        Executor.openGLThreadId = Thread.currentThread().id
+    internal fun privateInit() = runBlocking {
+        Executor.launch {
+            Executor.openGLThreadId = Thread.currentThread().id
 
-        glfwMakeContextCurrent(window.handle)
+            glfwMakeContextCurrent(window.handle)
 
-        GL.createCapabilities()
+            capabilities = GL.createCapabilities()
 
-        println("OpenGL version: " + GL11.glGetString(GL_VERSION))
-        val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
-        val supportedExtensions = (0 until numExtensions).map { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
+            println("OpenGL version: " + GL11.glGetString(GL_VERSION))
+            val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
+            val supportedExtensions = (0 until numExtensions).map { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
 
-        extensions = supportedExtensions.joinToString(" ")
+            extensions = supportedExtensions.joinToString(" ")
 
-        val debug = true
-        if(debug) {
-            val debugProc = GLUtil.setupDebugMessageCallback()
-        }
+            val debug = true
+            if (debug) {
+                val debugProc = GLUtil.setupDebugMessageCallback()
+            }
 
-        enable(GlCap.DEPTH_TEST)
-        enable(GlCap.CULL_FACE)
+            enable(GlCap.DEPTH_TEST)
+            enable(GlCap.CULL_FACE)
 
-        // Map the internal OpenGL coordinate system to the entire screen
-        viewPort(0, 0, window.width, window.height)
-        maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
+            // Map the internal OpenGL coordinate system to the entire screen
+            viewPort(0, 0, window.width, window.height)
+            maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
 
-        frontBuffer = createFrontBuffer()
+            frontBuffer = createFrontBuffer()
 
-        isInitialized = true
-//        LOGGER.info("OpenGLContext isInitialized")
+            isInitialized = true
+            //        LOGGER.info("OpenGLContext isInitialized")
+        }.join()
     }
 
     override fun update(seconds: Float) { }
@@ -487,11 +477,11 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
 
         internal val openGlExecutor = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable).apply {
-                name = OpenGLContext.OPENGL_THREAD_NAME
+                name = OPENGL_THREAD_NAME
             }
         }
 
-        val dispatcher = Executor.openGlExecutor.asCoroutineDispatcher()
+        val dispatcher = openGlExecutor.asCoroutineDispatcher()
 
 //        private val job = Job()
 //        override val coroutineContext = dispatcher + job
