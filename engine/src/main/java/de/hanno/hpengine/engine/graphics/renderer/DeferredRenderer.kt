@@ -60,6 +60,7 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.glFinish
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.io.File
@@ -217,7 +218,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
             val camera = state.camera
 
             gpuContext.depthMask(true)
-            getGBuffer().use(true)
+            getGBuffer().use(gpuContext, true)
 
             gpuContext.disable(CULL_FACE)
             gpuContext.depthMask(false)
@@ -291,8 +292,9 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                     gpuContext.blendEquation(FUNC_ADD)
                     gpuContext.blendFunc(ONE, ONE)
 
-                    gBuffer.lightAccumulationBuffer.use(true)
-                    GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.depthBufferTexture)
+                    gBuffer.lightAccumulationBuffer.use(gpuContext, true)
+//                    GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.depthBufferTexture)
+                    GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, gBuffer.depthBufferTexture, 0)
                     backend.gpuContext.clearColor(0f, 0f, 0f, 0f)
                     backend.gpuContext.clearColorBuffer()
 
@@ -301,7 +303,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                         gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.normalMap)
                         gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.colorReflectivenessMap)
                         gpuContext.bindTexture(3, TEXTURE_2D, gBuffer.motionMap)
-                        gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.textureId)
+                        gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.id)
                         gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState.shadowMapId)
                         gpuContext.bindTexture(7, TEXTURE_2D, gBuffer.visibilityMap)
                         if(state.environmentProbesState.environmapsArray3Id > 0) {
@@ -345,7 +347,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                 }
 
                 backend.gpuContext.disable(BLEND)
-                gBuffer.lightAccumulationBuffer.unuse()
+                gBuffer.lightAccumulationBuffer.unuse(gpuContext)
 
                 renderAOAndScattering(state)
 
@@ -361,8 +363,8 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                     backend.gpuContext.cullFace(BACK)
                     renderReflections(viewMatrix, projectionMatrix, state)
                 } else {
-                    gBuffer.reflectionBuffer.use(true)
-                    gBuffer.reflectionBuffer.unuse()
+                    gBuffer.reflectionBuffer.use(gpuContext, true)
+                    gBuffer.reflectionBuffer.unuse(gpuContext)
                 }
 
                 for (extension in renderExtensions) {
@@ -411,7 +413,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                 combineProgram.setUniform("activeProbeCount", state.environmentProbesState.activeProbeCount)
                 combineProgram.bindShaderStorageBuffer(0, getGBuffer().storageBuffer)
 
-                finalBuffer.use(true)
+                finalBuffer.use(gpuContext, true)
                 backend.gpuContext.disable(DEPTH_TEST)
 
                 backend.gpuContext.bindTexture(0, TEXTURE_2D, getGBuffer().colorReflectivenessMap)
@@ -426,13 +428,13 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                 backend.gpuContext.bindTexture(8, TEXTURE_2D, getGBuffer().reflectionMap)
                 backend.gpuContext.bindTexture(9, TEXTURE_2D, getGBuffer().refractedMap)
                 backend.gpuContext.bindTexture(11, TEXTURE_2D, getGBuffer().ambientOcclusionScatteringMap)
-                backend.gpuContext.bindTexture(14, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.textureId)
+                backend.gpuContext.bindTexture(14, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.id)
 
                 gpuContext.fullscreenBuffer.draw()
 
             }
 
-            backend.gpuContext.frontBuffer.use(true)
+            backend.gpuContext.frontBuffer.use(gpuContext, true)
             profiled("Post processing") {
                 postProcessProgram.use()
                 backend.gpuContext.bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0))
@@ -454,13 +456,13 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
                 backend.gpuContext.bindTexture(1, TEXTURE_2D, getGBuffer().normalMap)
                 backend.gpuContext.bindTexture(2, TEXTURE_2D, getGBuffer().motionMap)
                 backend.gpuContext.bindTexture(3, TEXTURE_2D, getGBuffer().lightAccumulationMapOneId)
-                backend.gpuContext.bindTexture(4, TEXTURE_2D, backend.textureManager.lensFlareTexture.textureId)
+                backend.gpuContext.bindTexture(4, TEXTURE_2D, backend.textureManager.lensFlareTexture.id)
                 gpuContext.fullscreenBuffer.draw()
 
             }
         } else {
             backend.gpuContext.disable(DEPTH_TEST)
-            backend.gpuContext.frontBuffer.use(true)
+            backend.gpuContext.frontBuffer.use(gpuContext, true)
             drawToQuad(engineContext.config.debug.directTextureOutputTextureIndex)
         }
         if (engineContext.config.debug.isDebugframeEnabled) {
@@ -672,7 +674,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
         if (!engineContext.config.quality.isUseAmbientOcclusion && !engineContext.config.effects.isScattering) {
             return
         }
-        gBuffer.halfScreenBuffer.use(true)
+        gBuffer.halfScreenBuffer.use(gpuContext, true)
         backend.gpuContext.disable(DEPTH_TEST)
         backend.gpuContext.bindTexture(0, TEXTURE_2D, gBuffer.positionMap)
         backend.gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.normalMap)
@@ -746,7 +748,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
         backend.gpuContext.bindTexture(11, TEXTURE_2D, copyTextureId)
 
         if (!USE_COMPUTESHADER_FOR_REFLECTIONS) {
-            reflectionBuffer.use(true)
+            reflectionBuffer.use(gpuContext, true)
             reflectionProgram.use()
             reflectionProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT)
             reflectionProgram.setUniform("useAmbientOcclusion", engineContext.config.quality.isUseAmbientOcclusion)
@@ -759,7 +761,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
             reflectionProgram.setUniform("activeProbeCount", renderState.environmentProbesState.activeProbeCount)
             reflectionProgram.bindShaderStorageBuffer(0, gBuffer.storageBuffer)
             gpuContext.fullscreenBuffer.draw()
-            reflectionBuffer.unuse()
+            reflectionBuffer.unuse(gpuContext)
         } else {
             GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
             tiledProbeLightingProgram.use()

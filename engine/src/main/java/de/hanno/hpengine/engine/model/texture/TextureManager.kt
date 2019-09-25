@@ -11,11 +11,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXT
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -231,8 +229,8 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     fun getCubeMap(resourceName: String): CubeMap? {
         val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap? ?: getCubeMap(resourceName,
                 GL11.GL_RGBA,
-                LINEAR_MIPMAP_LINEAR,
-                LINEAR) ?: return null
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR) ?: return null
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -275,7 +273,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[4]))
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[5]))
 
-            this@TextureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMap.textureId)
+            this@TextureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMap.id)
             if(gpuContext.isSupported(BindlessTextures)) {
                 cubeMap.createTextureHandleAndMakeResident() // TODO: Can this be placed into the init of the texture?
             }
@@ -283,7 +281,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     }
 
     fun Texture<*>.createTextureHandleAndMakeResident() = gpuContext.calculate {
-        handle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
+        handle = ARBBindlessTexture.glGetTextureHandleARB(id)
         ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
     }
 
@@ -419,7 +417,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
             target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
             target.is3D -> GL12.glTexImage3D(target.glTarget, mipMapLevel, internalFormat, width, height, depth, mipMapLevel, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
             else -> {
-                GL11.glTexImage2D(target.glTarget, mipMapLevel, internalFormat, width, height, mipMapLevel, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
+                GL11.glTexImage2D(target.glTarget, mipMapLevel, internalFormat, width, height, 0, format, GL11.GL_UNSIGNED_BYTE, null as FloatBuffer?)
             }
         }
     }
@@ -473,8 +471,8 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         GL30.glGenerateMipmap(target.glTarget)
     }
 
-    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: MinFilter, magFilter: MagFilter, wrapMode: Int): SimpleTexture3D {
-        return SimpleTexture3D(gpuContext, TextureDimension(gridResolution, gridResolution, gridResolution), TextureFilterConfig(minFilter, magFilter), internalFormat, wrapMode)
+    fun getTexture3D(gridResolution: Int, internalFormat: Int, minFilter: MinFilter, magFilter: MagFilter, wrapMode: Int): Texture3D {
+        return Texture3D(gpuContext, TextureDimension(gridResolution, gridResolution, gridResolution), TextureFilterConfig(minFilter, magFilter), internalFormat, wrapMode)
     }
 
     fun blur2DTextureRGBA16F(sourceTexture: Int, width: Int, height: Int, mipmapTarget: Int, mipmapSource: Int) {

@@ -13,8 +13,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MagFilter.LINEAR
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
@@ -50,33 +50,33 @@ class VoxelConeTracingExtension(
             setPosition(Vector3f(50f,0f,0f))
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid = textureId
+                grid = id
                 gridHandle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid2 = textureId
+                grid2 = id
                 grid2Handle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                albedoGrid = textureId
+                albedoGrid = id
                 albedoGridHandle = handle
             }
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                normalGrid = textureId
+                normalGrid = id
                 normalGridHandle = handle
             }
 
@@ -87,33 +87,33 @@ class VoxelConeTracingExtension(
             setPosition(Vector3f(-50f,0f,0f))
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid = textureId
+                grid = id
                 gridHandle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                grid2 = textureId
+                grid2 = id
                 grid2Handle = handle
             }
 
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                albedoGrid = textureId
+                albedoGrid = id
                 albedoGridHandle = handle
             }
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    LINEAR_MIPMAP_LINEAR,
-                    LINEAR,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
                     GL12.GL_CLAMP_TO_EDGE).apply {
-                normalGrid = textureId
+                normalGrid = id
                 normalGridHandle = handle
             }
 

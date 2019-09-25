@@ -11,7 +11,7 @@ import kotlin.math.nextUp
 
 interface Texture<out DIMENSION: TextureDimension1D> {
     val dimension: DIMENSION
-    val textureId: Int
+    val id: Int
     val target: GlTextureTarget
     val internalFormat: Int
     var handle: Long

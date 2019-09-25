@@ -19,7 +19,7 @@ open class CubeMap(protected val textureManager: TextureManager,
                    override val dimension: TextureDimension3D,
                    override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
                    protected var srcPixelFormat: Int,
-                   override val textureId: Int,
+                   override val id: Int,
                    private val data: MutableList<ByteArray>) : CubeTexture, Serializable {
     private val srgba = true // TODO: Make this configurable
     override var handle: Long = -1
@@ -49,7 +49,7 @@ open class CubeMap(protected val textureManager: TextureManager,
                 internalFormat,
                 dimension.width / 4,
                 dimension.height / 3,
-                dimension.depth,
+                0,
                 srcPixelFormat,
                 GL11.GL_UNSIGNED_BYTE,
                 buffer)

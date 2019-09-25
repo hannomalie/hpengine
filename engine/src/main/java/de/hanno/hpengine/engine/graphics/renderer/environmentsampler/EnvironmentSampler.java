@@ -3,15 +3,14 @@ package de.hanno.hpengine.engine.graphics.renderer.environmentsampler;
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
-import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
-import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer;
@@ -20,26 +19,35 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
+import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.ShaderKt;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
-import de.hanno.hpengine.engine.scene.*;
+import de.hanno.hpengine.engine.scene.AABB;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe;
+import de.hanno.hpengine.engine.scene.EnvironmentProbeManager;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.Spatial;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
-import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import de.hanno.hpengine.util.stopwatch.ProfilingTask;
-import org.joml.*;
+import org.joml.AxisAngle4f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
 
 import java.io.File;
-import java.lang.Math;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.List;
@@ -137,14 +145,14 @@ public class EnvironmentSampler extends Entity {
             cubeMapFaceViews[2][z] = GL11.glGenTextures();
             cubeMapFaceViews[3][z] = GL11.glGenTextures();
 			//GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureId(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
-			GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
-			GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
-            GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
-            GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).getTextureID(), diffuseInternalFormat, 0, 1, 6 * probeIndex + z, 1);
+			GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getId(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+			GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getId(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+            GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getId(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+            GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).getId(), diffuseInternalFormat, 0, 1, 6 * probeIndex + z, 1);
 		}
-        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
-        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
-        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
+        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getId(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
+        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getId(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
+        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getId(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
 
 
 		renderTarget = new RenderTargetBuilder<>(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
@@ -171,13 +179,13 @@ public class EnvironmentSampler extends Entity {
 		Vector3f initialPosition = getPosition();
 
 		DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
-		environmentProbeManager.getEnvironmentMapsArray().bind(engine.getGpuContext(), 8);
-		environmentProbeManager.getEnvironmentMapsArray(0).bind(engine.getGpuContext(), 10);
+		engine.getGpuContext().bindTexture(8, environmentProbeManager.getEnvironmentMapsArray());
+		engine.getGpuContext().bindTexture(10, environmentProbeManager.getEnvironmentMapsArray(0));
 
 		engine.getGpuContext().disable(DEPTH_TEST);
 		engine.getGpuContext().depthFunc(LEQUAL);
 
-		renderTarget.use(false);
+		renderTarget.use(engine.getGpuContext(), false);
 		Program cubeMapProgram = this.cubeMapProgram;
 		bindProgramSpecificsPerCubeMap(cubeMapProgram);
 
@@ -401,10 +409,10 @@ public class EnvironmentSampler extends Entity {
         engine.getGpuContext().bindTexture(1, TEXTURE_2D, normalMap);
         engine.getGpuContext().bindTexture(2, TEXTURE_2D, colorMap);
         engine.getGpuContext().bindTexture(8, TEXTURE_2D, colorMap);
-        environmentProbeManager.getEnvironmentMapsArray(3).bind(engine.getGpuContext(), 8);
+		engine.getGpuContext().bindTexture(8, environmentProbeManager.getEnvironmentMapsArray(3));
         engine.getGpuContext().bindTexture(9, engine.getTextureManager().getCubeMap());
 
-        engine.getGpuContext().bindImageTexture(6, environmentProbeManager.getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+        engine.getGpuContext().bindImageTexture(6, environmentProbeManager.getCubeMapArrayRenderTarget().getCubeMapArray(3).getId(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();
 		tiledProbeLightingProgram.setUniform("secondBounce", DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
 		tiledProbeLightingProgram.setUniform("screenWidth", (float) EnvironmentProbeManager.RESOLUTION);
@@ -438,10 +446,10 @@ public class EnvironmentSampler extends Entity {
 
                 CubeMapArray cubeMapArray = environmentProbeManager.getEnvironmentMapsArray(3);
 				int internalFormat = cubeMapArray.getInternalFormat();
-				int cubemapArrayColorTextureId = cubeMapArray.getTextureID();
+				int cubemapArrayColorTextureId = cubeMapArray.getId();
 				int cubeMapView = GL11.glGenTextures();
 
-                GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(),
+                GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getId(),
 						cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT,
 						6 * probe.getIndex(), 6);
 
@@ -468,7 +476,7 @@ public class EnvironmentSampler extends Entity {
 		
 		cubemapRadianceFragmentProgram.use();
         CubeMapArrayRenderTarget cubeMapArrayRenderTarget = environmentProbeManager.getCubeMapArrayRenderTarget();
-		renderTarget.use(false);
+		renderTarget.use(engine.getGpuContext(), false);
 
         engine.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP, cubeMapView);
 		//GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentMap().getTextureId());
@@ -531,14 +539,14 @@ public class EnvironmentSampler extends Entity {
 		if (use2DMipMapping ) {
 			for (int i = 0; i < 6; i++) {
 				int cubeMapFaceView = GL11.glGenTextures();
-                GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6 * probe.getIndex() + i, 1);
+                GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getId(), cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6 * probe.getIndex() + i, 1);
                 engine.getTextureManager().generateMipMaps(TEXTURE_2D, cubeMapFaceView);
 				GL11.glDeleteTextures(cubeMapFaceView);
 			}
 			
 		} else {
 			int cubeMapView = GL11.glGenTextures();
-            GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probe.getIndex(), 6);
+            GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getId(), cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probe.getIndex(), 6);
             engine.getTextureManager().generateMipMaps(TEXTURE_CUBE_MAP, cubeMapView);
 			GL11.glDeleteTextures(cubeMapView);
 		}

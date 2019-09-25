@@ -1,12 +1,15 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
@@ -18,13 +21,13 @@ import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
+import de.hanno.hpengine.engine.model.texture.TextureDimension;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -35,8 +38,9 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR_MIPMAP_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_REPEAT;
+import static org.lwjgl.opengl.GL11.GL_RGBA8;
+import static org.lwjgl.opengl.GL30.GL_RGBA32F;
 
 public class EnvironmentProbeManager implements Manager, RenderSystem {
 	public static final int MAX_PROBES = 25;
@@ -63,11 +67,15 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 
 	public EnvironmentProbeManager(Engine engineContext, Renderer renderer) {
     	this.engine = engineContext;
-		this.environmentMapsArray = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR, RESOLUTION);
-		this.environmentMapsArray1 = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
-		this.environmentMapsArray2 = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR, GL11.GL_RGBA8, RESOLUTION);
-		this.environmentMapsArray3 = new CubeMapArray(engineContext.getGpuContext(), MAX_PROBES, LINEAR_MIPMAP_LINEAR, RESOLUTION);
-        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engineContext.getGpuContext(), EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+		TextureDimension dimension = new TextureDimension(RESOLUTION, RESOLUTION, MAX_PROBES);
+		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
+		int wrapMode = GL_REPEAT;
+		GpuContext gpuContext = engineContext.getGpuContext();
+		this.environmentMapsArray = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA32F, wrapMode);
+		this.environmentMapsArray1 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
+		this.environmentMapsArray2 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
+		this.environmentMapsArray3 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
+        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(gpuContext, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
 		this.renderer = renderer;
@@ -172,7 +180,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
         engine.getGpuContext().depthMask(true);
         engine.getGpuContext().enable(DEPTH_TEST);
         engine.getGpuContext().enable(CULL_FACE);
-		cubeMapArrayRenderTarget.use(false);
+		cubeMapArrayRenderTarget.use(engine.getGpuContext(), false);
 	}
 	
 	public void drawDebug(Program program, Octree octree) {
@@ -319,8 +327,8 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 
 	@Override
 	public void extract(@NotNull RenderState renderState) {
-		renderState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getTextureID());
-		renderState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getTextureID());
+		renderState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getId());
+		renderState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getId());
 		renderState.getEnvironmentProbesState().setActiveProbeCount(getProbes().size());
 		renderState.getEnvironmentProbesState().setEnvironmentMapMin(getMinPositions());
 		renderState.getEnvironmentProbesState().setEnvironmentMapMax(getMaxPositions());

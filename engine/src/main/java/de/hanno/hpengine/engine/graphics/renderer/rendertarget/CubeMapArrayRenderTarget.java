@@ -1,154 +1,73 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
-import de.hanno.hpengine.engine.graphics.BindlessTextures;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
+import de.hanno.hpengine.engine.model.texture.SimpleCubeMap;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
-import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.engine.model.texture.TextureDimension;
+import org.joml.Vector4f;
+import org.lwjgl.opengl.GL30;
 
-import java.awt.image.BufferedImage;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter.LINEAR;
+import static de.hanno.hpengine.engine.model.texture.TextureImplsKt.createView;
+import static org.lwjgl.opengl.GL11.GL_REPEAT;
+import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24;
 
-public class CubeMapArrayRenderTarget extends RenderTarget {
-    private final ArrayList<long[]> handleLists;
-	private final int depth;
-	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
+public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 
-	public CubeMapArrayRenderTarget(GpuContext gpuContext, int width, int height, int depth, CubeMapArray... cubeMapArray) {
-		super(gpuContext);
-		this.depth = cubeMapArray[0].getCubeMapCount();
-		this.gpuContext = gpuContext;
-		this.width = width;
-		this.height = height;
-		this.clearR = 0;
-		this.clearG = 0.3f;
-		this.clearB = 0.3f;
-		this.clearA = 0;
-        this.handleLists = new ArrayList<>(cubeMapArray.length);
+	public List<SimpleCubeMap> cubeMapViews;
 
-		for(CubeMapArray cma: cubeMapArray) {
-			this.cubeMapArrays.add(cma);
-            long[] currentList = new long[cma.getCubeMapCount()];
-            handleLists.add(currentList);
-            for(int cubeMapIndex = 0; cubeMapIndex < cma.getCubeMapCount(); cubeMapIndex++) {
-                int cubeMapView = this.gpuContext.genTextures();
-                int finalCubeMapIndex = cubeMapIndex;
-                this.gpuContext.execute("CubeMapArrayRenderTarget0", () -> {
-                    GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cma.getTextureID(),
-                            cma.getInternalFormat(), 0, 1,
-                            6 * finalCubeMapIndex, 6);
+	static DepthBuffer<CubeMapArray> getDepthBuffer(GpuContext gpuContext, int width, int height, int depth) {
+		TextureDimension dimension = new TextureDimension(width, height, depth);
+		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST);
+		return new DepthBuffer<>(CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_DEPTH_COMPONENT24, GL_REPEAT));
+	}
 
-                });
-                if(gpuContext.isSupported(BindlessTextures.INSTANCE)) {
-					long handle = this.gpuContext.calculate((Callable<Long>) () ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
-					currentList[cubeMapIndex] = handle;
-					this.gpuContext.execute("CubeMapArrayRenderTarget1", () -> {
-						ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-					});
-				}
+	static List<CubeMapArray> toList(CubeMapArray... arrays) {
+		return Arrays.asList(arrays);
+	}
+
+	public CubeMapArrayRenderTarget(GpuContext gpuContext, int width, int height, CubeMapArray... cubeMapArray) {
+		super(
+			FrameBuffer.Companion.invoke(gpuContext, getDepthBuffer(gpuContext, width, height, cubeMapArray.length)),
+			width,
+			height,
+			toList(cubeMapArray),
+			"CubeMapArrayRenderTarget",
+			new Vector4f(0,0,0,0)
+		);
+		cubeMapViews = new ArrayList<>();
+
+		for(int cubeMapArrayIndex = 0; cubeMapArrayIndex < cubeMapArray.length; cubeMapArrayIndex++) {
+			CubeMapArray cma = cubeMapArray[cubeMapArrayIndex];
+			gpuContext.bindTexture(cma);
+            for(int cubeMapIndex = 0; cubeMapIndex < cubeMapArray.length; cubeMapIndex++) {
+				SimpleCubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
+				cubeMapViews.add(cubeMapView);
             }
 		}
-		int colorBufferCount = cubeMapArrays.size();
-		renderedTextures = new int[colorBufferCount];
-
-        this.gpuContext.execute("CubeMapArrayRenderTarget2", () -> {
-			frameBuffer = GL30.glGenFramebuffers();
-			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
-			IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
-
-			for (int i = 0; i < colorBufferCount; i++) {
-				GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, cubeMapArrays.get(i).getTextureID(), 0);
-				scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
-				renderedTextures[i] = cubeMapArrays.get(i).getTextureID();
-			}
-			GL20.glDrawBuffers(scratchBuffer);
-
-			int colorBufferFrameBufferCheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
-			if (colorBufferFrameBufferCheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
-				System.err.println("CubeRenderTarget fucked up with " + colorBufferFrameBufferCheck);
-				new Exception().printStackTrace();
-				System.exit(0);
-			}
-
-            CubeMapArray depthCubeMapArray = new CubeMapArray(gpuContext, this.depth, LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
-			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
-			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
-			depthBufferLocation = depthCubeMapArray.getTextureID();
-
-			//TODO: Make this more pretty
-			int framebufferCheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
-			if (framebufferCheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
-				System.err.println("CubeRenderTarget fucked up with " + framebufferCheck);
-                new Exception().printStackTrace();
-				System.exit(0);
-			}
-		});
 	}
 
-	public void setCubeMapFace(int cubeMapIndex, int faceIndex) {
-		setCubeMapFace(0, cubeMapIndex, faceIndex);
-	}
 	public void setCubeMapFace(int attachmentIndex, int cubeMapIndex, int faceIndex) {
 		setCubeMapFace(attachmentIndex, attachmentIndex, cubeMapIndex, faceIndex);
 	}
 
 	public void setCubeMapFace(int cubeMapArrayListIndex, int attachmentIndex, int cubeMapIndex, int faceIndex) {
-		GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+attachmentIndex, cubeMapArrays.get(cubeMapArrayListIndex).getTextureID(), 0, 6*cubeMapIndex + faceIndex);
+		GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+attachmentIndex, getTextures().get(cubeMapArrayListIndex).getId(), 0, 6*cubeMapIndex + faceIndex);
 	}
 	public void resetAttachments() {
-		for (int i = 0; i < cubeMapArrays.size(); i++) {
+		for (int i = 0; i < getTextures().size(); i++) {
 			GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, 0, 0, 0);
 		}
 	}
 	
-	public void saveBuffer(String path) {
-		Util.saveImage(getBuffer(), path);
-	}
-	public void saveDepthBuffer(String path) {
-		Util.saveImage(getDepthBuffer(), path);
-	}
-
-	public BufferedImage getBuffer() {
-		return Util.toImage(getTargetTexturedata(), width, height);
-	}
-	public BufferedImage getDepthBuffer() {
-		return Util.toImage(getDepthTexturedata(), width, height);
-	}
-
-	public ByteBuffer getTargetTexturedata() {
-		ByteBuffer pixels = BufferUtils.createByteBuffer(width*height*4);
-		GL11.glReadPixels(0, 0, width, height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, pixels);
-
-		return pixels;
-	}
-	public ByteBuffer getDepthTexturedata() {
-		ByteBuffer pixels = BufferUtils.createByteBuffer(width*height*4);
-		GL11.glReadPixels(0, 0, width, height, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, pixels);
-
-		return pixels;
-	}
-
-	public CubeMapArray getCubeMapArray() {
-		return getCubeMapArray(0);
-	}
-
 	public CubeMapArray getCubeMapArray(int i) {
-		return cubeMapArrays.get(i);
+		return getTextures().get(i);
 	}
-
-	public void bindCubeMapFace(GpuContext gpuContext, int unit, int attachment, int cubemapIndex, int sideIndex) {
-		cubeMapArrays.get(attachment).bind(gpuContext, 6*cubemapIndex + sideIndex, unit);
-	}
-
-    public ArrayList<long[]> getHandleLists() {
-        return handleLists;
-    }
 
 }

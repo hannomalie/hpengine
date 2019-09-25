@@ -9,6 +9,9 @@ import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -46,11 +49,11 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     val appendDrawcommandsProgram = engine.programManager.getProgramFromFileNames("append_drawcommands_vertex.glsl")
     val appendDrawCommandComputeProgram = engine.programManager.getComputeProgram("append_drawcommands_compute.glsl")
 
-    var highZBuffer: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
+    var highZBuffer: RenderTarget<*> = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget<*>>(engine.gpuContext)
             .setName("GPUCulledPipeline")
             .setWidth(engine.config.width / 2).setHeight(engine.config.height / 2)
             .add(ColorAttachmentDefinition("HighZ").setInternalFormat(Pipeline.HIGHZ_FORMAT)
-                    .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
+                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
             .build()
 
     override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {

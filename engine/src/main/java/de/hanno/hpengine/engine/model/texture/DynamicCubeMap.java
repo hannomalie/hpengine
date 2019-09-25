@@ -2,9 +2,13 @@ package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
-import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig.MinFilter;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL30;
 
 import java.nio.FloatBuffer;
 
@@ -18,7 +22,7 @@ public class DynamicCubeMap extends CubeMap {
         if(values.length != 6) { throw new IllegalArgumentException("Pass six float buffers with values!"); }
         this.engine = engine;
 
-        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, getTextureId());
+        engine.getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, getId());
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);

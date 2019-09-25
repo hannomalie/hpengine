@@ -3,9 +3,11 @@ package de.hanno.hpengine.engine.graphics
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.*
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
@@ -16,7 +18,7 @@ interface GpuContext<T: BackendType> {
 
     val backend: T
 
-    val frontBuffer: RenderTarget
+    val frontBuffer: RenderTarget<Texture2D>
 
     val window: Window<T>
 
@@ -39,7 +41,7 @@ interface GpuContext<T: BackendType> {
     val fullscreenBuffer: VertexBuffer
     val debugBuffer: VertexBuffer
 
-    val registeredRenderTargets: List<RenderTarget>
+    val registeredRenderTargets: List<RenderTarget<*>>
 
     val features: List<GpuFeature>
 
@@ -62,11 +64,11 @@ interface GpuContext<T: BackendType> {
     }
 
     fun bindTexture(textureUnitIndex: Int, texture: Texture<*>) {
-        bindTexture(textureUnitIndex, texture.target, texture.textureId)
+        bindTexture(textureUnitIndex, texture.target, texture.id)
     }
 
     fun bindTexture(texture: Texture<*>) {
-        bindTexture(texture.target, texture.textureId)
+        bindTexture(texture.target, texture.id)
     }
 
     fun bindTextures(textureIds: IntBuffer)
@@ -137,7 +139,7 @@ interface GpuContext<T: BackendType> {
 
     fun clearCubeMapInCubeMapArray(textureID: Int, internalFormat: Int, width: Int, height: Int, cubeMapIndex: Int)
 
-    fun register(target: RenderTarget)
+    fun register(target: RenderTarget<*>)
 
     fun finishFrame(renderState: RenderState)
 
@@ -156,6 +158,7 @@ interface GpuContext<T: BackendType> {
     }
 
     fun getExceptionOnError(errorMessage: String = ""): RuntimeException?
+    fun bindFrameBuffer(frameBuffer: FrameBuffer)
 
     sealed class SupportResult {
         object Supported: SupportResult()

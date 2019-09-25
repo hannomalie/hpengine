@@ -12,7 +12,7 @@ class SimpleLinesRenderer(engineContext: EngineContext<*>, programManager: Progr
 
     override fun render(result: DrawResult, state: RenderState) {
         finalImage = deferredRenderingBuffer.colorReflectivenessMap
-        deferredRenderingBuffer.use(true)
+        deferredRenderingBuffer.use(gpuContext, true)
         drawlinesExtension.renderFirstPass(null, gpuContext, result.firstPassResult, state)
         super.render(result, state)
     }

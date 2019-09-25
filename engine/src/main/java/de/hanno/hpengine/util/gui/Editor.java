@@ -51,6 +51,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;
+import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.TextureDimension1D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.SimpleScene;
@@ -690,10 +692,10 @@ public class Editor implements HostComponent {
 
         Map<String, List<JComponent>> toggleButtonsWithGroups = getButtons(config, engine);
 
-        for(RenderTarget target: engine.getGpuContext().getRegisteredRenderTargets()) {
-            for(int i = 0; i < target.getColorAttachments().size(); i++) {
-                ColorAttachmentDefinition attachmentDefinition = target.getColorAttachments().get(i);
-                String name = target.getName() + " - " + attachmentDefinition.getName();
+        for(RenderTarget<?> target: engine.getGpuContext().getRegisteredRenderTargets()) {
+            for(int i = 0; i < target.getTextures().size(); i++) {
+                Texture<?> texture = target.getTextures().get(i);
+                String name = target.getName() + " - " + i; // TODO: Revive names here
                 renderTargetTextures.add(new DirectTextureOutputItem(target, name, target.getRenderedTexture(i)));
             }
         }

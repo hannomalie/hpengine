@@ -17,7 +17,7 @@ class SimpleColorRenderer(val engineContext: EngineContext<*>, programManager: P
     val simpleColorProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
 
     override fun render(result: DrawResult, state: RenderState) {
-        deferredRenderingBuffer.use(true)
+        deferredRenderingBuffer.use(gpuContext, true)
 
         simpleColorProgram.use()
 

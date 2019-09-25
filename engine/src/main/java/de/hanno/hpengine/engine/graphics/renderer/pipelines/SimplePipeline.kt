@@ -194,7 +194,7 @@ fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,
 
         if(maps.contains(mapEnumEntry)) {
             val map = maps[mapEnumEntry]!!
-            if (map.textureId > 0) {
+            if (map.id > 0) {
                 gpuContext.bindTexture(mapEnumEntry.textureSlot, map)
                 setUniform(uniformKey, true)
             }

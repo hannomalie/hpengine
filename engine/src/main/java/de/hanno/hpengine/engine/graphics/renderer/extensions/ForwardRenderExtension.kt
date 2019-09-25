@@ -32,11 +32,12 @@ class ForwardRenderExtension(renderState: TripleBuffer<RenderState>,
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource)
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
-        deferredRenderingBuffer.forwardBuffer.use(false)
+        deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
 
         GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f,0f,0f,0f))
         GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f,1f,1f,1f))
-        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
+//        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
+        GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
         engineContext.gpuContext.depthMask(false)
         engineContext.gpuContext.depthFunc(GlDepthFunc.LEQUAL)
         engineContext.gpuContext.enable(GlCap.BLEND)
@@ -60,7 +61,7 @@ class ForwardRenderExtension(renderState: TripleBuffer<RenderState>,
 
         }
         engineContext.gpuContext.disable(GlCap.BLEND)
-        deferredRenderingBuffer.forwardBuffer.unuse()
+        deferredRenderingBuffer.forwardBuffer.unuse(gpuContext)
     }
 
     companion object {

@@ -1,13 +1,18 @@
 package de.hanno.hpengine.engine.graphics.light.area
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -42,13 +47,13 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
 
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
-    private val renderTarget: RenderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget>(engine.gpuContext)
+    private val renderTarget: RenderTarget<*> = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget<*>>(engine.gpuContext)
             .setName("AreaLight Shadow")
             .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
             .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
             .add(ColorAttachmentDefinition("Shadow")
                     .setInternalFormat(GL30.GL_RGBA32F)
-                    .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
+                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
             .build()
 
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
@@ -74,7 +79,7 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
             engine.gpuContext.depthMask(true)
             engine.gpuContext.enable(GlCap.DEPTH_TEST)
             engine.gpuContext.disable(GlCap.CULL_FACE)
-            renderTarget.use(true)
+            renderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
 
             for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 

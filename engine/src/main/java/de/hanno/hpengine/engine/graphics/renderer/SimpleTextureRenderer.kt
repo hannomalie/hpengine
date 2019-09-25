@@ -9,5 +9,5 @@ import de.hanno.hpengine.engine.model.texture.Texture
 class SimpleTextureRenderer(config: Config,
                             programManager: ProgramManager<OpenGl>,
                             var texture: Texture<*>) : AbstractDeferredRenderer(programManager as OpenGlProgramManager, config) {
-    override var finalImage = texture.textureId
+    override var finalImage = texture.id
 }

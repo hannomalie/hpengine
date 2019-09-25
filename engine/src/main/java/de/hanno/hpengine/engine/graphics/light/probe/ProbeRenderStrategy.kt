@@ -12,6 +12,8 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
@@ -34,8 +36,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.GL_LINEAR
-import org.lwjgl.opengl.GL30.GL_LINEAR_MIPMAP_LINEAR
 import org.lwjgl.opengl.GL30.GL_RG
 import org.lwjgl.opengl.GL30.GL_RG16F
 import org.lwjgl.opengl.GL30.GL_RGBA
@@ -55,10 +55,10 @@ class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
             .setHeight(resolution)
             .add(ColorAttachmentDefinition("Diffuse")
                     .setInternalFormat(GL_RGBA16F)
-                    .setTextureFilter(GL_LINEAR_MIPMAP_LINEAR))
+                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
             .add(ColorAttachmentDefinition("Radial Distance")
                     .setInternalFormat(GL_RG16F)
-                    .setTextureFilter(GL_LINEAR)))
+                    .setTextureFilter(TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR))))
 
     private var probeProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), getShaderSource(File(Shader.directory + "probe_cube_fragment.glsl")), getShaderSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
 
@@ -94,7 +94,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
                 gpuContext.disable(GlCap.CULL_FACE)
                 gpuContext.depthMask(true)
                 gpuContext.clearColor(0f,0f,0f,0f)
-                cubeMapRenderTarget.use(true)
+                cubeMapRenderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
                 gpuContext.viewPort(0, 0, resolution, resolution)
 
                 val probePosition = Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
@@ -128,16 +128,16 @@ class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
                 engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
 
                 val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z)) {
-                    val cubeMap: CubeMap = DynamicCubeMap(engine, 1, GL30.GL_RGBA16F, GL11.GL_FLOAT, TextureFilterConfig.MinFilter.LINEAR, GL_RGBA, colorValueBuffers)
-                    val distanceCubeMap = DynamicCubeMap(engine, resolution, GL30.GL_RG16F, GL11.GL_FLOAT, TextureFilterConfig.MinFilter.LINEAR, GL_RG, visibilityValueBuffers)
+                    val cubeMap: CubeMap = DynamicCubeMap(engine, 1, GL30.GL_RGBA16F, GL11.GL_FLOAT, MinFilter.LINEAR, GL_RGBA, colorValueBuffers)
+                    val distanceCubeMap = DynamicCubeMap(engine, resolution, GL30.GL_RG16F, GL11.GL_FLOAT, MinFilter.LINEAR, GL_RG, visibilityValueBuffers)
                     AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 
                 glFinish()
                 GL43.glCopyImageSubData(cubeMapRenderTarget.renderedTexture, GL13.GL_TEXTURE_CUBE_MAP, mipmapCount-1, 0, 0, 0,
-                        ambientCube.cubeMap.textureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, 1, 1, 6)
+                        ambientCube.cubeMap.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, 1, 1, 6)
                 GL43.glCopyImageSubData(cubeMapRenderTarget.getRenderedTexture(1), GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-                        ambientCube.distanceMap.textureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, resolution, resolution, 6)
+                        ambientCube.distanceMap.id, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0, resolution, resolution, 6)
 //            GL44.glClearTexSubImage(ambientCube.cubeMap.textureId, 0, 0, 0, 0, 1, 1, 6, GL_RGBA, GL11.GL_FLOAT, blackBuffer)
 
                 glFinish()
@@ -182,7 +182,7 @@ class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGl>): RenderEx
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
-        engine.renderManager.renderer.gBuffer.lightAccumulationBuffer.use(false)
+        engine.renderManager.renderer.gBuffer.lightAccumulationBuffer.use(engine.gpuContext, false)
 
         engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.renderManager.renderer.gBuffer.positionMap)
         engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.renderManager.renderer.gBuffer.normalMap)

@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.util.AbstractBuilder;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,9 +81,13 @@ public class RenderTargetBuilder<BUILDER_TYPE extends RenderTargetBuilder, TARGE
 
     @Override
     public TARGET_TYPE build() {
-        TARGET_TYPE target = (TARGET_TYPE) new RenderTarget(gpuContext, this);
+        TARGET_TYPE target = (TARGET_TYPE) RenderTarget.Companion.invoke(gpuContext, this);
         gpuContext.register(target);
         return target;
+    }
+
+    public Vector4f getClear() {
+        return new Vector4f(clearR, clearG, clearB, clearA);
     }
 
 }

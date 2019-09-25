@@ -1,11 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
 import de.hanno.hpengine.engine.backend.OpenGl;
+import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.StorageBuffer;
-import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
+import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -49,7 +52,7 @@ public class DeferredRenderingBuffer {
 
 		gBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(width).setHeight(height)
 				.setName("GBuffer")
-				.add(new ColorAttachmentDefinitions(new String[]{"PositionView/Roughness","Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"}, GL30.GL_RGBA16F, GL11.GL_LINEAR))
+				.add(new ColorAttachmentDefinitions(new String[]{"PositionView/Roughness","Normal/Ambient", "Color/Metallic", "Motion/Depth/Transparency"}, GL30.GL_RGBA16F, new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)))
 				.add(new ColorAttachmentDefinition("Depth/Indices", GL30.GL_RGBA32F))
 //				.add(1, new ColorAttachmentDefinition("ColorReflectiveness").setInternalFormat(GL30.GL_RGBA16F))
 				.build();
@@ -123,8 +126,8 @@ public class DeferredRenderingBuffer {
 		this.storageBuffer = storageBuffer;
 	}
 
-	public void use(boolean clear) {
-		gBuffer.use(clear);
+	public void use(GpuContext<OpenGl> gpuContext, boolean clear) {
+		gBuffer.use(gpuContext, clear);
 	}
 
 	public RenderTarget getLightAccumulationBuffer() {
@@ -132,7 +135,7 @@ public class DeferredRenderingBuffer {
 	}
 
 	public int getDepthBufferTexture() {
-		return gBuffer.getDepthBufferTexture();
+		return gBuffer.getFrameBuffer().getDepthBuffer().getTexture().getId();
 	}
 
 	public RenderTarget getReflectionBuffer() {

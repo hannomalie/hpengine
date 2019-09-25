@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
@@ -52,7 +53,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
-import kotlin.system.exitProcess
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget.Companion.createFrontBuffer
+import de.hanno.hpengine.engine.model.texture.Texture2D
 
 class OpenGLContext private constructor(override val window: GlfwWindow) : GpuContext<OpenGl> {
     init {
@@ -65,9 +67,9 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         override val gpuContext = this@OpenGLContext
     }
 
-    override lateinit var frontBuffer: RenderTarget
+    override lateinit var frontBuffer: RenderTarget<Texture2D>
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
-    override val registeredRenderTargets = ArrayList<RenderTarget>()
+    override val registeredRenderTargets = ArrayList<RenderTarget<*>>()
 
     internal val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
 
@@ -86,24 +88,6 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
             return calculate(Callable{ GL11.glGetError() != GL11.GL_NO_ERROR })!!
         }
 
-
-    fun createFrontBuffer(): RenderTarget {
-        val frontBuffer = object : RenderTarget(this) {
-            override fun getWidth(): Int {
-                return window.width
-            }
-
-            override fun getHeight(): Int {
-                return window.height
-            }
-
-            override fun use(clear: Boolean) {
-                super.use(false)
-            }
-        }
-        frontBuffer.frameBuffer = 0
-        return frontBuffer
-    }
 
     override val features = run {
         val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
@@ -153,10 +137,9 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
             viewPort(0, 0, window.width, window.height)
             maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
 
-            frontBuffer = createFrontBuffer()
+            frontBuffer = window.createFrontBuffer()
 
             isInitialized = true
-            //        LOGGER.info("OpenGLContext isInitialized")
         }.join()
     }
 
@@ -422,7 +405,7 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         glClearTexSubImage(textureID, 0, 0, 0, 6 * cubeMapIndex, width, height, 6, internalFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
     }
 
-    override fun register(target: RenderTarget) {
+    override fun register(target: RenderTarget<*>) {
         registeredRenderTargets.add(target)
     }
 
@@ -457,6 +440,9 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         return this.getExceptionOnError { errorMessage }
     }
 
+    override fun bindFrameBuffer(frameBuffer: FrameBuffer) {
+        bindFrameBuffer(frameBuffer.frameBuffer)
+    }
     fun checkGLError(errorMessage: () -> String) = execute("checkGLError") {
         if (GpuContext.CHECKERRORS) {
 
