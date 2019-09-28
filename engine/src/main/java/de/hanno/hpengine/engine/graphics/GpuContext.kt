@@ -18,8 +18,6 @@ interface GpuContext<T: BackendType> {
 
     val backend: T
 
-    val frontBuffer: RenderTarget<Texture2D>
-
     val window: Window<T>
 
     val isError: Boolean

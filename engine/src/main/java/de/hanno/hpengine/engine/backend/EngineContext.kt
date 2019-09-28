@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
@@ -10,6 +11,7 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 
 interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
+    val window: Window<TYPE>
     val backend: Backend<TYPE>
     val commandQueue: CommandQueue
     val config: Config

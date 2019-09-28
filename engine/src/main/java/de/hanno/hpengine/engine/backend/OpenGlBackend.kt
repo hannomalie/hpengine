@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -33,9 +34,9 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val input: Input) : Backend<OpenGl> {
 
     companion object {
-        operator fun invoke(window: GlfwWindow, config: Config): OpenGlBackend {
+        operator fun invoke(window: Window<OpenGl>, config: Config): OpenGlBackend {
             val eventBus= MBassadorEventBus()
-            val gpuContext = OpenGLContext(window)
+            val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
             val textureManager = TextureManager(config, programManager, gpuContext)
             val input = Input(eventBus, gpuContext)
@@ -49,7 +50,8 @@ class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { Up
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val config: Config,
-                        override val backend: Backend<OpenGl> = OpenGlBackend(GlfwWindow(config.width, config.height, "HPEngine"), config),
+                        override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine"),
+                        override val backend: Backend<OpenGl> = OpenGlBackend(window, config),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext<OpenGl>
 
@@ -61,6 +63,7 @@ class ManagerContextImpl(
 ) : ManagerContext<OpenGl> {
 
     override val directories = engineContext.config.directories
+    override val window = engineContext.window
 
     init {
         managers.register(directories)

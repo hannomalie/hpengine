@@ -183,26 +183,6 @@ open class RenderTarget<T: Texture<*>> protected @JvmOverloads constructor(val f
             }
         }
 
-        fun GlfwWindow.createFrontBuffer(): RenderTarget<Texture2D> {
-            return object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer(0, null), name = "FrontBuffer") {
-                override var width: Int
-                    get() = this@createFrontBuffer.width
-                    set(value) {
-                        this@createFrontBuffer.width = value
-                    }
-
-                override var height: Int
-                    get() = this@createFrontBuffer.height
-                    set(value) {
-                        this@createFrontBuffer.height = value
-                    }
-
-                override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
-                    super.use(gpuContext, false)
-                }
-            }
-        }
-
         private fun validateFrameBufferState() {
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
                 LOGGER.severe("RenderTarget fucked up")
@@ -275,6 +255,8 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
                 }
             }
         }
+
+        val FrontBuffer = FrameBuffer(0, null)
     }
 }
 

@@ -76,6 +76,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
     val gpuContext = engineContext.gpuContext.backend.gpuContext
     val programManager = backend.programManager
     val renderState = engineContext.renderStateManager.renderState
+    val window = engineContext.window
     init {
 //        throwIfGpuFeaturesMissing()
     }
@@ -434,7 +435,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
 
             }
 
-            backend.gpuContext.frontBuffer.use(gpuContext, true)
+            window.frontBuffer.use(gpuContext, true)
             profiled("Post processing") {
                 postProcessProgram.use()
                 backend.gpuContext.bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0))
@@ -462,7 +463,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
             }
         } else {
             backend.gpuContext.disable(DEPTH_TEST)
-            backend.gpuContext.frontBuffer.use(gpuContext, true)
+            window.frontBuffer.use(gpuContext, true)
             drawToQuad(engineContext.config.debug.directTextureOutputTextureIndex)
         }
         if (engineContext.config.debug.isDebugframeEnabled) {

@@ -1,8 +1,12 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.model.texture.Texture2D
 
 interface Window<T: BackendType> {
+    val handle: Long // TODO: Remove this, because it is OpenGl/GLFW specific
+
     val title: String
 
     var width: Int
@@ -15,4 +19,5 @@ interface Window<T: BackendType> {
     fun showWindow()
     fun hideWindow()
     fun pollEvents()
+    val frontBuffer: RenderTarget<Texture2D>
 }

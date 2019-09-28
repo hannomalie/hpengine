@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.backend.OpenGl;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.MeshSelectedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -29,8 +29,9 @@ public class PixelPerfectPickingExtension implements RenderExtension<OpenGl> {
             gpuContext.readBuffer(4);
 
             floatBuffer.rewind();
-            Vector2f ratio = new Vector2f((float) gpuContext.getFrontBuffer().getWidth() / (float) gpuContext.getWindow().getWidth(),
-                    (float) gpuContext.getFrontBuffer().getHeight() / (float) gpuContext.getWindow().getHeight());
+//             TODO: This doesn't make sense anymore, does it?
+            Vector2f ratio = new Vector2f((float) gpuContext.getWindow().getWidth() / (float) gpuContext.getWindow().getWidth(),
+                    (float) gpuContext.getWindow().getHeight() / (float) gpuContext.getWindow().getHeight());
             int adjustedX = (int) (backend.getInput().getMouseX() * ratio.x);
             int adjustedY = (int) (backend.getInput().getMouseY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);

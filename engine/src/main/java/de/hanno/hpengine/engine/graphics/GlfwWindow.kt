@@ -1,7 +1,9 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
-import org.lwjgl.glfw.GLFW
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
@@ -26,7 +28,9 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
                  closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl> {
 
-//     TODO: Avoid this somehow, move to update, but only when update is called before all the
+    override val frontBuffer: RenderTarget<Texture2D>
+
+    //     TODO: Avoid this somehow, move to update, but only when update is called before all the
 //    contexts and stuff, or the fresh window will get a message dialog that it doesnt respond
     private val pollEventsThread = Thread({
         while(true) {
@@ -48,7 +52,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         }
     }
 
-    val handle: Long
+    override val handle: Long
     init {
         glfwSetErrorCallback(errorCallback)
         glfwInit()
@@ -70,6 +74,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         setCallbacks(framebufferSizeCallback, closeCallback)
         glfwMakeContextCurrent(handle)
         glfwShowWindow(handle)
+        frontBuffer = createFrontBufferRenderTarget()
     }
 
     override fun showWindow() {
@@ -95,5 +100,25 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     }
     override fun getMouseButton(buttonCode: Int): Int {
         return glfwGetMouseButton(handle, buttonCode)
+    }
+}
+
+private fun GlfwWindow.createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
+    return object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer.FrontBuffer, name = "FrontBuffer") {
+        override var width: Int
+            get() = this@createFrontBufferRenderTarget.width
+            set(value) {
+                this@createFrontBufferRenderTarget.width = value
+            }
+
+        override var height: Int
+            get() = this@createFrontBufferRenderTarget.height
+            set(value) {
+                this@createFrontBufferRenderTarget.height = value
+            }
+
+        override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
+            super.use(gpuContext, false)
+        }
     }
 }

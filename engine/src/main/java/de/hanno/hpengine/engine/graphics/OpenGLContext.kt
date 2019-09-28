@@ -53,10 +53,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget.Companion.createFrontBuffer
-import de.hanno.hpengine.engine.model.texture.Texture2D
 
-class OpenGLContext private constructor(override val window: GlfwWindow) : GpuContext<OpenGl> {
+class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
     init {
         privateInit()
         startEndlessLoop()
@@ -67,7 +65,6 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
         override val gpuContext = this@OpenGLContext
     }
 
-    override lateinit var frontBuffer: RenderTarget<Texture2D>
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     override val registeredRenderTargets = ArrayList<RenderTarget<*>>()
 
@@ -136,8 +133,6 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
             // Map the internal OpenGL coordinate system to the entire screen
             viewPort(0, 0, window.width, window.height)
             maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
-
-            frontBuffer = window.createFrontBuffer()
 
             isInitialized = true
         }.join()
@@ -518,11 +513,11 @@ class OpenGLContext private constructor(override val window: GlfwWindow) : GpuCo
 
         private var openGLContextSingleton: OpenGLContext? = null
 
-        @JvmStatic @JvmName("create") operator fun invoke(glfwWindow: GlfwWindow): OpenGLContext {
+        @JvmStatic @JvmName("create") operator fun invoke(window: Window<OpenGl>): OpenGLContext {
             return if(openGLContextSingleton != null) {
                 throw IllegalStateException("Can only instantiate one OpenGLContext!")
             } else {
-                OpenGLContext(glfwWindow).apply {
+                OpenGLContext(window).apply {
                     openGLContextSingleton = this
                 }
             }
