@@ -45,11 +45,13 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 
 		for(int cubeMapArrayIndex = 0; cubeMapArrayIndex < cubeMapArray.length; cubeMapArrayIndex++) {
 			CubeMapArray cma = cubeMapArray[cubeMapArrayIndex];
-			gpuContext.bindTexture(cma);
-            for(int cubeMapIndex = 0; cubeMapIndex < cubeMapArray.length; cubeMapIndex++) {
-				SimpleCubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
-				cubeMapViews.add(cubeMapView);
-            }
+			gpuContext.execute("createViews for " + cubeMapArrayIndex, () -> {
+				gpuContext.bindTexture(cma);
+				for(int cubeMapIndex = 0; cubeMapIndex < cubeMapArray.length; cubeMapIndex++) {
+					SimpleCubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
+					cubeMapViews.add(cubeMapView);
+				}
+			});
 		}
 	}
 

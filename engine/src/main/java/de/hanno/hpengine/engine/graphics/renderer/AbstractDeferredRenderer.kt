@@ -22,11 +22,11 @@ import java.util.ArrayList
 import java.util.EnumSet
 import java.util.function.Consumer
 
-open class AbstractDeferredRenderer(programManager: ProgramManager<OpenGl>, config: Config) : Renderer<OpenGl> {
-    protected val programManager: ProgramManager<OpenGl> = programManager
+open class AbstractDeferredRenderer(protected val programManager: ProgramManager<OpenGl>,
+                                    val config: Config,
+                                    val deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
     protected val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
-    protected val deferredRenderingBuffer = DeferredRenderingBuffer(gpuContext, config.width, config.height)
     protected open var finalImage = deferredRenderingBuffer.finalBuffer.renderedTexture
     protected val renderToQuadProgram: Program = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "simpletexture_fragment.glsl")))
 

@@ -31,7 +31,7 @@ data class Texture3D(override val dimension: TextureDimension3D,
                      override var uploadState: UploadState) : Texture<TextureDimension3D> {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): Texture3D {
-            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(TextureDimension(dimension.width, dimension.height, dimension.depth)), GlTextureTarget.TEXTURE_3D, filterConfig, internalFormat, wrapMode)
+            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_3D, filterConfig, internalFormat, wrapMode)
             return Texture3D(dimension, textureId, GlTextureTarget.TEXTURE_3D, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
@@ -47,7 +47,7 @@ data class SimpleCubeMap(override val dimension: TextureDimension2D,
                          override var uploadState: UploadState) : Texture<TextureDimension2D> {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): SimpleCubeMap {
-            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(TextureDimension(dimension.width, dimension.height)), GlTextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
+            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
             return SimpleCubeMap(dimension, textureId, GlTextureTarget.TEXTURE_CUBE_MAP, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
@@ -101,7 +101,7 @@ data class CubeMapArray(override val dimension: TextureDimension3D,
                         override var uploadState: UploadState) : Texture<TextureDimension3D> {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): CubeMapArray {
-            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(TextureDimension(dimension.width, dimension.height)), GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)
+            val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)
             return CubeMapArray(dimension, textureId, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, internalFormat, handle, filterConfig, wrapMode, UploadState.UPLOADED)
         }
     }
@@ -114,6 +114,7 @@ fun CubeMapArray.createViews(gpuContext: GpuContext<OpenGl>): List<SimpleCubeMap
 }
 fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): SimpleCubeMap {
     val cubeMapView = gpuContext.genTextures()
+    require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
     gpuContext.execute("SimpleCubeMapArray.createView") {
         GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, id,
                 internalFormat, 0, 1,

@@ -16,6 +16,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -47,14 +49,13 @@ class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntit
 
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
-    private val renderTarget: RenderTarget<*> = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget<*>>(engine.gpuContext)
+    private val renderTarget: CubeRenderTarget = CubeRenderTarget(engine, CubeRenderTargetBuilder(engine)
             .setName("AreaLight Shadow")
             .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
             .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
             .add(ColorAttachmentDefinition("Shadow")
                     .setInternalFormat(GL30.GL_RGBA32F)
-                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
-            .build()
+                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR))))
 
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
     private val areaLightDepthMaps = ArrayList<Int>().apply {

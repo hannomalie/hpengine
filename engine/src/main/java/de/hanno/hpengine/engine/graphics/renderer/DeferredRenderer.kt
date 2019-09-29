@@ -71,7 +71,9 @@ import java.util.function.Consumer
 import javax.vecmath.Vector2f
 
 class DeferredRenderer @Throws(Exception::class)
-constructor(private val materialManager: MaterialManager, val engineContext: EngineContext<OpenGl>) : Renderer<OpenGl> {
+constructor(private val materialManager: MaterialManager,
+            val engineContext: EngineContext<OpenGl>,
+            deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
     private val backend: Backend<OpenGl> = engineContext.backend
     val gpuContext = engineContext.gpuContext.backend.gpuContext
     val programManager = backend.programManager
@@ -79,6 +81,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
     val window = engineContext.window
     init {
 //        throwIfGpuFeaturesMissing()
+        gpuContext.enableSeamlessCubeMapFiltering()
     }
 
     private fun throwIfGpuFeaturesMissing() {
@@ -94,7 +97,7 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
 
     private val sixDebugBuffers: ArrayList<VertexBuffer> = gpuContext.setupBuffers()
 
-    private val gBuffer: DeferredRenderingBuffer = gpuContext.setUpGBuffer(engineContext)
+    private val gBuffer: DeferredRenderingBuffer = deferredRenderingBuffer
     private val forwardRenderer = ForwardRenderExtension(engineContext.renderStateManager.renderState, gBuffer, engineContext)
 
     private val buffer = VertexBuffer(engineContext.gpuContext, floatArrayOf(0f, 0f, 0f, 0f), EnumSet.of(DataChannels.POSITION3)).apply {
@@ -195,14 +198,11 @@ constructor(private val materialManager: MaterialManager, val engineContext: Eng
         }
     }
 
-    private fun GpuContext<OpenGl>.setUpGBuffer(engineContext: EngineContext<OpenGl>): DeferredRenderingBuffer {
-        this@setUpGBuffer.getExceptionOnError("Before setupGBuffer")
-
+    private fun GpuContext<OpenGl>.enableSeamlessCubeMapFiltering() {
         execute("GpuContext<OpenGl>.setUpGBuffer") {
-            this@setUpGBuffer.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
-            this@setUpGBuffer.getExceptionOnError("setupGBuffer")
+            this@enableSeamlessCubeMapFiltering.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
+            this@enableSeamlessCubeMapFiltering.getExceptionOnError("setupGBuffer")
         }
-        return this@setUpGBuffer.calculate { DeferredRenderingBuffer(this@setUpGBuffer, engineContext.config.width, engineContext.config.height) }
     }
 
     override fun update(engine: Engine<OpenGl>, seconds: Float) {}

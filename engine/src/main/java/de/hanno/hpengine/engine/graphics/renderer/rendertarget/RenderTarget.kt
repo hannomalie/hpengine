@@ -248,8 +248,8 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, depthBuffer: DepthBuffer<*>?): FrameBuffer {
             return FrameBuffer(gpuContext.calculate { glGenFramebuffers() }, depthBuffer).apply {
                 if(depthBuffer != null) {
-                    gpuContext.bindFrameBuffer(this)
                     gpuContext.execute("glFramebufferTexture") {
+                        gpuContext.bindFrameBuffer(this)
                         GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer.texture.id, 0)
                     }
                 }
@@ -272,7 +272,6 @@ class RenderBuffer private constructor(val renderBuffer: Int, val width: Int, va
             val renderBuffer = gpuContext.calculate {
                 val renderBuffer = glGenRenderbuffers()
                 glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
-//                GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height)
                 renderBuffer
             }
             return RenderBuffer(renderBuffer, width, height)
