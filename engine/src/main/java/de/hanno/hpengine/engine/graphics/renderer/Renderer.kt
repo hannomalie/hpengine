@@ -265,7 +265,7 @@ interface LineRenderer {
     }
 }
 
-interface Renderer<TYPE : BackendType> : RenderSystem{//}, LineRenderer {
+interface Renderer<TYPE : BackendType> : RenderSystem {
 
     val deferredRenderingBuffer: DeferredRenderingBuffer
 

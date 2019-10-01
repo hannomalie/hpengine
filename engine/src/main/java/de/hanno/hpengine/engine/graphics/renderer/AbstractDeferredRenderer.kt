@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -20,9 +21,10 @@ import java.io.File
 import java.util.ArrayList
 import java.util.EnumSet
 
-abstract class AbstractDeferredRenderer(protected val programManager: ProgramManager<OpenGl>,
-                                    val config: Config,
-                                    override val deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
+abstract class AbstractDeferredRenderer(private val engineContext: EngineContext<OpenGl>,
+                                        protected val programManager: ProgramManager<OpenGl>,
+                                        val config: Config,
+                                        final override val deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
     protected val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
     override val renderExtensions: List<RenderExtension<OpenGl>> = mutableListOf()
 
@@ -44,8 +46,7 @@ abstract class AbstractDeferredRenderer(protected val programManager: ProgramMan
     private fun drawToQuad(texture: Int, buffer: VertexBuffer, program: Program) {
         program.use()
 
-        gpuContext.bindFrameBuffer(0)
-        gpuContext.viewPort(0, 0, gpuContext.window.width, gpuContext.window.height)
+        engineContext.window.frontBuffer.use(gpuContext, clear = true)
         gpuContext.disable(GlCap.DEPTH_TEST)
 
         gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, texture)

@@ -17,7 +17,7 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>,
                           programManager: ProgramManager<OpenGl> = engineContext.programManager,
                           val textureManager: TextureManager = engineContext.textureManager,
-                          deferredRenderingBuffer: DeferredRenderingBuffer) : AbstractDeferredRenderer(programManager, engineContext.config, deferredRenderingBuffer) {
+                          deferredRenderingBuffer: DeferredRenderingBuffer) : AbstractDeferredRenderer(engineContext, programManager, engineContext.config, deferredRenderingBuffer) {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
     val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
