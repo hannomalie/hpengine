@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.state
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync

@@ -43,6 +43,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.OBJLoader
@@ -73,7 +74,7 @@ import javax.vecmath.Vector2f
 class DeferredRenderer
             @Throws(Exception::class) constructor(private val materialManager: MaterialManager,
             val engineContext: EngineContext<OpenGl>,
-            override val deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
+            val deferredRenderingBuffer: DeferredRenderingBuffer) : RenderSystem {
 
     private val backend: Backend<OpenGl> = engineContext.backend
     val gpuContext = engineContext.gpuContext.backend.gpuContext
@@ -142,7 +143,7 @@ class DeferredRenderer
     private val tiledDirectLightingProgram = programManager.getComputeProgram("tiled_direct_lighting_compute.glsl")
     private val tiledProbeLightingProgram = programManager.getComputeProgram("tiled_probe_lighting_compute.glsl")
 
-    override val renderExtensions: MutableList<RenderExtension<OpenGl>> = mutableListOf()
+    val renderExtensions: MutableList<RenderExtension<OpenGl>> = mutableListOf()
     //	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private val mainPipelineRef: StateRef<Pipeline>
 
@@ -201,7 +202,7 @@ class DeferredRenderer
         }
     }
 
-    override fun render(result: DrawResult, state: RenderState) = profiled("Frame") {
+    override fun render(result: DrawResult, state: RenderState): Unit = profiled("Frame") {
         gpuContext.getExceptionOnError("Frame")
 
         val firstPassResult = result.firstPassResult
@@ -498,7 +499,7 @@ class DeferredRenderer
         }
     }
 
-    override fun drawToQuad(texture: Int) {
+    fun drawToQuad(texture: Int) {
         drawToQuad(texture, backend.gpuContext.fullscreenBuffer, renderToQuadProgram)
     }
 

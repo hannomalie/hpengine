@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
-import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
@@ -23,6 +22,7 @@ import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.ressources.CodeSource
 import org.lwjgl.opengl.ARBClearTexture
@@ -34,7 +34,7 @@ import org.lwjgl.opengl.GL43
 import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
-                                                              renderer: Renderer<OpenGl>,
+                                                              renderer: RenderSystem,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
                                                               useLineDrawing: Boolean = true,
@@ -77,7 +77,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
     }
 
-    open var depthMap = renderer.deferredRenderingBuffer.visibilityMap
+    open var depthMap = engine.deferredRenderingBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
         if (engine.config.debug.isPrintPipelineDebugOutput) {

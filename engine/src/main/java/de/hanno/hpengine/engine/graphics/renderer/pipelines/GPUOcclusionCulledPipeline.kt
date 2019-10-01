@@ -3,13 +3,12 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 
 open class GPUOcclusionCulledPipeline @JvmOverloads constructor(val engineContext: EngineContext<OpenGl>,
-                                                                renderer: Renderer<OpenGl>,
+                                                                renderer: RenderSystem,
                                                                 useFrustumCulling: Boolean,
                                                                 useBackFaceCulling: Boolean,
                                                                 useLineDrawing: Boolean,

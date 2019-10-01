@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
-import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -25,6 +24,7 @@ import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
@@ -43,7 +43,7 @@ class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 class VoxelConeTracingExtension(
         private val engine: EngineContext<OpenGl>,
         directionalLightShadowMapExtension: DirectionalLightShadowMapExtension,
-        val renderer: Renderer<OpenGl>) : RenderExtension<OpenGl> {
+        val renderer: RenderSystem) : RenderExtension<OpenGl> {
 
     val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
         array[0].apply { gridSize = 256 }.apply {
@@ -348,19 +348,19 @@ class VoxelConeTracingExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if(!renderState.sceneInitialized) return
         profiled("VCT second pass") {
-            engine.gpuContext.bindTexture(0, TEXTURE_2D, renderer.deferredRenderingBuffer.positionMap)
-            engine.gpuContext.bindTexture(1, TEXTURE_2D, renderer.deferredRenderingBuffer.normalMap)
-            engine.gpuContext.bindTexture(2, TEXTURE_2D, renderer.deferredRenderingBuffer.colorReflectivenessMap)
-            engine.gpuContext.bindTexture(3, TEXTURE_2D, renderer.deferredRenderingBuffer.motionMap)
-            engine.gpuContext.bindTexture(7, TEXTURE_2D, renderer.deferredRenderingBuffer.visibilityMap)
-            engine.gpuContext.bindTexture(11, TEXTURE_2D, renderer.deferredRenderingBuffer.ambientOcclusionScatteringMap)
+            engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.deferredRenderingBuffer.positionMap)
+            engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.deferredRenderingBuffer.normalMap)
+            engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.deferredRenderingBuffer.colorReflectivenessMap)
+            engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.deferredRenderingBuffer.motionMap)
+            engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.deferredRenderingBuffer.visibilityMap)
+            engine.gpuContext.bindTexture(11, TEXTURE_2D, engine.deferredRenderingBuffer.ambientOcclusionScatteringMap)
 
             voxelConeTraceProgram.use()
             val camTranslation = Vector3f()
             voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
             voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
             voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-            voxelConeTraceProgram.bindShaderStorageBuffer(0, renderer.deferredRenderingBuffer.storageBuffer)
+            voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.deferredRenderingBuffer.storageBuffer)
             voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
             voxelConeTraceProgram.setUniform("useAmbientOcclusion", engine.config.quality.isUseAmbientOcclusion)
             voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat())

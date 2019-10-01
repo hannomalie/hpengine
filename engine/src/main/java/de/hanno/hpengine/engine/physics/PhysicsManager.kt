@@ -16,12 +16,10 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
-import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.component.PhysicsComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
-import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem

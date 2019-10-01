@@ -14,9 +14,9 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
-import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleColorRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -40,7 +40,7 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
                                            val materialManager: MaterialManager = MaterialManager(engineContext),
-                                           val renderer: Renderer<OpenGl>,
+                                           val renderer: RenderSystem,
                                            override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, materialManager = materialManager),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
@@ -129,7 +129,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             val engineContext = EngineContextImpl(config = config)
             val materialManager = MaterialManager(engineContext)
             val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
-            val renderer: Renderer<OpenGl> = getRendererForPlatform(engineContext, materialManager, deferredRenderingBuffer)
+            val renderer: RenderSystem = getRendererForPlatform(engineContext, materialManager, deferredRenderingBuffer)
             println("Using renderer class ${renderer.javaClass.simpleName}")
             val engine = EngineImpl(
                     engineContext = engineContext,
@@ -156,8 +156,8 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 engineContext: EngineContext<OpenGl>,
                 materialManager: MaterialManager,
                 deferredRenderingBuffer: DeferredRenderingBuffer
-        ): Renderer<OpenGl> {
-            return SimpleColorRenderer(engineContext, deferredRenderingBuffer = deferredRenderingBuffer)//DeferredRenderer(materialManager, engineContext, deferredRenderingBuffer)
+        ): RenderSystem {
+            return SimpleColorRenderer(engineContext)//DeferredRenderer(materialManager, engineContext, deferredRenderingBuffer)
 //            return when {
 //                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
 //                    DeferredRenderer(materialManager, engineContext)

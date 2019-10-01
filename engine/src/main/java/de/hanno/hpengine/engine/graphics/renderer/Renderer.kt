@@ -264,15 +264,3 @@ interface LineRenderer {
         }
     }
 }
-
-interface Renderer<TYPE : BackendType> : RenderSystem {
-
-    val deferredRenderingBuffer: DeferredRenderingBuffer
-
-    val renderExtensions: List<RenderExtension<OpenGl>>
-
-    fun update(engine: Engine<TYPE>, seconds: Float) {}
-
-    fun drawToQuad(texture: Int)
-
-}

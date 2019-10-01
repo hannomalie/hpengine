@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.container;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
@@ -613,17 +612,6 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 				return childrenMaxDeepness;
 			} else {
 				return deepness;
-			}
-		}
-
-		public void drawDebug(Renderer renderer, GpuContext gpuContext, Program program) {
-			VertexBuffer buffer = new VertexBuffer(gpuContext, getPoints(), EnumSet.of(DataChannels.POSITION3));
-			buffer.upload();
-			buffer.drawDebug();
-			if (hasChildren()) {
-				for (int i = 0; i < 8; i++) {
-					children[i].drawDebug(renderer, gpuContext, program);
-				}
 			}
 		}
 

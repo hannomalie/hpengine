@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDe
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinitions;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
+import de.hanno.hpengine.engine.model.texture.Texture2D;
 import de.hanno.hpengine.util.Util;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
@@ -29,12 +30,12 @@ public class DeferredRenderingBuffer {
 	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
 	private static FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	private RenderTarget gBuffer;
-	private RenderTarget reflectionBuffer;
-	private RenderTarget forwardBuffer;
-	private RenderTarget laBuffer;
-	private RenderTarget finalBuffer;
-	private RenderTarget halfScreenBuffer;
+	private RenderTarget<Texture2D> gBuffer;
+	private RenderTarget<Texture2D> reflectionBuffer;
+	private RenderTarget<Texture2D> forwardBuffer;
+	private RenderTarget<Texture2D> laBuffer;
+	private RenderTarget<Texture2D> finalBuffer;
+	private RenderTarget<Texture2D> halfScreenBuffer;
 
 
 	public RenderTarget getGBuffer() {
@@ -107,6 +108,9 @@ public class DeferredRenderingBuffer {
 	public int getColorReflectivenessMap() {
 		return gBuffer.getRenderedTexture(2);
 	}
+	public Texture2D getColorReflectivenessTexture() {
+    	return gBuffer.getTextures().get(2);
+	}
 	public int getMotionMap() {
 		return gBuffer.getRenderedTexture(3);
 	}
@@ -146,7 +150,7 @@ public class DeferredRenderingBuffer {
 		return halfScreenBuffer;
 	}
 
-	public RenderTarget getFinalBuffer() {
+	public RenderTarget<Texture2D> getFinalBuffer() {
 		return finalBuffer;
 	}
 

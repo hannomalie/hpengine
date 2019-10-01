@@ -2,25 +2,22 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setUniforms
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
-import de.hanno.hpengine.engine.model.texture.TextureManager
 
-class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>,
-                          programManager: ProgramManager<OpenGl> = engineContext.programManager,
-                          val textureManager: TextureManager = engineContext.textureManager,
-                          deferredRenderingBuffer: DeferredRenderingBuffer) : AbstractDeferredRenderer(engineContext, programManager, engineContext.config, deferredRenderingBuffer) {
+class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
     val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
+
+    val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
     val pipeline = engineContext.renderStateManager.renderState.registerState {
         SimplePipeline(engineContext)
@@ -38,12 +35,13 @@ class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>,
 
         }
 
-        if(engineContext.config.debug.isUseDirectTextureOutput) {
-            finalImage = engineContext.config.debug.directTextureOutputTextureIndex
+        val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
+            engineContext.config.debug.directTextureOutputTextureIndex
         } else {
-            finalImage = deferredRenderingBuffer.colorReflectivenessMap
+            deferredRenderingBuffer.colorReflectivenessMap
         }
-        super.render(result, state)
+
+        textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
     }
 }
 
