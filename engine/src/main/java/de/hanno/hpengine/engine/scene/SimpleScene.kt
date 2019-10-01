@@ -62,7 +62,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     private val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
 
     override val entityManager = EntityManager(engine, engine.eventBus, this).apply { managers.register(this) }
-    override val environmentProbeManager: EnvironmentProbeManager = EnvironmentProbeManager(engine, engine.renderManager.renderer).also {
+    override val environmentProbeManager: EnvironmentProbeManager = EnvironmentProbeManager(engine, engine.renderManager.lineRenderer).also {
         managers.register(it)
         engine.renderSystems.add(it)
     }

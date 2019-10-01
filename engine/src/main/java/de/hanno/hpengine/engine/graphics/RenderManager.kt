@@ -1,8 +1,11 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
+import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
@@ -20,9 +23,9 @@ class RenderStateManager(renderStateFactory: () -> RenderState) {
             renderStateFactory(),
             renderStateFactory())
 }
-class RenderManager(val engineContext: EngineContext<*>,
+class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make generic
                     val renderStateManager: RenderStateManager,
-                    var renderer: Renderer<*>,
+                    val lineRenderer: LineRenderer = SimpleLineRenderer(engineContext),
                     val materialManager: MaterialManager) : Manager {
 
     inline val renderState: TripleBuffer<RenderState>
@@ -53,7 +56,6 @@ class RenderManager(val engineContext: EngineContext<*>,
                 engineContext.renderSystems.forEach {
                     it.render(drawResult, renderState.currentReadState)
                 }
-                renderer.render(drawResult, renderState.currentReadState)
                 engineContext.gpuContext.finishFrame(renderState.currentReadState)
                 lastFrameTime = System.currentTimeMillis()
                 fpsCounter.update()

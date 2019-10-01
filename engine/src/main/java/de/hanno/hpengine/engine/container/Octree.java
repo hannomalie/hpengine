@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.container;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -155,13 +156,13 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 		}
 	}
 
-	private void batchLines(Renderer renderer, Node node) {
+	private void batchLines(LineRenderer renderer, Node node) {
         if(node.hasChildren()) {
             for(Node child : node.children) {
                 batchLines(renderer, child);
             }
         } else if(node.hasEntities()){
-            DrawLinesExtension.batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
+            DrawLinesExtension.Companion.batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
         }
     }
 

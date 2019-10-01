@@ -370,26 +370,26 @@ public class Editor implements HostComponent {
         	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
         	probeAddMenuItem.addActionListener(e -> {
 
-                new SwingWorkerWithProgress<Result>(this, "Adding Probe...", "Failed to add probe") {
-					@Override
-					public Result doInBackground() throws Exception {
+                new SwingWorkerWithProgress<>(this, "Adding Probe...", "Failed to add probe") {
+                    @Override
+                    public Result doInBackground() {
                         engine.getGpuContext().execute("probeAddMenuItem", () -> {
                             try {
-                                EnvironmentProbe probe = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50, engine.getRenderer());
+                                EnvironmentProbe probe = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50);
                                 engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
                             } catch (Exception e1) {
                                 e1.printStackTrace();
                             }
 
                         });
-                        return new Result(true);
-					}
+                        return new Result<>(true);
+                    }
 
-					@Override
-					public void done(Result result) {
-					}
+                    @Override
+                    public void done(Result result) {
+                    }
 
-				}.execute();
+                }.execute();
         	});
 
         	menuProbe.add(probeAddMenuItem);

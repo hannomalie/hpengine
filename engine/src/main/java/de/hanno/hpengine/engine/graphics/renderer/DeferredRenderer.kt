@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -38,6 +37,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipelin
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -70,15 +70,17 @@ import java.util.EnumSet
 import java.util.function.Consumer
 import javax.vecmath.Vector2f
 
-class DeferredRenderer @Throws(Exception::class)
-constructor(private val materialManager: MaterialManager,
+class DeferredRenderer
+            @Throws(Exception::class) constructor(private val materialManager: MaterialManager,
             val engineContext: EngineContext<OpenGl>,
-            deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
+            override val deferredRenderingBuffer: DeferredRenderingBuffer) : Renderer<OpenGl> {
+
     private val backend: Backend<OpenGl> = engineContext.backend
     val gpuContext = engineContext.gpuContext.backend.gpuContext
     val programManager = backend.programManager
     val renderState = engineContext.renderStateManager.renderState
     val window = engineContext.window
+
     init {
 //        throwIfGpuFeaturesMissing()
         gpuContext.enableSeamlessCubeMapFiltering()
@@ -100,9 +102,6 @@ constructor(private val materialManager: MaterialManager,
     private val gBuffer: DeferredRenderingBuffer = deferredRenderingBuffer
     private val forwardRenderer = ForwardRenderExtension(engineContext.renderStateManager.renderState, gBuffer, engineContext)
 
-    private val buffer = VertexBuffer(engineContext.gpuContext, floatArrayOf(0f, 0f, 0f, 0f), EnumSet.of(DataChannels.POSITION3)).apply {
-        upload()
-    }
     private val skyBoxEntity = Entity("Skybox")
 
     private val skyBox = OBJLoader().loadTexturedModel(this.materialManager, engineContext.config.directories.engineDir.resolve("assets/models/skybox.obj"))
@@ -136,7 +135,6 @@ constructor(private val materialManager: MaterialManager,
 
     private val aoScatteringProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl")
     private val reflectionProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl")
-    private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
     private val skyBoxProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl")
     private val skyBoxDepthProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl")
 //    private val probeFirstpassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl")
@@ -144,13 +142,11 @@ constructor(private val materialManager: MaterialManager,
     private val tiledDirectLightingProgram = programManager.getComputeProgram("tiled_direct_lighting_compute.glsl")
     private val tiledProbeLightingProgram = programManager.getComputeProgram("tiled_probe_lighting_compute.glsl")
 
-    private val renderExtensions = ArrayList<RenderExtension<OpenGl>>()
+    override val renderExtensions: MutableList<RenderExtension<OpenGl>> = mutableListOf()
     //	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private val mainPipelineRef: StateRef<Pipeline>
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
-
-    private val linePoints = ArrayList<Vector3f>()
 
     init {
         if (engineContext.gpuContext !is OpenGLContext) {
@@ -158,7 +154,7 @@ constructor(private val materialManager: MaterialManager,
         }
         //		directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension(engineContext);
 
-        registerRenderExtension(DrawLinesExtension(engineContext, this, programManager))
+        registerRenderExtension(DrawLinesExtension(engineContext, programManager))
         //		TODO: This seems to be broken with the new texture implementations
         //		registerRenderExtension(new VoxelConeTracingExtension(engineContext, directionalLightShadowMapExtension, this));
         //        registerRenderExtension(new EvaluateProbeRenderExtension(managerContext));
@@ -205,9 +201,6 @@ constructor(private val materialManager: MaterialManager,
         }
     }
 
-    override fun update(engine: Engine<OpenGl>, seconds: Float) {}
-
-
     override fun render(result: DrawResult, state: RenderState) = profiled("Frame") {
         gpuContext.getExceptionOnError("Frame")
 
@@ -219,7 +212,7 @@ constructor(private val materialManager: MaterialManager,
             val camera = state.camera
 
             gpuContext.depthMask(true)
-            getGBuffer().use(gpuContext, true)
+            deferredRenderingBuffer.use(gpuContext, true)
 
             gpuContext.disable(CULL_FACE)
             gpuContext.depthMask(false)
@@ -396,7 +389,7 @@ constructor(private val materialManager: MaterialManager,
                 }
 
             }
-            val finalBuffer = getGBuffer().finalBuffer
+            val finalBuffer = deferredRenderingBuffer.finalBuffer
             profiled("Combine pass") {
                 backend.textureManager.generateMipMaps(TEXTURE_2D, finalBuffer.getRenderedTexture(0))
 
@@ -410,25 +403,25 @@ constructor(private val materialManager: MaterialManager,
                 combineProgram.setUniform("useAmbientOcclusion", engineContext.config.quality.isUseAmbientOcclusion)
                 combineProgram.setUniform("worldExposure", engineContext.config.effects.exposure)
                 combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.effects.isAutoExposureEnabled)
-                combineProgram.setUniform("fullScreenMipmapCount", getGBuffer().fullScreenMipmapCount)
+                combineProgram.setUniform("fullScreenMipmapCount", deferredRenderingBuffer.fullScreenMipmapCount)
                 combineProgram.setUniform("activeProbeCount", state.environmentProbesState.activeProbeCount)
-                combineProgram.bindShaderStorageBuffer(0, getGBuffer().storageBuffer)
+                combineProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.storageBuffer)
 
                 finalBuffer.use(gpuContext, true)
                 backend.gpuContext.disable(DEPTH_TEST)
 
-                backend.gpuContext.bindTexture(0, TEXTURE_2D, getGBuffer().colorReflectivenessMap)
-                backend.gpuContext.bindTexture(1, TEXTURE_2D, getGBuffer().lightAccumulationMapOneId)
-                backend.gpuContext.bindTexture(2, TEXTURE_2D, getGBuffer().lightAccumulationBuffer.getRenderedTexture(1))
-                backend.gpuContext.bindTexture(3, TEXTURE_2D, getGBuffer().motionMap)
-                backend.gpuContext.bindTexture(4, TEXTURE_2D, getGBuffer().positionMap)
-                backend.gpuContext.bindTexture(5, TEXTURE_2D, getGBuffer().normalMap)
-                backend.gpuContext.bindTexture(6, TEXTURE_2D, getGBuffer().forwardBuffer.getRenderedTexture(0))
-                backend.gpuContext.bindTexture(7, TEXTURE_2D, getGBuffer().forwardBuffer.getRenderedTexture(1))
+                backend.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+                backend.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+                backend.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationBuffer.getRenderedTexture(1))
+                backend.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+                backend.gpuContext.bindTexture(4, TEXTURE_2D, deferredRenderingBuffer.positionMap)
+                backend.gpuContext.bindTexture(5, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+                backend.gpuContext.bindTexture(6, TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(0))
+                backend.gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(1))
                 //			backend.getGpuContext().bindTexture(7, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
-                backend.gpuContext.bindTexture(8, TEXTURE_2D, getGBuffer().reflectionMap)
-                backend.gpuContext.bindTexture(9, TEXTURE_2D, getGBuffer().refractedMap)
-                backend.gpuContext.bindTexture(11, TEXTURE_2D, getGBuffer().ambientOcclusionScatteringMap)
+                backend.gpuContext.bindTexture(8, TEXTURE_2D, deferredRenderingBuffer.reflectionMap)
+                backend.gpuContext.bindTexture(9, TEXTURE_2D, deferredRenderingBuffer.refractedMap)
+                backend.gpuContext.bindTexture(11, TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
                 backend.gpuContext.bindTexture(14, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.id)
 
                 gpuContext.fullscreenBuffer.draw()
@@ -452,11 +445,11 @@ constructor(private val materialManager: MaterialManager,
                 }
 
                 postProcessProgram.setUniform("seconds", state.deltaInS)
-                postProcessProgram.bindShaderStorageBuffer(0, getGBuffer().storageBuffer)
+                postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.storageBuffer)
                 //        postProcessProgram.bindShaderStorageBuffer(1, managerContext.getRenderer().getMaterialManager().getMaterialBuffer());
-                backend.gpuContext.bindTexture(1, TEXTURE_2D, getGBuffer().normalMap)
-                backend.gpuContext.bindTexture(2, TEXTURE_2D, getGBuffer().motionMap)
-                backend.gpuContext.bindTexture(3, TEXTURE_2D, getGBuffer().lightAccumulationMapOneId)
+                backend.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+                backend.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+                backend.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
                 backend.gpuContext.bindTexture(4, TEXTURE_2D, backend.textureManager.lensFlareTexture.id)
                 gpuContext.fullscreenBuffer.draw()
 
@@ -523,56 +516,20 @@ constructor(private val materialManager: MaterialManager,
         buffer.draw()
     }
 
-    override fun drawLines(program: Program): Int {
-        val points = FloatArray(linePoints.size * 3)
-        for (i in linePoints.indices) {
-            val point = linePoints[i]
-            points[3 * i] = point.x
-            points[3 * i + 1] = point.y
-            points[3 * i + 2] = point.z
-        }
-        buffer.putValues(*points)
-        buffer.upload().join()
-        buffer.drawDebugLines()
-        glFinish()
-        linePoints.clear()
-        return points.size / 3 / 2
-    }
-
-    override fun batchLine(from: Vector3f, to: Vector3f) {
-        linePoints.add(from)
-        linePoints.add(to)
-    }
-
-    override fun drawAllLines(action: Consumer<Program>) {
-        linePoints.clear()
-        linesProgram.use()
-        action.accept(linesProgram)
-        drawLines(linesProgram)
-    }
-
-    override fun getGBuffer(): DeferredRenderingBuffer {
-        return gBuffer
-    }
-
-    override fun getRenderExtensions(): List<RenderExtension<OpenGl>> {
-        return renderExtensions
-    }
-
     private fun doPointLights(renderState: RenderState, viewMatrix: FloatBuffer, projectionMatrix: FloatBuffer) {
         if (renderState.lightState.pointLights.isEmpty()) {
             return
         }
         profiled("Seconds pass PointLights") {
-            gpuContext.bindTexture(0, TEXTURE_2D, getGBuffer().positionMap)
-            gpuContext.bindTexture(1, TEXTURE_2D, getGBuffer().normalMap)
-            gpuContext.bindTexture(2, TEXTURE_2D, getGBuffer().colorReflectivenessMap)
-            gpuContext.bindTexture(3, TEXTURE_2D, getGBuffer().motionMap)
-            gpuContext.bindTexture(4, TEXTURE_2D, getGBuffer().lightAccumulationMapOneId)
-            gpuContext.bindTexture(5, TEXTURE_2D, getGBuffer().visibilityMap)
+            gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
+            gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+            gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+            gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+            gpuContext.bindTexture(4, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+            gpuContext.bindTexture(5, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             renderState.lightState.pointLightShadowMapStrategy.bindTextures()
             // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(4, getGBuffer()!!.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            GL42.glBindImageTexture(4, deferredRenderingBuffer!!.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
             secondPassPointComputeProgram.use()
             secondPassPointComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
             secondPassPointComputeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
@@ -721,7 +678,7 @@ constructor(private val materialManager: MaterialManager,
     }
 
     private fun renderReflections(viewMatrix: FloatBuffer, projectionMatrix: FloatBuffer, renderState: RenderState) = profiled("Reflections and AO") {
-        val gBuffer = getGBuffer()
+        val gBuffer = deferredRenderingBuffer
         val reflectionBuffer = gBuffer.reflectionBuffer
 
         backend.gpuContext.bindTexture(0, TEXTURE_2D, gBuffer.positionMap)
@@ -790,6 +747,43 @@ constructor(private val materialManager: MaterialManager,
         @Volatile
         var IMPORTANCE_SAMPLE_COUNT = 8
     }
+}
 
+class SimpleLineRenderer(engineContext: EngineContext<OpenGl>) : LineRenderer {
 
+    private val programManager: ProgramManager<OpenGl> = engineContext.programManager
+    private val linePoints = ArrayList<Vector3f>()
+    private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
+
+    private val buffer = VertexBuffer(engineContext.gpuContext, floatArrayOf(0f, 0f, 0f, 0f), EnumSet.of(DataChannels.POSITION3)).apply {
+        upload()
+    }
+
+    override fun batchLine(from: Vector3f, to: Vector3f) {
+        linePoints.add(from)
+        linePoints.add(to)
+    }
+
+    override fun drawAllLines(action: Consumer<Program>) {
+        linePoints.clear()
+        linesProgram.use()
+        action.accept(linesProgram)
+        drawLines(linesProgram)
+    }
+
+    override fun drawLines(program: Program): Int {
+        val points = FloatArray(linePoints.size * 3)
+        for (i in linePoints.indices) {
+            val point = linePoints[i]
+            points[3 * i] = point.x
+            points[3 * i + 1] = point.y
+            points[3 * i + 2] = point.z
+        }
+        buffer.putValues(*points)
+        buffer.upload().join()
+        buffer.drawDebugLines()
+        glFinish()
+        linePoints.clear()
+        return points.size / 3 / 2
+    }
 }

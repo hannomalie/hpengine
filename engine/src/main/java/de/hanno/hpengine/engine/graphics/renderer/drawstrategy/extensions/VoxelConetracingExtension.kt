@@ -348,19 +348,19 @@ class VoxelConeTracingExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if(!renderState.sceneInitialized) return
         profiled("VCT second pass") {
-            engine.gpuContext.bindTexture(0, TEXTURE_2D, renderer.gBuffer.positionMap)
-            engine.gpuContext.bindTexture(1, TEXTURE_2D, renderer.gBuffer.normalMap)
-            engine.gpuContext.bindTexture(2, TEXTURE_2D, renderer.gBuffer.colorReflectivenessMap)
-            engine.gpuContext.bindTexture(3, TEXTURE_2D, renderer.gBuffer.motionMap)
-            engine.gpuContext.bindTexture(7, TEXTURE_2D, renderer.gBuffer.visibilityMap)
-            engine.gpuContext.bindTexture(11, TEXTURE_2D, renderer.gBuffer.ambientOcclusionScatteringMap)
+            engine.gpuContext.bindTexture(0, TEXTURE_2D, renderer.deferredRenderingBuffer.positionMap)
+            engine.gpuContext.bindTexture(1, TEXTURE_2D, renderer.deferredRenderingBuffer.normalMap)
+            engine.gpuContext.bindTexture(2, TEXTURE_2D, renderer.deferredRenderingBuffer.colorReflectivenessMap)
+            engine.gpuContext.bindTexture(3, TEXTURE_2D, renderer.deferredRenderingBuffer.motionMap)
+            engine.gpuContext.bindTexture(7, TEXTURE_2D, renderer.deferredRenderingBuffer.visibilityMap)
+            engine.gpuContext.bindTexture(11, TEXTURE_2D, renderer.deferredRenderingBuffer.ambientOcclusionScatteringMap)
 
             voxelConeTraceProgram.use()
             val camTranslation = Vector3f()
             voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
             voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
             voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-            voxelConeTraceProgram.bindShaderStorageBuffer(0, renderer.gBuffer.storageBuffer)
+            voxelConeTraceProgram.bindShaderStorageBuffer(0, renderer.deferredRenderingBuffer.storageBuffer)
             voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
             voxelConeTraceProgram.setUniform("useAmbientOcclusion", engine.config.quality.isUseAmbientOcclusion)
             voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat())

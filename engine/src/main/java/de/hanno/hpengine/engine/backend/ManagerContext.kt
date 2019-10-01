@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.ManagerRegistry
@@ -29,4 +30,6 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
         get() = engineContext.renderSystems
     override val renderStateManager: RenderStateManager
         get() = engineContext.renderStateManager
+    override val deferredRenderingBuffer: DeferredRenderingBuffer
+        get() = engineContext.deferredRenderingBuffer
 }

@@ -10,15 +10,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.joml.Vector3f
 import java.util.function.Consumer
 
-interface Renderer<TYPE : BackendType> : RenderSystem {
-
-    val gBuffer: DeferredRenderingBuffer
-
-    val renderExtensions: List<RenderExtension<OpenGl>>
-
-    open fun update(engine: Engine<TYPE>, seconds: Float) {}
-
+interface LineRenderer {
     fun batchLine(from: Vector3f, to: Vector3f)
+
+    fun drawLines(program: Program): Int
+    fun drawAllLines(action: Consumer<Program>)
 
     fun batchTriangle(a: Vector3f, b: Vector3f, c: Vector3f) {
         batchLine(a, b)
@@ -26,27 +22,18 @@ interface Renderer<TYPE : BackendType> : RenderSystem {
         batchLine(c, a)
     }
 
-    fun drawLines(firstPassProgram: Program): Int
-
-    fun drawAllLines(action: Consumer<Program>)
-
-    fun drawToQuad(texture: Int)
-
-    @JvmOverloads
-    fun batchVector(vector: Vector3f, charWidth: Float = 0.1f) {
+    fun batchVector(vector: Vector3f, charWidth: Float) {
         batchString(String.format("%.2f", vector.x()), charWidth, charWidth * 0.2f, 0f, 2f * charWidth)
         batchString(String.format("%.2f", vector.y()), charWidth, charWidth * 0.2f, 0f, charWidth)
         batchString(String.format("%.2f", vector.z()), charWidth, charWidth * 0.2f, 0f, 0f)
     }
 
-    @JvmOverloads
-    fun batchString(text: String, charWidth: Float = 0.1f) {
+    fun batchString(text: String, charWidth: Float) {
         batchString(text, charWidth, charWidth * 0.2f)
     }
 
-    @JvmOverloads
-    fun batchString(text: String, charWidthIn: Float, gapIn: Float, x: Int = 0) {
-        batchString(text, charWidthIn, gapIn, x.toFloat(), 0f)
+    fun batchString(text: String, charWidthIn: Float, gapIn: Float, x: Float = 0f) {
+        batchString(text, charWidthIn, gapIn, x, 0f)
     }
 
     fun batchString(text: String, charWidthIn: Float, gapIn: Float, x: Float, y: Float) {
@@ -276,4 +263,16 @@ interface Renderer<TYPE : BackendType> : RenderSystem {
             }
         }
     }
+}
+
+interface Renderer<TYPE : BackendType> : RenderSystem{//}, LineRenderer {
+
+    val deferredRenderingBuffer: DeferredRenderingBuffer
+
+    val renderExtensions: List<RenderExtension<OpenGl>>
+
+    fun update(engine: Engine<TYPE>, seconds: Float) {}
+
+    fun drawToQuad(texture: Int)
+
 }

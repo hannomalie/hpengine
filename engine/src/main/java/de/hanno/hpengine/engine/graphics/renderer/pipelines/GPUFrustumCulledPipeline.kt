@@ -77,7 +77,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
     }
 
-    open var depthMap = renderer.gBuffer.visibilityMap
+    open var depthMap = renderer.deferredRenderingBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
         if (engine.config.debug.isPrintPipelineDebugOutput) {

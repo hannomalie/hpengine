@@ -20,7 +20,6 @@ import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem;
 import de.hanno.hpengine.engine.model.Instance;
@@ -37,8 +36,11 @@ import org.joml.Vector3f;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.model.ModelComponentSystemKt.getInstances;
@@ -48,11 +50,9 @@ public class EntityView extends WebPanel {
 	protected Entity entity;
 	protected Engine<? extends BackendType> engine;
 	protected WebFormattedTextField nameField;
-	protected Renderer renderer;
 
 	public EntityView(Engine engine, Entity entity) {
 		this.engine = engine;
-        this.renderer = engine.getRenderManager().getRenderer();
 		setUndecorated(true);
 		this.setSize(600, 700);
 		setMargin(20);

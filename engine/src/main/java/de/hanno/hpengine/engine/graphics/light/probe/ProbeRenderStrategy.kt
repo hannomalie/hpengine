@@ -182,20 +182,21 @@ class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGl>): RenderEx
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
-        engine.renderManager.renderer.gBuffer.lightAccumulationBuffer.use(engine.gpuContext, false)
+        val deferredRenderingBuffer = engine.deferredRenderingBuffer
+        deferredRenderingBuffer.lightAccumulationBuffer.use(engine.gpuContext, false)
 
-        engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.renderManager.renderer.gBuffer.positionMap)
-        engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.renderManager.renderer.gBuffer.normalMap)
-        engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.renderManager.renderer.gBuffer.colorReflectivenessMap)
-        engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.renderManager.renderer.gBuffer.motionMap)
-        engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.renderManager.renderer.gBuffer.visibilityMap)
+        engine.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
+        engine.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+        engine.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+        engine.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+        engine.gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
 
         evaluateProbeProgram.use()
         val camTranslation = Vector3f()
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.bindShaderStorageBuffer(0, engine.renderManager.renderer.gBuffer.storageBuffer)
+        evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.storageBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
         evaluateProbeProgram.setUniform("screenWidth", engine.config.width.toFloat())
         evaluateProbeProgram.setUniform("screenHeight", engine.config.height.toFloat())

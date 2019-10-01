@@ -9,6 +9,8 @@ import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -52,6 +54,7 @@ class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQ
                         override val config: Config,
                         override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine"),
                         override val backend: Backend<OpenGl> = OpenGlBackend(window, config),
+                        override val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext<OpenGl>
 
@@ -59,7 +62,7 @@ class ManagerContextImpl(
         override val engineContext: EngineContext<OpenGl>,
         override val managers: ManagerRegistry = SimpleManagerRegistry(),
         override val renderManager: RenderManager,
-        override val physicsManager: PhysicsManager = PhysicsManager(renderManager.renderer, engineContext.config)
+        override val physicsManager: PhysicsManager = PhysicsManager(renderer = SimpleLineRenderer(engineContext), config = engineContext.config)
 ) : ManagerContext<OpenGl> {
 
     override val directories = engineContext.config.directories

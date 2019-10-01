@@ -14,7 +14,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleColorRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
@@ -40,10 +39,9 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
-                                           val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(engineContext.gpuContext, engineContext.config.width, engineContext.config.height),
                                            val materialManager: MaterialManager = MaterialManager(engineContext),
                                            val renderer: Renderer<OpenGl>,
-                                           override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, renderer, materialManager),
+                                           override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, materialManager = materialManager),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
     private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
@@ -65,6 +63,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         gpuContext.registerPerFrameCommand(inputUpdater)
         startSimulation()
         engineContext.eventBus.post(EngineInitializedEvent())
+        engineContext.renderSystems.add(0, renderer)
     }
 
     fun startSimulation() {
@@ -129,12 +128,11 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 
             val engineContext = EngineContextImpl(config = config)
             val materialManager = MaterialManager(engineContext)
-            val deferredRenderingBuffer = DeferredRenderingBuffer(engineContext.gpuContext, config.width, config.height)
+            val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
             val renderer: Renderer<OpenGl> = getRendererForPlatform(engineContext, materialManager, deferredRenderingBuffer)
             println("Using renderer class ${renderer.javaClass.simpleName}")
             val engine = EngineImpl(
                     engineContext = engineContext,
-                    deferredRenderingBuffer = deferredRenderingBuffer,
                     materialManager = materialManager,
                     renderer = renderer
             )

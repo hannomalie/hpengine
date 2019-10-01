@@ -184,14 +184,15 @@ public class MainLightView extends WebPanel {
                 engine.getSceneManager().getScene().setActiveCamera(engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight());
             });
         }});
-        webComponentPanel.addElement(new WebButton("Use Voxelizer Cam") {{
-            addActionListener(e -> {
-                Optional<RenderExtension<OpenGl>> voxelConeTracingExtension = engine.getRenderManager().getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
-                voxelConeTracingExtension.ifPresent(it -> {
-                    engine.getSceneManager().getScene().setActiveCamera(((VoxelConeTracingExtension) it).getVoxelGrids().get(0).getOrthoCam());
-                });
-            });
-        }});
+//        TODO: Make registering config possible somehow
+//        webComponentPanel.addElement(new WebButton("Use Voxelizer Cam") {{
+//            addActionListener(e -> {
+//                Optional<RenderExtension<OpenGl>> voxelConeTracingExtension = engine.getRenderManager().getRenderer().getRenderExtensions().stream().filter(it -> it instanceof VoxelConeTracingExtension).findFirst();
+//                voxelConeTracingExtension.ifPresent(it -> {
+//                    engine.getSceneManager().getScene().setActiveCamera(((VoxelConeTracingExtension) it).getVoxelGrids().get(0).getOrthoCam());
+//                });
+//            });
+//        }});
         webComponentPanel.addElement(new WebButton("Use World Cam") {{
             addActionListener(e -> {
                 engine.getSceneManager().getScene().restoreWorldCamera();

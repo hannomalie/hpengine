@@ -79,7 +79,6 @@ public class EnvironmentSampler extends Entity {
 	private ComputeShaderProgram cubemapRadianceProgram;
 	private Program cubemapRadianceFragmentProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
-	private Renderer renderer;
 	transient private boolean drawnOnce = false;
 	transient Set<Integer> sidesDrawn = new HashSet<>();
 	transient private EnvironmentProbe probe;
@@ -98,7 +97,7 @@ public class EnvironmentSampler extends Entity {
 	private RenderTarget renderTarget;
 	private Camera camera;
 
-	public EnvironmentSampler(Entity entity, Engine engine, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex, Renderer renderer, EnvironmentProbeManager environmentProbeManager) throws Exception {
+	public EnvironmentSampler(Entity entity, Engine engine, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex, EnvironmentProbeManager environmentProbeManager) throws Exception {
 		this.engine = engine;
 		this.environmentProbeManager = environmentProbeManager;
 		Camera camera = new Camera(entity, 0.1f, 5000f, 90f, 1f);
@@ -107,7 +106,6 @@ public class EnvironmentSampler extends Entity {
 		camera.setWidth(height);
 		this.camera = camera;
         translate(position);
-        this.renderer = renderer;
 		this.probe = probe;
 		float far = 5000f;
 		float near = 0.1f;

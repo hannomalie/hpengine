@@ -38,7 +38,7 @@ public class PhysicsComponent extends BaseComponent {
 
     private void actuallyCreatePhysicsObject() {
         MotionState motionState = new DefaultMotionState(initialTransform);
-        rigidBodyConstructionInfo = new RigidBodyConstructionInfo(info.mass, motionState, info.shapeSupplier.get(), info.inertia);
+        rigidBodyConstructionInfo = new RigidBodyConstructionInfo(info.getMass(), motionState, info.getShapeSupplier().get(), info.getInertia());
         rigidBodyConstructionInfo.restitution = 0.5f;
         rigidBody = new RigidBody(rigidBodyConstructionInfo);
         rigidBody.setUserPointer(owner);

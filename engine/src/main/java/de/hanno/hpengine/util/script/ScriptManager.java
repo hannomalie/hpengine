@@ -42,7 +42,6 @@ public class ScriptManager implements Manager {
 
 	public void defineGlobals(ManagerContext engine, EntityManager entityManager, MaterialManager materialManager) {
 		define("world", scriptEngine);
-        define("renderer", engine.getRenderManager().getRenderer());
         define("entityManager", entityManager);
 		define("materialManager", materialManager);
         define("textureManager", engine.getTextureManager());

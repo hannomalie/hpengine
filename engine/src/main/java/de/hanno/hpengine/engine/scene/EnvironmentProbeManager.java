@@ -5,12 +5,14 @@ import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -59,13 +61,13 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	private CubeMapArray environmentMapsArray2;
 	private CubeMapArray environmentMapsArray3;
     private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
-	private final Renderer renderer;
+	private final LineRenderer renderer;
 
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(100*3);
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(100*3);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(100*3);
 
-	public EnvironmentProbeManager(Engine engineContext, Renderer renderer) {
+	public EnvironmentProbeManager(Engine engineContext, LineRenderer renderer) {
     	this.engine = engineContext;
 		TextureDimension dimension = new TextureDimension(RESOLUTION, RESOLUTION, MAX_PROBES);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
@@ -81,18 +83,18 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		this.renderer = renderer;
 	}
 
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Renderer renderer) throws Exception {
-		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f, renderer);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {
+		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f);
 	}
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, float weight, Renderer renderer) throws Exception {
-		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, weight, renderer);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, float weight) throws Exception {
+		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, weight);
 	}
 
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Update update, float weight, Renderer renderer) throws Exception {
-		return getProbe(entity, center, new Vector3f(size, size, size), update, weight, renderer);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size, Update update, float weight) throws Exception {
+		return getProbe(entity, center, new Vector3f(size, size, size), update, weight);
 	}
-	public EnvironmentProbe getProbe(Entity entity, Vector3f center, Vector3f size, Update update, float weight, Renderer renderer) throws Exception {
-		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight, renderer, this);
+	public EnvironmentProbe getProbe(Entity entity, Vector3f center, Vector3f size, Update update, float weight) throws Exception {
+		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight, this);
 		probes.add(probe);
 		updateBuffers();
         engine.getEventBus().post(new ProbeAddedEvent(probe));
@@ -182,12 +184,38 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
         engine.getGpuContext().enable(CULL_FACE);
 		cubeMapArrayRenderTarget.use(engine.getGpuContext(), false);
 	}
-	
+
+	public void drawDebug(EnvironmentProbe probe, Program program) {
+		List<Vector3f> points = probe.getBox().getPoints();
+		EnvironmentSampler sampler = probe.getSampler();
+		for (int i = 0; i < points.size() - 1; i++) {
+			renderer.batchLine(points.get(i), points.get(i + 1));
+		}
+
+		renderer.batchLine(points.get(3), points.get(0));
+		renderer.batchLine(points.get(7), points.get(4));
+
+		renderer.batchLine(points.get(0), points.get(6));
+		renderer.batchLine(points.get(1), points.get(7));
+		renderer.batchLine(points.get(2), points.get(4));
+		renderer.batchLine(points.get(3), points.get(5));
+
+		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(5, 0, 0)));
+		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(0, 5, 0)));
+		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(0, 0, -5)));
+
+		float temp = (float)probe.getIndex()/10;
+		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
+	    renderer.drawLines(program);
+
+//		renderer.batchLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
+	}
+
 	public void drawDebug(Program program, Octree octree) {
 		List<float[]> arrays = new ArrayList<>();
 
 		for (EnvironmentProbe probe : getProbes()) {
-			probe.drawDebug(program);
+			drawDebug(probe, program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
 //			Vector3f clipStart = new Vector3f(probe.getCenter(), (Vector3f) probe.getRightDirection().mul(probe.getCamera().getNear()), null);

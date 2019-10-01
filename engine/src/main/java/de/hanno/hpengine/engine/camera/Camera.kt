@@ -1,8 +1,10 @@
 package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -249,6 +251,8 @@ open class Camera: Component {
 
 class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, RenderSystem {
 
+    // TODO: Remove this cast
+    private val lineRenderer = SimpleLineRenderer(engine as Engine<OpenGl>)
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(deltaSeconds: Float) {
         getComponents().forEach {
@@ -274,21 +278,20 @@ class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, Ren
             for (i in components.indices) {
                 val camera = components[i]
                 val corners = camera.frustumCorners
-                val renderer = engine.renderManager.renderer
-                renderer.batchLine(corners[0], corners[1])
-                renderer.batchLine(corners[1], corners[2])
-                renderer.batchLine(corners[2], corners[3])
-                renderer.batchLine(corners[3], corners[0])
+                lineRenderer.batchLine(corners[0], corners[1])
+                lineRenderer.batchLine(corners[1], corners[2])
+                lineRenderer.batchLine(corners[2], corners[3])
+                lineRenderer.batchLine(corners[3], corners[0])
 
-                renderer.batchLine(corners[4], corners[5])
-                renderer.batchLine(corners[5], corners[6])
-                renderer.batchLine(corners[6], corners[7])
-                renderer.batchLine(corners[7], corners[4])
+                lineRenderer.batchLine(corners[4], corners[5])
+                lineRenderer.batchLine(corners[5], corners[6])
+                lineRenderer.batchLine(corners[6], corners[7])
+                lineRenderer.batchLine(corners[7], corners[4])
 
-                renderer.batchLine(corners[0], corners[6])
-                renderer.batchLine(corners[1], corners[7])
-                renderer.batchLine(corners[2], corners[4])
-                renderer.batchLine(corners[3], corners[5])
+                lineRenderer.batchLine(corners[0], corners[6])
+                lineRenderer.batchLine(corners[1], corners[7])
+                lineRenderer.batchLine(corners[2], corners[4])
+                lineRenderer.batchLine(corners[3], corners[5])
             }
         }
     }

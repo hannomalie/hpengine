@@ -1,8 +1,6 @@
 package de.hanno.hpengine.engine.physics
 
-import com.bulletphysics.collision.broadphase.BroadphaseInterface
 import com.bulletphysics.collision.broadphase.DbvtBroadphase
-import com.bulletphysics.collision.dispatch.CollisionConfiguration
 import com.bulletphysics.collision.dispatch.CollisionDispatcher
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration
 import com.bulletphysics.collision.shapes.BoxShape
@@ -13,52 +11,46 @@ import com.bulletphysics.dynamics.DiscreteDynamicsWorld
 import com.bulletphysics.dynamics.DynamicsWorld
 import com.bulletphysics.dynamics.RigidBody
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo
-import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver
 import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
-import com.bulletphysics.linearmath.MotionState
 import com.bulletphysics.linearmath.Transform
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.component.PhysicsComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.threads.TimeStepThread
-import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
-import kotlinx.coroutines.CoroutineScope
-
+import java.util.ArrayList
+import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
+import java.util.function.Supplier
+import java.util.logging.Logger
 import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
-import java.util.ArrayList
-import java.util.concurrent.CompletableFuture
-import java.util.function.Supplier
-import java.util.logging.Logger
 
-class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val config: Config) : Manager, RenderSystem {
+class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
+                     val renderer: LineRenderer,
+                     private val config: Config) : Manager, RenderSystem {
 
-    private val renderer: Renderer<out BackendType>
     private var dynamicsWorld: DynamicsWorld? = null
     var ground: RigidBody? = null
     val commandQueue = CommandQueue()
 
     internal var rigidBodyCache: MutableList<RigidBody> = ArrayList()
 
-    constructor(renderer: Renderer<*>, config: Config) : this(Vector3f(0f, -20f, 0f), renderer, config) {}
-
     init {
-        this.renderer = renderer
         setupBullet(renderer, gravity)
         object : TimeStepThread("Physics", 0.001f) {
-
             override fun update(seconds: Float) {
                 try {
                     commandQueue.executeCommands()
@@ -77,7 +69,7 @@ class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val confi
         val sphereShape = SphereShape(radius)
         val inertia = Vector3f()
         sphereShape.calculateLocalInertia(mass, inertia)
-        return addPhysicsComponent(MeshShapeInfo({ sphereShape }, owner, mass, inertia))
+        return addPhysicsComponent(MeshShapeInfo(Supplier { sphereShape }, owner, mass, inertia))
     }
 
     fun addBoxPhysicsComponent(entity: Entity): PhysicsComponent {
@@ -99,7 +91,7 @@ class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val confi
         val boxShape = BoxShape(halfExtends)
         val inertia = Vector3f()
         boxShape.calculateLocalInertia(1f, inertia)
-        return addPhysicsComponent(MeshShapeInfo({ boxShape }, owner, mass, inertia))
+        return addPhysicsComponent(MeshShapeInfo(Supplier { boxShape }, owner, mass, inertia))
     }
 
     fun addHullPhysicsComponent(owner: Entity, mass: Float): PhysicsComponent {
@@ -120,7 +112,7 @@ class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val confi
 
     fun addMeshPhysicsComponent(owner: Entity, mass: Float): PhysicsComponent {
         val inertia = Vector3f()
-        val collisionShapeSupplier = { supplyCollisionShape(owner, mass, inertia) }
+        val collisionShapeSupplier = Supplier { supplyCollisionShape(owner, mass, inertia) }
 
         val info = MeshShapeInfo(collisionShapeSupplier, owner, mass, inertia)
         return addPhysicsComponent(info)
@@ -165,10 +157,6 @@ class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val confi
         dynamicsWorld!!.debugDrawWorld()
     }
 
-    override fun update(scop: CoroutineScope, deltaSeconds: Float) {
-
-    }
-
     override fun clear() {
 
     }
@@ -177,16 +165,12 @@ class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val confi
 
     }
 
-    override fun afterUpdate(scope: CoroutineScope, deltaSeconds: Float) {
-
-    }
-
     override fun render(result: DrawResult, state: RenderState) {
         if (config.debug.isDrawLines) {
-            renderer.drawAllLines { program ->
+            renderer.drawAllLines(Consumer{ program ->
                 program.setUniform("diffuseColor", org.joml.Vector3f(1f, 1f, 0f))
                 debugDrawWorld()
-            }
+            })
         }
     }
 
@@ -197,7 +181,7 @@ class PhysicsManager(gravity: Vector3f, renderer: Renderer<*>, private val confi
     }
 
 
-    private fun setupBullet(renderer: Renderer<*>, gravity: Vector3f) {
+    private fun setupBullet(renderer: LineRenderer, gravity: Vector3f) {
         val broadphase = DbvtBroadphase()
         val collisionConfiguration = DefaultCollisionConfiguration()
         val dispatcher = CollisionDispatcher(collisionConfiguration)

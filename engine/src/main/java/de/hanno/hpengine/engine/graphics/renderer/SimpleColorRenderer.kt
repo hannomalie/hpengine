@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setUniforms
@@ -19,7 +18,7 @@ class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>,
                           programManager: ProgramManager<OpenGl> = engineContext.programManager,
                           val textureManager: TextureManager = engineContext.textureManager,
                           deferredRenderingBuffer: DeferredRenderingBuffer) : AbstractDeferredRenderer(programManager, engineContext.config, deferredRenderingBuffer) {
-    val drawlinesExtension = DrawLinesExtension(engineContext, this, programManager)
+    val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
     val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
 
@@ -32,10 +31,11 @@ class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>,
 
         simpleColorProgramStatic.setUniforms(state, state.camera, config)
 
-        state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
-
         if(engineContext.config.debug.isDrawBoundingVolumes) {
-            drawlinesExtension.renderFirstPass(null, gpuContext, result.firstPassResult, state)
+            drawlinesExtension.renderFirstPass(engineContext, gpuContext, result.firstPassResult, state)
+        } else {
+            state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
+
         }
 
         if(engineContext.config.debug.isUseDirectTextureOutput) {

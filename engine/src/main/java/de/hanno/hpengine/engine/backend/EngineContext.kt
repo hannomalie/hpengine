@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
@@ -15,6 +16,7 @@ interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
     val backend: Backend<TYPE>
     val commandQueue: CommandQueue
     val config: Config
+    val deferredRenderingBuffer: DeferredRenderingBuffer
     val renderSystems: MutableList<RenderSystem>
     val renderStateManager: RenderStateManager
 
