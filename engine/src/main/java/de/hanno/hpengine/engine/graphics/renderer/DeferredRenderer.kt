@@ -101,18 +101,7 @@ class DeferredRenderer
     private val sixDebugBuffers: ArrayList<VertexBuffer> = gpuContext.setupBuffers()
 
     private val gBuffer: DeferredRenderingBuffer = deferredRenderingBuffer
-    private val forwardRenderer = ForwardRenderExtension(engineContext.renderStateManager.renderState, gBuffer, engineContext)
-
-    private val skyBoxEntity = Entity("Skybox")
-
-    private val skyBox = OBJLoader().loadTexturedModel(this.materialManager, engineContext.config.directories.engineDir.resolve("assets/models/skybox.obj"))
-    private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox).apply {
-        skyBoxEntity.addComponent(this)
-    }
-    private val skyboxVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
-
-    private val vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent::class.java).putToBuffer(engineContext.gpuContext, skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS)
-    private val skyBoxRenderBatch = RenderBatch().init(0, true, false, false, Vector3f(0f, 0f, 0f), true, 1, true, DYNAMIC, Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(), 1000f, skyBox.indices.size, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.instanceMinMaxWorlds, skyBoxModelComponent.getMaterial(materialManager).materialInfo)
+    private val forwardRenderer = ForwardRenderExtension(engineContext)
 
     private val renderToQuadProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "simpletexture_fragment.glsl")))
     private val debugFrameProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "debugframe_fragment.glsl")))
@@ -136,7 +125,6 @@ class DeferredRenderer
 
     private val aoScatteringProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl")
     private val reflectionProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl")
-    private val skyBoxProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl")
     private val skyBoxDepthProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl")
 //    private val probeFirstpassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl")
     private val depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "depth_prepass_fragment.glsl")
@@ -146,8 +134,6 @@ class DeferredRenderer
     val renderExtensions: MutableList<RenderExtension<OpenGl>> = mutableListOf()
     //	private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private val mainPipelineRef: StateRef<Pipeline>
-
-    private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
 
     init {
         if (engineContext.gpuContext !is OpenGLContext) {
@@ -214,22 +200,6 @@ class DeferredRenderer
 
             gpuContext.depthMask(true)
             deferredRenderingBuffer.use(gpuContext, true)
-
-            gpuContext.disable(CULL_FACE)
-            gpuContext.depthMask(false)
-            gpuContext.disable(GlCap.BLEND)
-            skyBoxEntity.identity().scale(10f)
-            skyBoxEntity.setTranslation(camera.getPosition())
-            skyBoxProgram.use()
-            skyBoxProgram.setUniform("eyeVec", camera.getViewDirection())
-            val translation = Vector3f()
-            skyBoxProgram.setUniform("eyePos_world", camera.getTranslation(translation))
-            skyBoxProgram.setUniform("materialIndex", materialManager.skyboxMaterial.materialIndex)
-            skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.transformation.get(modelMatrixBuffer))
-            skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-            skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
-            gpuContext.bindTexture(6, backend.textureManager.cubeMap!!)
-            draw(skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
 
             profiled("Set GPU state") {
                 gpuContext.enable(CULL_FACE)

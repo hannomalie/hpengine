@@ -74,5 +74,5 @@ void main(void) {
     out_color.rgb = textureLod(environmentMap, -sampleVector, 0).rgb;
     out_motion = vec4(0,0,depth,0);
     out_visibility = vec4(1, 1, materialIndex, 0);
-//    gl_FragDepth = 1;
+    gl_FragDepth = 0.99999;
 }

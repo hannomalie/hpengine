@@ -144,15 +144,15 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         prepare(writeState)
     }
 
-    fun beforeDrawStatic(renderState: RenderState, program: Program) {
+    open fun beforeDrawStatic(renderState: RenderState, program: Program) {
         beforeDraw(renderState, program)
     }
 
-    fun beforeDrawAnimated(renderState: RenderState, program: Program) {
+    open fun beforeDrawAnimated(renderState: RenderState, program: Program) {
         beforeDraw(renderState, program)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program) {
+    open fun beforeDraw(renderState: RenderState, program: Program) {
         if (useBackFaceCulling) {
             engine.gpuContext.enable(GlCap.CULL_FACE)
         }

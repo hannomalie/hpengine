@@ -15,16 +15,14 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.model.Update
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL40.*
 import java.io.File
 
-class ForwardRenderExtension(renderState: TripleBuffer<RenderState>,
-                             val deferredRenderingBuffer: DeferredRenderingBuffer,
-                             val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+    val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
     val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "first_pass_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.directory + "forward_fragment.glsl"))

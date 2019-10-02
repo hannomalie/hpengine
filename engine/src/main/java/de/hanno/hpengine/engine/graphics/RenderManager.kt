@@ -23,9 +23,9 @@ class RenderStateManager(renderStateFactory: () -> RenderState) {
             renderStateFactory())
 }
 class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make generic
-                    val renderStateManager: RenderStateManager,
+                    val renderStateManager: RenderStateManager = engineContext.renderStateManager,
                     val lineRenderer: LineRenderer = SimpleLineRenderer(engineContext),
-                    val materialManager: MaterialManager) : Manager {
+                    val materialManager: MaterialManager = engineContext.materialManager) : Manager {
 
     inline val renderState: TripleBuffer<RenderState>
         get() = renderStateManager.renderState

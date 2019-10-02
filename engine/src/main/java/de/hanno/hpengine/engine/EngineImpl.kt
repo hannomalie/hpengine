@@ -39,9 +39,8 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
-                                           val materialManager: MaterialManager = MaterialManager(engineContext),
                                            val renderer: RenderSystem,
-                                           override val renderManager: RenderManager = RenderManager(engineContext, engineContext.renderStateManager, materialManager = materialManager),
+                                           override val renderManager: RenderManager = RenderManager(engineContext),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
     private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
@@ -133,7 +132,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             println("Using renderer class ${renderer.javaClass.simpleName}")
             val engine = EngineImpl(
                     engineContext = engineContext,
-                    materialManager = materialManager,
                     renderer = renderer
             )
             if (debug) {

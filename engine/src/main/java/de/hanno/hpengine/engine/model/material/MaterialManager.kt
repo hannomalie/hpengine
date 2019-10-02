@@ -1,7 +1,8 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -10,6 +11,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
@@ -24,16 +26,22 @@ import java.util.HashMap
 import java.util.LinkedHashMap
 import java.util.logging.Logger
 
-class MaterialManager(val engineContext: EngineContext<*>) : Manager {
-    val textureManager = engineContext.textureManager
+class MaterialManager(val config: Config,
+                      private val eventBus: EventBus,
+                      val textureManager: TextureManager) : Manager {
+
+    constructor(engineContext: EngineContext<*>,
+                config: Config = engineContext.config,
+                eventBus: EventBus = engineContext.eventBus,
+                textureManager: TextureManager = engineContext.textureManager): this(config, eventBus, textureManager) {}
+
     val skyboxMaterial: SimpleMaterial
-    private val eventBus: EventBus = engineContext.eventBus
 
     var MATERIALS: MutableMap<String, SimpleMaterial> = LinkedHashMap()
 
     val defaultMaterial: SimpleMaterial
 
-    val engineDir = engineContext.config.directories.engineDir
+    val engineDir = config.directories.engineDir
 
     val materials: List<SimpleMaterial>
         get() = ArrayList(MATERIALS.values)
@@ -46,7 +54,7 @@ class MaterialManager(val engineContext: EngineContext<*>) : Manager {
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
-        engineContext.eventBus.register(this)
+        eventBus.register(this)
     }
 
     fun initDefaultMaterials() {

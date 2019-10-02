@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -56,7 +57,8 @@ class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQ
                         override val backend: Backend<OpenGl> = OpenGlBackend(window, config),
                         override val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
-                        override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) }) : EngineContext<OpenGl>
+                        override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },
+                        override val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager)) : EngineContext<OpenGl>
 
 class ManagerContextImpl(
         override val engineContext: EngineContext<OpenGl>,
@@ -66,7 +68,6 @@ class ManagerContextImpl(
 ) : ManagerContext<OpenGl> {
 
     override val directories = engineContext.config.directories
-    override val window = engineContext.window
 
     init {
         managers.register(directories)

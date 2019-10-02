@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 
@@ -19,6 +20,7 @@ interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
     val deferredRenderingBuffer: DeferredRenderingBuffer
     val renderSystems: MutableList<RenderSystem>
     val renderStateManager: RenderStateManager
+    val materialManager: MaterialManager
 
     override val eventBus
         get() = backend.eventBus

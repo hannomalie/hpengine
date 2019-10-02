@@ -2,10 +2,15 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.setUniforms
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -19,20 +24,42 @@ class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>): RenderSyste
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
-    val pipeline = engineContext.renderStateManager.renderState.registerState {
-        SimplePipeline(engineContext)
+    val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
+        object: SimplePipeline(engineContext) {
+            override fun beforeDraw(renderState: RenderState, program: Program) {
+
+                deferredRenderingBuffer.use(gpuContext, false)
+                super.beforeDraw(renderState, program)
+
+                gpuContext.enable(GlCap.CULL_FACE)
+                gpuContext.depthMask(true)
+                gpuContext.enable(GlCap.DEPTH_TEST)
+                gpuContext.depthFunc(GlDepthFunc.LESS)
+                gpuContext.disable(GlCap.BLEND)
+            }
+        }
     }
 
-    override fun render(result: DrawResult, state: RenderState) {
-        deferredRenderingBuffer.use(gpuContext, true)
+    val extensions: List<RenderExtension<OpenGl>> = listOf(
+        SkyBoxRenderExtension(engineContext),
+        ForwardRenderExtension(engineContext)
+    )
 
-        simpleColorProgramStatic.setUniforms(state, state.camera, config)
+    override fun render(result: DrawResult, state: RenderState) {
+        gpuContext.depthMask(true)
+        deferredRenderingBuffer.use(gpuContext, true)
 
         if(engineContext.config.debug.isDrawBoundingVolumes) {
             drawlinesExtension.renderFirstPass(engineContext, gpuContext, result.firstPassResult, state)
         } else {
             state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
-
+            for (extension in extensions) {
+                extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
+            }
+            for (extension in extensions) {
+                extension.renderSecondPassHalfScreen(state, result.secondPassResult)
+                extension.renderSecondPassFullScreen(state, result.secondPassResult)
+            }
         }
 
         val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
