@@ -115,7 +115,6 @@ class DeferredRenderer
     private val secondPassPointProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_point_fragment.glsl")))
     private val secondPassTubeProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_tube_fragment.glsl")))
     private val secondPassAreaProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_area_fragment.glsl")))
-    private val secondPassDirectionalProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_directional_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_directional_fragment.glsl")))
     private val instantRadiosityProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_instant_radiosity_fragment.glsl")))
 
     private val secondPassPointComputeProgram = programManager.getComputeProgram("second_pass_point_compute.glsl")
@@ -249,52 +248,6 @@ class DeferredRenderer
 
                 val viewMatrix = camera1.viewMatrixAsBuffer
                 val projectionMatrix = camera1.projectionMatrixAsBuffer
-
-                profiled("Directional light") {
-                    gpuContext.depthMask(false)
-                    gpuContext.disable(DEPTH_TEST)
-                    gpuContext.enable(BLEND)
-                    gpuContext.blendEquation(FUNC_ADD)
-                    gpuContext.blendFunc(ONE, ONE)
-
-                    gBuffer.lightAccumulationBuffer.use(gpuContext, true)
-//                    GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.depthBufferTexture)
-                    GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, gBuffer.depthBufferTexture, 0)
-                    backend.gpuContext.clearColor(0f, 0f, 0f, 0f)
-                    backend.gpuContext.clearColorBuffer()
-
-                    profiled("Activate DeferredRenderingBuffer textures") {
-                        gpuContext.bindTexture(0, TEXTURE_2D, gBuffer.positionMap)
-                        gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.normalMap)
-                        gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.colorReflectivenessMap)
-                        gpuContext.bindTexture(3, TEXTURE_2D, gBuffer.motionMap)
-                        gpuContext.bindTexture(4, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.id)
-                        gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState.shadowMapId)
-                        gpuContext.bindTexture(7, TEXTURE_2D, gBuffer.visibilityMap)
-                        if(state.environmentProbesState.environmapsArray3Id > 0) {
-                            gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, state.environmentProbesState.environmapsArray3Id)
-                        }
-                        if(!gpuContext.isSupported(BindlessTextures)) {
-                            gpuContext.bindTexture(8, TEXTURE_2D, state.directionalLightState.shadowMapId)
-                        }
-                    }
-
-                    secondPassDirectionalProgram.use()
-                    val camTranslation = Vector3f()
-                    secondPassDirectionalProgram.setUniform("eyePosition", camera1.getTranslation(camTranslation))
-                    secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", engineContext.config.effects.ambientocclusionRadius)
-                    secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", engineContext.config.effects.ambientocclusionTotalStrength)
-                    secondPassDirectionalProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
-                    secondPassDirectionalProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
-                    secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
-                    secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
-                    secondPassDirectionalProgram.bindShaderStorageBuffer(2, state.directionalLightBuffer)
-                    bindEnvironmentProbePositions(secondPassDirectionalProgram, state.environmentProbesState)
-                    profiled("Draw fullscreen buffer") {
-                        backend.gpuContext.fullscreenBuffer.draw()
-                    }
-
-                }
 
                 doTubeLights(state.lightState.tubeLights, camPositionV4, viewMatrix, projectionMatrix)
 

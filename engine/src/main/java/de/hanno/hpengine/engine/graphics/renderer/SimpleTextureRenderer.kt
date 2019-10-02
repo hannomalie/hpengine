@@ -36,6 +36,9 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
     }
 
     private fun draw(renderTarget: RenderTarget<Texture2D>, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program = renderToQuadProgram) {
+
+        gpuContext.disable(GlCap.BLEND)
+
         renderTarget.use(gpuContext, clear = true)
 
         program.use()

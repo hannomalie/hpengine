@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.SimpleProvider
-import de.hanno.hpengine.engine.graphics.renderer.SimpleColorRenderer
+import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -155,7 +155,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 materialManager: MaterialManager,
                 deferredRenderingBuffer: DeferredRenderingBuffer
         ): RenderSystem {
-            return SimpleColorRenderer(engineContext)//DeferredRenderer(materialManager, engineContext, deferredRenderingBuffer)
+            return ExtensibleDeferredRenderer(engineContext)//DeferredRenderer(materialManager, engineContext, deferredRenderingBuffer)
 //            return when {
 //                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
 //                    DeferredRenderer(materialManager, engineContext)

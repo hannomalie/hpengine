@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
@@ -17,7 +18,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
 
-class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
+class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
     val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
@@ -42,7 +43,8 @@ class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>): RenderSyste
 
     val extensions: List<RenderExtension<OpenGl>> = listOf(
         SkyBoxRenderExtension(engineContext),
-        ForwardRenderExtension(engineContext)
+        ForwardRenderExtension(engineContext),
+        DirectionalLightSecondPassExtension(engineContext)
     )
 
     override fun render(result: DrawResult, state: RenderState) {
@@ -56,10 +58,12 @@ class SimpleColorRenderer(val engineContext: EngineContext<OpenGl>): RenderSyste
             for (extension in extensions) {
                 extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
             }
+            deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
             for (extension in extensions) {
                 extension.renderSecondPassHalfScreen(state, result.secondPassResult)
                 extension.renderSecondPassFullScreen(state, result.secondPassResult)
             }
+            deferredRenderingBuffer.lightAccumulationBuffer.unuse(gpuContext)
         }
 
         val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
