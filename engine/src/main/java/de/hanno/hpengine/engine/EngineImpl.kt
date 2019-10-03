@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.SimpleProvider
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -53,13 +52,8 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 
     override val sceneManager = managerContext.managers.register(SceneManager(managerContext))
 
-    val inputUpdater = SimpleProvider(Runnable {
-        input.update()
-    })
-
     init {
         engineContext.eventBus.register(this)
-        gpuContext.registerPerFrameCommand(inputUpdater)
         startSimulation()
         engineContext.eventBus.post(EngineInitializedEvent())
         engineContext.renderSystems.add(0, renderer)
@@ -70,10 +64,9 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     }
 
     fun CoroutineScope.update(deltaSeconds: Float) = try {
+        gpuContext.execute("updateInput") { input.update() }
         gpuContext.update(deltaSeconds)
         engineContext.commandQueue.executeCommands()
-        inputUpdater.setReadyForExecution()
-        while(inputUpdater.isReadyForExecution()){ }
         with(managerContext.managers) {
             update(deltaSeconds)
         }

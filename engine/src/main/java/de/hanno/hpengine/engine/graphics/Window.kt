@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
 
@@ -11,6 +12,9 @@ interface Window<T: BackendType> {
 
     var width: Int
     var height: Int
+
+    val vSync: Boolean
+    fun setVSync(vSync: Boolean, gpuContext: GpuContext<T>)
 
     fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray)
     fun getFrameBufferSize(width: IntArray, height: IntArray)

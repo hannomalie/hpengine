@@ -142,9 +142,9 @@ interface IPerformanceConfig {
 }
 
 data class PerformanceConfig(
-    override val isIndirectRendering: Boolean = true,
-    override val isLockFps: Boolean = false,
-    override val isVsync: Boolean = true
+    override var isIndirectRendering: Boolean = true,
+    override var isLockFps: Boolean = false,
+    override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
 class SimpleConfig(override val quality: QualityConfig = QualityConfig(),

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.directional
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -19,7 +20,7 @@ class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleSce
 
     init {
         eventBus.register(this)
-        shadowMapExtension = DirectionalLightShadowMapExtension(engine)
+        shadowMapExtension = DirectionalLightShadowMapExtension(_engine)
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {

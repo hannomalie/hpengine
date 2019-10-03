@@ -25,6 +25,7 @@ private val exitOnCloseCallback = GLFWWindowCloseCallbackI { l: Long ->
 class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  override var height: Int,
                  override val title: String,
+                 override var vSync: Boolean = true,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
                  closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl> {
 
@@ -69,12 +70,19 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         glfwMakeContextCurrent(handle)
 
         glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
-        glfwSwapInterval(1)
+        glfwSwapInterval(if(vSync) 1 else 0)
 
         setCallbacks(framebufferSizeCallback, closeCallback)
         glfwMakeContextCurrent(handle)
         glfwShowWindow(handle)
         frontBuffer = createFrontBufferRenderTarget()
+    }
+
+    override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
+        gpuContext.execute("setVSync") {
+            glfwSwapInterval(if(vSync) 1 else 0)
+            this.vSync = vSync
+        }
     }
 
     override fun showWindow() {

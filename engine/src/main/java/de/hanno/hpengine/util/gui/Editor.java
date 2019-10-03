@@ -38,7 +38,6 @@ import de.hanno.hpengine.engine.event.MeshSelectedEvent;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.event.SceneInitEvent;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
-import de.hanno.hpengine.engine.graphics.SimpleProvider;
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
@@ -48,11 +47,11 @@ import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;
 import de.hanno.hpengine.engine.model.texture.Texture;
-import de.hanno.hpengine.engine.model.texture.TextureDimension1D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.SimpleScene;
@@ -78,6 +77,7 @@ import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -100,7 +100,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import static de.hanno.hpengine.util.gui.DebugFrameUtilsKt.getButtons;
+import static de.hanno.hpengine.util.gui.EditorUtilsKt.getButtons;
 
 
 public class Editor implements HostComponent {
@@ -196,11 +196,16 @@ public class Editor implements HostComponent {
                 SwingUtilities.invokeLater(getSetTitleRunnable());
             }
         }.start();
-        engine.getGpuContext().registerPerFrameCommand(new SimpleProvider(() -> {}) {
+
+        engine.getRenderSystems().add(new RenderSystem() {
+
             @Override
-            public void postFrame() {
+            public void afterFrameFinished() {
                 handle(new FrameFinishedEvent(engine.getRenderManager().getRenderState().getCurrentReadState().getLatestDrawResult()));
             }
+
+            @Override
+            public void render(@NotNull DrawResult result, @NotNull RenderState state) { }
         });
     }
 

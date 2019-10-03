@@ -60,6 +60,9 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         startEndlessLoop()
     }
 
+    override val coroutineContext: CoroutineContext
+        get() = Executor.coroutineContext
+
     private lateinit var capabilities: GLCapabilities
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
@@ -73,7 +76,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override var isInitialized = false
         private set
     override var maxTextureUnits: Int = 0
-    private val perFrameCommandProviders = CopyOnWriteArrayList<PerFrameCommandProvider>()
 
     override val fullscreenBuffer = QuadVertexBuffer(this, true).apply { upload() }
     override val debugBuffer = QuadVertexBuffer(this, false).apply { upload() }
@@ -102,10 +104,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         val openGlCommandSync = OpenGlCommandSync()
         commandSyncs.add(openGlCommandSync)
         return openGlCommandSync
-    }
-
-    override fun registerPerFrameCommand(perFrameCommandProvider: PerFrameCommandProvider) {
-        this.perFrameCommandProviders.add(perFrameCommandProvider)
     }
 
     internal fun privateInit() = runBlocking {
@@ -142,24 +140,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     internal fun checkCommandSyncs() {
         commandSyncs = checkCommandSyncsReturnUnsignaled(commandSyncs)
-    }
-
-    internal fun executePerFrameCommands() {
-        for (i in perFrameCommandProviders.indices) {
-            val provider = perFrameCommandProviders[i]
-            executePerFrameCommand(provider)
-        }
-    }
-    internal fun executeAfterFrameActions() {
-        for (i in perFrameCommandProviders.indices) {
-            perFrameCommandProviders[i].postFrame()
-        }
-    }
-
-    internal fun executePerFrameCommand(perFrameCommandProvider: PerFrameCommandProvider) {
-        if (perFrameCommandProvider.isReadyForExecution()) {
-            perFrameCommandProvider.execute()
-        }
     }
 
     override fun enable(cap: GlCap) {
@@ -354,7 +334,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
                 profiled("Frame") {
                     checkCommandSyncs()
                     getExceptionOnError("")
-                    executePerFrameCommands()
                     getExceptionOnError("")
                     var callable: FutureCallable<*>? = channel.poll()
                     while (callable != null) {
@@ -366,7 +345,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
                     yield()
                     GPUProfiler.currentTimings = GPUProfiler.currentTask?.dumpTimings() ?: ""
                     GPUProfiler.currentAverages = GPUProfiler.dumpAverages()
-                    executeAfterFrameActions()
                     getExceptionOnError("Error in undefined operation")
                 }
             }

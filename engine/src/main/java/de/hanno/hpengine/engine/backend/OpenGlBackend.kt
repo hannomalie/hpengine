@@ -53,7 +53,7 @@ class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { Up
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val config: Config,
-                        override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine"),
+                        override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
                         override val backend: Backend<OpenGl> = OpenGlBackend(window, config),
                         override val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),

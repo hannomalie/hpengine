@@ -35,7 +35,7 @@ val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
     rewind()
 }
 
-open class RenderTarget<T: Texture<*>> protected @JvmOverloads constructor(val frameBuffer: FrameBuffer,
+open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer: FrameBuffer,
                                                             open val width: Int = 0,
                                                             open val height: Int = 0,
                                                             val textures: List<T> = emptyList(),

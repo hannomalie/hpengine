@@ -9,12 +9,13 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture
+import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.concurrent.Callable
 import java.util.logging.Logger
 
-interface GpuContext<T: BackendType> {
+interface GpuContext<T: BackendType>: CoroutineScope {
 
     val backend: T
 
@@ -44,8 +45,6 @@ interface GpuContext<T: BackendType> {
     val features: List<GpuFeature>
 
     fun createNewGPUFenceForReadState(currentReadState: RenderState)
-
-    fun registerPerFrameCommand(perFrameCommandProvider: PerFrameCommandProvider)
 
     fun update(seconds: Float)
 

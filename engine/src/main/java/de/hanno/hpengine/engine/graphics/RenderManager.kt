@@ -15,6 +15,9 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
@@ -43,31 +46,30 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
             field = (this.cpuGpuSyncTimeNs + cpuGpuSyncTimeNs) / 2
         }
 
-    val drawRunnable: Runnable = object : Runnable {
-        var lastTimeSwapped = true
-        override fun run() {
-            renderState.startRead()
+    init {
+        engineContext.gpuContext.launch {
+            var lastTimeSwapped = true
+            while(isActive) {
+                renderState.startRead()
 
-            if (lastTimeSwapped) {
-                recorder.add(renderState.currentReadState)
-                val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                if (lastTimeSwapped) {
+                    recorder.add(renderState.currentReadState)
+                    val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                engineContext.renderSystems.forEach {
-                    it.render(drawResult, renderState.currentReadState)
+                    engineContext.renderSystems.forEach {
+                        it.render(drawResult, renderState.currentReadState)
+                    }
+                    engineContext.gpuContext.finishFrame(renderState.currentReadState)
+                    engineContext.renderSystems.forEach {
+                        it.afterFrameFinished()
+                    }
+                    lastFrameTime = System.currentTimeMillis()
+                    fpsCounter.update()
                 }
-                engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                lastFrameTime = System.currentTimeMillis()
-                fpsCounter.update()
+                lastTimeSwapped = renderState.stopRead()
+                yield()
             }
-            lastTimeSwapped = renderState.stopRead()
         }
-    }
-    val perFrameCommand = object: SimpleProvider(drawRunnable){
-        override fun isReadyForExecution(): Boolean {
-            return true
-        }
-    }.also {
-        engineContext.gpuContext.registerPerFrameCommand(it)
     }
 
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
