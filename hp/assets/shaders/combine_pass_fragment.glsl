@@ -433,7 +433,7 @@ void main(void) {
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
 
-//    out_color.rgb = averageColor.rgb;
+//    out_color.rgb = vec3(1,0,0);
 //    out_color.rgb = 0.2*vec3(additiveness);
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;
 //	out_color.b = 0;
@@ -446,7 +446,7 @@ void main(void) {
 //	out_color.rgb = lightDiffuseSpecular.rgb;
 //	out_color.rgb = vec3(motionVec,0);
 //	out_color.rgb = 10*environmentLight;
-//	out_color.rgb = ambientTerm;
+//	out_color.rgb = lit.rgb;
 //	out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularColor;
 //	out_color.rgb = vec3(ao,ao,ao);

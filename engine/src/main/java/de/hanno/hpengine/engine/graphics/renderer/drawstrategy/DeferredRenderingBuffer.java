@@ -44,7 +44,7 @@ public class DeferredRenderingBuffer {
 
 	private int fullScreenMipmapCount;
 
-	private GPUBuffer storageBuffer;
+	private GPUBuffer exposureBuffer;
 
     public DeferredRenderingBuffer(GpuContext gpuContext, int width, int height) {
 
@@ -87,8 +87,8 @@ public class DeferredRenderingBuffer {
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height));
 
-         storageBuffer = new PersistentMappedBuffer(gpuContext, 4*8);//new StorageBuffer(16);
-         storageBuffer.putValues(1f,-1f,0f,1f);
+         exposureBuffer = new PersistentMappedBuffer(gpuContext, 4*8);//new StorageBuffer(16);
+         exposureBuffer.putValues(1f,-1f,0f,1f);
 
 		openglContext.getExceptionOnError("rendertarget creation");
 	}
@@ -122,12 +122,12 @@ public class DeferredRenderingBuffer {
 		return finalBuffer.getRenderedTexture(0);
 	}
 
-	public GPUBuffer getStorageBuffer() {
-		return storageBuffer;
+	public GPUBuffer getExposureBuffer() {
+		return exposureBuffer;
 	}
 
-	public void setStorageBuffer(StorageBuffer storageBuffer) {
-		this.storageBuffer = storageBuffer;
+	public void setExposureBuffer(StorageBuffer exposureBuffer) {
+		this.exposureBuffer = exposureBuffer;
 	}
 
 	public void use(GpuContext<OpenGl> gpuContext, boolean clear) {
@@ -168,10 +168,6 @@ public class DeferredRenderingBuffer {
 
 	public int getRefractedMap() {
 		return reflectionBuffer.getRenderedTexture(1);
-	}
-
-	public RenderTarget getlaBuffer() {
-		return laBuffer;
 	}
 
 	public RenderTarget getForwardBuffer() {

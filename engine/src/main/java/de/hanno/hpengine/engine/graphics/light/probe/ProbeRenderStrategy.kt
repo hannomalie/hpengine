@@ -196,7 +196,7 @@ class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGl>): RenderEx
         evaluateProbeProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.storageBuffer)
+        evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
         evaluateProbeProgram.setUniform("screenWidth", engine.config.width.toFloat())
         evaluateProbeProgram.setUniform("screenHeight", engine.config.height.toFloat())

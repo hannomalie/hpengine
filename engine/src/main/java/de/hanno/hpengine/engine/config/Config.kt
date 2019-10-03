@@ -130,7 +130,7 @@ data class EffectsConfig(
         @Adjustable(minimum = 1, maximum = 40, factor = 1f, minorTickSpacing = 1, majorTickSpacing = 5)
         override var exposure: Float = 5f,
         override var isUseBloom: Boolean = false,
-        override var isAutoExposureEnabled: Boolean = true,
+        override var isAutoExposureEnabled: Boolean = false,
         override var isEnablePostprocessing: Boolean = false,
         override var ambientLight: Vector3f = Vector3f(0.1f, 0.1f, 0.11f)
 ) : IEffectsConfig

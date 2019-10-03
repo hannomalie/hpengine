@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
@@ -20,6 +21,7 @@ import de.hanno.hpengine.engine.graphics.state.StateRef
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
+    val combinePassExtension = CombinePassRenderExtension(engineContext)
     val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
 
@@ -64,12 +66,13 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
                 extension.renderSecondPassFullScreen(state, result.secondPassResult)
             }
             deferredRenderingBuffer.lightAccumulationBuffer.unuse(gpuContext)
+            combinePassExtension.renderCombinePass(state)
         }
 
         val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
             engineContext.config.debug.directTextureOutputTextureIndex
         } else {
-            deferredRenderingBuffer.colorReflectivenessMap
+            deferredRenderingBuffer.finalMap
         }
 
         textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)

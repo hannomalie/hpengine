@@ -3,8 +3,6 @@ package de.hanno.hpengine.engine.graphics.renderer
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.DrawParameters
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -14,8 +12,6 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
 import de.hanno.hpengine.engine.graphics.profiled
-import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD
-import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
@@ -24,11 +20,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.LESS
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.PixelPerfectPickingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -46,22 +40,17 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
 import de.hanno.hpengine.engine.model.DataChannels
-import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
-import de.hanno.hpengine.engine.model.Update.DYNAMIC
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import org.joml.Vector3f
 import org.joml.Vector4f
-import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.glFinish
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.io.File
@@ -119,7 +108,6 @@ class DeferredRenderer
 
     private val secondPassPointComputeProgram = programManager.getComputeProgram("second_pass_point_compute.glsl")
 
-    private val combineProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "combine_pass_vertex.glsl")), getShaderSource(File(Shader.directory + "combine_pass_fragment.glsl")))
     private val postProcessProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "postprocess_fragment.glsl")))
 
     private val aoScatteringProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl")
@@ -313,63 +301,22 @@ class DeferredRenderer
                 }
 
             }
-            val finalBuffer = deferredRenderingBuffer.finalBuffer
-            profiled("Combine pass") {
-                backend.textureManager.generateMipMaps(TEXTURE_2D, finalBuffer.getRenderedTexture(0))
 
-                combineProgram.use()
-                combineProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                combineProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                combineProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
-                combineProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
-                combineProgram.setUniform("camPosition", state.camera.getPosition())
-                combineProgram.setUniform("ambientColor", engineContext.config.effects.ambientLight)
-                combineProgram.setUniform("useAmbientOcclusion", engineContext.config.quality.isUseAmbientOcclusion)
-                combineProgram.setUniform("worldExposure", engineContext.config.effects.exposure)
-                combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.effects.isAutoExposureEnabled)
-                combineProgram.setUniform("fullScreenMipmapCount", deferredRenderingBuffer.fullScreenMipmapCount)
-                combineProgram.setUniform("activeProbeCount", state.environmentProbesState.activeProbeCount)
-                combineProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.storageBuffer)
-
-                finalBuffer.use(gpuContext, true)
-                backend.gpuContext.disable(DEPTH_TEST)
-
-                backend.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-                backend.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-                backend.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationBuffer.getRenderedTexture(1))
-                backend.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
-                backend.gpuContext.bindTexture(4, TEXTURE_2D, deferredRenderingBuffer.positionMap)
-                backend.gpuContext.bindTexture(5, TEXTURE_2D, deferredRenderingBuffer.normalMap)
-                backend.gpuContext.bindTexture(6, TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(0))
-                backend.gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.forwardBuffer.getRenderedTexture(1))
-                //			backend.getGpuContext().bindTexture(7, TEXTURE_CUBE_MAP_ARRAY, renderState.getEnvironmentProbesState().getEnvironmapsArray0Id());
-                backend.gpuContext.bindTexture(8, TEXTURE_2D, deferredRenderingBuffer.reflectionMap)
-                backend.gpuContext.bindTexture(9, TEXTURE_2D, deferredRenderingBuffer.refractedMap)
-                backend.gpuContext.bindTexture(11, TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
-                backend.gpuContext.bindTexture(14, TEXTURE_CUBE_MAP, backend.textureManager.cubeMap!!.id)
-
-                gpuContext.fullscreenBuffer.draw()
-
-            }
 
             window.frontBuffer.use(gpuContext, true)
             profiled("Post processing") {
                 postProcessProgram.use()
-                backend.gpuContext.bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0))
+                backend.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.finalBuffer.getRenderedTexture(0))
                 postProcessProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
                 postProcessProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
                 postProcessProgram.setUniform("worldExposure", engineContext.config.effects.exposure)
                 postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.effects.isAutoExposureEnabled)
                 postProcessProgram.setUniform("usePostProcessing", engineContext.config.effects.isEnablePostprocessing)
-                try {
-                    postProcessProgram.setUniform("cameraRightDirection", state.camera.getRightDirection())
-                    postProcessProgram.setUniform("cameraViewDirection", state.camera.getViewDirection())
-                } catch (e: IllegalStateException) {
-                    // Normalizing zero length vector
-                }
+                postProcessProgram.setUniform("cameraRightDirection", state.camera.getRightDirection())
+                postProcessProgram.setUniform("cameraViewDirection", state.camera.getViewDirection())
 
                 postProcessProgram.setUniform("seconds", state.deltaInS)
-                postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.storageBuffer)
+                postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
                 //        postProcessProgram.bindShaderStorageBuffer(1, managerContext.getRenderer().getMaterialManager().getMaterialBuffer());
                 backend.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
                 backend.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.motionMap)
@@ -641,7 +588,7 @@ class DeferredRenderer
             reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             bindEnvironmentProbePositions(reflectionProgram, renderState.environmentProbesState)
             reflectionProgram.setUniform("activeProbeCount", renderState.environmentProbesState.activeProbeCount)
-            reflectionProgram.bindShaderStorageBuffer(0, gBuffer.storageBuffer)
+            reflectionProgram.bindShaderStorageBuffer(0, gBuffer.exposureBuffer)
             gpuContext.fullscreenBuffer.draw()
             reflectionBuffer.unuse(gpuContext)
         } else {
