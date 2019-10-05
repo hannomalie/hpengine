@@ -31,11 +31,14 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
         drawToQuad(texture = finalImage)
     }
 
-    fun drawToQuad(renderTarget: RenderTarget<Texture2D> = engineContext.window.frontBuffer, texture: Int = finalImage) {
-        draw(renderTarget, texture)
+    fun drawToQuad(renderTarget: RenderTarget<Texture2D> = engineContext.window.frontBuffer,
+                   texture: Int = finalImage,
+                   buffer: VertexBuffer = gpuContext.fullscreenBuffer,
+                   program: Program = renderToQuadProgram) {
+        draw(renderTarget, texture, buffer, program)
     }
 
-    private fun draw(renderTarget: RenderTarget<Texture2D>, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program = renderToQuadProgram) {
+    private fun draw(renderTarget: RenderTarget<Texture2D>, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program) {
 
         gpuContext.disable(GlCap.BLEND)
 

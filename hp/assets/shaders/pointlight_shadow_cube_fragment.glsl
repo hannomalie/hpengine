@@ -35,7 +35,7 @@ void main()
 //	} else if(gl_Layer == 1) {
 //	    out_Color.g = 1;
 //	}
-//	out_Color = vec4(pass_WorldPosition.xyz,0);
+	out_Color = vec4(1,0,0,0);
 //	out_Color = vec4(gl_FragCoord.xy/vec2(512,512),0,0);
 
 //	float dx = dFdx(depth);

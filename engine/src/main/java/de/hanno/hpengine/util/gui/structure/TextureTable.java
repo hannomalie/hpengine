@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.laf.rootpane.WebFrame;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.texture.FileBasedSimpleTexture;
+import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 import javax.imageio.ImageIO;
@@ -38,8 +38,8 @@ public class TextureTable extends JTable {
     }
 
     public void showTexture(Texture<?> input) {
-        if(input.getClass().isAssignableFrom(FileBasedSimpleTexture.class)) {
-            FileBasedSimpleTexture texture = (FileBasedSimpleTexture) input;
+        if(input.getClass().isAssignableFrom(FileBasedTexture2D.class)) {
+            FileBasedTexture2D texture = (FileBasedTexture2D) input;
             textureView.getContentPane().removeAll();
             try {
                 BufferedImage bufferedImage = ImageIO.read(new File(texture.getPath()));

@@ -51,6 +51,14 @@ class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
             linesDrawn += lineRenderer.drawLines(linesProgram)
 
             firstPassResult.linesDrawn += linesDrawn
+
+
+            renderState.lightState.pointLights.forEach {
+                val max = Vector3f(it.entity.position).add(Vector3f(it.radius*0.5f))
+                val min = Vector3f(it.entity.position).sub(Vector3f(it.radius*0.5f))
+                lineRenderer.batchLine(min, max)
+            }
+            linesDrawn += lineRenderer.drawLines(linesProgram)
         }
     }
 

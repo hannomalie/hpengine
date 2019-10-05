@@ -12,7 +12,7 @@ object FileMonitor {
     }
 
     @JvmOverloads
-    fun addOnFileChangeListener(file: File, overwriteShouldReload: (File) -> Boolean = { false }, action: (File) -> Unit) {
+    fun addOnFileChangeListener(file: File, overwriteShouldReload: (File) -> Boolean = { false }, action: (File) -> Unit): OnFileChangeListener {
         val fileObserver = directoryObservers.getOrPut(file.parentFile) {
             FileAlterationObserver(file.parent).apply {
                 initialize()
@@ -32,5 +32,6 @@ object FileMonitor {
             }
         }
         fileObserver.addListener(listener)
+        return listener
     }
 }

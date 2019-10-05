@@ -4,8 +4,8 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
-import de.hanno.hpengine.engine.model.texture.SimpleCubeMap;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
+import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL30;
@@ -20,7 +20,7 @@ import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24;
 
 public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 
-	public List<SimpleCubeMap> cubeMapViews;
+	public List<CubeMap> cubeMapViews;
 
 	static DepthBuffer<CubeMapArray> getDepthBuffer(GpuContext gpuContext, int width, int height, int depth) {
 		TextureDimension dimension = new TextureDimension(width, height, depth);
@@ -48,7 +48,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 			gpuContext.execute("createViews for " + cubeMapArrayIndex, () -> {
 				gpuContext.bindTexture(cma);
 				for(int cubeMapIndex = 0; cubeMapIndex < cubeMapArray.length; cubeMapIndex++) {
-					SimpleCubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
+					CubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
 					cubeMapViews.add(cubeMapView);
 				}
 			});

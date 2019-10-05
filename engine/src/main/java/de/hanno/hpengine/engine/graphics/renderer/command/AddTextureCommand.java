@@ -10,7 +10,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	String path;
 	boolean srgba = false;
 	protected TextureManager textureManager;
-	private GameDirectory gameDir;
+	protected GameDirectory gameDir;
 
 	public AddTextureCommand(String path, TextureManager textureManager, GameDirectory gameDir) {
 		this(path, false, textureManager, gameDir);

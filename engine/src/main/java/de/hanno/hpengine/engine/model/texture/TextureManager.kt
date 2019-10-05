@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.model.texture
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -77,22 +76,6 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     val engineDir = config.directories.engineDir
 
-    /** The colour model including alpha for the GL image  */
-    val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-            intArrayOf(8, 8, 8, 8),
-            true,
-            false,
-            ComponentColorModel.TRANSLUCENT,
-            DataBuffer.TYPE_BYTE)
-
-    /** The colour model for the GL image  */
-    val glColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-            intArrayOf(8, 8, 8, 0),
-            false,
-            false,
-            ComponentColorModel.OPAQUE,
-            DataBuffer.TYPE_BYTE)
-
     /** The table of textures that have been loaded in this loader  */
     var textures: MutableMap<String, Texture<*>> = LinkedHashMap()
 
@@ -122,7 +105,8 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     }
 
     val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)
-    var cubeMap = getCubeMap("assets/textures/skybox/skybox.png")
+    var cubeMap = getCubeMap("assets/textures/skybox/skybox.png", config.directories.engineDir.resolve("assets/textures/skybox/skybox.png"))
+//    var cubeMap = getCubeMap("assets/textures/skybox/skybox5.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("HORIZONTAL", true)))
     private val blur2dProgramSeparableVertical = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("VERTICAL", true)))
 
@@ -147,7 +131,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
                 if (FilenameUtils.isExtension(file.absolutePath, "hptexture")) {
                     getTexture(file.absolutePath, directory = config.directories.gameDir)
                 } else {
-                    getCubeMap(file.absolutePath)
+                    getCubeMap(file.absolutePath, config.directories.gameDir.resolve(file.absolutePath))
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -170,13 +154,13 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     @JvmOverloads
     fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> {
         return textures.computeIfAbsent(resourceName) {
-            FileBasedSimpleTexture(gpuContext, resourceName, directory, srgba)
+            FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
     }
     @JvmOverloads
     fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> {
         return textures.computeIfAbsent(resourceName) {
-            FileBasedSimpleTexture(gpuContext, resourceName, file, srgba)
+            FileBasedTexture2D(gpuContext, resourceName, file, srgba)
         } as Texture<TextureDimension2D>
     }
 
@@ -226,58 +210,16 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
     }
 
     @Throws(IOException::class)
-    fun getCubeMap(resourceName: String): CubeMap? {
-        val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap? ?: getCubeMap(resourceName,
-                GL11.GL_RGBA,
-                MinFilter.LINEAR_MIPMAP_LINEAR,
-                MagFilter.LINEAR) ?: return null
+    fun getCubeMap(resourceName: String, file: File): CubeMap {
+        val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
+                ?: FileBasedCubeMap(gpuContext, resourceName, file).backingTexture
+//        getCubeMap(resourceName,
+//                GL11.GL_RGBA,
+//                MinFilter.LINEAR_MIPMAP_LINEAR,
+//                MagFilter.LINEAR)
 
         textures[resourceName + "_cube"] = tex
         return tex
-    }
-
-    @Throws(IOException::class)
-    private fun getCubeMap(resourceName: String,
-                           dstPixelFormat: Int,
-                           minFilter: MinFilter,
-                           magFilter: MagFilter): CubeMap {
-
-
-        val bufferedImage: BufferedImage = loadImage(resourceName)
-        val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) {
-            GL11.GL_RGBA
-        } else {
-            GL11.GL_RGB
-        }
-        val width = bufferedImage.width
-        val height = bufferedImage.height
-
-        val data = convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
-
-        return CubeMap(this, resourceName, TextureDimension(width, height), TextureFilterConfig(minFilter, magFilter), srcPixelFormat, gpuContext.genTextures(), data).apply {
-            upload(this)
-        }
-    }
-
-    fun upload(cubeMap: CubeMap) {
-
-        gpuContext.execute("upload(cubeMap: CubeMap)") {
-            gpuContext.bindTexture(cubeMap)
-
-            val perFaceBuffer = ByteBuffer.allocateDirect(cubeMap.getData()[0].size)
-
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[1])) //1
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[0])) //0
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[2]))
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[3]))
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[4]))
-            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, CubeMap.buffer(perFaceBuffer, cubeMap.getData()[5]))
-
-            this@TextureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMap.id)
-            if(gpuContext.isSupported(BindlessTextures)) {
-                cubeMap.createTextureHandleAndMakeResident() // TODO: Can this be placed into the init of the texture?
-            }
-        }
     }
 
     fun Texture<*>.createTextureHandleAndMakeResident() = gpuContext.calculate {
@@ -300,10 +242,10 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
         if (bufferedImage.colorModel.hasAlpha()) {
             raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, width, height, 4, null)
-            texImage = BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
+            texImage = BufferedImage(Companion.glAlphaColorModel, raster, false, Hashtable<Any, Any>())
         } else {
             raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, width, height, 3, null)
-            texImage = BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
+            texImage = BufferedImage(Companion.glColorModel, raster, false, Hashtable<Any, Any>())
         }
 
         // copy the source image into the produced image
@@ -553,7 +495,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         var TEXTURE_UNLOAD_THRESHOLD_IN_MS: Long = 10000
         private val USE_TEXTURE_STREAMING = false
 
-        private fun convertCubeMapData(bufferedImage: BufferedImage, width: Int, height: Int, glAlphaColorModel: ColorModel, glColorModel: ColorModel): MutableList<ByteArray> {
+        fun convertCubeMapData(bufferedImage: BufferedImage, width: Int, height: Int, glAlphaColorModel: ColorModel, glColorModel: ColorModel): MutableList<ByteArray> {
             //        ByteBuffer imageBuffers[] = new ByteBuffer[6];
             val byteArrays = ArrayList<ByteArray>()
 
@@ -604,32 +546,63 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
             return byteArrays
         }
 
-        private fun getRectForFaceIndex(index: Int, imageWidth: Int, imageHeight: Int) = when (GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
+        private fun getRectForFaceIndex(index: Int, imageWidth: Int, imageHeight: Int): Array<Vector2f> {
+            val tileHeight = imageHeight.toFloat() / 3f
+            val tileWidth = imageWidth.toFloat() / 4f
+            return when (GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
 
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X -> arrayOf(Vector2f((imageWidth / 2).toFloat(), (imageHeight / 3 + 2).toFloat()),
-                    Vector2f((3 * imageWidth / 4).toFloat(), (2 * imageHeight / 3).toFloat()))
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X -> {
+                    arrayOf(Vector2f(2 * tileWidth, tileHeight),
+                            Vector2f(3 * tileWidth, 2 * tileHeight))
+                }
 
-            GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> arrayOf(Vector2f(0f, (imageHeight / 3).toFloat()),
-                    Vector2f((imageWidth / 4).toFloat(), (2 * imageHeight / 3).toFloat()))
+                GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> {
+                    arrayOf(Vector2f(0f, tileHeight),
+                            Vector2f(tileWidth, 2 * tileHeight))
+                }
 
-            GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> arrayOf(Vector2f((imageWidth / 4).toFloat(), 0f),
-                    Vector2f((imageWidth / 2).toFloat(), (imageHeight / 3).toFloat()))
+                GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> {
+                    arrayOf(Vector2f(2* tileWidth, tileHeight),
+                            Vector2f(tileWidth, 0f))
+                }
 
-            GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> arrayOf(Vector2f((imageWidth / 2 - 1).toFloat(), imageHeight.toFloat()),
-                    Vector2f((imageWidth / 4).toFloat(), (2 * imageHeight / 3 + 1).toFloat()))
+                GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> {
+                    arrayOf(Vector2f(2 * tileWidth, 3f*tileHeight),
+                            Vector2f(tileWidth, 2 * tileHeight))
+                }
 
-            GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> arrayOf(Vector2f((3 * imageWidth / 4).toFloat(), (imageHeight / 3).toFloat()),
-                    Vector2f(imageWidth.toFloat(), (2 * imageHeight / 3).toFloat()))
+                GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> {
+                    arrayOf(Vector2f(3 * tileWidth, tileHeight),
+                            Vector2f(4*tileWidth, 2 * tileHeight))
+                }
 
-            GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> arrayOf(Vector2f((imageWidth / 4).toFloat(), (imageHeight / 3).toFloat()),
-                    Vector2f((imageWidth / 2).toFloat(), (2 * imageHeight / 3).toFloat()))
+                GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> {
+                    arrayOf(Vector2f(tileWidth, tileHeight),
+                            Vector2f(2*tileWidth, 2 * tileHeight))
+                }
 
-            else -> throw IllegalStateException("")
+                else -> throw IllegalStateException("")
+            }
         }
 
         fun deleteTexture(id: Int) {
             GL11.glDeleteTextures(id)
         }
+
+        /** The colour model including alpha for the GL image  */
+        val glAlphaColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                intArrayOf(8, 8, 8, 8),
+                true,
+                false,
+                ComponentColorModel.TRANSLUCENT,
+                DataBuffer.TYPE_BYTE)
+        /** The colour model for the GL image  */
+        val glColorModel = ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                intArrayOf(8, 8, 8, 0),
+                false,
+                false,
+                ComponentColorModel.OPAQUE,
+                DataBuffer.TYPE_BYTE)
     }
 
 }

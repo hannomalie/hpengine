@@ -200,98 +200,38 @@ void main(void) {
 	ivec2 localIndex = ivec2(gl_LocalInvocationID.xy);
 	vec2 st = vec2(storePos) / vec2(screenWidth, screenHeight);
 
-	const bool enable = false;
-		vec3 positionView = textureLod(positionMap, st, 0).xyz;
-		vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
+	vec3 positionView = textureLod(positionMap, st, 0).xyz;
+	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 
-		vec3 color = texture2D(diffuseMap, st).xyz;
-		float roughness = texture2D(positionMap, st).w;
-		float metallic = texture2D(diffuseMap, st).w;
+	vec3 color = texture2D(diffuseMap, st).xyz;
+	float roughness = texture2D(positionMap, st).w;
+	float metallic = texture2D(diffuseMap, st).w;
 
-		float glossiness = (1-roughness);
-		vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
-		vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
-		vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
+	float glossiness = (1-roughness);
+	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
+	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
-		vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
-		position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
-		vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
-		dir.w = 0.0;
-		vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
-		vec3 normalView = textureLod(normalMap, st, 0).xyz;
-		vec4 specular = texture2D(specularMap, st);
-		float depthFloat = texture2D(normalMap, st).w;
-		depthFloat = textureLod(visibilityMap, st, 0).g;
-		uint depth = uint(depthFloat * 0xFFFFFFFF);
+	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
+	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
+	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
+	dir.w = 0.0;
+	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
+	vec3 normalView = textureLod(normalMap, st, 0).xyz;
+	vec4 specular = texture2D(specularMap, st);
+	float depthFloat = texture2D(normalMap, st).w;
+	depthFloat = textureLod(visibilityMap, st, 0).g;
 
+	vec4 finalColor = vec4(0);
+	for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
+	{
+		PointLight pointLight = pointLights[lightIndex];
+		vec3 pointLightPosition = pointLight.position;
+		vec4 pos = (viewMatrix * vec4(pointLightPosition, 1.0f));
+		float rad = 2*float(pointLight.radius);
 
-		atomicMin(minDepth, depth);
-		atomicMax(maxDepth, depth);
-		barrier();
-		float minDepthZ = float(minDepth / float(0xFFFFFFFF));
-		float maxDepthZ = float(maxDepth / float(0xFFFFFFFF));
+		if (distance(pointLight.position, positionWorld) < rad) {
 
-		vec2 tileScale = vec2(screenWidth, screenHeight) * (1.0f / float(2*WORK_GROUP_SIZE));
-		vec2 tileBias = tileScale - vec2(gl_WorkGroupID.xy);
-		vec4 c1 = vec4(-projectionMatrix[0][0] * tileScale.x, 0.0f, tileBias.x, 0.0f);
-		vec4 c2 = vec4(0.0f, -projectionMatrix[1][1] * tileScale.y, tileBias.y, 0.0f);
-		vec4 c4 = vec4(0.0f, 0.0f, 1.0f, 0.0f);
-		// Derive frustum planes
-		vec4 frustumPlanes[6];
-		// Sides
-		//right
-		frustumPlanes[0] = c4 - c1;
-		//left
-		frustumPlanes[1] = c4 + c1;
-		//bottom
-		frustumPlanes[2] = c4 - c2;
-		//top
-		frustumPlanes[3] = c4 + c2;
-		// Near/far
-		frustumPlanes[4] = vec4(0.0f, 0.0f,  1.0f, -minDepthZ);
-		frustumPlanes[5] = vec4(0.0f, 0.0f, -1.0f,  maxDepthZ);
-		for(int i = 0; i < 4; i++)
-		{
-			frustumPlanes[i] *= 1.0f / length(frustumPlanes[i].xyz);
-		}
-
-		const vec3 bias = vec3(0);
-		uint threadCount = WORK_GROUP_SIZE * WORK_GROUP_SIZE;
-		uint passCount = (uint(pointLightCount) + threadCount - 1) / threadCount;
-//	TODO: This is broken somehow, freezes pc if enabled
-	if(enable) {
-		for (uint passIt = 0; passIt < passCount; ++passIt)
-		{
-			uint lightIndex =  passIt * threadCount + gl_LocalInvocationIndex;
-			PointLight pointLight = pointLights[lightIndex];
-			vec3 pointLightPosition = pointLight.position;
-			vec4 pos = (viewMatrix * vec4(pointLightPosition, 1.0f));
-			float rad = 2*float(pointLight.radius);
-
-			if (lightIndex < uint(pointLightCount) && lightIndex < MAX_LIGHTS_PER_TILE)
-			{
-				bool inFrustum = true;
-				for (uint i = 3; i >= 0 && inFrustum; i--)
-				{
-					float dist = dot(frustumPlanes[i], pos);
-					inFrustum = (-rad <= dist);
-				}
-
-				if (inFrustum)
-				{
-					uint id = atomicAdd(currentArrayIndex, 1);
-					pointLightIndicesForTile[id] = lightIndex;
-				}
-			}
-		}
-
-		barrier();
-		vec3 finalColor = vec3(0,0,0);
-		for(int i = 0; i < currentArrayIndex; i++) {
-			uint lightIndex = pointLightIndicesForTile[i];
-			PointLight pointLight = pointLights[lightIndex];
-			//	for(int i = 0; i < uint(pointLightCount); i++) {
-			//		PointLight pointLight = pointLights[i];
 			vec3 lightPositionView = (viewMatrix * vec4(pointLight.position, 1)).xyz;
 			vec3 lightDiffuse = pointLight.color;
 			vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
@@ -306,23 +246,23 @@ void main(void) {
 				attenuation, V, positionView, normalView,
 				roughness, 0, diffuseColor, specularColor);
 				temp = attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
-			} else
-			{
+			} else {
 				temp = cookTorrance(lightDirectionView, lightDiffuse,
 				attenuation, V, positionView, normalView,
 				roughness, metallic, diffuseColor, specularColor);
 			}
+			temp = vec3(lightDiffuse) * attenuation;
 
-			float visibility = getVisibility(positionWorld, lightIndex, pointLight);
+			float visibility = 1.0f;//getVisibility(positionWorld, lightIndex, pointLight);
 
-			finalColor += temp*visibility;
+			finalColor.rgb += temp*visibility;
 		}
-		barrier();
-		vec4 oldSample = imageLoad(out_DiffuseSpecular, storePos).rgba;
-
-		//	imageStore(out_DiffuseSpecular, storePos, vec4(0.5*oldSample.rgb + 0.5*vec3(4 * finalColor.rgb), 0));
-		//	imageStore(out_DiffuseSpecular, storePos, vec4(finalColor.rgb,0));
 	}
+
+
+	vec4 oldSample = imageLoad(out_DiffuseSpecular, storePos).rgba;
+	imageStore(out_DiffuseSpecular, storePos, vec4(0.5*oldSample.rgb + 0.5*vec3(4 * finalColor.rgb), 0));
+//	imageStore(out_DiffuseSpecular, storePos, vec4(finalColor.rgb,0));
 
 //	imageStore(out_DiffuseSpecular, storePos, vec4(st,0,0));
 }

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface RenderExtension<TYPE extends BackendType> {
     default void update() {}
-    default void renderFirstPass(@NotNull Backend<TYPE> backend, @NotNull GpuContext<TYPE> gpuContext, @NotNull FirstPassResult firstPassResult, RenderState renderState) {}
+    default void renderFirstPass(@NotNull Backend<TYPE> backend, @NotNull GpuContext<TYPE> gpuContext, @NotNull FirstPassResult firstPassResult, @NotNull RenderState renderState) {}
     default void renderSecondPassFullScreen(@NotNull RenderState renderState, @NotNull SecondPassResult secondPassResult) {}
     default void renderSecondPassHalfScreen(@NotNull RenderState renderState, @NotNull SecondPassResult secondPassResult) {}
 }

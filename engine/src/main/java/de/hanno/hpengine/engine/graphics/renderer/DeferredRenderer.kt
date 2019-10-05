@@ -101,13 +101,9 @@ class DeferredRenderer
         getShaderSource(File(Shader.directory + "first_pass_fragment.glsl")), Defines(Define.getDefine("ANIMATED", true))
     )
 
-    private val secondPassPointProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_point_fragment.glsl")))
     private val secondPassTubeProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_tube_fragment.glsl")))
     private val secondPassAreaProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_area_fragment.glsl")))
     private val instantRadiosityProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(File(Shader.directory + "second_pass_instant_radiosity_fragment.glsl")))
-
-    private val secondPassPointComputeProgram = programManager.getComputeProgram("second_pass_point_compute.glsl")
-
     private val postProcessProgram = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "postprocess_fragment.glsl")))
 
     private val aoScatteringProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl")
@@ -240,8 +236,6 @@ class DeferredRenderer
                 doTubeLights(state.lightState.tubeLights, camPositionV4, viewMatrix, projectionMatrix)
 
                 doAreaLights(state.lightState.areaLights, viewMatrix, projectionMatrix, state)
-
-                doPointLights(state, viewMatrix, projectionMatrix)
 
                 if (!engineContext.config.debug.isUseDirectTextureOutput) {
                     profiled("Extensions") {
@@ -387,32 +381,6 @@ class DeferredRenderer
         buffer.draw()
     }
 
-    private fun doPointLights(renderState: RenderState, viewMatrix: FloatBuffer, projectionMatrix: FloatBuffer) {
-        if (renderState.lightState.pointLights.isEmpty()) {
-            return
-        }
-        profiled("Seconds pass PointLights") {
-            gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
-            gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
-            gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
-            gpuContext.bindTexture(4, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            gpuContext.bindTexture(5, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-            renderState.lightState.pointLightShadowMapStrategy.bindTextures()
-            // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(4, deferredRenderingBuffer!!.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
-            secondPassPointComputeProgram.use()
-            secondPassPointComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
-            secondPassPointComputeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
-            secondPassPointComputeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
-            secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
-            secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
-            secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS)
-            secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
-            secondPassPointComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-            secondPassPointComputeProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
-        }
-    }
 
     private fun doTubeLights(tubeLights: List<TubeLight>,
                              camPositionV4: Vector4f, viewMatrix: FloatBuffer,

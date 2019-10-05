@@ -2,13 +2,12 @@ package de.hanno.hpengine.engine.graphics.renderer.rendertarget
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.BindlessTextures
-import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.model.texture.SimpleCubeMap
+import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.Texture
@@ -233,8 +232,8 @@ fun List<ColorAttachmentDefinition>.toTextures(gpuContext: GpuContext<OpenGl>, w
             internalFormat = it.internalFormat
     )
 }
-fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): List<SimpleCubeMap> = map {
-    SimpleCubeMap.invoke(
+fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): List<CubeMap> = map {
+    CubeMap.invoke(
             gpuContext = gpuContext,
             filterConfig = it.textureFilter,
             internalFormat = it.internalFormat,

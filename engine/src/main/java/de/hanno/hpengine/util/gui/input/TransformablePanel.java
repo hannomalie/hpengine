@@ -110,6 +110,11 @@ public class TransformablePanel<T extends Matrix4f> extends WebComponentPanel {
 			public void onValueChange(Vector3f current) {
 				engine.getCommandQueue().addCommand(() -> {
 					transformable.scaleAroundLocal(current.x, current.y, current.z, 0, 0, 0);
+					Vector3f translation = transformable.getTranslation(new Vector3f());
+					AxisAngle4f rotation = transformable.getRotation(new AxisAngle4f());
+					transformable.set(new Matrix4f().scale(current.x, current.y, current.z));
+					transformable.rotate(rotation);
+					transformable.translate(translation);
 				});
 			}
 		});

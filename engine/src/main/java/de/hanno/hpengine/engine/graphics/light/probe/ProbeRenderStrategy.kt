@@ -28,7 +28,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.CubeMap
-import de.hanno.hpengine.engine.model.texture.DynamicCubeMap
+import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.util.Util
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -36,9 +36,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.GL_RG
 import org.lwjgl.opengl.GL30.GL_RG16F
-import org.lwjgl.opengl.GL30.GL_RGBA
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.glFinish
 import org.lwjgl.opengl.GL43
@@ -46,7 +44,7 @@ import java.io.File
 import java.nio.FloatBuffer
 
 
-class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
+class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
@@ -128,8 +126,10 @@ class ProbeRenderStrategy(private val engine: ManagerContext<*>) {
                 engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
 
                 val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z)) {
-                    val cubeMap: CubeMap = DynamicCubeMap(engine, 1, GL30.GL_RGBA16F, GL11.GL_FLOAT, MinFilter.LINEAR, GL_RGBA, colorValueBuffers)
-                    val distanceCubeMap = DynamicCubeMap(engine, resolution, GL30.GL_RG16F, GL11.GL_FLOAT, MinFilter.LINEAR, GL_RG, visibilityValueBuffers)
+                    val dimension = TextureDimension(resolution, resolution)
+                    val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
+                    val cubeMap = CubeMap.invoke(engine.gpuContext, dimension, filterConfig, GL11.GL_RGBA8)
+                    val distanceCubeMap = CubeMap(engine.gpuContext, dimension, filterConfig, GL30.GL_RG16F)
                     AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 

@@ -9,6 +9,12 @@ layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 
+#ifdef ANIMATED
+layout(std430, binding=6) buffer _joints {
+	mat4 joints[2000];
+};
+#endif
+
 uniform int indirect = 1;
 uniform int entityIndex = 0;
 
@@ -24,8 +30,10 @@ in vec3 in_Position;
 in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
-in vec3 in_Tangent;
-in vec3 in_Binormal;
+#ifdef ANIMATED
+in vec4 in_Weights;
+in ivec4 in_JointIndices;
+#endif
 
 out vec4 vs_pass_WorldPosition;
 out vec4 pass_ProjectedPosition;
@@ -38,7 +46,7 @@ void main()
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
     Entity entity = entities[entityBufferIndex];
-    mat4 modelMatrix = mat4(entity.modelMatrix);
+    mat4 modelMatrix = entity.modelMatrix;
 
 	vs_pass_WorldPosition = modelMatrix * vec4(in_Position.xyz,1);
 

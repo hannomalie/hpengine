@@ -6,8 +6,8 @@ import de.hanno.hpengine.engine.graphics.GlfwWindow;
 import de.hanno.hpengine.engine.graphics.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.model.texture.CompleteTextureInfo;
-import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.DDSConverter;
+import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D;
 import de.hanno.hpengine.engine.model.texture.TextureManager;
@@ -144,7 +144,7 @@ public class TextureTest {
 
 	@Test
 	public void loadsCubeMap() throws IOException {
-        CubeMap cubeMap = textureManager.getCubeMap("hp/assets/textures/wood_diffuse.png");
+        CubeMap cubeMap = textureManager.getCubeMap("hp/assets/textures/wood_diffuse.png", config.directories.gameDir.resolve(resourceName));
 	}
 
     @Test

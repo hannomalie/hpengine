@@ -49,8 +49,6 @@ void main(void) {
     int materialIndex = int(entity.materialIndex);
     Material material = materials[materialIndex];
 
-
-
     mat4 modelMatrix = entity.modelMatrix;
 
 	vec4 positionModel = vec4(in_Position.xyz,1);

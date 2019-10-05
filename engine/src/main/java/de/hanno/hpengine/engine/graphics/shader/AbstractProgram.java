@@ -1,11 +1,11 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.util.ressources.OnFileChangeListener;
 import net.engio.mbassy.listener.Handler;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
@@ -16,13 +16,16 @@ import org.lwjgl.opengl.GL43;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.lwjgl.opengl.GL42.GL_ATOMIC_COUNTER_BUFFER;
 
 
 public abstract class AbstractProgram {
 
+	private final List<OnFileChangeListener> fileListeners = new ArrayList<>();
     protected HashMap<String, Uniform> uniforms = new HashMap<>();
     protected Defines defines = new Defines();
 	protected final int id;
@@ -157,4 +160,7 @@ public abstract class AbstractProgram {
 	public void handle(GlobalDefineChangedEvent e) {
 	}
 
+	public List<OnFileChangeListener> getFileListeners() {
+		return fileListeners;
+	}
 }
