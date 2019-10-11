@@ -1,11 +1,13 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
+import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
+import de.hanno.hpengine.engine.model.texture.Texture2D;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL30;
@@ -21,6 +23,7 @@ import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24;
 public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 
 	public List<CubeMap> cubeMapViews;
+	public List<Texture2D> cubeMapFaceViews;
 
 	static DepthBuffer<CubeMapArray> getDepthBuffer(GpuContext gpuContext, int width, int height, int depth) {
 		TextureDimension dimension = new TextureDimension(width, height, depth);
@@ -32,16 +35,19 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 		return Arrays.asList(arrays);
 	}
 
-	public CubeMapArrayRenderTarget(GpuContext gpuContext, int width, int height, CubeMapArray... cubeMapArray) {
+	public CubeMapArrayRenderTarget(GpuContext<OpenGl> gpuContext, int width, int height, Vector4f clear, CubeMapArray... cubeMapArray) {
 		super(
 			FrameBuffer.Companion.invoke(gpuContext, getDepthBuffer(gpuContext, width, height, cubeMapArray.length)),
 			width,
 			height,
 			toList(cubeMapArray),
 			"CubeMapArrayRenderTarget",
-			new Vector4f(0,0,0,0)
+			clear
 		);
 		cubeMapViews = new ArrayList<>();
+		cubeMapFaceViews = new ArrayList<>();
+
+		initialize(gpuContext);
 
 		for(int cubeMapArrayIndex = 0; cubeMapArrayIndex < cubeMapArray.length; cubeMapArrayIndex++) {
 			CubeMapArray cma = cubeMapArray[cubeMapArrayIndex];
@@ -50,6 +56,9 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 				for(int cubeMapIndex = 0; cubeMapIndex < cubeMapArray.length; cubeMapIndex++) {
 					CubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
 					cubeMapViews.add(cubeMapView);
+					for(int faceIndex = 0; faceIndex < 6; faceIndex++) {
+						cubeMapFaceViews.add(createView(cma, gpuContext, cubeMapIndex, faceIndex));
+					}
 				}
 			});
 		}

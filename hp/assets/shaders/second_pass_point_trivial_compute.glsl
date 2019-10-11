@@ -251,9 +251,9 @@ void main(void) {
 				attenuation, V, positionView, normalView,
 				roughness, metallic, diffuseColor, specularColor);
 			}
-			temp = vec3(lightDiffuse) * attenuation;
+			temp = temp * lightDiffuse * attenuation;
 
-			float visibility = 1.0f;//getVisibility(positionWorld, lightIndex, pointLight);
+			float visibility = getVisibility(positionWorld, lightIndex, pointLight);
 
 			finalColor.rgb += temp*visibility;
 		}

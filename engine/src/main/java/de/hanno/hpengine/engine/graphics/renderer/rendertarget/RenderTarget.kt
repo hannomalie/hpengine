@@ -26,7 +26,9 @@ import org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.opengl.GL32
+import org.lwjgl.opengl.GL32.*
 import java.util.logging.Logger
+import kotlin.math.max
 
 val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
     val borderColors = floatArrayOf(0f, 0f, 0f, 1f)
@@ -44,7 +46,7 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
     var renderedTextures: IntArray = IntArray(textures.size)
     var renderedTextureHandles: LongArray = LongArray(textures.size)
     protected var drawBuffers: IntArray = IntArray(textures.size)
-    protected var mipMapCount = Util.calculateMipMapCount(Math.max(width, height))
+    protected var mipMapCount = Util.calculateMipMapCount(max(width, height))
 
     fun initialize(gpuContext: GpuContext<OpenGl>) {
         gpuContext.execute("RenderTarget") {
@@ -53,7 +55,7 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
             configureBorderColor()
 
             textures.forEachIndexed { index, it ->
-                GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
                 drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index
                 renderedTextureHandles[index] = it.handle
                 renderedTextures[index] = it.id // TODO: Remove me and the line above me
@@ -113,7 +115,7 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
 //        resizeTextures(gpuContext)
 //    }
 
-    open fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
+    open fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) = gpuContext.execute("Rendertarget.use") {
         gpuContext.bindFrameBuffer(frameBuffer)
         gpuContext.viewPort(0, 0, width, height)
         if (clear) {
@@ -123,7 +125,7 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
 
     @JvmOverloads
     fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int = 0) {
-        GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureID, mipMapLevel)
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, textureID, mipMapLevel)
     }
 
     /**
@@ -249,7 +251,7 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
                 if(depthBuffer != null) {
                     gpuContext.execute("glFramebufferTexture") {
                         gpuContext.bindFrameBuffer(this)
-                        GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer.texture.id, 0)
+                        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer.texture.id, 0)
                     }
                 }
             }

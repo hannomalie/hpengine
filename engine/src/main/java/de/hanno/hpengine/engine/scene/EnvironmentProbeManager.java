@@ -28,6 +28,7 @@ import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -76,7 +77,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		this.environmentMapsArray1 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
 		this.environmentMapsArray2 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
 		this.environmentMapsArray3 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
-        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(gpuContext, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(gpuContext, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, new Vector4f(0, 0, 0, 0), environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
 		this.renderer = renderer;

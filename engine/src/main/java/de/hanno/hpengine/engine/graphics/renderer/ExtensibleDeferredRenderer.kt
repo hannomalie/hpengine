@@ -26,6 +26,8 @@ import de.hanno.hpengine.engine.graphics.state.StateRef
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.createView
+import org.lwjgl.BufferUtils
+import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
 import java.io.File
 import java.util.ArrayList
@@ -67,6 +69,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         PointLightSecondPassExtension(engineContext)
     )
 
+    var notRedYet = true
     override fun render(result: DrawResult, state: RenderState) {
         gpuContext.depthMask(true)
         deferredRenderingBuffer.use(gpuContext, true)
@@ -98,15 +101,15 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
 
 
-//        val cubeMapIndex = 0
-//        (0..5).map { faceIndex ->
-//            val cubeShadowMapStrategy = state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy
-//            cubeShadowMapStrategy?.let { cubeShadowMapStrategy ->
-//                val id = textureManager.cubeMap.createView(gpuContext, faceIndex).id//cubeShadowMapStrategy.cubeMapArray.createView(gpuContext, cubeMapIndex, faceIndex).id
-//                textureRenderer.drawToQuad(texture = id, program = debugFrameProgram, buffer = sixDebugBuffers[faceIndex])
-//                GL11.glDeleteTextures(id);
-//            }
-//        }
+        val cubeShadowMapStrategy = state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy
+
+        val cubeMapIndex = 0
+        (0..5).map { faceIndex ->
+            cubeShadowMapStrategy?.let { cubeShadowMapStrategy ->
+                val viewId = cubeShadowMapStrategy.cubemapArrayRenderTarget.cubeMapFaceViews[6*cubeMapIndex+faceIndex].id
+                textureRenderer.drawToQuad(texture = viewId, program = debugFrameProgram, buffer = sixDebugBuffers[faceIndex])
+            }
+        }
     }
 
     private fun GpuContext<OpenGl>.setupBuffers(): ArrayList<VertexBuffer> {

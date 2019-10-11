@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.engine.graphics.profiled
@@ -29,6 +28,7 @@ import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.util.Util
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_REPEAT
@@ -59,7 +59,12 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
     )
     val pointLightDepthMapsArrayCube = cubeMapArray.id
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
-            engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, cubeMapArray)
+            engine.gpuContext,
+            cubeMapArray.dimension.width,
+            cubeMapArray.dimension.height,
+            Vector4f(0f, 0f, 0f, 0f),
+            cubeMapArray
+    )
 
     override fun bindTextures() {
         engine.gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
@@ -78,8 +83,8 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
             gpuContext.depthMask(true)
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.enable(GlCap.CULL_FACE)
-            cubemapArrayRenderTarget.use(engine.gpuContext, false)
-            gpuContext.clearDepthAndColorBuffer()
+            cubemapArrayRenderTarget.use(engine.gpuContext, true)
+//            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
 
             for (i in 0 until min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
