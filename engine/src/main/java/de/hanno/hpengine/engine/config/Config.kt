@@ -51,6 +51,7 @@ interface IDebugConfig {
     val isUseGpuOcclusionCulling: Boolean
     val isDrawLines: Boolean
     val isDrawBoundingVolumes: Boolean
+    val isDrawPointLightShadowMaps: Boolean
     val isDrawCameras: Boolean
     val isDrawScene: Boolean
     val isUseDirectTextureOutput: Boolean
@@ -105,6 +106,7 @@ data class DebugConfig(
     override var isUseGpuOcclusionCulling: Boolean = false,
     override var isDrawLines: Boolean = false,
     override var isDrawBoundingVolumes: Boolean = false,
+    override var isDrawPointLightShadowMaps: Boolean = false,
     override var isDrawCameras: Boolean = true,
     override var isDrawScene: Boolean = true,
     override var isUseDirectTextureOutput: Boolean = false,

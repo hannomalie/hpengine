@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
@@ -15,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtens
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
@@ -23,15 +23,7 @@ import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
-import de.hanno.hpengine.engine.model.QuadVertexBuffer
-import de.hanno.hpengine.engine.model.VertexBuffer
-import de.hanno.hpengine.engine.model.texture.createView
-import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.ARBClearTexture
-import org.lwjgl.opengl.GL11
 import java.io.File
-import java.util.ArrayList
-import javax.vecmath.Vector2f
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
@@ -40,11 +32,6 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
-
-    private val sixDebugBuffers: ArrayList<VertexBuffer> = gpuContext.setupBuffers()
-    private val debugFrameProgram = programManager.getProgram(
-            getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")),
-            getShaderSource(File(Shader.directory + "debugframe_fragment.glsl")))
 
     val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
         object: SimplePipeline(engineContext) {
@@ -69,14 +56,19 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         PointLightSecondPassExtension(engineContext)
     )
 
-    var notRedYet = true
     override fun render(result: DrawResult, state: RenderState) {
         gpuContext.depthMask(true)
         deferredRenderingBuffer.use(gpuContext, true)
 
         if(engineContext.config.debug.isDrawBoundingVolumes) {
+
             drawlinesExtension.renderFirstPass(engineContext, gpuContext, result.firstPassResult, state)
+        } else if(engineContext.config.debug.isDrawPointLightShadowMaps) {
+
+            val cubeMapArrayRenderTarget = (state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy)?.cubemapArrayRenderTarget
+            textureRenderer.renderCubeMapDebug(deferredRenderingBuffer.gBuffer, cubeMapArrayRenderTarget, cubeMapIndex = 0)
         } else {
+
             state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
             for (extension in extensions) {
                 extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
@@ -94,42 +86,14 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
             engineContext.config.debug.directTextureOutputTextureIndex
         } else if(engineContext.config.debug.isDrawBoundingVolumes) {
             deferredRenderingBuffer.colorReflectivenessMap
+        } else if(engineContext.config.debug.isDrawPointLightShadowMaps) {
+            deferredRenderingBuffer.positionMap
         } else {
             deferredRenderingBuffer.finalMap
         }
 
         textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
 
-
-        val cubeShadowMapStrategy = state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy
-
-        val cubeMapIndex = 0
-        (0..5).map { faceIndex ->
-            cubeShadowMapStrategy?.let { cubeShadowMapStrategy ->
-                val viewId = cubeShadowMapStrategy.cubemapArrayRenderTarget.cubeMapFaceViews[6*cubeMapIndex+faceIndex].id
-                textureRenderer.drawToQuad(texture = viewId, program = debugFrameProgram, buffer = sixDebugBuffers[faceIndex])
-            }
-        }
-    }
-
-    private fun GpuContext<OpenGl>.setupBuffers(): ArrayList<VertexBuffer> {
-        return calculate {
-            val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
-                init {
-                    val height = -2f / 3f
-                    val width = 2f
-                    val widthDiv = width / 6f
-                    for (i in 0..5) {
-                        val quadVertexBuffer = QuadVertexBuffer(backend.gpuContext, Vector2f(-1f + i * widthDiv, -1f), Vector2f(-1 + (i + 1) * widthDiv, height))
-                        add(quadVertexBuffer)
-                        quadVertexBuffer.upload()
-                    }
-                }
-            }
-
-            gpuContext.getExceptionOnError("setupBuffers")
-            sixDebugBuffers
-        }
     }
 }
 

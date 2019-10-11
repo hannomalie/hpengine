@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.texture.Texture
 import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
+import java.util.ArrayList
 import java.util.concurrent.Callable
 import java.util.logging.Logger
 
@@ -39,6 +40,7 @@ interface GpuContext<T: BackendType>: CoroutineScope {
 
     val fullscreenBuffer: VertexBuffer
     val debugBuffer: VertexBuffer
+    val sixDebugBuffers: List<VertexBuffer>
 
     val registeredRenderTargets: List<RenderTarget<*>>
 

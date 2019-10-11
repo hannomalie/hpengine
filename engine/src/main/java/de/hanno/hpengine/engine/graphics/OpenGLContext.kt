@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
+import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
@@ -52,6 +53,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.logging.Logger
+import javax.vecmath.Vector2f
 import kotlin.coroutines.CoroutineContext
 
 class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
@@ -79,7 +81,16 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override val fullscreenBuffer = QuadVertexBuffer(this, true).apply { upload() }
     override val debugBuffer = QuadVertexBuffer(this, false).apply { upload() }
-
+    override val sixDebugBuffers: List<VertexBuffer> = run {
+        val height = -2f / 3f
+        val width = 2f
+        val widthDiv = width / 6f
+        (0..5).map {
+            val quadVertexBuffer = QuadVertexBuffer(this, Vector2f(-1f + it * widthDiv, -1f), Vector2f(-1 + (it + 1) * widthDiv, height))
+            quadVertexBuffer.upload()
+            quadVertexBuffer
+        }
+    }
     private lateinit var extensions: String
 
     override val isError: Boolean

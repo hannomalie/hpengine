@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
@@ -25,6 +26,10 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
 
     private val renderToQuadProgram: Program = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "simpletexture_fragment.glsl")))
 
+    private val debugFrameProgram = programManager.getProgram(
+            getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")),
+            getShaderSource(File(Shader.directory + "debugframe_fragment.glsl")))
+
     open var finalImage = texture.id
 
     final override fun render(result: DrawResult, state: RenderState) {
@@ -35,14 +40,34 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
                    texture: Int = finalImage,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
                    program: Program = renderToQuadProgram) {
-        draw(renderTarget, texture, buffer, program)
+        draw(renderTarget, texture, buffer, program, true)
     }
 
-    private fun draw(renderTarget: RenderTarget<Texture2D>, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program) {
+    fun drawToQuad(renderTarget: RenderTarget<Texture2D> = engineContext.window.frontBuffer,
+                   texture: Texture2D,
+                   buffer: VertexBuffer = gpuContext.fullscreenBuffer,
+                   program: Program = renderToQuadProgram) {
+        drawToQuad(renderTarget, texture.id, buffer, program)
+    }
+
+    fun renderCubeMapDebug(renderTarget: RenderTarget<Texture2D> = engineContext.window.frontBuffer,
+                           cubeMapArrayRenderTarget: CubeMapArrayRenderTarget?, cubeMapIndex: Int) {
+        if(cubeMapArrayRenderTarget == null) return
+
+        (0..5).map { faceIndex ->
+            val textureView = cubeMapArrayRenderTarget.cubeMapFaceViews[6 * cubeMapIndex + faceIndex]
+            draw(renderTarget = renderTarget,
+                    texture = textureView.id,
+                    program = debugFrameProgram,
+                    buffer = gpuContext.sixDebugBuffers[faceIndex],
+                    clear = false)
+        }
+    }
+    private fun draw(renderTarget: RenderTarget<Texture2D>, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program, clear: Boolean) {
 
         gpuContext.disable(GlCap.BLEND)
 
-        renderTarget.use(gpuContext, clear = true)
+        renderTarget.use(gpuContext, clear = clear)
 
         program.use()
 

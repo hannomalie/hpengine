@@ -38,7 +38,7 @@ public class DeferredRenderingBuffer {
 	private RenderTarget<Texture2D> halfScreenBuffer;
 
 
-	public RenderTarget getGBuffer() {
+	public RenderTarget<Texture2D> getGBuffer() {
 		return gBuffer;
 	}
 
