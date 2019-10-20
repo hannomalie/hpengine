@@ -117,6 +117,10 @@ dependencies {
     compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     compile("de.hanno.structs:structs:1.0.1-SNAPSHOT")
 //    compile("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
+    compile("org.pushing-pixels:radiance-ember:2.5.1")
+    compile("org.pushing-pixels:radiance-substance-extras:2.5.1")
+    compile("org.pushing-pixels:radiance-flamingo:2.5.1")
+    compile("org.pushing-pixels:radiance-photon:2.5.1")
 
     testCompile("junit:junit:4.12")
 //    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")

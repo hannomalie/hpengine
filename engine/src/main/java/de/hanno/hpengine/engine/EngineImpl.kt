@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine
 
+import de.hanno.hpengine.editor.NewEditor
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.EngineContextImpl
@@ -19,15 +20,17 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
-import de.hanno.hpengine.util.gui.Editor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
+import org.pushingpixels.substance.api.SubstanceCortex
+import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
+import javax.swing.SwingUtilities
 
 interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
@@ -128,7 +131,11 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                     renderer = renderer
             )
             if (debug) {
-                Editor(engine, config)
+                SwingUtilities.invokeLater {
+                    SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
+                    NewEditor(engine)
+                }
+//                Editor(engine, config)
             }
 
             val initScriptFile = engineContext.config.directories.gameDir.initScript
