@@ -1,9 +1,14 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.manager.Manager
+import kotlinx.coroutines.CoroutineScope
+import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.GL_RGBA
 import org.lwjgl.opengl.GL11.GL_RGBA8
@@ -26,18 +31,25 @@ import org.pushingpixels.neon.icon.ResizableIcon
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
-import java.awt.FlowLayout
 import java.awt.Graphics
-import java.awt.Image
+import java.awt.event.KeyEvent
+import java.awt.event.KeyEvent.VK_A
+import java.awt.event.KeyEvent.VK_D
+import java.awt.event.KeyEvent.VK_E
+import java.awt.event.KeyEvent.VK_Q
+import java.awt.event.KeyEvent.VK_S
+import java.awt.event.KeyEvent.VK_SHIFT
+import java.awt.event.KeyEvent.VK_W
+import java.awt.event.KeyListener
+import java.awt.event.MouseEvent
+import java.awt.event.MouseMotionListener
 import java.awt.image.BufferedImage
-import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import javax.swing.BorderFactory
 import javax.swing.GroupLayout
 import javax.swing.Icon
 import javax.swing.ImageIcon
 import javax.swing.JButton
-import javax.swing.JCheckBox
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
@@ -90,7 +102,7 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
     }
 
     val mainPanel = JPanel().apply {
-//        layout = FlowLayout()
+        //        layout = FlowLayout()
 //        add(JButton("button"))
 //        add(JCheckBox("check"))
 //        add(JLabel("label"))
@@ -98,12 +110,38 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
 //            background = Color.BLACK
     }
 
+    val pressedKeys = mutableSetOf<Int>()
+    fun isKeyPressed(key: Int) = pressedKeys.contains(key)
+
+    init {
+
+        mainPanel.addMouseMotionListener(MouseMotionListener1(mainPanel, engine))
+
+        addKeyListener(object : KeyListener {
+            override fun keyTyped(e: KeyEvent) {}
+
+            override fun keyPressed(e: KeyEvent) {
+                pressedKeys.add(e.keyCode)
+            }
+
+            override fun keyReleased(e: KeyEvent) {
+                pressedKeys.remove(e.keyCode)
+            }
+
+        })
+        isFocusable = true
+        focusTraversalKeysEnabled = false
+
+        engine.managers.register(NewEditorManager(this))
+    }
+
     val imageLabel = ImageLabel(ImageIcon(image))
 
-    inner class ImageLabel(image: Icon): JLabel(image) {
+    inner class ImageLabel(image: Icon) : JLabel(image) {
         override fun getPreferredSize(): Dimension {
             return Dimension(mainPanel.width, mainPanel.height)
         }
+
         override fun paint(g: Graphics) {
             g.drawImage(image, 0, 0, this.width, this.height, null)
         }
@@ -158,6 +196,7 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
         add(mainPanel, BorderLayout.CENTER)
 
     }
+
     override fun render(result: DrawResult, state: RenderState) {
         bufferImage()
         imageLabel.repaint()
@@ -173,7 +212,7 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
             val width = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH)
             val height = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT)
 
-            if(format != GL_RGBA8) throw IllegalStateException("Unexpected format")
+            if (format != GL_RGBA8) throw IllegalStateException("Unexpected format")
             val channels = 4
 
             val buffer = BufferUtils.createByteBuffer(width * height * channels)
@@ -196,7 +235,7 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
                 val b = buffer.get(i + 2) and 0xFF.toByte()
                 val a = (if (channels == 4) (buffer.get(i + 3) and 0xFF.toByte()).toInt() else 255)
 
-                val mirroredY = height-1 - y
+                val mirroredY = height - 1 - y
                 setRGB(x, mirroredY, (a shl 24) or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt())
             }
         }
@@ -207,6 +246,77 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
         fun getResizableIconFromResource(resource: String): ResizableIcon {
             return ImageWrapperResizableIcon.getIcon(NewEditor::class.java.classLoader.getResource(resource), Dimension(24, 24))
         }
+    }
+
+}
+
+class NewEditorManager(val editor: NewEditor) : Manager {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+
+        val turbo = if (editor.isKeyPressed(VK_SHIFT)) 3f else 1f
+
+        val moveAmount = 100f * 0.1f * deltaSeconds * turbo
+
+        val entity = editor.engine.scene.camera.entity
+
+        if (editor.isKeyPressed(VK_W)) {
+            entity.translate(Vector3f(0f, 0f, -moveAmount))
+        }
+        if (editor.isKeyPressed(VK_S)) {
+            entity.translate(Vector3f(0f, 0f, moveAmount))
+        }
+        if (editor.isKeyPressed(VK_A)) {
+            entity.translate(Vector3f(-moveAmount, 0f, 0f))
+        }
+        if (editor.isKeyPressed(VK_D)) {
+            entity.translate(Vector3f(moveAmount, 0f, 0f))
+        }
+        if (editor.isKeyPressed(VK_Q)) {
+            entity.translate(Vector3f(0f, -moveAmount, 0f))
+        }
+        if (editor.isKeyPressed(VK_E)) {
+            entity.translate(Vector3f(0f, moveAmount, 0f))
+        }
+    }
+}
+
+class MouseMotionListener1(mainPanel: JPanel, val engine: Engine<*>) : MouseMotionListener {
+    private var lastDeltaX = 0f
+    private var lastDeltaY = 0f
+    private var lastX = mainPanel.width.toFloat() / 2f
+    private var lastY = mainPanel.height.toFloat() / 2f
+
+    private var pitch = 0f
+    private var yaw = 0f
+
+    override fun mouseMoved(e: MouseEvent) {}
+
+    override fun mouseDragged(e: MouseEvent) {
+        val rotationDelta = 10f
+        val rotationAmount = 10.1f * 0.05 * rotationDelta
+        val currentDeltaX = lastX - e.x.toFloat()
+        val currentDeltaY = lastY - e.y.toFloat()
+        val smoothDeltaX = 0.5f * (currentDeltaX + lastDeltaX)
+        val smoothDeltaY = 0.5f * (currentDeltaY + lastDeltaY)
+
+        lastX = e.x.toFloat()
+        lastY = e.y.toFloat()
+        lastDeltaX = currentDeltaX
+        lastDeltaY = currentDeltaY
+
+        val entity = engine.scene.camera.entity
+
+        val pitchAmount = Math.toRadians((smoothDeltaY * rotationAmount % 360))
+        val yawAmount = Math.toRadians((-smoothDeltaX * rotationAmount % 360))
+
+        yaw += yawAmount.toFloat()
+        pitch += pitchAmount.toFloat()
+
+        val oldTranslation = entity.getTranslation(Vector3f())
+        entity.setTranslation(Vector3f(0f, 0f, 0f))
+        entity.rotateLocalY((-yawAmount).toFloat())
+        entity.rotateX(pitchAmount.toFloat())
+        entity.translateLocal(oldTranslation)
     }
 
 }
