@@ -105,7 +105,7 @@ abstract class SimpleEntitySystem(val engine: Engine<*>, val scene: Scene, val c
             }
         } else {
             for (clazz in componentClasses) {
-                components[clazz] = entities.map { entity ->  entity.getComponent(clazz) }
+                components[clazz] = entities.mapNotNull { entity ->  entity.getComponent(clazz) }
             }
         }
     }

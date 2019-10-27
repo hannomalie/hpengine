@@ -52,7 +52,7 @@ interface SystemsRegistry {
     }
 
     fun onEntityAdded(entities: List<Entity>) {
-        val matchedComponents = mutableMapOf<Class<Component>, Component>()
+        val matchedComponents = mutableMapOf<Class<out Component>, Component>()
         getSystems().forEach {
             matchedComponents += it.onEntityAdded(entities)
         }

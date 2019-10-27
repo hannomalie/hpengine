@@ -24,15 +24,15 @@ interface ComponentSystem<T : Component> {
     fun onSceneSet() {
         clear()
     }
-    fun onEntityAdded(entities: List<Entity>): MutableMap<Class<Component>, Component> {
-        val matchedComponents = mutableMapOf<Class<Component>, Component>()
+    fun onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+        val matchedComponents = mutableMapOf<Class<out Component>, Component>()
         for(entity in entities) {
             matchedComponents += addCorrespondingComponents(entity.components)
         }
         return matchedComponents
     }
 
-    fun addCorrespondingComponents(components: Map<Class<Component>, Component>): Map<Class<Component>, Component> {
+    fun addCorrespondingComponents(components: Map<Class<out Component>, Component>): Map<Class<out Component>, Component> {
         val correspondingComponents = components.filter { it.key == componentClass }
         correspondingComponents.forEach { addComponent(it.value as T) }
         return correspondingComponents

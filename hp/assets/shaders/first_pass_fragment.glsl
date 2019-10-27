@@ -160,7 +160,7 @@ void main(void) {
 	{
 		discard;
 	}
-	if(isSelected)
+	if(entity.isSelected > 0)
 	{
 		color.rgb = vec3(1,0,0);
 	}

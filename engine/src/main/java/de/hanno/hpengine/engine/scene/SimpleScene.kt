@@ -101,7 +101,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             .apply { this@SimpleScene.add(cameraEntity) }
 //    TODO: Exclude from entity movement determination
 
-    override var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)
+    override var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
 
 
     override var initialized: Boolean = false
@@ -118,7 +118,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     }
 
     override fun restoreWorldCamera() {
-        activeCamera = cameraEntity.getComponent(Camera::class.java)
+        activeCamera = cameraEntity.getComponent(Camera::class.java)!!
     }
 
     override fun extract(currentWriteState: RenderState) {
@@ -142,8 +142,8 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     @Handler
     fun handleSelection(event: MeshSelectedEvent) {
         getEntities().parallelStream().forEach { e -> e.isSelected = false }
-        val entity = getEntities().get(event.entityIndex)
-        val mesh = entity.getComponent(ModelComponent::class.java).meshes[event.meshIndex]
+        val entity = getEntities()[event.entityIndex]
+        val mesh = entity.getComponent(ModelComponent::class.java)!!.meshes[event.meshIndex]
         entity.isSelected = true
     }
 }

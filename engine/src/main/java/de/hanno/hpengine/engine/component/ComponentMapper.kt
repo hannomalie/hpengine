@@ -7,7 +7,7 @@ interface ComponentMapper<T: Component> {
     val clazz: Class<T>
     val index: Int
 
-    fun getComponent(entity: Entity): T {
+    fun getComponent(entity: Entity): T? {
         return entity.getComponent(clazz)
     }
 

@@ -65,7 +65,7 @@ public class EntityTest extends TestWithEngine {
         instanceTransform.setTranslation(new Vector3f(15,15,15));
         ClustersComponent clustersComponent = parentEntity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getComponentSystems().get(ClustersComponentSystem.class).create(parentEntity));
 
-        ClustersComponent.addInstance(parentEntity, clustersComponent, instanceTransform, parentEntity.spatial);
+        ClustersComponent.addInstance(parentEntity, clustersComponent, instanceTransform, parentEntity.getSpatial());
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
 

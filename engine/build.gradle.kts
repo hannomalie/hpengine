@@ -121,6 +121,7 @@ dependencies {
     compile("org.pushing-pixels:radiance-substance-extras:2.5.1")
     compile("org.pushing-pixels:radiance-flamingo:2.5.1")
     compile("org.pushing-pixels:radiance-photon:2.5.1")
+    compile("com.miglayout:miglayout:3.7.4")
 
     testCompile("junit:junit:4.12")
 //    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")
