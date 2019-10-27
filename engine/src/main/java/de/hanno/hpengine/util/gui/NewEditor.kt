@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor
 import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -10,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
 import net.miginfocom.swing.MigLayout
+import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
@@ -42,6 +44,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
+import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.KeyEvent.VK_A
 import java.awt.event.KeyEvent.VK_D
@@ -50,13 +53,9 @@ import java.awt.event.KeyEvent.VK_Q
 import java.awt.event.KeyEvent.VK_S
 import java.awt.event.KeyEvent.VK_SHIFT
 import java.awt.event.KeyEvent.VK_W
-import java.awt.event.KeyEvent.VK_X
-import java.awt.event.KeyEvent.VK_Y
-import java.awt.event.KeyEvent.VK_Z
 import java.awt.event.KeyListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
 import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
 import javax.swing.BorderFactory
@@ -85,108 +84,22 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
         border = BorderFactory.createMatteBorder(0, 1, 0, 0, Color.BLACK)
     }
 
-    val mainPanel = JPanel()
+    val mainPanel = MainPanel()
 
-    val pressedKeys = mutableSetOf<Int>()
-    fun isKeyPressed(key: Int) = pressedKeys.contains(key)
+    val keyListener = KeyListener1().apply {
+        addKeyListener(this)
+    }
+    fun isKeyPressed(key: Int) = keyListener.pressedKeys.contains(key)
 
-    var selectedEntity: Entity? = null
-    var mouseClicked: MouseEvent? = null
+    var constraintAxis = AxisConstraint.None
 
-    var xSelected = false
-    var ySelected = false
-    var zSelected = false
+    val entitySelector = EntitySelector(this).apply {
+        engine.renderSystems.add(this)
+    }
 
-    init {
-
-        val mouseMotionListener1 = MouseMotionListener1(engine, ::selectedEntity, this)
-        mainPanel.addMouseMotionListener(mouseMotionListener1)
-        mainPanel.addMouseListener(mouseMotionListener1)
-        mainPanel.addMouseListener(object : MouseListener {
-            override fun mouseReleased(e: MouseEvent?) {}
-
-            override fun mouseEntered(e: MouseEvent?) {}
-
-            override fun mouseClicked(e: MouseEvent) {
-                mouseClicked = e
-            }
-
-            override fun mouseExited(e: MouseEvent?) {}
-
-            override fun mousePressed(e: MouseEvent?) {}
-
-        })
-
-        addKeyListener(object : KeyListener {
-            override fun keyTyped(e: KeyEvent) { }
-
-            override fun keyPressed(e: KeyEvent) {
-                pressedKeys.add(e.keyCode)
-                if(e.keyCode == VK_X) {
-                    xSelected = !xSelected
-                } else if(e.keyCode == VK_Y) {
-                    ySelected = !ySelected
-                } else if(e.keyCode == VK_Z) {
-                    zSelected = !zSelected
-                }
-            }
-
-            override fun keyReleased(e: KeyEvent) {
-                pressedKeys.remove(e.keyCode)
-            }
-        })
-        isFocusable = true
-        focusTraversalKeysEnabled = false
-
-        engine.managers.register(NewEditorManager(this))
-        engine.renderSystems.add(object : RenderSystem {
-            val floatBuffer = BufferUtils.createFloatBuffer(4)
-            override fun render(result: DrawResult, state: RenderState) {
-
-                mouseClicked?.let { event ->
-                    engine.deferredRenderingBuffer.use(engine.gpuContext, false)
-                    engine.gpuContext.readBuffer(4)
-                    floatBuffer.rewind()
-                    val ratio = Vector2f(mainPanel.width.toFloat() / engine.gpuContext.window.width.toFloat(),
-                            mainPanel.height.toFloat() / engine.gpuContext.window.height.toFloat())
-                    val adjustedX = (event.x * ratio.x).toInt()
-                    val adjustedY = (event.y * ratio.y).toInt()
-                    GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL_RGBA, GL11.GL_FLOAT, floatBuffer)
-                    val entityIndex = floatBuffer.get()
-                    val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
-                    if(selectedEntity == null) {
-                        selectEntity(pickedEntity)
-                    } else if(selectedEntity?.name == pickedEntity.name) {
-                        unselectEntity()
-                    }
-
-                    println("Selected $selectedEntity")
-                    mouseClicked = null
-                }
-            }
-
-            private fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
-                selectedEntity = pickedEntity
-                sidePanel.removeAll()
-                sidePanel.add(JButton("Unselect").apply {
-                    addActionListener {
-                        unselectEntity()
-                    }
-                })
-                pickedEntity.isSelected = true
-                sidePanel.add(EntityGrid(pickedEntity))
-                sidePanel.revalidate()
-                sidePanel.repaint()
-            }
-
-            private fun unselectEntity() = SwingUtils.invokeLater {
-                selectedEntity?.isSelected = false
-                selectedEntity = null
-                sidePanel.removeAll()
-                sidePanel.revalidate()
-                sidePanel.repaint()
-            }
-        })
+    val mouseMotionListener = MouseMotionListener1(engine, entitySelector::selectedEntity, this).apply {
+        mainPanel.addMouseMotionListener(this)
+        mainPanel.addMouseListener(this)
     }
 
     val imageLabel = ImageLabel(ImageIcon(image))
@@ -202,6 +115,10 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
     }
 
     init {
+        isFocusable = true
+        focusTraversalKeysEnabled = false
+
+        engine.managers.register(NewEditorManager(this))
 
         add(sidePanel, BorderLayout.LINE_END)
         mainPanel.add(imageLabel)
@@ -212,17 +129,17 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
 
         val newEntityBand = JRibbonBand("New", null).apply {
             val command = Command.builder()
-                    .setText("Entity")
-                    .setIconFactory { getResizableIconFromResource("3d_rotation-24px.svg") }
-                    .setAction { println("Entity created!") }
-                    .setActionRichTooltip(RichTooltip.builder()
-                            .setTitle("Entity")
-                            .addDescriptionSection("Creates an entity")
-                            .build())
-                    .build()
+                .setText("Entity")
+                .setIconFactory { getResizableIconFromResource("3d_rotation-24px.svg") }
+                .setAction { println("Entity created!") }
+                .setActionRichTooltip(RichTooltip.builder()
+                        .setTitle("Entity")
+                        .addDescriptionSection("Creates an entity")
+                        .build())
+                .build()
             addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
-                    .setTextClickAction()
-                    .build()), JRibbonBand.PresentationPriority.TOP)
+                .setTextClickAction()
+                .build()), JRibbonBand.PresentationPriority.TOP)
             resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
         }
 
@@ -233,15 +150,15 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
 
             val translateAxisToggleGroup = CommandToggleGroupModel();
 
-            val commands = listOf(Pair("X", ::xSelected), Pair("Y", ::ySelected), Pair("Z", ::zSelected)).map {
+            val commands = listOf(Pair(AxisConstraint.X, ::constraintAxis), Pair(AxisConstraint.Y, ::constraintAxis), Pair(AxisConstraint.Z, ::constraintAxis)).map {
                 Command.builder()
                     .setToggle()
-                    .setText(it.first)
+                    .setText(it.first.toString())
                     .setIconFactory { getResizableIconFromResource("3d_rotation-24px.svg") }
                     .inToggleGroup(translateAxisToggleGroup)
                     .setAction { event ->
-                        it.second.set(!it.second.get())
-                        event.command.isToggleSelected = it.second.get()
+                        if(it.second.get() == it.first) it.second.set(AxisConstraint.None) else it.second.set(it.first)
+                        event.command.isToggleSelected = it.second.get() == it.first
                     }
                     .build()
             }
@@ -318,6 +235,99 @@ class NewEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem
 
 }
 
+class MainPanel : JPanel() {
+    var containsMouse = true
+
+    init {
+        addMouseListener(object : MouseAdapter() {
+
+            override fun mouseEntered(e: MouseEvent?) {
+                containsMouse = true
+            }
+
+            override fun mouseExited(e: MouseEvent?) {
+                containsMouse = false
+            }
+        })
+    }
+}
+
+class KeyListener1 : KeyListener {
+    val pressedKeys = mutableSetOf<Int>()
+    override fun keyTyped(e: KeyEvent) { }
+
+    override fun keyPressed(e: KeyEvent) {
+        pressedKeys.add(e.keyCode)
+    }
+
+    override fun keyReleased(e: KeyEvent) {
+        pressedKeys.remove(e.keyCode)
+    }
+}
+
+class EntitySelector(val engine: Engine<OpenGl>, val mainPanel: JPanel, val sidePanel: JPanel) : RenderSystem {
+    constructor(editor: NewEditor): this(editor.engine, editor.mainPanel, editor.sidePanel)
+
+    init {
+        mainPanel.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                mouseClicked = e
+            }
+        })
+    }
+
+    val floatBuffer = BufferUtils.createFloatBuffer(4)
+
+    var selectedEntity: Entity? = null
+    var mouseClicked: MouseEvent? = null
+
+    override fun render(result: DrawResult, state: RenderState) {
+
+        mouseClicked?.let { event ->
+            engine.deferredRenderingBuffer.use(engine.gpuContext, false)
+            engine.gpuContext.readBuffer(4)
+            floatBuffer.rewind()
+            val ratio = Vector2f(mainPanel.width.toFloat() / engine.gpuContext.window.width.toFloat(),
+                    mainPanel.height.toFloat() / engine.gpuContext.window.height.toFloat())
+            val adjustedX = (event.x * ratio.x).toInt()
+            val adjustedY = (event.y * ratio.y).toInt()
+            GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL_RGBA, GL11.GL_FLOAT, floatBuffer)
+            val entityIndex = floatBuffer.get()
+            val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
+            if(selectedEntity == null) {
+                selectEntity(pickedEntity)
+            } else if(selectedEntity?.name == pickedEntity.name) {
+                unselectEntity()
+            }
+
+            println("Selected $selectedEntity")
+            mouseClicked = null
+        }
+    }
+
+    private fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
+        selectedEntity = pickedEntity
+        sidePanel.removeAll()
+        sidePanel.add(JButton("Unselect").apply {
+            addActionListener {
+                unselectEntity()
+            }
+        })
+        pickedEntity.isSelected = true
+        sidePanel.add(EntityGrid(pickedEntity))
+        sidePanel.revalidate()
+        sidePanel.repaint()
+    }
+
+    private fun unselectEntity() = SwingUtils.invokeLater {
+        selectedEntity?.isSelected = false
+        selectedEntity = null
+        sidePanel.removeAll()
+        sidePanel.revalidate()
+        sidePanel.repaint()
+    }
+}
+
 class EntityGrid(val entity: Entity): JPanel() {
     init {
         layout = MigLayout("wrap 2")
@@ -347,6 +357,8 @@ class EntityGrid(val entity: Entity): JPanel() {
 
 class NewEditorManager(val editor: NewEditor) : Manager {
     override fun CoroutineScope.update(deltaSeconds: Float) {
+
+        if(!editor.mainPanel.containsMouse) return
 
         val turbo = if (editor.isKeyPressed(VK_SHIFT)) 3f else 1f
 
@@ -378,6 +390,7 @@ class NewEditorManager(val editor: NewEditor) : Manager {
 class MouseMotionListener1(val engine: Engine<*>, val selectedEntity: KProperty0<Entity?>, val editor: NewEditor) : MouseAdapter() {
     private var lastX: Float? = null
     private var lastY: Float? = null
+    private val oldTransform = Matrix4f()
 
     private var pitch = 0f
     private var yaw = 0f
@@ -386,6 +399,14 @@ class MouseMotionListener1(val engine: Engine<*>, val selectedEntity: KProperty0
     override fun mousePressed(e: MouseEvent) {
         lastX = e.x.toFloat()
         lastY = e.y.toFloat()
+
+        val entityOrNull = selectedEntity.call()
+        entityOrNull?.transformation?.get(oldTransform)
+    }
+
+    override fun mouseReleased(e: MouseEvent?) {
+        val entityOrNull = selectedEntity.call()
+        entityOrNull?.transformation?.get(oldTransform)
     }
 
     override fun mouseDragged(e: MouseEvent) {
@@ -415,17 +436,15 @@ class MouseMotionListener1(val engine: Engine<*>, val selectedEntity: KProperty0
 
             val moveAmountX = deltaX * turbo
             val moveAmountY = deltaY * turbo
-            println("MoveAmountX $moveAmountX")
-            if(editor.xSelected) {
-                entityOrNull.translation(Vector3f(moveAmountX, 0f, 0f))
-            }
-            if(editor.ySelected) {
-                entityOrNull.translation(Vector3f(0f, moveAmountY, 0f))
-            }
-            if(editor.zSelected) {
-                entityOrNull.translation(Vector3f(0f, 0f, moveAmountY))
+            when(editor.constraintAxis) {
+                AxisConstraint.X -> entityOrNull.set(Matrix4f().translation(Vector3f(moveAmountX, 0f, 0f)).mul(oldTransform))
+                AxisConstraint.Y -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, moveAmountY, 0f)).mul(oldTransform))
+                AxisConstraint.Z -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, 0f, moveAmountY)).mul(oldTransform))
             }
         }
     }
+}
 
+enum class AxisConstraint {
+    None, X, Y, Z
 }
