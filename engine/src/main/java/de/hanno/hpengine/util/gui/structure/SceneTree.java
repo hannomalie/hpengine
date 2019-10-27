@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class SceneTree extends WebCheckBoxTree {
 
-    private static final Logger LOGGER = Logger.getLogger(SceneTree.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(de.hanno.hpengine.editor.SceneTree.class.getName());
 
     private SetSelectedListener selectionListener = null;
     private Engine engine;

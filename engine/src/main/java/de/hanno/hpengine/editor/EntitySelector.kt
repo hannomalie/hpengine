@@ -55,21 +55,20 @@ class EntitySelector(val engine: Engine<OpenGl>, val mainPanel: JPanel, val side
         }
     }
 
-    private fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
+    fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
         selectedEntity = pickedEntity
-        sidePanel.removeAll()
-        sidePanel.add(JButton("Unselect").apply {
-            addActionListener {
-                unselectEntity()
-            }
-        })
         pickedEntity.isSelected = true
-        sidePanel.add(EntityGrid(pickedEntity))
-        sidePanel.revalidate()
-        sidePanel.repaint()
+        sidePanel.setContent {
+            add(JButton("Unselect").apply {
+                addActionListener {
+                    unselectEntity()
+                }
+            })
+            add(EntityGrid(pickedEntity))
+        }
     }
 
-    private fun unselectEntity() = SwingUtils.invokeLater {
+    fun unselectEntity() = SwingUtils.invokeLater {
         selectedEntity?.isSelected = false
         selectedEntity = null
         sidePanel.removeAll()

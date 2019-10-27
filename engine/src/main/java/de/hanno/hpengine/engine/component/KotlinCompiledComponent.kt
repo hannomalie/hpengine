@@ -16,7 +16,7 @@ import java.net.URLClassLoader
 import java.util.HashMap
 import javax.inject.Inject
 
-class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: CodeSource, entity: Entity) : BaseComponent(entity), ScriptComponent {
+data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: CodeSource, override val entity: Entity) : BaseComponent(entity), ScriptComponent {
     init {
         require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
         initWrappingComponent()

@@ -19,6 +19,6 @@ class InitSibenikKotlin @Inject constructor(val engine: Engine<*>) : EngineConsu
             println("Loaded $component")
             entity.addComponent(component, ScriptComponent::class.java as Class<Component>)
         }
-        engine.sceneManager.scene.addAll(loaded.entities)
+        engine.sceneManager.addAll(loaded.entities)
     }
 }

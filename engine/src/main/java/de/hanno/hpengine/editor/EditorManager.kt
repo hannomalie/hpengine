@@ -1,11 +1,15 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
 
 class EditorManager(val editor: RibbonEditor) : Manager {
+    override fun onEntityAdded(entities: List<Entity>) {
+        editor.sceneTree.reload()
+    }
     override fun CoroutineScope.update(deltaSeconds: Float) {
 
         if(!editor.mainPanel.containsMouse) return

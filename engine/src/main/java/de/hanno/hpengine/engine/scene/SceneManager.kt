@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,13 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
             managerContext.eventBus.post(SceneInitEvent())
         }
 
+
+    fun addAll(entities: List<Entity>) {
+        scene.addAll(entities)
+        managerContext.managers.managers.values.forEach {
+            it.onEntityAdded(entities)
+        }
+    }
     override fun CoroutineScope.update(deltaSeconds: Float) {
 //        super.update(deltaSeconds)
         val newDrawCycle = managerContext.renderManager.drawCycle.get()

@@ -9,7 +9,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import kotlin.reflect.KProperty0
 
-class MouseMotionListener1(val engine: Engine<*>, val selectedEntity: KProperty0<Entity?>, val editor: RibbonEditor) : MouseAdapter() {
+class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<Entity?>, val editor: RibbonEditor) : MouseAdapter() {
     private var lastX: Float? = null
     private var lastY: Float? = null
     private val oldTransform = Matrix4f()

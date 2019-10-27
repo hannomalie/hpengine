@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.GL_RGBA
@@ -33,13 +34,10 @@ import org.pushingpixels.photon.icon.SvgBatikResizableIcon
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
-import java.awt.Graphics
 import java.awt.image.BufferedImage
 import java.nio.ByteBuffer
 import javax.swing.BorderFactory
-import javax.swing.Icon
 import javax.swing.ImageIcon
-import javax.swing.JLabel
 import javax.swing.JPanel
 import kotlin.experimental.and
 
@@ -55,12 +53,21 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
         border = BorderFactory.createMatteBorder(0, 1, 0, 0, Color.BLACK)
     }
 
-    val mainPanel = MainPanel()
+    val mainPanel = MainPanel().apply {
+        this@RibbonEditor.add(this, BorderLayout.CENTER)
+    }
+    val sceneTree = SceneTree(engine, this)
+    val sceneTreePanel = ReloadableScrollPane(sceneTree).apply {
+        this.preferredSize = Dimension(300, mainPanel.height)
 
-    val keyListener = KeyLogger().apply {
+        this@RibbonEditor.add(this, BorderLayout.LINE_START)
+    }
+    val imageLabel = ImageLabel(ImageIcon(image), this)
+
+    val keyLogger = KeyLogger().apply {
         addKeyListener(this)
     }
-    fun isKeyPressed(key: Int) = keyListener.pressedKeys.contains(key)
+    fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
 
     var constraintAxis = AxisConstraint.None
 
@@ -68,24 +75,12 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
         engine.renderSystems.add(this)
     }
 
-    val mouseMotionListener = MouseMotionListener1(engine, entitySelector::selectedEntity, this).apply {
-        mainPanel.addMouseMotionListener(this)
-        mainPanel.addMouseListener(this)
-    }
-
-    val imageLabel = ImageLabel(ImageIcon(image))
-
-    inner class ImageLabel(image: Icon) : JLabel(image) {
-        override fun getPreferredSize(): Dimension {
-            return Dimension(mainPanel.width, mainPanel.height)
-        }
-
-        override fun paint(g: Graphics) {
-            g.drawImage(image, 0, 0, this.width, this.height, null)
-        }
-    }
-
     init {
+        MouseInputProcessor(engine, entitySelector::selectedEntity, this).apply {
+            mainPanel.addMouseMotionListener(this)
+            mainPanel.addMouseListener(this)
+        }
+
         isFocusable = true
         focusTraversalKeysEnabled = false
 
@@ -148,9 +143,6 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
         defaultCloseOperation = EXIT_ON_CLOSE
         isVisible = true
 
-
-        add(mainPanel, BorderLayout.CENTER)
-
     }
 
     override fun render(result: DrawResult, state: RenderState) {
@@ -209,4 +201,11 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
 
 enum class AxisConstraint {
     None, X, Y, Z
+}
+
+fun JPanel.setContent(addContent: JPanel.() -> Unit) {
+    removeAll()
+    addContent()
+    revalidate()
+    repaint()
 }
