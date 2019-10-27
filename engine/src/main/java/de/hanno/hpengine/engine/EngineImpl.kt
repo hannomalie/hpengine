@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.editor.NewEditor
+import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.EngineContextImpl
@@ -133,7 +133,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             if (debug) {
                 SwingUtilities.invokeLater {
                     SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
-                    NewEditor(engine)
+                    RibbonEditor(engine)
                 }
 //                Editor(engine, config)
             }
