@@ -28,6 +28,7 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
             it.onEntityAdded(entities)
         }
     }
+    fun add(entity: Entity) = addAll(listOf(entity))
     override fun CoroutineScope.update(deltaSeconds: Float) {
 //        super.update(deltaSeconds)
         val newDrawCycle = managerContext.renderManager.drawCycle.get()

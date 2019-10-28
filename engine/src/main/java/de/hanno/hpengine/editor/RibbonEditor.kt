@@ -1,6 +1,7 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -93,11 +94,13 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
         setDefaultLookAndFeelDecorated(true)
         this.size = Dimension(1280, 720)
 
-        val newEntityBand = JRibbonBand("New", null).apply {
+        val entityBand = JRibbonBand("Entity", null).apply {
             val command = Command.builder()
-                .setText("Entity")
-                .setIconFactory { getResizableIconFromResource("3d_rotation-24px.svg") }
-                .setAction { println("Entity created!") }
+                .setText("Create")
+                .setIconFactory { getResizableIconFromResource("add-24px.svg") }
+                .setAction {
+                    engine.sceneManager.add(Entity("NewEntity_${engine.scene.getEntities().count { it.name.startsWith("NewEntity")}}"))
+                }
                 .setActionRichTooltip(RichTooltip.builder()
                         .setTitle("Entity")
                         .addDescriptionSection("Creates an entity")
@@ -109,7 +112,7 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
             resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
         }
 
-        val entityTask = RibbonTask("Entity", newEntityBand)
+        val sceneTask = RibbonTask("Scene", entityBand)
 
         val translateBand = JFlowRibbonBand("Active Axes", null).apply {
             resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
@@ -137,7 +140,7 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
         }
         val transformTask = RibbonTask("Translate", translateBand)
 
-        addTask(entityTask)
+        addTask(sceneTask)
         addTask(transformTask)
 
         defaultCloseOperation = EXIT_ON_CLOSE
