@@ -388,14 +388,14 @@ data class Texture2D(override val dimension: TextureDimension2D,
     }
 }
 
-data class FileBasedTexture2D(val path: String, val backingTexture: Texture2D): Texture<TextureDimension2D> by backingTexture {
+data class FileBasedTexture2D(val path: String, val file: File, val backingTexture: Texture2D): Texture<TextureDimension2D> by backingTexture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedTexture2D {
             return invoke(gpuContext, path, directory.resolve(path), srgba)
         }
 
         operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, file: File, srgba: Boolean = false) =
-                FileBasedTexture2D(path, Texture2D(gpuContext, file, path, srgba))
+                FileBasedTexture2D(path, file, Texture2D(gpuContext, file, path, srgba))
     }
 }
 

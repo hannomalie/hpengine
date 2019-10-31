@@ -58,7 +58,7 @@ class EntitySelector(val engine: Engine<OpenGl>, val mainPanel: JPanel, val side
     fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
         selectedEntity = pickedEntity
         pickedEntity.isSelected = true
-        sidePanel.setContent {
+        sidePanel.doWithRefresh {
             add(JButton("Unselect").apply {
                 addActionListener {
                     unselectEntity()

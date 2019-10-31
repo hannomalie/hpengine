@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor
 
+import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
@@ -18,4 +19,9 @@ class MainPanel : JPanel() {
             }
         })
     }
+
+    fun setContent(content: Component) = doWithRefresh {
+        add(content)
+    }
+
 }
