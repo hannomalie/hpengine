@@ -23,6 +23,7 @@ import de.hanno.hpengine.engine.threads.UpdateThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
+import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.io.File
@@ -31,6 +32,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import javax.swing.SwingUtilities
+import javax.swing.SwingUtilities.invokeLater
 
 interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
@@ -131,7 +133,8 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                     renderer = renderer
             )
             if (debug) {
-                SwingUtilities.invokeLater {
+                invokeLater {
+                    JRibbonFrame.setDefaultLookAndFeelDecorated(true)
                     SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
                     RibbonEditor(engine, config)
 //                Editor(engine, config)

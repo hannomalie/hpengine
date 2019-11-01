@@ -55,7 +55,6 @@ import kotlin.experimental.and
 
 
 class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFrame("HPEngine"), RenderSystem {
-
     val finalTexture = engine.deferredRenderingBuffer.finalBuffer.textures.first()
     val image = BufferedImage(finalTexture.dimension.width, finalTexture.dimension.height, BufferedImage.TYPE_INT_ARGB)
 
@@ -103,7 +102,6 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         add(sidePanel, BorderLayout.LINE_END)
 
         engine.renderSystems.add(this)
-        setDefaultLookAndFeelDecorated(true)
         this.size = Dimension(1280, 720)
 
         addSceneTask()
@@ -240,7 +238,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
             val refreshTexturesCommand = Command.builder()
                 .setText("Refresh")
-                .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
+                .setIconFactory { getResizableIconFromSvgResource("refresh-24px.svg") }
                 .setAction {
                     contentModel.getCommandGroupByTitle("Available textures").apply {
                         SwingUtils.invokeLater {
