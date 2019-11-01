@@ -133,9 +133,9 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             if (debug) {
                 SwingUtilities.invokeLater {
                     SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
-                    RibbonEditor(engine)
-                }
+                    RibbonEditor(engine, config)
 //                Editor(engine, config)
+                }
             }
 
             val initScriptFile = engineContext.config.directories.gameDir.initScript

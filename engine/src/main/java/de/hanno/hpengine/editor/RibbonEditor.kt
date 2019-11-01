@@ -50,12 +50,11 @@ import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
 import javax.swing.JFileChooser
-import javax.swing.JLabel
 import javax.swing.JPanel
 import kotlin.experimental.and
 
 
-class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSystem {
+class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFrame("HPEngine"), RenderSystem {
 
     val finalTexture = engine.deferredRenderingBuffer.finalBuffer.textures.first()
     val image = BufferedImage(finalTexture.dimension.width, finalTexture.dimension.height, BufferedImage.TYPE_INT_ARGB)
@@ -179,7 +178,7 @@ class RibbonEditor(val engine: EngineImpl) : JRibbonFrame("HPEngine"), RenderSys
                     .setAction { event ->
                         if(event.command.isToggleSelected) {
                             mainPanel.setContent(
-                                ReloadableScrollPane(ConfigGrid(engine.config as SimpleConfig)).apply { //TODO: Remove cast, use di
+                                ReloadableScrollPane(ConfigGrid(config)).apply {
                                     this.preferredSize = Dimension(mainPanel.width, mainPanel.height)
                                 }
                             )
