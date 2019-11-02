@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.UploadState
 import de.hanno.hpengine.engine.model.texture.allocateTexture
 import de.hanno.hpengine.util.Util
@@ -24,8 +25,6 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30.*
-import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL32.*
 import java.util.logging.Logger
 import kotlin.math.max
@@ -67,6 +66,7 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
 
             gpuContext.clearColor(clear.x, clear.y, clear.z, clear.w)
         }
+        gpuContext.register(this)
     }
 
     open val renderedTexture: Int
@@ -261,7 +261,26 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
     }
 }
 
-class DepthBuffer<T: Texture<*>>(val texture: T)
+class DepthBuffer<T: Texture<*>>(val texture: T) {
+
+    companion object {
+        operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): DepthBuffer<Texture2D> {
+            val dimension = TextureDimension(width, height)
+            val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
+            val textureTarget = GlTextureTarget.TEXTURE_2D
+            val internalFormat1 = GL_DEPTH_COMPONENT24
+            val (textureId, internalFormat, handle) = allocateTexture(
+                    gpuContext,
+                    Texture2DUploadInfo(dimension),
+                    textureTarget,
+                    filterConfig, internalFormat1)
+
+            DepthBuffer(Texture2D(dimension, textureId, textureTarget, internalFormat, handle, filterConfig, GL11.GL_REPEAT, UploadState.UPLOADED))
+
+            return DepthBuffer(Texture2D(dimension, textureId, textureTarget, internalFormat, handle, filterConfig, GL11.GL_REPEAT, UploadState.UPLOADED))
+        }
+    }
+}
 
 class RenderBuffer private constructor(val renderBuffer: Int, val width: Int, val height: Int) {
     fun bind(gpuContext: GpuContext<OpenGl>) = gpuContext.execute("BindRenderBuffer") {

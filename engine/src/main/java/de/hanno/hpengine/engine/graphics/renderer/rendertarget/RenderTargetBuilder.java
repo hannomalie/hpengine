@@ -82,7 +82,6 @@ public class RenderTargetBuilder<BUILDER_TYPE extends RenderTargetBuilder, TARGE
     @Override
     public TARGET_TYPE build() {
         TARGET_TYPE target = (TARGET_TYPE) RenderTarget.Companion.invoke(gpuContext, this);
-        gpuContext.register(target);
         return target;
     }
 

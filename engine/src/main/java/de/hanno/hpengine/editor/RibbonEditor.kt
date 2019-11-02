@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.lwjgl.BufferUtils
@@ -37,6 +38,9 @@ import org.pushingpixels.flamingo.api.ribbon.model.RibbonGalleryContentModel
 import org.pushingpixels.flamingo.api.ribbon.model.RibbonGalleryPresentationModel
 import org.pushingpixels.flamingo.api.ribbon.projection.RibbonGalleryProjection
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
+import org.pushingpixels.flamingo.api.ribbon.synapse.model.ComponentPresentationModel
+import org.pushingpixels.flamingo.api.ribbon.synapse.model.RibbonDefaultComboBoxContentModel
+import org.pushingpixels.flamingo.api.ribbon.synapse.projection.RibbonComboBoxProjection
 import org.pushingpixels.neon.icon.ResizableIcon
 import org.pushingpixels.photon.icon.SvgBatikResizableIcon
 import java.awt.BorderLayout
@@ -46,11 +50,15 @@ import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.ArrayList
 import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
+import javax.swing.JComboBox
 import javax.swing.JFileChooser
 import javax.swing.JPanel
+import javax.swing.event.ListDataEvent
+import javax.swing.event.ListDataListener
 import kotlin.experimental.and
 
 
@@ -104,6 +112,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         engine.renderSystems.add(this)
         this.size = Dimension(1280, 720)
 
+        addViewTask()
         addSceneTask()
         addTransformTask()
         addTextureTask()
@@ -112,6 +121,57 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         defaultCloseOperation = EXIT_ON_CLOSE
         isVisible = true
 
+    }
+
+    private fun addViewTask() {
+
+        val outputBand = JRibbonBand("Output", null).apply {
+
+            val command = Command.builder()
+                    .setText("Direct texture output")
+                    .setToggle()
+                    .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
+                    .setAction {
+                        config.debug.isUseDirectTextureOutput = it.command.isToggleSelected
+                    }
+                    .build()
+            addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
+                    .setTextClickAction()
+                    .build()), JRibbonBand.PresentationPriority.TOP)
+
+            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
+        }
+
+
+        val outputIndexBand = JFlowRibbonBand("Output", null).apply {
+            val renderTargetTextures = ArrayList<DirectTextureOutputItem>()
+            for (target in engine.gpuContext.registeredRenderTargets) {
+                for (i in 0 until target.textures.size) {
+                    val name = target.name + " - " + i // TODO: Revive names here
+                    renderTargetTextures.add(DirectTextureOutputItem(target, name, target.getRenderedTexture(i)))
+                }
+            }
+
+            val directTextureOutputComboBoxModel = RibbonDefaultComboBoxContentModel.builder<DirectTextureOutputItem>()
+                    .setItems(renderTargetTextures.toTypedArray())
+                    .build()
+
+            directTextureOutputComboBoxModel.addListDataListener(object: ListDataListener {
+                override fun intervalRemoved(e: ListDataEvent?) { }
+                override fun intervalAdded(e: ListDataEvent?) { }
+
+                override fun contentsChanged(e: ListDataEvent) {
+                    val newSelection = directTextureOutputComboBoxModel.selectedItem as DirectTextureOutputItem
+                    config.debug.directTextureOutputTextureIndex = newSelection.textureId
+                }
+            })
+
+            addFlowComponent(RibbonComboBoxProjection(directTextureOutputComboBoxModel, ComponentPresentationModel.builder().build()))
+
+        }
+        val viewTask = RibbonTask("Viewport", outputBand, outputIndexBand)
+
+        addTask(viewTask)
     }
 
     private fun addTransformTask() {
@@ -176,7 +236,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                     .setAction { event ->
                         if(event.command.isToggleSelected) {
                             mainPanel.setContent(
-                                ReloadableScrollPane(ConfigGrid(config)).apply {
+                                ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
                                     this.preferredSize = Dimension(mainPanel.width, mainPanel.height)
                                 }
                             )
@@ -310,13 +370,15 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
                 val i = (x + y * width) * channels
 
-                val r = buffer.get(i) and 0xFF.toByte()
-                val g = buffer.get(i + 1) and 0xFF.toByte()
-                val b = buffer.get(i + 2) and 0xFF.toByte()
-                val a = (if (channels == 4) (buffer.get(i + 3) and 0xFF.toByte()).toInt() else 255)
+                val r = buffer.get(i).toUByte() and 0xFF.toUByte()
+                val g = buffer.get(i + 1).toUByte() and 0xFF.toUByte()
+                val b = buffer.get(i + 2).toUByte() and 0xFF.toUByte()
+                val a = if (channels == 4) (buffer.get(i + 3).toUByte() and 0xFF.toUByte()) else 255.toUByte()
+
+                val rgb = (a.toInt() shl 24) or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt()
 
                 val mirroredY = height - 1 - y
-                setRGB(x, mirroredY, (a shl 24) or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt())
+                setRGB(x, mirroredY, rgb)
             }
         }
     }

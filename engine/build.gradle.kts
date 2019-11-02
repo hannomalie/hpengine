@@ -53,6 +53,9 @@ repositories {
     maven {
         setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
     }
+    maven {
+        setUrl("https://oss.sonatype.org/content/repositories/snapshots/org/pushing-pixels")
+    }
     
     mavenCentral()
     jcenter()
@@ -97,9 +100,8 @@ dependencies {
     runtime("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
 
     compile("org.joml:joml:1.9.3")
-//    TODO: Use ether of them
+//    TODO: Remove weblaf stuff
     compile("", "weblaf-complete", "1.28")
-//    compile("org.pushing-pixels:radiance-substance:2.5.1")
     compile("", "vecmath")
     compile("", "rsyntaxtextarea")
     compile("jfree:jfreechart:1.0.13")
@@ -117,12 +119,12 @@ dependencies {
     compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     compile("de.hanno.structs:structs:1.0.1-SNAPSHOT")
 //    compile("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
-    compile("org.pushing-pixels:radiance-ember:2.5.1")
-    compile("org.pushing-pixels:radiance-substance-extras:2.5.1")
-    compile("org.pushing-pixels:radiance-flamingo:2.5.1")
-    compile("org.pushing-pixels:radiance-photon:2.5.1")
+    val radianceVersion = "2.5.1" // "3.0-SNAPSHOT"
+    compile("org.pushing-pixels:radiance-ember:$radianceVersion")
+    compile("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
+    compile("org.pushing-pixels:radiance-flamingo:$radianceVersion")
+    compile("org.pushing-pixels:radiance-photon:$radianceVersion")
     compile("com.miglayout:miglayout:3.7.4")
 
     testCompile("junit:junit:4.12")
-//    testCompile("org.jetbrains.kotlin:kotlin-test:${rootProject.extra["kotlin_version"]}")
 }

@@ -4,12 +4,15 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
@@ -26,7 +29,7 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
 
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
     val renderTarget = RenderTarget(
-        frameBuffer = FrameBuffer(gpuContext, null),
+        frameBuffer = FrameBuffer(gpuContext, DepthBuffer(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
         name = "DirectionalLight Shadow",
         width = SHADOWMAP_RESOLUTION,
         height = SHADOWMAP_RESOLUTION,
@@ -60,8 +63,10 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
     }
 
     private fun drawShadowMap(renderState: RenderState, firstPassResult: FirstPassResult) {
+        gpuContext.disable(BLEND)
         gpuContext.depthMask(true)
         gpuContext.enable(DEPTH_TEST)
+        gpuContext.depthFunc(GlDepthFunc.LESS)
         gpuContext.disable(CULL_FACE)
 
         // TODO: Better instance culling
@@ -76,7 +81,7 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
 
         for (i in visibles.indices) {
             val e = visibles[i]
-            draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, directionalShadowPassProgram, !e.isVisible, true)
+            draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, directionalShadowPassProgram, false, false)
         }
         engineContext.textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)
         firstPassResult.directionalLightShadowMapWasRendered = true

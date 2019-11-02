@@ -340,7 +340,7 @@ float doAmbientOcclusion(in vec2 tcoord,in vec2 uv, in vec3 p, in vec3 cnorm) {
 }
 float getAmbientOcclusion(vec2 st) {
 
-    const bool useCrytekAO = false;
+    const bool useCrytekAO = true;
     if(useCrytekAO) {
         const vec2 vec[4] = {vec2(1,0),vec2(-1,0),
                     vec2(0,1),vec2(0,-1)};
@@ -366,7 +366,7 @@ float getAmbientOcclusion(vec2 st) {
         }
         ao/= float(iterations)*4.0;
 
-        return 1-ao;
+        return 1.0*(1-ao);
 
     } else {
         float ao = 1;
@@ -379,35 +379,33 @@ float getAmbientOcclusion(vec2 st) {
         int hf = NUM_SAMPLES/2;
 
         //calculate sampling rates:
-        float ratex = (1.0/screenWidth);
-        float ratey = (1.0/screenHeight);
-        float incx2 = ratex*8;//ao radius
-        float incy2 = ratey*8;
-        if (useAmbientOcclusion) {
-            for(int i=-hf; i < hf; i++) {
-                  for(int j=-hf; j < hf; j++) {
+        float ratex = (1.0f/screenWidth);
+        float ratey = (1.0f/screenHeight);
+        float incx2 = ratex*8.0f;//ao radius
+        float incy2 = ratey*8.0f;
+		for(int i=-hf; i < hf; i++) {
+			  for(int j=-hf; j < hf; j++) {
 
-                  if (i != 0 || j!= 0) {
+			  if (i != 0 || j!= 0) {
 
-                      vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
+				  vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
 
-                      float prof2g = texture2D(motionMap,st.xy+coords2*rand(st.xy)).b; // depth
-                      vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
+				  float prof2g = texture2D(motionMap,st.xy+coords2*rand(st.xy)).b; // depth
+				  vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
 
-                      //OCCLUSION:
-                      //calculate approximate pixel distance:
-                      vec3 dist2 = vec3(coords2,prof-prof2g);
-                      //calculate normal and sampling direction coherence:
-                      float coherence2 = dot(normalize(-coords2),normalize(vec2(norm2g.xy)));
-                      //if there is coherence, calculate occlusion:
-                      if (coherence2 > 0){
-                          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
-                          sum += clamp(pformfactor2*0.25,0.0,.075);//ao intensity;
-                      }
-                  }
-               }
-            }
-        }
+				  //OCCLUSION:
+				  //calculate approximate pixel distance:
+				  vec3 dist2 = vec3(coords2,prof-prof2g);
+				  //calculate normal and sampling direction coherence:
+				  float coherence2 = dot(normalize(-coords2),normalize(vec2(norm2g.xy)));
+				  //if there is coherence, calculate occlusion:
+				  if (coherence2 > 0){
+					  float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
+					  sum += clamp(pformfactor2*0.25,0.0,.075);//ao intensity;
+				  }
+			  }
+		   }
+		}
 
         ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
         return ao;
@@ -424,7 +422,7 @@ void main(void) {
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 
   	if(useAmbientOcclusion) {
-		out_AOScattering.r = 1.4*getAmbientOcclusion(st);
+		out_AOScattering.r = getAmbientOcclusion(st);
   	} else {
   		out_AOScattering.r = 1;
   	}

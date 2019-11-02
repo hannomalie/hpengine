@@ -1,6 +1,8 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.config.SimpleConfig
+import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
+import de.hanno.hpengine.engine.event.bus.EventBus
 import net.miginfocom.swing.MigLayout
 import javax.swing.JCheckBox
 import javax.swing.JComponent
@@ -13,7 +15,7 @@ import kotlin.reflect.jvm.javaType
 import javax.swing.BorderFactory
 
 
-class ConfigGrid(val config: SimpleConfig): JPanel() {
+class ConfigGrid(val config: SimpleConfig, val eventBus: EventBus): JPanel() {
     init {
         layout = MigLayout("wrap 1")
         getInputsPanelForObject(config.debug, "Debug")?.let { add(it) }
@@ -44,7 +46,10 @@ class ConfigGrid(val config: SimpleConfig): JPanel() {
     private fun <R> KMutableProperty1<R, Boolean>.toCheckBox(receiver: R): JCheckBox {
         return JCheckBox(name).apply {
             isSelected = this@toCheckBox.get(receiver)
-            addActionListener { this@toCheckBox.set(receiver, isSelected) }
+            addActionListener {
+                this@toCheckBox.set(receiver, isSelected)
+                eventBus.post(GlobalDefineChangedEvent())
+            }
         }
     }
     private fun <R> KProperty1<R, Boolean>.toCheckBox(receiver: R): JCheckBox {

@@ -394,7 +394,7 @@ void main(void) {
 	float resultingAdditiveness = ((additiveness * (1-resultingRevealage)) / 4) + additiveness * resultingRevealage;
 	resultingAdditiveness += min(2*(1-resultingRevealage), 1);
 
-	vec4 AOscattering = textureLod(aoScattering, st, 0);
+	vec4 AOscattering = textureLod(aoScattering, st, 3);
 	vec3 scattering = AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;

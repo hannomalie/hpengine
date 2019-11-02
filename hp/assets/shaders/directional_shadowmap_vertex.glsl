@@ -3,6 +3,7 @@ in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
 
+uniform int indirect = 1;
 uniform int entityIndex;
 uniform int entityBaseIndex;
 
@@ -26,15 +27,16 @@ layout(std430, binding=2) buffer _directionalLight {
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
+layout(std430, binding=4) buffer _entityOffsets {
+	int entityOffsets[2000];
+};
 
 void main()
 {
-    int entityBufferIndex = entityBaseIndex + gl_InstanceID;
-    Entity entity = entities[entityBufferIndex];
-    //outEntityIndex = entityIndex;
-    //outEntity = entity;
-    //Material material = materials[int(entity.materialIndex)];
-    //outMaterial = material;
+	int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
+
+	if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
+	Entity entity = entities[entityBufferIndex];
 
 
     mat4 projectionMatrix = directionalLight.projectionMatrix;
