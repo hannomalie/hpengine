@@ -22,7 +22,7 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-uniform vec3 eyePosition;
+uniform vec3 eyePosition = vec3(0);
 
 uniform bool useAmbientOcclusion = true;
 
@@ -255,7 +255,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	vec3 rayVector = worldPos.xyz - startPosition;
 	 
 	float rayLength = length(rayVector);
-	vec3 rayDirection = rayVector / rayLength;
+	vec3 rayDirection = rayVector / vec3(rayLength);
 	 
 	float stepLength = rayLength / NB_STEPS;
 	 
@@ -263,8 +263,8 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	 
 	vec3 currentPosition = startPosition;
 	 
-	vec3 accumFog = vec3(0,0,0);
-	vec3 accumFogShadow = vec3(0,0,0);
+	vec3 accumFog = vec3(0);
+	vec3 accumFogShadow = vec3(0);
 	 
 	for (int i = 0; i < NB_STEPS; i++)
 	{
@@ -275,50 +275,50 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
     	
     	float ditherValue = ditherPattern[int(gl_FragCoord.x) % 4 + int(gl_FragCoord.y) % 4];
     	
-		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
+		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord, 0).r;
 
-		 float NdotL = clamp(dot(rayDirection, directionalLight.direction), 0, 1);
-		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
-		{
-			accumFog += ComputeScattering(NdotL);
-			for(int lightIndex = 0; lightIndex < pointLightCount; lightIndex++) {
-			    PointLight pointLight = pointLights[lightIndex];
+		bool notInShadow = shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001);
+		if (notInShadow) {
+			float NdotL = clamp(dot(normalize(rayDirection), normalize(directionalLight.direction)), 0.0, 1.0);
+			accumFog += vec3(0.25f*directionalLight.scatterFactor) * vec3(ComputeScattering(NdotL)) * directionalLight.color;
+		}
+		for(int lightIndex = 0; lightIndex < pointLightCount; lightIndex++) {
+			PointLight pointLight = pointLights[lightIndex];
 
-			    vec3 pointLightPosition = pointLight.position;
-			    if(isInsideSphere(currentPosition, pointLightPosition, float(pointLight.radius))){
-                    accumFog += ComputeScattering(distance(currentPosition, pointLightPosition)/float(pointLight.radius)) + getVisibilityCubemap(currentPosition, lightIndex, pointLight);
-			    }
+			vec3 pointLightPosition = pointLight.position;
+			if(isInsideSphere(currentPosition, pointLightPosition, float(pointLight.radius))){
+				float visibilityPointLight = getVisibilityCubemap(currentPosition, lightIndex, pointLight);
+				float attenuationPointLight = distance(currentPosition, pointLightPosition)/float(pointLight.radius);
+				accumFog += pointLight.color * vec3(ComputeScattering(attenuationPointLight)) * visibilityPointLight;
 			}
 		}
-		{
-			if(useVoxelGrid == 1) {
-			    float mipLevel = 2.5f;
-				vec3 randomPosition = currentPosition/30.0f;
-				float rand = surface3(randomPosition + vec3(0.0003f)*vec3(time%1000000), 0.5f);
-				for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
-                    VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+		if(useVoxelGrid == 1) {
+			float mipLevel = 2.5f;
+			vec3 randomPosition = currentPosition/30.0f;
+			float rand = surface3(randomPosition + vec3(0.0003f)*vec3(time%1000000), 0.5f);
+			for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+				VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
 #ifdef BINDLESS_TEXTURES
-					sampler3D gridSampler = toSampler(voxelGrid.gridHandle);
-					vec4 voxel = voxelFetch(voxelGrid, gridSampler, currentPosition, mipLevel);
+				sampler3D gridSampler = toSampler(voxelGrid.gridHandle);
+				vec4 voxel = voxelFetch(voxelGrid, gridSampler, currentPosition, mipLevel);
 #else
-					vec4 voxel = voxelFetch(voxelGrid, grid, currentPosition, mipLevel);
+				vec4 voxel = voxelFetch(voxelGrid, grid, currentPosition, mipLevel);
 #endif
-                    accumFogShadow += 3.5*rand*voxel.rgb;
-                }
+				accumFogShadow += 3.5*rand*voxel.rgb;
+			}
 
-                const float maxFogHeight = 5;
-                const bool useGroundFog = false;
-                if(useGroundFog) {
-                    float z = 1-clamp(distance(currentPosition.y, 0)/maxFogHeight, 0, 1);
-//			        accumFogShadow += 0.02*(vec2(1)-vec2(rand))*mix(0, 1, z);
-                }
+			const float maxFogHeight = 5;
+			const bool useGroundFog = false;
+			if(useGroundFog) {
+				float z = 1-clamp(distance(currentPosition.y, 0)/maxFogHeight, 0, 1);
+				accumFogShadow += 0.02*(vec3(1)-vec3(rand))*mix(0, 1, z);
 			}
 		}
 
 		currentPosition += step;
 	}
 	accumFog /= NB_STEPS;
-	return (accumFog * directionalLight.color) + accumFogShadow;
+	return clamp(accumFog + accumFogShadow, vec3(0.0f), vec3(10.0f));
 }
 
 vec3 getPosition(in vec2 uv) {
@@ -346,7 +346,7 @@ float getAmbientOcclusion(vec2 st) {
                     vec2(0,1),vec2(0,-1)};
         vec3 p = getPosition(st);
         vec3 n = getNormal(st);
-        vec2 rand = vec2(rand(st), rand(vec2(1)-st));
+        vec2 rand = vec2(snoise(st), snoise(1-st));//vec2(rand(st), rand(vec2(1)-st));
         float g_sample_rad = 10;
 
         float ao = 0.0f;
@@ -416,19 +416,17 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
 
-	float depth = texture2D(normalMap, st).w;
-	vec3 positionView = texture2D(positionMap, st).xyz;
+	float depth = textureLod(normalMap, st, 0).w;
+	vec3 positionView = textureLod(positionMap, st, 0).xyz;
   	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 
+	vec4 result = vec4(0,0,0,0);
   	if(useAmbientOcclusion) {
-		out_AOScattering.r = getAmbientOcclusion(st);
-  	} else {
-  		out_AOScattering.r = 1;
+		result.r = getAmbientOcclusion(st);
   	}
   	if(SCATTERING) {
-  		out_AOScattering.gba += 0.25*directionalLight.scatterFactor * scatter(positionWorld, eyePosition);
-  	} else {
-  		out_AOScattering.gba = vec3(0,0,0);
+  		result.gba = 10*directionalLight.scatterFactor * scatter(positionWorld, eyePosition);
   	}
+	out_AOScattering = result;
 }

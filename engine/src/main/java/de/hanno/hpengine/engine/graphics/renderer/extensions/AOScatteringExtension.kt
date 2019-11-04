@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
+import org.lwjgl.opengl.GL11
 
 class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
     val gBuffer = engineContext.deferredRenderingBuffer
@@ -22,7 +23,10 @@ class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExt
             if (!engineContext.config.quality.isUseAmbientOcclusion && !engineContext.config.effects.isScattering) {
                 return
             }
+
             gpuContext.disable(GlCap.DEPTH_TEST)
+            aoScatteringProgram.use()
+
             gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, gBuffer.positionMap)
             gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.normalMap)
             gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
@@ -33,13 +37,12 @@ class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExt
                 gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
             }
 
-            aoScatteringProgram.use()
             aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition())
             aoScatteringProgram.setUniform("useAmbientOcclusion", engineContext.config.quality.isUseAmbientOcclusion)
             aoScatteringProgram.setUniform("ambientOcclusionRadius", engineContext.config.effects.ambientocclusionRadius)
             aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", engineContext.config.effects.ambientocclusionTotalStrength)
-            aoScatteringProgram.setUniform("screenWidth", engineContext.config.width.toFloat() / 2)
-            aoScatteringProgram.setUniform("screenHeight", engineContext.config.height.toFloat() / 2)
+            aoScatteringProgram.setUniform("screenWidth", engineContext.config.width.toFloat() / 2f)
+            aoScatteringProgram.setUniform("screenHeight", engineContext.config.height.toFloat() / 2f)
             aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
             aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
             aoScatteringProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())

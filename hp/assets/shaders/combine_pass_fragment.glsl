@@ -395,7 +395,7 @@ void main(void) {
 	resultingAdditiveness += min(2*(1-resultingRevealage), 1);
 
 	vec4 AOscattering = textureLod(aoScattering, st, 3);
-	vec3 scattering = AOscattering.gba;
+	vec3 scattering = textureLod(aoScattering, st, 2).gba;//AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
@@ -407,17 +407,17 @@ void main(void) {
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 
 	vec3 ambientTerm = ambientColor*environmentLight;
+	if(useAmbientOcclusion) {
+		ambientTerm *= clamp(ao,0,1);
+	}
 
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 //	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
-    if(useAmbientOcclusion) {
-	    out_color.rgb *= clamp(ao,0,1);
-    }
 	out_color.rgb = out_color.rgb * (1-resultingRevealage) + (resultingAdditiveness * averageColor.rgb);// * (1-resultingRevealage);
 
-	out_color.rgb += (scattering.rgb); //scattering
+	out_color.rgb += (scattering.rgb);
 
 	float autoExposure = exposure;
 	if(!AUTO_EXPOSURE_ENABLED) { autoExposure = worldExposure; }
