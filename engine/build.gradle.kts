@@ -74,8 +74,8 @@ dependencies {
     compile(kotlin("stdlib-jdk8"))
     compile(kotlin("reflect"))
     compile("javax.inject:javax.inject:1")
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0-alpha-2")
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0-alpha-2")
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
     compile(kotlin("compiler-embeddable"))
 
 

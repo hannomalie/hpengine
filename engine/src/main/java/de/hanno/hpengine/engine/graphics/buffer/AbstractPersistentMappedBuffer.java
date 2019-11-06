@@ -53,6 +53,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
                         id = -1;
                     }
                     unbind();
+                    buffer = null;
                 });
             } else {
                 return;

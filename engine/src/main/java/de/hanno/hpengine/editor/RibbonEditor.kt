@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
@@ -33,9 +34,11 @@ import org.pushingpixels.flamingo.api.common.projection.CommandStripProjection
 import org.pushingpixels.flamingo.api.ribbon.JFlowRibbonBand
 import org.pushingpixels.flamingo.api.ribbon.JRibbonBand
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
+import org.pushingpixels.flamingo.api.ribbon.RibbonApplicationMenu
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.flamingo.api.ribbon.model.RibbonGalleryContentModel
 import org.pushingpixels.flamingo.api.ribbon.model.RibbonGalleryPresentationModel
+import org.pushingpixels.flamingo.api.ribbon.projection.RibbonApplicationMenuCommandButtonProjection
 import org.pushingpixels.flamingo.api.ribbon.projection.RibbonGalleryProjection
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.ComponentPresentationModel
@@ -54,15 +57,30 @@ import java.util.ArrayList
 import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
-import javax.swing.JComboBox
 import javax.swing.JFileChooser
 import javax.swing.JPanel
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
-import kotlin.experimental.and
 
 
 class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFrame("HPEngine"), RenderSystem {
+    val appMenuNew = Command.builder()
+        .setText("New Scene")
+        .setIconFactory { getResizableIconFromSvgResource("create_new_folder-24px.svg") }
+        .setExtraText("Creates an empty scene")
+        .setAction { engine.sceneManager.scene = SimpleScene("Scene_${System.currentTimeMillis()}", engine) }
+        .build()
+    val applicationMenu = RibbonApplicationMenu(CommandGroup(appMenuNew))
+
+    val ribbonMenuCommandProjection = RibbonApplicationMenuCommandButtonProjection(
+        Command.builder()
+            .setText("Application")
+            .setSecondaryContentModel(applicationMenu)
+            .build(), CommandButtonPresentationModel.builder().build()).apply {
+
+        ribbon.setApplicationMenuCommand(this)
+    }
+
     val finalTexture = engine.deferredRenderingBuffer.finalBuffer.textures.first()
     val image = BufferedImage(finalTexture.dimension.width, finalTexture.dimension.height, BufferedImage.TYPE_INT_ARGB)
 
@@ -88,6 +106,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     val keyLogger = KeyLogger().apply {
         addKeyListener(this)
     }
+
     fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
 
     var constraintAxis = AxisConstraint.None
@@ -116,7 +135,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         addSceneTask()
         addTransformTask()
         addTextureTask()
-        addConfigTask()
+        addConfigAnchoredCommand()
 
         defaultCloseOperation = EXIT_ON_CLOSE
         isVisible = true
@@ -156,9 +175,9 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                     .setItems(renderTargetTextures.toTypedArray())
                     .build()
 
-            directTextureOutputComboBoxModel.addListDataListener(object: ListDataListener {
-                override fun intervalRemoved(e: ListDataEvent?) { }
-                override fun intervalAdded(e: ListDataEvent?) { }
+            directTextureOutputComboBoxModel.addListDataListener(object : ListDataListener {
+                override fun intervalRemoved(e: ListDataEvent?) {}
+                override fun intervalAdded(e: ListDataEvent?) {}
 
                 override fun contentsChanged(e: ListDataEvent) {
                     val newSelection = directTextureOutputComboBoxModel.selectedItem as DirectTextureOutputItem
@@ -182,21 +201,21 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
             val commands = listOf(Pair(AxisConstraint.X, ::constraintAxis), Pair(AxisConstraint.Y, ::constraintAxis), Pair(AxisConstraint.Z, ::constraintAxis)).map {
                 Command.builder()
-                    .setToggle()
-                    .setText(it.first.toString())
-                    .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
-                    .inToggleGroup(translateAxisToggleGroup)
-                    .setAction { event ->
-                        if (it.second.get() == it.first) it.second.set(AxisConstraint.None) else it.second.set(it.first)
-                        event.command.isToggleSelected = it.second.get() == it.first
-                    }
-                    .build()
+                        .setToggle()
+                        .setText(it.first.toString())
+                        .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                        .inToggleGroup(translateAxisToggleGroup)
+                        .setAction { event ->
+                            if (it.second.get() == it.first) it.second.set(AxisConstraint.None) else it.second.set(it.first)
+                            event.command.isToggleSelected = it.second.get() == it.first
+                        }
+                        .build()
             }
             val translateCommandGroup = CommandGroup(commands)
             val projection = CommandStripProjection(translateCommandGroup,
-                CommandStripPresentationModel.builder()
-                    .setCommandPresentationState(CommandButtonPresentationState.SMALL)
-                    .build())
+                    CommandStripPresentationModel.builder()
+                            .setCommandPresentationState(CommandButtonPresentationState.SMALL)
+                            .build())
             addFlowComponent(projection)
         }
         val transformTask = RibbonTask("Translate", translateBand)
@@ -227,31 +246,27 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         addTask(sceneTask)
     }
 
-    private fun addConfigTask() {
-        val configBand = JRibbonBand("Config", null).apply {
-            val command = Command.builder()
-                    .setText("Show")
-                    .setToggle()
-                    .setIconFactory { getResizableIconFromSvgResource("settings_applications-24px.svg") }
-                    .setAction { event ->
-                        if(event.command.isToggleSelected) {
-                            mainPanel.setContent(
+    private fun addConfigAnchoredCommand() {
+        val command = Command.builder()
+                .setText("Show Config")
+                .setToggle()
+                .setIconFactory { getResizableIconFromSvgResource("settings_applications-24px.svg") }
+                .setAction { event ->
+                    if (event.command.isToggleSelected) {
+                        mainPanel.setContent(
                                 ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
                                     this.preferredSize = Dimension(mainPanel.width, mainPanel.height)
                                 }
-                            )
-                        } else {
-                            mainPanel.setContent(imageLabel)
-                        }
-                    }.build()
-            addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
-                    .setTextClickAction()
-                    .build()), JRibbonBand.PresentationPriority.TOP)
-            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
-        }
+                        )
+                    } else {
+                        mainPanel.setContent(imageLabel)
+                    }
+                }.build()
 
-        val configTaskTask = RibbonTask("Config", configBand)
-        addTask(configTaskTask)
+        ribbon.addAnchoredCommand(command.project(CommandButtonPresentationModel.builder()
+                .setTextClickAction()
+                .build()))
+
     }
 
     private fun addTextureTask() {
@@ -279,41 +294,41 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
             val textureCommands = retrieveTextureCommands()
             val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { getResizableIconFromSvgResource("add-24px.svg") },
-                listOf(CommandGroup("Available textures", textureCommands))
+                    listOf(CommandGroup("Available textures", textureCommands))
             )
             val stylesGalleryVisibleCommandCounts = mapOf(
-                JRibbonBand.PresentationPriority.LOW to 1,
-                JRibbonBand.PresentationPriority.MEDIUM to 2,
-                JRibbonBand.PresentationPriority.TOP to 3
+                    JRibbonBand.PresentationPriority.LOW to 1,
+                    JRibbonBand.PresentationPriority.MEDIUM to 2,
+                    JRibbonBand.PresentationPriority.TOP to 3
             )
 
             val galleryProjection = RibbonGalleryProjection(contentModel, RibbonGalleryPresentationModel.builder()
-                .setPreferredVisibleCommandCounts(stylesGalleryVisibleCommandCounts)
-                .setPreferredPopupMaxVisibleCommandRows(3)
-                .setPreferredPopupMaxCommandColumns(3)
-                .setCommandPresentationState(JRibbonBand.BIG_FIXED_LANDSCAPE)
-                .setExpandKeyTip("L")
-                .build())
+                    .setPreferredVisibleCommandCounts(stylesGalleryVisibleCommandCounts)
+                    .setPreferredPopupMaxVisibleCommandRows(3)
+                    .setPreferredPopupMaxCommandColumns(3)
+                    .setCommandPresentationState(JRibbonBand.BIG_FIXED_LANDSCAPE)
+                    .setExpandKeyTip("L")
+                    .build())
             addRibbonGallery(galleryProjection, JRibbonBand.PresentationPriority.TOP)
 
             val refreshTexturesCommand = Command.builder()
-                .setText("Refresh")
-                .setIconFactory { getResizableIconFromSvgResource("refresh-24px.svg") }
-                .setAction {
-                    contentModel.getCommandGroupByTitle("Available textures").apply {
-                        SwingUtils.invokeLater {
-                            removeAllCommands()
-                            retrieveTextureCommands().forEach {
-                                addCommand(it)
+                    .setText("Refresh")
+                    .setIconFactory { getResizableIconFromSvgResource("refresh-24px.svg") }
+                    .setAction {
+                        contentModel.getCommandGroupByTitle("Available textures").apply {
+                            SwingUtils.invokeLater {
+                                removeAllCommands()
+                                retrieveTextureCommands().forEach {
+                                    addCommand(it)
+                                }
                             }
                         }
                     }
-                }
-                .setActionRichTooltip(RichTooltip.builder()
-                        .setTitle("Refresh textures")
-                        .addDescriptionSection("Populates the gallery with the current set of available textures")
-                        .build())
-                .build()
+                    .setActionRichTooltip(RichTooltip.builder()
+                            .setTitle("Refresh textures")
+                            .addDescriptionSection("Populates the gallery with the current set of available textures")
+                            .build())
+                    .build()
             addRibbonCommand(refreshTexturesCommand.project(CommandButtonPresentationModel.builder()
                     .setTextClickAction()
                     .build()), JRibbonBand.PresentationPriority.TOP)
@@ -337,7 +352,9 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         }
     }
 
-    override fun render(result: DrawResult, state: RenderState) {
+    override fun render(result: DrawResult, state: RenderState) {}
+
+    override fun afterFrameFinished() {
         bufferImage()
         imageLabel.repaint()
     }
@@ -354,11 +371,8 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
             if (format != GL_RGBA8) throw IllegalStateException("Unexpected format")
             val channels = 4
-
             val buffer = BufferUtils.createByteBuffer(width * height * channels)
-
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
-
 
             image.setData(width, height, channels, buffer)
         }
@@ -392,6 +406,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         fun getResizableIconFromImageSource(resource: String): ResizableIcon {
             return ImageWrapperResizableIcon.getIcon(RibbonEditor::class.java.classLoader.getResource(resource), Dimension(24, 24))
         }
+
         fun getResizableIconFromImageSource(image: Image): ResizableIcon {
             return ImageWrapperResizableIcon.getIcon(image, Dimension(24, 24))
         }

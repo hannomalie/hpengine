@@ -26,10 +26,12 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer {
         ByteBuffer byteBuffer = glMapBufferRange(target,
                 0, capacityInBytes,
                 flags,
-                null);//xxxx);//LibCStdlib.malloc(capacityInBytes));//
+                null);
+//                xxxx);
         if(buffer != null) {
 //            TODO: This causes segfaults in Unsafe class, wtf...
             byteBuffer.put(buffer);
+
             byteBuffer.rewind();
         }
         return byteBuffer;

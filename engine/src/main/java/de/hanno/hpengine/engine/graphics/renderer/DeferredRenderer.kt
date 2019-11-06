@@ -317,7 +317,6 @@ class DeferredRenderer
                 backend.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
                 backend.gpuContext.bindTexture(4, TEXTURE_2D, backend.textureManager.lensFlareTexture.id)
                 gpuContext.fullscreenBuffer.draw()
-
             }
         } else {
             backend.gpuContext.disable(DEPTH_TEST)

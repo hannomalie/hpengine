@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderEx
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
@@ -29,6 +30,8 @@ import java.io.File
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
     val combinePassExtension = CombinePassRenderExtension(engineContext)
+    val postProcessingExtension = PostProcessingExtension(engineContext)
+
     val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
     val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
 
@@ -98,7 +101,11 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         }
 
         runCatching {
-            textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
+            if(config.effects.isEnablePostprocessing) {
+                postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
+            } else {
+                textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
+            }
         }.onFailure { println("Not able to render texture") }
 
     }
