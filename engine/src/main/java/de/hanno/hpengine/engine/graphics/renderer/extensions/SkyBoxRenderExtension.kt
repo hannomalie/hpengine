@@ -59,7 +59,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
         skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.transformation.get(modelMatrixBuffer))
         skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
-        gpuContext.bindTexture(6, backend.textureManager.cubeMap!!)
+        gpuContext.bindTexture(6, backend.textureManager.cubeMap)
         draw(skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
 
     }

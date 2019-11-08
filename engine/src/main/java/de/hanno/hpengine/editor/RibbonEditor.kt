@@ -344,10 +344,10 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             if (it is FileBasedTexture2D) {
                 val image = ImageIO.read(File(it.file.absolutePath))
                 Command.builder()
-                        .setText(it.file.name)
-                        .setIconFactory { getResizableIconFromImageSource(image) }
-                        .setToggle()
-                        .build()
+                    .setText(it.file.name)
+                    .setIconFactory { getResizableIconFromImageSource(image) }
+                    .setToggle()
+                    .build()
             } else null
         }
     }

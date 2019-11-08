@@ -71,7 +71,7 @@ void main(void) {
     out_normal = vec4(normal_view, depth);
     out_normal.a = 1;
     vec3 sampleVector = -normalize(pass_WorldPosition.xyz-eyePos_world.xyz);
-    out_color.rgb = textureLod(environmentMap, -sampleVector, 0).rgb;
+    out_color.rgb = 0.25*textureLod(environmentMap, -sampleVector, 0).rgb; // compensate for ambient term
     out_motion = vec4(0,0,depth,0);
     out_visibility = vec4(1, 1, materialIndex, 0);
     gl_FragDepth = 0.99999;
