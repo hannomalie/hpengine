@@ -124,6 +124,7 @@ dependencies {
     compile("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
     compile("org.pushing-pixels:radiance-flamingo:$radianceVersion")
     compile("org.pushing-pixels:radiance-photon:$radianceVersion")
+    compile("org.pushing-pixels:radiance-meteor:$radianceVersion")
     compile("com.miglayout:miglayout:3.7.4")
 
     testCompile("junit:junit:4.12")
