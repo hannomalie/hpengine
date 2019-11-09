@@ -43,18 +43,11 @@ open class Camera @JvmOverloads constructor(
     var ratio = ratio
         set(value) {
             field = value
-            calculateProjectionMatrix()
-            frustum.calculate(this)
+            updateProjectionMatrixAndFrustum()
         }
-    @Transient
     var viewProjectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-        internal set
-    @Transient
     var projectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-        internal set
-    @Transient
     var lastViewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-        internal set
     val viewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
 
     var viewMatrix = Matrix4f()
@@ -65,28 +58,33 @@ open class Camera @JvmOverloads constructor(
     var viewProjectionMatrix = Matrix4f()
 
     var frustum = Frustum()
-        protected set
 
-    private var near = 1f
-    private var far = 7000f
-    var fov = 60f
+    var near = 1f
         set(value) {
             field = value
-            calculateProjectionMatrix()
-            frustum.calculate(this)
+            updateProjectionMatrixAndFrustum()
+        }
+    var far = 7000f
+        set(value) {
+            field = value
+            updateProjectionMatrixAndFrustum()
+        }
+
+    var fov = Defaults.fov
+        set(value) {
+            field = value
+            updateProjectionMatrixAndFrustum()
         }
 
     var width = 1600f
         set(width) {
             field = width
-            calculateProjectionMatrix()
-            frustum.calculate(this)
+            updateProjectionMatrixAndFrustum()
         }
     var height = 1600f
         set(height) {
             field = height
-            calculateProjectionMatrix()
-            frustum.calculate(this)
+            updateProjectionMatrixAndFrustum()
         }
 
     var perspective = true
@@ -127,7 +125,7 @@ open class Camera @JvmOverloads constructor(
 
     fun init(camera: Camera) {
         entity.set(camera.entity)
-        init(camera.projectionMatrix, camera.getNear(), camera.getFar(),
+        init(camera.projectionMatrix, camera.near, camera.far,
              camera.fov, camera.ratio, camera.exposure,
              camera.focalDepth, camera.focalLength, camera.fStop)
         if (camera.entity.hasParent()) {
@@ -194,25 +192,9 @@ open class Camera @JvmOverloads constructor(
         lastViewMatrixAsBuffer.rewind()
     }
 
-    fun getNear(): Float {
-        return near
-    }
-
-    fun setNear(near: Float) {
-        this.near = near
+    private fun updateProjectionMatrixAndFrustum() {
         calculateProjectionMatrix()
         frustum.calculate(this)
-    }
-
-
-    fun setFar(far: Float) {
-        this.far = far
-        calculateProjectionMatrix()
-        frustum.calculate(this)
-    }
-
-    fun getFar(): Float {
-        return far
     }
 
     private fun calculateProjectionMatrix() {
@@ -223,20 +205,6 @@ open class Camera @JvmOverloads constructor(
         }
     }
 
-
-    @Throws(IOException::class, ClassNotFoundException::class)
-    private fun readObject(`in`: java.io.ObjectInputStream) {
-        `in`.defaultReadObject()
-        viewProjectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-        projectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-        lastViewMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
-    }
-
-
-    @Throws(IOException::class)
-    private fun writeObject(oos: ObjectOutputStream) {
-        oos.defaultWriteObject()
-    }
 
     fun getViewDirection() = entity.viewDirection
     fun getRightDirection() = entity.rightDirection

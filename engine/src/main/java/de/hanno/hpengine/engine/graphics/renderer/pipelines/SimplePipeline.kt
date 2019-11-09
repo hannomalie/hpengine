@@ -180,8 +180,8 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
     setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer)
 
     setUniform("eyePosition", camera.getPosition())
-    setUniform("near", camera.getNear())
-    setUniform("far", camera.getFar())
+    setUniform("near", camera.near)
+    setUniform("far", camera.far)
     setUniform("timeGpu", System.currentTimeMillis().toInt())
     setUniform("useParallax", config.quality.isUseParallax)
     setUniform("useSteepParallax", config.quality.isUseSteepParallax)

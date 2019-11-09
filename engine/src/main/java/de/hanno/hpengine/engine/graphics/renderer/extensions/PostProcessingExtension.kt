@@ -31,8 +31,8 @@ class PostProcessingExtension(val engineContext: EngineContext<OpenGl>): RenderE
             postProcessProgram.setUniform("focalDepth", renderState.camera.focalDepth)
             postProcessProgram.setUniform("focalLength", renderState.camera.focalLength)
             postProcessProgram.setUniform("fstop", renderState.camera.fStop)
-            postProcessProgram.setUniform("znear", renderState.camera.getNear())
-            postProcessProgram.setUniform("zfar", renderState.camera.getFar())
+            postProcessProgram.setUniform("znear", renderState.camera.near)
+            postProcessProgram.setUniform("zfar", renderState.camera.far)
 
             postProcessProgram.setUniform("seconds", renderState.deltaInS)
             postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)

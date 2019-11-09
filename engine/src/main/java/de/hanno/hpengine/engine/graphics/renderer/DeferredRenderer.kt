@@ -227,7 +227,7 @@ class DeferredRenderer
                 val secondPassResult = result.secondPassResult
                 val camera1 = state.camera
                 val camPosition = Vector3f(camera1.getPosition())
-                camPosition.add(camera1.getViewDirection().mul(-camera1.getNear()))
+                camPosition.add(camera1.getViewDirection().mul(-camera1.near))
                 val camPositionV4 = Vector4f(camPosition.x, camPosition.y, camPosition.z, 0f)
 
                 val viewMatrix = camera1.viewMatrixAsBuffer
