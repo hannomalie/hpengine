@@ -3,9 +3,9 @@ package de.hanno.hpengine.editor
 import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.GL_RGBA
 import org.lwjgl.opengl.GL11.GL_RGBA8
@@ -142,6 +143,13 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                                             }
                                         }
                                     })
+                                    add(JMenu("Light").apply {
+                                        add(JMenuItem("PointLight").apply {
+                                            addActionListener {
+                                                selection.addComponent(PointLight(selection, Vector4f(1f,1f,1f,1f), 10f))
+                                            }
+                                        })
+                                    })
                                 }
                             )
                             show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
@@ -184,6 +192,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
 
     var constraintAxis = AxisConstraint.None
+    var transformMode = TransformMode.None
 
     val entitySelector = EntitySelector(this).apply {
         engine.renderSystems.add(this)
@@ -268,31 +277,61 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     }
 
     private fun addTransformTask() {
-        val translateBand = JFlowRibbonBand("Active Axes", null).apply {
+        val activeAxesBand = JFlowRibbonBand("Active Axes", null).apply {
             resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
 
-            val translateAxisToggleGroup = CommandToggleGroupModel();
+            val transformAxisToggleGroup = CommandToggleGroupModel()
 
-            val commands = listOf(Pair(AxisConstraint.X, ::constraintAxis), Pair(AxisConstraint.Y, ::constraintAxis), Pair(AxisConstraint.Z, ::constraintAxis)).map {
+            val commands = listOf(
+                    Pair(AxisConstraint.X, ::constraintAxis),
+                    Pair(AxisConstraint.Y, ::constraintAxis),
+                    Pair(AxisConstraint.Z, ::constraintAxis)).map {
                 Command.builder()
                         .setToggle()
                         .setText(it.first.toString())
                         .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
-                        .inToggleGroup(translateAxisToggleGroup)
+                        .inToggleGroup(transformAxisToggleGroup)
                         .setAction { event ->
                             if (it.second.get() == it.first) it.second.set(AxisConstraint.None) else it.second.set(it.first)
                             event.command.isToggleSelected = it.second.get() == it.first
                         }
                         .build()
             }
-            val translateCommandGroup = CommandGroup(commands)
-            val projection = CommandStripProjection(translateCommandGroup,
+            val translateCommandGroupProjection = CommandStripProjection(CommandGroup(commands),
                     CommandStripPresentationModel.builder()
-                            .setCommandPresentationState(CommandButtonPresentationState.SMALL)
+                            .setCommandPresentationState(CommandButtonPresentationState.MEDIUM)
                             .build())
-            addFlowComponent(projection)
+            addFlowComponent(translateCommandGroupProjection)
         }
-        val transformTask = RibbonTask("Translate", translateBand)
+
+        val transformModeBand = JFlowRibbonBand("Transform Mode", null).apply {
+            resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
+
+            val transformModeToggleGroup = CommandToggleGroupModel()
+
+            val commands = listOf(
+                    Pair(TransformMode.Translate, ::transformMode),
+                    Pair(TransformMode.Rotate, ::transformMode),
+                    Pair(TransformMode.Scale, ::transformMode)).map {
+                Command.builder()
+                        .setToggle()
+                        .setText(it.first.toString())
+                        .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                        .inToggleGroup(transformModeToggleGroup)
+                        .setAction { event ->
+                            if (it.second.get() == it.first) it.second.set(TransformMode.None) else it.second.set(it.first)
+                            event.command.isToggleSelected = it.second.get() == it.first
+                        }
+                        .build()
+            }
+            val transformModeCommandGroupProjection = CommandStripProjection(CommandGroup(commands),
+                    CommandStripPresentationModel.builder()
+                            .setCommandPresentationState(CommandButtonPresentationState.MEDIUM)
+                            .build())
+            addFlowComponent(transformModeCommandGroupProjection)
+        }
+
+        val transformTask = RibbonTask("Transform", activeAxesBand, transformModeBand)
 
         addTask(transformTask)
     }
@@ -492,6 +531,9 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
 enum class AxisConstraint {
     None, X, Y, Z
+}
+enum class TransformMode {
+    None, Translate, Rotate, Scale
 }
 
 fun JPanel.doWithRefresh(addContent: JPanel.() -> Unit) {

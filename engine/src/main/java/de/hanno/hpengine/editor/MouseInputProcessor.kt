@@ -57,10 +57,27 @@ class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<
 
             val moveAmountX = deltaX * turbo
             val moveAmountY = deltaY * turbo
-            when(editor.constraintAxis) {
-                AxisConstraint.X -> entityOrNull.set(Matrix4f().translation(Vector3f(moveAmountX, 0f, 0f)).mul(oldTransform))
-                AxisConstraint.Y -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, moveAmountY, 0f)).mul(oldTransform))
-                AxisConstraint.Z -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, 0f, moveAmountY)).mul(oldTransform))
+            val degreesX = Math.toDegrees(moveAmountX.toDouble()).toFloat() * 0.0001f
+            val degreesY = Math.toDegrees(moveAmountX.toDouble()).toFloat() * 0.0001f
+
+            fun handleTranslation() {
+                when(editor.constraintAxis) {
+                    AxisConstraint.X -> entityOrNull.set(Matrix4f().translation(Vector3f(moveAmountX, 0f, 0f)).mul(oldTransform))
+                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, moveAmountY, 0f)).mul(oldTransform))
+                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, 0f, moveAmountY)).mul(oldTransform))
+                }
+            }
+            fun handleRotation() {
+                when(editor.constraintAxis) {
+                    AxisConstraint.X -> entityOrNull.set(Matrix4f().rotateLocalX(degreesX)).mul(oldTransform)
+                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().rotateLocalY(degreesY)).mul(oldTransform)
+                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().rotateLocalZ(degreesY)).mul(oldTransform)
+                }
+            }
+            when(editor.transformMode) {
+                TransformMode.Translate -> handleTranslation()
+                TransformMode.Rotate -> handleRotation()
+                TransformMode.Scale -> TODO()
             }
         }
     }

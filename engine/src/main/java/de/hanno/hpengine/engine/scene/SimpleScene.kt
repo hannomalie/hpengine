@@ -58,7 +58,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     }
     private val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
     private val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
-    private val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem())
+    val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem())
     private val areaLightComponentSystem = componentSystems.register(AreaLightComponentSystem())
     private val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
 
