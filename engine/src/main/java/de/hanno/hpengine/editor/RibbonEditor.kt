@@ -2,6 +2,8 @@ package de.hanno.hpengine.editor
 
 import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
@@ -60,6 +62,7 @@ import java.util.ArrayList
 import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
+import javax.swing.JButton
 import javax.swing.JFileChooser
 import javax.swing.JMenu
 import javax.swing.JMenuItem
@@ -103,37 +106,57 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         var selectedTreeElement: Any? = null
 
         fun handleContextMenu(mouseEvent: MouseEvent) {
-            if (mouseEvent.isPopupTrigger) {
-                val contextMenu = JPopupMenu().apply {
-                    add(
-                        JMenu("Add").apply {
-                            add(JMenuItem("ModelComponent").apply {
+
+            if(mouseEvent.button == MouseEvent.BUTTON1) {
+
+                when(val selection = selectedTreeElement) {
+                    is Camera -> {
+                        sidePanel.doWithRefresh {
+                            add(JButton("Unselect").apply {
                                 addActionListener {
-                                    JFileChooser(engine.directories.gameDir).apply {
-                                        if(showOpenDialog(this@RibbonEditor) == JFileChooser.APPROVE_OPTION) {
-                                            val loadedModels = LoadModelCommand(selectedFile,
-                                                "Model_${System.currentTimeMillis()}",
-                                                engine.materialManager,
-                                                engine.directories.gameDir,
-                                                selectedTreeElement as? Entity).execute()
-                                            engine.scene.addAll(loadedModels.entities)
-                                        }
-                                    }
+                                    sidePanel.removeAll()
                                 }
                             })
+                            add(CameraGrid(selection))
                         }
-                    )
+                    }
                 }
+            } else if (mouseEvent.isPopupTrigger) {
 
-                val row = getClosestRowForLocation(mouseEvent.x, mouseEvent.y)
-                setSelectionRow(row)
-                selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
-                contextMenu.show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
+                when(val selection = selectedTreeElement) {
+                    is Entity -> {
+                        JPopupMenu().apply {
+                            add(
+                                JMenu("Add").apply {
+                                    add(JMenuItem("ModelComponent").apply {
+                                        addActionListener {
+                                            JFileChooser(engine.directories.gameDir).apply {
+                                                if(showOpenDialog(this@RibbonEditor) == JFileChooser.APPROVE_OPTION) {
+                                                    val loadedModels = LoadModelCommand(selectedFile,
+                                                            "Model_${System.currentTimeMillis()}",
+                                                            engine.materialManager,
+                                                            engine.directories.gameDir,
+                                                            selection).execute()
+                                                    engine.scene.addAll(loadedModels.entities)
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+                            )
+                            show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
+                        }
+                    }
+                }
             }
         }
 
         val mouseListener = object: MouseAdapter() {
             override fun mousePressed(mouseEvent: MouseEvent) {
+                val row = getClosestRowForLocation(mouseEvent.x, mouseEvent.y)
+                setSelectionRow(row)
+                selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
+
                 handleContextMenu(mouseEvent)
             }
 

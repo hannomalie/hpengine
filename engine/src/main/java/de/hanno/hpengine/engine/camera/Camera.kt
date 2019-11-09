@@ -12,40 +12,40 @@ import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
-import org.joml.*
+import org.joml.AxisAngle4f
+import org.joml.Matrix4f
+import org.joml.Quaternionf
+import org.joml.Vector3f
+import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import java.io.IOException
 import java.io.ObjectOutputStream
 import java.nio.FloatBuffer
 
-open class Camera: Component {
+object Defaults {
+    const val focalDepth = 1.84f
+    const val focalLength = 51f
+    const val fStop = 1.15f
+    const val fov = 60f
+}
 
-    override var entity: Entity
-
-    @JvmOverloads constructor(entity: Entity, ratio: Float = 1280f/720f) {
-        this.entity = entity
-        init(Util.createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio)
-        //this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
-    }
-
-    constructor(entity: Entity, near: Float, far: Float, fov: Float, ratio: Float) {
-        this.entity = entity
-        init(Util.createPerspective(fov, ratio, near, far), near, far, fov, ratio)
-    }
-
-    constructor(entity: Entity, camera: Camera) {
-        this.entity = entity
-        init(camera)
-    }
-
-    constructor(entity: Entity, projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float) {
-        this.entity = entity
-        init(projectionMatrix, near, far, fov, ratio)
-    }
+open class Camera @JvmOverloads constructor(
+        override var entity: Entity,
+        ratio: Float = 1280f/720f): Component {
 
     override val identifier = this.javaClass.simpleName
 
+    var exposure = 5f
+    var focalDepth = Defaults.focalDepth
+    var focalLength = Defaults.focalLength
+    var fStop = Defaults.fStop
 
+    var ratio = ratio
+        set(value) {
+            field = value
+            calculateProjectionMatrix()
+            frustum.calculate(this)
+        }
     @Transient
     var viewProjectionMatrixAsBuffer = BufferUtils.createFloatBuffer(16)
         internal set
@@ -69,8 +69,13 @@ open class Camera: Component {
 
     private var near = 1f
     private var far = 7000f
-    private var fov = 30f
-    private var ratio = 1280f/720f
+    var fov = 60f
+        set(value) {
+            field = value
+            calculateProjectionMatrix()
+            frustum.calculate(this)
+        }
+
     var width = 1600f
         set(width) {
             field = width
@@ -104,9 +109,27 @@ open class Camera: Component {
             return resultVec3.toTypedArray()
         }
 
+    init {
+        init(Util.createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
+    }
+
+    constructor(entity: Entity, near: Float, far: Float, fov: Float, ratio: Float): this(entity) {
+        init(Util.createPerspective(fov, ratio, near, far), near, far, fov, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
+    }
+
+    constructor(entity: Entity, camera: Camera): this(entity) {
+        init(camera)
+    }
+
+    constructor(entity: Entity, projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float): this(entity) {
+        init(projectionMatrix, near, far, fov, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
+    }
+
     fun init(camera: Camera) {
         entity.set(camera.entity)
-        init(camera.projectionMatrix, camera.getNear(), camera.getFar(), camera.getFov(), camera.getRatio())
+        init(camera.projectionMatrix, camera.getNear(), camera.getFar(),
+             camera.fov, camera.ratio, camera.exposure,
+             camera.focalDepth, camera.focalLength, camera.fStop)
         if (camera.entity.hasParent()) {
             val formerParent = camera.entity.parent
             entity.removeParent()
@@ -114,7 +137,14 @@ open class Camera: Component {
         }
     }
 
-    fun init(projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float) {
+    fun init(projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float,
+             exposure: Float, focalDepth: Float, focalLength: Float, fStop: Float) {
+
+        this.exposure = exposure
+        this.focalDepth = focalDepth
+        this.focalLength = focalLength
+        this.fStop = fStop
+
         this.near = near
         this.far = far
         this.fov = fov
@@ -191,26 +221,6 @@ open class Camera: Component {
         } else {
             projectionMatrix = Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
         }
-    }
-
-    fun setRatio(ratio: Float) {
-        this.ratio = ratio
-        calculateProjectionMatrix()
-        frustum.calculate(this)
-    }
-
-    fun setFov(fov: Float) {
-        this.fov = fov
-        calculateProjectionMatrix()
-        frustum.calculate(this)
-    }
-
-    fun getFov(): Float {
-        return fov
-    }
-
-    fun getRatio(): Float {
-        return ratio
     }
 
 

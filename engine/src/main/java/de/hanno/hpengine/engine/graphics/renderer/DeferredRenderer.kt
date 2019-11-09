@@ -303,7 +303,7 @@ class DeferredRenderer
                 backend.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.finalBuffer.getRenderedTexture(0))
                 postProcessProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
                 postProcessProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
-                postProcessProgram.setUniform("worldExposure", engineContext.config.effects.exposure)
+                postProcessProgram.setUniform("worldExposure", state.camera.exposure)
                 postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.effects.isAutoExposureEnabled)
                 postProcessProgram.setUniform("usePostProcessing", engineContext.config.effects.isEnablePostprocessing)
                 postProcessProgram.setUniform("cameraRightDirection", state.camera.getRightDirection())

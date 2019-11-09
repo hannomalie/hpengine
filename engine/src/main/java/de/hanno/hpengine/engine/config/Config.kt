@@ -67,12 +67,10 @@ interface IDebugConfig {
 }
 
 interface IEffectsConfig {
-    val cameraSpeed: Float
     val isScattering: Boolean
     val rainEffect: Float
     val ambientocclusionTotalStrength: Float
     val ambientocclusionRadius: Float
-    val exposure: Float
     val isUseBloom: Boolean
     val isAutoExposureEnabled: Boolean
     val isEnablePostprocessing: Boolean
@@ -122,15 +120,13 @@ data class DebugConfig(
 ) : IDebugConfig
 
 data class EffectsConfig(
-        override var cameraSpeed: Float = 1.0f,
-        override var isScattering: Boolean = false,
+        override var isScattering: Boolean = true,
         @Adjustable(minimum = 0, maximum = 100, minorTickSpacing = 5, majorTickSpacing = 10)
         override var rainEffect: Float = 0.0f,
         @Adjustable(maximum = 200, minorTickSpacing = 20, majorTickSpacing = 50)
         override var ambientocclusionTotalStrength: Float = 0.5f,
         override var ambientocclusionRadius: Float = 0.0250f,
         @Adjustable(minimum = 1, maximum = 40, factor = 1f, minorTickSpacing = 1, majorTickSpacing = 5)
-        override var exposure: Float = 5f,
         override var isUseBloom: Boolean = false,
         override var isAutoExposureEnabled: Boolean = false,
         override var isEnablePostprocessing: Boolean = false,

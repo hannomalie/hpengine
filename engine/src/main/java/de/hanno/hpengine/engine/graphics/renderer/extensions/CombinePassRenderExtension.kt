@@ -21,7 +21,7 @@ class CombinePassRenderExtension(val engineContext: EngineContext<OpenGl>): Rend
 
     fun renderCombinePass(state: RenderState, renderTarget: RenderTarget<Texture2D> = deferredRenderingBuffer.finalBuffer) {
         if(!engineContext.config.effects.isAutoExposureEnabled) {
-            deferredRenderingBuffer.exposureBuffer.putValues(0, engineContext.config.effects.exposure)
+            deferredRenderingBuffer.exposureBuffer.putValues(0, state.camera.exposure)
         }
         profiled("Combine pass") {
             renderTarget.use(gpuContext, false)
@@ -36,7 +36,7 @@ class CombinePassRenderExtension(val engineContext: EngineContext<OpenGl>): Rend
             combineProgram.setUniform("camPosition", state.camera.getPosition())
             combineProgram.setUniform("ambientColor", engineContext.config.effects.ambientLight)
             combineProgram.setUniform("useAmbientOcclusion", engineContext.config.quality.isUseAmbientOcclusion)
-            combineProgram.setUniform("worldExposure", engineContext.config.effects.exposure)
+            combineProgram.setUniform("worldExposure", state.camera.exposure)
             combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", engineContext.config.effects.isAutoExposureEnabled)
             combineProgram.setUniform("fullScreenMipmapCount", deferredRenderingBuffer.fullScreenMipmapCount)
             combineProgram.setUniform("activeProbeCount", state.environmentProbesState.activeProbeCount)

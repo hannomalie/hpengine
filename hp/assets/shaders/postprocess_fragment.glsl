@@ -45,19 +45,19 @@ float calculateMotionBlur(vec2 uv) {
 ///////////////////////////////////////
 #define PI  3.14159265
 //uniform variables from external script
-const float focalDepth = 110;  //focal distance value in meters, but you may use autofocus option below
-const float focalLength = 52.0; //focal length in mm
-const float fstop = 1.4;//0.7;//1.4; //f-stop value
+uniform float focalDepth = 110;  //focal distance value in meters, but you may use autofocus option below
+uniform float focalLength = 52.0; //focal length in mm
+uniform float fstop = 1.4;//0.7;//1.4; //f-stop value
 const bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
 /* 
 make sure that these two values are the same for your camera, otherwise distances will be wrong.
 */
 
-const float znear = 0.1; //camera clipping start
-const float zfar = 5000; //camera clipping end
-const float zScaleLinear = znear / zfar;
-const float zScaleLinearRev = zfar / znear;
+uniform float znear = 0.1f; //camera clipping start
+uniform float zfar = 5000.0f; //camera clipping end
+float zScaleLinear = znear / zfar;
+float zScaleLinearRev = zfar / znear;
 
 //------------------------------------------
 //user variables
@@ -80,7 +80,7 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 1.43; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 1.0f; //clamp value of max blur (0.0 = no blur,1.0 default)
 
 const float threshold = 10;//0.7595; //highlight threshold;
 const float gain = 24.0; //highlight gain;
@@ -108,7 +108,7 @@ const float feather = 0.5; //pentagon shape feather
 //------------------------------------------
 float readDepth(in vec2 coord, sampler2D tex)
 {
-	return texture2D(tex, coord).a * zScaleLinear;
+	return textureLod(tex, coord, 0).a * zScaleLinear;
 }
 float readDepth(float linDepth)
 {
