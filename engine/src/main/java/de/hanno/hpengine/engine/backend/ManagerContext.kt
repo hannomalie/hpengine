@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 
 interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
@@ -19,6 +20,8 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
     val directories: Directories
     val renderManager: RenderManager
     val physicsManager: PhysicsManager
+
+    fun onSetScene(nextScene: Scene)
 
     override val backend: Backend<TYPE>
         get() = engineContext.backend

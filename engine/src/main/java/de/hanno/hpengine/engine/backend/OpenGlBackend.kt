@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -74,5 +75,11 @@ class ManagerContextImpl(
         managers.register(renderManager)
         managers.register(physicsManager)
         engineContext.renderSystems.add(physicsManager)
+    }
+
+    override fun onSetScene(nextScene: Scene) {
+        for (manager in managers.managers) {
+            manager.value.onSetScene(nextScene)
+        }
     }
 }

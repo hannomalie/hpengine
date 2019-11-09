@@ -18,10 +18,18 @@ public class LoadModelCommand implements Command<EntityListResult> {
     private final String name;
     private MaterialManager materialManager;
     private final GameDirectory gameDir;
+    private Entity entity;
 
     public LoadModelCommand(File file, String name, MaterialManager materialManager, GameDirectory gameDir) {
+        this(file, name, materialManager, gameDir, null);
+    }
+    public LoadModelCommand(File file, String name, MaterialManager materialManager, GameDirectory gameDir, Entity entity) {
         this.materialManager = materialManager;
         this.gameDir = gameDir;
+        this.entity = entity;
+        if(this.entity == null) {
+            this.entity = new Entity(name);
+        }
         if(file == null) {
             throw new IllegalArgumentException("Passed file is null!");
         }
@@ -40,7 +48,6 @@ public class LoadModelCommand implements Command<EntityListResult> {
 
             List<Entity> entities = new ArrayList<>();
             Model model = getModel(materialManager, gameDir);
-            Entity entity = new Entity(name);
             ModelComponent modelComponent = new ModelComponent(entity, model);
             entity.addComponent(modelComponent);
 

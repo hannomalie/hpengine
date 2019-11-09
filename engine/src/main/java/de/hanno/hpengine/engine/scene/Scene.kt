@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystemRegistry
@@ -56,6 +57,8 @@ interface Scene : Updatable, Serializable {
 
         entityManager.entityAddedInCycle = currentCycle
     }
+
+    fun onComponentAdded(component: Component)
 
     fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
     fun getTubeLights(): List<TubeLight> = componentSystems.get(TubeLightComponentSystem::class.java).getComponents()

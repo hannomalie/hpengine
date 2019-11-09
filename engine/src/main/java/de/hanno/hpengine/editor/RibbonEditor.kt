@@ -4,6 +4,7 @@ import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -50,21 +51,23 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
-import java.awt.event.ActionEvent
-import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.ArrayList
 import javax.imageio.ImageIO
-import javax.swing.AbstractAction
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
 import javax.swing.JFileChooser
+import javax.swing.JMenu
+import javax.swing.JMenuItem
 import javax.swing.JPanel
-import javax.swing.KeyStroke
+import javax.swing.JPopupMenu
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
+import javax.swing.tree.DefaultMutableTreeNode
 
 class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFrame("HPEngine"), RenderSystem {
     val appMenuNew = Command.builder()
@@ -96,7 +99,52 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     val mainPanel = MainPanel().apply {
         this@RibbonEditor.add(this, BorderLayout.CENTER)
     }
-    val sceneTree = SceneTree(engine, this)
+    val sceneTree = SceneTree(engine, this).apply {
+        var selectedTreeElement: Any? = null
+
+        fun handleContextMenu(mouseEvent: MouseEvent) {
+            if (mouseEvent.isPopupTrigger) {
+                val contextMenu = JPopupMenu().apply {
+                    add(
+                        JMenu("Add").apply {
+                            add(JMenuItem("ModelComponent").apply {
+                                addActionListener {
+                                    JFileChooser(engine.directories.gameDir).apply {
+                                        if(showOpenDialog(this@RibbonEditor) == JFileChooser.APPROVE_OPTION) {
+                                            val loadedModels = LoadModelCommand(selectedFile,
+                                                "Model_${System.currentTimeMillis()}",
+                                                engine.materialManager,
+                                                engine.directories.gameDir,
+                                                selectedTreeElement as? Entity).execute()
+                                            engine.scene.addAll(loadedModels.entities)
+                                        }
+                                    }
+                                }
+                            })
+                        }
+                    )
+                }
+
+                val row = getClosestRowForLocation(mouseEvent.x, mouseEvent.y)
+                setSelectionRow(row)
+                selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
+                contextMenu.show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
+            }
+        }
+
+        val mouseListener = object: MouseAdapter() {
+            override fun mousePressed(mouseEvent: MouseEvent) {
+                handleContextMenu(mouseEvent)
+            }
+
+            override fun mouseReleased(mouseEvent: MouseEvent) {
+                handleContextMenu(mouseEvent)
+            }
+        }
+
+        addMouseListener(mouseListener);
+    }
+
     val sceneTreePanel = ReloadableScrollPane(sceneTree).apply {
         this.preferredSize = Dimension(300, mainPanel.height)
 

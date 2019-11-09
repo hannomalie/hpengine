@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.PhysicsComponent
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
-import de.hanno.hpengine.engine.model.Cluster
+import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
@@ -14,13 +14,16 @@ import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
-
-import java.util.*
+import java.util.ArrayList
+import java.util.HashMap
+import java.util.Optional
 import java.util.concurrent.Callable
 import java.util.function.Supplier
 
 open class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentTimeMillis().toString(),
                                             position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
+    internal var managerRegistry: ManagerRegistry? = null
+
     val spatial: SimpleSpatial = object : SimpleSpatial() {
         override fun getMinMax(): AABB {
             if (hasComponent(ModelComponent::class.java)) {
@@ -102,6 +105,7 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
 
     fun addComponent(component: Component, clazz: Class<Component>) {
         components[clazz] = component
+        managerRegistry?.onComponentAdded(component)
     }
 
     fun removeComponent(component: Component) {

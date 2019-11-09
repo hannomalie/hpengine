@@ -32,6 +32,11 @@ interface ComponentSystem<T : Component> {
         return matchedComponents
     }
 
+
+    fun onComponentAdded(component: Component) {
+        addCorrespondingComponents(mapOf(component::class.java to component))
+    }
+
     fun addCorrespondingComponents(components: Map<Class<out Component>, Component>): Map<Class<out Component>, Component> {
         val correspondingComponents = components.filter { it.key == componentClass }
         correspondingComponents.forEach { addComponent(it.value as T) }

@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
@@ -137,6 +138,11 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         for(manager in managers.managers) {
             manager.value.extract(currentWriteState)
         }
+    }
+
+    override fun onComponentAdded(component: Component) {
+        componentSystems.onComponentAdded(component)
+        managers.onComponentAdded(component)
     }
 
     @Handler

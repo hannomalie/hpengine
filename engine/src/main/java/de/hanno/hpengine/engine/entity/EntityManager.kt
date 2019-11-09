@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus

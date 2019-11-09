@@ -37,7 +37,6 @@ class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<
 
         val deltaX = (lastX ?: e.x.toFloat()) - e.x.toFloat()
         val deltaY = (lastY ?: e.y.toFloat()) - e.y.toFloat()
-        println("DeltaX $deltaX, DeltaY $deltaY")
 
         val pitchAmount = Math.toRadians((deltaY * rotationAmount % 360))
         val yawAmount = Math.toRadians((-deltaX * rotationAmount % 360))

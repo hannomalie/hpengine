@@ -20,7 +20,7 @@ class SelectionListener(internal var tree: JTree, private val editor: RibbonEdit
     }
 
     override fun valueChanged(e: TreeSelectionEvent) {
-        val treeNode = tree.lastSelectedPathComponent as DefaultMutableTreeNode
+        val treeNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return
 
         val paths = tree.selectionPaths
         val currentPath = e.path

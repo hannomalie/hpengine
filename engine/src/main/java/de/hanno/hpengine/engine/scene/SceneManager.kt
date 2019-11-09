@@ -30,7 +30,6 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
     }
     fun add(entity: Entity) = addAll(listOf(entity))
     override fun CoroutineScope.update(deltaSeconds: Float) {
-//        super.update(deltaSeconds)
         val newDrawCycle = managerContext.renderManager.drawCycle.get()
         scene.currentCycle = newDrawCycle
         with(scene) {
@@ -38,13 +37,11 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
     }
 
-    private fun onSetScene(nextScene: Scene) {
+    override fun onSetScene(nextScene: Scene) {
         scene.environmentProbeManager.clearProbes()
         managerContext.physicsManager.clearWorld()
         managerContext.renderManager.clear()
         scene.clear()
-//        TODO: Do we need this anymore?
-//        nextScene.init(managerContext)
         managerContext.renderManager.renderState.addCommand { renderState1 ->
             renderState1.setVertexIndexBufferStatic(managerContext.renderManager.vertexIndexBufferStatic)
             renderState1.setVertexIndexBufferAnimated(managerContext.renderManager.vertexIndexBufferAnimated)
@@ -52,11 +49,4 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         nextScene.entitySystems.gatherEntities()
     }
 
-    init {
-//        TODO: Do we need this anymore?
-//        scene.init(managerContext)
-    }
-
-    override fun clear() {
-    }
 }

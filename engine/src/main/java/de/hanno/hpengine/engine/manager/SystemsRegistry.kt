@@ -23,6 +23,12 @@ interface ManagerRegistry {
         }
     }
 
+    fun onComponentAdded(component: Component) {
+        managers.forEach {
+            it.value.onComponentAdded(component)
+        }
+    }
+
     fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
         managers.forEach { manager ->
             with(manager.value) { afterUpdate(deltaSeconds) }
@@ -59,6 +65,12 @@ interface SystemsRegistry {
         val leftOvers = matchedComponents.keys.filter { !matchedComponents.keys.contains(it) }
         if(leftOvers.isNotEmpty()) {
             throw IllegalStateException("Cannot find system for components: ${leftOvers.map { it::class.java }}")
+        }
+    }
+
+    fun onComponentAdded(component: Component) {
+        getSystems().forEach {
+            it.onComponentAdded(component)
         }
     }
 }
