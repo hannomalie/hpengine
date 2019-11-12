@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.transform.Spatial
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.joml.Vector3f
-import java.util.*
+import java.util.ArrayList
 
 
 class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), Updatable, Spatial by spatial {
@@ -38,12 +38,14 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
 
     var minMaxProperty: AABB = AABB(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX))
 
-    override fun getMinMax() : AABB {
-        if(isHasMoved || minMaxProperty.min == Spatial.MIN) {
-            recalculate()
+    override val minMax: AABB
+        get() {
+            if(isHasMoved || minMaxProperty.min == Spatial.MIN) {
+                recalculate()
+            }
+            return minMaxProperty
         }
-        return minMaxProperty
-    }
+
 
     fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMaxWorld(get(i))
 
@@ -68,8 +70,8 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             }
         }
 
-        spatial.minMaxWorldProperty.min.set(minMax.min)
-        spatial.minMaxWorldProperty.max.set(minMax.max)
+        spatial.minMaxWorld.min.set(minMax.min)
+        spatial.minMaxWorld.max.set(minMax.max)
         spatial.calculateCenter(spatial.centerWorld, minMaxWorld)
         spatial.calculateBoundSphereRadius()
     }

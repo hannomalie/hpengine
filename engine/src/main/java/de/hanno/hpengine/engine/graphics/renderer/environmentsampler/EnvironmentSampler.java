@@ -294,7 +294,7 @@ public class EnvironmentSampler extends Entity {
 		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, program);
 
 		for (RenderBatch e : renderState.getRenderBatchesStatic()) {
-			if (!Spatial.isInFrustum(getCamera(), e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
+			if (!Spatial.Companion.isInFrustum(getCamera(), e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
 //				continue;
 			}
 			draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, program, false, true);

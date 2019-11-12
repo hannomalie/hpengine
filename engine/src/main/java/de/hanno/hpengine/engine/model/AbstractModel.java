@@ -28,7 +28,7 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
             Mesh mesh = meshes.get(i);
             AABB meshMinMax = mesh.getMinMax();
 //            StaticMesh.calculateMinMax(getMinMax().getMin(), getMinMax().getMax(), meshMinMax);
-            StaticMesh.calculateMinMax(getMinMaxProperty().getMin(), getMinMaxProperty().getMax(), meshMinMax);
+            StaticMesh.Companion.calculateMinMax(getMinMax().getMin(), getMinMax().getMax(), meshMinMax);
         }
     }
 

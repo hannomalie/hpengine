@@ -223,7 +223,7 @@ public class MD5Loader {
             normals.add(vertex.normal.z);
 
             int numWeights = vertex.weights.length;
-            for (int i = 0; i < Mesh.MAX_WEIGHTS; i++) {
+            for (int i = 0; i < Mesh.Companion.getMAX_WEIGHTS(); i++) {
                 if (i < numWeights) {
                     jointIndices.add(vertex.jointIndices[i]);
                     weights.add(vertex.weights[i]);

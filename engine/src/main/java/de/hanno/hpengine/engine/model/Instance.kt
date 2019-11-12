@@ -38,11 +38,9 @@ open class Instance
         with(spatial) { update(deltaSeconds) }
     }
 
-    override fun getMinMax(): AABB {
-        return spatial.minMax
-    }
+    override val minMax: AABB
+        get() = spatial.minMax
 
-    override fun getMinMaxWorld(): AABB {
-        return spatial.minMaxWorld
-    }
+    override val minMaxWorld: AABB
+        get() = spatial.minMaxWorld
 }

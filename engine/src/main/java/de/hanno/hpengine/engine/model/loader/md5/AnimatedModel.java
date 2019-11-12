@@ -16,8 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static de.hanno.hpengine.engine.model.loader.md5.MD5Mesh.VALUES_PER_VERTEX;
-
 public class AnimatedModel extends AbstractModel<AnimatedVertex> {
 
     private List<AnimatedFrame> frames;
@@ -86,7 +84,7 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
             for(int i = 0; i < indexBufferValuesArray.length; i++) {
                 indexBufferValuesArray[i] += currentIndexOffset;
             }
-            int vertexCount = mesh.getVertexBufferValuesArray().length / VALUES_PER_VERTEX;
+            int vertexCount = mesh.getVertexBufferValuesArray().length / MD5Mesh.Companion.getVALUES_PER_VERTEX();
             currentIndexOffset += vertexCount;
             intList.add(indexBufferValuesArray);
         }

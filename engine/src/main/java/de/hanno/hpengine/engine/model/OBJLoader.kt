@@ -144,7 +144,7 @@ class OBJLoader {
                     resultModel.addMesh(currentMesh)
                     usemtlCounter = 0
                 }
-                currentMesh!!.material = currentMaterial
+                currentMesh!!.material = currentMaterial!!
                 currentMesh.indexedFaces.add(parseFace(line))
             }
 

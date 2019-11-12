@@ -105,7 +105,7 @@ public class MD5Model {
                 model.setJointInfo(jointInfo);
                 break;
             case "mesh":
-                MD5Mesh md5Mesh = MD5Mesh.parse(modelFileBaseDir, blockBody);
+                MD5Mesh md5Mesh = MD5Mesh.Companion.parse(modelFileBaseDir, blockBody);
                 model.getMeshes().add(md5Mesh);
                 break;
             default:

@@ -9,28 +9,23 @@ import org.joml.Vector3f
 import java.io.Serializable
 
 abstract class AbstractSpatial : Serializable, Spatial {
-    protected val centerWorldProperty = Vector3f()
+    override val centerWorld = Vector3f()
+    override val minMaxWorld = AABB(Vector3f(Spatial.MIN),Vector3f(Spatial.MAX))
 
-    protected abstract val minMaxProperty : AABB
-    open val minMaxWorldProperty = AABB(Vector3f(Spatial.MIN),Vector3f(Spatial.MAX))
-
-    protected var boundingSphereRadiusProperty = -1f
+    override var boundingSphereRadius = -1f
+        protected set
     @Transient private var lastUsedTransformationMatrix: Matrix4f? = null
 
     override fun getCenterWorld(transform: Transform<*>): Vector3f {
         recalculateIfNotClean(transform)
         return centerWorld
     }
-    override fun getCenterWorld() = centerWorldProperty
-
-    override fun getMinMaxWorld(): AABB = minMaxWorldProperty
-
     protected open fun isClean(transform: Transform<*>): Boolean {
         return Util.equals(transform, lastUsedTransformationMatrix)
     }
 
     private fun calculateCenters() {
-        calculateCenter(centerWorld, minMaxWorldProperty)
+        calculateCenter(centerWorld, minMaxWorld)
     }
 
     fun calculateCenter(target: Vector3f, minMax: AABB) {
@@ -41,11 +36,11 @@ abstract class AbstractSpatial : Serializable, Spatial {
 
     override fun getMinMaxWorld(transform: Transform<*>): AABB {
         recalculateIfNotClean(transform)
-        return minMaxWorldProperty
+        return minMaxWorld
     }
 
     protected fun recalculate(transform: Transform<*>) {
-        minMax.transform(transform, minMaxWorldProperty)
+        minMax.transform(transform, minMaxWorld)
         calculateBoundSphereRadius()
         calculateCenters()
         setLastUsedTransformationMatrix(transform)
@@ -53,12 +48,12 @@ abstract class AbstractSpatial : Serializable, Spatial {
 
     private val boundingSphereTemp = Vector3f()
     fun calculateBoundSphereRadius() {
-        boundingSphereRadiusProperty = StaticMesh.getBoundingSphereRadius(boundingSphereTemp, minMaxWorldProperty.min, minMaxWorldProperty.max)
+        boundingSphereRadius = StaticMesh.getBoundingSphereRadius(boundingSphereTemp, minMaxWorld.min, minMaxWorld.max)
     }
 
     override fun getBoundingSphereRadius(transform: Transform<*>): Float {
         recalculateIfNotClean(transform)
-        return boundingSphereRadiusProperty
+        return boundingSphereRadius
     }
 
     protected fun recalculateIfNotClean(transform: Transform<*>) {
@@ -74,24 +69,18 @@ abstract class AbstractSpatial : Serializable, Spatial {
         this.lastUsedTransformationMatrix?.set(lastUsedTransformationMatrix)
     }
 
-    override fun getMinMax() = minMaxProperty
-
-    override fun getBoundingSphereRadius() = boundingSphereRadiusProperty
-
 }
 
-open class SimpleSpatial(override val minMaxProperty: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : AbstractSpatial()
+open class SimpleSpatial(override val minMax: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : AbstractSpatial()
 
-open class TransformSpatial(val transform: Transform<*>, override val minMaxProperty: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : SimpleSpatial() {
+open class TransformSpatial(val transform: Transform<*>, override val minMax: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : SimpleSpatial() {
     override fun CoroutineScope.update(deltaSeconds: Float) {
         super.recalculateIfNotClean(transform)
     }
 }
 open class StaticTransformSpatial(val transform: Transform<*>, val modelComponent: ModelComponent) : SimpleSpatial() {
-
-    override fun getMinMax(): AABB {
-        return modelComponent.minMax
-    }
+    override val minMax
+        get() = modelComponent.minMax
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         super.recalculateIfNotClean(transform)

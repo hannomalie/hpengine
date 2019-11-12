@@ -25,15 +25,15 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
     internal var managerRegistry: ManagerRegistry? = null
 
     val spatial: SimpleSpatial = object : SimpleSpatial() {
-        override fun getMinMax(): AABB {
-            if (hasComponent(ModelComponent::class.java)) {
+        override val minMax: AABB
+            get() = if (hasComponent(ModelComponent::class.java)) {
                 val modelComponent = getComponent(ModelComponent::class.java)
-                return modelComponent!!.getMinMax(modelComponent.animationController)
+                modelComponent!!.getMinMax(modelComponent.animationController)
             } else {
-                return super.getMinMax()
+                super.minMax
             }
-        }
     }
+
     var index = -1
 
     var updateType = Update.DYNAMIC
