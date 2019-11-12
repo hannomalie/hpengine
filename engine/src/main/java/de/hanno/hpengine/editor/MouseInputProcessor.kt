@@ -9,7 +9,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import kotlin.reflect.KProperty0
 
-class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<Entity?>, val editor: RibbonEditor) : MouseAdapter() {
+class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<Any?>, val editor: RibbonEditor) : MouseAdapter() {
     private var lastX: Float? = null
     private var lastY: Float? = null
     private val oldTransform = Matrix4f()
@@ -22,12 +22,12 @@ class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<
         lastX = e.x.toFloat()
         lastY = e.y.toFloat()
 
-        val entityOrNull = selectedEntity.call()
+        val entityOrNull = selectedEntity.call() as? Entity
         entityOrNull?.transformation?.get(oldTransform)
     }
 
     override fun mouseReleased(e: MouseEvent?) {
-        val entityOrNull = selectedEntity.call()
+        val entityOrNull = selectedEntity.call() as? Entity
         entityOrNull?.transformation?.get(oldTransform)
     }
 
@@ -44,7 +44,7 @@ class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<
         yaw += yawAmount.toFloat()
         pitch += pitchAmount.toFloat()
 
-        val entityOrNull = selectedEntity.call()
+        val entityOrNull = selectedEntity.call() as? Entity
         if(entityOrNull == null) {
             val entity = engine.scene.camera.entity
             val oldTranslation = entity.getTranslation(Vector3f())

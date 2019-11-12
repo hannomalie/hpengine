@@ -1,10 +1,8 @@
 package de.hanno.hpengine.editor
 
-import com.alee.laf.rootpane.WebFrame
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
-import javax.swing.JFrame
 import javax.swing.JTree
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
@@ -39,8 +37,8 @@ class SelectionListener(internal var tree: JTree, private val editor: RibbonEdit
         // TODO: MIIIIEEEEEES
         if (node is EnvironmentProbe) {
         } else if (node is Entity) {
-            if(node == editor.entitySelector.selectedEntity) {
-                editor.entitySelector.unselectEntity()
+            if(node == editor.entitySelector.selection) {
+                editor.entitySelector.unselect()
             } else {
                 editor.entitySelector.selectEntity(node)
             }

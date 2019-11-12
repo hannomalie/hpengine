@@ -36,7 +36,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
     private val skyboxVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
 
     private val vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent::class.java)!!.putToBuffer(engineContext.gpuContext, skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS)
-    private val skyBoxRenderBatch = RenderBatch().init(0, true, false, false, Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC, Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(), 1000f, skyBox.indices.size, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.instanceMinMaxWorlds, skyBoxModelComponent.getMaterial(materialManager).materialInfo, skyBoxEntity.index)
+    private val skyBoxRenderBatch = RenderBatch().init(0, true, false, false, Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC, Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(), 1000f, skyBox.indices.size, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.instanceMinMaxWorlds, skyBoxModelComponent.getMaterial(materialManager).materialInfo, skyBoxEntity.index, 0)
 
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {

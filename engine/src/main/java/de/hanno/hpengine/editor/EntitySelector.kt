@@ -3,23 +3,20 @@ package de.hanno.hpengine.editor
 import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -27,7 +24,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.io.File
 import java.util.function.Consumer
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -53,36 +49,55 @@ class EntitySelector(val engine: Engine<OpenGl>,
 
     val floatBuffer = BufferUtils.createFloatBuffer(4)
 
-    var selectedEntity: Entity? = null
+    var selection: Any? = null
     var mouseClicked: MouseEvent? = null
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)
     }
+
+    data class MeshSelection(val mesh: Mesh<*>, val entity: Entity)
     override fun render(result: DrawResult, state: RenderState) {
 
         mouseClicked?.let { event ->
             engine.deferredRenderingBuffer.use(engine.gpuContext, false)
             engine.gpuContext.readBuffer(4)
             floatBuffer.rewind()
-            val ratio = Vector2f(mainPanel.width.toFloat() / engine.gpuContext.window.width.toFloat(),
-                    mainPanel.height.toFloat() / engine.gpuContext.window.height.toFloat())
+            val ratio = Vector2f(engine.gpuContext.window.width.toFloat() / mainPanel.width.toFloat(),
+                    engine.gpuContext.window.height.toFloat() / mainPanel.height.toFloat())
             val adjustedX = (event.x * ratio.x).toInt()
-            val adjustedY = (event.y * ratio.y).toInt()
+            val adjustedY = engine.gpuContext.window.height - (event.y * ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
+
             val entityIndex = floatBuffer.get()
             val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
-            if(selectedEntity == null) {
-                selectEntity(pickedEntity)
-            } else if(selectedEntity?.name == pickedEntity.name) {
-                unselectEntity()
-            }
+            when(editor.selectionMode) {
+                SelectionMode.Entity -> {
+                    when(val localSelection = selection) {
+                        null -> selectEntity(pickedEntity)
+                        is Entity -> if(localSelection.name == pickedEntity.name) unselect() else selectEntity(pickedEntity)
+                        else -> Unit
+                    }
+                }
+                SelectionMode.Mesh -> {
+                    val meshIndex = floatBuffer.get(3)
+                    val selectedMesh = pickedEntity.getComponent(ModelComponent::class.java)!!.meshes[meshIndex.toInt()]
 
-            println("Selected $selectedEntity")
+                    when(val localSelection = selection) {
+                        null -> selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                        is MeshSelection -> if(localSelection.mesh.name == selectedMesh.name) unselect() else selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                        else -> Unit
+                    }
+                }
+            }.let {}
             mouseClicked = null
         }
 
-        selectedEntity?.let { entity ->
+        selection?.let { entityOrMeshSelection ->
+
+            val entity = if(entityOrMeshSelection is MeshSelection) entityOrMeshSelection.entity else entityOrMeshSelection as Entity
+            val mesh = if(entityOrMeshSelection is MeshSelection) entityOrMeshSelection.mesh else null
+
             engine.gpuContext.disable(GlCap.DEPTH_TEST)
             engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
             val origin = entity.position
@@ -109,7 +124,11 @@ class EntitySelector(val engine: Engine<OpenGl>,
                 program.setUniform("diffuseColor", Vector3f(1f, 0f, 1f))
             })
 
-            lineRenderer.batchAABBLines(entity.minMaxWorld.min, entity.minMaxWorld.max)
+            if(mesh != null) {
+                lineRenderer.batchAABBLines(mesh.minMax.min, mesh.minMax.max)
+            } else {
+                lineRenderer.batchAABBLines(entity.minMaxWorld.min, entity.minMaxWorld.max)
+            }
             lineRenderer.drawAllLines(5f, Consumer { program ->
                 program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
                 program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -117,8 +136,14 @@ class EntitySelector(val engine: Engine<OpenGl>,
                 program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
             })
 
-            state.renderBatchesStatic.filter {
-                it.entityIndex == entity.index
+            state.renderBatchesStatic.filter { batch ->
+                val modelComponent = entity.getComponent(ModelComponent::class.java)
+                val meshFilter = mesh?.let {
+                    val meshIndex = modelComponent?.meshes?.indexOf(it) ?: -100
+                    batch.meshIndex == meshIndex
+                } ?: true
+
+                batch.entityIndex == entity.index && meshFilter
             }.forEach {
                 engine.gpuContext.enable(GlCap.BLEND)
                 engine.gpuContext.blendEquation(BlendMode.FUNC_ADD)
@@ -141,21 +166,31 @@ class EntitySelector(val engine: Engine<OpenGl>,
     }
 
     fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
-        selectedEntity = pickedEntity
-        pickedEntity.isSelected = true
+        selection = pickedEntity
         sidePanel.doWithRefresh {
             add(JButton("Unselect").apply {
                 addActionListener {
-                    unselectEntity()
+                    unselect()
                 }
             })
             add(EntityGrid(pickedEntity))
         }
     }
 
-    fun unselectEntity() = SwingUtils.invokeLater {
-        selectedEntity?.isSelected = false
-        selectedEntity = null
+    fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeAndWait {
+        selection = pickedMesh
+        sidePanel.doWithRefresh {
+            add(JButton("Unselect").apply {
+                addActionListener {
+                    unselect()
+                }
+            })
+            add(MeshGrid(pickedMesh.mesh))
+        }
+    }
+
+    fun unselect() = SwingUtils.invokeLater {
+        selection = null
         sidePanel.removeAll()
         sidePanel.revalidate()
         sidePanel.repaint()

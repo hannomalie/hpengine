@@ -39,8 +39,8 @@ class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntityS
             val entityIndexOf = modelComponent.entityBufferIndex
 
             val meshes = modelComponent.meshes
-            for (i in meshes.indices) {
-                val mesh = meshes[i]
+            for (meshIndex in meshes.indices) {
+                val mesh = meshes[meshIndex]
                 val meshCenter = mesh.getCenter(entity)
                 val boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh)
 
@@ -50,10 +50,10 @@ class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntityS
 
 
                 val visibleForCamera = meshIsInFrustum || entity.instanceCount > 1 // TODO: Better culling for instances
-                val meshBufferIndex = entityIndexOf + i * entity.instanceCount
+                val meshBufferIndex = entityIndexOf + meshIndex * entity.instanceCount
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
-                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index)
+                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(meshIndex), modelComponent.getIndexOffset(meshIndex), modelComponent.getBaseVertex(meshIndex), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index, meshIndex)
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)
                 } else {

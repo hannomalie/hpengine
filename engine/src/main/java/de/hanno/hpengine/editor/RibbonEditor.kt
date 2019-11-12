@@ -7,8 +7,6 @@ import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.scene.SimpleScene
@@ -195,13 +193,14 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     var constraintAxis = AxisConstraint.None
     var transformMode = TransformMode.None
     var transformSpace = TransformSpace.World
+    var selectionMode = SelectionMode.Entity
 
     val entitySelector = EntitySelector(this).apply {
         engine.renderSystems.add(this)
     }
 
     init {
-        MouseInputProcessor(engine, entitySelector::selectedEntity, this).apply {
+        MouseInputProcessor(engine, entitySelector::selection, this).apply {
             mainPanel.addMouseMotionListener(this)
             mainPanel.addMouseListener(this)
         }
@@ -273,12 +272,41 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             addFlowComponent(RibbonComboBoxProjection(directTextureOutputComboBoxModel, ComponentPresentationModel.builder().build()))
 
         }
-        val viewTask = RibbonTask("Viewport", outputBand, outputIndexBand)
+
+        val selectionModeBand = JFlowRibbonBand("Selection Mode", null).apply {
+            resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
+
+            val selectionModeToggleGroup = CommandToggleGroupModel()
+
+            val commands = listOf(
+                    Pair(SelectionMode.Entity, ::selectionMode),
+                    Pair(SelectionMode.Mesh, ::selectionMode)).map {
+                Command.builder()
+                        .setToggle()
+                        .setToggleSelected(selectionMode == it.first)
+                        .setText(it.first.toString())
+                        .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                        .inToggleGroup(selectionModeToggleGroup)
+                        .setAction { event ->
+                            if (it.second.get() == it.first) it.second.set(SelectionMode.Entity) else it.second.set(it.first)
+                            event.command.isToggleSelected = it.second.get() == it.first
+                        }
+                        .build()
+            }
+            val selectionModeCommandGroupProjection = CommandStripProjection(CommandGroup(commands),
+                    CommandStripPresentationModel.builder()
+                            .setCommandPresentationState(CommandButtonPresentationState.MEDIUM)
+                            .build())
+            addFlowComponent(selectionModeCommandGroupProjection)
+        }
+
+        val viewTask = RibbonTask("Viewport", outputBand, outputIndexBand, selectionModeBand)
 
         addTask(viewTask)
     }
 
     private fun addTransformTask() {
+
         val activeAxesBand = JFlowRibbonBand("Active Axes", null).apply {
             resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
 
@@ -291,6 +319,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                 Command.builder()
                         .setToggle()
                         .setText(it.first.toString())
+                        .setToggleSelected(constraintAxis == it.first)
                         .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                         .inToggleGroup(transformAxisToggleGroup)
                         .setAction { event ->
@@ -317,6 +346,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                     Pair(TransformMode.Scale, ::transformMode)).map {
                 Command.builder()
                         .setToggle()
+                        .setToggleSelected(transformMode == it.first)
                         .setText(it.first.toString())
                         .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                         .inToggleGroup(transformModeToggleGroup)
@@ -344,6 +374,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                     Pair(TransformSpace.View, ::transformSpace)).map {
                 Command.builder()
                         .setToggle()
+                        .setToggleSelected(transformSpace == it.first)
                         .setText(it.first.toString())
                         .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                         .inToggleGroup(transformSpaceToggleGroup)
@@ -568,6 +599,10 @@ enum class TransformMode {
 
 enum class TransformSpace {
     World, Local, View
+}
+
+enum class SelectionMode {
+    Entity, Mesh
 }
 
 fun JPanel.doWithRefresh(addContent: JPanel.() -> Unit) {

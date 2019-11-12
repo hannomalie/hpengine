@@ -167,6 +167,8 @@ void main(void) {
 	out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
 	out_depthAndIndices = vec4(float(entity.entityIndexWithoutMeshIndex), depth, entity.materialIndex, float(entity.meshIndex));
 
+//	This is for reusability, remove this somewhen with a better
+//	mechanism for color output channel options
 	#ifdef COLOR_OUTPUT_0
 	out_positionRoughness.rgb = vec3(1.0f,0.1f,0.1f);
 	out_positionRoughness.a = 1;
