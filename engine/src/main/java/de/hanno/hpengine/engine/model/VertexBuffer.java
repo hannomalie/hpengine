@@ -376,15 +376,18 @@ public class VertexBuffer extends PersistentMappedBuffer {
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 		return verticesCount;
 	}
-	public int drawDebugLines() {
-		if(!uploaded) { return 0; }
-		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
-		GL11.glLineWidth(2f);
-		bind();
-		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
-		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
-		return verticesCount;
-	}
+    public int drawDebugLines(float lineWidth) {
+        if(!uploaded) { return 0; }
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+        GL11.glLineWidth(lineWidth);
+        bind();
+        GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+        return verticesCount;
+    }
+    public int drawDebugLines() {
+        return drawDebugLines(2f);
+    }
 
     public float[] getVertexData() {
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);

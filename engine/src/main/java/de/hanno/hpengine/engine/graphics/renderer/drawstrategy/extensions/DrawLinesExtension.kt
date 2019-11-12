@@ -6,7 +6,8 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
@@ -16,13 +17,13 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
-                         programManager: ProgramManager<*>) : RenderExtension<OpenGl> {
+                         programManager: ProgramManager<*> = engine.programManager) : RenderExtension<OpenGl> {
 
     private val linesProgram: Program = programManager.getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl")
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)
     }
-    private val lineRenderer = SimpleLineRenderer(engine)
+    private val lineRenderer = LineRendererImpl(engine)
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
 
@@ -67,9 +68,9 @@ class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
             if (engine.config.debug.isDrawBoundingVolumes) {
                 val renderAABBs = true
                 if (renderAABBs) {
-                    batchAABBLines(lineRenderer, batch.minWorld, batch.maxWorld)
+                    lineRenderer.batchAABBLines(batch.minWorld, batch.maxWorld)
                     for ((min, max) in batch.getInstanceMinMaxWorlds()) {
-                        batchAABBLines(lineRenderer, min, max)
+                        lineRenderer.batchAABBLines(min, max)
                     }
                 } else {
                     val radius = batch.boundingSphereRadius
@@ -96,71 +97,4 @@ class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
         }
     }
 
-    companion object {
-
-        fun batchAABBLines(lineRenderer: LineRenderer, minWorld: Vector3f, maxWorld: Vector3f) {
-            run {
-                val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
-                val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
-                val max = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
-                val max = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
-                val max = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
-                val max = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-
-
-            run {
-                val min = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
-                val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
-                val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
-                val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
-                val max = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
-                val max = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
-                val max = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-            run {
-                val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
-                val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
-                lineRenderer.batchLine(min, max)
-            }
-        }
-    }
 }

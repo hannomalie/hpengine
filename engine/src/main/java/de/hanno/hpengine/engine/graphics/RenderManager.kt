@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
-import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
@@ -27,7 +27,7 @@ class RenderStateManager(renderStateFactory: () -> RenderState) {
 }
 class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make generic
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,
-                    val lineRenderer: LineRenderer = SimpleLineRenderer(engineContext),
+                    val lineRenderer: LineRenderer = LineRendererImpl(engineContext),
                     val materialManager: MaterialManager = engineContext.materialManager) : Manager {
 
     inline val renderState: TripleBuffer<RenderState>

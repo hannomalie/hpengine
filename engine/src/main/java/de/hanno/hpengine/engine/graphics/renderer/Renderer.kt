@@ -13,8 +13,14 @@ import java.util.function.Consumer
 interface LineRenderer {
     fun batchLine(from: Vector3f, to: Vector3f)
 
-    fun drawLines(program: Program): Int
-    fun drawAllLines(action: Consumer<Program>)
+    @JvmDefault
+    fun drawLines(program: Program) = drawLines(program, 2f)
+    fun drawLines(program: Program, lineWidth: Float): Int
+    @JvmDefault
+    fun drawAllLines(action: Consumer<Program>) {
+        drawAllLines(2f, action)
+    }
+    fun drawAllLines(lineWidth: Float, action: Consumer<Program>)
 
     fun batchTriangle(a: Vector3f, b: Vector3f, c: Vector3f) {
         batchLine(a, b)

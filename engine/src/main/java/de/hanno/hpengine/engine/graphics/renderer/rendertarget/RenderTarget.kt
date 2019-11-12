@@ -245,6 +245,7 @@ fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, w
 }
 
 class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
+
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, depthBuffer: DepthBuffer<*>?): FrameBuffer {
             return FrameBuffer(gpuContext.calculate { glGenFramebuffers() }, depthBuffer).apply {
@@ -262,7 +263,6 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
 }
 
 class DepthBuffer<T: Texture<*>>(val texture: T) {
-
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): DepthBuffer<Texture2D> {
             val dimension = TextureDimension(width, height)

@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
+import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -25,7 +26,8 @@ public class DirectionalLight extends Camera {
 		setWidth(1500);
 		setHeight(1500);
 		setFar(-5000);
-		entity.translation(new Vector3f(12f, 300f, 2f));
+		entity.rotateAround(new Vector3f(1f,0f,0f), (float) Math.toRadians(100f), new Vector3f());
+		entity.translate(new Vector3f(12f, 300f, 2f));
 	}
 
 	@Override

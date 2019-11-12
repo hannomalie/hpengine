@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
+import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11.GL_RGBA
@@ -193,6 +194,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
     var constraintAxis = AxisConstraint.None
     var transformMode = TransformMode.None
+    var transformSpace = TransformSpace.World
 
     val entitySelector = EntitySelector(this).apply {
         engine.renderSystems.add(this)
@@ -331,7 +333,34 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             addFlowComponent(transformModeCommandGroupProjection)
         }
 
-        val transformTask = RibbonTask("Transform", activeAxesBand, transformModeBand)
+        val transformSpaceBand = JFlowRibbonBand("Transform Space", null).apply {
+            resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
+
+            val transformSpaceToggleGroup = CommandToggleGroupModel()
+
+            val commands = listOf(
+                    Pair(TransformSpace.World, ::transformSpace),
+                    Pair(TransformSpace.Local, ::transformSpace),
+                    Pair(TransformSpace.View, ::transformSpace)).map {
+                Command.builder()
+                        .setToggle()
+                        .setText(it.first.toString())
+                        .setIconFactory { getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                        .inToggleGroup(transformSpaceToggleGroup)
+                        .setAction { event ->
+                            if (it.second.get() == it.first) it.second.set(TransformSpace.World) else it.second.set(it.first)
+                            event.command.isToggleSelected = it.second.get() == it.first
+                        }
+                        .build()
+            }
+            val transformSpaceCommandGroupProjection = CommandStripProjection(CommandGroup(commands),
+                    CommandStripPresentationModel.builder()
+                            .setCommandPresentationState(CommandButtonPresentationState.MEDIUM)
+                            .build())
+            addFlowComponent(transformSpaceCommandGroupProjection)
+        }
+
+        val transformTask = RibbonTask("Transform", activeAxesBand, transformModeBand, transformSpaceBand)
 
         addTask(transformTask)
     }
@@ -465,8 +494,6 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         }
     }
 
-    override fun render(result: DrawResult, state: RenderState) {}
-
     override fun afterFrameFinished() {
         bufferImage()
         imageLabel.repaint()
@@ -529,11 +556,18 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
 
 
-enum class AxisConstraint {
-    None, X, Y, Z
+enum class AxisConstraint(val axis: Vector3f) {
+    None(Vector3f()),
+    X(Vector3f(1f, 0f, 0f)),
+    Y(Vector3f(0f, 1f, 0f)),
+    Z(Vector3f(0f, 0f, 1f))
 }
 enum class TransformMode {
     None, Translate, Rotate, Scale
+}
+
+enum class TransformSpace {
+    World, Local, View
 }
 
 fun JPanel.doWithRefresh(addContent: JPanel.() -> Unit) {

@@ -53,7 +53,7 @@ class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntityS
                 val meshBufferIndex = entityIndexOf + i * entity.instanceCount
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
-                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo)
+                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index)
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)
                 } else {

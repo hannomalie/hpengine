@@ -25,6 +25,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static de.hanno.hpengine.engine.graphics.renderer.DeferredRendererKt.batchAABBLines;
 import static de.hanno.hpengine.engine.math.VectorKt.toHp;
 
 public class Octree implements Updatable, Serializable, EntityContainer {
@@ -161,7 +162,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
                 batchLines(renderer, child);
             }
         } else if(node.hasEntities()){
-            DrawLinesExtension.Companion.batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
+            batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
         }
     }
 

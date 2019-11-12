@@ -61,23 +61,55 @@ class MouseInputProcessor(val engine: Engine<*>, val selectedEntity: KProperty0<
             val degreesY = Math.toDegrees(moveAmountX.toDouble()).toFloat() * 0.0001f
 
             fun handleTranslation() {
-                when(editor.constraintAxis) {
-                    AxisConstraint.X -> entityOrNull.set(Matrix4f().translation(Vector3f(moveAmountX, 0f, 0f)).mul(oldTransform))
-                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, moveAmountY, 0f)).mul(oldTransform))
-                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().translation(Vector3f(0f, 0f, moveAmountY)).mul(oldTransform))
+                when(editor.transformSpace) {
+                    TransformSpace.World -> when(editor.constraintAxis) {
+                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(Vector3f(moveAmountX, 0f, 0f)))
+                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(Vector3f(0f, moveAmountY, 0f)))
+                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(Vector3f(0f, 0f, moveAmountY)))
+                        AxisConstraint.None -> Unit
+                    }
+                    TransformSpace.Local -> when(editor.constraintAxis) {
+                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).translate(Vector3f(moveAmountX, 0f, 0f)))
+                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).translate(Vector3f(0f, moveAmountY, 0f)))
+                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).translate(Vector3f(0f, 0f, moveAmountY)))
+                        AxisConstraint.None -> Unit
+                    }
+                    TransformSpace.View -> {
+                        TODO()
+                    }
                 }
             }
             fun handleRotation() {
+                when(editor.transformSpace) {
+                    TransformSpace.World -> when(editor.constraintAxis) {
+                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).rotateLocalX(degreesX))
+                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).rotateLocalY(degreesY))
+                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).rotateLocalZ(degreesY))
+                        AxisConstraint.None -> Unit
+                    }
+                    TransformSpace.Local -> when(editor.constraintAxis) {
+                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).rotateX(degreesX))
+                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).rotateY(degreesY))
+                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).rotateZ(degreesY))
+                        AxisConstraint.None -> Unit
+                    }
+                    TransformSpace.View -> {
+                        TODO()
+                    }
+                }
+
+            }
+            fun handleScaling() {
                 when(editor.constraintAxis) {
-                    AxisConstraint.X -> entityOrNull.set(Matrix4f().rotateLocalX(degreesX)).mul(oldTransform)
-                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().rotateLocalY(degreesY)).mul(oldTransform)
-                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().rotateLocalZ(degreesY)).mul(oldTransform)
+                    AxisConstraint.X -> entityOrNull.set(Matrix4f().scale(1f + moveAmountX)).mul(oldTransform)
+                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().scale(1f + moveAmountY)).mul(oldTransform)
+                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().scale(1f + moveAmountY)).mul(oldTransform)
                 }
             }
             when(editor.transformMode) {
                 TransformMode.Translate -> handleTranslation()
                 TransformMode.Rotate -> handleRotation()
-                TransformMode.Scale -> TODO()
+                TransformMode.Scale -> handleScaling()
             }
         }
     }

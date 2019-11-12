@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
@@ -65,7 +65,7 @@ class ManagerContextImpl(
         override val engineContext: EngineContext<OpenGl>,
         override val managers: ManagerRegistry = SimpleManagerRegistry(),
         override val renderManager: RenderManager,
-        override val physicsManager: PhysicsManager = PhysicsManager(renderer = SimpleLineRenderer(engineContext), config = engineContext.config)
+        override val physicsManager: PhysicsManager = PhysicsManager(renderer = LineRendererImpl(engineContext), config = engineContext.config)
 ) : ManagerContext<OpenGl> {
 
     override val directories = engineContext.config.directories

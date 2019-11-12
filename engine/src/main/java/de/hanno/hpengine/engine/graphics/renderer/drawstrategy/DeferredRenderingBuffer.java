@@ -78,6 +78,7 @@ public class DeferredRenderingBuffer {
 				.setName("Final Image")
 				.add(new ColorAttachmentDefinition("Color", GL11.GL_RGBA8))
 				.build();
+
 		halfScreenBuffer = new RenderTargetBuilder<>(gpuContext).setWidth(width / 2).setHeight(height / 2)
 				.setName("Half Screen")
 				.add(new ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F))

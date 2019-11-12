@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.renderer.SimpleLineRenderer
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -18,8 +18,6 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import java.io.IOException
-import java.io.ObjectOutputStream
 import java.nio.FloatBuffer
 
 object Defaults {
@@ -230,7 +228,7 @@ open class Camera @JvmOverloads constructor(
 class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, RenderSystem {
 
     // TODO: Remove this cast
-    private val lineRenderer = SimpleLineRenderer(engine as Engine<OpenGl>)
+    private val lineRenderer = LineRendererImpl(engine as Engine<OpenGl>)
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(deltaSeconds: Float) {
         getComponents().forEach {

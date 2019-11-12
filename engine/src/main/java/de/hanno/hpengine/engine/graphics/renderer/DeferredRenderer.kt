@@ -587,7 +587,7 @@ class DeferredRenderer
     }
 }
 
-class SimpleLineRenderer(engineContext: EngineContext<OpenGl>) : LineRenderer {
+class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
 
     private val programManager: ProgramManager<OpenGl> = engineContext.programManager
     private val linePoints = ArrayList<Vector3f>()
@@ -602,14 +602,14 @@ class SimpleLineRenderer(engineContext: EngineContext<OpenGl>) : LineRenderer {
         linePoints.add(to)
     }
 
-    override fun drawAllLines(action: Consumer<Program>) {
-        linePoints.clear()
+    override fun drawAllLines(lineWidth: Float, action: Consumer<Program>) {
         linesProgram.use()
         action.accept(linesProgram)
-        drawLines(linesProgram)
+        drawLines(linesProgram, lineWidth)
+        linePoints.clear()
     }
 
-    override fun drawLines(program: Program): Int {
+    override fun drawLines(program: Program, lineWidth: Float): Int {
         val points = FloatArray(linePoints.size * 3)
         for (i in linePoints.indices) {
             val point = linePoints[i]
@@ -619,9 +619,74 @@ class SimpleLineRenderer(engineContext: EngineContext<OpenGl>) : LineRenderer {
         }
         buffer.putValues(*points)
         buffer.upload().join()
-        buffer.drawDebugLines()
+        buffer.drawDebugLines(lineWidth)
         glFinish()
         linePoints.clear()
         return points.size / 3 / 2
+    }
+}
+
+fun LineRenderer.batchAABBLines(minWorld: Vector3f, maxWorld: Vector3f) {
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+
+
+    run {
+        val min = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
+        val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
     }
 }

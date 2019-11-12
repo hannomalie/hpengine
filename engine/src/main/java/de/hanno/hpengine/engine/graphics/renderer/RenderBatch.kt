@@ -9,6 +9,7 @@ import org.joml.Vector3f
 import java.util.ArrayList
 
 class RenderBatch {
+    var entityIndex = -1
     var isVisible = false
     var isSelected = false
     var isDrawLines = false
@@ -47,7 +48,7 @@ class RenderBatch {
     val isStatic: Boolean
         get() = !animated
 
-    fun init(entityBufferIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, instanceMinMaxWorlds: List<AABB>, materialInfo: MaterialInfo): RenderBatch {
+    fun init(entityBufferIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, instanceMinMaxWorlds: List<AABB>, materialInfo: MaterialInfo, entityIndex: Int): RenderBatch {
         this.isVisible = isVisible
         this.isSelected = isSelected
         this.isDrawLines = drawLines
@@ -69,6 +70,7 @@ class RenderBatch {
         this.entityBufferIndex = entityBufferIndex
         this.animated = animated
         this.materialInfo = materialInfo
+        this.entityIndex = entityIndex
         return this
     }
 

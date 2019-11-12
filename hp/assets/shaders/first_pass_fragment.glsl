@@ -160,14 +160,17 @@ void main(void) {
 	{
 		discard;
 	}
-	if(entity.isSelected > 0)
-	{
-		color.rgb = vec3(1,0,0);
-	}
+
+
 	out_colorMetallic = vec4(color.rgb, material.metallic);
 	out_normalAmbient = vec4(PN_view, material.ambient);
 	out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
 	out_depthAndIndices = vec4(float(entity.entityIndexWithoutMeshIndex), depth, entity.materialIndex, float(entity.meshIndex));
+
+	#ifdef COLOR_OUTPUT_0
+	out_positionRoughness.rgb = vec3(1.0f,0.1f,0.1f);
+	out_positionRoughness.a = 1;
+	#endif
 
 	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

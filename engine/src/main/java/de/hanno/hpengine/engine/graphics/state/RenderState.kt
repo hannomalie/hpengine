@@ -171,6 +171,6 @@ interface CustomState {
 class StateRef<out T>(val index: Int)
 
 interface RenderSystem {
-    fun render(result: DrawResult, state: RenderState)
+    @JvmDefault fun render(result: DrawResult, state: RenderState) { }
     @JvmDefault fun afterFrameFinished() { }
 }
