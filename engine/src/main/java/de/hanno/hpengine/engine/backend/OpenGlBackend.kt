@@ -24,6 +24,8 @@ import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
@@ -35,17 +37,20 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val gpuContext: GpuContext<OpenGl>,
                     override val programManager: ProgramManager<OpenGl>,
                     override val textureManager: TextureManager,
-                    override val input: Input) : Backend<OpenGl> {
+                    override val input: Input,
+                    override val singleThreadUpdateScope: CoroutineDispatcher) : Backend<OpenGl> {
 
     companion object {
         operator fun invoke(window: Window<OpenGl>, config: Config): OpenGlBackend {
-            val eventBus= MBassadorEventBus()
+            //     TODO: Make me a type
+            val singleThreadedDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
+            val eventBus = MBassadorEventBus()
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
-            val textureManager = TextureManager(config, programManager, gpuContext)
+            val textureManager = TextureManager(config, programManager, gpuContext, singleThreadedDispatcher)
             val input = Input(eventBus, gpuContext)
 
-            return OpenGlBackend(eventBus, gpuContext, programManager, textureManager, input)
+            return OpenGlBackend(eventBus, gpuContext, programManager, textureManager, input, singleThreadedDispatcher)
         }
     }
 }
@@ -59,7 +64,7 @@ class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQ
                         override val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },
-                        override val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager)) : EngineContext<OpenGl>
+                        override val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager, backend.singleThreadUpdateScope)) : EngineContext<OpenGl>
 
 class ManagerContextImpl(
         override val engineContext: EngineContext<OpenGl>,

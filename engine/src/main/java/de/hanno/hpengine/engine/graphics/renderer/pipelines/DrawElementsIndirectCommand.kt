@@ -70,7 +70,12 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
                     0, nonZeroCapacityInBytes,
                     bufferFlags, null) ?: throw IllegalStateException("Cannot create mapped buffer")
 
-            buffer?.let { copyTo(byteBuffer) }
+//            dont remove safe call, since mapBuffer is caled in buffer initializer itself :)
+            buffer?.let {
+                synchronized(it) {
+                    it.copyTo(byteBuffer)
+                }
+            }
             byteBuffer.rewind()
             byteBuffer
         }

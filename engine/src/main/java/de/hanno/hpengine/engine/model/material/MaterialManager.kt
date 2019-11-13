@@ -15,7 +15,9 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
 import java.io.File
@@ -28,12 +30,14 @@ import java.util.logging.Logger
 
 class MaterialManager(val config: Config,
                       private val eventBus: EventBus,
-                      val textureManager: TextureManager) : Manager {
+                      val textureManager: TextureManager,
+                      val singleThreadedDispatcher: CoroutineDispatcher) : Manager {
 
     constructor(engineContext: EngineContext<*>,
                 config: Config = engineContext.config,
                 eventBus: EventBus = engineContext.eventBus,
-                textureManager: TextureManager = engineContext.textureManager): this(config, eventBus, textureManager) {}
+                textureManager: TextureManager = engineContext.textureManager,
+                singleThreadedDispatcher: CoroutineDispatcher = engineContext.singleThreadUpdateScope): this(config, eventBus, textureManager, singleThreadedDispatcher)
 
     val skyboxMaterial: SimpleMaterial
 
@@ -49,8 +53,8 @@ class MaterialManager(val config: Config,
     var materialsAsStructs = StructArray(1000) { MaterialStruct() }
 
     init {
-        defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f,0f,0f)).apply {
-          put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, engineDir))
+        defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f, 0f, 0f)).apply {
+            put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, engineDir))
         })
         skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
 
@@ -86,7 +90,7 @@ class MaterialManager(val config: Config,
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
             put(MAP.REFLECTION, textureManager.getTexture("assets/textures/stone_reflection.png", directory = engineDir))
         })
-        getMaterial(SimpleMaterialInfo(name = "mirror", diffuse = Vector3f(1f,1f,1f), metallic = 1f))
+        getMaterial(SimpleMaterialInfo(name = "mirror", diffuse = Vector3f(1f, 1f, 1f), metallic = 1f))
 
         getMaterial(SimpleMaterialInfo("stoneWet").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/bricks_parallax.dds", true, engineDir))
@@ -139,7 +143,7 @@ class MaterialManager(val config: Config,
         return MATERIALS[materialName] ?: return defaultMaterial
     }
 
-    private fun addMaterial(key: String, material: SimpleMaterial) {
+    private fun addMaterial(key: String, material: SimpleMaterial) = runBlocking(singleThreadedDispatcher) {
         MATERIALS[key] = material
         eventBus.post(MaterialAddedEvent())
     }
@@ -193,7 +197,7 @@ class MaterialManager(val config: Config,
 
     fun changeMaterial(changedMaterial: MaterialInfo) {
         val oldMaterial = materials.find { it.materialInfo.name == changedMaterial.name }
-        if(oldMaterial != null) {
+        if (oldMaterial != null) {
             oldMaterial.materialInfo = changedMaterial
 //            MATERIALS.remove(oldMaterial.name)
 //            getMaterial(changedMaterial)

@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.util.commandqueue.CommandQueue
+import kotlinx.coroutines.CoroutineDispatcher
 
 interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
     val window: Window<TYPE>
@@ -32,4 +33,6 @@ interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
         get() = backend.textureManager
     override val input: Input
         get() = backend.input
+    override val singleThreadUpdateScope: CoroutineDispatcher
+        get() = backend.singleThreadUpdateScope
 }

@@ -20,6 +20,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -44,7 +45,8 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 
     val scene
         get() = sceneManager.scene
-    val singleThreadUpdateScope: ExecutorCoroutineDispatcher
+    override val singleThreadUpdateScope: CoroutineDispatcher
+        get() = managerContext.singleThreadUpdateScope
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
@@ -52,8 +54,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                                            override val renderManager: RenderManager = RenderManager(engineContext),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
-//     TODO: Make me a type
-    override val singleThreadUpdateScope = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
     private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
     val updateConsumer = Consumer<Float> {
         with(this@EngineImpl) {
@@ -139,7 +139,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             config.height = height
 
             val engineContext = EngineContextImpl(config = config)
-            val materialManager = MaterialManager(engineContext)
+            val materialManager = engineContext.materialManager
             val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
             val renderer: RenderSystem = getRendererForPlatform(engineContext, materialManager, deferredRenderingBuffer)
             println("Using renderer class ${renderer.javaClass.simpleName}")

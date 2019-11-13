@@ -12,7 +12,8 @@ import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -138,7 +139,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                                                             engine.materialManager,
                                                             engine.directories.gameDir,
                                                             selection).execute()
-                                                    runBlocking(engine.singleThreadUpdateScope) {
+                                                    GlobalScope.launch(engine.singleThreadUpdateScope) {
                                                         with(engine.scene) {
                                                             addAll(loadedModels.entities)
                                                         }
@@ -151,7 +152,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                                         add(JMenuItem("PointLight").apply {
                                             addActionListener {
                                                 val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
-                                                runBlocking(engine.singleThreadUpdateScope) {
+                                                GlobalScope.launch(engine.singleThreadUpdateScope) {
                                                     selection.addComponent(component)
 
                                                     with(engine.managers) {
@@ -414,7 +415,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                     .setText("Create")
                     .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
                     .setAction {
-                        runBlocking(engine.singleThreadUpdateScope) {
+                        GlobalScope.launch(engine.singleThreadUpdateScope) {
                             with(engine.sceneManager)  {
                                 add(Entity("NewEntity_${engine.scene.getEntities().count { it.name.startsWith("NewEntity") }}"))
                             }

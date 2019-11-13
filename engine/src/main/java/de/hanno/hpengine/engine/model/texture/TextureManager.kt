@@ -23,7 +23,9 @@ import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import jogl.DDSImage
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
@@ -70,7 +72,9 @@ import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-class TextureManager(val config: Config, programManager: OpenGlProgramManager, val gpuContext: OpenGLContext) : Manager {
+class TextureManager(val config: Config, programManager: OpenGlProgramManager,
+                     val gpuContext: OpenGLContext,
+                     val singleThreadedDispatcher: CoroutineDispatcher) : Manager {
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
@@ -152,14 +156,18 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
         return getTexture(resourceName, srgba, this)
     }
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> {
-        return textures.computeIfAbsent(resourceName) {
+    fun getTexture(resourceName: String,
+                   srgba: Boolean = false,
+                   directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> = runBlocking(singleThreadedDispatcher) {
+
+        textures.computeIfAbsent(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
     }
+
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> {
-        return textures.computeIfAbsent(resourceName) {
+    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> = runBlocking(singleThreadedDispatcher) {
+        textures.computeIfAbsent(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
         } as Texture<TextureDimension2D>
     }
