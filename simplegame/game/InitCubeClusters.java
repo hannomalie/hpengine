@@ -45,7 +45,7 @@ public class InitCubeClusters implements Updatable {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
                     int count = 10;
-                    ClustersComponent clustersComponent = new ClustersComponent(engine, engine.getEventBus(), current);
+                    ClustersComponent clustersComponent = new ClustersComponent(engine, current);
                     for(int x = -count; x < count; x++) {
                         for(int y = -count; y < count; y++) {
                             for(int z = -count; z < count; z++) {

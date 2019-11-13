@@ -4,8 +4,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.event.EntityAddedEvent
-import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.Cluster
@@ -21,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ClustersComponent(val engine: EngineContext<*>, private val eventBus: EventBus, override val entity: Entity): Component {
+class ClustersComponent(override val entity: Entity): Component {
 
     private val instances = CopyOnWriteArrayList<Instance>()
     private val clusters = CopyOnWriteArrayList<Cluster>()
@@ -72,7 +70,6 @@ class ClustersComponent(val engine: EngineContext<*>, private val eventBus: Even
         val firstCluster = getOrCreateFirstCluster()
         firstCluster.addAll(instances)
         recalculateInstances()
-        eventBus.post(EntityAddedEvent())
     }
 
     fun getOrCreateFirstCluster(): Cluster {
@@ -141,10 +138,6 @@ class ClustersComponentSystem(val engine: EngineContext<*>) : ComponentSystem<Cl
                 update(deltaSeconds)
             }
         }
-    }
-
-    override fun create(entity: Entity): ClustersComponent {
-        return ClustersComponent(engine, engine.eventBus, entity)
     }
 
     override fun addComponent(component: ClustersComponent) {

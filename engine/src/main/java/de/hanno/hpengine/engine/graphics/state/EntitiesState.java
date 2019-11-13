@@ -34,8 +34,8 @@ public class EntitiesState {
     public List<BufferableMatrix4f> joints;
 
     public EntitiesState(GpuContext gpuContext) {
-        vertexIndexBufferStatic = new VertexIndexBuffer(gpuContext, 10,10, ModelComponent.DEFAULTCHANNELS);
-        vertexIndexBufferAnimated = new VertexIndexBuffer(gpuContext, 10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
+        vertexIndexBufferStatic = new VertexIndexBuffer(gpuContext, 10,10, ModelComponent.Companion.getDEFAULTCHANNELS());
+        vertexIndexBufferAnimated = new VertexIndexBuffer(gpuContext, 10,10, ModelComponent.Companion.getDEFAULTANIMATEDCHANNELS());
         entitiesBuffer = new PersistentMappedBuffer(gpuContext, 8000);
         jointsBuffer = new PersistentMappedBuffer(gpuContext, 8000);
         materialBuffer = new PersistentMappedBuffer(gpuContext, 8000);

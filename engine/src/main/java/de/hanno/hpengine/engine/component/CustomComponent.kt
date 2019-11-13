@@ -11,4 +11,4 @@ interface CustomComponent: Component {
     }
 }
 
-class CustomComponentSystem : SimpleComponentSystem<CustomComponent>(CustomComponent::class.java, factory = { TODO("Not implemented") })
+class CustomComponentSystem : SimpleComponentSystem<CustomComponent>(CustomComponent::class.java)

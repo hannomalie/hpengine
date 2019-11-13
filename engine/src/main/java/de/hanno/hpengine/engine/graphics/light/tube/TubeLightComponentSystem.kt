@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.light.tube
 
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import org.joml.Vector3f
 
-class TubeLightComponentSystem: SimpleComponentSystem<TubeLight>(componentClass = TubeLight::class.java, factory = { TubeLight(it, Vector3f(1f, 1f, 1f), 50f, 20f) })
+class TubeLightComponentSystem: SimpleComponentSystem<TubeLight>(componentClass = TubeLight::class.java)

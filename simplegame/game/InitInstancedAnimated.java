@@ -51,7 +51,7 @@ public class InitInstancedAnimated implements EngineConsumer {
 //                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
 //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
             List<Cluster> clusters = new ArrayList<Cluster>();
-            ClustersComponent clustersComponent = new ClustersComponent(engine, engine.getEventBus(), entity);
+            ClustersComponent clustersComponent = new ClustersComponent(engine, entity);
             for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                 Cluster cluster = new Cluster();
                 Random random = new Random();

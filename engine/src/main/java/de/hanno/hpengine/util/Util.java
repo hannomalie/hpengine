@@ -369,7 +369,7 @@ public class Util {
 		buffer.rewind();
 		StringBuilder builder = new StringBuilder();
 		for(int i = 0; i < count; i++) {
-			builder.append(ModelComponent.getDebugStringFromBuffer(buffer));
+			builder.append(ModelComponent.Companion.getDebugStringFromBuffer(buffer));
 		}
 		buffer.rewind();
 		String result = builder.toString();

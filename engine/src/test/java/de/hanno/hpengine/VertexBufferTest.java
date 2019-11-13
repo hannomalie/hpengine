@@ -156,7 +156,7 @@ public class VertexBufferTest extends TestWithEngine {
     @Test
     public void benchmarkBufferUpload() {
         int floatBufferSize = 8*10000000;
-        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(floatBufferSize), ModelComponent.DEFAULTCHANNELS);
+        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(floatBufferSize), ModelComponent.Companion.getDEFAULTCHANNELS());
 
         System.out.println("Starting VertexBufferUpload");
         long start = System.currentTimeMillis();
@@ -210,7 +210,7 @@ public class VertexBufferTest extends TestWithEngine {
         });
 
         engine.getGpuContext().execute(() -> {
-            VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
+            VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(30), ModelComponent.Companion.getPOSITIONCHANNEL());
             buffer.upload();
 
             GLTimerQuery query = new GLTimerQuery(engine.getGpuContext()).begin();
@@ -222,7 +222,7 @@ public class VertexBufferTest extends TestWithEngine {
         });
 
         engine.getGpuContext().execute(() -> {
-            VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
+            VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(30), ModelComponent.Companion.getPOSITIONCHANNEL());
             buffer.upload();
 
             GLTimerQuery query = new GLTimerQuery(engine.getGpuContext()).begin();

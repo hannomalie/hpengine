@@ -39,8 +39,6 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
         engine.eventBus.register(this)
     }
 
-    override fun create(entity: Entity) = ModelComponent(entity)
-
     override fun CoroutineScope.update(deltaSeconds: Float) {
         for (component in getComponents()) {
             with(component) {
@@ -216,10 +214,10 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 }
 
 val Entity.instances: List<Instance>
-    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: kotlin.collections.emptyList()
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: emptyList()
 
 val Entity.clusters: List<Cluster>
-    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: kotlin.collections.emptyList()
+    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: emptyList()
 
 val Entity.instanceCount: Int
     get() = this.getComponent(ClustersComponent::class.java)?.getInstanceCount() ?: 1

@@ -157,7 +157,7 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> engine.getScene().getComponentSystems().get(ClustersComponentSystem.class).create(entity));
+            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> new ClustersComponent(entity));
             ClustersComponent.addInstance(entity, clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.getSpatial());
         });
         buttonPanel.addElement(addInstanceButton);
@@ -221,7 +221,8 @@ public class EntityView extends WebPanel {
 
         if(entity.getComponentOption(ModelComponent.class).isPresent()) {
             webComponentPanel.addElement(new WebCheckBox("Instanced") {{
-                this.addActionListener(e -> {entity.getComponent(ModelComponent.class).instanced = !entity.getComponent(ModelComponent.class).instanced;});
+                this.addActionListener(e -> {
+                    entity.getComponent(ModelComponent.class).setInstanced(!entity.getComponent(ModelComponent.class).getInstanced());});
             }});
         }
 

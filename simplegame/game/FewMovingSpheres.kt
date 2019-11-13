@@ -1,9 +1,7 @@
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.KotlinCompiledComponentLoader
 import de.hanno.hpengine.engine.component.ScriptComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Instance
@@ -18,7 +16,7 @@ class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
             println("loaded entities : " + loaded.entities.size)
             for (current in loaded.entities) {
 
-                val clustersComponent = ClustersComponent(engine, engine.eventBus, current)
+                val clustersComponent = ClustersComponent(engine, current)
                 val instances = (0..499).map { i ->
                     val trafo = SimpleTransform()
                     trafo.rotate(Vector3f(1f, 0f, 0f), -90)

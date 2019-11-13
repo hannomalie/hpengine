@@ -21,7 +21,7 @@ public class OpenGLQueryTest extends TestWithEngine {
         query.begin();
 
         int floatValueCount = 300000;
-        new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(floatValueCount), ModelComponent.POSITIONCHANNEL).upload();
+        new VertexBuffer(engine.getGpuContext(), BufferUtils.createFloatBuffer(floatValueCount), ModelComponent.Companion.getPOSITIONCHANNEL()).upload();
 
         query.end();
         Float result = query.getResult();

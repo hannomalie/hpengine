@@ -20,7 +20,7 @@ import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector4f
 
-class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java, factory = { PointLight(it, Vector4f(1f,1f,1f,1f), 100f) })
+class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java)
 
 class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
 

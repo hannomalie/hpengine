@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.component.ScriptComponent
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.util.ressources.FileMonitor
 
-class ScriptComponentSystem(val engine: Engine<*>): SimpleComponentSystem<ScriptComponent>(ScriptComponent::class.java, factory = { TODO("not implemented")}) {
+class ScriptComponentSystem(val engine: Engine<*>): SimpleComponentSystem<ScriptComponent>(ScriptComponent::class.java) {
 
     override fun addComponent(component: ScriptComponent) = with(component) {
         if (codeSource.isFileBased) {

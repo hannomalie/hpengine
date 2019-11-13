@@ -40,7 +40,7 @@ import java.nio.FloatBuffer
 import java.util.ArrayList
 import java.util.concurrent.Callable
 
-class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java, factory = { TODO("not implemented") })
+class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
 class AreaLightSystem(engine: Engine<*>, simpleScene: SimpleScene) : SimpleEntitySystem(engine, simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")

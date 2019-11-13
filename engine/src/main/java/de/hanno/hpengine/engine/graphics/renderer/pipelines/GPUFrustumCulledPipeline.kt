@@ -148,7 +148,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             with(commandOrganization) {
                 val instanceCount = primitiveCount
                 visibilityBuffers.resize(instanceCount)
-                commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * ModelComponent.getBytesPerInstance()
+                commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * ModelComponent.bytesPerInstance
                 val entitiesCountersToUse = entitiesCounters
                 entitiesCountersToUse.resize(commandCount)
                 with(appendProgram) {

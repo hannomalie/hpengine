@@ -2,7 +2,6 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
-import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
@@ -38,7 +37,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
             //                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
             //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
             val clusters = ArrayList<Cluster>()
-            val clustersComponent = ClustersComponent(engine, engine.eventBus, entity)
+            val clustersComponent = ClustersComponent(engine, entity)
             for (clusterIndex in 0..2) {
                 val cluster = Cluster()
                 val random = Random()
