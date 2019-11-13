@@ -21,7 +21,6 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
@@ -34,10 +33,7 @@ import java.util.EnumSet
 import java.util.logging.Logger
 
 
-class ModelComponent(entity: Entity, var model: Model<*>) : BaseComponent(entity), Serializable, Bufferable {
-
-    var animationController: AnimationController? = null
-        private set
+class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity), Serializable, Bufferable {
 
     var instanced = false
 
@@ -45,10 +41,6 @@ class ModelComponent(entity: Entity, var model: Model<*>) : BaseComponent(entity
     val baseVertices: IntArray
 
     init {
-        if (!model.isStatic) {
-            val animatedModel = model as AnimatedModel
-            animationController = AnimationController(animatedModel.frames.size, animatedModel.header.frameRate.toFloat())
-        }
         indicesCounts = IntArray(model.meshes.size)
         baseVertices = IntArray(model.meshes.size)
     }
@@ -87,9 +79,8 @@ class ModelComponent(entity: Entity, var model: Model<*>) : BaseComponent(entity
         get() = vertexIndexOffsets!!.vertexOffset
     val minMax: AABB
         get() {
-            if (!isStatic) {
-                val animationController = animationController
-                return getMinMax(animationController)
+            if (model is AnimatedModel) {
+                return getMinMax(entity)
             }
             return model.minMax
         }
@@ -98,20 +89,20 @@ class ModelComponent(entity: Entity, var model: Model<*>) : BaseComponent(entity
         get() = model.meshes
 
     val isStatic: Boolean
-        get() = model?.isStatic ?: true
+        get() = model.isStatic ?: true
 
     val animationFrame0: Int
         get() = if (model is AnimatedModel) {
-            animationController!!.currentFrameIndex
+            model.animationController.currentFrameIndex
         } else 0
 
     var isHasUpdated: Boolean
-        get() = if (!isStatic) {
-            animationController!!.isHasUpdated
+        get() = if (model is AnimatedModel) {
+            model.animationController.isHasUpdated
         } else false
         set(value) {
-            if (!isStatic) {
-                animationController!!.isHasUpdated = value
+            if (model is AnimatedModel) {
+                model.animationController.isHasUpdated = value
             }
         }
 
@@ -207,12 +198,6 @@ class ModelComponent(entity: Entity, var model: Model<*>) : BaseComponent(entity
         return model.getMinMax(transform)
     }
 
-    fun getMinMax(animationController: AnimationController?): AABB {
-        return if (isStatic || animationController == null) {
-            model.minMax
-        } else model.getMinMax(null!!, animationController)
-    }
-
     fun getIndexCount(i: Int): Int {
         return model.meshIndices[i].size()
     }
@@ -233,16 +218,16 @@ class ModelComponent(entity: Entity, var model: Model<*>) : BaseComponent(entity
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         if (model is AnimatedModel) {
-            animationController!!.update(deltaSeconds)
+            model.update(deltaSeconds)
         }
     }
 
     fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
-        return model.getBoundingSphereRadius(mesh, animationController)
+        return model.getBoundingSphereRadius(mesh)
     }
 
     fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
-        return model.getMinMax(transform, mesh, animationController)
+        return model.getMinMax(transform, mesh)
     }
 
     override fun putToBuffer(buffer: ByteBuffer) {

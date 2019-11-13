@@ -28,7 +28,7 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
         override val minMax: AABB
             get() = if (hasComponent(ModelComponent::class.java)) {
                 val modelComponent = getComponent(ModelComponent::class.java)
-                modelComponent!!.getMinMax(modelComponent.animationController)
+                modelComponent!!.minMax
             } else {
                 super.minMax
             }

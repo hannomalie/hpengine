@@ -161,7 +161,8 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
 
     override fun getCenter(entity: Entity): Vector3f {
         val component = entity.getComponent(ModelComponent::class.java)
-        return entity.transformPosition(centerTemp.set((component!!.model as AnimatedModel).getCurrentBoundInfo(component.animationController!!.currentFrameIndex).getCenterWorld(entity)))
+        val animatedModel = component!!.model as AnimatedModel
+        return entity.transformPosition(centerTemp.set(animatedModel.getCurrentBoundInfo(animatedModel.animationController.currentFrameIndex).getCenterWorld(entity)))
     }
 
     fun setModel(model: AnimatedModel) {

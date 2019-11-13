@@ -32,12 +32,12 @@ public interface Model<T extends Bufferable> {
 
     default boolean isStatic() {return true;}
 
-    default float getBoundingSphereRadius(Mesh mesh, AnimationController controller) { return mesh.getBoundingSphereRadius(); }
+    default float getBoundingSphereRadius(Mesh mesh) { return mesh.getBoundingSphereRadius(); }
 
-    default AABB getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
+    default AABB getMinMax(Transform transform, Mesh mesh) {
         return mesh.getMinMax(transform);
     }
-    default AABB getMinMax(Mesh mesh, AnimationController animationController) {
+    default AABB getMinMax(Mesh mesh) {
         return mesh.getMinMax();
     }
 
