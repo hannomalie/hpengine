@@ -185,7 +185,7 @@ class EntitySelector(val engine: Engine<OpenGl>,
                     unselect()
                 }
             })
-            add(MeshGrid(pickedMesh.mesh))
+            add(MeshGrid(pickedMesh.mesh, engine.scene.materialManager))
         }
     }
 
