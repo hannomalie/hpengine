@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.ManagerRegistry
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import kotlinx.coroutines.CoroutineScope
 import java.io.Serializable
@@ -46,26 +47,26 @@ interface Scene : Updatable, Serializable {
     fun extract(currentWriteState: RenderState)
 
     fun getEntities() = entityManager.getEntities()
-    fun addAll(entities: List<Entity>) {
-        entityManager.add(entities)
+    fun CoroutineScope.addAll(entities: List<Entity>) {
+        with(entityManager) { add(entities) }
 
-        entitySystems.onEntityAdded(entities)
-        componentSystems.onEntityAdded(entities)
-        managers.onEntityAdded(entities)
+        with(entitySystems) { onEntityAdded(entities) }
+        with(componentSystems) { onEntityAdded(entities) }
+        with(managers) { onEntityAdded(entities) }
 
         minMax.calculateMinMax(entityManager.getEntities())
 
         entityManager.entityAddedInCycle = currentCycle
     }
 
-    fun onComponentAdded(component: Component)
+    fun CoroutineScope.onComponentAdded(component: Component)
 
     fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
     fun getTubeLights(): List<TubeLight> = componentSystems.get(TubeLightComponentSystem::class.java).getComponents()
     fun getAreaLights(): List<AreaLight> = componentSystems.get(AreaLightComponentSystem::class.java).getComponents()
     fun getAreaLightSystem(): AreaLightSystem = entitySystems.get(AreaLightSystem::class.java)
     fun getPointLightSystem(): PointLightSystem = entitySystems.get(PointLightSystem::class.java)
-    fun add(entity: Entity) = addAll(listOf(entity))
+    fun CoroutineScope.add(entity: Entity) = addAll(listOf(entity))
     fun getEntity(name: String): Optional<Entity> {
         val candidate = entityManager.getEntities().find { e -> e.name == name }
         return Optional.ofNullable(candidate)
@@ -89,4 +90,5 @@ interface Scene : Updatable, Serializable {
     }
 
     var initialized: Boolean
+    val modelComponentSystem: ModelComponentSystem
 }

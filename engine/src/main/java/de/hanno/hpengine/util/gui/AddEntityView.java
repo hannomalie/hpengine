@@ -70,9 +70,10 @@ public class AddEntityView extends WebPanel {
 										engine.getScene().getMaterialManager(),
 										engine.getConfig().getDirectories().getGameDir()).execute();
 								System.out.println("result.entities.size() = " + result.entities.size());
-								engine.getSceneManager().getScene().addAll(result.entities);
-                                Thread.sleep(100);
-								return result;
+								throw new IllegalStateException("Doesnt work anymore, remove me");
+//								engine.getSceneManager().getScene().addAll(result.entities);
+//                                Thread.sleep(100);
+//								return result;
 							}
 
 							@Override

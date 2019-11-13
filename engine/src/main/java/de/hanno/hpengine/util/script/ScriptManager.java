@@ -119,7 +119,7 @@ public class ScriptManager implements Manager {
 	}
 
 	@Override
-	public void onEntityAdded(@NotNull List<? extends Entity> entities) {
+	public void onEntityAdded(CoroutineScope scope, @NotNull List<? extends Entity> entities) {
 
 	}
 

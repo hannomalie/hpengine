@@ -8,8 +8,14 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
+import java.util.concurrent.Executors
 
-private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>, override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext
+private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>,
+                                                override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext {
+    override val singleThreadUpdateScope: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
+}
 class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
 
     var scene: Scene = SimpleScene("InitScene", TempEngineImpl(managerContext, this@SceneManager))
@@ -22,13 +28,13 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
 
 
-    fun addAll(entities: List<Entity>) {
-        scene.addAll(entities)
+    fun CoroutineScope.addAll(entities: List<Entity>) {
+        with(scene) { addAll(entities) }
         managerContext.managers.managers.values.forEach {
-            it.onEntityAdded(entities)
+            with(it) { onEntityAdded(entities) }
         }
     }
-    fun add(entity: Entity) = addAll(listOf(entity))
+    fun CoroutineScope.add(entity: Entity) = addAll(listOf(entity))
     override fun CoroutineScope.update(deltaSeconds: Float) {
         val newDrawCycle = managerContext.renderManager.drawCycle.get()
         scene.currentCycle = newDrawCycle

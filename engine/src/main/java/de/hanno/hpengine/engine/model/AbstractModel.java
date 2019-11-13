@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
@@ -32,7 +33,8 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
         }
     }
 
-    public void setMaterial(SimpleMaterial material) {
+    @Override
+    public void setMaterial(Material material) {
         for (Mesh mesh : meshes) {
             mesh.setMaterial(material);
         }

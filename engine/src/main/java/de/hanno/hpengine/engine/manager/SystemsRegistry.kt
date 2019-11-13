@@ -17,15 +17,15 @@ interface ManagerRegistry {
         managers.forEach { it.value.clear() }
     }
 
-    fun onEntityAdded(entities: List<Entity>) {
+    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
         managers.forEach {
-            it.value.onEntityAdded(entities)
+            with(it.value) { onEntityAdded(entities) }
         }
     }
 
-    fun onComponentAdded(component: Component) {
+    fun CoroutineScope.onComponentAdded(component: Component) {
         managers.forEach {
-            it.value.onComponentAdded(component)
+            with(it.value) { onComponentAdded(component) }
         }
     }
 
@@ -57,10 +57,10 @@ interface SystemsRegistry {
         getSystems().forEach { it.clear() }
     }
 
-    fun onEntityAdded(entities: List<Entity>) {
+    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
         val matchedComponents = mutableMapOf<Class<out Component>, Component>()
         getSystems().forEach {
-            matchedComponents += it.onEntityAdded(entities)
+            matchedComponents += with(it) { onEntityAdded(entities) }
         }
         val leftOvers = matchedComponents.keys.filter { !matchedComponents.keys.contains(it) }
         if(leftOvers.isNotEmpty()) {
@@ -68,7 +68,7 @@ interface SystemsRegistry {
         }
     }
 
-    fun onComponentAdded(component: Component) {
+    fun CoroutineScope.onComponentAdded(component: Component) {
         getSystems().forEach {
             it.onComponentAdded(component)
         }

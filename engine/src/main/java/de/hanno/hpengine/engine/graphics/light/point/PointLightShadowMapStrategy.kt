@@ -166,6 +166,7 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
         val entities = engine.scene.entityManager.getEntities()
+        val modelComponentSystem = engine.scene.modelComponentSystem
         val gpuContext = engine.gpuContext
 
         profiled("PointLight shadowmaps") {
@@ -189,11 +190,13 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
 
                 for (e in entities) {
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
-                        pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.getHasDiffuseMap())
-                        pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
 
-                        val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds, modelComponent.getMaterial(engine.sceneManager.scene.materialManager).materialInfo, e.index, 0)
+                        val vertexIndexOffsets = modelComponentSystem.allocations[modelComponent]!!
+                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
+                        pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
+                        pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
+
+                        val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds, modelComponent.material.materialInfo, e.index, 0)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }
@@ -203,11 +206,13 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                 gpuContext.clearDepthAndColorBuffer()
                 for (e in entities) {
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
-                        pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.getHasDiffuseMap())
-                        pointShadowPassProgram.setUniform("color", modelComponent.getMaterial(engine.scene.materialManager).materialInfo.diffuse)
+                        val vertexIndexOffsets = modelComponentSystem.allocations[modelComponent]!!
 
-                        val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, modelComponent.indexOffset, modelComponent.baseVertex, false, e.instanceMinMaxWorlds, modelComponent.getMaterial(engine.sceneManager.scene.materialManager).materialInfo, e.index, 0)
+                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
+                        pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
+                        pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
+
+                        val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds, modelComponent.material.materialInfo, e.index, 0)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }

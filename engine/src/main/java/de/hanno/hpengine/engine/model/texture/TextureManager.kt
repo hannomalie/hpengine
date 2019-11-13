@@ -479,7 +479,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager, v
 
     }
 
-    override fun onEntityAdded(entities: List<Entity>) {
+    override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
 
     }
 

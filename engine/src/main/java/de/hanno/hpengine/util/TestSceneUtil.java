@@ -1,5 +1,6 @@
 package de.hanno.hpengine.util;
 
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.directory.EngineDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -57,21 +58,22 @@ public class TestSceneUtil {
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
                             Entity entity = entityManager.create(position, "Entity_" + System.currentTimeMillis());
-                            entity.addComponent(modelComponentSystem.create(entity, sphere));
+                            entity.addComponent(new ModelComponent(entity, sphere, materialManager.getDefaultMaterial()));
                             Entity pointLightEntity = new Entity();
                             pointLightEntity.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             pointLightEntity.addComponent(new PointLight(pointLightEntity, new Vector4f(1,1,1,1), 10));
-                            scene.add(pointLightEntity);
+                            throw new IllegalStateException("Doesnt work anymore, remove me");
+//                            scene.add(pointLightEntity);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 //							scale.scale(new Random().nextFloat()*14);
 //							entity.setScale(scale);
 //
-                            PhysicsComponent physicsComponent = physicsManager.addBallPhysicsComponent(entity);
-                            entity.addComponent(physicsComponent);
+//                            PhysicsComponent physicsComponent = physicsManager.addBallPhysicsComponent(entity);
+//                            entity.addComponent(physicsComponent);
 //							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
 //							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
 
-                            entities.add(entity);
+//                            entities.add(entity);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

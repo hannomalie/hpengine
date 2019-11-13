@@ -27,6 +27,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
+import kotlinx.coroutines.CoroutineScope
 import java.util.ArrayList
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
@@ -159,7 +160,7 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
 
     }
 
-    override fun onEntityAdded(entities: List<Entity>) {
+    override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
 
     }
 

@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.StaticMesh
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import org.joml.Vector2f
@@ -39,7 +40,7 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
     var weights: ArrayList<MD5Weight> = ArrayList()
     override var vertexBufferValuesArray: FloatArray = floatArrayOf()
     private val indicesList = IntArrayList()
-    override lateinit var material: SimpleMaterial
+    override lateinit var material: Material
     override lateinit var name: String
     private var model: AnimatedModel? = null
 

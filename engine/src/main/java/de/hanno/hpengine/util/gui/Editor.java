@@ -330,10 +330,11 @@ public class Editor implements HostComponent {
                                 engine.getSceneManager().getScene(),
                                 engine.getSceneManager().getScene().getComponentSystems().get(ModelComponentSystem.class),
                                 engine.getConfig().getDirectories().getEngineDir());
-                        engine.getSceneManager().getScene().addAll(entities);
-                        engine.getEventBus().post(new EntityAddedEvent());
-						stopProgress();
-                        return new Result(engine.getSceneManager().getScene());
+                        throw new IllegalStateException("Doesnt work anymore, remove me");
+//                        engine.getSceneManager().getScene().addAll(entities);
+//                        engine.getEventBus().post(new EntityAddedEvent());
+//						stopProgress();
+//                        return new Result(engine.getSceneManager().getScene());
                     }
 
                     @Override
@@ -409,8 +410,9 @@ public class Editor implements HostComponent {
                     public Result execute() throws Exception {
                         Entity pointLightEntity = new Entity("PointLight" + System.currentTimeMillis());
                         pointLightEntity.addComponent(new PointLight(pointLightEntity, new Vector4f(1,1,1,1), 50));
-                        engine.getSceneManager().getScene().add(pointLightEntity);
-                        return new Result(true);
+                        throw new IllegalStateException("Doesnt work anymore, remove me");
+//                        engine.getSceneManager().getScene().add(pointLightEntity);
+//                        return new Result(true);
                     }
                 });
 
@@ -438,8 +440,9 @@ public class Editor implements HostComponent {
                 Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
                     Entity tubeLightEntity = new Entity("TubeLight" + System.currentTimeMillis());
                     tubeLightEntity.addComponent(new TubeLight(tubeLightEntity, new Vector3f(1, 1, 1), 100, 50));
-                    engine.getSceneManager().getScene().add(tubeLightEntity);
-                    return new Result(true);
+                    throw new IllegalStateException("Doesnt work anymore, remove me");
+//                    engine.getSceneManager().getScene().add(tubeLightEntity);
+//                    return new Result(true);
                 });
 
 				if (!result.isSuccessful()) {
@@ -460,8 +463,9 @@ public class Editor implements HostComponent {
                 Result<Boolean> result = engine.getGpuContext().calculate((Callable<Result<Boolean>>) () -> {
                     Entity entity = new Entity("AreaLight" + System.currentTimeMillis());
                     entity.addComponent(new AreaLight(entity, new Vector3f(1, 1, 1), new Vector3f(50, 50, 20)));
-                    engine.getSceneManager().getScene().add(entity);
-                    return new Result(true);
+                    throw new IllegalStateException("Doesnt work anymore, remove me");
+//                    engine.getSceneManager().getScene().add(entity);
+//                    return new Result(true);
                 });
 
 				if (!result.isSuccessful()) {

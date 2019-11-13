@@ -21,8 +21,12 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin
@@ -40,6 +44,7 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 
     val scene
         get() = sceneManager.scene
+    val singleThreadUpdateScope: ExecutorCoroutineDispatcher
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
@@ -47,10 +52,20 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                                            override val renderManager: RenderManager = RenderManager(engineContext),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
+//     TODO: Make me a type
+    override val singleThreadUpdateScope = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
     private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
     val updateConsumer = Consumer<Float> {
         with(this@EngineImpl) {
-            runBlocking(updateScope) { update(it) }
+            runBlocking {
+                withContext(singleThreadUpdateScope) {
+                    val job = launch(updateScope) {
+                        update(it)
+                    }
+                    // block singleThreadContext while updating, not suspending
+                    while(!job.isCompleted) { }
+                }
+            }
         }
     }
     val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())

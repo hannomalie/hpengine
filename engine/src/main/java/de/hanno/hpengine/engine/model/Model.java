@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -10,7 +11,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import java.util.List;
 
 public interface Model<T extends Bufferable> {
-    void setMaterial(SimpleMaterial material);
+    void setMaterial(Material material);
 
     List<Mesh<T>> getMeshes();
 

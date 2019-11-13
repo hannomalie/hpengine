@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.MeshSelectedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
+import de.hanno.hpengine.engine.graphics.OpenGLContext.Executor.async
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -36,6 +37,7 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
 
@@ -57,7 +59,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         engine.renderSystems.add(it)
     }
     private val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
-    private val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
+    override val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
     val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem())
     private val areaLightComponentSystem = componentSystems.register(AreaLightComponentSystem())
     private val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
@@ -83,7 +85,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         override fun clear() {}
         override fun CoroutineScope.update(deltaSeconds: Float) {}
         override fun gatherEntities() {}
-        override fun onEntityAdded(entities: List<Entity>) {
+        override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
             engine.eventBus.post(MaterialAddedEvent())
             engine.eventBus.post(EntityAddedEvent())
         }
@@ -92,14 +94,22 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     val directionalLight = Entity("DirectionalLight")
             .apply { addComponent(DirectionalLight(this)) }
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
-            .apply { this@SimpleScene.add(this) }
+            .apply {
+                runBlocking(engine.singleThreadUpdateScope) {
+                    with(this@SimpleScene) { add(this@apply) }
+                }
+            }
 
     val cameraEntity = Entity("MainCamera")
             .apply { addComponent(inputComponentSystem.create(this)) }
 
     override val camera = cameraComponentSystem.create(cameraEntity)
             .apply { cameraEntity.addComponent(this) }
-            .apply { this@SimpleScene.add(cameraEntity) }
+            .apply {
+                runBlocking(engine.singleThreadUpdateScope) {
+                    with(this@SimpleScene) { add(cameraEntity) }
+                }
+            }
 //    TODO: Exclude from entity movement determination
 
     override var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
@@ -140,16 +150,9 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         }
     }
 
-    override fun onComponentAdded(component: Component) {
-        componentSystems.onComponentAdded(component)
-        managers.onComponentAdded(component)
+    override fun CoroutineScope.onComponentAdded(component: Component) {
+        with(componentSystems) { onComponentAdded(component) }
+        with(managers) { onComponentAdded(component) }
     }
 
-    @Handler
-    fun handleSelection(event: MeshSelectedEvent) {
-        getEntities().parallelStream().forEach { e -> e.isSelected = false }
-        val entity = getEntities()[event.entityIndex]
-        val mesh = entity.getComponent(ModelComponent::class.java)!!.meshes[event.meshIndex]
-        entity.isSelected = true
-    }
 }

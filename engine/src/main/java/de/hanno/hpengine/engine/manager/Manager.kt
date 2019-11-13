@@ -13,10 +13,10 @@ interface Manager {
     fun clear() {}
 
     @JvmDefault
-    fun onEntityAdded(entities: List<Entity>) {}
+    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {}
 
     @JvmDefault
-    fun onComponentAdded(component: Component) {}
+    fun CoroutineScope.onComponentAdded(component: Component) {}
 
     @JvmDefault
     fun CoroutineScope.afterUpdate(deltaSeconds: Float) {}

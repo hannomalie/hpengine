@@ -2,19 +2,18 @@ package de.hanno.hpengine.engine.model
 
 import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable
-import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import org.joml.Vector3f
 
 interface Mesh<T : Bufferable> {
     val vertexBufferValuesArray: FloatArray
     val indexBufferValuesArray: IntArray
     val triangleCount: Int
-    var material: SimpleMaterial
+    var material: Material
     val boundingSphereRadius: Float
     var name: String
     val faces: List<StaticMesh.CompiledFace>

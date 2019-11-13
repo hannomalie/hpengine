@@ -2,16 +2,12 @@ package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
-import de.hanno.hpengine.engine.model.clusters
 import de.hanno.hpengine.engine.model.instanceCount
-import de.hanno.hpengine.engine.model.instances
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController
-import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
@@ -25,35 +21,28 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
 import kotlinx.coroutines.CoroutineScope
-import org.joml.Matrix4f
-import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.util.EnumSet
 import java.util.logging.Logger
 
 
-class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity), Serializable, Bufferable {
-
+class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
+    var material = initMaterial
+    set(value) {
+        field = value
+        model.setMaterial(value)
+        for (child in entity.children) {
+            child.getComponentOption(ModelComponent::class.java).ifPresent { c -> c.material = value }
+        }
+    }
     var instanced = false
 
-    private val indicesCounts: IntArray
-    val baseVertices: IntArray
+    internal val indicesCounts = IntArray(model.meshes.size)
+    val baseVertices = IntArray(model.meshes.size)
 
-    init {
-        indicesCounts = IntArray(model.meshes.size)
-        baseVertices = IntArray(model.meshes.size)
-    }
-
-    protected var materialName = ""
-    private lateinit var vertexIndexOffsets: VertexIndexOffsets
     var jointsOffset = 0
-    @Transient
-    var componentIndex = -1
     var entityBufferIndex: Int = 0
-
-    @Transient
-    private var materialCache: WeakReference<SimpleMaterial>? = null
 
     val boundingSphereRadius: Float
         get() = model.boundingSphereRadius
@@ -70,13 +59,6 @@ class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity
     val indexCount: Int
         get() = indicesCounts[0]
 
-    // TODO: Remove this
-    val indexOffset: Int
-        get() = vertexIndexOffsets!!.indexOffset
-
-    // TODO: Remove this
-    val baseVertex: Int
-        get() = vertexIndexOffsets!!.vertexOffset
     val minMax: AABB
         get() {
             if (model is AnimatedModel) {
@@ -109,90 +91,8 @@ class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity
     val isInvertTexCoordY: Boolean
         get() = model.isInvertTexCoordY
 
-    val materials: List<SimpleMaterial>
+    val materials: List<Material>
         get() = meshes.map { it.material }
-
-    fun getMaterial(materialManager: MaterialManager): SimpleMaterial {
-        if (materialCache != null && materialCache!!.get() != null && materialCache!!.get()!!.materialInfo.name == materialName) {
-            //            return materialCache.get();
-        }
-        val material = materialManager.getMaterial(materialName)
-        materialCache = WeakReference(material)
-        if (material == null) {
-            Logger.getGlobal().info("SimpleMaterial null, default is applied")
-            return materialManager.defaultMaterial
-        }
-        return material
-    }
-
-    fun setMaterial(materialManager: MaterialManager, materialName: String) {
-        this.materialName = materialName
-        model.setMaterial(materialManager.getMaterial(materialName))
-        for (child in entity.children) {
-            child.getComponentOption(ModelComponent::class.java).ifPresent { c -> c.setMaterial(materialManager, materialName) }
-        }
-    }
-
-    fun putToBuffer(gpuContext: GpuContext<*>, vertexIndexBuffer: VertexIndexBuffer, channels: EnumSet<DataChannels>): VertexIndexOffsets {
-
-        val compiledVertices = model.compiledVertices
-
-        val elementsPerVertex = DataChannels.totalElementsPerVertex(channels)
-        val indicesCount = indices.size
-        vertexIndexOffsets = vertexIndexBuffer.allocate(compiledVertices.size, indicesCount)
-
-        var currentIndexOffset = vertexIndexOffsets!!.indexOffset
-        var currentVertexOffset = vertexIndexOffsets!!.vertexOffset
-
-        for (i in indicesCounts.indices) {
-            val mesh = model.meshes[i] as Mesh<*>
-            indicesCounts[i] = currentIndexOffset
-            baseVertices[i] = currentVertexOffset
-            currentIndexOffset += mesh.indexBufferValuesArray.size
-            currentVertexOffset += mesh.vertexBufferValuesArray.size / elementsPerVertex
-        }
-
-        val result: StructArray<*>
-        val bytesPerObject: Int
-        if (model.isStatic) {
-            val converted = StructArray(compiledVertices.size) { VertexStruct() }
-            for (i in compiledVertices.indices) {
-                val (_, position, texCoord, normal) = compiledVertices[i] as Vertex
-                val target = converted.getAtIndex(i)
-                target.position.set(position)
-                target.texCoord.set(texCoord)
-                target.normal.set(normal)
-            }
-            result = converted
-            bytesPerObject = Vertex.sizeInBytes
-        } else {
-            val converted = StructArray(compiledVertices.size) { AnimatedVertexStruct() }
-            for (i in compiledVertices.indices) {
-                val (_, position, texCoord, normal, weights, jointIndices) = compiledVertices[i] as AnimatedVertex
-                val target = converted.getAtIndex(i)
-                target.position.set(position)
-                target.texCoord.set(texCoord)
-                target.normal.set(normal)
-                target.weights.set(weights)
-                target.jointIndices.set(jointIndices)
-            }
-            result = converted
-            bytesPerObject = AnimatedVertex.sizeInBytes
-        }
-
-        gpuContext.execute("ModelComponent.putToBuffer") {
-            vertexIndexBuffer.vertexBuffer.setCapacityInBytes(bytesPerObject * compiledVertices.size)
-            val shrunk = result.shrinkToBytes(vertexIndexBuffer.vertexBuffer.buffer.capacity(), true)
-            shrunk.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexIndexOffsets!!.vertexOffset * bytesPerObject)
-            vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets!!.indexOffset, *indices)
-
-            LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets!!.indexOffset)
-            LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets!!.vertexOffset)
-            vertexIndexBuffer.vertexBuffer.upload()
-        }
-
-        return vertexIndexOffsets
-    }
 
     fun getMinMax(transform: Transform<*>): AABB {
         return model.getMinMax(transform)
@@ -230,84 +130,7 @@ class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity
         return model.getMinMax(transform, mesh)
     }
 
-    override fun putToBuffer(buffer: ByteBuffer) {
-
-        var meshIndex = 0
-        val meshes = meshes
-        for (mesh in meshes) {
-            val materialIndex = mesh.material.materialIndex
-            run { putValues(buffer, entity.transformation, meshIndex, materialIndex, animationFrame0, getMinMax(entity, mesh)) }
-
-            for (cluster in entity.clusters) {
-                for (i in cluster.indices) {
-                    val instance = cluster[i]
-                    val instanceMatrix = instance.transformation
-                    val instanceMaterialIndex = instance.materials[meshIndex].materialIndex
-                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.animationController!!.currentFrameIndex, instance.getMinMaxWorld(instance))
-                }
-            }
-
-            // TODO: This has to be the outer loop i think?
-            if (entity.hasParent()) {
-                for (instance in entity.instances) {
-                    val instanceMatrix = instance.transformation
-                    putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.animationController!!.currentFrameIndex, entity.minMaxWorld)
-                }
-            }
-            meshIndex++
-        }
-    }
-
-    private fun putValues(buffer: ByteBuffer, mm: Matrix4f, meshIndex: Int, materialIndex: Int, animationFrame0: Int, minMaxWorld: AABB) {
-        buffer.putFloat(mm.m00())
-        buffer.putFloat(mm.m01())
-        buffer.putFloat(mm.m02())
-        buffer.putFloat(mm.m03())
-        buffer.putFloat(mm.m10())
-        buffer.putFloat(mm.m11())
-        buffer.putFloat(mm.m12())
-        buffer.putFloat(mm.m13())
-        buffer.putFloat(mm.m20())
-        buffer.putFloat(mm.m21())
-        buffer.putFloat(mm.m22())
-        buffer.putFloat(mm.m23())
-        buffer.putFloat(mm.m30())
-        buffer.putFloat(mm.m31())
-        buffer.putFloat(mm.m32())
-        buffer.putFloat(mm.m33())
-
-        buffer.putInt(if (entity.isSelected) 1 else 0)
-        buffer.putInt(materialIndex)
-        buffer.putInt(entity.updateType.asDouble.toInt())
-        buffer.putInt(entityBufferIndex + meshIndex)
-
-        buffer.putInt(entity.index)
-        buffer.putInt(meshIndex)
-        buffer.putInt(getBaseVertex(meshIndex))
-        buffer.putInt(baseJointIndex)
-
-        buffer.putInt(animationFrame0)
-        buffer.putInt(0)
-        buffer.putInt(0)
-        buffer.putInt(0)
-
-        buffer.putInt(if (isInvertTexCoordY) 1 else 0)
-        buffer.putInt(0)
-        buffer.putInt(0)
-        buffer.putInt(0)
-
-        buffer.putFloat(minMaxWorld.min.x)
-        buffer.putFloat(minMaxWorld.min.y)
-        buffer.putFloat(minMaxWorld.min.z)
-        buffer.putFloat(1f)
-
-        buffer.putFloat(minMaxWorld.max.x)
-        buffer.putFloat(minMaxWorld.max.y)
-        buffer.putFloat(minMaxWorld.max.z)
-        buffer.putFloat(1f)
-    }
-
-    override fun debugPrintFromBuffer(buffer: ByteBuffer): String {
+    fun debugPrintFromBuffer(buffer: ByteBuffer): String {
         return getDebugStringFromBuffer(buffer)
     }
 
@@ -315,7 +138,7 @@ class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity
         return "ModelComponent (" + model.toString() + ")"
     }
 
-    override fun getBytesPerObject(): Int {
+    fun getBytesPerObject(): Int {
         return bytesPerInstance * meshes.size * entity.instanceCount
     }
 
@@ -392,5 +215,64 @@ class ModelComponent(entity: Entity, val model: Model<*>) : BaseComponent(entity
 
         val bytesPerInstance: Int
             get() = 16 * java.lang.Float.BYTES + 16 * Integer.BYTES + 8 * java.lang.Float.BYTES
+    }
+}
+fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
+    return allocate(modelComponent.model.compiledVertices.size, modelComponent.indices.size)
+}
+fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
+                               vertexIndexBuffer: VertexIndexBuffer,
+                               channels: EnumSet<DataChannels>,
+                               vertexIndexOffsets: VertexIndexOffsets) {
+
+    val compiledVertices = model.compiledVertices
+
+    val elementsPerVertex = DataChannels.totalElementsPerVertex(channels)
+
+    var currentIndexOffset = vertexIndexOffsets.indexOffset
+    var currentVertexOffset = vertexIndexOffsets.vertexOffset
+
+    for (i in indicesCounts.indices) {
+        val mesh = model.meshes[i] as Mesh<*>
+        indicesCounts[i] = currentIndexOffset
+        baseVertices[i] = currentVertexOffset
+        currentIndexOffset += mesh.indexBufferValuesArray.size
+        currentVertexOffset += mesh.vertexBufferValuesArray.size / elementsPerVertex
+    }
+
+    val result: StructArray<*>
+    val bytesPerObject: Int
+    if (model.isStatic) {
+        val converted = StructArray(compiledVertices.size) { VertexStruct() }
+        for (i in compiledVertices.indices) {
+            val (_, position, texCoord, normal) = compiledVertices[i] as Vertex
+            val target = converted.getAtIndex(i)
+            target.position.set(position)
+            target.texCoord.set(texCoord)
+            target.normal.set(normal)
+        }
+        result = converted
+        bytesPerObject = Vertex.sizeInBytes
+    } else {
+        val converted = StructArray(compiledVertices.size) { AnimatedVertexStruct() }
+        for (i in compiledVertices.indices) {
+            val (_, position, texCoord, normal, weights, jointIndices) = compiledVertices[i] as AnimatedVertex
+            val target = converted.getAtIndex(i)
+            target.position.set(position)
+            target.texCoord.set(texCoord)
+            target.normal.set(normal)
+            target.weights.set(weights)
+            target.jointIndices.set(jointIndices)
+        }
+        result = converted
+        bytesPerObject = AnimatedVertex.sizeInBytes
+    }
+
+    gpuContext.execute("ModelComponent.putToBuffer") {
+        vertexIndexBuffer.vertexBuffer.setCapacityInBytes(bytesPerObject * compiledVertices.size)
+        val shrunk = result.shrinkToBytes(vertexIndexBuffer.vertexBuffer.buffer.capacity(), true)
+        shrunk.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexIndexOffsets.vertexOffset * bytesPerObject)
+        vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, *indices)
+        vertexIndexBuffer.vertexBuffer.upload()
     }
 }

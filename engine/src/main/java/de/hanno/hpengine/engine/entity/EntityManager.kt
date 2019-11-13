@@ -45,7 +45,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         entity.index = entityContainer.entities.indexOf(entity)
     }
 
-    fun add(entities: List<Entity>) {
+    fun CoroutineScope.add(entities: List<Entity>) {
         for (entity in entities) {
             add(entity)
         }

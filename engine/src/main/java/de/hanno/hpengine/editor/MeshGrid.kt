@@ -1,6 +1,7 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.model.Mesh
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import net.miginfocom.swing.MigLayout
@@ -17,7 +18,7 @@ class MeshGrid(val mesh: Mesh<*>, val materialManager: MaterialManager): JPanel(
         labeled("Material", mesh::material.toComboBox())
     }
 
-    fun KMutableProperty0<SimpleMaterial>.toComboBox(): JComboBox<SimpleMaterial> {
+    fun KMutableProperty0<Material>.toComboBox(): JComboBox<SimpleMaterial> {
         return JComboBox(materialManager.MATERIALS.values.toTypedArray()).apply {
             addActionListener {
                 this@toComboBox.set(this.selectedItem as SimpleMaterial)

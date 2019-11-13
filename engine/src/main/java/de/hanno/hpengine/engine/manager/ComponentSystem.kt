@@ -23,9 +23,14 @@ interface ComponentSystem<T : Component> {
     fun onSceneSet() {
         clear()
     }
-    fun onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+    fun CoroutineScope.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+        return onEntityAddedImpl(entities)
+    }
+
+//     Workaround for https://youtrack.jetbrains.com/issue/KT-11488?_ga=2.92346137.567661805.1573652933-1826229974.1518078622
+    fun onEntityAddedImpl(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
         val matchedComponents = mutableMapOf<Class<out Component>, Component>()
-        for(entity in entities) {
+        for (entity in entities) {
             matchedComponents += addCorrespondingComponents(entity.components)
         }
         return matchedComponents

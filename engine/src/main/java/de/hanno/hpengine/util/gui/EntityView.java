@@ -16,15 +16,16 @@ import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.backend.BackendType;
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.component.ModelComponentKt;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.instancing.ClustersComponent;
-import de.hanno.hpengine.engine.instancing.ClustersComponentSystem;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Update;
+import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.util.Util;
@@ -157,8 +158,9 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> new ClustersComponent(entity));
-            ClustersComponent.addInstance(entity, clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.getSpatial());
+            throw new IllegalStateException("Doesnt work anymore, remove me");
+//            ClustersComponent clustersComponent = entity.getOrAddComponent(ClustersComponent.class, () -> new ClustersComponent(entity));
+//            ClustersComponent.addInstance(entity, clustersComponent.getOrCreateFirstCluster(), new SimpleTransform(), entity.getSpatial());
         });
         buttonPanel.addElement(addInstanceButton);
         instancesPanels.add(buttonPanel);
@@ -207,15 +209,15 @@ public class EntityView extends WebPanel {
         });
         webComponentPanel.addElement(updateComboBox);
 
-        SimpleMaterial material = engine.getScene().getMaterialManager().getDefaultMaterial();
+        Material material = engine.getScene().getMaterialManager().getDefaultMaterial();
         if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-            material = entity.getComponent(ModelComponent.class).getMaterial(engine.getScene().getMaterialManager());
+            material = entity.getComponent(ModelComponent.class).getMaterial();
         }
 
         addMaterialSelect(webComponentPanel, e -> {
             WebComboBox cb = (WebComboBox) e.getSource();
             SimpleMaterial selectedMaterial = engine.getScene().getMaterialManager().getMaterials().get(cb.getSelectedIndex());
-            entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(engine.getScene().getMaterialManager(), selectedMaterial.getMaterialInfo().getName()));
+            entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial));
             engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         }, material);
 
@@ -266,7 +268,7 @@ public class EntityView extends WebPanel {
         return webComponentPanel;
 	}
 
-    private void addMaterialSelect(WebComponentPanel webComponentPanel, ActionListener actionListener, SimpleMaterial initialSelection) {
+    private void addMaterialSelect(WebComponentPanel webComponentPanel, ActionListener actionListener, Material initialSelection) {
         try {
             WebComboBox materialSelect = new WebComboBox(new Vector<>(engine.getScene().getMaterialManager().getMaterials()));
 

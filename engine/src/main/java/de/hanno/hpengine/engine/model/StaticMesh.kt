@@ -5,6 +5,7 @@ import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.Vertex
@@ -30,7 +31,7 @@ class StaticMesh(override var name: String = "",
 
     val indexedFaces: MutableList<Face> = ArrayList()
     private val compiledFaces = ArrayList<CompiledFace>()
-    override lateinit var material: SimpleMaterial
+    override lateinit var material: Material
     override val indexBufferValues = IntArrayList()
     private val vertexBufferValues = FloatArrayList()
     override lateinit var indexBufferValuesArray: IntArray

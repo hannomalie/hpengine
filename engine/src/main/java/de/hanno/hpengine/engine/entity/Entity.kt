@@ -100,38 +100,21 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
             clazz = clazz.superclass as Class<Component>
         }
         addComponent(component, clazz)
-        return this
+        return this@Entity
     }
 
     fun addComponent(component: Component, clazz: Class<Component>) {
         components[clazz] = component
-        managerRegistry?.onComponentAdded(component)
     }
 
     fun removeComponent(component: Component) {
         (components as java.util.Map<Class<Component>, Component>).remove(component.identifier, component)
     }
 
-    fun <T : Component> getOrAddComponent(type: Class<T>, supplier: Supplier<T>): T? {
+    fun <T : Component> CoroutineScope.getOrAddComponent(type: Class<T>, supplier: Supplier<T>): T? {
         if (!hasComponent(type)) {
             val component = supplier.get()
             addComponent(component)
-            return component
-        }
-        return getComponent(type)
-    }
-
-    fun <T : Component> getOrAddComponentLegacy(type: Class<T>, supplier: Callable<T>): T? {
-        if (!hasComponent(type)) {
-            var component: T? = null
-            try {
-                component = supplier.call()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return null
-            }
-
-            addComponent(component!!)
             return component
         }
         return getComponent(type)

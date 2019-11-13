@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
@@ -111,7 +112,7 @@ class ClustersComponent(override val entity: Entity): Component {
                                    cluster: Cluster,
                                    transform: Transform<*>,
                                    modelComponent: ModelComponent,
-                                   materials: List<SimpleMaterial> = modelComponent.materials,
+                                   materials: List<Material> = modelComponent.materials,
                                    animationController: AnimationController = if (modelComponent.isStatic) AnimationController(0, 0f) else AnimationController(120, 24f),
                                    spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
 

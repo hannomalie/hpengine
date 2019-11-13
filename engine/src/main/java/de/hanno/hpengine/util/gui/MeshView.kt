@@ -8,6 +8,7 @@ import com.alee.laf.panel.WebPanel
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.model.Mesh
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import java.awt.event.ActionListener
 import java.util.*
@@ -40,8 +41,8 @@ class MeshView(val engine: Engine<*>, val mesh: Mesh<*>): WebPanel() {
         add(meshesPanel)
     }
 
-    private fun addMaterialSelect(webComponentPanel: WebComponentPanel, actionListener: ActionListener, initialSelection: SimpleMaterial) {
-        val materialSelect = WebComboBox(Vector<SimpleMaterial>(engine.scene.materialManager.materials))
+    private fun addMaterialSelect(webComponentPanel: WebComponentPanel, actionListener: ActionListener, initialSelection: Material) {
+        val materialSelect = WebComboBox(Vector(engine.scene.materialManager.materials))
 
         materialSelect.selectedIndex = engine.scene.materialManager.materials.indexOf(initialSelection)
         materialSelect.addActionListener(actionListener)

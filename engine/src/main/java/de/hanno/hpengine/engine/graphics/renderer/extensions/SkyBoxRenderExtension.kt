@@ -4,6 +4,8 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.allocateForComponent
+import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
@@ -30,13 +32,15 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
     private val skyBoxEntity = Entity("Skybox")
 
     private val skyBox = OBJLoader().loadTexturedModel(materialManager, engineContext.config.directories.engineDir.resolve("assets/models/skybox.obj"))
-    private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox).apply {
+    private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox, materialManager.defaultMaterial).apply {
         skyBoxEntity.addComponent(this)
     }
     private val skyboxVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
 
-    private val vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent::class.java)!!.putToBuffer(engineContext.gpuContext, skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS)
-    private val skyBoxRenderBatch = RenderBatch().init(0, true, false, false, Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC, Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(), 1000f, skyBox.indices.size, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.instanceMinMaxWorlds, skyBoxModelComponent.getMaterial(materialManager).materialInfo, skyBoxEntity.index, 0)
+    private val vertexIndexOffsets = skyboxVertexIndexBuffer.allocateForComponent(skyBoxModelComponent).apply {
+        skyBoxModelComponent.putToBuffer(engineContext.gpuContext, skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS, this)
+    }
+    private val skyBoxRenderBatch = RenderBatch().init(0, true, false, false, Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC, Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(), 1000f, skyBox.indices.size, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxEntity.instanceMinMaxWorlds, skyBoxModelComponent.material.materialInfo, skyBoxEntity.index, 0)
 
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {

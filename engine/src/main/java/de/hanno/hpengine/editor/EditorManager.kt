@@ -17,11 +17,11 @@ class EditorManager(val editor: RibbonEditor) : Manager {
     private var ePressed by KeyUpDownProperty(editor, KeyEvent.VK_E, withShift = true)
     private var shiftPressed by KeyUpDownProperty(editor, KeyEvent.VK_SHIFT, withShift = true)
 
-    override fun onEntityAdded(entities: List<Entity>) {
+    override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
         editor.sceneTree.reload()
     }
 
-    override fun onComponentAdded(component: Component) {
+    override fun CoroutineScope.onComponentAdded(component: Component) {
         editor.sceneTree.reload()
     }
     override fun CoroutineScope.update(deltaSeconds: Float) {

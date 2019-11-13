@@ -28,12 +28,6 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
     }
 
 
-    override fun setMaterial(material: SimpleMaterial) {
-        for (mesh in meshes) {
-            mesh.material = material
-        }
-    }
-
     override fun getMeshes(): List<Mesh<AnimatedVertex>> {
         return meshes
     }

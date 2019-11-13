@@ -12,7 +12,7 @@ import net.engio.mbassy.listener.Handler
 interface EntitySystem {
     fun CoroutineScope.update(deltaSeconds: Float)
     fun gatherEntities()
-    fun onEntityAdded(entities: List<Entity>) {
+    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
 
@@ -47,9 +47,9 @@ interface EntitySystemRegistry {
         } else return clazz.cast(firstOrNull)
     }
 
-    fun onEntityAdded(entities: List<Entity>) {
+    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
         for(system in getSystems()) {
-            system.onEntityAdded(entities)
+            with(system) { onEntityAdded(entities) }
         }
     }
 
