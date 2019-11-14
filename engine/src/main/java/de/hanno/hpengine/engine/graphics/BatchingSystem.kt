@@ -1,42 +1,30 @@
 package de.hanno.hpengine.engine.graphics
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.ComponentMapper
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
-import de.hanno.hpengine.engine.scene.SimpleScene
-import kotlinx.coroutines.CoroutineScope
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 
-class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(ModelComponent::class.java)) {
+class BatchingSystem {
 
-    private val cameraMapper = ComponentMapper.forClass(Camera::class.java)
     private val tempDistVector = Vector3f()
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    fun extract(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f,
+                modelComponents: List<ModelComponent>, drawLines: Boolean,
+                allocations: MutableMap<ModelComponent, ModelComponentSystem.Allocation>,
+                entityIndices: MutableMap<ModelComponent, Int>) {
 
-    }
-
-    override fun extract(renderState: RenderState) {
-        val camera = engine.scene.activeCamera
-        val cameraWorldPosition = camera.entity.position
-
-        addBatches(camera, renderState, cameraWorldPosition, components[ModelComponent::class.java] as List<ModelComponent>)
-    }
-
-    private fun addBatches(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, modelComponents: List<ModelComponent>) {
         for (modelComponent in modelComponents) {
             val entity = modelComponent.entity
             val distanceToCamera = tempDistVector.length()
             val isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.boundingSphereRadius
 
-            val entityIndexOf = modelComponent.entityBufferIndex
+            val entityIndexOf = entityIndices[modelComponent]!!
 
             val meshes = modelComponent.meshes
             for (meshIndex in meshes.indices) {
@@ -53,7 +41,13 @@ class BatchingSystem(engine: Engine<*>, simpleScene: SimpleScene): SimpleEntityS
                 val meshBufferIndex = entityIndexOf + meshIndex * entity.instanceCount
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
-                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, engine.config.debug.isDrawLines, cameraWorldPosition, isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType, min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(meshIndex), modelComponent.getIndexOffset(meshIndex), modelComponent.getBaseVertex(meshIndex), !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index, meshIndex)
+                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, drawLines, cameraWorldPosition,
+                        isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType,
+                        min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(meshIndex),
+                        allocations[modelComponent]!!.vertexIndexOffsetsForMeshes[meshIndex].indexOffset,
+                        allocations[modelComponent]!!.vertexIndexOffsetsForMeshes[meshIndex].vertexOffset,
+                        !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index, meshIndex)
+
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)
                 } else {

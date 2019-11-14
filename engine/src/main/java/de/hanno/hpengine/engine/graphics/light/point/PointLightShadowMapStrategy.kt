@@ -191,12 +191,19 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                 for (e in entities) {
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
 
-                        val vertexIndexOffsets = modelComponentSystem.allocations[modelComponent]!!
+                        val allocation = modelComponentSystem.allocations[modelComponent]!!
                         pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
                         pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
                         pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
 
-                        val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds, modelComponent.material.materialInfo, e.index, 0)
+                        val batch = RenderBatch().init(modelComponentSystem.entityIndices[modelComponent]!!,
+                                e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true,
+                                e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld,
+                                e.boundingSphereRadius, allocation.vertexIndexOffsetsForMeshes[0].indexOffset,
+                                allocation.vertexIndexOffsets.indexOffset,
+                                allocation.vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds,
+                                modelComponent.material.materialInfo, e.index, 0)
+
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }
@@ -206,13 +213,18 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                 gpuContext.clearDepthAndColorBuffer()
                 for (e in entities) {
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                        val vertexIndexOffsets = modelComponentSystem.allocations[modelComponent]!!
+                        val allocation = modelComponentSystem.allocations[modelComponent]!!
 
                         pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
                         pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
                         pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
 
-                        val batch = RenderBatch().init(e.getComponent(ModelComponent::class.java)!!.entityBufferIndex, e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius, modelComponent.indexCount, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds, modelComponent.material.materialInfo, e.index, 0)
+                        val batch = RenderBatch().init(modelComponentSystem.entityIndices[modelComponent]!!, e.isVisible,
+                                e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true,
+                                e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius,
+                                allocation.vertexIndexOffsetsForMeshes[0].indexOffset, allocation.vertexIndexOffsets.indexOffset,
+                                allocation.vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds,
+                                modelComponent.material.materialInfo, e.index, 0)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }

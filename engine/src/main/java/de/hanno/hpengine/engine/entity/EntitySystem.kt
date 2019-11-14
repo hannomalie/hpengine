@@ -11,7 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import net.engio.mbassy.listener.Handler
 
 interface EntitySystem {
-    fun CoroutineScope.update(deltaSeconds: Float)
+    @JvmDefault
+    fun CoroutineScope.update(deltaSeconds: Float) {}
     fun gatherEntities()
     fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
         gatherEntities()

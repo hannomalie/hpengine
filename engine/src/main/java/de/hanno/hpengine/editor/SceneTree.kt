@@ -9,6 +9,7 @@ import java.util.ArrayList
 import java.util.HashMap
 import java.util.logging.Logger
 import javax.swing.JTree
+import javax.swing.SwingUtilities
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -26,10 +27,13 @@ class SceneTree(private val engine: Engine<*>,
     fun reload() {
         addSceneObjects()
         val model = model as DefaultTreeModel
-        model.reload()
-        revalidate()
-        repaint()
-        LOGGER.info("Reload scene tree")
+
+        SwingUtilities.invokeLater {
+            model.reload()
+            revalidate()
+            repaint()
+            LOGGER.info("Reload scene tree")
+        }
     }
 
     private fun addSceneObjects(): DefaultMutableTreeNode {

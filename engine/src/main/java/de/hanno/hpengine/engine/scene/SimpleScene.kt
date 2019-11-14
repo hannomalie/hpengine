@@ -71,7 +71,6 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         entitySystems.register(this)
         engine.renderSystems.add(this)
     }
-    val batchingSystem = entitySystems.register(BatchingSystem(engine, this))
     val pointLightSystemX = entitySystems.register(PointLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
     private val areaLightSystemX = entitySystems.register(AreaLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
     val probeSystem = entitySystems.register(ProbeSystem(engine, this))

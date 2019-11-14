@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.model
 
-import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
@@ -8,6 +7,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.GpuEntityStruct
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
@@ -26,15 +26,17 @@ import java.util.concurrent.CopyOnWriteArrayList
 class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
-    private val entityIndices = IntArrayList()
+    private val batchingSystem = BatchingSystem()
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
-    @Transient
     var updateCache = true
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
 
     private var gpuEntitiesArray = StructArray(size = 1000) { GpuEntityStruct() }
     private var gpuJointsArray = StructArray(size = 1000) { Matrix4f() }
+
+    val allocations: MutableMap<ModelComponent, Allocation> = mutableMapOf()
+    val entityIndices: MutableMap<ModelComponent, Int> = mutableMapOf()
 
     override fun getComponents(): List<ModelComponent> = components
 
@@ -63,8 +65,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
             entityIndices.clear()
             var index = 0
             for (current in getComponents()) {
-                entityIndices.add(index)
-                current.entityBufferIndex = index
+                entityIndices[current] = index
                 index += current.entity.instanceCount * current.meshes.size
             }
         }
@@ -88,23 +89,24 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
         val materials = engine.scene.materialManager.materials
 
         for(modelComponent in components) {
-            val vertexIndexOffsets = allocations[modelComponent]!!
+            val allocation = allocations[modelComponent]!!
             if(counter < gpuEntitiesArray.size) {
                 val meshes = modelComponent.meshes
                 val entity = modelComponent.entity
 
                 var target = this.gpuEntitiesArray.getAtIndex(counter)
+                val entityBufferIndex = entityIndices[modelComponent]!!
 
                 for ((meshIndex, mesh) in meshes.withIndex()) {
                     val materialIndex = materials.indexOf(mesh.material)
                     target.selected = entity.isSelected
                     target.materialIndex = materialIndex
                     target.update = entity.updateType.asDouble.toInt()
-                    target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
+                    target.meshBufferIndex = entityBufferIndex + meshIndex
                     target.entityIndex = entity.index
                     target.meshIndex = meshIndex
-                    target.baseVertex = modelComponent.baseVertices[meshIndex]
-                    target.baseJointIndex = modelComponent.baseJointIndex
+                    target.baseVertex = allocation.vertexIndexOffsetsForMeshes[meshIndex].vertexOffset
+                    target.baseJointIndex = allocation.baseJointIndex
                     target.animationFrame0 = modelComponent.animationFrame0
                     target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
                     val minMax = modelComponent.getMinMax(entity, mesh)
@@ -122,11 +124,11 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
                         target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex
                         target.update = entity.updateType.ordinal
-                        target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
+                        target.meshBufferIndex = entityBufferIndex + meshIndex
                         target.entityIndex = entity.index
                         target.meshIndex = meshIndex
-                        target.baseVertex = modelComponent.baseVertices[meshIndex]
-                        target.baseJointIndex = modelComponent.baseJointIndex
+                        target.baseVertex = allocation.vertexIndexOffsetsForMeshes[meshIndex].vertexOffset
+                        target.baseJointIndex = allocation.baseJointIndex
                         target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                         target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
                         val minMaxWorld = instance.minMaxWorld
@@ -144,11 +146,11 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
                             target.selected = entity.isSelected
                             target.materialIndex = materialIndex
                             target.update = entity.updateType.ordinal
-                            target.meshBufferIndex = modelComponent.entityBufferIndex + meshIndex
+                            target.meshBufferIndex = entityBufferIndex + meshIndex
                             target.entityIndex = entity.index
                             target.meshIndex = meshIndex
-                            target.baseVertex = vertexIndexOffsets.vertexOffset
-                            target.baseJointIndex = modelComponent.baseJointIndex
+                            target.baseVertex = allocation.vertexIndexOffsets.vertexOffset
+                            target.baseJointIndex = allocation.baseJointIndex
                             target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                             target.isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
                             val minMaxWorld = instance.minMaxWorld
@@ -166,7 +168,15 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
     private fun getRequiredEntityBufferSize() = components.sumBy { it.entity.instanceCount * it.meshes.size }
 
-    val allocations: MutableMap<ModelComponent, VertexIndexBuffer.VertexIndexOffsets> = mutableMapOf()
+    sealed class Allocation(open val vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets,
+                            open val vertexIndexOffsetsForMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) {
+
+        data class Static(override val vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets,
+                          override val vertexIndexOffsetsForMeshes: List<VertexIndexBuffer.VertexIndexOffsets>): Allocation(vertexIndexOffsets, vertexIndexOffsetsForMeshes)
+        data class Animated(override val vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets,
+                            override val vertexIndexOffsetsForMeshes: List<VertexIndexBuffer.VertexIndexOffsets>,
+                            val jointsOffset: Int): Allocation(vertexIndexOffsets, vertexIndexOffsetsForMeshes)
+    }
 
     fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
         val components = entities.flatMap { it.components.values.filterIsInstance<ModelComponent>() }
@@ -174,18 +184,17 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
             if (c.model.isStatic) {
                 val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTCHANNELS, vertexIndexOffsets)
-                vertexIndexOffsets
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTCHANNELS, vertexIndexOffsets)
+                Allocation.Static(vertexIndexOffsets, vertexIndexOffsetsForMeshes)
             } else {
                 val vertexIndexBuffer = this.engine.renderManager.vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTANIMATEDCHANNELS, vertexIndexOffsets)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTANIMATEDCHANNELS, vertexIndexOffsets)
 
-                c.jointsOffset = joints.size // TODO: Proper allocation
                 val elements = (c.model as AnimatedModel).frames
                         .flatMap { frame -> frame.jointMatrices.toList() }
                 joints.addAll(elements)
-                vertexIndexOffsets
+                Allocation.Animated(vertexIndexOffsets, vertexIndexOffsetsForMeshes, joints.size)
             }
         }.apply {
             updateCache = true
@@ -213,8 +222,18 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
 //        TODO: Remove this with proper extraction
         renderState.entitiesState.joints = joints
+
+
+        batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
+                components, engine.config.debug.isDrawLines, allocations, entityIndices)
     }
 }
+
+val ModelComponentSystem.Allocation.baseJointIndex: Int
+    get() = when(this) {
+        is ModelComponentSystem.Allocation.Static -> 0
+        is ModelComponentSystem.Allocation.Animated -> jointsOffset
+    }
 
 val Entity.instances: List<Instance>
     get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: emptyList()
