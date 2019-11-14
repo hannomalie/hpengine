@@ -19,11 +19,11 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.engine.model.texture.DDSConverter.getFullPathAsDDS
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import jogl.DDSImage
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FileUtils
@@ -74,7 +74,7 @@ import javax.imageio.ImageIO
 
 class TextureManager(val config: Config, programManager: OpenGlProgramManager,
                      val gpuContext: OpenGLContext,
-                     val singleThreadedDispatcher: CoroutineDispatcher) : Manager {
+                     val singleThreadContext: SingleThreadContext) : Manager {
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
@@ -158,7 +158,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager,
     @JvmOverloads
     fun getTexture(resourceName: String,
                    srgba: Boolean = false,
-                   directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> = runBlocking(singleThreadedDispatcher) {
+                   directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> = singleThreadContext.runBlocking {
 
         textures.computeIfAbsent(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
@@ -166,7 +166,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager,
     }
 
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> = runBlocking(singleThreadedDispatcher) {
+    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> = singleThreadContext.runBlocking {
         textures.computeIfAbsent(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
         } as Texture<TextureDimension2D>
@@ -487,7 +487,7 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager,
 
     }
 
-    override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
 
     }
 

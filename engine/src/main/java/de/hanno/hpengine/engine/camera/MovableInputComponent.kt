@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -109,7 +110,7 @@ class InputComponentSystem(val engine: EngineContext<*>): ComponentSystem<InputC
     override fun getComponents(): List<InputControllerComponent> = components
 
     fun create(entity: Entity) = MovableInputComponent(engine, entity)
-    override fun addComponent(component: InputControllerComponent) {
+    override fun SingleThreadContext.addComponent(component: InputControllerComponent) {
         components.add(component)
     }
     override fun clear() = components.clear()

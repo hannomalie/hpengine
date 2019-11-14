@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import kotlinx.coroutines.CoroutineScope
 
 interface ManagerRegistry {
@@ -17,13 +18,13 @@ interface ManagerRegistry {
         managers.forEach { it.value.clear() }
     }
 
-    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
         managers.forEach {
             with(it.value) { onEntityAdded(entities) }
         }
     }
 
-    fun CoroutineScope.onComponentAdded(component: Component) {
+    fun SingleThreadContext.onComponentAdded(component: Component) {
         managers.forEach {
             with(it.value) { onComponentAdded(component) }
         }
@@ -57,7 +58,7 @@ interface SystemsRegistry {
         getSystems().forEach { it.clear() }
     }
 
-    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
         val matchedComponents = mutableMapOf<Class<out Component>, Component>()
         getSystems().forEach {
             matchedComponents += with(it) { onEntityAdded(entities) }
@@ -68,9 +69,9 @@ interface SystemsRegistry {
         }
     }
 
-    fun CoroutineScope.onComponentAdded(component: Component) {
+    fun SingleThreadContext.onComponentAdded(component: Component) {
         getSystems().forEach {
-            it.onComponentAdded(component)
+            with(it) { onComponentAdded(component) }
         }
     }
 }

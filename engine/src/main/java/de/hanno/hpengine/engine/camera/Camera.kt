@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
@@ -243,7 +244,7 @@ class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, Ren
     fun create(entity: Entity) = Camera(entity, engine.config.width.toFloat() / engine.config.height.toFloat())
     fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean) = Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { components.add(it); }
 
-    override fun addComponent(component: Camera) {
+    override fun SingleThreadContext.addComponent(component: Camera) {
         components.add(component)
     }
     override fun clear() = components.clear()

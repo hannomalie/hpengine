@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
@@ -17,11 +18,11 @@ class EditorManager(val editor: RibbonEditor) : Manager {
     private var ePressed by KeyUpDownProperty(editor, KeyEvent.VK_E, withShift = true)
     private var shiftPressed by KeyUpDownProperty(editor, KeyEvent.VK_SHIFT, withShift = true)
 
-    override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
         editor.sceneTree.reload()
     }
 
-    override fun CoroutineScope.onComponentAdded(component: Component) {
+    override fun SingleThreadContext.onComponentAdded(component: Component) {
         editor.sceneTree.reload()
     }
     override fun CoroutineScope.update(deltaSeconds: Float) {

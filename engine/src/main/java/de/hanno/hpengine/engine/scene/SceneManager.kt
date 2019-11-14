@@ -8,14 +8,51 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>,
                                                 override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext {
-    override val singleThreadUpdateScope: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
+    override val singleThreadContext: SingleThreadContext = SingleThreadContext()
 }
+
+class SingleThreadContext(val singleThreadUpdateScope: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()) {
+    init {
+        GlobalScope.async {}
+    }
+    fun launch(
+        start: CoroutineStart = CoroutineStart.DEFAULT,
+        block: suspend SingleThreadContext.() -> Unit
+    ): Job {
+        return GlobalScope.launch(singleThreadUpdateScope, start) { block() }
+    }
+
+    fun <T> CoroutineScope.async(
+            start: CoroutineStart = CoroutineStart.DEFAULT,
+            block: suspend SingleThreadContext.() -> T
+    ): Deferred<T> {
+        return GlobalScope.async(singleThreadUpdateScope, start) { block() }
+    }
+
+    @Throws(InterruptedException::class)
+    fun <T> runBlocking(block: suspend SingleThreadContext.() -> T): T {
+        return kotlinx.coroutines.runBlocking(singleThreadUpdateScope) {
+            with(this@SingleThreadContext) {
+                block()
+            }
+        }
+    }
+}
+
 class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
 
     var scene: Scene = SimpleScene("InitScene", TempEngineImpl(managerContext, this@SceneManager))
@@ -28,13 +65,14 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
 
 
-    fun CoroutineScope.addAll(entities: List<Entity>) {
+    fun SingleThreadContext.addAll(entities: List<Entity>) {
         with(scene) { addAll(entities) }
         managerContext.managers.managers.values.forEach {
             with(it) { onEntityAdded(entities) }
         }
     }
-    fun CoroutineScope.add(entity: Entity) = addAll(listOf(entity))
+    fun SingleThreadContext.add(entity: Entity) = addAll(listOf(entity))
+
     override fun CoroutineScope.update(deltaSeconds: Float) {
         val newDrawCycle = managerContext.renderManager.drawCycle.get()
         scene.currentCycle = newDrawCycle

@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
@@ -160,7 +161,7 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
 
     }
 
-    override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
 
     }
 

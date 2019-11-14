@@ -6,13 +6,14 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import kotlinx.coroutines.CoroutineScope
 import net.engio.mbassy.listener.Handler
 
 interface EntitySystem {
     fun CoroutineScope.update(deltaSeconds: Float)
     fun gatherEntities()
-    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
 
@@ -47,7 +48,7 @@ interface EntitySystemRegistry {
         } else return clazz.cast(firstOrNull)
     }
 
-    fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
         for(system in getSystems()) {
             with(system) { onEntityAdded(entities) }
         }

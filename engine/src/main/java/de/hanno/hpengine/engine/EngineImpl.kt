@@ -19,15 +19,12 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.threads.UpdateThread
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin
@@ -36,7 +33,6 @@ import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
-import javax.swing.SwingUtilities
 import javax.swing.SwingUtilities.invokeLater
 
 interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
@@ -45,8 +41,8 @@ interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
 
     val scene
         get() = sceneManager.scene
-    override val singleThreadUpdateScope: CoroutineDispatcher
-        get() = managerContext.singleThreadUpdateScope
+    override val singleThreadContext: SingleThreadContext
+        get() = managerContext.singleThreadContext
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
@@ -57,14 +53,12 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
     val updateConsumer = Consumer<Float> {
         with(this@EngineImpl) {
-            runBlocking {
-                withContext(singleThreadUpdateScope) {
-                    val job = launch(updateScope) {
-                        update(it)
-                    }
-                    // block singleThreadContext while updating, not suspending
-                    while(!job.isCompleted) { }
+            singleThreadContext.runBlocking {
+                val job = GlobalScope.launch(updateScope) {
+                    update(it)
                 }
+                // block singleThreadContext while updating, not suspending
+                while(!job.isCompleted) { }
             }
         }
     }

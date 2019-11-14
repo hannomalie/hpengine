@@ -12,10 +12,8 @@ import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.util.commandqueue.CommandQueue
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.Executors
 
 interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
     val engineContext: EngineContext<TYPE>
@@ -44,6 +42,6 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
         get() = engineContext.materialManager
     override val window: Window<TYPE>
         get() = engineContext.window
-    override val singleThreadUpdateScope: CoroutineDispatcher
-        get() = engineContext.singleThreadUpdateScope
+    override val singleThreadContext: SingleThreadContext
+        get() = engineContext.singleThreadContext
 }

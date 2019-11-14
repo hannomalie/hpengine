@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.logging.Logger
@@ -40,12 +41,12 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         return Entity(name, position)
     }
 
-    fun add(entity: Entity) {
+    fun SingleThreadContext.add(entity: Entity) {
         entityContainer.add(entity)
         entity.index = entityContainer.entities.indexOf(entity)
     }
 
-    fun CoroutineScope.add(entities: List<Entity>) {
+    fun SingleThreadContext.add(entities: List<Entity>) {
         for (entity in entities) {
             add(entity)
         }

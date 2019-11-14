@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.entity.EntityManager;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
+import de.hanno.hpengine.engine.scene.SingleThreadContext;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import kotlinx.coroutines.CoroutineScope;
 import org.fife.ui.autocomplete.BasicCompletion;
@@ -119,7 +120,7 @@ public class ScriptManager implements Manager {
 	}
 
 	@Override
-	public void onEntityAdded(CoroutineScope scope, @NotNull List<? extends Entity> entities) {
+	public void onEntityAdded(SingleThreadContext scope, @NotNull List<? extends Entity> entities) {
 
 	}
 

@@ -47,7 +47,7 @@ interface Scene : Updatable, Serializable {
     fun extract(currentWriteState: RenderState)
 
     fun getEntities() = entityManager.getEntities()
-    fun CoroutineScope.addAll(entities: List<Entity>) {
+    fun SingleThreadContext.addAll(entities: List<Entity>) {
         with(entityManager) { add(entities) }
 
         with(entitySystems) { onEntityAdded(entities) }
@@ -59,14 +59,14 @@ interface Scene : Updatable, Serializable {
         entityManager.entityAddedInCycle = currentCycle
     }
 
-    fun CoroutineScope.onComponentAdded(component: Component)
+    fun SingleThreadContext.onComponentAdded(component: Component)
 
     fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
     fun getTubeLights(): List<TubeLight> = componentSystems.get(TubeLightComponentSystem::class.java).getComponents()
     fun getAreaLights(): List<AreaLight> = componentSystems.get(AreaLightComponentSystem::class.java).getComponents()
     fun getAreaLightSystem(): AreaLightSystem = entitySystems.get(AreaLightSystem::class.java)
     fun getPointLightSystem(): PointLightSystem = entitySystems.get(PointLightSystem::class.java)
-    fun CoroutineScope.add(entity: Entity) = addAll(listOf(entity))
+    fun SingleThreadContext.add(entity: Entity) = addAll(listOf(entity))
     fun getEntity(name: String): Optional<Entity> {
         val candidate = entityManager.getEntities().find { e -> e.name == name }
         return Optional.ofNullable(candidate)

@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.Spatial
@@ -141,7 +142,7 @@ class ClustersComponentSystem(val engine: EngineContext<*>) : ComponentSystem<Cl
         }
     }
 
-    override fun addComponent(component: ClustersComponent) {
+    override fun SingleThreadContext.addComponent(component: ClustersComponent) {
         components.add(component)
         instances.addAll(component.getInstances())
         entityInstances[component.entity] = ArrayList(component.getInstances())

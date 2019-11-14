@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
@@ -52,7 +53,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
         updateGpuJointsArray()
     }
 
-    override fun addComponent(component: ModelComponent) {
+    override fun SingleThreadContext.addComponent(component: ModelComponent) {
         components.add(component)
     }
 
@@ -194,8 +195,8 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
     }
     override fun clear() = components.clear()
 
-    override fun CoroutineScope.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
-        val result = onEntityAddedImpl(entities)
+    override fun SingleThreadContext.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+        val result = onEntityAddedImpl(this, entities)
         allocateVertexIndexBufferSpace(entities)
         updateCache = true
         return result

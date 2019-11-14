@@ -12,10 +12,10 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FilenameUtils
@@ -31,13 +31,13 @@ import java.util.logging.Logger
 class MaterialManager(val config: Config,
                       private val eventBus: EventBus,
                       val textureManager: TextureManager,
-                      val singleThreadedDispatcher: CoroutineDispatcher) : Manager {
+                      val singleThreadContext: SingleThreadContext) : Manager {
 
     constructor(engineContext: EngineContext<*>,
                 config: Config = engineContext.config,
                 eventBus: EventBus = engineContext.eventBus,
                 textureManager: TextureManager = engineContext.textureManager,
-                singleThreadedDispatcher: CoroutineDispatcher = engineContext.singleThreadUpdateScope): this(config, eventBus, textureManager, singleThreadedDispatcher)
+                singleThreadContext: SingleThreadContext = engineContext.singleThreadContext): this(config, eventBus, textureManager, singleThreadContext)
 
     val skyboxMaterial: SimpleMaterial
 
@@ -143,7 +143,7 @@ class MaterialManager(val config: Config,
         return MATERIALS[materialName] ?: return defaultMaterial
     }
 
-    private fun addMaterial(key: String, material: SimpleMaterial) = runBlocking(singleThreadedDispatcher) {
+    private fun addMaterial(key: String, material: SimpleMaterial) = singleThreadContext.runBlocking {
         MATERIALS[key] = material
         eventBus.post(MaterialAddedEvent())
     }

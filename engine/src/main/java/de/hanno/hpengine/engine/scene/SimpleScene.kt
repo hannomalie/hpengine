@@ -8,16 +8,13 @@ import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.CustomComponentSystem
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
-import de.hanno.hpengine.engine.event.MeshSelectedEvent
 import de.hanno.hpengine.engine.graphics.BatchingSystem
-import de.hanno.hpengine.engine.graphics.OpenGLContext.Executor.async
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -37,8 +34,6 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.script.ScriptManager
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
-import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
 
 class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine<OpenGl>) : Scene {
@@ -85,7 +80,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         override fun clear() {}
         override fun CoroutineScope.update(deltaSeconds: Float) {}
         override fun gatherEntities() {}
-        override fun CoroutineScope.onEntityAdded(entities: List<Entity>) {
+        override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
             engine.eventBus.post(MaterialAddedEvent())
             engine.eventBus.post(EntityAddedEvent())
         }
@@ -95,7 +90,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             .apply { addComponent(DirectionalLight(this)) }
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
             .apply {
-                runBlocking(engine.singleThreadUpdateScope) {
+                engine.singleThreadContext.runBlocking {
                     with(this@SimpleScene) { add(this@apply) }
                 }
             }
@@ -106,7 +101,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override val camera = cameraComponentSystem.create(cameraEntity)
             .apply { cameraEntity.addComponent(this) }
             .apply {
-                runBlocking(engine.singleThreadUpdateScope) {
+                engine.singleThreadContext.runBlocking {
                     with(this@SimpleScene) { add(cameraEntity) }
                 }
             }
@@ -150,7 +145,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         }
     }
 
-    override fun CoroutineScope.onComponentAdded(component: Component) {
+    override fun SingleThreadContext.onComponentAdded(component: Component) {
         with(componentSystems) { onComponentAdded(component) }
         with(managers) { onComponentAdded(component) }
     }
