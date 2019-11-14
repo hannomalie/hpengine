@@ -16,9 +16,7 @@ public class InitMaterialCommand implements Command<MaterialResult> {
 
 	@Override
 	public MaterialResult execute() {
-		material.init(materialManager);
-		MaterialResult result = new MaterialResult(material);
-		return result;
+		return new MaterialResult(material);
 	}
 
 	public static class MaterialResult extends Result {

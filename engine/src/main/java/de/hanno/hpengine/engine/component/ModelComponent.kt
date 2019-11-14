@@ -20,7 +20,6 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
 import kotlinx.coroutines.CoroutineScope
-import java.nio.ByteBuffer
 import java.util.EnumSet
 import java.util.logging.Logger
 
@@ -93,10 +92,6 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         return model.getMinMax(transform, mesh)
     }
 
-    fun debugPrintFromBuffer(buffer: ByteBuffer): String {
-        return getDebugStringFromBuffer(buffer)
-    }
-
     override fun toString(): String {
         return "ModelComponent (" + model.toString() + ")"
     }
@@ -128,53 +123,6 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
                 DataChannels.POSITION3)
         var POSITIONCHANNEL = EnumSet.of(
                 DataChannels.POSITION3)
-
-        fun getDebugStringFromBuffer(buffer: ByteBuffer): String {
-            val builder = StringBuilder()
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append("\n")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append("\n")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append("\n")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append(" ")
-                    .append(buffer.float).append("\n")
-            //                .append("Selected ").append(buffer.getInt()).append("\n")
-            //                .append("SimpleMaterial Index ").append(buffer.getInt()).append("\n")
-            //                .append("Update ").append(buffer.getInt() == 0 ? "Dynamic" : "Static").append("\n")
-            //                .append("Mesh Buffer Index ").append(buffer.getInt()).append("\n")
-            //                .append("Entity Index ").append(buffer.getInt()).append("\n")
-            //                .append("Mesh Index ").append(buffer.getInt()).append("\n")
-            //                .append("Base Vertex ").append(buffer.getInt()).append("\n")
-            //                .append("Joint Base Index ").append(buffer.getInt()).append("\n")
-            //                .append("Animationframe 0 ").append(buffer.getInt()).append("\n")
-            //                .append("Animationframe 1 ").append(buffer.getInt()).append("\n")
-            //                .append("Animationframe 2 ").append(buffer.getInt()).append("\n")
-            //                .append("Animationframe 3 ").append(buffer.getInt()).append("\n")
-            //                .append("InvertTexCoordY ").append(buffer.getInt()).append("\n")
-            //                .append("Placeholder ").append(buffer.getInt()).append("\n")
-            //                .append("Placeholder ").append(buffer.getInt()).append("\n")
-            //                .append("Placeholder ").append(buffer.getInt()).append("\n")
-            //                .append("MinX ").append(buffer.getInt()).append("\n")
-            //                .append("MinY ").append(buffer.getInt()).append("\n")
-            //                .append("MinZ ").append(buffer.getInt()).append("\n")
-            //                .append("Placeholder ").append(buffer.getInt()).append("\n")
-            //                .append("MaxX ").append(buffer.getInt()).append("\n")
-            //                .append("MaxY ").append(buffer.getInt()).append("\n")
-            //                .append("MaxZ ").append(buffer.getInt()).append("\n")
-            //                .append("Placeholder ").append(buffer.getInt()).append("\n");
-
-            //        System.out.println(resultString);
-            return builder.toString()
-        }
 
         val bytesPerInstance: Int
             get() = 16 * java.lang.Float.BYTES + 16 * Integer.BYTES + 8 * java.lang.Float.BYTES
@@ -238,12 +186,12 @@ fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexO
     var currentIndexOffset = vertexIndexOffsets.indexOffset
     var currentVertexOffset = vertexIndexOffsets.vertexOffset
 
-    val vertexIndexOffsets = model.meshes.indices.map { i ->
+    val meshVertexIndexOffsets = model.meshes.indices.map { i ->
         val mesh = model.meshes[i] as Mesh<*>
         VertexIndexOffsets(currentIndexOffset, currentVertexOffset).apply {
             currentIndexOffset += mesh.indexBufferValuesArray.size
             currentVertexOffset += mesh.vertexBufferValuesArray.size / elementsPerVertex
         }
     }
-    return vertexIndexOffsets
+    return meshVertexIndexOffsets
 }

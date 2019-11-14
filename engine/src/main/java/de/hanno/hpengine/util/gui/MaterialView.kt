@@ -56,37 +56,11 @@ class MaterialView(private val engine: Engine<*>, var material: SimpleMaterial) 
         addTexturePanel(panels)
         addValuePanels(panels)
 
-        val saveButton = WebButton("Save")
-        saveButton.addActionListener { e ->
-            var toSave: SimpleMaterial = material
-            if (nameField.text != material.materialInfo.name) {
-                val newInfo = SimpleMaterialInfo(nameField.text)
-
-                val result = engine.gpuContext.calculate {
-                    GetMaterialCommand(newInfo, engine.scene.materialManager).execute()
-                }
-
-                if (result.material != null) {
-                    toSave = result.material
-                    showNotification(NotificationIcon.plus, "SimpleMaterial changed")
-                } else {
-                    showNotification(NotificationIcon.error, "Not able to change materials")
-                }
-
-            } else {
-                toSave = material
-                SimpleMaterial.write(toSave, toSave.materialInfo.name)
-            }
-
-            addMaterialInitCommand(toSave)
-        }
-
         val components = panels.toTypedArray()
 
         val materialAttributesPane = WebScrollPane(GridPanel(panels.size, 1, *components))
         this.layout = BorderLayout()
         this.add(materialAttributesPane, BorderLayout.CENTER)
-        this.add(saveButton, BorderLayout.SOUTH)
     }
 
     private fun addTexturePanel(panels: MutableList<Component>) {

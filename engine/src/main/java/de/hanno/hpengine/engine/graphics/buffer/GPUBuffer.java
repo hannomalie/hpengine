@@ -11,10 +11,6 @@ public interface GPUBuffer {
 
     ByteBuffer getBuffer();
 
-    default IntBuffer getIntBufferView() {
-        return getBuffer().asIntBuffer();
-    }
-
     void putValues(ByteBuffer values);
 
     void putValues(int offset, ByteBuffer values);

@@ -365,17 +365,7 @@ public class Util {
 		System.out.println(result);
 		return result;
 	}
-	public static String printModelComponents(ByteBuffer buffer, int count) {
-		buffer.rewind();
-		StringBuilder builder = new StringBuilder();
-		for(int i = 0; i < count; i++) {
-			builder.append(ModelComponent.Companion.getDebugStringFromBuffer(buffer));
-		}
-		buffer.rewind();
-		String result = builder.toString();
-		System.out.println(result);
-		return result;
-	}
+
 	public static String printIntBuffer(IntBuffer buffer, int columns) {
 		return printIntBuffer(buffer, columns, 1000);
 	}

@@ -120,11 +120,6 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
         return buffer;
     }
 
-    @Override
-    public IntBuffer getIntBufferView() {
-        return intBuffer;
-    }
-
     public void dispose() {
         glDeleteBuffers(id);
     }

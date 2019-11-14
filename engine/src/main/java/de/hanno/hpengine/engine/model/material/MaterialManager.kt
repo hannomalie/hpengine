@@ -16,14 +16,7 @@ import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
-import org.apache.commons.io.FilenameUtils
 import org.joml.Vector3f
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-import java.io.ObjectInputStream
 import java.util.HashMap
 import java.util.LinkedHashMap
 import java.util.logging.Logger
@@ -99,25 +92,13 @@ class MaterialManager(val config: Config,
         })
     }
 
-    @JvmOverloads
-    fun getMaterial(materialInfo: MaterialInfo, readFromHdd: Boolean = false): SimpleMaterial {
+    fun getMaterial(materialInfo: MaterialInfo): SimpleMaterial {
         if ("" == materialInfo.name) {
             throw IllegalArgumentException("Don't pass a material with null or empty name")
         }
         fun readOrCreateMaterial(): SimpleMaterial {
-            if (readFromHdd) {
-                val readMaterial = read(getDirectory() + materialInfo.name)
-                if (readMaterial != null) {
-                    readMaterial.materialIndex = MATERIALS.size
-                    return readMaterial
-                }
-            }
             val newMaterial = SimpleMaterial(materialInfo)
-            newMaterial.init(this)
             newMaterial.materialIndex = MATERIALS.size
-
-//            TODO: Reactivate this? ImmutableHashMap is not Serializable, in SimpleMaterialInfo
-//            write(newMaterial, materialInfo.name)
 
             return newMaterial
         }
@@ -154,37 +135,6 @@ class MaterialManager(val config: Config,
         }
     }
 
-    fun read(resourceName: String): SimpleMaterial? {
-        val fileName = FilenameUtils.getBaseName(resourceName)
-        val materialFileName = getDirectory() + fileName + ".hpmaterial"
-        val materialFile = File(materialFileName)
-        if (materialFile.exists() && materialFile.isFile) {
-
-            try {
-                val fis = FileInputStream(materialFileName)
-                val `in` = ObjectInputStream(fis)
-                val material = `in`.readObject() as SimpleMaterial
-                `in`.close()
-                material.init(this)
-                return material
-            } catch (e: ClassNotFoundException) {
-                e.printStackTrace()
-            } catch (e: IOException) {
-                Logger.getGlobal().info("SimpleMaterial read ($fileName) caused an exception, probably not very important")
-            }
-
-        }
-        return null
-    }
-
-    override fun clear() {
-
-    }
-
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-
-    }
-
     companion object {
         private val LOGGER = Logger.getLogger(MaterialManager::class.java.name)
         val TEXTUREASSETSPATH = "assets/textures/"
@@ -210,7 +160,6 @@ class MaterialManager(val config: Config,
         renderState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
         for ((index, material) in materials.withIndex()) {
-//            material.putToBuffer(renderState.materialBuffer.buffer)
             val target = materialsAsStructs[index]
             target.diffuse.set(material.materialInfo.diffuse)
             target.metallic = material.materialInfo.metallic
