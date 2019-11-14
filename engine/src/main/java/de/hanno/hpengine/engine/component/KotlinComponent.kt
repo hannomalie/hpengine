@@ -26,8 +26,6 @@ class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource
     val sourceCode: String
         get() = codeSource.source
 
-    override val identifier: String = "KotlinComponent"
-
     override fun CoroutineScope.update(deltaSeconds: Float) {
         if (isLifeCycle) {
             with(instance as Updatable) {

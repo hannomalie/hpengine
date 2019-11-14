@@ -45,9 +45,6 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     val triangleCount: Int
         get() = model.triangleCount
 
-    override val identifier: String
-        get() = COMPONENT_KEY
-
     val minMax: AABB
         get() = getMinMax(entity)
 

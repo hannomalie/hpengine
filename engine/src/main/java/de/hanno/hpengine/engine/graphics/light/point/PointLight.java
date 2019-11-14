@@ -112,12 +112,7 @@ public class PointLight implements Component, Serializable, Bufferable {
 		return entity;
 	}
 
-	@Override
-	public String getIdentifier() {
-		return COMPONENT_KEY;
-	}
-
-	public void setRadius(float radius) {
+    public void setRadius(float radius) {
 		Vector3f position = entity.getPosition();
 		this.entity.identity().scale(radius).transformPosition(position);
 	}

@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
@@ -29,7 +28,6 @@ class ClustersComponent(override val entity: Entity): Component {
     fun getInstances(): List<Instance> = instances
     fun getInstancesMinMaxWorlds(): List<AABB> = instances.map{ it.minMaxWorld }
 
-    override val identifier: String = ClustersComponent::class.java.simpleName
     override fun CoroutineScope.update(deltaSeconds: Float) {
         for (cluster in clusters) {
             launch {

@@ -33,8 +33,6 @@ data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSourc
     val sourceCode: String
         get() = codeSource.source
 
-    override val identifier: String = "KotlinComponent"
-
     override fun CoroutineScope.update(deltaSeconds: Float) {
         if (isUpdatable) {
             with(instance as Updatable) {

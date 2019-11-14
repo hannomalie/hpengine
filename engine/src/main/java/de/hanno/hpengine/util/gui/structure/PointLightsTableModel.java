@@ -1,7 +1,6 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.component.ComponentMapper;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.Util;
@@ -10,7 +9,6 @@ import javax.swing.table.AbstractTableModel;
 
 public class PointLightsTableModel extends AbstractTableModel {
 
-    ComponentMapper<PointLight> mapper = ComponentMapper.Companion.forClass(PointLight.class);
     private Engine engine;
 
     public PointLightsTableModel(Engine engine) {

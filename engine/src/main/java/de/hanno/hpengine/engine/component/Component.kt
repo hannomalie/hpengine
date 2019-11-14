@@ -10,8 +10,6 @@ interface Component : Updatable, Serializable {
 
     val entity: Entity
 
-    val identifier: String
-
     @JvmDefault
     override fun CoroutineScope.update(deltaSeconds: Float) {}
 

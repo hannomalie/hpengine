@@ -29,11 +29,6 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     @Override
-    public String getIdentifier() {
-        return "JavaScriptComponent";
-    }
-
-    @Override
     public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
         scriptManager.evalUpdate(this, deltaSeconds);
     }

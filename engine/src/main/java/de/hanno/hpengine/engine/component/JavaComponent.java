@@ -42,11 +42,6 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public String getIdentifier() {
-        return "JavaComponent";
-    }
-
-    @Override
     public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
         if(isLifeCycle) {
             ((Updatable) instance).update(scope, deltaSeconds);

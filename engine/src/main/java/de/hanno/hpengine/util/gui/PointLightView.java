@@ -1,29 +1,23 @@
 package de.hanno.hpengine.util.gui;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.JScrollPane;
-
+import com.alee.laf.colorchooser.WebColorChooserPanel;
 import de.hanno.hpengine.engine.Engine;
-
-import de.hanno.hpengine.engine.component.ComponentMapper;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
 import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import org.joml.Vector4f;
 
-import com.alee.laf.colorchooser.WebColorChooserPanel;
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PointLightView extends EntityView {
 	private PointLight light;
-	ComponentMapper<PointLight> mapper = ComponentMapper.Companion.forClass(PointLight.class);
 
 	public PointLightView(Engine engine, Entity lightEntity) {
 		super(engine, lightEntity);
-		this.light = mapper.getComponent(lightEntity);
+		this.light = entity.getComponent(PointLight.class);
 	}
 
 	@Override

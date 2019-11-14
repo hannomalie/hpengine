@@ -32,8 +32,6 @@ open class Camera @JvmOverloads constructor(
         override var entity: Entity,
         ratio: Float = 1280f/720f): Component {
 
-    override val identifier = this.javaClass.simpleName
-
     var exposure = 5f
     var focalDepth = Defaults.focalDepth
     var focalLength = Defaults.focalLength

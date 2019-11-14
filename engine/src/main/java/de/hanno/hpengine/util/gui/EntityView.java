@@ -75,31 +75,24 @@ public class EntityView extends WebPanel {
     private void addPhysicsPanel(final Entity entity, WebTabbedPane tabbedPane) {
         WebComponentPanel physicsPanel = new WebComponentPanel();
         if(entity.getComponentOption(PhysicsComponent.class).isPresent()) {
-            WebButton removePhysicsComponent = new WebButton("Remove PhysicsComponent");
-            removePhysicsComponent.addActionListener(e -> {
-                if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-                    entity.removeComponent(entity.getComponent(PhysicsComponent.class));
+            javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
+            physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
+                @Override
+                public void onValueChange(Vector3f value) {
+                    entity.getComponent(PhysicsComponent.class).getRigidBody().setLinearVelocity(Util.toBullet(value));
                 }
             });
-            physicsPanel.addElement(removePhysicsComponent);
-                javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
-                physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
-                    @Override
-                    public void onValueChange(Vector3f value) {
-                        entity.getComponent(PhysicsComponent.class).getRigidBody().setLinearVelocity(Util.toBullet(value));
-                    }
-                });
-                physicsPanel.addElement(new LimitedWebFormattedTextField("Mass", 0, 10000) {
-                    @Override
-                    public void onChange(float currentValue) {
-                        entity.getComponent(PhysicsComponent.class).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
-                    }
-                });
-                WebButton resetTransformButton = new WebButton("Reset Transform");
-                resetTransformButton.addActionListener(e -> {
-                    entity.getComponent(PhysicsComponent.class).reset(engine);
-                });
-                physicsPanel.addElement(resetTransformButton);
+            physicsPanel.addElement(new LimitedWebFormattedTextField("Mass", 0, 10000) {
+                @Override
+                public void onChange(float currentValue) {
+                    entity.getComponent(PhysicsComponent.class).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
+                }
+            });
+            WebButton resetTransformButton = new WebButton("Reset Transform");
+            resetTransformButton.addActionListener(e -> {
+                entity.getComponent(PhysicsComponent.class).reset(engine);
+            });
+            physicsPanel.addElement(resetTransformButton);
         } else {
             WebButton addBallPhysicsComponentButton = new WebButton("Add Ball PhysicsComponent");
             addBallPhysicsComponentButton.addActionListener(e -> {

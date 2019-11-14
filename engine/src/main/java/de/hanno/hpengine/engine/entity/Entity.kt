@@ -107,10 +107,6 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
         components[clazz] = component
     }
 
-    fun removeComponent(component: Component) {
-        (components as java.util.Map<Class<Component>, Component>).remove(component.identifier, component)
-    }
-
     fun <T : Component> CoroutineScope.getOrAddComponent(type: Class<T>, supplier: Supplier<T>): T? {
         if (!hasComponent(type)) {
             val component = supplier.get()

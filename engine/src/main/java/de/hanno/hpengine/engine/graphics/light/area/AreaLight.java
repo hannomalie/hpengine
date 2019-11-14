@@ -136,12 +136,7 @@ public class AreaLight implements Component, Bufferable {
 		return entity;
 	}
 
-	@Override
-	public String getIdentifier() {
-		return COMPONENT_KEY;
-	}
-
-	public void setScale(Vector3f scale) {
+    public void setScale(Vector3f scale) {
 		this.scale = scale;
 	}
 

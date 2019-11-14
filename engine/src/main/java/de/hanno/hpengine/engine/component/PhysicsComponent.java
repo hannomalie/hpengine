@@ -73,12 +73,7 @@ public class PhysicsComponent extends BaseComponent {
         actuallyCreatePhysicsObject();
     }
 
-	@Override
-	public String getIdentifier() {
-		return "PhysicsComponent";
-	}
-
-	public RigidBody getRigidBody() {
+    public RigidBody getRigidBody() {
 		return rigidBody;
 	}
 

@@ -5,13 +5,10 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import org.joml.Vector3f;
 
-import java.util.List;
 import java.util.Random;
 
 public class EnvironmentProbe implements Component {
@@ -133,8 +130,4 @@ public class EnvironmentProbe implements Component {
 		return entity;
 	}
 
-	@Override
-	public String getIdentifier() {
-		return COMPONENT_KEY;
-	}
 }

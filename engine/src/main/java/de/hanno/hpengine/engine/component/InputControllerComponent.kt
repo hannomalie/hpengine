@@ -5,8 +5,6 @@ import java.io.Serializable
 
 abstract class InputControllerComponent(entity: Entity) : BaseComponent(entity), Serializable {
 
-    override val identifier: String = "InputControllerComponent"
-
     companion object {
 
         private const val serialVersionUID = 1L

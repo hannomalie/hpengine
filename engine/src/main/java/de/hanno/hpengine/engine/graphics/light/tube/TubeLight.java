@@ -54,12 +54,7 @@ public class TubeLight implements Component {
 	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
 	}
 
-	@Override
-	public String getIdentifier() {
-		return COMPONENT_KEY;
-	}
-
-	public void draw(Program program) {
+    public void draw(Program program) {
         throw new IllegalStateException("Currently not implemented");
 //		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 //			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
