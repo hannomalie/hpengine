@@ -74,7 +74,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
         });
-        setCapacityInBytes(values.length * Float.BYTES);
+        ensureCapacityInBytes(values.length * Float.BYTES);
         this.verticesCount = calculateVerticesCount(buffer, channels);
         setMaxLod(1);
         this.triangleCount = verticesCount / 3;
@@ -338,7 +338,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
     @Override
     public void putValues(int floatOffset, float... values) {
 //        bind();
-        setCapacityInBytes((floatOffset + values.length) * Float.BYTES);
+        ensureCapacityInBytes((floatOffset + values.length) * Float.BYTES);
         FloatBuffer floatBuffer = buffer.asFloatBuffer();
         floatBuffer.position(floatOffset);
         floatBuffer.put(values);

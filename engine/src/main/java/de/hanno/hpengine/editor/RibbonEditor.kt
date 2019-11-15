@@ -12,6 +12,8 @@ import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -49,6 +51,7 @@ import org.pushingpixels.flamingo.api.ribbon.synapse.model.RibbonDefaultComboBox
 import org.pushingpixels.flamingo.api.ribbon.synapse.projection.RibbonComboBoxProjection
 import org.pushingpixels.neon.icon.ResizableIcon
 import org.pushingpixels.photon.icon.SvgBatikResizableIcon
+import org.pushingpixels.substance.api.SubstanceCortex
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -132,14 +135,16 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                                         addActionListener {
                                             JFileChooser(engine.directories.gameDir).apply {
                                                 if(showOpenDialog(this@RibbonEditor) == JFileChooser.APPROVE_OPTION) {
-                                                    val loadedModels = LoadModelCommand(selectedFile,
-                                                            "Model_${System.currentTimeMillis()}",
-                                                            engine.materialManager,
-                                                            engine.directories.gameDir,
-                                                            selection).execute()
-                                                    engine.singleThreadContext.launch {
-                                                        with(engine.scene) {
-                                                            addAll(loadedModels.entities)
+                                                    GlobalScope.launch {
+                                                        val loadedModels = LoadModelCommand(selectedFile,
+                                                                "Model_${System.currentTimeMillis()}",
+                                                                engine.materialManager,
+                                                                engine.directories.gameDir,
+                                                                selection).execute()
+                                                        engine.singleThreadContext.launch {
+                                                            with(engine.scene) {
+                                                                addAll(loadedModels.entities)
+                                                            }
                                                         }
                                                     }
                                                 }

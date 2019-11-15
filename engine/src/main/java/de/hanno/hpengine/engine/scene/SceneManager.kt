@@ -44,7 +44,7 @@ class SingleThreadContext(val singleThreadUpdateScope: ExecutorCoroutineDispatch
     }
 
     @Throws(InterruptedException::class)
-    fun <T> runBlocking(block: suspend SingleThreadContext.() -> T): T {
+    fun <T> runBlocking(block: SingleThreadContext.() -> T): T {
         return kotlinx.coroutines.runBlocking(singleThreadUpdateScope) {
             with(this@SingleThreadContext) {
                 block()

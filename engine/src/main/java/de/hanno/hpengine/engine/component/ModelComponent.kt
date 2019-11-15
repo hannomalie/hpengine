@@ -134,14 +134,11 @@ fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): Vert
 }
 fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
                                vertexIndexBuffer: VertexIndexBuffer,
-                               channels: EnumSet<DataChannels>,
                                vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
 
     val compiledVertices = model.compiledVertices
 
-    val elementsPerVertex = DataChannels.totalElementsPerVertex(channels)
-
-    val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets, elementsPerVertex)
+    val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
     val result: StructArray<*>
     val bytesPerObject: Int
@@ -172,17 +169,19 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
     }
 
     gpuContext.execute("ModelComponent.putToBuffer") {
-        vertexIndexBuffer.vertexBuffer.setCapacityInBytes(bytesPerObject * compiledVertices.size)
-        val shrunk = result.shrinkToBytes(vertexIndexBuffer.vertexBuffer.buffer.capacity(), true)
-        shrunk.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexIndexOffsets.vertexOffset * bytesPerObject)
-        vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, *indices)
+        val neededSizeInBytes = bytesPerObject * compiledVertices.size
+        vertexIndexBuffer.vertexBuffer.ensureCapacityInBytes(vertexIndexBuffer.vertexBuffer.buffer.capacity() + neededSizeInBytes)
+        val vertexOffsetInBytes = vertexIndexOffsetsForMeshes.first().vertexOffset * bytesPerObject
+        val shrunk = result.shrinkToBytes(neededSizeInBytes, true)
+        shrunk.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexOffsetInBytes)
+        vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsetsForMeshes.first().indexOffset, *indices)
         vertexIndexBuffer.vertexBuffer.upload()
     }
 
     return vertexIndexOffsetsForMeshes
 }
 
-fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets, elementsPerVertex: Int): List<VertexIndexOffsets> {
+fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
     var currentIndexOffset = vertexIndexOffsets.indexOffset
     var currentVertexOffset = vertexIndexOffsets.vertexOffset
 
@@ -190,7 +189,7 @@ fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexO
         val mesh = model.meshes[i] as Mesh<*>
         VertexIndexOffsets(currentIndexOffset, currentVertexOffset).apply {
             currentIndexOffset += mesh.indexBufferValuesArray.size
-            currentVertexOffset += mesh.vertexBufferValuesArray.size / elementsPerVertex
+            currentVertexOffset += mesh.compiledVertices.size
         }
     }
     return meshVertexIndexOffsets

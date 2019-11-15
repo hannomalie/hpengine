@@ -56,6 +56,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
     }
 
     override fun SingleThreadContext.addComponent(component: ModelComponent) {
+        allocateVertexIndexBufferSpace(listOf(component.entity))
         components.add(component)
     }
 
@@ -105,7 +106,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
                     target.meshBufferIndex = entityBufferIndex + meshIndex
                     target.entityIndex = entity.index
                     target.meshIndex = meshIndex
-                    target.baseVertex = allocation.vertexIndexOffsetsForMeshes[meshIndex].vertexOffset
+                    target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
                     target.baseJointIndex = allocation.baseJointIndex
                     target.animationFrame0 = modelComponent.animationFrame0
                     target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
@@ -127,7 +128,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
                         target.meshBufferIndex = entityBufferIndex + meshIndex
                         target.entityIndex = entity.index
                         target.meshIndex = meshIndex
-                        target.baseVertex = allocation.vertexIndexOffsetsForMeshes[meshIndex].vertexOffset
+                        target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
                         target.baseJointIndex = allocation.baseJointIndex
                         target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                         target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
@@ -149,7 +150,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
                             target.meshBufferIndex = entityBufferIndex + meshIndex
                             target.entityIndex = entity.index
                             target.meshIndex = meshIndex
-                            target.baseVertex = allocation.vertexIndexOffsets.vertexOffset
+                            target.baseVertex = allocation.forMeshes.first().vertexOffset
                             target.baseJointIndex = allocation.baseJointIndex
                             target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                             target.isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
@@ -168,14 +169,15 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
     private fun getRequiredEntityBufferSize() = components.sumBy { it.entity.instanceCount * it.meshes.size }
 
-    sealed class Allocation(open val vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets,
-                            open val vertexIndexOffsetsForMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) {
+    sealed class Allocation(val forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) {
+        init {
+            require(forMeshes.isNotEmpty())
+        }
+        val indexOffset = forMeshes.first().indexOffset
+        val vertexOffset = forMeshes.first().vertexOffset
 
-        data class Static(override val vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets,
-                          override val vertexIndexOffsetsForMeshes: List<VertexIndexBuffer.VertexIndexOffsets>): Allocation(vertexIndexOffsets, vertexIndexOffsetsForMeshes)
-        data class Animated(override val vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets,
-                            override val vertexIndexOffsetsForMeshes: List<VertexIndexBuffer.VertexIndexOffsets>,
-                            val jointsOffset: Int): Allocation(vertexIndexOffsets, vertexIndexOffsetsForMeshes)
+        class Static(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>): Allocation(forMeshes)
+        class Animated(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>, val jointsOffset: Int): Allocation(forMeshes)
     }
 
     fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
@@ -184,17 +186,17 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
             if (c.model.isStatic) {
                 val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTCHANNELS, vertexIndexOffsets)
-                Allocation.Static(vertexIndexOffsets, vertexIndexOffsetsForMeshes)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
+                Allocation.Static(vertexIndexOffsetsForMeshes)
             } else {
                 val vertexIndexBuffer = this.engine.renderManager.vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, ModelComponent.DEFAULTANIMATEDCHANNELS, vertexIndexOffsets)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
 
                 val elements = (c.model as AnimatedModel).frames
                         .flatMap { frame -> frame.jointMatrices.toList() }
                 joints.addAll(elements)
-                Allocation.Animated(vertexIndexOffsets, vertexIndexOffsetsForMeshes, joints.size)
+                Allocation.Animated(vertexIndexOffsetsForMeshes, joints.size)
             }
         }.apply {
             updateCache = true
@@ -206,7 +208,6 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
     override fun SingleThreadContext.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
         val result = onEntityAddedImpl(this, entities)
-        allocateVertexIndexBufferSpace(entities)
         updateCache = true
         return result
     }

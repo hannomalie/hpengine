@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class VertexIndexBuffer implements Serializable {
     private volatile VertexBuffer vertexBuffer;
     private volatile IndexBuffer indexBuffer;
-    private volatile AtomicInteger currentBaseVertex = new AtomicInteger();
-    private volatile AtomicInteger currentIndexOffset = new AtomicInteger();
+    private int currentBaseVertex = 0;
+    private int currentIndexOffset = 0;
 
     public VertexIndexBuffer(GpuContext gpuContext, int vertexBufferSizeInFloatsCount, int indexBufferSizeInIntsCount, EnumSet<DataChannels> channels) {
         vertexBuffer = new VertexBuffer(gpuContext, BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), channels);
@@ -37,32 +37,16 @@ public class VertexIndexBuffer implements Serializable {
         this.indexBuffer = indexBuffer;
     }
 
-    public AtomicInteger getCurrentBaseVertex() {
-        return currentBaseVertex;
-    }
-
-    public void setCurrentBaseVertex(AtomicInteger currentBaseVertex) {
-        this.currentBaseVertex = currentBaseVertex;
-    }
-
-    public AtomicInteger getCurrentIndexOffset() {
-        return currentIndexOffset;
-    }
-
-    public void setCurrentIndexOffset(AtomicInteger currentIndexOffset) {
-        this.currentIndexOffset = currentIndexOffset;
-    }
-
     public synchronized VertexIndexOffsets allocate(int elementsCount, int indicesCount) {
-        VertexIndexOffsets vertexIndexOffsets = new VertexIndexOffsets(currentBaseVertex.get(), currentIndexOffset.get());
-        currentBaseVertex.getAndSet(vertexIndexOffsets.vertexOffset + elementsCount);
-        currentIndexOffset.getAndSet(vertexIndexOffsets.indexOffset + indicesCount);
+        VertexIndexOffsets vertexIndexOffsets = new VertexIndexOffsets(currentBaseVertex, currentIndexOffset);
+        currentBaseVertex += elementsCount;
+        currentIndexOffset += indicesCount;
         return vertexIndexOffsets;
     }
 
     public void resetAllocations() {
-        currentBaseVertex.getAndSet(0);
-        currentIndexOffset.getAndSet(0);
+        currentBaseVertex = 0;
+        currentIndexOffset = 0;
     }
 
     public static class VertexIndexOffsets {

@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.model;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.system.libc.LibCStdlib;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -15,7 +14,7 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
 
     public IndexBuffer(GpuContext gpuContext) {
         this(gpuContext, GL_ELEMENT_ARRAY_BUFFER);
-        setCapacityInBytes(4*3*50);
+        ensureCapacityInBytes(4*3*50);
     }
 
     public IndexBuffer(GpuContext gpuContext, int target) {
@@ -46,7 +45,7 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
         put(0, values);
     }
     public void put(int offset, int[] values) {
-        setCapacityInBytes((offset + values.length)* Integer.BYTES);
+        ensureCapacityInBytes((offset + values.length)* Integer.BYTES);
         IntBuffer intBuffer = buffer.asIntBuffer();
         intBuffer.position(offset);
         intBuffer.put(values);
@@ -87,14 +86,14 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
     }
 
     public void put(IntBuffer indices) {
-        setCapacityInBytes(indices.capacity() * Integer.BYTES);
+        ensureCapacityInBytes(indices.capacity() * Integer.BYTES);
         buffer.rewind();
         indices.rewind();
         buffer.asIntBuffer().put(indices);
     }
 
     public void put(int index, int value) {
-        setCapacityInBytes(Integer.BYTES*index+Integer.BYTES);
+        ensureCapacityInBytes(Integer.BYTES*index+Integer.BYTES);
         buffer.rewind();
         buffer.asIntBuffer().put(index, value);
     }

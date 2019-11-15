@@ -199,9 +199,9 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                         val batch = RenderBatch().init(modelComponentSystem.entityIndices[modelComponent]!!,
                                 e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true,
                                 e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld,
-                                e.boundingSphereRadius, allocation.vertexIndexOffsetsForMeshes[0].indexOffset,
-                                allocation.vertexIndexOffsets.indexOffset,
-                                allocation.vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds,
+                                e.boundingSphereRadius, allocation.forMeshes[0].indexOffset,
+                                allocation.indexOffset,
+                                allocation.vertexOffset, false, e.instanceMinMaxWorlds,
                                 modelComponent.material.materialInfo, e.index, 0)
 
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
@@ -222,8 +222,8 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
                         val batch = RenderBatch().init(modelComponentSystem.entityIndices[modelComponent]!!, e.isVisible,
                                 e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true,
                                 e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius,
-                                allocation.vertexIndexOffsetsForMeshes[0].indexOffset, allocation.vertexIndexOffsets.indexOffset,
-                                allocation.vertexIndexOffsets.vertexOffset, false, e.instanceMinMaxWorlds,
+                                allocation.forMeshes[0].indexOffset, allocation.indexOffset,
+                                allocation.vertexOffset, false, e.instanceMinMaxWorlds,
                                 modelComponent.material.materialInfo, e.index, 0)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }

@@ -10,7 +10,7 @@ import static org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BUFFER;
 public class AtomicCounterBuffer extends IndexBuffer {
     public AtomicCounterBuffer(GpuContext gpuContext, int size) {
         super(gpuContext, GL_SHADER_STORAGE_BUFFER);
-        setCapacityInBytes(size * Integer.BYTES);
+        ensureCapacityInBytes(size * Integer.BYTES);
     }
 
     public void bindAsParameterBuffer() {

@@ -157,7 +157,7 @@ class MaterialManager(val config: Config,
 
     override fun extract(renderState: RenderState) {
 //        TODO: Remove most of this
-        renderState.entitiesState.materialBuffer.setCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
+        renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
         for ((index, material) in materials.withIndex()) {
             val target = materialsAsStructs[index]

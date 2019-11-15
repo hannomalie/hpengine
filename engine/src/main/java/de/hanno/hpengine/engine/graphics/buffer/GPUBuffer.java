@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 public interface GPUBuffer {
-    default void setCapacityInBytes(int requestedCapacity) { throw new IllegalStateException("NOT IMPLEMENTED"); }
+    default void ensureCapacityInBytes(int requestedCapacity) { throw new IllegalStateException("NOT IMPLEMENTED"); }
     void bind();
 
     void unbind();

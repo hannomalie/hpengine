@@ -18,7 +18,6 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
-import org.joml.Vector4f
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java)
 
@@ -48,7 +47,7 @@ class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): Simple
             target.radius = pointLight.radius
             target.color.set(pointLight.color)
         }
-        lightBuffer.setCapacityInBytes(pointLights.size * PointLightStruct.getBytesPerInstance())
+        lightBuffer.ensureCapacityInBytes(pointLights.size * PointLightStruct.getBytesPerInstance())
         lightBuffer.buffer.rewind()
         gpuPointLightArray.copyTo(lightBuffer.buffer)
         lightBuffer.buffer.rewind()

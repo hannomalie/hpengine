@@ -28,7 +28,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
     public ByteBuffer map(int requestedCapacityInBytes) {
         bind();
         if(requestedCapacityInBytes > buffer.capacity()){
-            setCapacityInBytes(requestedCapacityInBytes);
+            ensureCapacityInBytes(requestedCapacityInBytes);
         }
 
         buffer.clear();
@@ -36,7 +36,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
     }
 
     @Override
-    public synchronized void setCapacityInBytes(int requestedCapacity) {
+    public synchronized void ensureCapacityInBytes(int requestedCapacity) {
         int capacityInBytes = requestedCapacity;
         if(capacityInBytes <= 0) { capacityInBytes = 10; }
 
@@ -77,8 +77,6 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
 
     @Override
     public void bind() {
-//        TODO: Make this somehow possible
-//        if(bound) {return;}
         gpuContext.execute("AbstractPersistentMappedBuffer.bind", bindBufferRunnable);
         bound = true;
     }
@@ -112,7 +110,7 @@ public abstract class AbstractPersistentMappedBuffer implements GPUBuffer {
 
     @Override
     public void setSizeInBytes(int size) {
-        setCapacityInBytes(size);
+        ensureCapacityInBytes(size);
     }
 
     @Override

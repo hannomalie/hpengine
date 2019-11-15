@@ -44,8 +44,8 @@ class BatchingSystem {
                 batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, drawLines, cameraWorldPosition,
                         isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType,
                         min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(meshIndex),
-                        allocations[modelComponent]!!.vertexIndexOffsetsForMeshes[meshIndex].indexOffset,
-                        allocations[modelComponent]!!.vertexIndexOffsetsForMeshes[meshIndex].vertexOffset,
+                        allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset,
+                        allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset,
                         !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index, meshIndex)
 
                 if (batch.isStatic) {
