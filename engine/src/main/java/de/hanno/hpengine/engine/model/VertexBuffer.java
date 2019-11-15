@@ -6,9 +6,11 @@ import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
-import org.apache.commons.lang.NotImplementedException;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.ARBIndirectParameters;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL42;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -17,7 +19,6 @@ import java.util.EnumSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
-import static org.lwjgl.opengl.GL30.glMapBufferRange;
 import static org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect;
 
 public class VertexBuffer extends PersistentMappedBuffer {
@@ -75,7 +76,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
             setVertexArrayObject(VertexArrayObject.getForChannels(gpuContext, channels));
         });
         ensureCapacityInBytes(values.length * Float.BYTES);
-        this.verticesCount = calculateVerticesCount(buffer, channels);
+        this.verticesCount = calculateVerticesCount(getBuffer(), channels);
         setMaxLod(1);
         this.triangleCount = verticesCount / 3;
         putValues(values);
@@ -95,14 +96,14 @@ public class VertexBuffer extends PersistentMappedBuffer {
 			int currentOffset = 0;
 			for (DataChannels channel : channels) {
 				for(int a = 0; a < channel.getSize(); a++) {
-					buffer.putFloat(vertices[(i*totalElementsPerVertex) + currentOffset + a]);
+					getBuffer().putFloat(vertices[(i*totalElementsPerVertex) + currentOffset + a]);
 				}
 				currentOffset += channel.getSize();
 			}
 		}
 
-		buffer.rewind();
-		return buffer.asFloatBuffer();
+		getBuffer().rewind();
+		return getBuffer().asFloatBuffer();
 	}
 
 	public int getVerticesCount() {
@@ -115,7 +116,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		validate(totalElementsPerVertex);
 
-		int verticesCount = buffer.capacity() / Float.BYTES / totalElementsPerVertex;
+		int verticesCount = getBuffer().capacity() / Float.BYTES / totalElementsPerVertex;
         triangleCount = verticesCount / 3;
 		return verticesCount;
 	}
@@ -143,17 +144,17 @@ public class VertexBuffer extends PersistentMappedBuffer {
 
 	// TODO: Mach irgendwas....
 	private void validate(int totalElementsPerVertex) {
-		int modulo = buffer.capacity() % totalElementsPerVertex;
+		int modulo = getBuffer().capacity() % totalElementsPerVertex;
 		if (modulo != 0) {
 			throw new RuntimeException(String.format("Can't buffer those vertices!\n" +
 					"vertices count: %d,\n" +
 					"Attribute values per vertex: %d\n" +
-					"=> Modulo is %d", buffer.capacity(), totalElementsPerVertex, modulo));
+					"=> Modulo is %d", getBuffer().capacity(), totalElementsPerVertex, modulo));
 		}
 	}
 
     public CompletableFuture<VertexBuffer> upload() {
-        buffer.rewind();
+        getBuffer().rewind();
         CompletableFuture<VertexBuffer> future = new CompletableFuture<>();
         gpuContext.execute("VertexBuffer.upload", () -> {
             bind();
@@ -163,21 +164,10 @@ public class VertexBuffer extends PersistentMappedBuffer {
         return future;
     }
 
-    protected ByteBuffer mapBuffer(long capacityInBytes, int flags)  {
-//        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, LibCStdlib.malloc(capacityInBytes));//BufferUtils.createByteBuffer(capacityInBytes));
-        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer((int) capacityInBytes));
-        if(buffer != null) {
-            buffer.rewind();
-            byteBuffer.put(buffer);
-            byteBuffer.rewind();
-        }
-        return byteBuffer;
-    }
-
     public void delete() {
 		GL15.glDeleteBuffers(getId());
         vertexArrayObject.delete();
-		buffer = null;
+		setBuffer(null);
 	}
 
     public int draw() {
@@ -321,37 +311,17 @@ public class VertexBuffer extends PersistentMappedBuffer {
     }
 
     @Override
-    public void putValues(ByteBuffer values) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public void putValues(int offset, ByteBuffer values) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public void putValues(float... values) {
-        putValues(0, values);
-    }
-
-    @Override
     public void putValues(int floatOffset, float... values) {
 //        bind();
         ensureCapacityInBytes((floatOffset + values.length) * Float.BYTES);
-        FloatBuffer floatBuffer = buffer.asFloatBuffer();
+        FloatBuffer floatBuffer = getBuffer().asFloatBuffer();
         floatBuffer.position(floatOffset);
         floatBuffer.put(values);
-        buffer.rewind();
+        getBuffer().rewind();
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
         verticesCount = (floatOffset+values.length)/totalElementsPerVertex;
         triangleCount = verticesCount/3;
-    }
-
-    public void drawAgain(IndexBuffer indexBuffer) {
-        if(!uploaded) { return; }
-        drawActually(indexBuffer);
     }
 
     public int drawDebug() {
@@ -394,8 +364,8 @@ public class VertexBuffer extends PersistentMappedBuffer {
 
 		float[] result = new float[totalElementsPerVertex * verticesCount];
 
-		buffer.rewind();
-		buffer.asFloatBuffer().get(result);
+		getBuffer().rewind();
+		getBuffer().asFloatBuffer().get(result);
 		return result;
 	}
 
@@ -416,7 +386,7 @@ public class VertexBuffer extends PersistentMappedBuffer {
 		int resultIndex = 0;
 
 		int elementsPerChannel = forChannel.getSize();
-        FloatBuffer floatBuffer = buffer.asFloatBuffer();
+        FloatBuffer floatBuffer = getBuffer().asFloatBuffer();
         int vertexCounter = 0;
 		for (int i = stride; i < floatBuffer.capacity() && vertexCounter < verticesCount; i += stride + elementsPerChannel + elementCountAfterPositions) {
 			for (int x = 0; x < forChannel.getSize(); x++) {

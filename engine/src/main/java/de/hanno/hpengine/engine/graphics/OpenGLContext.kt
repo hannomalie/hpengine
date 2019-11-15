@@ -290,6 +290,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             andBlock -> Executor.future {
                 runnable.run()
                 getExceptionOnError { "Error in action $actionName in $runnable" }
+            }.exceptionally {
+                RuntimeException(it).apply {
+                    printStackTrace()
+                }
             }.get()
             else -> Executor.async {
                 runnable.run()

@@ -15,19 +15,29 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.apache.xpath.operations.Bool
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>,
                                                 override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext {
-    override val singleThreadContext: SingleThreadContext = SingleThreadContext()
+    override val singleThreadContext: SingleThreadContext = SingleThreadContext
 }
 
-class SingleThreadContext(val singleThreadUpdateScope: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()) {
+private var singleThreadContextCounter = 0
+object SingleThreadContext {
+    val threadName: String = "SingleThreadContext${singleThreadContextCounter++}"
+    private val singleThreadUpdateScope: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(1) { Thread(it, threadName) }.asCoroutineDispatcher()
+
     init {
-        GlobalScope.async {}
+        GlobalScope.launch(singleThreadUpdateScope) {
+            while(true) {
+                delay(1)
+            }
+        }
     }
     fun launch(
         start: CoroutineStart = CoroutineStart.DEFAULT,
@@ -43,8 +53,14 @@ class SingleThreadContext(val singleThreadUpdateScope: ExecutorCoroutineDispatch
         return GlobalScope.async(singleThreadUpdateScope, start) { block() }
     }
 
+    private val isSingleThreadContextThread: Boolean
+        get() = Thread.currentThread().name == threadName
+
     @Throws(InterruptedException::class)
     fun <T> runBlocking(block: SingleThreadContext.() -> T): T {
+        if(isSingleThreadContextThread) {
+            return block()
+        }
         return kotlinx.coroutines.runBlocking(singleThreadUpdateScope) {
             with(this@SingleThreadContext) {
                 block()

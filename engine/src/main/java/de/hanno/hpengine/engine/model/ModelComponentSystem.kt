@@ -195,8 +195,9 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
                 val elements = (c.model as AnimatedModel).frames
                         .flatMap { frame -> frame.jointMatrices.toList() }
+                val jointsOffset = joints.size
                 joints.addAll(elements)
-                Allocation.Animated(vertexIndexOffsetsForMeshes, joints.size)
+                Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
             }
         }.apply {
             updateCache = true

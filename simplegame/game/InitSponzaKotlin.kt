@@ -10,7 +10,7 @@ class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsum
         val loaded = LoadModelCommand(modelFile, "sponza", engine.scene.materialManager, engine.config.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
         with(engine.sceneManager.scene) {
-            runBlocking(engine.singleThreadContext.singleThreadUpdateScope) {
+            engine.singleThreadContext.runBlocking {
                 with(engine.singleThreadContext) {
                     addAll(loaded.entities)
                 }

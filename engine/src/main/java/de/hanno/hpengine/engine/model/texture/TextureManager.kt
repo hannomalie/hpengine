@@ -160,16 +160,24 @@ class TextureManager(val config: Config, programManager: OpenGlProgramManager,
                    srgba: Boolean = false,
                    directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> = singleThreadContext.runBlocking {
 
-        textures.computeIfAbsent(resourceName) {
+        textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
         } as Texture<TextureDimension2D>
     }
 
     @JvmOverloads
     fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> = singleThreadContext.runBlocking {
-        textures.computeIfAbsent(resourceName) {
+        textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
         } as Texture<TextureDimension2D>
+    }
+
+    private inline fun <T> MutableMap<String,T>.ifAbsentPutInSingleThreadContext(resourceName: String, block: () -> T): T {
+        return if(!containsKey(resourceName)) {
+            block().apply {
+                singleThreadContext.runBlocking { put(resourceName, this@apply) }
+            }
+        } else this[resourceName]!!
     }
 
     fun getCompleteTextureInfo(resourceName: String, srgba: Boolean): CompleteTextureInfo {

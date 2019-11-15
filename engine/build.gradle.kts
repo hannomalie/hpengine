@@ -63,7 +63,7 @@ repositories {
     maven { setUrl("https://jitpack.io") }
 }
 val kotlinVersion: String by rootProject.extra
-val lwjgl_version = "3.2.0"
+val lwjgl_version = "3.2.3"
 val lwjgl_natives = when (OperatingSystem.current()) {
     OperatingSystem.LINUX   -> "natives-linux"
     OperatingSystem.MAC_OS  -> "natives-macos"

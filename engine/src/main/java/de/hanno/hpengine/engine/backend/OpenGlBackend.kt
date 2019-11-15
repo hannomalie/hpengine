@@ -41,7 +41,7 @@ class OpenGlBackend(override val eventBus: EventBus,
 
     companion object {
         operator fun invoke(window: Window<OpenGl>, config: Config): OpenGlBackend {
-            val singleThreadContext = SingleThreadContext()
+            val singleThreadContext = SingleThreadContext
             val eventBus = MBassadorEventBus()
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
