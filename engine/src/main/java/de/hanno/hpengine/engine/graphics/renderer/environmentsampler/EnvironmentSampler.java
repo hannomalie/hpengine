@@ -25,7 +25,7 @@ import de.hanno.hpengine.engine.graphics.shader.ShaderKt;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.engine.model.VertexBufferKt;
+import de.hanno.hpengine.engine.model.VertexBufferExtensionsKt;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
@@ -374,7 +374,7 @@ public class EnvironmentSampler extends Entity {
         secondPassDirectionalProgram.setUniform("activeProbeCount", environmentProbeManager.getProbes().size());
         environmentProbeManager.bindEnvironmentProbePositions(secondPassDirectionalProgram);
 //		LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
-		VertexBufferKt.draw(fullscreenBuffer);
+		VertexBufferExtensionsKt.draw(fullscreenBuffer);
 
 
         engine.getGpuContext().enable(CULL_FACE);
@@ -501,7 +501,7 @@ public class EnvironmentSampler extends Entity {
 				cubemapRadianceFragmentProgram.setUniform("screenHeight", (float) height);
                 environmentProbeManager.bindEnvironmentProbePositions(cubemapRadianceFragmentProgram);
                 engine.getGpuContext().viewPort(0, 0, width, height);
-				VertexBufferKt.draw(fullscreenBuffer);
+				VertexBufferExtensionsKt.draw(fullscreenBuffer);
 			}
 		}
 	}
@@ -591,7 +591,7 @@ public class EnvironmentSampler extends Entity {
 			secondPassPointProgram.setUniform("lightRadius", lightRadius);
 			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
 
-			VertexBufferKt.draw(fullscreenBuffer);
+			VertexBufferExtensionsKt.draw(fullscreenBuffer);
 			light.draw(secondPassPointProgram);
 			
 			if(firstLightDrawn) {
@@ -677,7 +677,7 @@ public class EnvironmentSampler extends Entity {
 //			}
 
             engine.getGpuContext().bindTexture(9, TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
-			VertexBufferKt.draw(fullscreenBuffer);
+			VertexBufferExtensionsKt.draw(fullscreenBuffer);
 //			areaLight.getVertexBuffer().drawDebug();
 		}
 		

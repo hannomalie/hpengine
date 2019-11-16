@@ -1,8 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.engine.model.VertexBuffer;
 import junit.framework.Assert;
 import org.junit.Test;
 

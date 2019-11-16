@@ -1,14 +1,9 @@
 package de.hanno.hpengine.engine.container;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
-import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import kotlinx.coroutines.CoroutineScope;
@@ -26,7 +21,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.DeferredRendererKt.batchAABBLines;
-import static de.hanno.hpengine.engine.math.VectorKt.toHp;
 
 public class Octree implements Updatable, Serializable, EntityContainer {
 	private static final long serialVersionUID = 1L;

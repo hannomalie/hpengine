@@ -8,7 +8,6 @@ import org.lwjgl.BufferUtils;
 
 import java.io.Serializable;
 import java.util.EnumSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class VertexIndexBuffer implements Serializable {
     private volatile VertexBuffer vertexBuffer;

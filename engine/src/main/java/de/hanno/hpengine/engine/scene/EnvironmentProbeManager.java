@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
-import static de.hanno.hpengine.engine.model.VertexBufferKt.drawDebugLines;
+import static de.hanno.hpengine.engine.model.VertexBufferExtensionsKt.drawDebugLines;
 import static org.lwjgl.opengl.GL11.GL_REPEAT;
 import static org.lwjgl.opengl.GL11.GL_RGBA8;
 import static org.lwjgl.opengl.GL30.GL_RGBA32F;
