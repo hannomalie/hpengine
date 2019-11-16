@@ -23,6 +23,6 @@ public class DataChannelsTest {
         float[] floats = new float[DataChannels.totalElementsPerVertex(ModelComponent.Companion.getDEFAULTCHANNELS())*expected];
 
         Assert.assertEquals("Total elements per vertex not calculated correctly",
-                expected, VertexBuffer.calculateVerticesCount(floats, ModelComponent.Companion.getDEFAULTCHANNELS()));
+                expected, VertexBuffer.Companion.calculateVerticesCount(floats, ModelComponent.Companion.getDEFAULTCHANNELS()));
     }
 }

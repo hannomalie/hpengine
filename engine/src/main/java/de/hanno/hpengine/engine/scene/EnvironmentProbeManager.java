@@ -234,7 +234,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 				points[24*3*i + z] = array[z];
 			}
 		};
-		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), points, EnumSet.of(DataChannels.POSITION3));
+		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3), points);
 		buffer.upload();
 		program.setUniform("diffuseColor", new Vector3f(0,1,0));
 		buffer.drawDebug();

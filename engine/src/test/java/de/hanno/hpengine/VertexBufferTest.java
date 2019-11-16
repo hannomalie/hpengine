@@ -42,7 +42,7 @@ public class VertexBufferTest extends TestWithEngine {
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
 
-        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD), vertexData);
         buffer.upload();
         float[] bufferedData = buffer.getVertexData();
         Assert.assertArrayEquals(vertexData, bufferedData, 0f);
@@ -136,7 +136,7 @@ public class VertexBufferTest extends TestWithEngine {
 		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
 		};
 		
-		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD), vertexData);
 		float[] result = buffer.getValues(DataChannels.TEXCOORD);
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
 
@@ -176,7 +176,7 @@ public class VertexBufferTest extends TestWithEngine {
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
 
-        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD), vertexData);
         buffer.upload();
         Assert.assertEquals(6, buffer.getVerticesCount());
         Assert.assertEquals(2, buffer.getTriangleCount());

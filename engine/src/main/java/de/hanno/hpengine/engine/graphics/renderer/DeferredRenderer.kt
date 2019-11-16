@@ -593,7 +593,7 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
     private val linePoints = ArrayList<Vector3f>()
     private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
 
-    private val buffer = VertexBuffer(engineContext.gpuContext, floatArrayOf(0f, 0f, 0f, 0f), EnumSet.of(DataChannels.POSITION3)).apply {
+    private val buffer = VertexBuffer(engineContext.gpuContext, EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).apply {
         upload()
     }
 

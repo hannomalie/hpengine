@@ -8,10 +8,10 @@ import java.util.EnumSet;
 public class QuadVertexBuffer extends VertexBuffer {
 
 	public QuadVertexBuffer(GpuContext gpuContext, boolean fullscreen) {
-		super(gpuContext, getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		super(gpuContext, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD), getPositionsAndTexCoords(fullscreen));
 	}
 	public QuadVertexBuffer(GpuContext gpuContext, Vector2f leftBottom, Vector2f rightUpper) {
-		super(gpuContext, getPositionsAndTexCoords(leftBottom, rightUpper), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		super(gpuContext, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD), getPositionsAndTexCoords(leftBottom, rightUpper));
 	}
 
 	static float[] getPositionsAndTexCoords(boolean fullscreen) {
