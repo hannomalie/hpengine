@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.engine.model.VertexBufferKt;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.junit.Assert;
@@ -227,7 +228,7 @@ public class VertexBufferTest extends TestWithEngine {
 
             GLTimerQuery query = new GLTimerQuery(engine.getGpuContext()).begin();
             for(int i = 0; i < count; i++) {
-                buffer.draw();
+                VertexBufferKt.draw(buffer);
             }
             query.end();
             System.out.println("VB draw " + query.getResult());

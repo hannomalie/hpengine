@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
+import static de.hanno.hpengine.engine.model.VertexBufferKt.drawDebugLines;
 import static org.lwjgl.opengl.GL11.GL_REPEAT;
 import static org.lwjgl.opengl.GL11.GL_RGBA8;
 import static org.lwjgl.opengl.GL30.GL_RGBA32F;
@@ -237,7 +238,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3), points);
 		buffer.upload();
 		program.setUniform("diffuseColor", new Vector3f(0,1,0));
-		buffer.drawDebug();
+		drawDebugLines(buffer);
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {

@@ -16,7 +16,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.model.drawLinesInstancedIndirectBaseVertex
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.multiDrawElementsIndirectCount
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
@@ -113,9 +115,9 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
         if (engine.config.debug.isDrawLines && useLineDrawingIfActivated) {
             engine.gpuContext.disable(GlCap.CULL_FACE)
-            VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexIndexBuffer, commandBuffer, commandCount)
+            vertexIndexBuffer.drawLinesInstancedIndirectBaseVertex(commandBuffer, commandCount)
         } else {
-            VertexBuffer.multiDrawElementsIndirectCount(vertexIndexBuffer, commandBuffer, drawCountBuffer, commandCount)
+            vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, commandCount)
         }
     }
 

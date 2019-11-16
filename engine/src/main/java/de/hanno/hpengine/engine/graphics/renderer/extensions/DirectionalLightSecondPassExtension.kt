@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.draw
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30

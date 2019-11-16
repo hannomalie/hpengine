@@ -42,6 +42,8 @@ import de.hanno.hpengine.engine.graphics.state.StateRef
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.model.draw
+import de.hanno.hpengine.engine.model.drawDebugLines
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions
 import de.hanno.hpengine.log.ConsoleLogger.getLogger

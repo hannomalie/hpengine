@@ -13,6 +13,8 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.model.drawInstancedBaseVertex
+import de.hanno.hpengine.engine.model.drawLinesInstancedBaseVertex
 import org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
 import org.lwjgl.opengl.GL42.glMemoryBarrier
 
