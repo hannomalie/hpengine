@@ -1,25 +1,29 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import org.joml.Vector2f
-import org.joml.Vector3f
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Vertex
-
-import java.io.*
-import java.lang.IllegalArgumentException
-import java.util.*
-import java.util.logging.Level
-
+import de.hanno.hpengine.log.ConsoleLogger
+import org.joml.Vector2f
+import org.joml.Vector3f
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileReader
+import java.io.IOException
 import java.lang.Integer.parseInt
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.HashMap
+import java.util.Random
 import java.util.concurrent.CompletableFuture
+import java.util.logging.Level
 
 class OBJLoader {
 
@@ -97,12 +101,16 @@ class OBJLoader {
             throw IllegalArgumentException("File does not exist: ${f.absolutePath}")
         }
         val reader = BufferedReader(FileReader(f))
-        val resultModel = StaticModel<Vertex>(f.path)
 
-        var currentMesh: StaticMesh? = null
-        var currentMaterial: SimpleMaterial? = null
+        var currentMesh: MeshData? = null
+        var currentMaterial: Material? = null
 
         var usemtlCounter = 0
+
+        val vertices = mutableListOf<Vector3f>()
+        val normals = mutableListOf<Vector3f>()
+        val texCoords = mutableListOf<Vector2f>()
+        val meshes = mutableListOf<MeshData>()
 
         var line: String? = reader.readLine()
         while (line != null) {
@@ -119,29 +127,25 @@ class OBJLoader {
             } else if ("usemtl" == firstToken) {
                 val materialName = line.replace("usemtl ", "")
                 currentMaterial = materialManager.getMaterial(materialName)
-                if (currentMaterial == null) {
-                    LOGGER.log(Level.INFO, "No material found!!!")
-                    currentMaterial = materialManager.defaultMaterial
-                }
                 usemtlCounter++
             } else if ("o" == firstToken || "g" == firstToken || line.startsWith("# object ")) {
-                currentMesh = newMeshHelper(resultModel.getVertices(), resultModel.getTexCoords(), resultModel.getNormals(), line, line.replace("o ", "").replace("# object ", "").replace("g ", ""))
-                resultModel.addMesh(currentMesh)
+                currentMesh = newMeshHelper(vertices, texCoords, normals, line, line.replace("o ", "").replace("# object ", "").replace("g ", ""), materialManager.defaultMaterial)
+                meshes.add(currentMesh)
                 usemtlCounter = 0
             } else if ("v" == firstToken) {
                 currentState = State.READING_VERTEX
-                resultModel.addVertex(parseVertex(line))
+                vertices.add(parseVertex(line))
             } else if ("vt" == firstToken) {
                 currentState = State.READING_UV
-                resultModel.addTexCoords(parseTexCoords(line))
+                texCoords.add(parseTexCoords(line))
             } else if ("vn" == firstToken) {
                 currentState = State.READING_NORMAL
-                resultModel.addNormal(parseVertex(line))
+                normals.add(parseVertex(line))
             } else if ("f" == firstToken) {
                 currentState = State.READING_FACE
                 if (usemtlCounter > 1) {
-                    currentMesh = newMeshHelper(resultModel.getVertices(), resultModel.getTexCoords(), resultModel.getNormals(), line, currentMesh!!.name + Random().nextInt())
-                    resultModel.addMesh(currentMesh)
+                    currentMesh = newMeshHelper(vertices, texCoords, normals, line, currentMesh!!.name + Random().nextInt(), currentMaterial!!)
+                    meshes.add(currentMesh)
                     usemtlCounter = 0
                 }
                 currentMesh!!.material = currentMaterial!!
@@ -152,13 +156,21 @@ class OBJLoader {
         }
         reader.close()
 
-        resultModel.init(materialManager)
+        val meshes1 = meshes.map { StaticMesh(it.name, it.positions, it.texCoords, it.normals, it.indexedFaces, it.material) }
+        val resultModel = StaticModel(f.path, vertices, texCoords, normals, meshes1)
         return resultModel
     }
 
-    private fun newMeshHelper(vertices: ArrayList<Vector3f>, texCoords: ArrayList<Vector2f>,
-                              normals: ArrayList<Vector3f>, line: String, name: String): StaticMesh {
-        val mesh = StaticMesh(line, vertices, texCoords, normals)
+    data class MeshData(var name: String = "",
+                        val positions: MutableList<Vector3f> = mutableListOf(),
+                        val texCoords: MutableList<Vector2f> = mutableListOf(),
+                        val normals: MutableList<Vector3f> = mutableListOf(),
+                        val indexedFaces: MutableList<Face> = mutableListOf(),
+                        var material: Material)
+
+    private fun newMeshHelper(vertices: MutableList<Vector3f>, texCoords: MutableList<Vector2f>,
+                              normals: MutableList<Vector3f>, line: String, name: String, material: Material): MeshData {
+        val mesh = MeshData(line, vertices, texCoords, normals, material = material)
         mesh.name = name
         return mesh
     }

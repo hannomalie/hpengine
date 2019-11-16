@@ -76,7 +76,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 
     fun getMinMax(transform: Transform<*>): AABB = model.getMinMax(transform)
 
-    fun getIndexCount(i: Int): Int = model.meshIndices[i].size()
+    fun getIndexCount(i: Int): Int = model.meshIndices[i].size
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         if (model is AnimatedModel) {
@@ -145,7 +145,8 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
     if (model.isStatic) {
         val converted = StructArray(compiledVertices.size) { VertexStruct() }
         for (i in compiledVertices.indices) {
-            val (_, position, texCoord, normal) = compiledVertices[i] as Vertex
+            val vertex = compiledVertices[i] as Vertex
+            val (position, texCoord, normal) = vertex
             val target = converted.getAtIndex(i)
             target.position.set(position)
             target.texCoord.set(texCoord)
@@ -156,7 +157,8 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
     } else {
         val converted = StructArray(compiledVertices.size) { AnimatedVertexStruct() }
         for (i in compiledVertices.indices) {
-            val (_, position, texCoord, normal, weights, jointIndices) = compiledVertices[i] as AnimatedVertex
+            val animatedVertex = compiledVertices[i] as AnimatedVertex
+            val (position, texCoord, normal, weights, jointIndices) = animatedVertex
             val target = converted.getAtIndex(i)
             target.position.set(position)
             target.texCoord.set(texCoord)
@@ -188,7 +190,7 @@ fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexO
     val meshVertexIndexOffsets = model.meshes.indices.map { i ->
         val mesh = model.meshes[i] as Mesh<*>
         VertexIndexOffsets(currentIndexOffset, currentVertexOffset).apply {
-            currentIndexOffset += mesh.indexBufferValuesArray.size
+            currentIndexOffset += mesh.indexBufferValues.size
             currentVertexOffset += mesh.compiledVertices.size
         }
     }

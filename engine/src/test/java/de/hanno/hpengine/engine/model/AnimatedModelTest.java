@@ -26,7 +26,7 @@ public class AnimatedModelTest extends TestWithEngine {
 
         for(int i = 0; i < animatedModel.getMeshes().size(); i++) {
             MD5Mesh mesh = (MD5Mesh) (animatedModel.getMeshes().get(i));
-            float[] vertexBufferValues = mesh.getVertexBufferValuesArray();
+            float[] vertexBufferValues = mesh.getVertexBufferValues();
 
             for(int vertexIndex = 0; vertexIndex < mesh.getCompiledVertices().size(); vertexIndex++) {
                 AnimatedVertex vertex = mesh.getCompiledVertices().get(vertexIndex);

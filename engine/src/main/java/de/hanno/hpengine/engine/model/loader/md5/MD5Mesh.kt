@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.model.loader.md5
 
 import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -10,7 +9,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -20,14 +18,13 @@ import org.joml.Vector4i
 import java.io.File
 import java.util.ArrayList
 import java.util.regex.Pattern
-import java.util.stream.Collectors
 
 class MD5Mesh() : Mesh<AnimatedVertex> {
     override var compiledVertices: List<AnimatedVertex> = mutableListOf()
     var positionsArray: FloatArray = floatArrayOf()
     private var textCoordsArr: FloatArray = floatArrayOf()
     private var normalsArr: FloatArray = floatArrayOf()
-    override var indexBufferValuesArray: IntArray = intArrayOf()
+    override var indexBufferValues: IntArray = intArrayOf()
     private var jointIndicesArr: IntArray = intArrayOf()
     private var weightsArr: FloatArray = floatArrayOf()
 
@@ -38,7 +35,7 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
     var triangles: ArrayList<MD5Triangle> = ArrayList()
 
     var weights: ArrayList<MD5Weight> = ArrayList()
-    override var vertexBufferValuesArray: FloatArray = floatArrayOf()
+    override var vertexBufferValues: FloatArray = floatArrayOf()
     private val indicesList = IntArrayList()
     override lateinit var material: Material
     override lateinit var name: String
@@ -54,40 +51,33 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
     override val faces: List<StaticMesh.CompiledFace>
         get() = emptyList()
 
-    override val indexBufferValues: IntArrayList
-        get() {
-            indicesList.clear()
-            indicesList.add(indexBufferValuesArray, 0, indexBufferValuesArray.size - 1)
-            return indicesList
-        }
-
     constructor(positionsArr: FloatArray, textCoordsArr: FloatArray, normalsArr: FloatArray, indicesArr: IntArray, jointIndicesArr: IntArray, weightsArr: FloatArray) : this() {
         this.positionsArray = positionsArr
         this.textCoordsArr = textCoordsArr
         this.normalsArr = normalsArr
-        this.indexBufferValuesArray = indicesArr
+        this.indexBufferValues = indicesArr
         this.jointIndicesArr = jointIndicesArr
         this.weightsArr = weightsArr
 
         var counter = 0
 
         val vertexCount = positionsArr.size / 3
-        vertexBufferValuesArray = FloatArray(vertexCount * VALUES_PER_VERTEX)
+        vertexBufferValues = FloatArray(vertexCount * VALUES_PER_VERTEX)
         var i = 0
         while (i < vertexCount) {
             val currentIndex = i
 
             val vec3BaseIndex = 3 * currentIndex
-            vertexBufferValuesArray[counter++] = positionsArr[vec3BaseIndex]
-            vertexBufferValuesArray[counter++] = positionsArr[vec3BaseIndex + 1]
-            vertexBufferValuesArray[counter++] = positionsArr[vec3BaseIndex + 2]
+            vertexBufferValues[counter++] = positionsArr[vec3BaseIndex]
+            vertexBufferValues[counter++] = positionsArr[vec3BaseIndex + 1]
+            vertexBufferValues[counter++] = positionsArr[vec3BaseIndex + 2]
 
-            vertexBufferValuesArray[counter++] = textCoordsArr[2 * currentIndex]
-            vertexBufferValuesArray[counter++] = textCoordsArr[2 * currentIndex + 1]
+            vertexBufferValues[counter++] = textCoordsArr[2 * currentIndex]
+            vertexBufferValues[counter++] = textCoordsArr[2 * currentIndex + 1]
 
-            vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex]
-            vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex + 1]
-            vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex + 2]
+            vertexBufferValues[counter++] = normalsArr[vec3BaseIndex]
+            vertexBufferValues[counter++] = normalsArr[vec3BaseIndex + 1]
+            vertexBufferValues[counter++] = normalsArr[vec3BaseIndex + 2]
             i += 1
 
         }
@@ -120,7 +110,7 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
             i++
         }
         val jointIndices = Vector4i(jointIndices1[0], jointIndices1[1], jointIndices1[2], jointIndices1[3])
-        return AnimatedVertex("Vertex", input.position, input.textCoords, input.normal, weights, jointIndices)
+        return AnimatedVertex(input.position, input.textCoords, input.normal, weights, jointIndices)
     }
 
     override fun toString(): String {
@@ -146,14 +136,6 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
         str.append("]").append(System.lineSeparator())
 
         return str.toString()
-    }
-
-    override fun init(materialManager: MaterialManager) {
-
-    }
-
-    override fun putToValueArrays() {
-
     }
 
     override fun getMinMax(transform: Transform<*>): AABB {

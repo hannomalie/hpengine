@@ -1,13 +1,9 @@
 package de.hanno.hpengine.engine.model
 
 import com.carrotsearch.hppc.FloatArrayList
-import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
@@ -20,64 +16,48 @@ import org.joml.Vector4f
 import java.io.Serializable
 import java.util.ArrayList
 import java.util.UUID
-import java.util.logging.Level
 
 class StaticMesh(override var name: String = "",
-                 val positions: MutableList<Vector3f> = ArrayList(),
-                 val texCoords: MutableList<Vector2f> = ArrayList(),
-                 val normals: MutableList<Vector3f> = ArrayList()) : SimpleSpatial(), Serializable, Mesh<Bufferable> {
+                 modelPositions: List<Vector3f>,
+                 modelTexCoords: List<Vector2f>,
+                 modelNormals: List<Vector3f>,
+                 indexedFaces: List<Face>,
+                 override var material: Material) : SimpleSpatial(), Serializable, Mesh<Vertex> {
 
     val uuid = UUID.randomUUID()
 
-    val indexedFaces: MutableList<Face> = ArrayList()
-    private val compiledFaces = ArrayList<CompiledFace>()
-    override lateinit var material: Material
-    override val indexBufferValues = IntArrayList()
-    private val vertexBufferValues = FloatArrayList()
-    override lateinit var indexBufferValuesArray: IntArray
-    private val valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS)
     override val compiledVertices = ArrayList<Vertex>()
+    override val faces = ArrayList<CompiledFace>()
+    private val valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS)
     override val minMax = AABB(Vector3f(), Vector3f())
 
-    override lateinit var vertexBufferValuesArray: FloatArray
+    private val positions: MutableList<Vector3f> = mutableListOf()
+    private val texCoords: MutableList<Vector2f> = mutableListOf()
+    private val normals: MutableList<Vector3f> = mutableListOf()
 
-    override val faces: List<CompiledFace>
-        get() = compiledFaces
-
-    override val triangleCount: Int
-        get() = indexBufferValues.size() / 3
-
-    override fun init(materialManager: MaterialManager) {
-
-        if (!::material.isInitialized) {
-            LOGGER.log(Level.INFO, "No material found for mesh " + this.name + "!!!")
-            material = materialManager.defaultMaterial
-        }
-        compiledVertices.clear()
-
+    init {
         val values = FloatArrayList(indexedFaces.size * valuesPerVertex)
 
-        for (i in indexedFaces.indices) {
-            val face = indexedFaces[i]
+        for (face in indexedFaces) {
 
             val referencedVertices = face.vertices
             val referencedNormals = face.normalIndices
             val referencedTexcoords = face.textureCoordinateIndices
             val compiledPositions = arrayOf(Vector3f(), Vector3f(), Vector3f())
             val compiledTexCoords = arrayOf(Vector2f(), Vector2f(), Vector2f())
-            val compiledNormals = arrayOf(Vector3f(), Vector3f(),Vector3f())
+            val compiledNormals = arrayOf(Vector3f(), Vector3f(), Vector3f())
 
             for (j in 0..2) {
-                val referencedVertex = positions[referencedVertices[j] - 1]
+                val referencedVertex = modelPositions[referencedVertices[j] - 1]
                 compiledPositions[j] = referencedVertex
                 var referencedTexcoord = Vector2f(0f, 0f)
                 try {
-                    referencedTexcoord = texCoords[referencedTexcoords[j] - 1]
+                    referencedTexcoord = modelTexCoords[referencedTexcoords[j] - 1]
                 } catch (e: Exception) {
                 }
 
                 compiledTexCoords[j] = referencedTexcoord
-                val referencedNormal = normals[referencedNormals[j] - 1]
+                val referencedNormal = modelNormals[referencedNormals[j] - 1]
                 compiledNormals[j] = referencedNormal
 
                 values.add(referencedVertex.x)
@@ -90,49 +70,40 @@ class StaticMesh(override var name: String = "",
                 values.add(referencedNormal.z)
 
 
-                compiledVertices.add(Vertex("Vertex", referencedVertex, referencedTexcoord, referencedNormal))
+                compiledVertices.add(Vertex(referencedVertex, referencedTexcoord, referencedNormal))
 
             }
-            compiledFaces.add(CompiledFace(compiledPositions, compiledTexCoords, compiledNormals))
+            faces.add(CompiledFace(compiledPositions, compiledTexCoords, compiledNormals))
         }
 
-        val uniqueVertices = ArrayList<CompiledVertex>()
-        for (currentFace in compiledFaces) {
+        for (currentFace in faces) {
             for (i in 0..2) {
                 val currentVertex = currentFace.vertices[i]
-                run {
-                    uniqueVertices.add(currentVertex)
-                    positions.add(currentVertex.position)
-                    texCoords.add(currentVertex.texCoords)
-                    normals.add(currentVertex.normal)
-                    indexBufferValues.add(uniqueVertices.size - 1)
-                }
+                positions.add(currentVertex.position)
+                texCoords.add(currentVertex.texCoords)
+                normals.add(currentVertex.normal)
             }
         }
 
-        putToValueArrays()
-        calculateMinMax(null, minMax.min, minMax.max, compiledFaces)
+        calculateMinMax(null, minMax.min, minMax.max, faces)
     }
 
-    override fun putToValueArrays() {
-        vertexBufferValues.clear()
-        vertexBufferValuesArray = FloatArray(compiledFaces.size * 3 * valuesPerVertex)
-        for (currentFace in compiledFaces) {
-            for (i in 0..2) {
-                vertexBufferValues.add(*currentFace.vertices[i].asFloats())
+    override val indexBufferValues = (0 until faces.size * 3).map { it }.toIntArray()
+
+    override val vertexBufferValues = FloatArrayList().apply {
+        faces.forEach { currentFace ->
+            (0..2).forEach { vertexIndex ->
+                add(*currentFace.vertices[vertexIndex].asFloats())
             }
         }
-        vertexBufferValuesArray = vertexBufferValues.toArray()
+    }.toArray()
 
-        indexBufferValuesArray = IntArray(indexBufferValues.size())
-        for (indexIndex in 0 until indexBufferValues.size()) {
-            indexBufferValuesArray[indexIndex] = indexBufferValues.get(indexIndex)
-        }
-    }
+    override val triangleCount: Int
+        get() = faces.size
 
     override fun getMinMax(transform: Transform<*>): AABB {
         if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, compiledFaces)
+            calculateMinMax(transform, minMax.min, minMax.max, faces)
         }
         return super.getMinMaxWorld(transform)
     }
@@ -143,7 +114,7 @@ class StaticMesh(override var name: String = "",
 
     override fun getCenterWorld(transform: Transform<*>): Vector3f {
         if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, compiledFaces)
+            calculateMinMax(transform, minMax.min, minMax.max, faces)
         }
         return super.getCenterWorld(transform)
     }
@@ -154,7 +125,7 @@ class StaticMesh(override var name: String = "",
 
     override fun getBoundingSphereRadius(transform: Transform<*>): Float {
         if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, compiledFaces)
+            calculateMinMax(transform, minMax.min, minMax.max, faces)
         }
         return super.getBoundingSphereRadius(transform)
     }
@@ -213,12 +184,12 @@ class StaticMesh(override var name: String = "",
 
         private const val serialVersionUID = 1L
 
-        fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, compiledFaces: List<CompiledFace>) {
+        fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
             min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
             max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
 
-            for (i in compiledFaces.indices) {
-                val face = compiledFaces[i]
+            for (i in faces.indices) {
+                val face = faces[i]
 
                 val vertices = face.vertices
 

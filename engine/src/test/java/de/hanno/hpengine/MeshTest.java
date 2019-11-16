@@ -21,10 +21,10 @@ public class MeshTest extends TestWithEngine {
         Assert.assertEquals(4, planeMesh.getFaces().size());
 
         Assert.assertEquals(2, planeMesh.getFaces().size());
-        Assert.assertEquals(6, planeMesh.getIndexBufferValuesArray().length);
+        Assert.assertEquals(6, planeMesh.getIndexBufferValues().length);
 
         int[] expectedIndexBufferValues = {0,1,2,3,0,2};
-        Assert.assertArrayEquals(expectedIndexBufferValues, planeMesh.getIndexBufferValuesArray());
+        Assert.assertArrayEquals(expectedIndexBufferValues, planeMesh.getIndexBufferValues());
     }
 
     @Test
@@ -34,7 +34,7 @@ public class MeshTest extends TestWithEngine {
         Assert.assertEquals(6, planeMesh.getFaces().size());
 
         Assert.assertEquals(4, planeMesh.getFaces().size());
-        Assert.assertEquals(12, planeMesh.getIndexBufferValuesArray().length);
+        Assert.assertEquals(12, planeMesh.getIndexBufferValues().length);
     }
 	
 

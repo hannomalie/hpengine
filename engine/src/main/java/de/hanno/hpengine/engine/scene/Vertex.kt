@@ -27,42 +27,9 @@ class AnimatedVertexStruct : Struct() {
     val jointIndices by HpVector4i()
 }
 
-data class Vertex (override val name: String = "Vertex",
-                  val position: Vector3f = Vector3f(),
+data class Vertex (val position: Vector3f = Vector3f(),
                   val texCoord: Vector2f = Vector2f(),
-                  val normal: Vector3f = Vector3f()) : Bufferable, DataChannelProvider {
-
-    override fun getBytesPerObject(): Int {
-        return sizeInBytes
-    }
-
-    override fun putToBuffer(buffer: ByteBuffer?) {
-        buffer?.let {
-            with(buffer) {
-                putFloat(position.x)
-                putFloat(position.y)
-                putFloat(position.z)
-                putFloat(texCoord.x)
-                putFloat(texCoord.y)
-                putFloat(normal.x)
-                putFloat(normal.y)
-                putFloat(normal.z)
-            }
-        }
-    }
-
-    override fun getFromBuffer(buffer: ByteBuffer?) {
-        buffer?.let {
-            position.x = it.float
-            position.y = it.float
-            position.z = it.float
-            texCoord.x = it.float
-            texCoord.y = it.float
-            normal.x = it.float
-            normal.y = it.float
-            normal.z = it.float
-        }
-    }
+                  val normal: Vector3f = Vector3f()) {
 
     companion object {
         val channels by lazy {
@@ -72,7 +39,4 @@ data class Vertex (override val name: String = "Vertex",
             channels.map { it.byteSize }.reduce { a, b -> a + b }
         }
     }
-    override val channels = Vertex.channels
-
-    private val sizeInBytes = Vertex.sizeInBytes
 }
