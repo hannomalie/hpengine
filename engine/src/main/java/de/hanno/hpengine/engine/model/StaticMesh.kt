@@ -31,10 +31,6 @@ class StaticMesh(override var name: String = "",
     private val valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS)
     override val minMax = AABB(Vector3f(), Vector3f())
 
-    private val positions: MutableList<Vector3f> = mutableListOf()
-    private val texCoords: MutableList<Vector2f> = mutableListOf()
-    private val normals: MutableList<Vector3f> = mutableListOf()
-
     init {
         val values = FloatArrayList(indexedFaces.size * valuesPerVertex)
 
@@ -74,15 +70,6 @@ class StaticMesh(override var name: String = "",
 
             }
             faces.add(CompiledFace(compiledPositions, compiledTexCoords, compiledNormals))
-        }
-
-        for (currentFace in faces) {
-            for (i in 0..2) {
-                val currentVertex = currentFace.vertices[i]
-                positions.add(currentVertex.position)
-                texCoords.add(currentVertex.texCoords)
-                normals.add(currentVertex.normal)
-            }
         }
 
         calculateMinMax(null, minMax.min, minMax.max, faces)
@@ -131,34 +118,13 @@ class StaticMesh(override var name: String = "",
     }
 
     class CompiledVertex(val position: Vector3f, val texCoords: Vector2f, val normal: Vector3f) {
-
-        override fun equals(other: Any?): Boolean {
-            if (other !is CompiledVertex) {
-                return false
-            }
-
-            val otherVertex = other as CompiledVertex?
-            return this.position == otherVertex!!.position &&
-                    this.texCoords == otherVertex.texCoords &&
-                    this.normal == otherVertex.normal
-        }
-
         fun asFloats(): FloatArray {
             return floatArrayOf(position.x, position.y, position.z, texCoords.x, texCoords.y, normal.x, normal.y, normal.z)
         }
     }
 
-    class CompiledFace(val positions: Array<Vector3f>, texCoords: Array<Vector2f>, normal: Array<Vector3f>) {
-
-        val vertices = (0..2).map { CompiledVertex(positions[it], texCoords[it], normal[it]) }
-
-        override fun equals(other: Any?): Boolean {
-            if (other is CompiledFace) {
-                val otherFace = other as CompiledFace?
-                return this.vertices == otherFace!!.vertices
-            }
-            return false
-        }
+    class CompiledFace(val positions: Array<Vector3f>, val texCoords: Array<Vector2f>, val normals: Array<Vector3f>) {
+        val vertices = (0..2).map { CompiledVertex(positions[it], texCoords[it], normals[it]) }
     }
 
     override fun equals(other: Any?): Boolean {

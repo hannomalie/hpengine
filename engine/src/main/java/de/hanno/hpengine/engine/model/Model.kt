@@ -3,8 +3,12 @@ package de.hanno.hpengine.engine.model
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.struct.Struct
+import de.hanno.struct.StructArray
 
 interface Model<T> {
+
+    val verticesStructArray: StructArray<out Struct>
 
     val meshes: List<Mesh<T>>
 
@@ -27,6 +31,8 @@ interface Model<T> {
 
     val isInvertTexCoordY: Boolean
         get() = true
+
+    val bytesPerVertex: Int
 
     fun setMaterial(material: Material) {
         for (mesh in meshes) {

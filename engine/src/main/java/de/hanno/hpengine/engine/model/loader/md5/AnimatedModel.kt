@@ -3,8 +3,10 @@ package de.hanno.hpengine.engine.model.loader.md5
 import de.hanno.hpengine.engine.model.AbstractModel
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.scene.AnimatedVertex
+import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.struct.StructArray
 import org.joml.Matrix4f
 
 class AnimatedModel(meshes: Array<MD5Mesh>,
@@ -14,13 +16,26 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
                     val invJointMatrices: List<Matrix4f>,
                     override val isInvertTexCoordY: Boolean) : AbstractModel<AnimatedVertex>(meshes.toList()) {
 
+    override val bytesPerVertex = AnimatedVertex.sizeInBytes
+
     val animationController = AnimationController(frames.size, header.frameRate.toFloat())
     init {
         for (mesh in meshes) {
             mesh.setModel(this)
         }
     }
-
+    override val verticesStructArray = StructArray(compiledVertices.size) { AnimatedVertexStruct() }.apply {
+        for (i in compiledVertices.indices) {
+            val animatedVertex = compiledVertices[i]
+            val (position, texCoord, normal, weights, jointIndices) = animatedVertex
+            val target = getAtIndex(i)
+            target.position.set(position)
+            target.texCoord.set(texCoord)
+            target.normal.set(normal)
+            target.weights.set(weights)
+            target.jointIndices.set(jointIndices)
+        }
+    }
     override val isStatic = false
 
     override fun getBoundingSphereRadius(mesh: Mesh<*>): Float {

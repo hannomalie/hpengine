@@ -5,21 +5,21 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
+import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
-import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
-import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.shrinkToBytes
 import kotlinx.coroutines.CoroutineScope
+import java.lang.IllegalStateException
 import java.util.EnumSet
 import java.util.logging.Logger
 
@@ -140,35 +140,8 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
 
     val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
-    val result: StructArray<*>
-    val bytesPerObject: Int
-    if (model.isStatic) {
-        val converted = StructArray(compiledVertices.size) { VertexStruct() }
-        for (i in compiledVertices.indices) {
-            val vertex = compiledVertices[i] as Vertex
-            val (position, texCoord, normal) = vertex
-            val target = converted.getAtIndex(i)
-            target.position.set(position)
-            target.texCoord.set(texCoord)
-            target.normal.set(normal)
-        }
-        result = converted
-        bytesPerObject = Vertex.sizeInBytes
-    } else {
-        val converted = StructArray(compiledVertices.size) { AnimatedVertexStruct() }
-        for (i in compiledVertices.indices) {
-            val animatedVertex = compiledVertices[i] as AnimatedVertex
-            val (position, texCoord, normal, weights, jointIndices) = animatedVertex
-            val target = converted.getAtIndex(i)
-            target.position.set(position)
-            target.texCoord.set(texCoord)
-            target.normal.set(normal)
-            target.weights.set(weights)
-            target.jointIndices.set(jointIndices)
-        }
-        result = converted
-        bytesPerObject = AnimatedVertex.sizeInBytes
-    }
+    val result: StructArray<*> = model.verticesStructArray
+    val bytesPerObject = model.bytesPerVertex
 
     gpuContext.execute("ModelComponent.putToBuffer") {
         val neededSizeInBytes = bytesPerObject * compiledVertices.size

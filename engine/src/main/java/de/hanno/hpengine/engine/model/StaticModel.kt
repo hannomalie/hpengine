@@ -1,7 +1,11 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.scene.AnimatedVertex
+import de.hanno.hpengine.engine.scene.Vertex
+import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.struct.StructArray
 import org.joml.Vector2f
 import org.joml.Vector3f
 
@@ -13,7 +17,19 @@ class StaticModel<T>(private val path: String,
                      val normals: List<Vector3f>,
                      meshes: List<Mesh<T>>) : AbstractModel<T>(meshes) {
 
-    fun getMesh(i: Int): Mesh<*> {
+    override val bytesPerVertex = Vertex.sizeInBytes
+
+    override val verticesStructArray = StructArray(compiledVertices.size) { VertexStruct() }.apply {
+        for (i in compiledVertices.indices) {
+            val vertex = compiledVertices[i] as Vertex
+            val (position, texCoord, normal) = vertex
+            val target = getAtIndex(i)
+            target.position.set(position)
+            target.texCoord.set(texCoord)
+            target.normal.set(normal)
+        }
+    }
+    fun getMesh(i: Int): Mesh<T> {
         return meshes[i]
     }
 
