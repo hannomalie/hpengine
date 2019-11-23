@@ -14,12 +14,4 @@ abstract class AbstractModel<T>(final override val meshes: List<Mesh<T>>) : Simp
     override val vertexBufferValuesArray: FloatArray = meshes.fold(mutableListOf<Float>()) { list, it ->
         list.apply { addAll(it.vertexBufferValues.toList()) }
     }.toFloatArray() // TODO Make more pretty
-
-    init {
-        for (i in meshes.indices) {
-            val mesh = meshes[i]
-            val meshMinMax = mesh.minMax
-            StaticMesh.calculateMinMax(minMax.min, minMax.max, meshMinMax)
-        }
-    }
 }

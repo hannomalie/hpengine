@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 interface Window<T: BackendType> {
     val handle: Long // TODO: Remove this, because it is OpenGl/GLFW specific
 
-    val title: String
+    var title: String
 
     var width: Int
     var height: Int

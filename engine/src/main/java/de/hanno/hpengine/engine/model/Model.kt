@@ -10,6 +10,8 @@ interface Model<T> {
 
     val verticesStructArray: StructArray<out Struct>
 
+    val verticesStructArrayPacked: StructArray<out Struct>
+
     val meshes: List<Mesh<T>>
 
     val boundingSphereRadius: Float

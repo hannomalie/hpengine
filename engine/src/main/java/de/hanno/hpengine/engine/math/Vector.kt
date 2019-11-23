@@ -42,6 +42,15 @@ class Vector4f : Struct() {
         this.z = target.z
         this.w = target.w
     }
+    fun set(target: org.joml.Vector3f) {
+        this.x = target.x
+        this.y = target.y
+        this.z = target.z
+    }
+    fun set(target: org.joml.Vector2f) {
+        this.x = target.x
+        this.y = target.y
+    }
 }
 class Vector4i : Struct() {
     var x by 0

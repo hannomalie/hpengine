@@ -24,11 +24,16 @@ private val exitOnCloseCallback = GLFWWindowCloseCallbackI { l: Long ->
 
 class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  override var height: Int,
-                 override val title: String,
+                 title: String,
                  override var vSync: Boolean = true,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
                  closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl> {
 
+    override var title = title
+        set(value) {
+            glfwSetWindowTitle(handle, value)
+            field = value
+        }
     override val frontBuffer: RenderTarget<Texture2D>
 
     //     TODO: Avoid this somehow, move to update, but only when update is called before all the

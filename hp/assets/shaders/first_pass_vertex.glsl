@@ -27,16 +27,28 @@ layout(std430, binding=6) buffer _joints {
 };
 #endif
 
-//////
+
+#ifdef ANIMATED
+struct VertexAnimatedPacked {
+	vec4 position;
+	vec4 texCoord;
+	vec4 normal;
+	vec4 weights;
+	ivec4 jointIndices;
+};
+layout(std430, binding=7) buffer _vertices {
+	VertexAnimatedPacked vertices[];
+};
+#else
 struct VertexPacked {
 	vec4 position;
 	vec4 texCoord;
 	vec4 normal;
 };
 layout(std430, binding=7) buffer _vertices {
-	int VertexPacked[];
+	VertexPacked vertices[];
 };
-//////
+#endif
 
 in vec3 in_Position;
 in vec4 in_Color;
@@ -62,9 +74,44 @@ void main(void) {
 
     mat4 modelMatrix = entity.modelMatrix;
 
-	vec4 positionModel = vec4(in_Position.xyz,1);
+#define PROGRAMMABLE_VERTEX_PULLING false
 
+#if PROGRAMMABLE_VERTEX_PULLING
+	#ifdef ANIMATED
+		VertexAnimatedPacked vertex = vertices[gl_VertexID];
+	#else
+		VertexPacked vertex = vertices[gl_VertexID];
+	#endif
+
+#else
+	#ifdef ANIMATED
+		VertexAnimatedPacked vertex;
+		vertex.position = vec4(in_Position.xyz,1);
+		vertex.texCoord = vec4(in_TextureCoord, 0, 0);
+		vertex.normal = vec4(in_Normal, 0);
+		vertex.jointIndices = in_JointIndices;
+		vertex.weights = in_Weights;
+	#else
+		VertexPacked vertex;
+		vertex.position = vec4(in_Position.xyz,1);
+		vertex.texCoord = vec4(in_TextureCoord, 0, 0);
+		vertex.normal = vec4(in_Normal, 0);
+	#endif
+#endif
+
+	if(entity.invertTexcoordY == 1) {
+		vertex.texCoord.y = 1 - vertex.texCoord.y;
+	}
+
+	vec4 positionModel = vertex.position;
 #ifdef ANIMATED
+	#if PROGRAMMABLE_VERTEX_PULLING
+		vec4 weightsIn = vertex.weights;
+		ivec4 jointIndices = vertex.jointIndices;
+	#else
+		vec4 weightsIn = in_Weights;
+		ivec4 jointIndices = in_JointIndices;
+	#endif
 
 	vec4 initPos = vec4(0, 0, 0, 0);
 	int count = 0;
@@ -73,10 +120,10 @@ void main(void) {
 	int currentJoint = 150 * frameIndex; // MAX_JOINTS per animation frame is 150
 	for(int i = 0; i < MAX_WEIGHTS; i++)
 	{
-		float weight = in_Weights[i];
+		float weight = weightsIn[i];
 		if(weight > 0) {
 			count++;
-			int jointIndex = entity.baseJointIndex + currentJoint + in_JointIndices[i];
+			int jointIndex = entity.baseJointIndex + currentJoint + jointIndices[i];
 			vec4 tmpPos = joints[jointIndex] * vec4(positionModel.xyz, 1.0);
 			initPos += weight * tmpPos;
 		}
@@ -103,16 +150,11 @@ void main(void) {
 	position_clip_uv.xyz *= 0.5;
 
 	vec4 color = in_Color;
-	vec2 texCoord = in_TextureCoord;
-	if(entity.invertTexcoordY == 1) {
-	    texCoord.y = 1 - in_TextureCoord.y;
-	} else {
-	    texCoord.y = in_TextureCoord.y;
-	}
+	vec2 texCoord = vertex.texCoord.xy;
 
 
-	vec3 normalVec = in_Normal;
-	vec3 normal_model = (vec4(in_Normal,0)).xyz;
+	vec3 normalVec = vertex.normal.xyz;
+	vec3 normal_model = vertex.normal.xyz;
 	vec3 normal_world;
 	normal_world.x = dot(modelMatrix[0].xyz, normal_model);
     normal_world.y = dot(modelMatrix[1].xyz, normal_model);
@@ -120,8 +162,6 @@ void main(void) {
     normal_world = normalize(normal_world);
 	normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
 	vec3 normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
-
-
 
 
 	vertexShaderOutput.color = color;

@@ -15,7 +15,14 @@ class StaticModel(private val path: String,
                   val normals: List<Vector3f>,
                   meshes: List<Mesh<Vertex>>) : AbstractModel<Vertex>(meshes) {
 
-    override val bytesPerVertex = VertexStruct.sizeInBytes
+    init {
+        for (i in meshes.indices) {
+            val mesh = meshes[i]
+            val meshMinMax = mesh.minMax
+            StaticMesh.calculateMinMax(minMax.min, minMax.max, meshMinMax)
+        }
+    }
+    override val bytesPerVertex = VertexStructPacked.sizeInBytes
 
     override val verticesStructArray = StructArray(compiledVertices.size) { VertexStruct() }.apply {
         for (i in compiledVertices.indices) {
@@ -27,6 +34,18 @@ class StaticModel(private val path: String,
             target.normal.set(normal)
         }
     }
+
+    override val verticesStructArrayPacked = StructArray(compiledVertices.size) { VertexStructPacked() }.apply {
+        for (i in compiledVertices.indices) {
+            val vertex = compiledVertices[i]
+            val (position, texCoord, normal) = vertex
+            val target = getAtIndex(i)
+            target.position.set(position)
+            target.texCoord.set(texCoord)
+            target.normal.set(normal)
+        }
+    }
+
     fun getMesh(i: Int): Mesh<Vertex> {
         return meshes[i]
     }

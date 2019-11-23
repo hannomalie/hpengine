@@ -67,6 +67,7 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                     fpsCounter.update()
                 }
                 lastTimeSwapped = renderState.stopRead()
+                engineContext.window.title = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
                 yield()
             }
         }

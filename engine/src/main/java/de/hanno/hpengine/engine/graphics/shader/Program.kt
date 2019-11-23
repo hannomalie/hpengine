@@ -149,7 +149,6 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
     }
 
     override fun reload() {
-        val self = this
 
         val result = gpuContext.calculate {
             detachShader(vertexShader!!)
@@ -162,7 +161,7 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
                 geometryShader!!.reload()
             }
             vertexShader!!.reload()
-            self.load()
+            load()
             true
         }
 
