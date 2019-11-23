@@ -27,6 +27,17 @@ layout(std430, binding=6) buffer _joints {
 };
 #endif
 
+//////
+struct VertexPacked {
+	vec4 position;
+	vec4 texCoord;
+	vec4 normal;
+};
+layout(std430, binding=7) buffer _vertices {
+	int VertexPacked[];
+};
+//////
+
 in vec3 in_Position;
 in vec4 in_Color;
 in vec2 in_TextureCoord;

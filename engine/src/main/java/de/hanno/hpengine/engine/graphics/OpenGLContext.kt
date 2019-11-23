@@ -284,6 +284,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean) {
         val runtimeException: RuntimeException? = when {
             isOpenGLThread -> {
+                getExceptionOnError { "Error before action $actionName in $runnable" }
                 runnable.run()
                 getExceptionOnError { "Error in action $actionName in $runnable" }
             }

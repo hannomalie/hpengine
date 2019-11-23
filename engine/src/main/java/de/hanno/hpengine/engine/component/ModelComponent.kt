@@ -136,24 +136,37 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
                                vertexIndexBuffer: VertexIndexBuffer,
                                vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
 
-    val compiledVertices = model.compiledVertices
+    synchronized(vertexIndexBuffer) {
+        val compiledVertices = model.compiledVertices
 
-    val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
+        val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
-    val result: StructArray<*> = model.verticesStructArray
-    val bytesPerObject = model.bytesPerVertex
+        val result: StructArray<*> = model.verticesStructArray
+        val bytesPerObject = model.bytesPerVertex
 
-    gpuContext.execute("ModelComponent.putToBuffer") {
-        val neededSizeInBytes = bytesPerObject * compiledVertices.size
-        vertexIndexBuffer.vertexBuffer.ensureCapacityInBytes(vertexIndexBuffer.vertexBuffer.buffer.capacity() + neededSizeInBytes)
-        val vertexOffsetInBytes = vertexIndexOffsetsForMeshes.first().vertexOffset * bytesPerObject
-        val shrunk = result.shrinkToBytes(neededSizeInBytes, true)
-        shrunk.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexOffsetInBytes)
-        vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsetsForMeshes.first().indexOffset, *indices)
-        vertexIndexBuffer.vertexBuffer.upload()
+        if(model is StaticModel) {
+            val sizeBefore = vertexIndexBuffer.vertexArray.size
+            vertexIndexBuffer.vertexArray.addAll(model.compiledVertices)
+            vertexIndexBuffer.vertexStructArray.enlarge(vertexIndexBuffer.vertexArray.size)
+            model.verticesStructArray.buffer.copyTo(vertexIndexBuffer.vertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
+        } else if(model is AnimatedModel) {
+            val sizeBefore = vertexIndexBuffer.animatedVertexArray.size
+            vertexIndexBuffer.animatedVertexArray.addAll(model.compiledVertices)
+            vertexIndexBuffer.vertexStructArray.enlarge(vertexIndexBuffer.animatedVertexArray.size)
+            model.verticesStructArray.buffer.copyTo(vertexIndexBuffer.animatedVertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
+        }
+
+        gpuContext.execute("ModelComponent.putToBuffer") {
+            val neededSizeInBytes = bytesPerObject * compiledVertices.size
+            val vertexOffsetInBytes = vertexIndexOffsets.vertexOffset * bytesPerObject
+            vertexIndexBuffer.vertexBuffer.ensureCapacityInBytes(vertexOffsetInBytes + neededSizeInBytes)
+            result.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexOffsetInBytes)
+            vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, *indices)
+            vertexIndexBuffer.vertexBuffer.upload()
+        }
+
+        return vertexIndexOffsetsForMeshes
     }
-
-    return vertexIndexOffsetsForMeshes
 }
 
 fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {

@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.log.ConsoleLogger
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -23,7 +22,6 @@ import java.util.Arrays
 import java.util.HashMap
 import java.util.Random
 import java.util.concurrent.CompletableFuture
-import java.util.logging.Level
 
 class OBJLoader {
 
@@ -96,7 +94,7 @@ class OBJLoader {
     }
 
     @Throws(Exception::class)
-    fun loadTexturedModel(materialManager: MaterialManager, f: File): StaticModel<Vertex> {
+    fun loadTexturedModel(materialManager: MaterialManager, f: File): StaticModel {
         if(!f.isFile) {
             throw IllegalArgumentException("File does not exist: ${f.absolutePath}")
         }

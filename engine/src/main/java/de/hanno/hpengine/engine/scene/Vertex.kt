@@ -18,6 +18,17 @@ class VertexStruct : Struct() {
     val position by HpVector3f()
     val texCoord by HpVector2f()
     val normal by HpVector3f()
+    companion object {
+        val sizeInBytes = 8 * java.lang.Float.BYTES
+    }
+}
+class VertexStructPacked: Struct() {
+    val position by HpVector4f()
+    val texCoord by HpVector4f()
+    val normal by HpVector4f()
+    companion object {
+        val sizeInBytes = 3 * 4 * java.lang.Float.BYTES
+    }
 }
 class AnimatedVertexStruct : Struct() {
     val position by HpVector3f()
@@ -25,6 +36,10 @@ class AnimatedVertexStruct : Struct() {
     val normal by HpVector3f()
     val weights by HpVector4f()
     val jointIndices by HpVector4i()
+
+    companion object {
+        val sizeInBytes = 16 * java.lang.Float.BYTES
+    }
 }
 
 data class Vertex (val position: Vector3f = Vector3f(),
