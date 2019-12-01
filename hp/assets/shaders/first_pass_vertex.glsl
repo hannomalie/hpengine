@@ -25,10 +25,7 @@ layout(std430, binding=4) buffer _entityOffsets {
 layout(std430, binding=6) buffer _joints {
 	mat4 joints[2000];
 };
-#endif
 
-
-#ifdef ANIMATED
 struct VertexAnimatedPacked {
 	vec4 position;
 	vec4 texCoord;
@@ -44,6 +41,7 @@ struct VertexPacked {
 	vec4 position;
 	vec4 texCoord;
 	vec4 normal;
+	vec4 dummy;
 };
 layout(std430, binding=7) buffer _vertices {
 	VertexPacked vertices[];
@@ -74,30 +72,27 @@ void main(void) {
 
     mat4 modelMatrix = entity.modelMatrix;
 
-#define PROGRAMMABLE_VERTEX_PULLING false
-
-#if PROGRAMMABLE_VERTEX_PULLING
-	#ifdef ANIMATED
-		VertexAnimatedPacked vertex = vertices[gl_VertexID];
-	#else
-		VertexPacked vertex = vertices[gl_VertexID];
-	#endif
-
+#ifdef ANIMATED
+	VertexAnimatedPacked vertex;
 #else
-	#ifdef ANIMATED
-		VertexAnimatedPacked vertex;
+	VertexPacked vertex;
+#endif
+
+	int vertexIndex = gl_VertexID;
+	const bool programmableVertexPulling = true;
+	if(programmableVertexPulling) {
+		vertex = vertices[vertexIndex];
+		vertex.position.w = 1;
+	} else {
 		vertex.position = vec4(in_Position.xyz,1);
 		vertex.texCoord = vec4(in_TextureCoord, 0, 0);
 		vertex.normal = vec4(in_Normal, 0);
+#ifdef ANIMATED
 		vertex.jointIndices = in_JointIndices;
 		vertex.weights = in_Weights;
-	#else
-		VertexPacked vertex;
-		vertex.position = vec4(in_Position.xyz,1);
-		vertex.texCoord = vec4(in_TextureCoord, 0, 0);
-		vertex.normal = vec4(in_Normal, 0);
-	#endif
 #endif
+
+	}
 
 	if(entity.invertTexcoordY == 1) {
 		vertex.texCoord.y = 1 - vertex.texCoord.y;
@@ -105,13 +100,15 @@ void main(void) {
 
 	vec4 positionModel = vertex.position;
 #ifdef ANIMATED
-	#if PROGRAMMABLE_VERTEX_PULLING
-		vec4 weightsIn = vertex.weights;
-		ivec4 jointIndices = vertex.jointIndices;
-	#else
-		vec4 weightsIn = in_Weights;
-		ivec4 jointIndices = in_JointIndices;
-	#endif
+	vec4 weightsIn;
+	ivec4 jointIndices;
+	if(programmableVertexPulling) {
+		weightsIn = vertex.weights;
+		jointIndices = vertex.jointIndices;
+	} else {
+		weightsIn = in_Weights;
+		jointIndices = in_JointIndices;
+	}
 
 	vec4 initPos = vec4(0, 0, 0, 0);
 	int count = 0;

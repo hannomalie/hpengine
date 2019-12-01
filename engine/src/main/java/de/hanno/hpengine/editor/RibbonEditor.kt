@@ -6,10 +6,15 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.SimpleScene
+import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import kotlinx.coroutines.GlobalScope
@@ -51,7 +56,6 @@ import org.pushingpixels.flamingo.api.ribbon.synapse.model.RibbonDefaultComboBox
 import org.pushingpixels.flamingo.api.ribbon.synapse.projection.RibbonComboBoxProjection
 import org.pushingpixels.neon.icon.ResizableIcon
 import org.pushingpixels.photon.icon.SvgBatikResizableIcon
-import org.pushingpixels.substance.api.SubstanceCortex
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -62,6 +66,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.ArrayList
+import java.util.function.Consumer
 import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
@@ -76,6 +81,11 @@ import javax.swing.event.ListDataListener
 import javax.swing.tree.DefaultMutableTreeNode
 
 class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFrame("HPEngine"), RenderSystem {
+    private val lineRenderer = LineRendererImpl(engine)
+    private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
+        SimpleTransform().get(this)
+    }
+
     val appMenuNew = Command.builder()
         .setText("New Scene")
         .setIconFactory { getResizableIconFromSvgResource("create_new_folder-24px.svg") }
@@ -550,6 +560,24 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         imageLabel.repaint()
     }
 
+    override fun render(result: DrawResult, state: RenderState) {
+        engine.deferredRenderingBuffer.gBuffer.use(engine.gpuContext, false)
+
+        fun HpVector4f.toJomlVec3() = Vector3f(x, y, z)
+        val vertexArray = state.vertexIndexBufferStatic.vertexStructArray
+        val indexArray = state.vertexIndexBufferStatic.indexBuffer
+        val asIntBuffer = indexArray.buffer.asIntBuffer()
+//        (0 until asIntBuffer.capacity()).forEach { index ->
+//            lineRenderer.batchPointForLine(vertexArray[asIntBuffer[index]].position.toJomlVec3())
+//        }
+//        lineRenderer.drawAllLines(2f, Consumer { program ->
+//            program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
+//            program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+//            program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+//            program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
+//        })
+    }
+
     fun addTask(task: RibbonTask) = ribbon.addTask(task)
 
     fun bufferImage() {
@@ -565,7 +593,9 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             val buffer = BufferUtils.createByteBuffer(width * height * channels)
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
 
-            image.setData(width, height, channels, buffer)
+//            GlobalScope.launch() {
+                image.setData(width, height, channels, buffer)
+//            }
         }
     }
 

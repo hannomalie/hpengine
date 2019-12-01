@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge

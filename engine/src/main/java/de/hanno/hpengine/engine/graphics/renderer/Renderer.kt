@@ -11,6 +11,7 @@ import org.joml.Vector3f
 import java.util.function.Consumer
 
 interface LineRenderer {
+    fun batchPointForLine(point: Vector3f)
     fun batchLine(from: Vector3f, to: Vector3f)
 
     @JvmDefault

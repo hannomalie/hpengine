@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
@@ -17,8 +16,9 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
-import de.hanno.struct.shrinkToBytes
 import kotlinx.coroutines.CoroutineScope
+import org.joml.Vector2f
+import org.joml.Vector3f
 import java.lang.IllegalStateException
 import java.util.EnumSet
 import java.util.logging.Logger
@@ -147,13 +147,13 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
         if(model is StaticModel) {
             val sizeBefore = vertexIndexBuffer.vertexArray.size
             vertexIndexBuffer.vertexArray.addAll(model.compiledVertices)
-            vertexIndexBuffer.vertexStructArray.enlarge(vertexIndexBuffer.vertexArray.size)
-            model.verticesStructArray.buffer.copyTo(vertexIndexBuffer.vertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
+            vertexIndexBuffer.vertexStructArray.enlarge(model.verticesStructArrayPacked.size)
+            model.verticesStructArrayPacked.buffer.copyTo(vertexIndexBuffer.vertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
         } else if(model is AnimatedModel) {
             val sizeBefore = vertexIndexBuffer.animatedVertexArray.size
             vertexIndexBuffer.animatedVertexArray.addAll(model.compiledVertices)
-            vertexIndexBuffer.vertexStructArray.enlarge(vertexIndexBuffer.animatedVertexArray.size)
-            model.verticesStructArray.buffer.copyTo(vertexIndexBuffer.animatedVertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
+            vertexIndexBuffer.animatedVertexStructArray.enlarge(vertexIndexBuffer.animatedVertexArray.size)
+            model.verticesStructArrayPacked.buffer.copyTo(vertexIndexBuffer.animatedVertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
         }
 
         gpuContext.execute("ModelComponent.putToBuffer") {

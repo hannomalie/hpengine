@@ -61,4 +61,8 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
         getBuffer().rewind();
         getBuffer().asIntBuffer().put(index, value);
     }
+
+    public int getSize() {
+        return getSizeInBytes() / Integer.BYTES;
+    }
 }

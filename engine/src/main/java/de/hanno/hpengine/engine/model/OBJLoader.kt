@@ -108,7 +108,7 @@ class OBJLoader {
         val vertices = mutableListOf<Vector3f>()
         val normals = mutableListOf<Vector3f>()
         val texCoords = mutableListOf<Vector2f>()
-        val meshes = mutableListOf<MeshData>()
+        val meshData = mutableListOf<MeshData>()
 
         var line: String? = reader.readLine()
         while (line != null) {
@@ -128,7 +128,7 @@ class OBJLoader {
                 usemtlCounter++
             } else if ("o" == firstToken || "g" == firstToken || line.startsWith("# object ")) {
                 currentMesh = newMeshHelper(vertices, texCoords, normals, line, line.replace("o ", "").replace("# object ", "").replace("g ", ""), materialManager.defaultMaterial)
-                meshes.add(currentMesh)
+                meshData.add(currentMesh)
                 usemtlCounter = 0
             } else if ("v" == firstToken) {
                 currentState = State.READING_VERTEX
@@ -143,7 +143,7 @@ class OBJLoader {
                 currentState = State.READING_FACE
                 if (usemtlCounter > 1) {
                     currentMesh = newMeshHelper(vertices, texCoords, normals, line, currentMesh!!.name + Random().nextInt(), currentMaterial!!)
-                    meshes.add(currentMesh)
+                    meshData.add(currentMesh)
                     usemtlCounter = 0
                 }
                 currentMesh!!.material = currentMaterial!!
@@ -154,9 +154,8 @@ class OBJLoader {
         }
         reader.close()
 
-        val meshes1 = meshes.map { StaticMesh(it.name, it.positions, it.texCoords, it.normals, it.indexedFaces, it.material) }
-        val resultModel = StaticModel(f.path, vertices, texCoords, normals, meshes1)
-        return resultModel
+        val meshes = meshData.map { StaticMesh(it.name, it.positions, it.texCoords, it.normals, it.indexedFaces, it.material) }
+        return StaticModel(f.path, vertices, texCoords, normals, meshes)
     }
 
     data class MeshData(var name: String = "",

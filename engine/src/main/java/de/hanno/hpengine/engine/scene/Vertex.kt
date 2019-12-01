@@ -26,8 +26,13 @@ class VertexStructPacked: Struct() {
     val position by HpVector4f()
     val texCoord by HpVector4f()
     val normal by HpVector4f()
+    val dummy by HpVector4f()
+    override fun toString(): String {
+        return "VertexStructPacked(position=(${position.x}, ${position.y}, ${position.z}), " +
+                "texCoord=(${texCoord.x}, ${texCoord.y}), normal=(${normal.x}, ${normal.y}, ${normal.z}))"
+    }
     companion object {
-        val sizeInBytes = 3 * 4 * java.lang.Float.BYTES
+        val sizeInBytes = 4 * 4 * java.lang.Float.BYTES
     }
 }
 class AnimatedVertexStruct : Struct() {

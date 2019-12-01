@@ -115,8 +115,7 @@ fun VertexBuffer.multiDrawElementsIndirectCount(indexBuffer: IndexBuffer,
 fun VertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                                                      drawCountBuffer: AtomicCounterBuffer,
                                                      maxDrawCount: Int) {
-    vertexBuffer.multiDrawElementsIndirectCount(indexBuffer,
-            commandBuffer, drawCountBuffer, maxDrawCount)
+    vertexBuffer.multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, maxDrawCount)
 }
 
 fun VertexBuffer.multiDrawElementsIndirect(indexBuffer: IndexBuffer, commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>, primitiveCount: Int) {

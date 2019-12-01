@@ -604,6 +604,10 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
         linePoints.add(to)
     }
 
+    override fun batchPointForLine(point: Vector3f) {
+        linePoints.add(point)
+    }
+
     override fun drawAllLines(lineWidth: Float, action: Consumer<Program>) {
         linesProgram.use()
         action.accept(linesProgram)

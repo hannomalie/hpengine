@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model
 
 import com.carrotsearch.hppc.FloatArrayList
+import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.material.Material
@@ -14,74 +15,87 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.io.Serializable
+import java.lang.IllegalStateException
 import java.util.ArrayList
 import java.util.UUID
 
+
+data class IndexedFace(val a: Int, val b: Int, val c: Int)
 class StaticMesh(override var name: String = "",
                  modelPositions: List<Vector3f>,
                  modelTexCoords: List<Vector2f>,
                  modelNormals: List<Vector3f>,
-                 indexedFaces: List<Face>,
+                 multiIndexedFaces: List<Face>,
                  override var material: Material) : SimpleSpatial(), Serializable, Mesh<Vertex> {
 
     val uuid = UUID.randomUUID()
 
     override val compiledVertices = ArrayList<Vertex>()
+    override val uniqueVertices = mutableSetOf<Vertex>()
     override val faces = ArrayList<CompiledFace>()
+    private val indexedFaces = ArrayList<IndexedFace>()
     private val valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS)
     override val minMax = AABB(Vector3f(), Vector3f())
 
     init {
-        val values = FloatArrayList(indexedFaces.size * valuesPerVertex)
+        for (face in multiIndexedFaces) {
 
-        for (face in indexedFaces) {
-
-            val referencedVertices = face.vertices
-            val referencedNormals = face.normalIndices
-            val referencedTexcoords = face.textureCoordinateIndices
             val compiledPositions = arrayOf(Vector3f(), Vector3f(), Vector3f())
             val compiledTexCoords = arrayOf(Vector2f(), Vector2f(), Vector2f())
             val compiledNormals = arrayOf(Vector3f(), Vector3f(), Vector3f())
 
-            for (j in 0..2) {
-                val referencedVertex = modelPositions[referencedVertices[j] - 1]
+            val vertexIndices = (0..2).map { j ->
+                val referencedVertex = modelPositions[face.vertices[j] - 1] // obj is index 1 based
                 compiledPositions[j] = referencedVertex
                 var referencedTexcoord = Vector2f(0f, 0f)
                 try {
-                    referencedTexcoord = modelTexCoords[referencedTexcoords[j] - 1]
+                    referencedTexcoord = modelTexCoords[face.textureCoordinateIndices[j] - 1] // obj is index 1 based
                 } catch (e: Exception) {
                 }
 
                 compiledTexCoords[j] = referencedTexcoord
-                val referencedNormal = modelNormals[referencedNormals[j] - 1]
+                val referencedNormal = modelNormals[face.normalIndices[j] - 1] // obj is index 1 based
                 compiledNormals[j] = referencedNormal
 
-                values.add(referencedVertex.x)
-                values.add(referencedVertex.y)
-                values.add(referencedVertex.z)
-                values.add(referencedTexcoord.x)
-                values.add(referencedTexcoord.y)
-                values.add(referencedNormal.x)
-                values.add(referencedNormal.y)
-                values.add(referencedNormal.z)
-
-
-                compiledVertices.add(Vertex(referencedVertex, referencedTexcoord, referencedNormal))
-
+                val element = Vertex(referencedVertex, referencedTexcoord, referencedNormal)
+                uniqueVertices.add(element)
+                compiledVertices.add(element)
+                uniqueVertices.indexOf(element)
             }
             faces.add(CompiledFace(compiledPositions, compiledTexCoords, compiledNormals))
+            indexedFaces.add(IndexedFace(vertexIndices[0], vertexIndices[1], vertexIndices[2]))
+
         }
 
         calculateMinMax(null, minMax.min, minMax.max, faces)
     }
 
     override val indexBufferValues = (0 until faces.size * 3).map { it }.toIntArray()
+//    override val indexBufferValues = IntArrayList().apply {
+//        indexedFaces.forEach { face ->
+//            add(face.a)
+//            add(face.b)
+//            add(face.c)
+//        }
+//    }.toArray()
 
+//    override val vertexBufferValues = FloatArrayList().apply {
+//        faces.forEach { currentFace ->
+//            (0..2).forEach { vertexIndex ->
+//                add(*currentFace.vertices[vertexIndex].asFloats())
+//            }
+//        }
+//    }.toArray()
     override val vertexBufferValues = FloatArrayList().apply {
-        faces.forEach { currentFace ->
-            (0..2).forEach { vertexIndex ->
-                add(*currentFace.vertices[vertexIndex].asFloats())
-            }
+        uniqueVertices.forEach { vertex ->
+            add(vertex.position.x)
+            add(vertex.position.y)
+            add(vertex.position.z)
+            add(vertex.texCoord.x)
+            add(vertex.texCoord.y)
+            add(vertex.normal.x)
+            add(vertex.normal.y)
+            add(vertex.normal.z)
         }
     }.toArray()
 

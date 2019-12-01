@@ -21,6 +21,8 @@ import java.util.regex.Pattern
 
 class MD5Mesh() : Mesh<AnimatedVertex> {
     override var compiledVertices: List<AnimatedVertex> = mutableListOf()
+    override val uniqueVertices: Set<AnimatedVertex>
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
     var positionsArray: FloatArray = floatArrayOf()
     private var textCoordsArr: FloatArray = floatArrayOf()
     private var normalsArr: FloatArray = floatArrayOf()

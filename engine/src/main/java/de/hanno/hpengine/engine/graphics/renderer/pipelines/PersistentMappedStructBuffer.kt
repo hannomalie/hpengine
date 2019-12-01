@@ -26,25 +26,22 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
 
     override lateinit var buffer: ByteBuffer
 
-    override var size = max(initialSize, 10)
-        private set(value) {
-            field = value
-            indices = IntRange(0, size)
-        }
+    override val size
+        get() = buffer.capacity() / slidingWindow.sizeInBytes
 
     var id: Int = -1
         private set
 
     init {
         gpuContext.calculate {
-            val (id, newBuffer) = createBuffer(size * slidingWindow.sizeInBytes)
+            val (id, newBuffer) = createBuffer(max(initialSize, 1) * slidingWindow.sizeInBytes)
             this.buffer = newBuffer
             this.id = id
         }
     }
 
-    override var indices = IntRange(0, size)
-        private set
+    override val indices
+        get() = IntRange(0, size)
 
     override val sizeInBytes: Int
         get() = size * slidingWindow.sizeInBytes
