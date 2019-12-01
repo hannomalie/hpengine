@@ -593,6 +593,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             val buffer = BufferUtils.createByteBuffer(width * height * channels)
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
 
+//            Run on a singlethread context to avoid tearing?
 //            GlobalScope.launch() {
                 image.setData(width, height, channels, buffer)
 //            }

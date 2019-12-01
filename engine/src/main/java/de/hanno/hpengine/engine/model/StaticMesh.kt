@@ -58,9 +58,9 @@ class StaticMesh(override var name: String = "",
                 compiledNormals[j] = referencedNormal
 
                 val element = Vertex(referencedVertex, referencedTexcoord, referencedNormal)
-                uniqueVertices.add(element)
+                val isNew = uniqueVertices.add(element)
                 compiledVertices.add(element)
-                uniqueVertices.indexOf(element)
+                if(isNew) uniqueVertices.size else uniqueVertices.indexOf(element)
             }
             faces.add(CompiledFace(compiledPositions, compiledTexCoords, compiledNormals))
             indexedFaces.add(IndexedFace(vertexIndices[0], vertexIndices[1], vertexIndices[2]))

@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.drawLinesInstancedIndirectBaseVertex
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.multiDrawElementsIndirectCount
@@ -193,16 +192,15 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
 fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,
                                maps: Map<SimpleMaterial.MAP, Texture<TextureDimension2D>>) {
     for (mapEnumEntry in SimpleMaterial.MAP.values()) {
-        val uniformKey = "has" + mapEnumEntry.shaderVariableName[0].toUpperCase() + mapEnumEntry.shaderVariableName.substring(1)
 
         if(maps.contains(mapEnumEntry)) {
             val map = maps[mapEnumEntry]!!
             if (map.id > 0) {
                 gpuContext.bindTexture(mapEnumEntry.textureSlot, map)
-                setUniform(uniformKey, true)
+                setUniform(mapEnumEntry.uniformKey, true)
             }
         } else {
-            setUniform(uniformKey, false)
+            setUniform(mapEnumEntry.uniformKey, false)
         }
     }
 }

@@ -42,7 +42,9 @@ class SimpleMaterial(override var materialInfo: MaterialInfo): Material {
         HEIGHT("heightMap", 4),
         REFLECTION("reflectionMap", 5),
         ENVIRONMENT("environmentMap", 6),
-        ROUGHNESS("roughnessMap", 7)
+        ROUGHNESS("roughnessMap", 7);
+
+        val uniformKey: String = "has" + shaderVariableName[0].toUpperCase() + shaderVariableName.substring(1)
     }
 
     enum class ENVIRONMENTMAP_TYPE {
