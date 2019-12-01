@@ -141,6 +141,8 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
 
     fun enlarge(size: Int, copyContent: Boolean = true) = enlargeToBytes(size * slidingWindow.sizeInBytes, copyContent)
 
+    fun enlargeBy(size: Int, copyContent: Boolean = true) = enlarge(this.size + size, copyContent)
+
     fun enlargeToBytes(sizeInBytes: Int, copyContent: Boolean = true) {
         ensureCapacityInBytes(sizeInBytes)
     }
