@@ -16,16 +16,12 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPas
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
-import java.io.File
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
@@ -39,10 +35,18 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
         object: SimplePipeline(engineContext) {
-            override fun beforeDraw(renderState: RenderState, program: Program) {
+            override fun beforeDrawAnimated(renderState: RenderState, program: Program) {
+                customBeforeDraw(renderState, program)
+                super.beforeDrawAnimated(renderState, program)
+            }
+            override fun beforeDrawStatic(renderState: RenderState, program: Program) {
+                customBeforeDraw(renderState, program)
+                super.beforeDrawStatic(renderState, program)
+            }
+            private fun customBeforeDraw(renderState: RenderState, program: Program) {
 
                 deferredRenderingBuffer.use(gpuContext, false)
-                super.beforeDraw(renderState, program)
+                super.beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray)
 
                 gpuContext.enable(GlCap.CULL_FACE)
                 gpuContext.depthMask(true)

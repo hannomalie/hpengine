@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.graphics.buffer.flags
 import de.hanno.struct.Array
 import de.hanno.struct.SlidingWindow
 import de.hanno.struct.Struct
+import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
@@ -34,7 +35,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
 
     init {
         gpuContext.calculate {
-            val (id, newBuffer) = createBuffer(max(initialSize, 1) * slidingWindow.sizeInBytes)
+            val (id, newBuffer) = createBuffer(max(initialSize * slidingWindow.sizeInBytes, 1))
             this.buffer = newBuffer
             this.id = id
         }
@@ -151,6 +152,12 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         val currentSlidingWindow = slidingWindow
         currentSlidingWindow.localByteOffset = (index * currentSlidingWindow.sizeInBytes).toLong()
         return currentSlidingWindow.underlying
+    }
+
+    fun addAll(elements: StructArray<T>) {
+        val sizeBefore = size
+        enlargeBy(elements.size)
+        elements.buffer.copyTo(buffer, targetOffset = sizeBefore * slidingWindow.sizeInBytes)
     }
 }
 

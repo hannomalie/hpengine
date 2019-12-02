@@ -45,7 +45,7 @@ class StaticModel(private val path: String,
                 target.position.set(position)
                 target.texCoord.set(texCoord)
                 target.normal.set(normal)
-                counter ++
+                counter++
             }
         }
     }

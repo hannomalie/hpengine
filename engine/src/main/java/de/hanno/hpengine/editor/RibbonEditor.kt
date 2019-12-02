@@ -560,24 +560,6 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
         imageLabel.repaint()
     }
 
-    override fun render(result: DrawResult, state: RenderState) {
-        engine.deferredRenderingBuffer.gBuffer.use(engine.gpuContext, false)
-
-        fun HpVector4f.toJomlVec3() = Vector3f(x, y, z)
-        val vertexArray = state.vertexIndexBufferStatic.vertexStructArray
-        val indexArray = state.vertexIndexBufferStatic.indexBuffer
-        val asIntBuffer = indexArray.buffer.asIntBuffer()
-//        (0 until asIntBuffer.capacity()).forEach { index ->
-//            lineRenderer.batchPointForLine(vertexArray[asIntBuffer[index]].position.toJomlVec3())
-//        }
-//        lineRenderer.drawAllLines(2f, Consumer { program ->
-//            program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
-//            program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-//            program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-//            program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
-//        })
-    }
-
     fun addTask(task: RibbonTask) = ribbon.addTask(task)
 
     fun bufferImage() {

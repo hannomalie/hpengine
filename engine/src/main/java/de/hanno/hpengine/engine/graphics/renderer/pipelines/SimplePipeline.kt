@@ -146,24 +146,27 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     open fun beforeDrawStatic(renderState: RenderState, program: Program) {
-        beforeDraw(renderState, program)
+        beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray)
     }
 
     open fun beforeDrawAnimated(renderState: RenderState, program: Program) {
-        beforeDraw(renderState, program)
+        beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray)
     }
 
-    open fun beforeDraw(renderState: RenderState, program: Program) {
+    fun beforeDraw(renderState: RenderState, program: Program,
+                        persistentMappedStructBuffer: PersistentMappedStructBuffer<*>) {
         if (useBackFaceCulling) {
             engine.gpuContext.enable(GlCap.CULL_FACE)
         }
         program.use()
-        program.setUniforms(renderState, cullCam ?: renderCam ?: renderState.camera, engine.config)
+        program.setUniforms(renderState, cullCam ?: renderCam ?: renderState.camera,
+                engine.config, persistentMappedStructBuffer)
     }
 
 }
 
-fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.camera, config: Config) = profiled("setUniforms") {
+fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
+                        config: Config, persistentMappedStructBuffer: PersistentMappedStructBuffer<*>) = profiled("setUniforms") {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
     val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
@@ -173,7 +176,7 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
     bindShaderStorageBuffer(1, renderState.materialBuffer)
     bindShaderStorageBuffer(3, renderState.entitiesBuffer)
     bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-    bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
+    bindShaderStorageBuffer(7, persistentMappedStructBuffer)
     setUniform("useRainEffect", config.effects.rainEffect != 0.0f)
     setUniform("rainEffect", config.effects.rainEffect)
     setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)

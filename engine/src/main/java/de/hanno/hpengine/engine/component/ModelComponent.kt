@@ -145,15 +145,9 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
         val bytesPerObject = model.bytesPerVertex
 
         if(model is StaticModel) {
-            val sizeBefore = vertexIndexBuffer.vertexArray.size
-            vertexIndexBuffer.vertexArray.addAll(model.compiledVertices)
-            vertexIndexBuffer.vertexStructArray.enlargeBy(model.verticesStructArrayPacked.size)
-            model.verticesStructArrayPacked.buffer.copyTo(vertexIndexBuffer.vertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
+            vertexIndexBuffer.vertexStructArray.addAll(model.verticesStructArrayPacked)
         } else if(model is AnimatedModel) {
-            val sizeBefore = vertexIndexBuffer.animatedVertexArray.size
-            vertexIndexBuffer.animatedVertexArray.addAll(model.compiledVertices)
-            vertexIndexBuffer.animatedVertexStructArray.enlargeBy(vertexIndexBuffer.animatedVertexArray.size)
-            model.verticesStructArrayPacked.buffer.copyTo(vertexIndexBuffer.animatedVertexStructArray.buffer, targetOffset = sizeBefore * bytesPerObject)
+            vertexIndexBuffer.animatedVertexStructArray.addAll(model.verticesStructArrayPacked)
         }
 
         gpuContext.execute("ModelComponent.putToBuffer") {

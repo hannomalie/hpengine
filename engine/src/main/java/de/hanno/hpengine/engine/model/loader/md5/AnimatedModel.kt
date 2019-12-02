@@ -38,16 +38,19 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
             target.jointIndices.set(jointIndices)
         }
     }
-    override val verticesStructArrayPacked = StructArray(compiledVertices.size) { AnimatedVertexStructPacked() }.apply {
-        for (i in compiledVertices.indices) {
-            val animatedVertex = compiledVertices[i]
-            val (position, texCoord, normal, weights, jointIndices) = animatedVertex
-            val target = getAtIndex(i)
-            target.position.set(position)
-            target.texCoord.set(texCoord)
-            target.normal.set(normal)
-            target.weights.set(weights)
-            target.jointIndices.set(jointIndices)
+    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.compiledVertices.size }) { AnimatedVertexStructPacked() }.apply {
+        var counter = 0
+        for (mesh in meshes) {
+            for(animatedVertex in mesh.compiledVertices) {
+                val (position, texCoord, normal, weights, jointIndices) = animatedVertex
+                val target = getAtIndex(counter)
+                target.position.set(position)
+                target.texCoord.set(texCoord)
+                target.normal.set(normal)
+                target.weights.set(weights)
+                target.jointIndices.set(jointIndices)
+                counter++
+            }
         }
     }
     override val isStatic = false
