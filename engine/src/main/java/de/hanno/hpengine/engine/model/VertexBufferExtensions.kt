@@ -73,7 +73,7 @@ fun VertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
         return indices.capacity() / 3
     } else {
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount)
-        return verticesCount
+        return verticesCount / 3
     }
 }
 
@@ -91,7 +91,6 @@ fun VertexBuffer.drawInstancedBaseVertex(indexBuffer: IndexBuffer?, indexCount: 
     if (indexBuffer != null) {
         indexBuffer.bind()
         GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
-
     } else {
         GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount)
     }

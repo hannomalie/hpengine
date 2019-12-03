@@ -64,7 +64,7 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
     }
 
     override fun getMinMax(transform: Transform<*>): AABB {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return getCurrentBoundInfo(animationController.currentFrameIndex).minMax
     }
 
     override fun getMinMax(mesh: Mesh<*>): AABB {

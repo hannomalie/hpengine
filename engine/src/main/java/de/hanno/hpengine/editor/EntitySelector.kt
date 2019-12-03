@@ -155,6 +155,7 @@ class EntitySelector(val engine: Engine<OpenGl>,
                 simpleColorProgramStatic.bindShaderStorageBuffer(1, state.entitiesState.materialBuffer)
                 simpleColorProgramStatic.bindShaderStorageBuffer(3, state.entitiesState.entitiesBuffer)
                 simpleColorProgramStatic.bindShaderStorageBuffer(6, state.entitiesState.jointsBuffer)
+                simpleColorProgramStatic.bindShaderStorageBuffer(7, state.entitiesState.vertexIndexBufferStatic.vertexStructArray)
                 simpleColorProgramStatic.setTextureUniforms(engine.gpuContext, it.materialInfo.maps)
                 simpleColorProgramStatic.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
                 simpleColorProgramStatic.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
