@@ -16,6 +16,8 @@ class MeshGrid(val mesh: Mesh<*>, val materialManager: MaterialManager): JPanel(
         layout = MigLayout("wrap 2")
         labeled("Name", mesh::name.toTextField())
         labeled("Material", mesh::material.toComboBox())
+        labeled("Vertices", JLabel(mesh.compiledVertices.size.toString()))
+        labeled("Unique Vertices", JLabel(mesh.compiledVertices.size.toString()))
     }
 
     fun KMutableProperty0<Material>.toComboBox(): JComboBox<SimpleMaterial> {

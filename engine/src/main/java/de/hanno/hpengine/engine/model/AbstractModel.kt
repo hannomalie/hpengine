@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.model
 
+import com.carrotsearch.hppc.IntArrayList
+import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 

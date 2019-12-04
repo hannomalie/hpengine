@@ -18,7 +18,7 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
                     val invJointMatrices: List<Matrix4f>,
                     override val isInvertTexCoordY: Boolean) : AbstractModel<AnimatedVertex>(meshes.toList()) {
 
-    override val bytesPerVertex = AnimatedVertexStructPacked.sizeInBytes
+    override val bytesPerVertex = AnimatedVertexStruct.sizeInBytes
 
     val animationController = AnimationController(frames.size, header.frameRate.toFloat())
     init {

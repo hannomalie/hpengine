@@ -98,9 +98,10 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         fun DrawDescription.drawDirect(beforeDrawAction: (RenderState, Program) -> Unit) {
             beforeDrawAction(renderState, program)
             program.use()
+            var indicesCount = 0
             for (batch in commandOrganization.filteredRenderBatches) {
                 program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
+                indicesCount += draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
             }
         }
         drawDescriptionStatic.drawDirect(::beforeDrawStatic)

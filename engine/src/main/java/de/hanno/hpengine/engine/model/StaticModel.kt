@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.scene.VertexStructPacked
@@ -23,7 +24,7 @@ class StaticModel(private val path: String,
             StaticMesh.calculateMinMax(minMax.min, minMax.max, meshMinMax)
         }
     }
-    override val bytesPerVertex = VertexStructPacked.sizeInBytes
+    override val bytesPerVertex = VertexStruct.sizeInBytes
 
     override val verticesStructArray = StructArray(compiledVertices.size) { VertexStruct() }.apply {
         for (i in compiledVertices.indices) {
@@ -36,6 +37,32 @@ class StaticModel(private val path: String,
         }
     }
 
+//    val uniqueVertices: Set<Vertex> = compiledVertices.toSet()
+//    val uniqueIndices = IntArrayList().apply {
+//        meshes.map { mesh ->
+//            val vertices: List<Vertex> = mesh.faces.flatMap { face ->
+//                (0..2).map { i ->
+//                    Vertex(face.positions[i], face.texCoords[i], face.normals[i])
+//                }
+//            }
+//            vertices.forEach { add(uniqueVertices.indexOf(it)) }
+//        }
+//    }
+//  Use this and change baseVertex to model base vertex
+//    override val indices = uniqueIndices.toArray()
+//    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.uniqueVertices.size }) { VertexStructPacked() }.apply {
+//        var counter = 0
+//        for(mesh in meshes) {
+//            for(vertex in mesh.uniqueVertices) {
+//                val (position, texCoord, normal) = vertex
+//                val target = getAtIndex(counter)
+//                target.position.set(position)
+//                target.texCoord.set(texCoord)
+//                target.normal.set(normal)
+//                counter++
+//            }
+//        }
+//    }
     override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.compiledVertices.size }) { VertexStructPacked() }.apply {
         var counter = 0
         for(mesh in meshes) {

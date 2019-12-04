@@ -127,7 +127,7 @@ class EntitySelector(val engine: Engine<OpenGl>,
             if(mesh != null) {
                 lineRenderer.batchAABBLines(mesh.minMax.min, mesh.minMax.max)
             } else {
-                lineRenderer.batchAABBLines(entity.minMaxWorld.min, entity.minMaxWorld.max)
+                lineRenderer.batchAABBLines(entity.minMax.min, entity.minMax.max)
             }
             lineRenderer.drawAllLines(5f, Consumer { program ->
                 program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)

@@ -33,7 +33,7 @@ class StaticMesh(override var name: String = "",
     override val compiledVertices = ArrayList<Vertex>()
     override val uniqueVertices = mutableSetOf<Vertex>()
     override val faces = ArrayList<CompiledFace>()
-    private val indexedFaces = ArrayList<IndexedFace>()
+    val indexedFaces = ArrayList<IndexedFace>()
     private val valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS)
     override val minMax = AABB(Vector3f(), Vector3f())
 
