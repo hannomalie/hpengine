@@ -114,6 +114,15 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override fun getMouseButton(buttonCode: Int): Int {
         return glfwGetMouseButton(handle, buttonCode)
     }
+
+    override fun swapBuffers() {
+        glfwSwapBuffers(handle)
+    }
+
+    override fun makeContextCurrent() {
+        glfwMakeContextCurrent(handle)
+    }
+
 }
 
 private fun GlfwWindow.createFrontBufferRenderTarget(): RenderTarget<Texture2D> {

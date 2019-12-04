@@ -121,7 +121,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         Executor.launch {
             Executor.openGLThreadId = Thread.currentThread().id
 
-            glfwMakeContextCurrent(window.handle)
+            window.makeContextCurrent()
 
             capabilities = GL.createCapabilities()
 
@@ -403,7 +403,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             createNewGPUFenceForReadState(renderState)
         }
         profiled("Swap buffers") {
-            glfwSwapBuffers(window.handle)
+            window.swapBuffers()
         }
     }
 

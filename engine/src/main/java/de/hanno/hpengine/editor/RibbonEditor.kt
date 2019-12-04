@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
@@ -32,6 +33,8 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WIDTH
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
 import org.lwjgl.opengl.GL11.glGetTexImage
 import org.lwjgl.opengl.GL11.glGetTexLevelParameteri
+import org.lwjgl.opengl.awt.AWTGLCanvas
+import org.lwjgl.opengl.awt.GLData
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
@@ -556,8 +559,10 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     }
 
     override fun afterFrameFinished() {
-        bufferImage()
-        imageLabel.repaint()
+//        if(engine.window !is AWTWindow) {
+//            bufferImage()
+//            imageLabel.repaint()
+//        }
     }
 
     fun addTask(task: RibbonTask) = ribbon.addTask(task)

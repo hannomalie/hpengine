@@ -148,7 +148,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                     JRibbonFrame.setDefaultLookAndFeelDecorated(true)
                     SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
                     RibbonEditor(engine, config)
-//                Editor(engine, config)
                 }
             }
 

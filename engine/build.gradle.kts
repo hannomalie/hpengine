@@ -102,6 +102,7 @@ dependencies {
     compile("org.joml:joml:1.9.3")
 //    TODO: Remove weblaf stuff
     compile("", "weblaf-complete", "1.28")
+    compile("", "lwjgl3-awt", "0.1.6")
     compile("", "vecmath")
     compile("", "rsyntaxtextarea")
     compile("jfree:jfreechart:1.0.13")

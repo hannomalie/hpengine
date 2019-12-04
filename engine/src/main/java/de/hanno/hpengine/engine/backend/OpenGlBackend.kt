@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
-import de.hanno.hpengine.engine.graphics.GlfwWindow
+import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
@@ -57,7 +57,7 @@ class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { Up
 
 class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
                         override val config: Config,
-                        override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
+                        override val window: Window<OpenGl> = AWTWindow(),//GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
                         override val backend: Backend<OpenGl> = OpenGlBackend(window, config),
                         override val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
