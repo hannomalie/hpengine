@@ -156,3 +156,21 @@ struct VertexShaderOutput {
     vec4 position_clip_uv;
     vec4 position_world;
 };
+
+struct VertexPacked {
+    vec4 position;
+    vec4 texCoord;
+    vec4 normal;
+    vec4 dummy;
+};
+struct VertexAnimatedPacked {
+    vec4 position;
+    vec4 texCoord;
+    vec4 normal;
+    vec4 weights;
+
+    ivec4 jointIndices;
+    vec4 dummy;
+    vec4 dummy1;
+    vec4 dummy2;
+};

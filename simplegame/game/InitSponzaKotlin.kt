@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
     init {
-        val modelFile = engine.config.directories.gameDir.resolve("assets/models/bpcem_playground.obj")
+        val modelFile = engine.config.directories.gameDir.resolve("assets/models/sponza.obj")
         val loaded = LoadModelCommand(modelFile, "sponza", engine.scene.materialManager, engine.config.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
         with(engine.sceneManager.scene) {

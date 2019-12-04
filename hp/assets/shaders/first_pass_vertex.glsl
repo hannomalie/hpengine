@@ -26,23 +26,10 @@ layout(std430, binding=6) buffer _joints {
 	mat4 joints[2000];
 };
 
-struct VertexAnimatedPacked {
-	vec4 position;
-	vec4 texCoord;
-	vec4 normal;
-	vec4 weights;
-	ivec4 jointIndices;
-};
 layout(std430, binding=7) buffer _vertices {
 	VertexAnimatedPacked vertices[];
 };
 #else
-struct VertexPacked {
-	vec4 position;
-	vec4 texCoord;
-	vec4 normal;
-	vec4 dummy;
-};
 layout(std430, binding=7) buffer _vertices {
 	VertexPacked vertices[];
 };
@@ -78,9 +65,9 @@ void main(void) {
 	VertexPacked vertex;
 #endif
 
-	int vertexIndex = gl_VertexID;
 	const bool programmableVertexPulling = true;
 	if(programmableVertexPulling) {
+		int vertexIndex = gl_VertexID;
 		vertex = vertices[vertexIndex];
 		vertex.position.w = 1;
 	} else {

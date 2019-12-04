@@ -13,6 +13,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.shader.define.Define
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.Update
@@ -24,7 +26,7 @@ import org.lwjgl.BufferUtils
 class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
 
     val materialManager: MaterialManager = engineContext.materialManager
-    private val skyBoxProgram = engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl")
+    private val skyBoxProgram = engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
 
@@ -63,6 +65,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
         skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.transformation.get(modelMatrixBuffer))
         skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
+        skyBoxProgram.bindShaderStorageBuffer(7, skyboxVertexIndexBuffer.vertexStructArray)
         gpuContext.bindTexture(6, backend.textureManager.cubeMap)
         draw(skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
 
