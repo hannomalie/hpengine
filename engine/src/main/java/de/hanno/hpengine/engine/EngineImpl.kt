@@ -25,6 +25,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.withLock
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin

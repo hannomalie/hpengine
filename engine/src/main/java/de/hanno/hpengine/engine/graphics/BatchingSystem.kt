@@ -32,7 +32,7 @@ class BatchingSystem {
                 val meshCenter = mesh.getCenter(entity)
                 val boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh)
 
-                val (min1, max1) = modelComponent.getMinMax(entity, mesh)
+                val (min1, max1) = modelComponent.model.getMinMax(mesh)
                 val intersectAABB = camera.frustum.frustumIntersection.intersectAab(min1, max1)
                 val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 

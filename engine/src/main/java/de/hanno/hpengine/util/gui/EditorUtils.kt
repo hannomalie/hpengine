@@ -28,7 +28,7 @@ fun SimpleConfig.getButtons(engine: Engine<*>): Map<String, MutableList<JCompone
 
     val scatteringSlider = object: SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
         override fun onValueChange(value: Int, delta: Int) {
-            engine.scene.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight().scatterFactor = value.toFloat()
+            engine.scene.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()?.scatterFactor = value.toFloat()
         }
     }
 

@@ -24,22 +24,24 @@ class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleSce
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
+        val light = getDirectionalLight() ?: return
 
-        with(getDirectionalLight()) {
+        with(light) {
             update(deltaSeconds)
         }
-        if (this@DirectionalLightSystem.getDirectionalLight().entity.hasMoved()) {
+        if (light.entity.hasMoved()) {
             this@DirectionalLightSystem.directionalLightMovedInCycle = this@DirectionalLightSystem.engine.scene.currentCycle
-            this@DirectionalLightSystem.getDirectionalLight().entity.isHasMoved = false
+            light.entity.isHasMoved = false
         }
     }
 
-    fun getDirectionalLight() = getComponents(DirectionalLight::class.java).first()
+    fun getDirectionalLight() = getComponents(DirectionalLight::class.java).firstOrNull()
 
     override fun extract(renderState: RenderState) {
         renderState.directionalLightHasMovedInCycle = directionalLightMovedInCycle
+        val light = getDirectionalLight() ?: return
 
-        with(getDirectionalLight()) {
+        with(light) {
             renderState.directionalLightState.color.set(color)
             renderState.directionalLightState.direction.set(direction)
             renderState.directionalLightState.scatterFactor = scatterFactor

@@ -14,13 +14,11 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.apache.xpath.operations.Bool
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 
 private class TempEngineImpl<TYPE: BackendType>(override val managerContext: ManagerContext<TYPE>,
                                                 override val sceneManager: SceneManager): Engine<TYPE>, ManagerContext<TYPE> by managerContext {
@@ -32,25 +30,34 @@ object SingleThreadContext {
     val threadName: String = "SingleThreadContext${singleThreadContextCounter++}"
     private val singleThreadUpdateScope: ExecutorCoroutineDispatcher = Executors.newFixedThreadPool(1) { Thread(it, threadName) }.asCoroutineDispatcher()
 
-    init {
-        GlobalScope.launch(singleThreadUpdateScope) {
-            while(true) {
-                delay(1)
-            }
+    suspend fun <T> execute(block: () -> T): T = if(isSingleThreadContextThread) {
+        block()
+    } else {
+        withContext(singleThreadUpdateScope) {
+            block()
         }
     }
+
     fun launch(
         start: CoroutineStart = CoroutineStart.DEFAULT,
         block: suspend SingleThreadContext.() -> Unit
     ): Job {
-        return GlobalScope.launch(singleThreadUpdateScope, start) { block() }
+        return GlobalScope.launch(start = start) {
+            with(singleThreadUpdateScope) {
+                block()
+            }
+        }
     }
 
     fun <T> CoroutineScope.async(
             start: CoroutineStart = CoroutineStart.DEFAULT,
             block: suspend SingleThreadContext.() -> T
     ): Deferred<T> {
-        return GlobalScope.async(singleThreadUpdateScope, start) { block() }
+        return GlobalScope.async(start = start) {
+            with(singleThreadUpdateScope) {
+                block()
+            }
+        }
     }
 
     private val isSingleThreadContextThread: Boolean
@@ -62,9 +69,7 @@ object SingleThreadContext {
             return block()
         }
         return kotlinx.coroutines.runBlocking(singleThreadUpdateScope) {
-            with(this@SingleThreadContext) {
-                block()
-            }
+            block()
         }
     }
 }
