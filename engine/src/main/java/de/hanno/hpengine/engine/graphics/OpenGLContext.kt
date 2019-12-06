@@ -57,14 +57,15 @@ import javax.vecmath.Vector2f
 import kotlin.coroutines.CoroutineContext
 
 class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
+    val executor = Executor()
     init {
         privateInit()
         startEndlessLoop()
     }
 
-    override val coroutineContext: CoroutineContext
-        get() = Executor.coroutineContext
-
+    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        return executor.launch { block() }
+    }
     private lateinit var capabilities: GLCapabilities
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
@@ -118,8 +119,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     internal fun privateInit() = runBlocking {
-        Executor.launch {
-            Executor.openGLThreadId = Thread.currentThread().id
+        executor.launch {
+            executor.openGLThreadId = Thread.currentThread().id
 
             window.makeContextCurrent()
 
@@ -288,7 +289,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
                 runnable.run()
                 getExceptionOnError { "Error in action $actionName in $runnable" }
             }
-            andBlock -> Executor.future {
+            andBlock -> executor.future {
                 runnable.run()
                 getExceptionOnError { "Error in action $actionName in $runnable" }
             }.exceptionally {
@@ -296,7 +297,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
                     printStackTrace()
                 }
             }.get()
-            else -> Executor.async {
+            else -> executor.async {
                 runnable.run()
                 getExceptionOnError { "Error in action $actionName in $runnable" }
             }.getCompleted()
@@ -324,7 +325,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             return callable.call()
         }
         return runBlocking {
-            withContext(Executor.coroutineContext) {
+            withContext(executor.coroutineContext) {
                 callable.call()
             }
         }
@@ -336,7 +337,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override fun destroy() {
         try {
-            Executor.openGlExecutor.shutdown()
+            executor.openGlExecutor.shutdown()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -345,7 +346,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
 
     private fun startEndlessLoop() {
-        Executor.launch {
+        executor.launch {
             while (true) {
                 profiled("Frame") {
                     checkCommandSyncs()
@@ -365,7 +366,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
                 }
             }
         }
-        println("OpenGLContext thread submitted with id ${Executor.openGLThreadId}")
+        println("OpenGLContext thread submitted with id ${executor.openGLThreadId}")
     }
 
     private fun waitForInitialization() {
@@ -447,51 +448,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         }
     }
 
-    object Executor: CoroutineScope {
-        internal var openGLThreadId: Long = -1
-
-        internal val openGlExecutor = Executors.newSingleThreadExecutor { runnable ->
-            Thread(runnable).apply {
-                name = OPENGL_THREAD_NAME
-            }
-        }
-
-        val dispatcher = openGlExecutor.asCoroutineDispatcher()
-
-//        private val job = Job()
-//        override val coroutineContext = dispatcher + job
-        override val coroutineContext
-            get() = dispatcher + Job()
-
-        fun launch(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> Unit): Job {
-            val enhancedBlock: suspend CoroutineScope.() -> Unit = { block(); executeExitOnGlErrorFunction(); }
-            return (CoroutineScope::launch)(this, coroutineContext, start, enhancedBlock)
-        }
-        fun <T> async(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> T): Deferred<T> {
-            val function = { coroutineScope: CoroutineScope,
-                             context: CoroutineContext,
-                             start: CoroutineStart,
-                             block: suspend CoroutineScope.() -> T -> coroutineScope.async(context, start, block) }
-            return function(this, coroutineContext, start, block)
-        }
-
-        // duplicate code, because I had compilation issues with coroutines and this function somehow
-        private fun executeExitOnGlErrorFunction(errorMessage: () -> String = {""}) {
-            if (GpuContext.CHECKERRORS) {
-                val errorValue = GL11.glGetError()
-
-                if (errorValue != GL11.GL_NO_ERROR) {
-                    val errorString = GLU.gluErrorString(errorValue)
-                    System.err.println("ERROR: $errorString")
-                    System.err.println(errorMessage())
-
-                    RuntimeException("").printStackTrace()
-                    System.exit(-1)
-                }
-            }
-        }
-    }
-
     companion object {
         private val LOGGER = Logger.getLogger(OpenGLContext::class.java.name)
 
@@ -536,14 +492,58 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
     fun getError(): Int = calculate { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
+
+    inline val isOpenGLThread: Boolean
+        get() {
+            return Thread.currentThread().isOpenGLThread
+        }
+
+    val Thread.isOpenGLThread: Boolean
+        get() {
+            return id == executor.openGLThreadId
+        }
 }
 
-inline val isOpenGLThread: Boolean
-    get() {
-        return Thread.currentThread().isOpenGLThread
+
+class Executor: CoroutineScope {
+    internal var openGLThreadId: Long = -1
+
+    internal val openGlExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable).apply {
+            name = OpenGLContext.OPENGL_THREAD_NAME
+        }
     }
 
-val Thread.isOpenGLThread: Boolean
-    get() {
-        return id == OpenGLContext.Executor.openGLThreadId
+    val dispatcher = openGlExecutor.asCoroutineDispatcher()
+
+    override val coroutineContext
+        get() = dispatcher + Job()
+
+    fun launch(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> Unit): Job {
+        val enhancedBlock: suspend CoroutineScope.() -> Unit = { block(); executeExitOnGlErrorFunction(); }
+        return (CoroutineScope::launch)(this, coroutineContext, start, enhancedBlock)
     }
+    fun <T> async(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> T): Deferred<T> {
+        val function = { coroutineScope: CoroutineScope,
+                         context: CoroutineContext,
+                         start: CoroutineStart,
+                         block: suspend CoroutineScope.() -> T -> coroutineScope.async(context, start, block) }
+        return function(this, coroutineContext, start, block)
+    }
+
+    // duplicate code, because I had compilation issues with coroutines and this function somehow
+    private fun executeExitOnGlErrorFunction(errorMessage: () -> String = {""}) {
+        if (GpuContext.CHECKERRORS) {
+            val errorValue = GL11.glGetError()
+
+            if (errorValue != GL11.GL_NO_ERROR) {
+                val errorString = GLU.gluErrorString(errorValue)
+                System.err.println("ERROR: $errorString")
+                System.err.println(errorMessage())
+
+                RuntimeException("").printStackTrace()
+                System.exit(-1)
+            }
+        }
+    }
+}

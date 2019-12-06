@@ -10,13 +10,14 @@ import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.ArrayList
 import java.util.concurrent.Callable
 import java.util.logging.Logger
 
-interface GpuContext<T: BackendType>: CoroutineScope {
+interface GpuContext<T: BackendType> {
 
     val backend: T
 
@@ -120,6 +121,8 @@ interface GpuContext<T: BackendType>: CoroutineScope {
     fun execute(actionName: String, runnable: () -> Unit, andBlock: Boolean) {
         return execute(actionName, Runnable(runnable), andBlock)
     }
+
+    fun launch(block: suspend CoroutineScope.() -> Unit): Job
 
     fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE
     fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE {
