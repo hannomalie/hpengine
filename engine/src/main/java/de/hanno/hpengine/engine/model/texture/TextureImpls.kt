@@ -367,7 +367,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
         }
 
         private fun Texture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext<*>, info: Texture2DUploadInfo, internalFormat: Int) {
-            gpuContext.execute("SimpleTexture2D.uploadWithoutPixelBuffer", {
+            gpuContext.execute("SimpleTexture2D.uploadWithoutPixelBuffer", false, {
                 glBindTexture(GL_TEXTURE_2D, id)
                 if (info.dataCompressed) {
                     glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, internalFormat, info.buffer)
@@ -376,7 +376,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                 }
                 GL30.glGenerateMipmap(GL_TEXTURE_2D)
                 uploadState = UploadState.UPLOADED
-            }, false)
+            })
         }
     }
 

@@ -560,9 +560,10 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
     override fun afterFrameFinished() {
 //        if(engine.window !is AWTWindow) {
-//            bufferImage()
-//            imageLabel.repaint()
-//        }
+        run {
+            bufferImage()
+            imageLabel.repaint()
+        }
     }
 
     fun addTask(task: RibbonTask) = ribbon.addTask(task)

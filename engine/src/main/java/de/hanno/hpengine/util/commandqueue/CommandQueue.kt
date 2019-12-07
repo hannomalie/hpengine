@@ -9,12 +9,13 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-open class CommandQueue @JvmOverloads constructor(executorService: ExecutorService = Executors.newSingleThreadExecutor(), private val executeDirectly: () -> Boolean = { false }) {
+open class CommandQueue @JvmOverloads constructor(executorService: ExecutorService = Executors.newSingleThreadExecutor(),
+                                                  private val executeDirectly: () -> Boolean = { false }) {
     val executor = executorService
     val dispatcher = executor.asCoroutineDispatcher()
-    private val channel = Channel<Callable<*>>(Channel.UNLIMITED)
+    protected val channel = Channel<Callable<*>>(Channel.UNLIMITED)
 
-    fun executeCommands(): Boolean {
+    open fun executeCommands(): Boolean {
         runBlocking {
             launch(dispatcher) {
                 try {
@@ -25,6 +26,7 @@ open class CommandQueue @JvmOverloads constructor(executorService: ExecutorServi
                     }
                 } catch (e: Error) {
                     LOGGER.log(Level.SEVERE, "", e)
+//                    e.printStackTrace()
                 }
             }
         }
@@ -76,20 +78,38 @@ open class CommandQueue @JvmOverloads constructor(executorService: ExecutorServi
         }
     }
 
-    fun execute(runnable: Runnable, andBlock: Boolean) {
-        if (executeDirectly()) {
+    open fun execute(runnable: Runnable, andBlock: Boolean) {
+        return execute(runnable, andBlock, false)
+    }
+    open fun execute(runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
+        if (!forceAsync && executeDirectly()) {
             runnable.run()
+            return
         }
 
-        val future = CompletableFuture<Void>()
-        GlobalScope.launch(dispatcher) {
-            channel.send(Callable {
-                runnable.run()
-                future.complete(null)
-            })
-        }
+//        val future = CompletableFuture<Void>()
+//        GlobalScope.launch(dispatcher, CoroutineStart.UNDISPATCHED) {
+//            channel.send(Callable {
+//                runnable.run()
+//                future.complete(null)
+//            })
+//        }
         if(andBlock) {
-            future.join()
+//            future.join()
+            val future = runBlocking {
+                val future = CompletableFuture<Void>()
+                channel.send(Callable {
+                    future.complete(null)
+                })
+                future
+            }
+            future.get()
+        } else {
+            GlobalScope.launch(dispatcher, CoroutineStart.UNDISPATCHED) {
+                channel.send(Callable {
+                    runnable.run()
+                })
+            }
         }
     }
 

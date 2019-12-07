@@ -4,13 +4,17 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback
 import org.lwjgl.glfw.GLFWWindowCloseCallbackI
+import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
+import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
 //     Don't make this a local field, we need a strong reference
@@ -27,7 +31,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  title: String,
                  override var vSync: Boolean = true,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
-                 closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl> {
+                 closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl>, OpenGlExecutor {
 
     override var title = title
         set(value) {
@@ -122,6 +126,28 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override fun makeContextCurrent() {
         glfwMakeContextCurrent(handle)
     }
+
+    val executor = Executor().apply {
+        execute("Create Capabilities") {
+            makeContextCurrent()
+            GL.createCapabilities()
+        }
+    }
+    override val openGLThreadId: Long
+        get() = executor.openGLThreadId
+    override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
+        return executor.execute(actionName, runnable, andBlock, forceAsync)
+    }
+
+    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        return executor.launch { block() }
+    }
+
+    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+        return executor.calculate(callable)
+    }
+
+    override fun shutdown() = executor.shutdown()
 
 }
 

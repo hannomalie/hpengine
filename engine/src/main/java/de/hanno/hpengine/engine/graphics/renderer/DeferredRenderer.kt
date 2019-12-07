@@ -174,7 +174,7 @@ class DeferredRenderer
     }
 
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("Frame") {
-        gpuContext.getExceptionOnError("Frame")
+        gpuContext.getExceptionOnError("Frame")?.let { throw it }
 
         val firstPassResult = result.firstPassResult
         profiled("First pass") {

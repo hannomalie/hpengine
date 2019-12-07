@@ -7,17 +7,32 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.VertexBuffer
-import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
-import java.util.ArrayList
 import java.util.concurrent.Callable
 import java.util.logging.Logger
+interface OpenGlExecutor {
+    val openGLThreadId: Long
 
-interface GpuContext<T: BackendType> {
+    fun execute(actionName: String, runnable: Runnable) = execute(actionName, runnable, true, false)
+    fun execute(actionName: String, runnable: Runnable, andBlock: Boolean) = execute(actionName, runnable, andBlock, false)
+    fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean)
+
+    fun execute(actionName: String, runnable: () -> Unit) = execute(actionName, Runnable(runnable), true, false)
+    fun execute(actionName: String, andBlock: Boolean, runnable: () -> Unit) = execute(actionName, andBlock, false, runnable)
+    fun execute(actionName: String, andBlock: Boolean, forceAsync: Boolean, runnable: () -> Unit) = execute(actionName, Runnable(runnable), andBlock, forceAsync)
+
+    fun launch(block: suspend CoroutineScope.() -> Unit): Job
+
+    fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE
+    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculate(Callable(callable))
+
+    fun shutdown()
+}
+interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     val backend: T
 
@@ -109,26 +124,6 @@ interface GpuContext<T: BackendType> {
     fun bindImageTexture(unit: Int, textureId: Int, level: Int, layered: Boolean, layer: Int, access: Int, internalFormat: Int)
 
     fun genTextures(): Int
-
-    fun execute(actionName: String, runnable: Runnable) {
-        execute(actionName, runnable, true)
-    }
-    fun execute(actionName: String, runnable: () -> Unit) {
-        execute(actionName, Runnable(runnable), true)
-    }
-
-    fun execute(actionName: String, runnable: Runnable, andBlock: Boolean)
-    fun execute(actionName: String, runnable: () -> Unit, andBlock: Boolean) {
-        return execute(actionName, Runnable(runnable), andBlock)
-    }
-
-    fun launch(block: suspend CoroutineScope.() -> Unit): Job
-
-    fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE
-    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE {
-        return calculate(Callable(callable))
-    }
-
 
     fun createProgramId(): Int
 

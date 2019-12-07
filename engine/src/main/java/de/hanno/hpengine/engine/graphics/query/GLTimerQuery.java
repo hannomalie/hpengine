@@ -33,7 +33,7 @@ public class GLTimerQuery implements GLQuery<Float> {
         finished = false;
         gpuContext.execute("GLTimerQuery.begin", () -> {
             glQueryCounter(start, GL_TIMESTAMP);
-        }, true);
+        });
         started = true;
         return this;
     }
@@ -45,7 +45,7 @@ public class GLTimerQuery implements GLQuery<Float> {
         }
         gpuContext.execute("GLTimerQuery.end", () -> {
             glQueryCounter(end, GL_TIMESTAMP);
-        }, true);
+        });
         finished = true;
     }
 

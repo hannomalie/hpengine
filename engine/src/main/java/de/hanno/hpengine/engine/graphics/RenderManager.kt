@@ -19,6 +19,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.util.concurrent.atomic.AtomicLong
+import javax.swing.SwingUtilities
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
     val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory(),
@@ -47,30 +48,37 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         }
 
     init {
-        engineContext.gpuContext.launch {
-            var lastTimeSwapped = true
-            while(isActive) {
-                renderState.startRead()
+        var lastTimeSwapped = true
+        val runnable = object: Runnable {
+            override fun run() {
+                try {
+                    renderState.startRead()
 
-                if (lastTimeSwapped) {
-                    recorder.add(renderState.currentReadState)
-                    val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                    if (lastTimeSwapped) {
+                        recorder.add(renderState.currentReadState)
+                        val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                    engineContext.renderSystems.forEach {
-                        it.render(drawResult, renderState.currentReadState)
+                        engineContext.renderSystems.forEach {
+                            it.render(drawResult, renderState.currentReadState)
+                        }
+                        engineContext.gpuContext.finishFrame(renderState.currentReadState)
+                        engineContext.renderSystems.forEach {
+                            it.afterFrameFinished()
+                        }
+                        lastFrameTime = System.currentTimeMillis()
+                        fpsCounter.update()
                     }
-                    engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                    engineContext.renderSystems.forEach {
-                        it.afterFrameFinished()
-                    }
-                    lastFrameTime = System.currentTimeMillis()
-                    fpsCounter.update()
+                    lastTimeSwapped = renderState.stopRead()
+                    engineContext.window.title = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-                lastTimeSwapped = renderState.stopRead()
-                engineContext.window.title = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
-                yield()
+                engineContext.gpuContext.execute("Foo", this, false, true)
+//                SwingUtilities.invokeLater(this)
             }
         }
+        engineContext.gpuContext.execute("Foo", runnable, false, true)
+//        SwingUtilities.invokeLater(runnable)
     }
 
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
@@ -82,12 +90,12 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
     fun getMsPerFrame() = fpsCounter.msPerFrame
 
     fun resetAllocations() {
-        engineContext.gpuContext.execute("resetAllocations", Runnable{
+        engineContext.gpuContext.execute("resetAllocations", Runnable {
             StopWatch.getInstance().start("SimpleScene init")
             vertexIndexBufferStatic.resetAllocations()
             vertexIndexBufferAnimated.resetAllocations()
             StopWatch.getInstance().stopAndPrintMS()
-        }, true)
+        })
     }
     override fun clear() = resetAllocations()
 

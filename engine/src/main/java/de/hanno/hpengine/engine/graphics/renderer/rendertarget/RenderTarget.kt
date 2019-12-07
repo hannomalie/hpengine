@@ -36,8 +36,8 @@ val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
 }
 
 open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer: FrameBuffer,
-                                                            open val width: Int = 0,
-                                                            open val height: Int = 0,
+                                                            open val width: Int = 1280,
+                                                            open val height: Int = 720,
                                                             val textures: List<T> = emptyList(),
                                                             val name: String,
                                                             val clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)) {
@@ -192,7 +192,7 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
                 } else if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
                     LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
                 }
-                RuntimeException().printStackTrace()
+                throw RuntimeException()
             }
         }
 

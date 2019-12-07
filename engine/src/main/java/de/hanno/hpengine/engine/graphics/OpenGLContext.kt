@@ -25,11 +25,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW.glfwMakeContextCurrent
-import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
@@ -49,29 +45,23 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
 import java.util.concurrent.Callable
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.vecmath.Vector2f
 import kotlin.coroutines.CoroutineContext
 
 class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
-    val executor = Executor()
+    private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     init {
         privateInit()
         startEndlessLoop()
     }
 
-    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
-        return executor.launch { block() }
-    }
     private lateinit var capabilities: GLCapabilities
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
 
-    private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     override val registeredRenderTargets = ArrayList<RenderTarget<*>>()
 
     internal val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
@@ -118,13 +108,13 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         return openGlCommandSync
     }
 
-    internal fun privateInit() = runBlocking {
-        executor.launch {
-            executor.openGLThreadId = Thread.currentThread().id
+    internal fun privateInit() {
+        window.execute("XXX", Runnable {
+//            window.openGLThreadId = Thread.currentThread().id
 
-            window.makeContextCurrent()
+//            window.makeContextCurrent()
 
-            capabilities = GL.createCapabilities()
+            capabilities = GL.getCapabilities()
 
             println("OpenGL version: " + GL11.glGetString(GL_VERSION))
             val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
@@ -145,7 +135,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
 
             isInitialized = true
-        }.join()
+
+        }, false, true)
     }
 
     override fun update(seconds: Float) { }
@@ -282,27 +273,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override val evictionCount: Int
         get() = calculate(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
 
-    override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean) {
-        val runtimeException: RuntimeException? = when {
-            isOpenGLThread -> {
-                getExceptionOnError { "Error before action $actionName in $runnable" }
-                runnable.run()
-                getExceptionOnError { "Error in action $actionName in $runnable" }
-            }
-            andBlock -> executor.future {
-                runnable.run()
-                getExceptionOnError { "Error in action $actionName in $runnable" }
-            }.exceptionally {
-                RuntimeException(it).apply {
-                    printStackTrace()
-                }
-            }.get()
-            else -> executor.async {
-                runnable.run()
-                getExceptionOnError { "Error in action $actionName in $runnable" }
-            }.getCompleted()
-        }
-        runtimeException?.printStackTrace()
+    override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean, forceAsync: Boolean): Unit {
+        return window.execute(actionName, runnable, andBlock, forceAsync)
     }
 
     fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
@@ -321,14 +293,15 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        if(isOpenGLThread) {
-            return callable.call()
-        }
-        return runBlocking {
-            withContext(executor.coroutineContext) {
-                callable.call()
-            }
-        }
+        return window.calculate(callable)
+    }
+
+    override fun shutdown() {
+        window.shutdown()
+    }
+
+    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        return window.launch(block)
     }
 
     override fun createProgramId(): Int {
@@ -337,7 +310,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override fun destroy() {
         try {
-            executor.openGlExecutor.shutdown()
+            window.shutdown()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -346,27 +319,48 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
 
     private fun startEndlessLoop() {
-        executor.launch {
-            while (true) {
+        val runnable = object : Runnable {
+            override fun run() {
                 profiled("Frame") {
                     checkCommandSyncs()
-                    getExceptionOnError("")
-                    getExceptionOnError("")
-                    var callable: FutureCallable<*>? = channel.poll()
-                    while (callable != null) {
-                        val result = callable.execute()
-                        getExceptionOnError("")
-                        (callable.future as CompletableFuture<Any>).complete(result)
-                        callable = channel.poll()
-                    }
-                    yield()
+                    getExceptionOnError("")?.let { throw it }
+//                    var callable: FutureCallable<*>? = channel.poll()
+//                    while (callable != null) {
+//                        val result = callable.execute()
+//                        getExceptionOnError("")
+//                        (callable.future as CompletableFuture<Any>).complete(result)
+//                        callable = channel.poll()
+//                    }
+//                    yield()
                     GPUProfiler.currentTimings = GPUProfiler.currentTask?.dumpTimings() ?: ""
                     GPUProfiler.currentAverages = GPUProfiler.dumpAverages()
-                    getExceptionOnError("Error in undefined operation")
+                    getExceptionOnError("Error in undefined operation")?.let { throw it }
                 }
+                window.execute("", this, false, true)
             }
         }
-        println("OpenGLContext thread submitted with id ${executor.openGLThreadId}")
+        window.execute("", runnable, false, false)
+//        window.launch {
+//            while (true) {
+//                profiled("Frame") {
+//                    checkCommandSyncs()
+//                    getExceptionOnError("")
+//                    getExceptionOnError("")
+////                    var callable: FutureCallable<*>? = channel.poll()
+////                    while (callable != null) {
+////                        val result = callable.execute()
+////                        getExceptionOnError("")
+////                        (callable.future as CompletableFuture<Any>).complete(result)
+////                        callable = channel.poll()
+////                    }
+////                    yield()
+//                    GPUProfiler.currentTimings = GPUProfiler.currentTask?.dumpTimings() ?: ""
+//                    GPUProfiler.currentAverages = GPUProfiler.dumpAverages()
+//                    getExceptionOnError("Error in undefined operation")
+//                }
+//            }
+//        }
+        println("OpenGLContext thread submitted with id ${window.openGLThreadId}")
     }
 
     private fun waitForInitialization() {
@@ -492,27 +486,22 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
     fun getError(): Int = calculate { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
+    override val openGLThreadId: Long
+        get() = window.openGLThreadId
 
-    inline val isOpenGLThread: Boolean
-        get() {
-            return Thread.currentThread().isOpenGLThread
-        }
-
-    val Thread.isOpenGLThread: Boolean
-        get() {
-            return id == executor.openGLThreadId
-        }
 }
 
 
-class Executor: CoroutineScope {
-    internal var openGLThreadId: Long = -1
+class Executor: CoroutineScope, OpenGlExecutor {
+    override var openGLThreadId: Long = -1
 
     internal val openGlExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable).apply {
             name = OpenGLContext.OPENGL_THREAD_NAME
         }
-    }
+    }.apply { this.submit {
+        openGLThreadId = Thread.currentThread().id
+    } }
 
     val dispatcher = openGlExecutor.asCoroutineDispatcher()
 
@@ -531,6 +520,16 @@ class Executor: CoroutineScope {
         return function(this, coroutineContext, start, block)
     }
 
+    inline val isOpenGLThread: Boolean
+        get() {
+            return Thread.currentThread().isOpenGLThread
+        }
+
+    val Thread.isOpenGLThread: Boolean
+        get() {
+            return id == openGLThreadId
+        }
+
     // duplicate code, because I had compilation issues with coroutines and this function somehow
     private fun executeExitOnGlErrorFunction(errorMessage: () -> String = {""}) {
         if (GpuContext.CHECKERRORS) {
@@ -545,5 +544,36 @@ class Executor: CoroutineScope {
                 System.exit(-1)
             }
         }
+    }
+
+    override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean, forceAsync: Boolean) {
+        when {
+            isOpenGLThread && !forceAsync -> {
+                runnable.run()
+            }
+            andBlock -> runBlocking(coroutineContext) {
+                runnable.run()
+            }
+            else -> launch(coroutineContext) {
+                runnable.run()
+            }
+        }
+    }
+
+    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        return launch(coroutineContext) { block() }
+    }
+
+    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+        if(isOpenGLThread) {
+            return callable.call()
+        }
+        return runBlocking(coroutineContext) {
+            callable.call()
+        }
+    }
+
+    override fun shutdown() {
+        openGlExecutor.shutdown()
     }
 }
