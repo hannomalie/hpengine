@@ -9,11 +9,8 @@ import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
-import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
@@ -33,8 +30,6 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_WIDTH
 import org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE
 import org.lwjgl.opengl.GL11.glGetTexImage
 import org.lwjgl.opengl.GL11.glGetTexLevelParameteri
-import org.lwjgl.opengl.awt.AWTGLCanvas
-import org.lwjgl.opengl.awt.GLData
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
@@ -69,7 +64,6 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.ArrayList
-import java.util.function.Consumer
 import javax.imageio.ImageIO
 import javax.swing.BorderFactory
 import javax.swing.ImageIcon
@@ -209,8 +203,9 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
 
         this@RibbonEditor.add(this, BorderLayout.LINE_START)
     }
-    val imageLabel = ImageLabel(ImageIcon(image), this).apply {
-        mainPanel.setContent(this)
+    val imageLabel = ImageLabel(ImageIcon(image), this)
+    init {
+        mainPanel.setRenderedContent()
     }
 
     val keyLogger = KeyLogger().apply {
@@ -460,12 +455,12 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                 .setAction { event ->
                     if (event.command.isToggleSelected) {
                         mainPanel.setContent(
-                                ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
-                                    this.preferredSize = Dimension(mainPanel.width, mainPanel.height)
-                                }
+                            ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
+                                this.preferredSize = Dimension(mainPanel.width, mainPanel.height)
+                            }
                         )
                     } else {
-                        mainPanel.setContent(imageLabel)
+                        mainPanel.setRenderedContent()
                     }
                 }.build()
 
@@ -473,6 +468,18 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                 .setTextClickAction()
                 .build()))
 
+    }
+
+    private fun MainPanel.setRenderedContent() {
+//        This is probably what I would have to do, if AWT window worked...
+//        val window = engine.window
+//        if (window is AWTWindow) {
+//            window.frame.remove(window.canvas)
+//            setContent(window.canvas)
+//        } else {
+//            setContent(imageLabel)
+//        }
+        setContent(imageLabel)
     }
 
     private fun addTextureTask() {
@@ -559,6 +566,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     }
 
     override fun afterFrameFinished() {
+//        This is probably what I would have to do if AWTWindow worked...
 //        if(engine.window !is AWTWindow) {
         run {
             bufferImage()

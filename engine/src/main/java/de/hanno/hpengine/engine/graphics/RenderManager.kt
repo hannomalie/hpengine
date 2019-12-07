@@ -74,11 +74,9 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                     e.printStackTrace()
                 }
                 engineContext.gpuContext.execute("Foo", this, false, true)
-//                SwingUtilities.invokeLater(this)
             }
         }
         engineContext.gpuContext.execute("Foo", runnable, false, true)
-//        SwingUtilities.invokeLater(runnable)
     }
 
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()

@@ -48,9 +48,10 @@ class StaticMesh(override var name: String = "",
                 val referencedVertex = modelPositions[face.vertices[j] - 1] // obj is index 1 based
                 compiledPositions[j] = referencedVertex
                 var referencedTexcoord = Vector2f(0f, 0f)
-                try {
-                    referencedTexcoord = modelTexCoords[face.textureCoordinateIndices[j] - 1] // obj is index 1 based
-                } catch (e: Exception) {
+
+                val texCoordsIndex = face.textureCoordinateIndices[j] - 1
+                if(texCoordsIndex >= 0 && modelTexCoords.size > texCoordsIndex) {
+                    referencedTexcoord = modelTexCoords[texCoordsIndex] // obj is index 1 based
                 }
 
                 compiledTexCoords[j] = referencedTexcoord
