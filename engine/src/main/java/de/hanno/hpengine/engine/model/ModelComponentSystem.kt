@@ -27,6 +27,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
+    val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
+
     private val batchingSystem = BatchingSystem()
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
     var updateCache = true
@@ -185,12 +188,12 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
         val components = entities.flatMap { it.components.values.filterIsInstance<ModelComponent>() }
         val allocations = components.associateWith { c ->
             if (c.model.isStatic) {
-                val vertexIndexBuffer = engine.renderManager.vertexIndexBufferStatic
+                val vertexIndexBuffer = vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                 val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
                 Allocation.Static(vertexIndexOffsetsForMeshes)
             } else {
-                val vertexIndexBuffer = this.engine.renderManager.vertexIndexBufferAnimated
+                val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                 val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
 
@@ -206,7 +209,12 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
         this.allocations.putAll(allocations)
     }
-    override fun clear() = components.clear()
+    override fun clear() {
+        components.clear()
+
+        vertexIndexBufferStatic.resetAllocations()
+        vertexIndexBufferAnimated.resetAllocations()
+    }
 
     override fun SingleThreadContext.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
         val result = onEntityAddedImpl(this, entities)
@@ -215,6 +223,9 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
     }
 
     override fun extract(renderState: RenderState) {
+        renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
+        renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
+
         renderState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize() * GpuEntityStruct.getBytesPerInstance()
         gpuEntitiesArray = gpuEntitiesArray.shrinkToBytes(renderState.entitiesBuffer.buffer.capacity())
         gpuEntitiesArray.copyTo(renderState.entitiesBuffer.buffer)

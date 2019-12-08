@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
@@ -20,7 +21,7 @@ class RenderBatch {
     var isInReachForTextureLoading = false
     var isVisibleForCamera = false
     var update = Update.STATIC
-    val drawElementsIndirectCommand = de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand()
+    val drawElementsIndirectCommand = DrawElementsIndirectCommand()
     var centerWorld = Vector3f()
     private var animated = false
     var boundingSphereRadius = 0.0f
@@ -32,16 +33,6 @@ class RenderBatch {
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount
-
-
-    val indexCount: Int
-        get() = drawElementsIndirectCommand.count
-
-    val indexOffset: Int
-        get() = drawElementsIndirectCommand.firstIndex
-
-    val baseVertex: Int
-        get() = drawElementsIndirectCommand.baseVertex
 
     val vertexCount: Int
         get() = drawElementsIndirectCommand.count / 3

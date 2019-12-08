@@ -34,9 +34,6 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(engineContext.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(engineContext.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
-
     val drawCycle = AtomicLong()
     var cpuGpuSyncTimeNs: Long = 0
         set(cpuGpuSyncTimeNs) {
@@ -100,20 +97,6 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
 
     fun getMsPerFrame() = fpsCounter.msPerFrame
 
-    fun resetAllocations() {
-        engineContext.gpuContext.execute("resetAllocations", Runnable {
-            StopWatch.getInstance().start("SimpleScene init")
-            vertexIndexBufferStatic.resetAllocations()
-            vertexIndexBufferAnimated.resetAllocations()
-            StopWatch.getInstance().stopAndPrintMS()
-        })
-    }
-    override fun clear() = resetAllocations()
-
-    override fun extract(renderState: RenderState) {
-        renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
-        renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
-    }
 }
 
 inline fun <T> profiled(name: String, action: () -> T): T {

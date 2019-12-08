@@ -19,6 +19,9 @@ class BatchingSystem {
                 allocations: MutableMap<ModelComponent, ModelComponentSystem.Allocation>,
                 entityIndices: MutableMap<ModelComponent, Int>) {
 
+        currentWriteState.entitiesState.renderBatchesStatic.clear()
+        currentWriteState.entitiesState.renderBatchesAnimated.clear()
+
         for (modelComponent in modelComponents) {
             val entity = modelComponent.entity
             val distanceToCamera = tempDistVector.length()

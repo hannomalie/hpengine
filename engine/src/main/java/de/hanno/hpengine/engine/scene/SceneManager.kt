@@ -107,10 +107,6 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         managerContext.physicsManager.clearWorld()
         managerContext.renderManager.clear()
         scene.clear()
-        managerContext.renderManager.renderState.addCommand { renderState1 ->
-            renderState1.setVertexIndexBufferStatic(managerContext.renderManager.vertexIndexBufferStatic)
-            renderState1.setVertexIndexBufferAnimated(managerContext.renderManager.vertexIndexBufferAnimated)
-        }
         nextScene.entitySystems.gatherEntities()
     }
 

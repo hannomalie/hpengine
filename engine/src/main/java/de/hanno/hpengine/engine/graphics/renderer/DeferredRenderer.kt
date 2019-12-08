@@ -179,7 +179,7 @@ class DeferredRenderer
         val firstPassResult = result.firstPassResult
         profiled("First pass") {
 
-            val pipeline = state.getState(mainPipelineRef)
+            val pipeline = state.get(mainPipelineRef)
 
             val camera = state.camera
 

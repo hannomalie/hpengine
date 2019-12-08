@@ -128,5 +128,3 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     }
 }
-
-private operator fun <T> RenderState.get(stateRef: StateRef<T>): T = getState(stateRef)

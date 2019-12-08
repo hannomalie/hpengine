@@ -171,7 +171,7 @@ class VoxelConeTracingExtension(
             val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
             globalGrid.scale = sceneScale // TODO: scenescale for first grid, other scale for other grids
             voxelGrids[1].scale = 1.0f
-            val voxelGridState = renderState.getState(voxelGridBufferRef)
+            val voxelGridState = renderState.get(voxelGridBufferRef)
             voxelGrids.buffer.copyTo(voxelGridState.voxelGridBuffer.buffer, true)
 
             val entityMoved = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
@@ -209,7 +209,7 @@ class VoxelConeTracingExtension(
                             setUniform("pointLightCount", renderState.lightState.pointLights.size)
                             bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
                             bindShaderStorageBuffer(3, renderState.directionalLightBuffer)
-                            bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
                             setUniform("bounces", bounces)
                             setUniform("voxelGridIndex", voxelGridIndex)
 
@@ -224,7 +224,7 @@ class VoxelConeTracingExtension(
                             setUniform("bounces", bounces)
                             setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
                             setUniform("voxelGridIndex", voxelGridIndex)
-                            bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
                             dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                             mipmapGrid(currentVoxelGrid.grid2)
                         }
@@ -258,7 +258,7 @@ class VoxelConeTracingExtension(
                         GL42.glBindImageTexture(0, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                         GL42.glBindImageTexture(1, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
                         GL42.glBindImageTexture(3, currentVoxelGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                        clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+                        clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
                         clearDynamicVoxelsComputeProgram.setUniform("voxelGridIndex", voxelGridIndex)
                         clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                     }
@@ -362,7 +362,7 @@ class VoxelConeTracingExtension(
             voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
             voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
             voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.deferredRenderingBuffer.exposureBuffer)
-            voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.getState(voxelGridBufferRef).voxelGridBuffer)
+            voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
             voxelConeTraceProgram.setUniform("useAmbientOcclusion", engine.config.quality.isUseAmbientOcclusion)
             voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat())
             voxelConeTraceProgram.setUniform("screenHeight", engine.config.height.toFloat())

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.state
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
@@ -104,23 +103,10 @@ class RenderState(gpuContext: GpuContext<*>) {
         sceneInitiallyDrawn = source.sceneInitiallyDrawn
         sceneMin = source.sceneMin
         sceneMax = source.sceneMax
-        prepareExtraction()
         latestDrawResult.set(latestDrawResult)
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
         this.sceneInitialized = source.sceneInitialized
-
-        //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
-        //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
-        //        this.entitiesState.materialBuffer.putValues(source.entitiesState.materialBuffer.getValuesAsFloats());
-        //        this.entitiesState.vertexBuffer.putValues(source.getVertexBuffer().getValuesAsFloats());
-        //        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
-    }
-
-    fun prepareExtraction() {
-//        this.latestDrawResult.set(latestDrawResult)
-        this.entitiesState.renderBatchesStatic.clear()
-        this.entitiesState.renderBatchesAnimated.clear()
     }
 
     fun addStatic(batch: RenderBatch) {
@@ -135,17 +121,10 @@ class RenderState(gpuContext: GpuContext<*>) {
         return currentStaging.cycle < currentRead.cycle
     }
 
-    fun setVertexIndexBufferStatic(vertexIndexBuffer: VertexIndexBuffer) {
-        this.entitiesState.vertexIndexBufferStatic = vertexIndexBuffer
-    }
-
-    fun setVertexIndexBufferAnimated(vertexIndexBufferAnimated: VertexIndexBuffer) {
-        this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
-    }
-
     fun add(state: CustomState) = customState.add(state)
 
-    fun <T> getState(stateRef: StateRef<T>) = customState.get(stateRef.index) as T
+    operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
+
     fun pointLightHasMoved() = pointLightMovedInCycle >= cycle
     fun entityHasMoved() = entitiesState.entityMovedInCycle >= cycle
     fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
@@ -157,7 +136,7 @@ class CustomStateHolder {
         states.add(state)
     }
 
-    fun get(index: Int) = states[index]
+    operator fun <T> get(ref: StateRef<T>) = states[ref.index]
 
     fun update(writeState: RenderState) = states.forEach { it.update(writeState) }
 
