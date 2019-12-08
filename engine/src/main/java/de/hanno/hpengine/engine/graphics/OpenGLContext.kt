@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -22,7 +21,6 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.lwjgl.BufferUtils
@@ -54,7 +52,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     init {
         privateInit()
-        startEndlessLoop()
+        println("OpenGLContext thread submitted with id ${window.openGLThreadId}")
     }
 
     private lateinit var capabilities: GLCapabilities
@@ -141,7 +139,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override fun update(seconds: Float) { }
 
-    internal fun checkCommandSyncs() {
+    override fun checkCommandSyncs() {
         commandSyncs = checkCommandSyncsReturnUnsignaled(commandSyncs)
     }
 
@@ -317,51 +315,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     }
 
-
-    private fun startEndlessLoop() {
-        val runnable = object : Runnable {
-            override fun run() {
-                profiled("Frame") {
-                    checkCommandSyncs()
-                    getExceptionOnError("")?.let { throw it }
-//                    var callable: FutureCallable<*>? = channel.poll()
-//                    while (callable != null) {
-//                        val result = callable.execute()
-//                        getExceptionOnError("")
-//                        (callable.future as CompletableFuture<Any>).complete(result)
-//                        callable = channel.poll()
-//                    }
-//                    yield()
-                    GPUProfiler.currentTimings = GPUProfiler.currentTask?.dumpTimings() ?: ""
-                    GPUProfiler.currentAverages = GPUProfiler.dumpAverages()
-                    getExceptionOnError("Error in undefined operation")?.let { throw it }
-                }
-                window.execute("", this, false, true)
-            }
-        }
-        window.execute("", runnable, false, false)
-//        window.launch {
-//            while (true) {
-//                profiled("Frame") {
-//                    checkCommandSyncs()
-//                    getExceptionOnError("")
-//                    getExceptionOnError("")
-////                    var callable: FutureCallable<*>? = channel.poll()
-////                    while (callable != null) {
-////                        val result = callable.execute()
-////                        getExceptionOnError("")
-////                        (callable.future as CompletableFuture<Any>).complete(result)
-////                        callable = channel.poll()
-////                    }
-////                    yield()
-//                    GPUProfiler.currentTimings = GPUProfiler.currentTask?.dumpTimings() ?: ""
-//                    GPUProfiler.currentAverages = GPUProfiler.dumpAverages()
-//                    getExceptionOnError("Error in undefined operation")
-//                }
-//            }
-//        }
-        println("OpenGLContext thread submitted with id ${window.openGLThreadId}")
-    }
 
     private fun waitForInitialization() {
         OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization")

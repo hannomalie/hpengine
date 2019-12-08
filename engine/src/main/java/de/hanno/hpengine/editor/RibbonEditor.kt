@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
@@ -15,6 +14,10 @@ import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import de.hanno.hpengine.util.stopwatch.GPUProfiler.DUMP_AVERAGES
+import de.hanno.hpengine.util.stopwatch.GPUProfiler.PROFILING_ENABLED
+import de.hanno.hpengine.util.stopwatch.GPUProfiler.currentAverages
+import de.hanno.hpengine.util.stopwatch.GPUProfiler.currentTimings
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.miginfocom.swing.MigLayout
@@ -58,6 +61,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
+import java.awt.TextArea
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
@@ -69,6 +73,7 @@ import javax.swing.BorderFactory
 import javax.swing.ImageIcon
 import javax.swing.JButton
 import javax.swing.JFileChooser
+import javax.swing.JFrame
 import javax.swing.JMenu
 import javax.swing.JMenuItem
 import javax.swing.JPanel
@@ -81,6 +86,33 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
     private val lineRenderer = LineRendererImpl(engine)
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)
+    }
+
+    val timingsFrame = JFrame("Timings").apply {
+        size = Dimension(500,500)
+        val frame = this
+
+        add(JPanel().apply {
+            layout = BorderLayout()
+            val panel = this
+            val textArea = TextArea().apply { panel.add(this, BorderLayout.CENTER) }
+
+            engine.renderSystems.add(object: RenderSystem {
+                override fun afterFrameFinished() {
+                    if (PROFILING_ENABLED) {
+                        SwingUtils.invokeLater {
+                            var drawResult = engine.renderManager.renderState.currentReadState.latestDrawResult.toString()
+                            if (DUMP_AVERAGES) {
+                                drawResult += currentAverages
+                            }
+                            textArea.text = currentTimings
+                        }
+                    }
+                }
+            })
+        })
+
+        frame.isVisible = true
     }
 
     val appMenuNew = Command.builder()
@@ -590,9 +622,9 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
 
 //            Run on a singlethread context to avoid tearing?
-//            GlobalScope.launch() {
+            GlobalScope.launch() {
                 image.setData(width, height, channels, buffer)
-//            }
+            }
         }
     }
 

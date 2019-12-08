@@ -8,13 +8,14 @@ import java.util.HashMap
 import org.lwjgl.opengl.GL15.glGenQueries
 import org.lwjgl.opengl.GL33.GL_TIMESTAMP
 import org.lwjgl.opengl.GL33.glQueryCounter
+import kotlin.math.max
 
 object GPUProfiler {
 
     @Volatile
-    var DUMP_AVERAGES = false
-    var PROFILING_ENABLED = false
-    var PRINTING_ENABLED = false
+    var DUMP_AVERAGES = true
+    var PROFILING_ENABLED = true
+    var PRINTING_ENABLED = true
 
     private var queryObjects: ArrayList<Int> = ArrayList()
 
@@ -116,7 +117,13 @@ object GPUProfiler {
         collectedTimes = ArrayList()
     }
 
-    class Record(val name: String, val timeGpu: Long, val timeCpu: Long)
+    class Record private constructor(val name: String, val timeGpu: Long, val timeCpu: Long) {
+        companion object {
+            operator fun invoke(name: String, timeGpu: Long, timeCpu: Long): Record {
+                return Record(name, max(timeGpu, 0), max(timeCpu, 0))
+            }
+        }
+    }
 
     class AverageHelper {
         var count = 0
@@ -144,7 +151,7 @@ object GPUProfiler {
     }
 
     private fun ProfilingTask.dump(indentation: Int, builder: StringBuilder): StringBuilder {
-        if (GPUProfiler.PRINTING_ENABLED) {
+        if (PRINTING_ENABLED) {
 
             var indentationString = ""
             for (i in (0 until indentation)) {
@@ -160,6 +167,12 @@ object GPUProfiler {
         }
 
         return builder
+    }
+
+    fun dump() {
+        currentTimings = currentTask?.dumpTimings() ?: ""
+        currentAverages = dumpAverages()
+        currentTask = null
     }
 
 }

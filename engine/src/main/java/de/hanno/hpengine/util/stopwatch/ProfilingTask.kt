@@ -1,6 +1,7 @@
 package de.hanno.hpengine.util.stopwatch
 
 import de.hanno.hpengine.util.TypedTuple
+import de.hanno.hpengine.util.stopwatch.GPUProfiler.currentTask
 import de.hanno.hpengine.util.stopwatch.GPUProfiler.dump
 
 import org.lwjgl.opengl.GL11.GL_TRUE
@@ -43,7 +44,7 @@ class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
     fun end() {
         this.endQuery = GPUProfiler.query
         this.endTimeCpu = System.nanoTime()
-        GPUProfiler.currentTask = parent
+        currentTask = parent ?: currentTask
         GPUProfiler.collectedTimes.add(GPUProfiler.Record(name, timeTaken, timeTakenCpu))
     }
 

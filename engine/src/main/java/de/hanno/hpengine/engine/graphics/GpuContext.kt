@@ -156,6 +156,7 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun getExceptionOnError(errorMessage: String = ""): RuntimeException?
     fun bindFrameBuffer(frameBuffer: FrameBuffer)
+    fun checkCommandSyncs()
 
     sealed class SupportResult {
         object Supported: SupportResult()

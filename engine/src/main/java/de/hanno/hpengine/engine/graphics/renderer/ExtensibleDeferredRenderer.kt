@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -65,7 +66,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         AOScatteringExtension(engineContext)
     )
 
-    override fun render(result: DrawResult, state: RenderState) {
+    override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
         gpuContext.depthMask(true)
         deferredRenderingBuffer.use(gpuContext, true)
 
@@ -77,18 +78,25 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
             val cubeMapArrayRenderTarget = (state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy)?.cubemapArrayRenderTarget
             textureRenderer.renderCubeMapDebug(deferredRenderingBuffer.gBuffer, cubeMapArrayRenderTarget, cubeMapIndex = 0)
         } else {
-
-            state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
-            for (extension in extensions) {
-                extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
+            profiled("MainPipeline") {
+                state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
             }
-            deferredRenderingBuffer.halfScreenBuffer.use(gpuContext, true)
-            for (extension in extensions) {
-                extension.renderSecondPassHalfScreen(state, result.secondPassResult)
+            profiled("FirstPass") {
+                for (extension in extensions) {
+                    extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
+                }
             }
-            deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
-            for (extension in extensions) {
-                extension.renderSecondPassFullScreen(state, result.secondPassResult)
+            profiled("SecondPass") {
+                profiled("HalfResolution") {
+                    deferredRenderingBuffer.halfScreenBuffer.use(gpuContext, true)
+                    for (extension in extensions) {
+                        extension.renderSecondPassHalfScreen(state, result.secondPassResult)
+                    }
+                }
+                deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
+                for (extension in extensions) {
+                    extension.renderSecondPassFullScreen(state, result.secondPassResult)
+                }
             }
             deferredRenderingBuffer.lightAccumulationBuffer.unuse(gpuContext)
             combinePassExtension.renderCombinePass(state)
@@ -106,7 +114,9 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
         runCatching {
             if(config.effects.isEnablePostprocessing) {
-                postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
+                profiled("PostProcessing") {
+                    postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
+                }
             } else {
                 textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
             }

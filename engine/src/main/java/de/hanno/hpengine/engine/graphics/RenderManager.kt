@@ -15,11 +15,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import java.util.concurrent.atomic.AtomicLong
-import javax.swing.SwingUtilities
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
     val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory(),
@@ -58,23 +54,38 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                         recorder.add(renderState.currentReadState)
                         val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                        engineContext.renderSystems.forEach {
-                            it.render(drawResult, renderState.currentReadState)
+                        profiled("renderSystems") {
+                            engineContext.renderSystems.forEach {
+                                it.render(drawResult, renderState.currentReadState)
+                            }
                         }
-                        engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                        engineContext.renderSystems.forEach {
-                            it.afterFrameFinished()
+
+                        profiled("finishFrame") {
+                            engineContext.gpuContext.finishFrame(renderState.currentReadState)
+                            engineContext.renderSystems.forEach {
+                                it.afterFrameFinished()
+                            }
                         }
+
+                        profiled("checkCommandSyncs") {
+                            engineContext.gpuContext.checkCommandSyncs()
+                        }
+
+                        GPUProfiler.dump()
+
                         lastFrameTime = System.currentTimeMillis()
                         fpsCounter.update()
+
                     }
                     lastTimeSwapped = renderState.stopRead()
+
                     engineContext.window.title = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
                 engineContext.gpuContext.execute("Foo", this, false, true)
             }
+
         }
         engineContext.gpuContext.execute("Foo", runnable, false, true)
     }
