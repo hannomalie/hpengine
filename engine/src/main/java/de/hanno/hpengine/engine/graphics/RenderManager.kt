@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -11,10 +10,8 @@ import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
