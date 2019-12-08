@@ -63,7 +63,9 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                         profiled("finishFrame") {
                             engineContext.gpuContext.finishFrame(renderState.currentReadState)
                             engineContext.renderSystems.forEach {
-                                it.afterFrameFinished()
+//                                profiled(it.javaClass.simpleName) {
+                                    it.afterFrameFinished()
+//                                }
                             }
                         }
 

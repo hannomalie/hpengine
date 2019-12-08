@@ -22,6 +22,7 @@ class ConfigGrid(val config: SimpleConfig, val eventBus: EventBus): JPanel() {
         getInputsPanelForObject(config.effects, "Effects")?.let { add(it) }
         getInputsPanelForObject(config.performance, "Performance")?.let { add(it) }
         getInputsPanelForObject(config.quality, "Quality")?.let { add(it) }
+        getInputsPanelForObject(config.profiling, "Profiling")?.let { add(it) }
     }
 
     private inline fun <reified T> getInputsPanelForObject(debugConfig: T, legend: String): JPanel? {

@@ -11,8 +11,6 @@ import org.lwjgl.opengl.GL33.glQueryCounter
 import kotlin.math.max
 
 object GPUProfiler {
-
-    @Volatile
     var DUMP_AVERAGES = true
     var PROFILING_ENABLED = true
     var PRINTING_ENABLED = true

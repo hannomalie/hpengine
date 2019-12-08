@@ -105,7 +105,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
                             if (DUMP_AVERAGES) {
                                 drawResult += currentAverages
                             }
-                            textArea.text = currentTimings
+                            textArea.text = currentAverages + "\n\n" + currentTimings
                         }
                     }
                 }
@@ -622,7 +622,7 @@ class RibbonEditor(val engine: EngineImpl, val config: SimpleConfig) : JRibbonFr
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
 
 //            Run on a singlethread context to avoid tearing?
-            GlobalScope.launch() {
+            GlobalScope.launch {
                 image.setData(width, height, channels, buffer)
             }
         }

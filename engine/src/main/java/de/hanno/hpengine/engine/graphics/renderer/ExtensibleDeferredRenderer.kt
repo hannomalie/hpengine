@@ -78,12 +78,16 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
             val cubeMapArrayRenderTarget = (state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy)?.cubemapArrayRenderTarget
             textureRenderer.renderCubeMapDebug(deferredRenderingBuffer.gBuffer, cubeMapArrayRenderTarget, cubeMapIndex = 0)
         } else {
-            profiled("MainPipeline") {
-                state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
-            }
             profiled("FirstPass") {
+
+                profiled("MainPipeline") {
+                    state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
+                }
+
                 for (extension in extensions) {
-                    extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
+                    profiled(extension.javaClass.simpleName) {
+                        extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
+                    }
                 }
             }
             profiled("SecondPass") {

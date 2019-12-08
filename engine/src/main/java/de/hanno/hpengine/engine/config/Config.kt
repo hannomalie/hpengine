@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.Directories.Companion.WORKDIR_NAME
 import de.hanno.hpengine.util.gui.Adjustable
+import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.apache.commons.beanutils.BeanUtils
 import org.joml.Vector3f
 import java.io.File
@@ -10,12 +11,15 @@ import java.io.FileInputStream
 import java.io.InputStream
 import java.lang.reflect.InvocationTargetException
 import java.util.Properties
+import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KProperty
 
 interface Config {
     val quality: IQualityConfig
     val debug: IDebugConfig
     val effects: IEffectsConfig
     val performance: IPerformanceConfig
+    val profiling: ProfilingConfig
 
     val initFileName: String
     val directories: Directories
@@ -76,6 +80,15 @@ interface IEffectsConfig {
     val isEnablePostprocessing: Boolean
     val ambientLight: Vector3f
 }
+
+class ProfilingConfig {
+    var dumpAverages by GPUProfiler::DUMP_AVERAGES
+    var profiling by GPUProfiler::PROFILING_ENABLED
+    var printing by GPUProfiler::PRINTING_ENABLED
+}
+
+operator fun <T> KMutableProperty0<T>.setValue(receiver: Any?, property: KProperty<*>, any: T) = set(any)
+operator fun <T> KMutableProperty0<T>.getValue(receiver: Any?, property: KProperty<*>): T = getter.call()
 
 data class QualityConfig(
     override var isUseAmbientOcclusion: Boolean = false,
@@ -148,7 +161,8 @@ data class PerformanceConfig(
 class SimpleConfig(override val quality: QualityConfig = QualityConfig(),
                    override val debug: DebugConfig = DebugConfig(),
                    override val effects: EffectsConfig = EffectsConfig(),
-                   override val performance: PerformanceConfig = PerformanceConfig())
+                   override val performance: PerformanceConfig = PerformanceConfig(),
+                   override val profiling: ProfilingConfig = ProfilingConfig())
         : Config {
 
     override var gameDir = Directories.GAMEDIR_NAME
