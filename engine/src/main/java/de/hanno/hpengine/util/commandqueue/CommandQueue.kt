@@ -9,10 +9,12 @@ import java.util.concurrent.Executors
 import java.util.logging.Level
 import java.util.logging.Logger
 
-open class CommandQueue @JvmOverloads constructor(executorService: ExecutorService = Executors.newSingleThreadExecutor(),
+open class CommandQueue @JvmOverloads constructor(val dispatcher: CoroutineDispatcher,
                                                   private val executeDirectly: () -> Boolean = { false }) {
-    val executor = executorService
-    val dispatcher = executor.asCoroutineDispatcher()
+
+    @JvmOverloads constructor(executorService: ExecutorService = Executors.newSingleThreadExecutor(),
+                executeDirectly: () -> Boolean = { false }): this(executorService.asCoroutineDispatcher(), executeDirectly)
+
     protected val channel = Channel<Callable<*>>(Channel.UNLIMITED)
 
     open fun executeCommands(): Boolean {

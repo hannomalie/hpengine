@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.50"
+    application
 }
 version = "1.0.0-SNAPSHOT"
 
@@ -20,10 +21,57 @@ allprojects {
             jvmTarget = JavaVersion.VERSION_1_8.toString()
         }
     }
+
+
+    repositories {
+
+        mavenCentral()
+        mavenLocal()
+        maven {
+            name = "local-dir"
+            setUrl("${project.rootDir.resolve("libs").absolutePath}")
+        }
+        flatDir {
+            dir("${project.rootDir.resolve("libs").absolutePath}")
+        }
+        maven {
+            name = "java.net"
+            setUrl("https://maven.java.net/content/repositories/public/")
+        }
+        maven {
+            name = "my-bintray-repo"
+            setUrl("https://dl.bintray.com/h-pernpeintner/maven-repo")
+        }
+        maven {
+            name = "snapshots-repo"
+            setUrl("https://oss.sonatype.org/content/repositories/snapshots")
+        }
+        maven {
+            name = "kotlinx"
+            setUrl("http://dl.bintray.com/kotlin/kotlinx")
+        }
+
+        maven {
+            setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
+        }
+        maven {
+            setUrl("https://oss.sonatype.org/content/repositories/snapshots/org/pushing-pixels")
+        }
+
+        jcenter()
+
+        maven { setUrl("https://jitpack.io") }
+    }
 }
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation(project("engine"))
 }
-repositories {
-    mavenCentral()
+
+application {
+    mainClassName = "de.hanno.hpengine.engine.EngineImpl"
+}
+application.applicationDistribution.into("bin/hp") {
+    from("../hp")
+    include("**/*")
 }

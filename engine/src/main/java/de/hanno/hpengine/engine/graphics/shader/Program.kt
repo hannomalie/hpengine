@@ -65,11 +65,7 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         gpuContext.execute("Program.load") {
             clearUniforms()
 
-            try {
-                vertexShader = programManager.loadShader(VertexShader::class.java, vertexShaderSource!!, defines)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            vertexShader = programManager.loadShader(VertexShader::class.java, vertexShaderSource!!, defines)
 
             try {
                 if (fragmentShaderSource != null) {
@@ -148,8 +144,7 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         glDeleteProgram(id)
     }
 
-    override fun reload() {
-
+    override fun reload() = try {
         val result = gpuContext.calculate {
             detachShader(vertexShader!!)
             if (fragmentShader != null) {
@@ -170,6 +165,8 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         } else {
             LOGGER.severe("Program not reloaded")
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 
     override fun getName(): String {

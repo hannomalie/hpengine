@@ -72,7 +72,8 @@ import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-class TextureManager(val config: Config, programManager: OpenGlProgramManager,
+class TextureManager(val config: Config,
+                     programManager: OpenGlProgramManager,
                      val gpuContext: OpenGLContext,
                      val singleThreadContext: SingleThreadContext) : Manager {
 

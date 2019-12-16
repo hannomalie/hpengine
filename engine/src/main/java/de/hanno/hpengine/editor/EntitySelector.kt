@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -28,19 +29,19 @@ import java.util.function.Consumer
 import javax.swing.JButton
 import javax.swing.JPanel
 
-class EntitySelector(val engine: Engine<OpenGl>,
-                     val editor: RibbonEditor,
-                     val mainPanel: JPanel,
-                     val sidePanel: JPanel) : RenderSystem {
+class EntitySelector(val editorComponents: EditorComponents) : RenderSystem {
+    val engine: Engine<OpenGl> = editorComponents.engine
+    val editor: RibbonEditor = editorComponents.editor
+    val sidePanel: JPanel = editorComponents.editor.sidePanel
     val lineRenderer = LineRendererImpl(engine)
+
+    val textureRenderer = SimpleTextureRenderer(engine, engine.deferredRenderingBuffer.colorReflectivenessTexture)
 
     val simpleColorProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
     val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
-    constructor(editor: RibbonEditor) : this(editor.engine, editor, editor.mainPanel, editor.sidePanel)
-
     init {
-        mainPanel.addMouseListener(object : MouseAdapter() {
+        editor.canvas?.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 mouseClicked = e
             }
@@ -63,15 +64,15 @@ class EntitySelector(val engine: Engine<OpenGl>,
             engine.deferredRenderingBuffer.use(engine.gpuContext, false)
             engine.gpuContext.readBuffer(4)
             floatBuffer.rewind()
-            val ratio = Vector2f(engine.gpuContext.window.width.toFloat() / mainPanel.width.toFloat(),
-                    engine.gpuContext.window.height.toFloat() / mainPanel.height.toFloat())
-            val adjustedX = (event.x * ratio.x).toInt()
-            val adjustedY = engine.gpuContext.window.height - (event.y * ratio.y).toInt()
+            val ratio = Vector2f(editor.canvas!!.width.toFloat() / engine.config.width.toFloat(),
+                    editor.canvas!!.height.toFloat() / engine.config.height.toFloat())
+            val adjustedX = (event.x / ratio.x).toInt()
+            val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
 
             val entityIndex = floatBuffer.get()
             val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
-            when(editor.selectionMode) {
+            when(editorComponents.selectionMode) {
                 SelectionMode.Entity -> {
                     when(val localSelection = selection) {
                         null -> selectEntity(pickedEntity)
@@ -100,23 +101,24 @@ class EntitySelector(val engine: Engine<OpenGl>,
 
             engine.gpuContext.disable(GlCap.DEPTH_TEST)
             engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-            val origin = entity.position
-            lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.rightDirection).mul(3f)))
-            lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.upDirection).mul(3f)))
-            lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.viewDirection).mul(3f)))
+            val origin = if(mesh != null) Vector3f(mesh.minMax.min).add(Vector3f(mesh.minMax.max).sub(mesh.minMax.min).mul(0.5f)) else entity.position
+            val arrowLength = state.camera.getPosition().distance(origin).coerceIn(0.5f, 20f)
+            lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.rightDirection).mul(arrowLength)))
+            lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.upDirection).mul(arrowLength)))
+            lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.viewDirection).mul(arrowLength)))
             lineRenderer.drawAllLines(5f, Consumer { program ->
                 program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
                 program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
                 program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
                 program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
             })
-            val constraintAxisVectorWorld = Vector3f(editor.constraintAxis.axis)
-            val constraintAxisVector = when(editor.transformSpace) {
+            val constraintAxisVectorWorld = Vector3f(editorComponents.constraintAxis.axis)
+            val constraintAxisVector = when(editorComponents.transformSpace) {
                 TransformSpace.World -> constraintAxisVectorWorld
                 TransformSpace.Local -> constraintAxisVectorWorld.rotate(entity.rotation)
                 TransformSpace.View -> constraintAxisVectorWorld
             }
-            lineRenderer.batchLine(origin, Vector3f(origin).add(constraintAxisVector.mul(3f)))
+            lineRenderer.batchLine(origin, Vector3f(origin).add(constraintAxisVector.mul(arrowLength)))
             lineRenderer.drawAllLines(5f, Consumer { program ->
                 program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
                 program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -163,6 +165,8 @@ class EntitySelector(val engine: Engine<OpenGl>,
                 draw(state.vertexIndexBufferStatic.vertexBuffer,
                      state.vertexIndexBufferStatic.indexBuffer, it, simpleColorProgramStatic, false, false)
             }
+
+            textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
         }
     }
 

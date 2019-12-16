@@ -1,27 +1,37 @@
 package de.hanno.hpengine.editor;
 
+import com.alee.utils.SwingUtils;
 import org.lwjgl.opengl.awt.AWTGLCanvas;
 import org.lwjgl.opengl.awt.GLData;
+import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame;
+import org.pushingpixels.substance.api.SubstanceCortex;
+import org.pushingpixels.substance.api.skin.MarinerSkin;
 
 import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static de.hanno.hpengine.editor.RibbonEditorKt.xxx;
 import static org.lwjgl.opengl.GL.createCapabilities;
 import static org.lwjgl.opengl.GL11.*;
 
 public class AWTTest {
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("AWT test");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        frame.setPreferredSize(new Dimension(600, 600));
+    public static void main(String[] args) throws InvocationTargetException, InterruptedException {
+        final RibbonEditor[] frame = new RibbonEditor[1];
+        SwingUtils.invokeAndWait(() -> {
+            JRibbonFrame.setDefaultLookAndFeelDecorated(true);
+            SubstanceCortex.GlobalScope.setSkin(new MarinerSkin());
+            frame[0] = new RibbonEditor();
+            frame[0].setPreferredSize(new Dimension(600,600));
+            xxx(frame[0]);
+        });
+        frame[0].setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         GLData data = new GLData();
         data.samples = 4;
         data.swapInterval = 0;
-        AWTGLCanvas canvas;
-        frame.add(canvas = new AWTGLCanvas(data) {
+        AWTGLCanvas canvas = new AWTGLCanvas(data) {
             private static final long serialVersionUID = 1L;
             int w = getWidth();
             int h = getHeight();
@@ -44,30 +54,26 @@ public class AWTTest {
                 glVertex2f(+0.75f / aspect, 0);
                 glVertex2f(0, +0.75f);
                 glEnd();
-
                 swapBuffers();
             }
-        }, BorderLayout.CENTER);
-        frame.pack();
-        frame.setVisible(true);
-        frame.transferFocus();
-
-        ExecutorService pool = Executors.newFixedThreadPool(1, runnable -> {
-            Thread thread = new Thread(runnable);
-            thread.setName("XXXXXXXXXXXXXXXXX");
-            thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace());
-            return thread;
+        };
+        canvas.setFocusable(true);
+        frame[0].add(canvas, BorderLayout.CENTER);
+//        frame[0].getMainPanel().add(canvas, BorderLayout.CENTER);
+        SwingUtilities.invokeAndWait(() -> {
+            frame[0].pack();
         });
+        frame[0].setVisible(true);
+        frame[0].transferFocus();
+
         Runnable renderLoop = new Runnable() {
 			public void run() {
 				if (!canvas.isValid())
 					return;
 				canvas.render();
-                pool.submit(this);
-//                SwingUtilities.invokeLater(this);
+                SwingUtilities.invokeLater(this);
 			}
 		};
-		pool.submit(renderLoop);
-//        SwingUtilities.invokeLater(renderLoop);
+        SwingUtilities.invokeLater(renderLoop);
     }
 }

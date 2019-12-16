@@ -9,7 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
 
-class EditorManager(val editor: RibbonEditor) : Manager {
+class EditorManager(val editorComponents: EditorComponents) : Manager {
+    private val editor = editorComponents.editor
     private var wPressed by KeyUpDownProperty(editor, KeyEvent.VK_W, withShift = true)
     private var sPressed by KeyUpDownProperty(editor, KeyEvent.VK_S, withShift = true)
     private var aPressed by KeyUpDownProperty(editor, KeyEvent.VK_A, withShift = true)
@@ -19,21 +20,21 @@ class EditorManager(val editor: RibbonEditor) : Manager {
     private var shiftPressed by KeyUpDownProperty(editor, KeyEvent.VK_SHIFT, withShift = true)
 
     override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
-        editor.sceneTree.reload()
+        editorComponents.sceneTree.reload()
     }
 
     override fun SingleThreadContext.onComponentAdded(component: Component) {
-        editor.sceneTree.reload()
+        editorComponents.sceneTree.reload()
     }
     override fun CoroutineScope.update(deltaSeconds: Float) {
 
-        if (!editor.mainPanel.containsMouse) return
+//        if (!editor.canvas?.containsMouse) return
 
         val turbo = if (shiftPressed) 3f else 1f
 
         val moveAmount = 100f * 0.1f * deltaSeconds * turbo
 
-        val entity = editor.engine.scene.camera.entity
+        val entity = editorComponents.engine.scene.camera.entity
 
         if (wPressed) {
             entity.translate(Vector3f(0f, 0f, -moveAmount))
@@ -56,7 +57,7 @@ class EditorManager(val editor: RibbonEditor) : Manager {
     }
 
     override fun onSetScene(nextScene: Scene) {
-        editor.sceneTree.reload()
+        editorComponents.sceneTree.reload()
     }
 
 }

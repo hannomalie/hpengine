@@ -16,7 +16,7 @@ import de.hanno.struct.copyFrom
 import org.joml.Vector3f
 
 class RenderState(private val gpuContext: GpuContext<*>) {
-    val customState = CustomStateHolder()
+    val customState = CustomStates()
 
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
@@ -115,10 +115,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         entitiesState.renderBatchesAnimated.add(batch)
     }
 
-    fun preventSwap(currentStaging: RenderState, currentRead: RenderState): Boolean {
-        return currentStaging.cycle < currentRead.cycle
-    }
-
     fun add(state: CustomState) = customState.add(state)
 
     operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
@@ -128,7 +124,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
 }
 
-class CustomStateHolder {
+class CustomStates {
     private val states = mutableListOf<CustomState>()
     fun add(state: CustomState) {
         states.add(state)

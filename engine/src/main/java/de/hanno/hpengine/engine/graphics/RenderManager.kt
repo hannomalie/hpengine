@@ -15,9 +15,8 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
-    val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory(),
-            renderStateFactory(),
-            renderStateFactory())
+    val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory,
+            { currentStaging, currentRead -> currentStaging.cycle < currentRead.cycle })
 }
 class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make generic
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,

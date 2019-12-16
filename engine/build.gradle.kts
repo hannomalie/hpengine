@@ -2,17 +2,9 @@ import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    application
     kotlin("jvm")
 }
 
-application {
-    mainClassName = "de.hanno.hpengine.engine.EngineImpl"
-}
-application.applicationDistribution.into("bin/hp") {
-    from("../hp")
-    include("**/*")
-}
 //
 //java.sourceSets {
 //    getByName("main").java.srcDirs("src/main/java")
@@ -23,45 +15,6 @@ kotlin.sourceSets {
     getByName("test").kotlin.srcDirs("src/test/java")
 }
 
-repositories {
-
-    mavenLocal()
-    maven {
-        name = "local-dir"
-        setUrl("libs")
-    }
-    flatDir {
-        dir("libs")
-    }
-    maven {
-        name = "java.net"
-        setUrl("https://maven.java.net/content/repositories/public/")
-    }
-    maven {
-        name = "my-bintray-repo"
-        setUrl("https://dl.bintray.com/h-pernpeintner/maven-repo")
-    }
-    maven {
-        name = "snapshots-repo"
-        setUrl("https://oss.sonatype.org/content/repositories/snapshots")
-    }
-    maven {
-        name = "kotlinx"
-        setUrl("http://dl.bintray.com/kotlin/kotlinx")
-    }
-
-    maven {
-        setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
-    }
-    maven {
-        setUrl("https://oss.sonatype.org/content/repositories/snapshots/org/pushing-pixels")
-    }
-    
-    mavenCentral()
-    jcenter()
-
-    maven { setUrl("https://jitpack.io") }
-}
 val kotlinVersion: String by rootProject.extra
 val lwjgl_version = "3.2.3"
 val lwjgl_natives = when (OperatingSystem.current()) {
@@ -71,62 +24,63 @@ val lwjgl_natives = when (OperatingSystem.current()) {
     else -> throw Error("Unrecognized or unsupported Operating system. Please set \"lwjglNatives\" manually")
 }
 dependencies {
-    compile(kotlin("stdlib-jdk8"))
-    compile(kotlin("reflect"))
-    compile("javax.inject:javax.inject:1")
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
-    compile(kotlin("compiler-embeddable"))
+    implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("reflect"))
+    implementation("javax.inject:javax.inject:1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.2")
+    implementation(kotlin("compiler-embeddable"))
 
 
-    compile("de.swirtz:ktsRunner:0.0.7")
+    implementation("de.swirtz:ktsRunner:0.0.7")
 
 
-    compile("", "PNGDecoder")
-    compile("", "dds", "1.0.1-SNAPSHOT")
+    implementation("", "PNGDecoder")
+    implementation("", "dds", "1.0.1-SNAPSHOT")
 
-    compile("org.lwjgl:lwjgl:$lwjgl_version")
-    compile("org.lwjgl:lwjgl-glfw:$lwjgl_version")
-    compile("org.lwjgl:lwjgl-jawt:$lwjgl_version")
-    compile("org.lwjgl:lwjgl-jemalloc:$lwjgl_version")
-    compile("org.lwjgl:lwjgl-nanovg:$lwjgl_version")
-    compile("org.lwjgl:lwjgl-opencl:$lwjgl_version")
-    compile("org.lwjgl:lwjgl-opengl:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl-glfw:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl-jawt:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl-jemalloc:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl-nanovg:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl-opencl:$lwjgl_version")
+    implementation("org.lwjgl:lwjgl-opengl:$lwjgl_version")
 
-    runtime("org.lwjgl", "lwjgl", lwjgl_version, classifier = lwjgl_natives)
-    runtime("org.lwjgl", "lwjgl-glfw", lwjgl_version, classifier = lwjgl_natives)
-    runtime("org.lwjgl", "lwjgl-jemalloc", lwjgl_version, classifier = lwjgl_natives)
-    runtime("org.lwjgl", "lwjgl-nanovg", lwjgl_version, classifier = lwjgl_natives)
-    runtime("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
+    implementation("org.lwjgl", "lwjgl", lwjgl_version, classifier = lwjgl_natives)
+    implementation("org.lwjgl", "lwjgl-glfw", lwjgl_version, classifier = lwjgl_natives)
+    implementation("org.lwjgl", "lwjgl-jemalloc", lwjgl_version, classifier = lwjgl_natives)
+    implementation("org.lwjgl", "lwjgl-nanovg", lwjgl_version, classifier = lwjgl_natives)
+    implementation("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
 
-    compile("org.joml:joml:1.9.3")
+    implementation("org.joml:joml:1.9.3")
 //    TODO: Remove weblaf stuff
-    compile("", "weblaf-complete", "1.28")
-    compile("", "lwjgl3-awt", "0.1.6")
-    compile("", "vecmath")
-    compile("", "rsyntaxtextarea")
-    compile("jfree:jfreechart:1.0.13")
-    compile("jcommon:jcommon:0.9.5")
-    compile("commons-lang:commons-lang:2.3")
-    compile("set.sf.sociaal:jbullet:3.0.0.20130526")
-    compile("com.google.guava:guava:10.0.1")
-    compile("net.engio:mbassador:1.2.4")
-    compile("", "dahie-dds", "1")
-    compile("commons-io:commons-io:2.4")
-    compile("de.ruedigermoeller:fst:2.33")
-    compile("com.carrotsearch:hppc:0.7.2")
-    compile("de.hanno.compiler:java-compiler:1.4")
-    compile("commons-beanutils:commons-beanutils:1.9.3")
-    compile("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
-    compile("de.hanno.structs:structs:1.0.1-SNAPSHOT")
-//    compile("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
+    implementation("", "weblaf-complete", "1.28")
+    implementation("", "lwjgl3-awt", "0.1.6")
+    implementation("", "vecmath")
+    implementation("", "rsyntaxtextarea")
+    implementation("jfree:jfreechart:1.0.13")
+    implementation("jcommon:jcommon:0.9.5")
+    implementation("commons-lang:commons-lang:2.3")
+    implementation("set.sf.sociaal:jbullet:3.0.0.20130526")
+    implementation("com.google.guava:guava:10.0.1")
+    implementation("net.engio:mbassador:1.2.4")
+    implementation("", "dahie-dds", "1")
+    implementation("commons-io:commons-io:2.4")
+    implementation("de.ruedigermoeller:fst:2.33")
+    implementation("com.carrotsearch:hppc:0.7.2")
+    implementation("de.hanno.compiler:java-compiler:1.4")
+    implementation("commons-beanutils:commons-beanutils:1.9.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
+    implementation("de.hanno.structs:structs:1.0.1-SNAPSHOT")
+//    implementation("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
     val radianceVersion = "2.5.1" // "3.0-SNAPSHOT"
-    compile("org.pushing-pixels:radiance-ember:$radianceVersion")
-    compile("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
-    compile("org.pushing-pixels:radiance-flamingo:$radianceVersion")
-    compile("org.pushing-pixels:radiance-photon:$radianceVersion")
-    compile("org.pushing-pixels:radiance-meteor:$radianceVersion")
-    compile("com.miglayout:miglayout:3.7.4")
+    implementation("org.pushing-pixels:radiance-ember:$radianceVersion")
+    implementation("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
+    implementation("org.pushing-pixels:radiance-flamingo:$radianceVersion")
+    implementation("org.pushing-pixels:radiance-photon:$radianceVersion")
+    implementation("org.pushing-pixels:radiance-meteor:$radianceVersion")
+    implementation("com.miglayout:miglayout:3.7.4")
 
-    testCompile("junit:junit:4.12")
+    testImplementation("junit:junit:4.12")
 }

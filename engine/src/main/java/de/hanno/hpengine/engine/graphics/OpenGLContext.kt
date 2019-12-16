@@ -298,10 +298,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         window.shutdown()
     }
 
-    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
-        return window.launch(block)
-    }
-
     override fun createProgramId(): Int {
         return calculate(Callable{ GL20.glCreateProgram() })!!
     }
@@ -511,10 +507,6 @@ class Executor: CoroutineScope, OpenGlExecutor {
                 runnable.run()
             }
         }
-    }
-
-    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
-        return launch(coroutineContext) { block() }
     }
 
     override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {

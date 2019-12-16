@@ -158,22 +158,18 @@ data class PerformanceConfig(
     override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
-class SimpleConfig(override val quality: QualityConfig = QualityConfig(),
+class SimpleConfig(override val gameDir: String = Directories.GAMEDIR_NAME,
+                   override var width: Int = 1280,
+                   override var height: Int = 720,
+                   override val quality: QualityConfig = QualityConfig(),
                    override val debug: DebugConfig = DebugConfig(),
                    override val effects: EffectsConfig = EffectsConfig(),
                    override val performance: PerformanceConfig = PerformanceConfig(),
                    override val profiling: ProfilingConfig = ProfilingConfig())
         : Config {
 
-    override var gameDir = Directories.GAMEDIR_NAME
-        set(gameDir) {
-            field = gameDir
-            this.directories = Directories(WORKDIR_NAME, gameDir, initFileName)
-        }
     override var initFileName = "Init.java"
-    override var directories = Directories(WORKDIR_NAME, this.gameDir, initFileName)
-    override var width = 1280
-    override var height = 720
+    override var directories = Directories("$WORKDIR_NAME", this.gameDir, initFileName)
 
     companion object {
 //        TODO: Remove this

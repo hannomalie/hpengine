@@ -25,8 +25,6 @@ interface OpenGlExecutor {
     fun execute(actionName: String, andBlock: Boolean, runnable: () -> Unit) = execute(actionName, andBlock, false, runnable)
     fun execute(actionName: String, andBlock: Boolean, forceAsync: Boolean, runnable: () -> Unit) = execute(actionName, Runnable(runnable), andBlock, forceAsync)
 
-    fun launch(block: suspend CoroutineScope.() -> Unit): Job
-
     fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE
     fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculate(Callable(callable))
 

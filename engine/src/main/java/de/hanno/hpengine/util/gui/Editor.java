@@ -73,6 +73,7 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.xpath.operations.Bool;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -376,9 +377,9 @@ public class Editor implements HostComponent {
         	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
         	probeAddMenuItem.addActionListener(e -> {
 
-                new SwingWorkerWithProgress<>(this, "Adding Probe...", "Failed to add probe") {
+                new SwingWorkerWithProgress<Result<Boolean>>(this, "Adding Probe...", "Failed to add probe") {
                     @Override
-                    public Result doInBackground() {
+                    public Result<Boolean> doInBackground() {
                         engine.getGpuContext().execute("probeAddMenuItem", () -> {
                             try {
                                 EnvironmentProbe probe = engine.getScene().getEnvironmentProbeManager().getProbe(new Entity("Probe_" + System.currentTimeMillis()), new Vector3f(), 50);
@@ -392,7 +393,7 @@ public class Editor implements HostComponent {
                     }
 
                     @Override
-                    public void done(Result result) {
+                    public void done(Result<Boolean> result) {
                     }
 
                 }.execute();

@@ -37,7 +37,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
             //                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
             //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
             val clusters = ArrayList<Cluster>()
-            val clustersComponent = ClustersComponent(engine, entity)
+            val clustersComponent = ClustersComponent(entity)
             for (clusterIndex in 0..2) {
                 val cluster = Cluster()
                 val random = Random()
@@ -53,7 +53,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
                             trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance.toFloat() * x.toFloat(), 0.001f * randomFloat, randomFloat * maxDistance.toFloat() * z.toFloat())))
 
                             val modelComponent = entity.getComponent(ModelComponent::class.java)
-                            val materials = modelComponent.materials
+                            val materials = modelComponent!!.materials
                             ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, AnimationController(120, 24f), AnimatedTransformSpatial(trafo, modelComponent))
                         }
                     }
@@ -67,6 +67,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
 
         //        Entity debugCam = new Entity("DebugCam");
         //        loaded.entities.add(debugCam.addComponent(new Camera(debugCam)));
-        engine.scene.addAll(loaded.entities)
+
+        engine.sceneManager.addAll(loaded.entities)
     }
 }

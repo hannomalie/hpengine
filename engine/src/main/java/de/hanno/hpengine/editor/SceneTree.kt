@@ -14,9 +14,10 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
 class SceneTree(private val engine: Engine<*>,
-                private val editor: RibbonEditor,
+                private val editorComponents: EditorComponents,
                 private val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode("Scene")) : JTree(rootNode) {
 
+    private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null
 
     init {
@@ -44,7 +45,7 @@ class SceneTree(private val engine: Engine<*>,
         LOGGER.info("Added " + engine.sceneManager.scene.getEntities().size)
 
         if (selectionListener == null) {
-            selectionListener = SelectionListener(this, editor)
+            selectionListener = SelectionListener(this, editorComponents)
         }
         return top
     }

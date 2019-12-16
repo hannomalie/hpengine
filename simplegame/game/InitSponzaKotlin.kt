@@ -2,6 +2,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import kotlinx.coroutines.runBlocking
+import java.util.Collections.addAll
 import javax.inject.Inject
 
 class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
@@ -9,12 +10,8 @@ class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsum
         val modelFile = engine.config.directories.gameDir.resolve("assets/models/bpcem_playground.obj")
         val loaded = LoadModelCommand(modelFile, "sponza", engine.scene.materialManager, engine.config.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
-        with(engine.sceneManager.scene) {
-            engine.singleThreadContext.runBlocking {
-                with(engine.singleThreadContext) {
-                    addAll(loaded.entities)
-                }
-            }
+        with(engine.sceneManager) {
+            addAll(loaded.entities)
         }
     }
 }

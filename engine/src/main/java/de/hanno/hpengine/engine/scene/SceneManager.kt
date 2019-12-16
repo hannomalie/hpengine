@@ -86,7 +86,12 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
 
 
-    fun SingleThreadContext.addAll(entities: List<Entity>) {
+    fun addAll(entities: List<Entity>) {
+        managerContext.singleThreadContext.runBlocking {
+            addAll(entities)
+        }
+    }
+    private fun SingleThreadContext.addAll(entities: List<Entity>) {
         with(scene) { addAll(entities) }
         managerContext.managers.managers.values.forEach {
             with(it) { onEntityAdded(entities) }

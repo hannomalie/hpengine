@@ -1,11 +1,21 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.util.commandqueue.CommandQueue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.swing.SwingDispatcher
 import org.lwjgl.opengl.awt.AWTGLCanvas
 import org.lwjgl.opengl.awt.GLData
-import java.awt.AWTException
+import java.awt.event.MouseEvent
+import java.awt.event.MouseListener
+import java.awt.event.MouseWheelEvent
+import java.util.concurrent.Callable
+import javax.swing.SwingUtilities
 
 
 interface Window<T: BackendType>: OpenGlExecutor {
@@ -27,32 +37,50 @@ interface Window<T: BackendType>: OpenGlExecutor {
     fun hideWindow()
     fun pollEvents()
     fun swapBuffers()
-    fun makeContextCurrent()
 
     val frontBuffer: RenderTarget<Texture2D>
 }
 
 val glData = GLData().apply {
-    this.majorVersion = 4
-    this.minorVersion = 5
-    this.debug = true
+    majorVersion = 4
+    minorVersion = 5
+    forwardCompatible = true
+//    profile = GLData.Profile.COMPATIBILITY
+    samples = 4
+    swapInterval = 0
+//    this.debug = true
 }
 
 abstract class CustomGlCanvas: AWTGLCanvas(glData) {
-    fun isCurrent(): Boolean {
-        return platformCanvas.isCurrent(context)
+    val commandQueue = CommandQueue { SwingUtilities.isEventDispatchThread() }
+
+    public override fun beforeRender() {
+        super.beforeRender()
     }
 
-    override fun afterRender() {
-        try {
-            platformCanvas.unlock()
-        } catch (var2: AWTException) {
-            throw RuntimeException("Failed to unlock Canvas", var2)
+    public override fun afterRender() {
+        super.afterRender()
+    }
+
+    fun unlock() {
+        platformCanvas.unlock()
+    }
+    fun lock() {
+        platformCanvas.lock()
+    }
+
+    fun createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
+        return object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer.FrontBuffer, name = "FrontBuffer") {
+            override val width: Int
+                get() = this@CustomGlCanvas.width
+
+            override val height: Int
+                get() = this@CustomGlCanvas.height
+
+            override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
+                super.use(gpuContext, false)
+            }
         }
-    }
-
-    fun makeContextCurrent() {
-        platformCanvas.makeCurrent(context)
     }
 }
 

@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
+import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
@@ -128,11 +129,8 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 }
             }
 
-            val config = SimpleConfig()
+            val config = SimpleConfig(gameDir, width, height)
             config.populateConfigurationWithProperties(File(gameDir))
-            config.gameDir = gameDir
-            config.width = width
-            config.height = height
 
             val engineContext = EngineContextImpl(config = config)
             val materialManager = engineContext.materialManager
@@ -144,10 +142,9 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                     renderer = renderer
             )
             if (debug) {
-                invokeLater {
-                    JRibbonFrame.setDefaultLookAndFeelDecorated(true)
-                    SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
-                    RibbonEditor(engine, config)
+                val window = engineContext.window
+                if(window is AWTWindow) {
+                    window.frame.setEngine(engine, config)
                 }
             }
 

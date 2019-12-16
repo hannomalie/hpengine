@@ -185,11 +185,12 @@ open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer
         }
 
         private fun validateFrameBufferState() {
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            val frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)
+            if (frameBufferStatus != GL_FRAMEBUFFER_COMPLETE) {
                 LOGGER.severe("RenderTarget fucked up")
-                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+                if (frameBufferStatus == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
                     LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
-                } else if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
+                } else if (frameBufferStatus == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
                     LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
                 }
                 throw RuntimeException()

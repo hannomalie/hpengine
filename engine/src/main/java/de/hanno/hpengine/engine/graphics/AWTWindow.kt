@@ -1,63 +1,94 @@
 package de.hanno.hpengine.engine.graphics
 
+import de.hanno.hpengine.editor.RibbonEditor
+import de.hanno.hpengine.editor.xxx
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
+import org.lwjgl.opengl.GL11.glClear
+import org.lwjgl.opengl.awt.GLData
+import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
+import org.pushingpixels.substance.api.SubstanceCortex
+import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.util.concurrent.Callable
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
+import kotlin.math.max
 
+fun main() {
+    AWTWindow()
+}
 class AWTWindow: Window<OpenGl>, OpenGlExecutor {
     override var openGLThreadId: Long = -1
 
     override var handle: Long = 0
         private set
     lateinit var canvas: CustomGlCanvas
-    lateinit var frame: JFrame
+    lateinit var frame: RibbonEditor
     init {
         SwingUtilities.invokeAndWait {
-//            JRibbonFrame.setDefaultLookAndFeelDecorated(true)
-//            SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
-            frame = JFrame().apply {
-                defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-                contentPane.layout = BorderLayout()
-                preferredSize = Dimension(600, 600)
+            JRibbonFrame.setDefaultLookAndFeelDecorated(true)
+            SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
+            frame = RibbonEditor()
+            frame.preferredSize = Dimension(600,600)
+//            frame.xxx()
+        }
+        frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+        canvas = object : CustomGlCanvas() {
+            override fun initGL() {
+                GL.createCapabilities()
+                GL11.glClearColor(0.3f, 0.4f, 0.5f, 1f)
+                glClear(GL_COLOR_BUFFER_BIT)
+                handle = context
+                openGLThreadId = Thread.currentThread().id
+                println("AWTWindow with OpenGL thread $openGLThreadId")
+                Thread.currentThread().name  = "OpenGlAWTCanvas"
             }
-            canvas = object : CustomGlCanvas() {
-                init {
-                    preferredSize = Dimension(200, 200)
-                    frame.add(this, BorderLayout.CENTER)
-                    frame.pack()
-                    frame.isVisible = true
-                    frame.transferFocus()
-                }
-                override fun initGL() {
-                    GL.createCapabilities()
-                    handle = context
-                    openGLThreadId = Thread.currentThread().id
-                    Thread.currentThread().name  = "OpenGlAWTCanvas"
-                }
 
-                override fun paintGL() {
-                }
+            override fun paintGL() {
+                commandQueue.executeCommands()
+            }
 
-            }.apply {
-                SwingUtilities.invokeLater {
-                    render()
+        }.apply {
+            isFocusable = true
+            frame.canvas = this
+            SwingUtilities.invokeAndWait {
+                frame.pack()
+            }
+            frame.isVisible = true
+            frame.transferFocus()
+
+            SwingUtilities.invokeAndWait {
+                beforeRender()
+                unlock()
+            }
+
+            val renderLoop = object: Runnable {
+                override fun run() {
+                    if (!canvas.isValid) return
+                    canvas.render()
+                    SwingUtilities.invokeLater(this)
                 }
             }
+            SwingUtilities.invokeLater(renderLoop)
         }
     }
 
-    override var title = "XXX"
+    override var title
+        get() = frame.title
+        set(value) {
+            frame.title = value
+        }
     override var width: Int
         get() = frame.width
         set(value) { frame.size.width = value }
@@ -96,25 +127,7 @@ class AWTWindow: Window<OpenGl>, OpenGlExecutor {
 
     }
 
-    override val frontBuffer = object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer.FrontBuffer, name = "FrontBuffer") {
-        override var width: Int
-            get() {
-                return frame.width
-            }
-            set(value) {
-                frame.size.width = value
-            }
-
-        override var height: Int
-            get() = frame.height
-            set(value) {
-                frame.size.height = value
-            }
-
-        override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
-            super.use(gpuContext, false)
-        }
-    }
+    override val frontBuffer = canvas.createFrontBufferRenderTarget()
 
     override fun swapBuffers() {
         canvas.swapBuffers()
@@ -124,38 +137,46 @@ class AWTWindow: Window<OpenGl>, OpenGlExecutor {
 
     }
 
+//    override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
+//        canvas.commandQueue.execute(runnable, andBlock, forceAsync)
+//    }
     override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
-//        return executor.execute(actionName, runnable, andBlock, forceAsync)
-        if(isOpenGLThread && !forceAsync) return runnable.run()
+        if(isOpenGLThread && !forceAsync) {
+            runnable.run()
+            return
+        }
 
         if(andBlock) {
-            SwingUtilities.invokeAndWait { runnable.run() }
+            SwingUtilities.invokeAndWait {
+                canvas.beforeRender()
+                runnable.run()
+                canvas.afterRender()
+            }
         } else {
-            SwingUtilities.invokeLater(runnable)
+            SwingUtilities.invokeLater {
+                canvas.beforeRender()
+                runnable.run()
+                canvas.afterRender()
+            }
         }
     }
 
-    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
-//        return executor.launch(block)
-        return calculate(Callable {
-            GlobalScope.launch { block() }
-        })
-    }
+//    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+//        return canvas.commandQueue.calculate(callable)
+//    }
 
     override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-//        return executor.calculate(callable)
         if(isOpenGLThread) return callable.call()
 
         var result: RETURN_TYPE? = null
         SwingUtilities.invokeAndWait {
+            canvas.beforeRender()
             result = callable.call()
+            canvas.afterRender()
         }
         return result!!
     }
 
-    override fun makeContextCurrent() {
-        canvas.makeContextCurrent()
-    }
     override fun shutdown() {
     }
 

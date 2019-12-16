@@ -123,7 +123,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         glfwSwapBuffers(handle)
     }
 
-    override fun makeContextCurrent() {
+    fun makeContextCurrent() {
         glfwMakeContextCurrent(handle)
     }
 
@@ -139,10 +139,6 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         return executor.execute(actionName, runnable, andBlock, forceAsync)
     }
 
-    override fun launch(block: suspend CoroutineScope.() -> Unit): Job {
-        return executor.launch { block() }
-    }
-
     override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
         return executor.calculate(callable)
     }
@@ -151,7 +147,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
 
 }
 
-private fun GlfwWindow.createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
+fun Window<*>.createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
     return object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer.FrontBuffer, name = "FrontBuffer") {
         override var width: Int
             get() = this@createFrontBufferRenderTarget.width

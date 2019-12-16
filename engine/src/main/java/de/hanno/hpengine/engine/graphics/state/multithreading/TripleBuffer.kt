@@ -4,13 +4,16 @@ import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.StateRef
 import java.util.concurrent.locks.ReentrantLock
-import java.util.function.Supplier
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.concurrent.withLock
 
-class TripleBuffer<T : RenderState>(private val instanceA: T,
-                                     private val instanceB: T,
-                                     private val instanceC: T) {
+class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
+                                                private val instanceB: T,
+                                                private val instanceC: T,
+                                                private val preventSwap: (T, T) -> Boolean = { _,_ -> false }) {
+
+    constructor(factory: () -> T, preventSwap: (T, T) -> Boolean = { _,_ -> false }): this(factory(), factory(), factory(), preventSwap)
 
     private val swapLock = ReentrantLock()
     private val stagingLock = ReentrantLock()
@@ -24,19 +27,15 @@ class TripleBuffer<T : RenderState>(private val instanceA: T,
     private var tempA: T? = null
     private var tempB: T? = null
 
-    protected fun swap(): Boolean {
-        var swapped = false
-        swapLock.lock()
-        stagingLock.lock()
-        if (!currentReadState.preventSwap(currentStagingState, currentReadState)) {
-            tempA = currentReadState
-            currentReadState = currentStagingState
-            currentStagingState = tempA!!
-            swapped = true
+    protected fun swap(): Boolean = swapLock.withLock {
+        stagingLock.withLock {
+            if (!preventSwap(currentStagingState, currentReadState)) {
+                tempA = currentReadState
+                currentReadState = currentStagingState
+                currentStagingState = tempA!!
+                true
+            } else false
         }
-        stagingLock.unlock()
-        swapLock.unlock()
-        return swapped
     }
 
     protected fun swapStaging() {
@@ -79,8 +78,6 @@ class TripleBuffer<T : RenderState>(private val instanceA: T,
         println("Stage " + (if (currentStagingState === instanceA) 0 else if (currentStagingState === instanceB) 1 else 2) + " with cycle " + currentStagingState.cycle)
         println("Write " + (if (currentWriteState === instanceA) 0 else if (currentWriteState === instanceB) 1 else 2) + " with cycle " + currentWriteState.cycle)
     }
-
-    private class State<T : RenderState>(private val state: T)
 
     companion object {
         private val LOGGER = Logger.getLogger(TripleBuffer::class.java.name)

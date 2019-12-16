@@ -9,7 +9,10 @@ import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeSelectionModel
 
-class SelectionListener(internal var tree: JTree, private val editor: RibbonEditor) : TreeSelectionListener {
+class SelectionListener(internal var tree: JTree,
+                        val editorComponents: EditorComponents) : TreeSelectionListener {
+
+    private val editor: RibbonEditor = editorComponents.editor
 
     init {
         tree.addTreeSelectionListener(this)
@@ -37,10 +40,10 @@ class SelectionListener(internal var tree: JTree, private val editor: RibbonEdit
         // TODO: MIIIIEEEEEES
         if (node is EnvironmentProbe) {
         } else if (node is Entity) {
-            if(node == editor.entitySelector.selection) {
-                editor.entitySelector.unselect()
+            if(node == editorComponents?.entitySelector?.selection) {
+                editorComponents.entitySelector.unselect()
             } else {
-                editor.entitySelector.selectEntity(node)
+                editorComponents.entitySelector.selectEntity(node)
             }
         } else if (node is Mesh<*>) {
 //            entityViewFrame.contentPane.removeAll()

@@ -51,6 +51,7 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.glFinish
+import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
@@ -61,6 +62,7 @@ import java.util.ArrayList
 import java.util.EnumSet
 import java.util.function.Consumer
 import javax.vecmath.Vector2f
+import kotlin.math.min
 
 class DeferredRenderer
             @Throws(Exception::class) constructor(private val materialManager: MaterialManager,
@@ -595,6 +597,8 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
     private val linePoints = ArrayList<Vector3f>()
     private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
 
+//    TODO: This has to be implemented in context
+    private val maxLineWidth = engineContext.backend.gpuContext.calculate { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
     private val buffer = VertexBuffer(engineContext.gpuContext, EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).apply {
         upload()
     }
@@ -625,7 +629,7 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
         }
         buffer.putValues(*points)
         buffer.upload().join()
-        buffer.drawDebugLines(lineWidth)
+        buffer.drawDebugLines(min(lineWidth, maxLineWidth))
         glFinish()
         linePoints.clear()
         return points.size / 3 / 2
