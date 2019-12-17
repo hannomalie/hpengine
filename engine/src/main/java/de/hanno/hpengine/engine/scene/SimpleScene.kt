@@ -14,7 +14,6 @@ import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
-import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -32,7 +31,6 @@ import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.util.script.ScriptManager
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
@@ -65,7 +63,6 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         engine.renderSystems.add(it)
     }
     override val materialManager = managers.register(MaterialManager(engine))
-    val scriptManager = managers.register(ScriptManager().apply { defineGlobals(engine, entityManager, materialManager) })
 
     val directionalLightSystem = DirectionalLightSystem(engine, this, engine.eventBus).apply {
         entitySystems.register(this)

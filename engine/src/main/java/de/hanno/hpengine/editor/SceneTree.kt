@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.util.gui.SetSelectedListener
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.logging.Logger

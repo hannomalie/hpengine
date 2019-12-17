@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.EngineContextImpl
@@ -26,18 +25,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.withLock
-import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
-import org.pushingpixels.substance.api.SubstanceCortex
-import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
-import javax.swing.JFrame
-import javax.swing.SwingUtilities.invokeLater
 
 interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
