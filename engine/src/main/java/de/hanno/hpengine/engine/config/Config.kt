@@ -169,7 +169,7 @@ class SimpleConfig(override val gameDir: String = Directories.GAMEDIR_NAME,
         : Config {
 
     override var initFileName = "Init.java"
-    override var directories = Directories("$WORKDIR_NAME", this.gameDir, initFileName)
+    override var directories = Directories(WORKDIR_NAME, this.gameDir, initFileName)
 
 }
 

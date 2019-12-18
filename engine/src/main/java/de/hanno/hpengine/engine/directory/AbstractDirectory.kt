@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.directory
 
 import java.io.File
+import java.lang.IllegalStateException
 
 
 interface Directory {
@@ -10,7 +11,11 @@ interface Directory {
 }
 open class AbstractDirectory(path: String): File(path) {
     init {
-        require(isDirectory) { "Given path is not a directory: $path" }
+        if (isFile) throw IllegalStateException("$absolutePath is a file, not a directory")
+        if(!exists()) {
+            mkdirs()
+            println("Created game directory $absolutePath")
+        }
     }
 }
 

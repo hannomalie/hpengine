@@ -73,6 +73,10 @@ application {
     mainClassName = "de.hanno.hpengine.engine.EngineImpl"
 }
 application.applicationDistribution.into("bin/hp") {
-    from("../hp")
+    from("./hp")
+    include("**/*")
+}
+application.applicationDistribution.into("bin/game") {
+    from("./simplegame/game")
     include("**/*")
 }
