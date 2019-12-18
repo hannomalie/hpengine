@@ -1,6 +1,5 @@
 package de.hanno.hpengine.editor
 
-import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.camera.Camera
@@ -59,8 +58,8 @@ import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.ComponentPresentationModel
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.RibbonDefaultComboBoxContentModel
 import org.pushingpixels.flamingo.api.ribbon.synapse.projection.RibbonComboBoxProjection
-import org.pushingpixels.neon.icon.ResizableIcon
-import org.pushingpixels.photon.icon.SvgBatikResizableIcon
+import org.pushingpixels.neon.api.icon.ResizableIcon
+import org.pushingpixels.photon.api.icon.SvgBatikResizableIcon
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -88,14 +87,6 @@ import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
 import javax.swing.tree.DefaultMutableTreeNode
 
-fun <T> calculateInSwing(block: () -> T): T {
-    var t : T? = null
-    SwingUtilities.invokeAndWait {
-        t = block()
-    }
-    return t!!
-}
-
 class EditorComponents(val engine: EngineImpl,
                        val config: SimpleConfig,
                        val editor: RibbonEditor): RenderSystem {
@@ -107,7 +98,7 @@ class EditorComponents(val engine: EngineImpl,
         SimpleTransform().get(this)
     }
 
-    val timingsFrame = calculateInSwing {
+    val timingsFrame = SwingUtils.invokeAndWait {
         JFrame("Timings").apply {
             size = Dimension(500, 500)
             val frame = this
@@ -162,7 +153,7 @@ class EditorComponents(val engine: EngineImpl,
         val image = BufferedImage(finalTexture.dimension.width, finalTexture.dimension.height, BufferedImage.TYPE_INT_ARGB)
 
 
-        val sceneTree = calculateInSwing {
+        val sceneTree = SwingUtils.invokeAndWait {
             SceneTree(engine, this).apply {
                 var selectedTreeElement: Any? = null
 
@@ -250,7 +241,7 @@ class EditorComponents(val engine: EngineImpl,
             }
         }
 
-        val sceneTreePanel = calculateInSwing {
+        val sceneTreePanel = SwingUtils.invokeAndWait {
             ReloadableScrollPane(sceneTree).apply {
                 preferredSize = Dimension(300, editor.sidePanel.height)
 
@@ -258,7 +249,7 @@ class EditorComponents(val engine: EngineImpl,
             }
         }
 
-        val imageLabel = calculateInSwing { ImageLabel(ImageIcon(image), this) }
+        val imageLabel = SwingUtils.invokeAndWait { ImageLabel(ImageIcon(image), this) }
 
         val keyLogger = KeyLogger().apply {
             editor.addKeyListener(this)
@@ -285,7 +276,7 @@ class EditorComponents(val engine: EngineImpl,
 
             engine.renderSystems.add(this)
 
-            calculateInSwing {
+            SwingUtils.invokeAndWait {
                 addViewTask()
                 addSceneTask()
                 addTransformTask()
@@ -734,28 +725,4 @@ fun JPanel.doWithRefresh(addContent: JPanel.() -> Unit) {
         revalidate()
         repaint()
     }
-}
-
-fun JRibbonFrame.xxx() {
-    val entityBand = JRibbonBand("Entity", null).apply {
-        val command = Command.builder()
-            .setText("Create")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
-            .setAction {
-            }
-            .setActionRichTooltip(RichTooltip.builder()
-                    .setTitle("Entity")
-                    .addDescriptionSection("Creates an entity")
-                    .build())
-            .build()
-        addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
-                .setTextClickAction()
-                .setActionKeyTip("B")
-                .build()), JRibbonBand.PresentationPriority.TOP)
-        resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
-    }
-
-    val sceneTask = RibbonTask("Scene", entityBand)
-    sceneTask.keyTip = "K"
-    ribbon.addTask(sceneTask)
 }

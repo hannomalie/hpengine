@@ -1,6 +1,5 @@
 package de.hanno.hpengine.editor
 
-import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent

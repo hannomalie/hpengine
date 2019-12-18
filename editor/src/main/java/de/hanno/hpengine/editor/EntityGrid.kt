@@ -1,7 +1,5 @@
 package de.hanno.hpengine.editor
 
-import com.alee.extended.panel.WebTitledPanel
-import com.alee.laf.slider.WebSlider
 import de.hanno.hpengine.engine.entity.Entity
 import net.miginfocom.swing.MigLayout
 import javax.swing.JCheckBox
@@ -46,7 +44,7 @@ abstract class SliderInput @JvmOverloads constructor(orientation: Int,
                                                      max: Int,
                                                      initialValue: Int,
                                                      minorTickSpacing: Int = (max - min) / 10,
-                                                     majorTickSpacing: Int = (max - min) / 4) : WebTitledPanel() {
+                                                     majorTickSpacing: Int = (max - min) / 4) : JPanel() {
 
     private var lastValue = 0
 
@@ -67,7 +65,7 @@ abstract class SliderInput @JvmOverloads constructor(orientation: Int,
                 lastValue = value
             }
         }
-        content = slider
+        add(slider)
 
     }
 
@@ -75,7 +73,7 @@ abstract class SliderInput @JvmOverloads constructor(orientation: Int,
 }
 
 fun KMutableProperty0<Float>.toSliderInput(min: Int, max: Int): SliderInput {
-    return object : SliderInput(WebSlider.HORIZONTAL, min = min, max = max, initialValue = (get() * 100f).toInt()) {
+    return object : SliderInput(JSlider.HORIZONTAL, min = min, max = max, initialValue = (get() * 100f).toInt()) {
         override fun onValueChange(value: Int, delta: Int) {
             set(value.toFloat() / 100f)
         }

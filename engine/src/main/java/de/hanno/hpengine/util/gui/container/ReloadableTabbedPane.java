@@ -1,12 +1,10 @@
 package de.hanno.hpengine.util.gui.container;
 
-import com.alee.laf.tabbedpane.WebTabbedPane;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class ReloadableTabbedPane extends WebTabbedPane {
+public class ReloadableTabbedPane extends JTabbedPane {
 
     public ReloadableTabbedPane() {
         super();

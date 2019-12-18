@@ -54,8 +54,6 @@ dependencies {
     api("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
 
     api("org.joml:joml:1.9.3")
-//    TODO: Remove weblaf stuff
-    api("", "weblaf-complete", "1.28")
     api("", "lwjgl3-awt", "0.1.6")
     api("", "vecmath")
     api("", "rsyntaxtextarea")
@@ -74,7 +72,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     api("de.hanno.structs:structs:1.0.1-SNAPSHOT")
 //    api("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
-    val radianceVersion = "2.5.1" // "3.0-SNAPSHOT"
+    val radianceVersion =  "3.0-SNAPSHOT"
     api("org.pushing-pixels:radiance-ember:$radianceVersion")
     api("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
     api("org.pushing-pixels:radiance-flamingo:$radianceVersion")

@@ -55,7 +55,7 @@ allprojects {
             setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
         }
         maven {
-            setUrl("https://oss.sonatype.org/content/repositories/snapshots/org/pushing-pixels")
+            setUrl("https://oss.sonatype.org")
         }
 
         jcenter()
