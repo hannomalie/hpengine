@@ -2,15 +2,18 @@ package de.hanno.hpengine.editor
 
 import com.alee.utils.SwingUtils
 import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.AWTWindow
+import de.hanno.hpengine.engine.executeInitScript
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.engine.retrieveConfig
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
@@ -595,7 +598,7 @@ class EditorComponents(val engine: EngineImpl,
         }
 
         override fun afterFrameFinished() {
-            if(engine.window !is AWTWindow) {
+            if(engine.window !is AWTEditor) {
                 bufferImage()
                 imageLabel.repaint()
             }
@@ -682,6 +685,25 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
 
     fun setEngine(engine: EngineImpl, config: SimpleConfig) {
         EditorComponents(engine, config, this)
+    }
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val config = retrieveConfig(args)
+
+            val window = AWTEditor()
+            val engineContext = EngineContextImpl(config = config, window = window)
+            val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
+            val engine = EngineImpl(
+                    engineContext = engineContext,
+                    renderer = renderer
+            )
+            window.init(engine, config)
+
+            engine.executeInitScript()
+
+        }
     }
 }
 

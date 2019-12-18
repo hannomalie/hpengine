@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
-import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -98,24 +97,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         }
     }
 
-    object Editor {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val config = retrieveConfig(args)
-
-            val window = AWTWindow()
-            val engineContext = EngineContextImpl(config = config, window = window)
-            val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
-            val engine = EngineImpl(
-                    engineContext = engineContext,
-                    renderer = renderer
-            )
-            window.init(engine, config)
-
-            engine.executeInitScript()
-
-        }
-    }
     companion object {
 
         @JvmStatic

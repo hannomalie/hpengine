@@ -1,33 +1,25 @@
-package de.hanno.hpengine.engine.graphics
+package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.editor.xxx
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.SimpleConfig
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.model.texture.Texture2D
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
+import de.hanno.hpengine.engine.graphics.CustomGlCanvas
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.OpenGlExecutor
+import de.hanno.hpengine.engine.graphics.Window
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.glClear
-import org.lwjgl.opengl.awt.GLData
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin
-import java.awt.BorderLayout
 import java.awt.Dimension
 import java.util.concurrent.Callable
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
-import kotlin.math.max
 
-class AWTWindow: Window<OpenGl>, OpenGlExecutor {
+class AWTEditor: Window<OpenGl>, OpenGlExecutor {
     override var openGLThreadId: Long = -1
 
     override var handle: Long = 0

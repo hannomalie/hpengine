@@ -1,6 +1,7 @@
 package de.hanno.hpengine.editor;
 
 import com.alee.utils.SwingUtils;
+import de.hanno.hpengine.editor.RibbonEditor;
 import org.lwjgl.opengl.awt.AWTGLCanvas;
 import org.lwjgl.opengl.awt.GLData;
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame;

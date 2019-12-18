@@ -63,6 +63,7 @@ allprojects {
         maven { setUrl("https://jitpack.io") }
     }
 }
+
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project("engine"))

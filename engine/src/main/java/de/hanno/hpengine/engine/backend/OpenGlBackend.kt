@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.backend
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
-import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
