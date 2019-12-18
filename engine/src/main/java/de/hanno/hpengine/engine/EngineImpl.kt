@@ -15,9 +15,7 @@ import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.AWTWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -26,12 +24,11 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-interface Engine<TYPE: BackendType>: ManagerContext<TYPE> {
+interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
     val sceneManager: SceneManager
 
@@ -54,7 +51,8 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                     update(it)
                 }
                 // block singleThreadContext while updating, not suspending
-                while(!job.isCompleted) { }
+                while (!job.isCompleted) {
+                }
             }
         }
     }
@@ -100,71 +98,65 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         }
     }
 
+    object Editor {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val config = retrieveConfig(args)
+
+            val window = AWTWindow()
+            val engineContext = EngineContextImpl(config = config, window = window)
+            val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
+            val engine = EngineImpl(
+                    engineContext = engineContext,
+                    renderer = renderer
+            )
+            window.init(engine, config)
+
+            engine.executeInitScript()
+
+        }
+    }
     companion object {
 
         @JvmStatic
         fun main(args: Array<String>) {
 
-            var gameDir = Directories.GAMEDIR_NAME
-            var width = 1280
-            var height = 720
-
-            var debug = true
-            for (string in args) {
-                when {
-                    "debug=false" == string -> debug = false
-                    string.startsWith("gameDir=", true) -> gameDir = string.replace("gameDir=", "", true)
-                    "fullhd" == string -> { // TODO: Remove this possibility to set resolution
-                        width = 1920
-                        height = 1080
-                    }
-                }
-            }
-
-            val config = SimpleConfig(gameDir, width, height)
-            config.populateConfigurationWithProperties(File(gameDir))
+            val config = retrieveConfig(args)
 
             val engineContext = EngineContextImpl(config = config)
-            val materialManager = engineContext.materialManager
-            val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
-            val renderer: RenderSystem = getRendererForPlatform(engineContext, materialManager, deferredRenderingBuffer)
-            println("Using renderer class ${renderer.javaClass.simpleName}")
+            val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
             val engine = EngineImpl(
-                    engineContext = engineContext,
-                    renderer = renderer
+                engineContext = engineContext,
+                renderer = renderer
             )
-            if (debug) {
-                val window = engineContext.window
-                if(window is AWTWindow) {
-                    window.frame.setEngine(engine, config)
-                }
-            }
 
-            val initScriptFile = engineContext.config.directories.gameDir.initScript
-            initScriptFile?.let {
-                try {
-                    ScriptComponentFileLoader.getLoaderForFileExtension(it.extension).load(engine, it, Entity())
-                    println("InitScript initialized")
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-
+            engine.executeInitScript()
         }
 
-        private fun getRendererForPlatform(
-                engineContext: EngineContext<OpenGl>,
-                materialManager: MaterialManager,
-                deferredRenderingBuffer: DeferredRenderingBuffer
-        ): RenderSystem {
-            return ExtensibleDeferredRenderer(engineContext)//DeferredRenderer(materialManager, engineContext, deferredRenderingBuffer)
-//            return when {
-//                engineContext.backend.gpuContext.isSupported(BindlessTextures, DrawParameters, Shader5) == Supported -> {
-//                    DeferredRenderer(materialManager, engineContext)
-//                }
-//                else -> SimpleColorRenderer(engineContext, engineContext.programManager, engineContext.textureManager)
-//            }
-        }
     }
 }
 
+fun Array<String>.extractGameDir(): String {
+    var gameDir = Directories.GAMEDIR_NAME
+
+    for (string in this) {
+        when {
+            string.startsWith("gameDir=", true) -> gameDir = string.replace("gameDir=", "", true)
+        }
+    }
+    return gameDir
+}
+
+fun retrieveConfig(args: Array<String>): SimpleConfig {
+    val gameDir = args.extractGameDir()
+
+    val config = SimpleConfig(gameDir)
+    config.populateConfigurationWithProperties(File(gameDir))
+    return config
+}
+
+fun EngineImpl.executeInitScript() {
+    config.directories.gameDir.initScript?.let { initScriptFile ->
+        ScriptComponentFileLoader.getLoaderForFileExtension(initScriptFile.extension).load(this, initScriptFile, Entity())
+    }
+}

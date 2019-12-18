@@ -2,7 +2,9 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.xxx
+import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.SimpleConfig
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
@@ -25,9 +27,6 @@ import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import kotlin.math.max
 
-fun main() {
-    AWTWindow()
-}
 class AWTWindow: Window<OpenGl>, OpenGlExecutor {
     override var openGLThreadId: Long = -1
 
@@ -41,7 +40,6 @@ class AWTWindow: Window<OpenGl>, OpenGlExecutor {
             SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
             frame = RibbonEditor()
             frame.preferredSize = Dimension(600,600)
-//            frame.xxx()
         }
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         canvas = object : CustomGlCanvas() {
@@ -178,6 +176,10 @@ class AWTWindow: Window<OpenGl>, OpenGlExecutor {
     }
 
     override fun shutdown() {
+    }
+
+    fun init(engine: EngineImpl, config: SimpleConfig) {
+        frame.setEngine(engine, config)
     }
 
     val Thread.isOpenGLThread: Boolean

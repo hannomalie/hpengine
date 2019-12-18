@@ -171,11 +171,6 @@ class SimpleConfig(override val gameDir: String = Directories.GAMEDIR_NAME,
     override var initFileName = "Init.java"
     override var directories = Directories("$WORKDIR_NAME", this.gameDir, initFileName)
 
-    companion object {
-//        TODO: Remove this
-        @JvmStatic
-        val isUseFileReloadXXX = true
-    }
 }
 
 fun SimpleConfig.populateConfigurationWithProperties(gameDir: File) {
