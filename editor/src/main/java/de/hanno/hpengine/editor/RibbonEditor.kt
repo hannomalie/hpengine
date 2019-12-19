@@ -3,7 +3,7 @@ package de.hanno.hpengine.editor
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.config.SimpleConfig
+import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.executeInitScript
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
@@ -14,7 +14,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.retrieveConfig
 import de.hanno.hpengine.engine.scene.SimpleScene
-import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.DirectTextureOutputItem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import de.hanno.hpengine.util.stopwatch.GPUProfiler.DUMP_AVERAGES
@@ -83,20 +82,17 @@ import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
 import javax.swing.SwingUtilities
+import javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
 import javax.swing.tree.DefaultMutableTreeNode
 
 class EditorComponents(val engine: EngineImpl,
-                       val config: SimpleConfig,
+                       val config: ConfigImpl,
                        val editor: RibbonEditor): RenderSystem {
 
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-//    private val lineRenderer = LineRendererImpl(engine)
-    private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
-    }
 
     val timingsFrame = SwingUtils.invokeAndWait {
         JFrame("Timings").apply {
@@ -106,7 +102,10 @@ class EditorComponents(val engine: EngineImpl,
             add(JPanel().apply {
                 layout = BorderLayout()
                 val panel = this
-                val textArea = TextArea().apply { panel.add(this, BorderLayout.CENTER) }
+                val textArea = TextArea().apply {
+                    isEditable = false
+                    panel.add(this, BorderLayout.CENTER)
+                }
 
                 engine.renderSystems.add(object : RenderSystem {
                     override fun afterFrameFinished() {
@@ -483,20 +482,29 @@ class EditorComponents(val engine: EngineImpl,
         }
 
         private fun addConfigAnchoredCommand() {
+            val configPane = ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
+                this.preferredSize = Dimension(editor.canvas.width, editor.canvas.height)
+            }
+            val configFrame = SwingUtils.invokeAndWait {
+                JFrame("Config").apply {
+                    size = Dimension(500, 500)
+                    defaultCloseOperation = DO_NOTHING_ON_CLOSE
+                    add(
+                        JPanel().apply {
+                            layout = BorderLayout()
+                            add(configPane, BorderLayout.CENTER)
+                        }
+                    )
+                    isVisible = true
+                }
+            }
+
             val command = Command.builder()
                     .setText("Show Config")
                     .setToggle()
                     .setIconFactory { getResizableIconFromSvgResource("settings_applications-24px.svg") }
                     .setAction { event ->
-                        //                    if (event.command.isToggleSelected) {
-//                        mainPanel.setContent(
-//                                ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
-//                                    this.preferredSize = Dimension(mainPanel.width, mainPanel.height)
-//                                }
-//                        )
-//                    } else {
-//                        mainPanel.setRenderedContent()
-//                    }
+                        configFrame.isVisible = event.command.isToggleSelected
                     }.build()
 
             ribbon.addAnchoredCommand(command.project(CommandButtonPresentationModel.builder()
@@ -660,11 +668,13 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
         preferredSize = size
     }
 
-    var canvas: CustomGlCanvas? = null
-        set(value) {
-            add(value, BorderLayout.CENTER)
-            field = value
-        }
+    lateinit var canvas: CustomGlCanvas
+        private set
+
+    fun addCanvas(canvas: CustomGlCanvas) {
+        this.canvas = canvas
+        add(canvas, BorderLayout.CENTER)
+    }
     var centerComponent: Component = JPanel()
 
     val sidePanel = JPanel().apply {
@@ -674,7 +684,7 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
         this@RibbonEditor.add(this, BorderLayout.LINE_END)
     }
 
-    fun setEngine(engine: EngineImpl, config: SimpleConfig) {
+    fun setEngine(engine: EngineImpl, config: ConfigImpl) {
         EditorComponents(engine, config, this)
     }
 

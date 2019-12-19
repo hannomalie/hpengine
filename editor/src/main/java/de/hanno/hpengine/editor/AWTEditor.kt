@@ -2,7 +2,7 @@ package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.config.SimpleConfig
+import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGlExecutor
@@ -51,7 +51,7 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
 
         }.apply {
             isFocusable = true
-            frame.canvas = this
+            frame.addCanvas(this)
             SwingUtilities.invokeAndWait {
                 frame.pack()
             }
@@ -170,7 +170,7 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
     override fun shutdown() {
     }
 
-    fun init(engine: EngineImpl, config: SimpleConfig) {
+    fun init(engine: EngineImpl, config: ConfigImpl) {
         frame.setEngine(engine, config)
     }
 

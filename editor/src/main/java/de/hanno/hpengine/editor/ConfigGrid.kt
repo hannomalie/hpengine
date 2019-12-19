@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.engine.config.SimpleConfig
+import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import net.miginfocom.swing.MigLayout
@@ -15,7 +15,7 @@ import kotlin.reflect.jvm.javaType
 import javax.swing.BorderFactory
 
 
-class ConfigGrid(val config: SimpleConfig, val eventBus: EventBus): JPanel() {
+class ConfigGrid(val config: ConfigImpl, val eventBus: EventBus): JPanel() {
     init {
         layout = MigLayout("wrap 1")
         getInputsPanelForObject(config.debug, "Debug")?.let { add(it) }

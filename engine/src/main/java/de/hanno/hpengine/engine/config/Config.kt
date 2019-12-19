@@ -133,7 +133,7 @@ data class DebugConfig(
 ) : IDebugConfig
 
 data class EffectsConfig(
-        override var isScattering: Boolean = true,
+        override var isScattering: Boolean = false,
         @Adjustable(minimum = 0, maximum = 100, minorTickSpacing = 5, majorTickSpacing = 10)
         override var rainEffect: Float = 0.0f,
         @Adjustable(maximum = 200, minorTickSpacing = 20, majorTickSpacing = 50)
@@ -158,14 +158,14 @@ data class PerformanceConfig(
     override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
-class SimpleConfig(override val gameDir: String = Directories.GAMEDIR_NAME,
-                   override var width: Int = 1280,
-                   override var height: Int = 720,
-                   override val quality: QualityConfig = QualityConfig(),
-                   override val debug: DebugConfig = DebugConfig(),
-                   override val effects: EffectsConfig = EffectsConfig(),
-                   override val performance: PerformanceConfig = PerformanceConfig(),
-                   override val profiling: ProfilingConfig = ProfilingConfig())
+class ConfigImpl(override val gameDir: String = Directories.GAMEDIR_NAME,
+                 override var width: Int = 1280,
+                 override var height: Int = 720,
+                 override val quality: QualityConfig = QualityConfig(),
+                 override val debug: DebugConfig = DebugConfig(),
+                 override val effects: EffectsConfig = EffectsConfig(),
+                 override val performance: PerformanceConfig = PerformanceConfig(),
+                 override val profiling: ProfilingConfig = ProfilingConfig())
         : Config {
 
     override var initFileName = "Init.java"
@@ -173,13 +173,13 @@ class SimpleConfig(override val gameDir: String = Directories.GAMEDIR_NAME,
 
 }
 
-fun SimpleConfig.populateConfigurationWithProperties(gameDir: File) {
+fun ConfigImpl.populateConfigurationWithProperties(gameDir: File) {
     FileInputStream(gameDir.resolve("default.properties")).use {
         populateConfigurationWithProperties(it.toProperties())
     }
 
 }
-fun SimpleConfig.populateConfigurationWithProperties(properties: Properties) {
+fun ConfigImpl.populateConfigurationWithProperties(properties: Properties) {
     val propertiesMap = mutableMapOf<String, Any>()
     for (key in properties.stringPropertyNames()) {
         propertiesMap[key] = properties[key]!!

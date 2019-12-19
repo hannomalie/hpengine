@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
-import de.hanno.hpengine.engine.config.SimpleConfig
+import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.entity.Entity
@@ -128,10 +128,10 @@ fun Array<String>.extractGameDir(): String {
     return gameDir
 }
 
-fun retrieveConfig(args: Array<String>): SimpleConfig {
+fun retrieveConfig(args: Array<String>): ConfigImpl {
     val gameDir = args.extractGameDir()
 
-    val config = SimpleConfig(gameDir)
+    val config = ConfigImpl(gameDir)
     config.populateConfigurationWithProperties(File(gameDir))
     return config
 }
