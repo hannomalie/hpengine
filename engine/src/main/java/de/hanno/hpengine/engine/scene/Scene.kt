@@ -19,6 +19,7 @@ import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.CubeMap
 import kotlinx.coroutines.CoroutineScope
 import java.io.Serializable
 import java.util.*
@@ -92,3 +93,6 @@ interface Scene : Updatable, Serializable {
     var initialized: Boolean
     val modelComponentSystem: ModelComponentSystem
 }
+
+
+class SkyBox(var cubeMap: CubeMap)

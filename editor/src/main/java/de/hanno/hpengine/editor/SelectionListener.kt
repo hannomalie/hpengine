@@ -40,10 +40,10 @@ class SelectionListener(internal var tree: JTree,
         // TODO: MIIIIEEEEEES
         if (node is EnvironmentProbe) {
         } else if (node is Entity) {
-            if(node == editorComponents?.entitySelector?.selection) {
-                editorComponents.entitySelector.unselect()
+            if(node == editorComponents?.selectionSystem?.selection) {
+                editorComponents.selectionSystem.unselect()
             } else {
-                editorComponents.entitySelector.selectEntity(node)
+                editorComponents.selectionSystem.selectEntity(node)
             }
         } else if (node is Mesh<*>) {
 //            entityViewFrame.contentPane.removeAll()

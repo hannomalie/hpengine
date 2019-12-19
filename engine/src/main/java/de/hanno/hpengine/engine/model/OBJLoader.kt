@@ -210,44 +210,44 @@ class OBJLoader {
 
                 } else if ("map_Kd" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.DIFFUSE, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.DIFFUSE, File(f.parentFile.absolutePath + "/" + map))
 //                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.DIFFUSE)
 
                 } else if ("map_Ka" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.OCCLUSION, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.OCCLUSION, File(f.parentFile.absolutePath + "/" + map))
 //                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.OCCLUSION)
 
                 } else if ("map_Disp" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR, File(f.parentFile.absolutePath + "/" + map))
 
                 } else if ("map_Ks" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.SPECULAR, File(f.parentFile.absolutePath + "/" + map))
 //                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.SPECULAR)
 
                 } else if ("map_Ns" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.ROUGHNESS, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.ROUGHNESS, File(f.parentFile.absolutePath + "/" + map))
 //                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.ROUGHNESS)
 
                 } else if ("map_bump" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL, File(f.parentFile.absolutePath + "/" + map))
 
                 } else if ("bump" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL, File(f.parentFile.absolutePath + "/" + map))
 
                 } else if ("map_d" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.NORMAL, File(f.parentFile.absolutePath + "/" + map))
 //                    textureJobs += addHelperXXX(textureManager, currentMaterialInfo!!, path, map, SimpleMaterial.MAP.NORMAL)
 
                 } else if ("map_Kh" == firstToken) {
                     val map = rest
-                    currentMaterialInfo = addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.HEIGHT, File(f.parentFile.absolutePath + "/" + map))
+                    addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.HEIGHT, File(f.parentFile.absolutePath + "/" + map))
 
                 } else if ("Kd" == firstToken) {
                     currentMaterialInfo = currentMaterialInfo!!.copyXXX(diffuse = parseVertex(materialLine))
@@ -281,8 +281,8 @@ class OBJLoader {
         return materials
     }
 
-    private fun addHelper(textureManager: TextureManager, currentMaterialInfo: MaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP, file: File): MaterialInfo {
-        return currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE, file))
+    private fun addHelper(textureManager: TextureManager, currentMaterialInfo: MaterialInfo?, path: String, name: String, map: SimpleMaterial.MAP, file: File) {
+        currentMaterialInfo!!.put(map, textureManager.getTexture(path + name, map === SimpleMaterial.MAP.DIFFUSE, file))
     }
 
     private fun parseName(line: String, mesh: StaticMesh) {

@@ -116,7 +116,7 @@ class MaterialManager(val config: Config,
         hashMap.forEach { map, value ->
             textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE, engineDir)
         }
-        val info = SimpleMaterialInfo(name = name, mapsInternal = textures)
+        val info = SimpleMaterialInfo(name = name, maps = textures)
         return getMaterial(info)
     }
 
@@ -143,16 +143,6 @@ class MaterialManager(val config: Config,
         fun getDirectory(): String {
             return Directories.WORKDIR_NAME + "/assets/materials/"
         }
-    }
-
-    fun changeMaterial(changedMaterial: MaterialInfo) {
-        val oldMaterial = materials.find { it.materialInfo.name == changedMaterial.name }
-        if (oldMaterial != null) {
-            oldMaterial.materialInfo = changedMaterial
-//            MATERIALS.remove(oldMaterial.name)
-//            getMaterial(changedMaterial)
-        }
-        eventBus.post(MaterialChangedEvent())
     }
 
     override fun extract(renderState: RenderState) {

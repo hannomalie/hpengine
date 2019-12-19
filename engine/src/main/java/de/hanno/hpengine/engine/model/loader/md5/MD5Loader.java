@@ -263,7 +263,7 @@ public class MD5Loader {
             try {
 
                 SimpleMaterialInfo materialInfo = new SimpleMaterialInfo(texturePath);
-                materialInfo = materialInfo.put(SimpleMaterial.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath, false, textureDir));
+                materialInfo.put(SimpleMaterial.MAP.DIFFUSE, materialManager.getTextureManager().getTexture(texturePath, false, textureDir));
 
                 // Handle normal Maps;
                 int pos = texturePath.lastIndexOf(".");
@@ -273,17 +273,17 @@ public class MD5Loader {
                     String normalMapFileName = basePath + "_local" + extension;
                     if (new File(normalMapFileName).exists()) {
                         Texture normalMap = materialManager.getTextureManager().getTexture(normalMapFileName, false, textureDir);
-                        materialInfo = materialInfo.put(SimpleMaterial.MAP.NORMAL, normalMap);
+                        materialInfo.put(SimpleMaterial.MAP.NORMAL, normalMap);
                     }
                     String heightMapFileName = basePath + "_h" + extension;
                     if (new File(heightMapFileName).exists()) {
                         Texture heightMap = materialManager.getTextureManager().getTexture(heightMapFileName, false, textureDir);
-                        materialInfo = materialInfo.put(SimpleMaterial.MAP.HEIGHT, heightMap);
+                        materialInfo.put(SimpleMaterial.MAP.HEIGHT, heightMap);
                     }
                     String specularMapFile = basePath + "_s" + extension;
                     if (new File(specularMapFile).exists()) {
                         Texture specularMap = materialManager.getTextureManager().getTexture(specularMapFile, false, textureDir);
-                        materialInfo = materialInfo.put(SimpleMaterial.MAP.SPECULAR, specularMap);
+                        materialInfo.put(SimpleMaterial.MAP.SPECULAR, specularMap);
                     }
                 }
                 SimpleMaterial material = materialManager.getMaterial(materialInfo);

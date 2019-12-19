@@ -8,19 +8,17 @@ import java.lang.Double.BYTES
 import java.lang.Float
 
 interface Material {
-    var materialInfo: MaterialInfo
+    val materialInfo: MaterialInfo
 
-    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>): MaterialInfo {
-        materialInfo = materialInfo.put(map, texture)
-        return materialInfo
+    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>) {
+        materialInfo.put(map, texture)
     }
-    fun remove(map: SimpleMaterial.MAP): MaterialInfo {
-        materialInfo = materialInfo.remove(map)
-        return materialInfo
+    fun remove(map: SimpleMaterial.MAP) {
+        materialInfo.remove(map)
     }
 }
 
-class SimpleMaterial(override var materialInfo: MaterialInfo): Material {
+class SimpleMaterial(override val materialInfo: MaterialInfo): Material {
 
     var materialIndex = -1
 

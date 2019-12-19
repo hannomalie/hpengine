@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.retrieveConfig
 import de.hanno.hpengine.engine.scene.SimpleScene
@@ -163,11 +164,10 @@ class EditorComponents(val engine: EngineImpl,
                         when(val selection = selectedTreeElement) {
                             is Camera -> {
                                 sidePanel.doWithRefresh {
-                                    add(JButton("Unselect").apply {
-                                        addActionListener {
-                                            sidePanel.removeAll()
-                                        }
-                                    })
+                                    addUnselectButton {
+                                        selectedTreeElement = null
+                                        this@apply.clearSelection()
+                                    }
                                     add(CameraGrid(selection))
                                 }
                             }
@@ -178,42 +178,42 @@ class EditorComponents(val engine: EngineImpl,
                             is Entity -> {
                                 JPopupMenu().apply {
                                     add(
-                                            JMenu("Add").apply {
-                                                add(JMenuItem("ModelComponent").apply {
-                                                    addActionListener {
-                                                        JFileChooser(engine.directories.gameDir).apply {
-                                                            if(showOpenDialog(editor) == JFileChooser.APPROVE_OPTION) {
-                                                                GlobalScope.launch {
-                                                                    val loadedModels = LoadModelCommand(selectedFile,
-                                                                            "Model_${System.currentTimeMillis()}",
-                                                                            engine.materialManager,
-                                                                            engine.directories.gameDir,
-                                                                            selection).execute()
-                                                                    engine.singleThreadContext.launch {
-                                                                        with(engine.scene) {
-                                                                            addAll(loadedModels.entities)
-                                                                        }
+                                        JMenu("Add").apply {
+                                            add(JMenuItem("ModelComponent").apply {
+                                                addActionListener {
+                                                    JFileChooser(engine.directories.gameDir).apply {
+                                                        if(showOpenDialog(editor) == JFileChooser.APPROVE_OPTION) {
+                                                            GlobalScope.launch {
+                                                                val loadedModels = LoadModelCommand(selectedFile,
+                                                                        "Model_${System.currentTimeMillis()}",
+                                                                        engine.materialManager,
+                                                                        engine.directories.gameDir,
+                                                                        selection).execute()
+                                                                engine.singleThreadContext.launch {
+                                                                    with(engine.scene) {
+                                                                        addAll(loadedModels.entities)
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                })
-                                                add(JMenu("Light").apply {
-                                                    add(JMenuItem("PointLight").apply {
-                                                        addActionListener {
-                                                            val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
-                                                            engine.singleThreadContext.launch {
-                                                                selection.addComponent(component)
+                                                }
+                                            })
+                                            add(JMenu("Light").apply {
+                                                add(JMenuItem("PointLight").apply {
+                                                    addActionListener {
+                                                        val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
+                                                        engine.singleThreadContext.launch {
+                                                            selection.addComponent(component)
 
-                                                                with(engine.managers) {
-                                                                    onComponentAdded(component)
-                                                                }
+                                                            with(engine.managers) {
+                                                                onComponentAdded(component)
                                                             }
                                                         }
-                                                    })
+                                                    }
                                                 })
-                                            }
+                                            })
+                                        }
                                     )
                                     show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
                                 }
@@ -240,7 +240,16 @@ class EditorComponents(val engine: EngineImpl,
             }
         }
 
-        val sceneTreePanel = SwingUtils.invokeAndWait {
+    fun JPanel.addUnselectButton(additionalOnClick: () -> Unit = {}) {
+        add(JButton("Unselect").apply {
+            addActionListener {
+                removeAll()
+                additionalOnClick()
+            }
+        })
+    }
+
+    val sceneTreePanel = SwingUtils.invokeAndWait {
             ReloadableScrollPane(sceneTree).apply {
                 preferredSize = Dimension(300, editor.sidePanel.height)
 
@@ -261,12 +270,12 @@ class EditorComponents(val engine: EngineImpl,
         var transformSpace = TransformSpace.World
         var selectionMode = SelectionMode.Entity
 
-        val entitySelector = EntitySelector(this).apply {
+        val selectionSystem = SelectionSystem(this).apply {
             engine.renderSystems.add(this)
         }
 
         init {
-            MouseInputProcessor(engine, entitySelector::selection, this).apply {
+            MouseInputProcessor(engine, selectionSystem::selection, this).apply {
                 editor.canvas?.addMouseMotionListener(this)
                 editor.canvas?.addMouseListener(this)
             }
@@ -280,6 +289,7 @@ class EditorComponents(val engine: EngineImpl,
                 addSceneTask()
                 addTransformTask()
                 addTextureTask()
+                addMaterialTask()
                 addConfigAnchoredCommand()
             }
         }
@@ -593,6 +603,111 @@ class EditorComponents(val engine: EngineImpl,
                             .setToggle()
                             .build()
                 } else null
+            }
+        }
+
+        private fun addMaterialTask() {
+            val materialBand = JRibbonBand("Material", null).apply {
+                val addMaterialCommand = Command.builder()
+                        .setText("Create")
+                        .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
+                        .setAction {
+                            val fc = JFileChooser()
+                            val returnVal = fc.showOpenDialog(editor)
+                            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                                val file = fc.selectedFile
+                                engine.textureManager.getCubeMap(file.name, file = file)
+                            }
+                        }
+                        .setActionRichTooltip(RichTooltip.builder()
+                                .setTitle("Material")
+                                .addDescriptionSection("Creates a texture from the selected image")
+                                .build())
+                        .build()
+                addRibbonCommand(addMaterialCommand.project(CommandButtonPresentationModel.builder()
+                        .setTextClickAction()
+                        .build()), JRibbonBand.PresentationPriority.TOP)
+
+
+                val materialCommands = retrieveMaterialCommands()
+                val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { getResizableIconFromSvgResource("add-24px.svg") },
+                        listOf(CommandGroup("Available materials", materialCommands))
+                )
+                val stylesGalleryVisibleCommandCounts = mapOf(
+                        JRibbonBand.PresentationPriority.LOW to 1,
+                        JRibbonBand.PresentationPriority.MEDIUM to 2,
+                        JRibbonBand.PresentationPriority.TOP to 3
+                )
+
+                val galleryProjection = RibbonGalleryProjection(contentModel, RibbonGalleryPresentationModel.builder()
+                        .setPreferredVisibleCommandCounts(stylesGalleryVisibleCommandCounts)
+                        .setPreferredPopupMaxVisibleCommandRows(3)
+                        .setPreferredPopupMaxCommandColumns(3)
+                        .setCommandPresentationState(JRibbonBand.BIG_FIXED_LANDSCAPE)
+                        .setExpandKeyTip("M")
+                        .build())
+                addRibbonGallery(galleryProjection, JRibbonBand.PresentationPriority.TOP)
+
+                val refreshMaterialsCommand = Command.builder()
+                        .setText("Refresh")
+                        .setIconFactory { getResizableIconFromSvgResource("refresh-24px.svg") }
+                        .setAction {
+                            contentModel.getCommandGroupByTitle("Available materials").apply {
+                                SwingUtils.invokeLater {
+                                    removeAllCommands()
+                                    retrieveMaterialCommands().forEach {
+                                        addCommand(it)
+                                    }
+                                }
+                            }
+                        }
+                        .setActionRichTooltip(RichTooltip.builder()
+                                .setTitle("Refresh materials")
+                                .addDescriptionSection("Populates the gallery with the current set of available materials")
+                                .build())
+                        .build()
+                addRibbonCommand(refreshMaterialsCommand.project(CommandButtonPresentationModel.builder()
+                        .setTextClickAction()
+                        .build()), JRibbonBand.PresentationPriority.TOP)
+                resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
+            }
+
+            val textureTask = RibbonTask("Material", materialBand)
+            addTask(textureTask)
+        }
+
+        private fun retrieveMaterialCommands(): List<Command> {
+            return engine.scene.materialManager.materials.mapNotNull { material ->
+                val icon = if(material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
+                    val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
+                    if(diffuseMap != null) {
+                        val image = ImageIO.read(File(diffuseMap.file.absolutePath))
+                        getResizableIconFromImageSource(image)
+                    } else {
+                        getResizableIconFromSvgResource("add-24px.svg")
+                    }
+                } else { getResizableIconFromSvgResource("add-24px.svg") }
+
+                Command.builder()
+                        .setText(material.materialInfo.name)
+                        .setAction { event ->
+                            // unselect and select material here
+                            if(event.command.isToggleSelected) {
+                                if(selectionSystem.selection == material) {
+                                    selectionSystem.unselect()
+                                } else {
+                                    sidePanel.doWithRefresh {
+                                        addUnselectButton()
+                                        add(MaterialGrid(engine.textureManager, material))
+                                    }
+                                }
+                            } else {
+                                selectionSystem.unselect()
+                            }
+                        }
+                        .setIconFactory { icon }
+                        .setToggle()
+                        .build()
             }
         }
 

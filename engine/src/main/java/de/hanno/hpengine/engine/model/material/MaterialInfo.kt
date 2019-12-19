@@ -56,8 +56,8 @@ interface MaterialInfo {
     fun getHasHeightMap(): Boolean
     fun getHasOcclusionMap(): Boolean
     fun getHasRoughnessMap(): Boolean
-    fun put(map: MAP, texture: Texture<TextureDimension2D>): MaterialInfo
-    fun remove(map: MAP): MaterialInfo
+    fun put(map: MAP, texture: Texture<TextureDimension2D>)
+    fun remove(map: MAP)
     fun copyXXX(diffuse: Vector3f = this.diffuse,
                 roughness: Float = this.roughness,
                 metallic: Float = this.metallic,
@@ -72,18 +72,17 @@ interface MaterialInfo {
                 environmentMapType: ENVIRONMENTMAP_TYPE = this.environmentMapType): MaterialInfo
 }
 
-// TODO: Make this truly immutable
 data class SimpleMaterialInfo @JvmOverloads constructor(override val name: String,
-                                                        override val diffuse: Vector3f = Vector3f(1f, 1f, 1f),
-                                                        override val roughness: Float = 0.95f,
-                                                        override val metallic: Float = 0f,
-                                                        override val ambient: Float = 0f,
-                                                        override val transparency: Float = 0f,
-                                                        override val parallaxScale: Float = 0.04f,
-                                                        override val parallaxBias: Float = 0.02f,
-                                                        override val materialType: MaterialType = DEFAULT,
-                                                        override val transparencyType: TransparencyType = TransparencyType.BINARY,
-                                                        private val mapsInternal: MutableMap<MAP, Texture<TextureDimension2D>> = hashMapOf(),
+                                                        override var diffuse: Vector3f = Vector3f(1f, 1f, 1f),
+                                                        override var roughness: Float = 0.95f,
+                                                        override var metallic: Float = 0f,
+                                                        override var ambient: Float = 0f,
+                                                        override var transparency: Float = 0f,
+                                                        override var parallaxScale: Float = 0.04f,
+                                                        override var parallaxBias: Float = 0.02f,
+                                                        override var materialType: MaterialType = DEFAULT,
+                                                        override var transparencyType: TransparencyType = TransparencyType.BINARY,
+                                                        override val maps: MutableMap<MAP, Texture<TextureDimension2D>> = hashMapOf(),
                                                         override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
 
     override fun copyXXX(diffuse: Vector3f, roughness: Float, metallic: Float, ambient: Float, transparency: Float, parallaxScale: Float, parallaxBias: Float, materialType: MaterialType, transparencyType: TransparencyType, textureLess: Boolean, maps: Map<MAP, Texture<TextureDimension2D>>, environmentMapType: ENVIRONMENTMAP_TYPE): MaterialInfo {
@@ -98,29 +97,27 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
                 parallaxBias = parallaxBias,
                 materialType = materialType,
                 transparencyType = transparencyType,
-                mapsInternal = HashMap(maps),
+                maps = HashMap(maps),
                 environmentMapType = environmentMapType
         )
     }
 
 
-    override fun getHasSpecularMap() = mapsInternal.containsKey(MAP.SPECULAR)
-    override fun getHasNormalMap() = mapsInternal.containsKey(MAP.NORMAL)
-    override fun getHasDiffuseMap() = mapsInternal.containsKey(MAP.DIFFUSE)
-    override fun getHasHeightMap() = mapsInternal.containsKey(MAP.HEIGHT)
-    override fun getHasOcclusionMap() = mapsInternal.containsKey(MAP.OCCLUSION)
-    override fun getHasRoughnessMap() = mapsInternal.containsKey(MAP.ROUGHNESS)
+    override fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
+    override fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)
+    override fun getHasDiffuseMap() = maps.containsKey(MAP.DIFFUSE)
+    override fun getHasHeightMap() = maps.containsKey(MAP.HEIGHT)
+    override fun getHasOcclusionMap() = maps.containsKey(MAP.OCCLUSION)
+    override fun getHasRoughnessMap() = maps.containsKey(MAP.ROUGHNESS)
 
-    override val textureLess = mapsInternal.isEmpty()
+    override val textureLess = maps.isEmpty()
 
-    override fun put(map: MAP, texture: Texture<TextureDimension2D>): SimpleMaterialInfo {
-        return copy(mapsInternal = mapsInternal.apply { put(map, texture) })
+    override fun put(map: MAP, texture: Texture<TextureDimension2D>) {
+        maps[map] = texture
     }
-    override fun remove(map: MAP): SimpleMaterialInfo {
-        return copy(mapsInternal = mapsInternal.apply { remove(map)})
+    override fun remove(map: MAP) {
+        maps.remove(map)
     }
-
-    override val maps = mapsInternal as Map<MAP, Texture<TextureDimension2D>>
 
     companion object {
         private const val serialVersionUID = 3564429930446909410L

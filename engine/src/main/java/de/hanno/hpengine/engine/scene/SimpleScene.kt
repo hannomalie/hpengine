@@ -34,6 +34,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
+
 class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine<OpenGl>) : Scene {
     @Transient
     override var currentCycle: Long = 0

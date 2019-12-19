@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Mesh
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -28,7 +29,7 @@ import java.util.function.Consumer
 import javax.swing.JButton
 import javax.swing.JPanel
 
-class EntitySelector(val editorComponents: EditorComponents) : RenderSystem {
+class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val engine: Engine<OpenGl> = editorComponents.engine
     val editor: RibbonEditor = editorComponents.editor
     val sidePanel: JPanel = editorComponents.editor.sidePanel
@@ -40,7 +41,7 @@ class EntitySelector(val editorComponents: EditorComponents) : RenderSystem {
     val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
     init {
-        editor.canvas?.addMouseListener(object : MouseAdapter() {
+        editor.canvas.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 mouseClicked = e
             }
@@ -57,8 +58,8 @@ class EntitySelector(val editorComponents: EditorComponents) : RenderSystem {
     }
 
     data class MeshSelection(val mesh: Mesh<*>, val entity: Entity)
-    override fun render(result: DrawResult, state: RenderState) {
 
+    override fun render(result: DrawResult, state: RenderState) {
         mouseClicked?.let { event ->
             engine.deferredRenderingBuffer.use(engine.gpuContext, false)
             engine.gpuContext.readBuffer(4)
@@ -71,24 +72,18 @@ class EntitySelector(val editorComponents: EditorComponents) : RenderSystem {
 
             val entityIndex = floatBuffer.get()
             val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
-            when(editorComponents.selectionMode) {
-                SelectionMode.Entity -> {
-                    when(val localSelection = selection) {
-                        null -> selectEntity(pickedEntity)
-                        is Entity -> if(localSelection.name == pickedEntity.name) unselect() else selectEntity(pickedEntity)
-                        else -> Unit
-                    }
-                }
-                SelectionMode.Mesh -> {
-                    val meshIndex = floatBuffer.get(3)
-                    val selectedMesh = pickedEntity.getComponent(ModelComponent::class.java)!!.meshes[meshIndex.toInt()]
+            val meshIndex = floatBuffer.get(3)
+            val selectedMesh = pickedEntity.getComponent(ModelComponent::class.java)!!.meshes[meshIndex.toInt()]
 
-                    when(val localSelection = selection) {
-                        null -> selectMesh(MeshSelection(selectedMesh, pickedEntity))
-                        is MeshSelection -> if(localSelection.mesh.name == selectedMesh.name) unselect() else selectMesh(MeshSelection(selectedMesh, pickedEntity))
-                        else -> Unit
-                    }
+            when(val selection = selection) {
+                null -> when(editorComponents.selectionMode) {
+                    SelectionMode.Entity -> selectEntity(pickedEntity)
+                    SelectionMode.Mesh -> selectMesh(MeshSelection(selectedMesh, pickedEntity))
                 }
+                is Entity -> if(selection.name == pickedEntity.name) unselect() else selectEntity(pickedEntity)
+                is MeshSelection -> if(selection.mesh.name == selectedMesh.name) unselect() else selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                is Material -> selectMaterial(selection)
+                else -> Unit
             }.let {}
             mouseClicked = null
         }
@@ -190,6 +185,18 @@ class EntitySelector(val editorComponents: EditorComponents) : RenderSystem {
                 }
             })
             add(MeshGrid(pickedMesh.mesh, engine.scene.materialManager))
+        }
+    }
+
+    fun selectMaterial(pickedMaterial: Material) = SwingUtils.invokeAndWait {
+        selection = pickedMaterial
+        sidePanel.doWithRefresh {
+            add(JButton("Unselect").apply {
+                addActionListener {
+                    unselect()
+                }
+            })
+            add(MaterialGrid(engine.textureManager, pickedMaterial))
         }
     }
 
