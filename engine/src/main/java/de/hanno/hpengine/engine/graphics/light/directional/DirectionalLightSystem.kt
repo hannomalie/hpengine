@@ -42,17 +42,15 @@ class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleSce
         val light = getDirectionalLight() ?: return
 
         with(light) {
-            renderState.directionalLightState.color.set(color)
-            renderState.directionalLightState.direction.set(direction)
-            renderState.directionalLightState.scatterFactor = scatterFactor
-            renderState.directionalLightState.viewMatrix.set(viewMatrix)
-            renderState.directionalLightState.projectionMatrix.set(projectionMatrix)
-            renderState.directionalLightState.viewProjectionMatrix.set(viewProjectionMatrix)
-            renderState.directionalLightState.shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
-            renderState.directionalLightState.shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
+            renderState.directionalLightState[0].color.set(color)
+            renderState.directionalLightState[0].direction.set(direction)
+            renderState.directionalLightState[0].scatterFactor = scatterFactor
+            renderState.directionalLightState[0].viewMatrix.set(viewMatrix)
+            renderState.directionalLightState[0].projectionMatrix.set(projectionMatrix)
+            renderState.directionalLightState[0].viewProjectionMatrix.set(viewProjectionMatrix)
+            renderState.directionalLightState[0].shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
+            renderState.directionalLightState[0].shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
         }
-
-        renderState.directionalLightState.buffer.copyTo(renderState.directionalLightBuffer.buffer)
     }
     override fun render(result: DrawResult, state: RenderState) {
         shadowMapExtension.renderFirstPass(_engine.backend, _engine.gpuContext, result.firstPassResult, state)

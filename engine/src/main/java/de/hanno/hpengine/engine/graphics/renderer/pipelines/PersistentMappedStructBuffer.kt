@@ -8,7 +8,6 @@ import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL40
@@ -18,9 +17,9 @@ import java.nio.ByteBuffer
 import kotlin.math.max
 
 class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
-                                                              val factory: () -> T,
-                                                              val gpuContext: GpuContext<*>,
-                                                              val target: Int = GL43.GL_SHADER_STORAGE_BUFFER): Array<T> {
+                                              val gpuContext: GpuContext<*>,
+                                              val factory: () -> T,
+                                              val target: Int = GL43.GL_SHADER_STORAGE_BUFFER): Array<T> {
     val slidingWindow = createSlidingWindow()
 
     fun createSlidingWindow(): SlidingWindow<T> {
@@ -175,7 +174,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
 }
 
 fun CommandBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<DrawElementsIndirectCommand> {
-    return PersistentMappedStructBuffer(size, { DrawElementsIndirectCommand() }, gpuContext, GL40.GL_DRAW_INDIRECT_BUFFER)
+    return PersistentMappedStructBuffer(size, gpuContext, { DrawElementsIndirectCommand() }, GL40.GL_DRAW_INDIRECT_BUFFER)
 }
 
 class IntStruct: Struct() {
@@ -183,5 +182,5 @@ class IntStruct: Struct() {
 }
 
 fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<IntStruct> {
-    return PersistentMappedStructBuffer(size, { IntStruct() }, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER)
+    return PersistentMappedStructBuffer(size, gpuContext, { IntStruct() }, GL40.GL_ELEMENT_ARRAY_BUFFER)
 }

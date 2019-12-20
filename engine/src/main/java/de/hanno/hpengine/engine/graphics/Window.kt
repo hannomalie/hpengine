@@ -41,17 +41,7 @@ interface Window<T: BackendType>: OpenGlExecutor {
     val frontBuffer: RenderTarget<Texture2D>
 }
 
-val glData = GLData().apply {
-    majorVersion = 4
-    minorVersion = 5
-    forwardCompatible = true
-//    profile = GLData.Profile.COMPATIBILITY
-    samples = 4
-    swapInterval = 0
-//    this.debug = true
-}
-
-abstract class CustomGlCanvas: AWTGLCanvas(glData) {
+abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
     val commandQueue = CommandQueue { SwingUtilities.isEventDispatchThread() }
 
     public override fun beforeRender() {

@@ -22,8 +22,8 @@ class EntitiesState(gpuContext: GpuContext<*>) {
     var renderBatchesAnimated = RenderBatches()
     var vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10, 10, DEFAULTCHANNELS)
     var vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10, 10, DEFAULTANIMATEDCHANNELS)
-    var entitiesBuffer = PersistentMappedStructBuffer(0, { EntityStruct() }, gpuContext)
-    var jointsBuffer = PersistentMappedStructBuffer(0, { Matrix4f() }, gpuContext)
-    val materialBuffer = PersistentMappedStructBuffer(0, { MaterialStruct() }, gpuContext)
+    var entitiesBuffer = PersistentMappedStructBuffer(0, gpuContext, { EntityStruct() })
+    var jointsBuffer = PersistentMappedStructBuffer(0, gpuContext, { Matrix4f() })
+    val materialBuffer = PersistentMappedStructBuffer(0, gpuContext, { MaterialStruct() })
 
 }

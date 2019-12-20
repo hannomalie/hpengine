@@ -205,7 +205,7 @@ class DeferredRenderer
             }
 
             if (!engineContext.config.debug.isUseDirectTextureOutput) {
-                backend.gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState.shadowMapId)
+                backend.gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState[0].shadowMapId)
                 for (extension in renderExtensions) {
                     profiled("RenderExtension " + extension.javaClass.simpleName) {
                         extension.renderFirstPass(backend, gpuContext, firstPassResult, state)
@@ -243,7 +243,7 @@ class DeferredRenderer
 
                 if (!engineContext.config.debug.isUseDirectTextureOutput) {
                     profiled("Extensions") {
-                        gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState.shadowMapId)
+                        gpuContext.bindTexture(6, TEXTURE_2D, state.directionalLightState[0].shadowMapId)
                         for (extension in renderExtensions) {
                             extension.renderSecondPassFullScreen(state, secondPassResult)
                         }
@@ -480,7 +480,7 @@ class DeferredRenderer
         backend.gpuContext.bindTexture(1, TEXTURE_2D, gBuffer.normalMap)
         backend.gpuContext.bindTexture(2, TEXTURE_2D, gBuffer.colorReflectivenessMap)
         backend.gpuContext.bindTexture(3, TEXTURE_2D, gBuffer.motionMap)
-        backend.gpuContext.bindTexture(6, TEXTURE_2D, renderState.directionalLightState.shadowMapId)
+        backend.gpuContext.bindTexture(6, TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
         renderState.lightState.pointLightShadowMapStrategy.bindTextures()
         if(renderState.environmentProbesState.environmapsArray3Id > 0) {
             backend.gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
@@ -509,7 +509,7 @@ class DeferredRenderer
         aoScatteringProgram.setUniform("maxPointLightShadowmaps", MAX_POINTLIGHT_SHADOWMAPS)
         aoScatteringProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
         aoScatteringProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-        aoScatteringProgram.bindShaderStorageBuffer(3, renderState.directionalLightBuffer)
+        aoScatteringProgram.bindShaderStorageBuffer(3, renderState.directionalLightState)
 
         bindEnvironmentProbePositions(aoScatteringProgram, renderState.environmentProbesState)
         gpuContext.fullscreenBuffer.draw()

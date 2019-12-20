@@ -45,7 +45,7 @@ class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderEx
 
         programStatic.use()
         programStatic.bindShaderStorageBuffer(1, renderState.materialBuffer)
-        programStatic.bindShaderStorageBuffer(2, renderState.directionalLightBuffer)
+        programStatic.bindShaderStorageBuffer(2, renderState.directionalLightState)
         programStatic.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
         programStatic.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         programStatic.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)

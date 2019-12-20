@@ -32,7 +32,7 @@ class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExt
             gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.normalMap)
             gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
             gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, gBuffer.motionMap)
-            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.shadowMapId)
+            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
             renderState.lightState.pointLightShadowMapStrategy.bindTextures()
             if(renderState.environmentProbesState.environmapsArray3Id > 0) {
                 gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
@@ -55,7 +55,7 @@ class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExt
             aoScatteringProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
             aoScatteringProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
             aoScatteringProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-            aoScatteringProgram.bindShaderStorageBuffer(3, renderState.directionalLightBuffer)
+            aoScatteringProgram.bindShaderStorageBuffer(3, renderState.directionalLightState)
 
             EnvironmentProbeManager.bindEnvironmentProbePositions(aoScatteringProgram, renderState.environmentProbesState)
             gpuContext.fullscreenBuffer.draw()

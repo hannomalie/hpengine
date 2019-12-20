@@ -50,13 +50,13 @@ class DirectionalLightSecondPassExtension(val engineContext: EngineContext<OpenG
                 gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
                 gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
                 gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_CUBE_MAP, engineContext.textureManager.cubeMap!!.id)
-                gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.shadowMapId)
+                gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
                 gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
                 if(renderState.environmentProbesState.environmapsArray3Id > 0) {
                     gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, renderState.environmentProbesState.environmapsArray3Id)
                 }
                 if(!gpuContext.isSupported(BindlessTextures)) {
-                    gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.shadowMapId)
+                    gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
                 }
             }
 
@@ -69,7 +69,7 @@ class DirectionalLightSecondPassExtension(val engineContext: EngineContext<OpenG
             secondPassDirectionalProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
-            secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.directionalLightBuffer)
+            secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
             EnvironmentProbeManager.bindEnvironmentProbePositions(secondPassDirectionalProgram, renderState.environmentProbesState)
             profiled("Draw fullscreen buffer") {
                 gpuContext.fullscreenBuffer.draw()

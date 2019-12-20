@@ -32,8 +32,8 @@ class VertexIndexBuffer(gpuContext: GpuContext<*>,
 
     val vertexArray = mutableListOf<Vertex>()
     val animatedVertexArray = mutableListOf<AnimatedVertex>()
-    var vertexStructArray = PersistentMappedStructBuffer(vertexArray.size, { VertexStructPacked() }, gpuContext)
-    var animatedVertexStructArray = PersistentMappedStructBuffer(animatedVertexArray.size, { AnimatedVertexStructPacked() }, gpuContext)
+    var vertexStructArray = PersistentMappedStructBuffer(vertexArray.size, gpuContext, { VertexStructPacked() })
+    var animatedVertexStructArray = PersistentMappedStructBuffer(animatedVertexArray.size, gpuContext, { AnimatedVertexStructPacked() })
 
     data class VertexIndexOffsets(val vertexOffset: Int, val indexOffset: Int)
 }

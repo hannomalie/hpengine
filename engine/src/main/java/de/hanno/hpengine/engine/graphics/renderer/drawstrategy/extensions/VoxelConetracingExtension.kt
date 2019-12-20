@@ -208,8 +208,8 @@ class VoxelConeTracingExtension(
                             GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                             setUniform("pointLightCount", renderState.lightState.pointLights.size)
                             bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-                            bindShaderStorageBuffer(3, renderState.directionalLightBuffer)
-                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
+                            bindShaderStorageBuffer(3, renderState.directionalLightState)
+                            bindShaderStorageBuffer(5, renderState[voxelGridBufferRef].voxelGridBuffer)
                             setUniform("bounces", bounces)
                             setUniform("voxelGridIndex", voxelGridIndex)
 

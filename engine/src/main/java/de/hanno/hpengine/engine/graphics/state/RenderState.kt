@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.EntityStruct
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
@@ -22,8 +21,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
-    val directionalLightBuffer = PersistentMappedBuffer(gpuContext, 58 * java.lang.Float::BYTES.get())
-    val directionalLightState = DirectionalLightState()
+    val directionalLightState = PersistentMappedStructBuffer(1, gpuContext, { DirectionalLightState() })
 
     val lightState = LightState(gpuContext)
 
@@ -75,12 +73,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
         camera.init(source.camera)
-        directionalLightState.viewMatrix.copyFrom(source.directionalLightState.viewMatrix)
-        directionalLightState.projectionMatrix.copyFrom(source.directionalLightState.projectionMatrix)
-        directionalLightState.viewProjectionMatrix.copyFrom(source.directionalLightState.viewProjectionMatrix)
-        directionalLightState.direction.copyFrom(source.directionalLightState.direction)
-        directionalLightState.color.copyFrom(source.directionalLightState.color)
-        directionalLightState.scatterFactor = source.directionalLightState.scatterFactor
+        directionalLightState[0].copyFrom(source.directionalLightState[0])
         lightState.pointLights = source.lightState.pointLights
         lightState.pointLightBuffer = source.lightState.pointLightBuffer
         lightState.areaLights = source.lightState.areaLights
@@ -103,9 +96,9 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         sceneMin = source.sceneMin
         sceneMax = source.sceneMax
         latestDrawResult.set(latestDrawResult)
-        this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
-        this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
-        this.sceneInitialized = source.sceneInitialized
+        entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
+        entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
+        sceneInitialized = source.sceneInitialized
     }
 
     fun addStatic(batch: RenderBatch) {

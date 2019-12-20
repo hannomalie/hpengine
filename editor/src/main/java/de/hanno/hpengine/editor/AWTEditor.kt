@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.glClear
+import org.lwjgl.opengl.awt.GLData
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin
@@ -34,7 +35,18 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
             frame.preferredSize = Dimension(600,600)
         }
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        canvas = object : CustomGlCanvas() {
+
+        val glData = GLData().apply {
+            majorVersion = 4
+            minorVersion = 5
+            forwardCompatible = true
+//    profile = GLData.Profile.COMPATIBILITY
+            samples = 4
+            swapInterval = 0
+//    this.debug = true
+        }
+
+        canvas = object : CustomGlCanvas(glData) {
             override fun initGL() {
                 GL.createCapabilities()
                 GL11.glClearColor(0.3f, 0.4f, 0.5f, 1f)
@@ -105,17 +117,11 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
         return 0
     }
 
-    override fun showWindow() {
+    override fun showWindow() { }
 
-    }
+    override fun hideWindow() { }
 
-    override fun hideWindow() {
-
-    }
-
-    override fun pollEvents() {
-
-    }
+    override fun pollEvents() { }
 
     override val frontBuffer = canvas.createFrontBufferRenderTarget()
 
@@ -124,7 +130,6 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
     }
 
     override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
-
     }
 
 //    override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {

@@ -64,8 +64,8 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             engine.deferredRenderingBuffer.use(engine.gpuContext, false)
             engine.gpuContext.readBuffer(4)
             floatBuffer.rewind()
-            val ratio = Vector2f(editor.canvas!!.width.toFloat() / engine.config.width.toFloat(),
-                    editor.canvas!!.height.toFloat() / engine.config.height.toFloat())
+            val ratio = Vector2f(editor.canvas.width.toFloat() / engine.config.width.toFloat(),
+                    editor.canvas.height.toFloat() / engine.config.height.toFloat())
             val adjustedX = (event.x / ratio.x).toInt()
             val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
@@ -73,15 +73,29 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             val entityIndex = floatBuffer.get()
             val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
             val meshIndex = floatBuffer.get(3)
-            val selectedMesh = pickedEntity.getComponent(ModelComponent::class.java)!!.meshes[meshIndex.toInt()]
+            val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
 
             when(val selection = selection) {
                 null -> when(editorComponents.selectionMode) {
                     SelectionMode.Entity -> selectEntity(pickedEntity)
-                    SelectionMode.Mesh -> selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                    SelectionMode.Mesh -> {
+                        if(modelComponent != null) {
+                            val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
+                            selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                        } else Unit
+                    }
                 }
                 is Entity -> if(selection.name == pickedEntity.name) unselect() else selectEntity(pickedEntity)
-                is MeshSelection -> if(selection.mesh.name == selectedMesh.name) unselect() else selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                is MeshSelection -> {
+                    val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
+                    when {
+                        selection.mesh.name == selectedMesh?.name -> {
+                            unselect()
+                        }
+                        selectedMesh != null -> selectMesh(MeshSelection(selectedMesh, pickedEntity))
+                        else -> Unit
+                    }
+                }
                 is Material -> selectMaterial(selection)
                 else -> Unit
             }.let {}
