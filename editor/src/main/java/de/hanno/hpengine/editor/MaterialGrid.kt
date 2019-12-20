@@ -61,17 +61,13 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
                         val typedSelectedItem = selectedItem as TextureSelection
                         val selected = retrieveCubeTextureItems().find { it.key == typedSelectedItem.key } ?: TextureSelection.None
                         when(selected) {
-                            is TextureSelection.Selection2D -> throw IllegalStateException("2D texture not suitable for $mapType selection")
                             is TextureSelection.SelectionCube -> maps[mapType] = selected.texture
                             TextureSelection.None -> maps.remove(mapType)
-                        }.let {  }
+                        }
                     }
-                    val newSelection: TextureSelection = if (maps.containsKey(mapType)) {
-                        val value = maps[mapType]!!
-                        val foundTexture = textureManager.textures.entries.first { it.value == value }
+                    selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
                         TextureSelection.SelectionCube(foundTexture.key, value)
-                    } else TextureSelection.None
-                    selectedItem = newSelection
+                    }
                 }
             }
             else -> {
@@ -81,16 +77,12 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
                         val selected = retrieve2DTextureItems().find { it.key == typedSelectedItem.key } ?: TextureSelection.None
                         when(selected) {
                             is TextureSelection.Selection2D -> maps[mapType] = selected.texture
-                            is TextureSelection.SelectionCube -> throw IllegalStateException("Cubemap not suitable for $mapType selection")
                             TextureSelection.None -> maps.remove(mapType)
-                        }.let {  }
+                        }
                     }
-                    val newSelection: TextureSelection = if (maps.containsKey(mapType)) {
-                        val value = maps[mapType]!!
-                        val foundTexture = textureManager.textures.entries.first { it.value == value }
+                    selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
                         TextureSelection.Selection2D(foundTexture.key, value)
-                    } else TextureSelection.None
-                    selectedItem = newSelection
+                    }
                 }
             }
         }
@@ -101,6 +93,16 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
             labeled(map.toString().toLowerCase(), combobox)
         }
     }
+}
+
+private fun SimpleMaterialInfo.retrieveInitialSelection(mapType: SimpleMaterial.MAP,
+                                                        textureManager: TextureManager,
+                                                        createSelection: (MutableMap.MutableEntry<String, Texture<*>>, Texture<TextureDimension2D>) -> TextureSelection): TextureSelection {
+    return if (maps.containsKey(mapType)) {
+        val value = maps[mapType]!!
+        val foundTexture = textureManager.textures.entries.first { it.value == value }
+        createSelection(foundTexture, value)
+    } else TextureSelection.None
 }
 
 private fun TextureManager.retrieve2DTextureItems() = retrieveTextureItems().filterIsInstance<TextureSelection.Selection2D>()

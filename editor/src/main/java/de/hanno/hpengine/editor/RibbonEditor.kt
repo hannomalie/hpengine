@@ -675,11 +675,15 @@ class EditorComponents(val engine: EngineImpl,
                         .setText("Refresh")
                         .setIconFactory { getResizableIconFromSvgResource("refresh-24px.svg") }
                         .setAction {
-                            contentModel.getCommandGroupByTitle("Available materials").apply {
-                                SwingUtils.invokeLater {
-                                    removeAllCommands()
-                                    retrieveMaterialCommands().forEach {
-                                        addCommand(it)
+                            GlobalScope.launch {
+                                val retrievedMaterialCommands = retrieveMaterialCommands()
+
+                                contentModel.getCommandGroupByTitle("Available materials").apply {
+                                    SwingUtils.invokeLater {
+                                        removeAllCommands()
+                                        retrievedMaterialCommands.forEach {
+                                            addCommand(it)
+                                        }
                                     }
                                 }
                             }
@@ -699,39 +703,37 @@ class EditorComponents(val engine: EngineImpl,
             addTask(textureTask)
         }
 
-        private fun retrieveMaterialCommands(): List<Command> {
-            return engine.scene.materialManager.materials.mapNotNull { material ->
-                val icon = if(material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
-                    val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
-                    if(diffuseMap != null) {
-                        val image = ImageIO.read(File(diffuseMap.file.absolutePath))
-                        getResizableIconFromImageSource(image)
-                    } else {
-                        getResizableIconFromSvgResource("add-24px.svg")
-                    }
-                } else { getResizableIconFromSvgResource("add-24px.svg") }
+        private fun retrieveMaterialCommands(): List<Command> = engine.scene.materialManager.materials.mapNotNull { material ->
+            val icon = if(material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
+                val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
+                if(diffuseMap != null) {
+                    val image = ImageIO.read(File(diffuseMap.file.absolutePath))
+                    getResizableIconFromImageSource(image)
+                } else {
+                    getResizableIconFromSvgResource("add-24px.svg")
+                }
+            } else { getResizableIconFromSvgResource("add-24px.svg") }
 
-                Command.builder()
-                        .setText(material.materialInfo.name)
-                        .setAction { event ->
-                            // unselect and select material here
-                            if(event.command.isToggleSelected) {
-                                if(selectionSystem.selection == material) {
-                                    selectionSystem.unselect()
-                                } else {
-                                    sidePanel.doWithRefresh {
-                                        addUnselectButton()
-                                        add(MaterialGrid(engine.textureManager, material))
-                                    }
-                                }
-                            } else {
-                                selectionSystem.unselect()
+            Command.builder()
+                .setText(material.materialInfo.name)
+                .setAction { event ->
+                    // unselect and select material here
+                    if(event.command.isToggleSelected) {
+                        if(selectionSystem.selection == material) {
+                            selectionSystem.unselect()
+                        } else {
+                            sidePanel.doWithRefresh {
+                                addUnselectButton()
+                                add(MaterialGrid(engine.textureManager, material))
                             }
                         }
-                        .setIconFactory { icon }
-                        .setToggle()
-                        .build()
-            }
+                    } else {
+                        selectionSystem.unselect()
+                    }
+                }
+                .setIconFactory { icon }
+                .setToggle()
+                .build()
         }
 
         override fun afterFrameFinished() {
