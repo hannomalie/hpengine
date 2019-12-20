@@ -8,7 +8,8 @@ import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.BatchingSystem
-import de.hanno.hpengine.engine.graphics.GpuEntityStruct
+import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -16,11 +17,8 @@ import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.struct.StructArray
-import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
-import de.hanno.struct.shrinkToBytes
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -36,7 +34,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
 
-    private var gpuEntitiesArray = StructArray(size = 1000) { GpuEntityStruct() }
+    private var gpuEntitiesArray = StructArray(size = 1000) { EntityStruct() }
     private var gpuJointsArray = StructArray(size = 1000) { Matrix4f() }
 
     val allocations: MutableMap<ModelComponent, Allocation> = mutableMapOf()
@@ -226,17 +224,8 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
         renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
-        renderState.entitiesBuffer.sizeInBytes = getRequiredEntityBufferSize() * GpuEntityStruct.getBytesPerInstance()
-        gpuEntitiesArray = gpuEntitiesArray.shrinkToBytes(renderState.entitiesBuffer.buffer.capacity())
-        gpuEntitiesArray.copyTo(renderState.entitiesBuffer.buffer)
-
-        renderState.entitiesState.jointsBuffer.sizeInBytes = joints.size * BufferableMatrix4f.getBytesPerInstance()
-        gpuJointsArray = gpuJointsArray.shrinkToBytes(renderState.entitiesState.jointsBuffer.buffer.capacity())
-        gpuJointsArray.copyTo(renderState.entitiesState.jointsBuffer.buffer)
-
-//        TODO: Remove this with proper extraction
-        renderState.entitiesState.joints = joints
-
+        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
+        gpuJointsArray.safeCopyTo(renderState.entitiesState.jointsBuffer)
 
         batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
                 components, engine.config.debug.isDrawLines, allocations, entityIndices)

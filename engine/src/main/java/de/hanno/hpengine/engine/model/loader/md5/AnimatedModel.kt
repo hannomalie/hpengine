@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model.loader.md5
 
 import de.hanno.hpengine.engine.model.AbstractModel
 import de.hanno.hpengine.engine.model.Mesh
-import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked

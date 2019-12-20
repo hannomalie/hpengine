@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
+import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -56,7 +56,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val vertexIndexBufferAnimated: VertexIndexBuffer
         get() = entitiesState.vertexIndexBufferAnimated
 
-    val entitiesBuffer: GPUBuffer
+    val entitiesBuffer: PersistentMappedStructBuffer<EntityStruct>
         get() = entitiesState.entitiesBuffer
 
     val materialBuffer: PersistentMappedStructBuffer<MaterialStruct>
@@ -74,7 +74,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     constructor(source: RenderState) : this(source.gpuContext) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
-        entitiesState.joints = source.entitiesState.joints
         camera.init(source.camera)
         directionalLightState.viewMatrix.copyFrom(source.directionalLightState.viewMatrix)
         directionalLightState.projectionMatrix.copyFrom(source.directionalLightState.projectionMatrix)

@@ -169,6 +169,11 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
     }
 }
 
+@JvmOverloads fun <T: Struct> Array<T>.safeCopyTo(target: PersistentMappedStructBuffer<T>, rewindBuffers: Boolean = true) {
+    target.resize(size)
+    copyTo(target, rewindBuffers)
+}
+
 fun CommandBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<DrawElementsIndirectCommand> {
     return PersistentMappedStructBuffer(size, { DrawElementsIndirectCommand() }, gpuContext, GL40.GL_DRAW_INDIRECT_BUFFER)
 }
