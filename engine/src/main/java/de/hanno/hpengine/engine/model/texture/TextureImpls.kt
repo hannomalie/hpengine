@@ -31,7 +31,7 @@ data class Texture3D(override val dimension: TextureDimension3D,
                      override var handle: Long,
                      override val textureFilterConfig: TextureFilterConfig,
                      override val wrapMode: Int,
-                     override var uploadState: UploadState) : Texture<TextureDimension3D> {
+                     override var uploadState: UploadState) : Texture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): Texture3D {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_3D, filterConfig, internalFormat, wrapMode)
@@ -47,7 +47,7 @@ data class CubeMap(override val dimension: TextureDimension2D,
                    override var handle: Long,
                    override val textureFilterConfig: TextureFilterConfig,
                    override val wrapMode: Int,
-                   override var uploadState: UploadState) : Texture<TextureDimension2D> {
+                   override var uploadState: UploadState) : Texture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): CubeMap {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
@@ -56,7 +56,7 @@ data class CubeMap(override val dimension: TextureDimension2D,
     }
 }
 
-data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Texture<TextureDimension2D> by backingTexture {
+data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Texture by backingTexture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedCubeMap {
             return invoke(gpuContext, path, directory.resolve(path), srgba)
@@ -166,7 +166,7 @@ data class CubeMapArray(override val dimension: TextureDimension3D,
                         override var handle: Long,
                         override val textureFilterConfig: TextureFilterConfig,
                         override val wrapMode: Int,
-                        override var uploadState: UploadState) : Texture<TextureDimension3D> {
+                        override var uploadState: UploadState) : Texture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): CubeMapArray {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)
@@ -267,7 +267,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                      override var handle: Long,
                      override val textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
                      override val wrapMode: Int,
-                     override var uploadState: UploadState) : Texture<TextureDimension2D> {
+                     override var uploadState: UploadState) : Texture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, file: File, path: String, srgba: Boolean = false): Texture2D {
             val fileAsDds = File(path.split(".")[0] + ".dds")
@@ -383,12 +383,12 @@ data class Texture2D(override val dimension: TextureDimension2D,
     sealed class TextureUploadInfo {
         data class Texture2DUploadInfo(val dimension: TextureDimension2D, val buffer: ByteBuffer? = null, val dataCompressed: Boolean = false, val srgba: Boolean = false): TextureUploadInfo()
         data class Texture3DUploadInfo(val dimension: TextureDimension3D): TextureUploadInfo()
-        data class CubeMapUploadInfo(val dimension: TextureDimension3D, val buffers: List<ByteBuffer> = emptyList()): TextureUploadInfo()
+        data class CubeMapUploadInfo(val dimension: TextureDimension2D, val buffers: List<ByteBuffer> = emptyList()): TextureUploadInfo()
         data class CubeMapArrayUploadInfo(val dimension: TextureDimension3D): TextureUploadInfo()
     }
 }
 
-data class FileBasedTexture2D(val path: String, val file: File, val backingTexture: Texture2D): Texture<TextureDimension2D> by backingTexture {
+data class FileBasedTexture2D(val path: String, val file: File, val backingTexture: Texture2D): Texture by backingTexture {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedTexture2D {
             return invoke(gpuContext, path, directory.resolve(path), srgba)

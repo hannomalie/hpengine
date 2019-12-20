@@ -21,7 +21,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import java.io.File
 
 open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
-                                 var texture: Texture<*>,
+                                 var texture: Texture,
                                  programManager: ProgramManager<OpenGl> = engineContext.programManager) : RenderSystem {
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
 

@@ -112,7 +112,7 @@ class MaterialManager(val config: Config,
     }
 
     fun getMaterial(name: String, hashMap: HashMap<MAP, String>): SimpleMaterial {
-        val textures = mutableMapOf<MAP, Texture<TextureDimension2D>>()
+        val textures = mutableMapOf<MAP, Texture>()
 
         hashMap.forEach { map, value ->
             textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE, engineDir)

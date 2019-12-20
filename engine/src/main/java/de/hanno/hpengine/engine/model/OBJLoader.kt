@@ -191,7 +191,7 @@ class OBJLoader {
         val parseMaterialName = ""
         var currentMaterialInfo: SimpleMaterialInfo? = null// = new SimpleMaterialInfo();
 
-        val textureJobs: MutableList<CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture<TextureDimension2D>>>> = mutableListOf()
+        val textureJobs: MutableList<CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture>>> = mutableListOf()
 
         var materialLine: String?  = materialFileReader!!.readLine()
         try {

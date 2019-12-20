@@ -17,7 +17,7 @@ public class CubeRenderTarget extends RenderTarget {
 		if(builder.useDepthBuffer) {
 			CubeMap depthCubeMap = CubeMap.Companion.invoke(
 					engine.getGpuContext(),
-					new TextureDimension(builder.width, builder.height),
+					TextureDimension.Companion.invoke(builder.width, builder.height),
 					new TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
 					GL14.GL_DEPTH_COMPONENT24, GL_REPEAT);
 

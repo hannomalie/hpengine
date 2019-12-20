@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.Texture2D;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
+import de.hanno.hpengine.engine.model.texture.TextureDimension3D;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL30;
 
@@ -26,7 +27,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 	public List<Texture2D> cubeMapFaceViews;
 
 	static DepthBuffer<CubeMapArray> getDepthBuffer(GpuContext gpuContext, int width, int height, int depth) {
-		TextureDimension dimension = new TextureDimension(width, height, depth);
+		TextureDimension3D dimension = TextureDimension.Companion.invoke(width, height, depth);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST);
 		return new DepthBuffer<>(CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_DEPTH_COMPONENT24, GL_REPEAT));
 	}

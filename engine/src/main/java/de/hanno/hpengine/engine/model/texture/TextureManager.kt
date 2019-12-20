@@ -82,7 +82,7 @@ class TextureManager(val config: Config,
     val engineDir = config.directories.engineDir
 
     /** The table of textures that have been loaded in this loader  */
-    var textures: MutableMap<String, Texture<*>> = LinkedHashMap()
+    var textures: MutableMap<String, Texture> = LinkedHashMap()
 
     init {
 //    	loadAllAvailableTextures();
@@ -120,7 +120,7 @@ class TextureManager(val config: Config,
     val defaultTextureAsBufferedImage = temp.second
 
 
-    private fun loadDefaultTexture(): Pair<Texture<TextureDimension2D>, BufferedImage> {
+    private fun loadDefaultTexture(): Pair<Texture, BufferedImage> {
         val defaultTexturePath = "assets/textures/default/gi_flag.png"
         val defaultTexture = engineDir.getTexture(defaultTexturePath, true)
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
@@ -153,24 +153,24 @@ class TextureManager(val config: Config,
         return true
     }
 
-    fun AbstractDirectory.getTexture(resourceName: String, srgba: Boolean = false): Texture<TextureDimension2D> {
+    fun AbstractDirectory.getTexture(resourceName: String, srgba: Boolean = false): Texture {
         return getTexture(resourceName, srgba, this)
     }
     @JvmOverloads
     fun getTexture(resourceName: String,
                    srgba: Boolean = false,
-                   directory: AbstractDirectory = config.directories.gameDir): Texture<TextureDimension2D> = singleThreadContext.runBlocking {
+                   directory: AbstractDirectory = config.directories.gameDir): Texture = singleThreadContext.runBlocking {
 
         textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
-        } as Texture<TextureDimension2D>
+        } as Texture
     }
 
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture<TextureDimension2D> = singleThreadContext.runBlocking {
+    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture = singleThreadContext.runBlocking {
         textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
-        } as Texture<TextureDimension2D>
+        } as Texture
     }
 
     private inline fun <T> MutableMap<String,T>.ifAbsentPutInSingleThreadContext(resourceName: String, block: () -> T): T {
@@ -239,7 +239,7 @@ class TextureManager(val config: Config,
         return tex
     }
 
-    fun Texture<*>.createTextureHandleAndMakeResident() = gpuContext.calculate {
+    fun Texture.createTextureHandleAndMakeResident() = gpuContext.calculate {
         handle = ARBBindlessTexture.glGetTextureHandleARB(id)
         ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
     }

@@ -194,7 +194,7 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
 }
 
 fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,
-                               maps: Map<SimpleMaterial.MAP, Texture<TextureDimension2D>>) {
+                               maps: Map<SimpleMaterial.MAP, Texture>) {
     for (mapEnumEntry in SimpleMaterial.MAP.values()) {
 
         if(maps.contains(mapEnumEntry)) {

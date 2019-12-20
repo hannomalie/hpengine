@@ -47,8 +47,8 @@ sealed class TextureSelection(val key: String) {
         return (other as? TextureSelection)?.key == key
     }
 
-    class Selection2D(key: String, val texture: Texture<TextureDimension2D>): TextureSelection(key)
-    class SelectionCube(key: String, val texture: Texture<TextureDimension2D>): TextureSelection(key)
+    class Selection2D(key: String, val texture: Texture): TextureSelection(key)
+    class SelectionCube(key: String, val texture: Texture): TextureSelection(key)
     object None: TextureSelection("None")
 }
 
@@ -97,7 +97,7 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
 
 private fun SimpleMaterialInfo.retrieveInitialSelection(mapType: SimpleMaterial.MAP,
                                                         textureManager: TextureManager,
-                                                        createSelection: (MutableMap.MutableEntry<String, Texture<*>>, Texture<TextureDimension2D>) -> TextureSelection): TextureSelection {
+                                                        createSelection: (MutableMap.MutableEntry<String, Texture>, Texture) -> TextureSelection): TextureSelection {
     return if (maps.containsKey(mapType)) {
         val value = maps[mapType]!!
         val foundTexture = textureManager.textures.entries.first { it.value == value }
@@ -110,9 +110,9 @@ private fun TextureManager.retrieveCubeTextureItems() = retrieveTextureItems().f
 
 private fun TextureManager.retrieveTextureItems(): List<TextureSelection> = textures.map {
     when (val value = it.value) {
-        is Texture2D -> TextureSelection.Selection2D(it.key, value as Texture<TextureDimension2D>)
-        is FileBasedTexture2D -> TextureSelection.Selection2D(it.key, value as Texture<TextureDimension2D>)
-        else -> TextureSelection.SelectionCube(it.key, value as Texture<TextureDimension2D>)
+        is Texture2D -> TextureSelection.Selection2D(it.key, value as Texture)
+        is FileBasedTexture2D -> TextureSelection.Selection2D(it.key, value as Texture)
+        else -> TextureSelection.SelectionCube(it.key, value)
     }
 }
 

@@ -49,7 +49,7 @@ interface MaterialInfo {
     val materialType: MaterialType
     val transparencyType: TransparencyType
     val textureLess: Boolean
-    val maps: Map<MAP, Texture<TextureDimension2D>>
+    val maps: Map<MAP, Texture>
 
     fun getHasSpecularMap(): Boolean
     fun getHasNormalMap(): Boolean
@@ -57,7 +57,7 @@ interface MaterialInfo {
     fun getHasHeightMap(): Boolean
     fun getHasOcclusionMap(): Boolean
     fun getHasRoughnessMap(): Boolean
-    fun put(map: MAP, texture: Texture<TextureDimension2D>)
+    fun put(map: MAP, texture: Texture)
     fun remove(map: MAP)
 }
 
@@ -71,7 +71,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
                                                         override var parallaxBias: Float = 0.02f,
                                                         override var materialType: MaterialType = DEFAULT,
                                                         override var transparencyType: TransparencyType = TransparencyType.BINARY,
-                                                        override val maps: MutableMap<MAP, Texture<TextureDimension2D>> = hashMapOf(),
+                                                        override val maps: MutableMap<MAP, Texture> = hashMapOf(),
                                                         override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
 
     override fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
@@ -83,7 +83,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override val name: Strin
 
     override val textureLess = maps.isEmpty()
 
-    override fun put(map: MAP, texture: Texture<TextureDimension2D>) {
+    override fun put(map: MAP, texture: Texture) {
         maps[map] = texture
     }
     override fun remove(map: MAP) {

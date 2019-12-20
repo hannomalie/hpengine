@@ -1,11 +1,9 @@
 package de.hanno.hpengine.engine.graphics.state
 
-import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.DEFAULTANIMATEDCHANNELS
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.DEFAULTCHANNELS
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.EntityStruct
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch.RenderBatches
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer

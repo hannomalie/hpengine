@@ -10,7 +10,7 @@ import java.lang.Float
 interface Material {
     val materialInfo: MaterialInfo
 
-    fun put(map: SimpleMaterial.MAP, texture: Texture<TextureDimension2D>) {
+    fun put(map: SimpleMaterial.MAP, texture: Texture) {
         materialInfo.put(map, texture)
     }
     fun remove(map: SimpleMaterial.MAP) {

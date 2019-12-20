@@ -23,6 +23,8 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
+import de.hanno.hpengine.engine.model.texture.TextureDimension2D;
+import de.hanno.hpengine.engine.model.texture.TextureDimension3D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
@@ -70,7 +72,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 
 	public EnvironmentProbeManager(Engine engineContext, LineRenderer renderer) {
     	this.engine = engineContext;
-		TextureDimension dimension = new TextureDimension(RESOLUTION, RESOLUTION, MAX_PROBES);
+		TextureDimension3D dimension = TextureDimension.Companion.invoke(RESOLUTION, RESOLUTION, MAX_PROBES);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
 		int wrapMode = GL_REPEAT;
 		GpuContext gpuContext = engineContext.getGpuContext();

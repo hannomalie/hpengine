@@ -35,7 +35,7 @@ val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
     rewind()
 }
 
-open class RenderTarget<T: Texture<*>> @JvmOverloads constructor(val frameBuffer: FrameBuffer,
+open class RenderTarget<T: Texture> @JvmOverloads constructor(val frameBuffer: FrameBuffer,
                                                             open val width: Int = 1280,
                                                             open val height: Int = 720,
                                                             val textures: List<T> = emptyList(),
@@ -240,7 +240,7 @@ fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, w
             gpuContext = gpuContext,
             filterConfig = it.textureFilter,
             internalFormat = it.internalFormat,
-            dimension = TextureDimension(width, height, 6),
+            dimension = TextureDimension(width, height),
             wrapMode = GL11.GL_REPEAT
     )
 }
@@ -263,7 +263,7 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
     }
 }
 
-class DepthBuffer<T: Texture<*>>(val texture: T) {
+class DepthBuffer<T: Texture>(val texture: T) {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): DepthBuffer<Texture2D> {
             val dimension = TextureDimension(width, height)

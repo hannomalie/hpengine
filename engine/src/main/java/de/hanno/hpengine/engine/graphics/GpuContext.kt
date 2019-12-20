@@ -76,11 +76,11 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
         bindTexture(0, target, textureId)
     }
 
-    fun bindTexture(textureUnitIndex: Int, texture: Texture<*>) {
+    fun bindTexture(textureUnitIndex: Int, texture: Texture) {
         bindTexture(textureUnitIndex, texture.target, texture.id)
     }
 
-    fun bindTexture(texture: Texture<*>) {
+    fun bindTexture(texture: Texture) {
         bindTexture(texture.target, texture.id)
     }
 
@@ -90,7 +90,7 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun bindTextures(firstUnit: Int, count: Int, textureIds: IntBuffer)
 
-    fun unbindTexture(textureUnitIndex: Int, texture: Texture<*>) {
+    fun unbindTexture(textureUnitIndex: Int, texture: Texture) {
         bindTexture(textureUnitIndex, texture.target, 0)
     }
 
