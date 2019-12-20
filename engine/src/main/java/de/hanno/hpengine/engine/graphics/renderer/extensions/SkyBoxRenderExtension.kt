@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -19,7 +20,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.struct.SlidingWindow
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
@@ -66,7 +71,12 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
         skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
         skyBoxProgram.bindShaderStorageBuffer(7, skyboxVertexIndexBuffer.vertexStructArray)
-        gpuContext.bindTexture(6, backend.textureManager.cubeMap)
+        val textureId = if (renderState.materialBuffer.size > 0) {
+            renderState.materialBuffer[renderState.skyBoxMaterialIndex].environmentMapId.takeIf { it > 0 } ?: backend.textureManager.cubeMap.id
+        } else {
+            backend.textureManager.cubeMap.id
+        }
+        gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, textureId)
         draw(skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
 
     }

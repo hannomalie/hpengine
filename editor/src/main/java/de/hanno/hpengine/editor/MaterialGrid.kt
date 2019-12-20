@@ -1,17 +1,19 @@
 package de.hanno.hpengine.editor
 
 import com.bric.colorpicker.ColorPicker
-import de.hanno.hpengine.editor.TextureSelection.Companion.noneSelection
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
+import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
 import java.awt.Color
+import java.lang.IllegalStateException
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -26,9 +28,11 @@ class MaterialGrid(val textureManager: TextureManager, val material: Material) :
         layout = MigLayout("wrap 2")
         labeled("Name", JLabel(info.name))
         labeled("MaterialType", info::materialType.toComboBox(MaterialType.values()))
+        labeled("TransparancyType", info::transparencyType.toComboBox(SimpleMaterial.TransparencyType.values()))
         labeled("Ambient", info::ambient.toSliderInput(0, 100))
         labeled("Metallic", info::metallic.toSliderInput(0, 100))
         labeled("Roughness", info::roughness.toSliderInput(0, 100))
+        labeled("Transparency", info::transparency.toSliderInput(0, 100))
         labeled("ParallaxBias", info::parallaxBias.toSliderInput(0, 100))
         labeled("ParallaxScale", info::parallaxScale.toSliderInput(0, 100))
 
@@ -37,40 +41,57 @@ class MaterialGrid(val textureManager: TextureManager, val material: Material) :
 
     }
 }
-class TextureSelection(val key: String, val texture: Texture<*>?) {
+sealed class TextureSelection(val key: String) {
     override fun toString() = key.takeLast(min(25, key.length))
     override fun equals(other: Any?): Boolean {
         return (other as? TextureSelection)?.key == key
     }
-    companion object {
-        val noneSelection = TextureSelection("None", null)
-    }
+
+    class Selection2D(key: String, val texture: Texture<TextureDimension2D>): TextureSelection(key)
+    class SelectionCube(key: String, val texture: Texture<TextureDimension2D>): TextureSelection(key)
+    object None: TextureSelection("None")
 }
 
 fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JComponent = with(textureManager) {
-    val initialTextures = retrieve2DTextureItems().toTypedArray()
-    val comboBoxes = SimpleMaterial.MAP.values().mapNotNull { mapType ->
+    val comboBoxes = SimpleMaterial.MAP.values().map { mapType ->
         when (mapType) {
-            SimpleMaterial.MAP.ENVIRONMENT -> null
-            else -> {
-                val comboBox = JComboBox(initialTextures).apply {
+            SimpleMaterial.MAP.ENVIRONMENT -> {
+                mapType to JComboBox((retrieveCubeTextureItems() + TextureSelection.None).toTypedArray()).apply {
                     addActionListener {
                         val typedSelectedItem = selectedItem as TextureSelection
-                        val selected = retrieve2DTextureItems().find { it.key == typedSelectedItem.key }!!
-                        if (selected == noneSelection) {
-                            maps.remove(mapType)
-                        } else {
-                            maps[mapType] = selected.texture as Texture<TextureDimension2D>
-                        }
+                        val selected = retrieveCubeTextureItems().find { it.key == typedSelectedItem.key } ?: TextureSelection.None
+                        when(selected) {
+                            is TextureSelection.Selection2D -> throw IllegalStateException("2D texture not suitable for $mapType selection")
+                            is TextureSelection.SelectionCube -> maps[mapType] = selected.texture
+                            TextureSelection.None -> maps.remove(mapType)
+                        }.let {  }
                     }
                     val newSelection: TextureSelection = if (maps.containsKey(mapType)) {
                         val value = maps[mapType]!!
                         val foundTexture = textureManager.textures.entries.first { it.value == value }
-                        TextureSelection(foundTexture.key, value)
-                    } else noneSelection
+                        TextureSelection.SelectionCube(foundTexture.key, value)
+                    } else TextureSelection.None
                     selectedItem = newSelection
                 }
-                mapType to comboBox
+            }
+            else -> {
+                mapType to JComboBox((retrieve2DTextureItems() + TextureSelection.None).toTypedArray()).apply {
+                    addActionListener {
+                        val typedSelectedItem = selectedItem as TextureSelection
+                        val selected = retrieve2DTextureItems().find { it.key == typedSelectedItem.key } ?: TextureSelection.None
+                        when(selected) {
+                            is TextureSelection.Selection2D -> maps[mapType] = selected.texture
+                            is TextureSelection.SelectionCube -> throw IllegalStateException("Cubemap not suitable for $mapType selection")
+                            TextureSelection.None -> maps.remove(mapType)
+                        }.let {  }
+                    }
+                    val newSelection: TextureSelection = if (maps.containsKey(mapType)) {
+                        val value = maps[mapType]!!
+                        val foundTexture = textureManager.textures.entries.first { it.value == value }
+                        TextureSelection.Selection2D(foundTexture.key, value)
+                    } else TextureSelection.None
+                    selectedItem = newSelection
+                }
             }
         }
     }
@@ -82,8 +103,16 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
     }
 }
 
-private fun TextureManager.retrieve2DTextureItems() =
-        textures.filterValues { it.dimension is TextureDimension2D }.map { TextureSelection(it.key, it.value) } + noneSelection
+private fun TextureManager.retrieve2DTextureItems() = retrieveTextureItems().filterIsInstance<TextureSelection.Selection2D>()
+private fun TextureManager.retrieveCubeTextureItems() = retrieveTextureItems().filterIsInstance<TextureSelection.SelectionCube>()
+
+private fun TextureManager.retrieveTextureItems(): List<TextureSelection> = textures.map {
+    when (val value = it.value) {
+        is Texture2D -> TextureSelection.Selection2D(it.key, value as Texture<TextureDimension2D>)
+        is FileBasedTexture2D -> TextureSelection.Selection2D(it.key, value as Texture<TextureDimension2D>)
+        else -> TextureSelection.SelectionCube(it.key, value as Texture<TextureDimension2D>)
+    }
+}
 
 fun <T : Enum<*>> KMutableProperty0<T>.toComboBox(values: Array<T>): JComboBox<T> {
     return JComboBox(values).apply {

@@ -189,7 +189,7 @@ class OBJLoader {
         }
 
         val parseMaterialName = ""
-        var currentMaterialInfo: MaterialInfo? = null// = new SimpleMaterialInfo();
+        var currentMaterialInfo: SimpleMaterialInfo? = null// = new SimpleMaterialInfo();
 
         val textureJobs: MutableList<CompletableFuture<Triple<SimpleMaterial.MAP, MaterialInfo, Texture<TextureDimension2D>>>> = mutableListOf()
 
@@ -250,10 +250,10 @@ class OBJLoader {
                     addHelper(textureManager, currentMaterialInfo, path, map, SimpleMaterial.MAP.HEIGHT, File(f.parentFile.absolutePath + "/" + map))
 
                 } else if ("Kd" == firstToken) {
-                    currentMaterialInfo = currentMaterialInfo!!.copyXXX(diffuse = parseVertex(materialLine))
+                    currentMaterialInfo!!.diffuse = parseVertex(materialLine)
                 } else if ("Kr" == firstToken) {
                     val roughness = rest
-                    currentMaterialInfo = currentMaterialInfo!!.copyXXX(roughness = parseFloat(roughness))
+                    currentMaterialInfo!!.roughness = parseFloat(roughness)
                 } else if ("Ks" == firstToken) {
                     val specular = materialLine
                     //currentMaterialInfo.specular = parseVertex(specular);

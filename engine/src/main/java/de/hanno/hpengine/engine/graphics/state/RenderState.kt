@@ -11,6 +11,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.model.material.MaterialStruct
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.copyFrom
 import org.joml.Vector3f
@@ -57,7 +59,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val entitiesBuffer: GPUBuffer
         get() = entitiesState.entitiesBuffer
 
-    val materialBuffer: GPUBuffer
+    val materialBuffer: PersistentMappedStructBuffer<MaterialStruct>
         get() = entitiesState.materialBuffer
 
     val staticEntityHasMoved: Boolean

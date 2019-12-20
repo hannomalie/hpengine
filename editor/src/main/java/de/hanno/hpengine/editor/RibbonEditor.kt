@@ -186,7 +186,7 @@ class EditorComponents(val engine: EngineImpl,
                                                             GlobalScope.launch {
                                                                 val loadedModels = LoadModelCommand(selectedFile,
                                                                         "Model_${System.currentTimeMillis()}",
-                                                                        engine.materialManager,
+                                                                        engine.scene.materialManager,
                                                                         engine.directories.gameDir,
                                                                         selection).execute()
                                                                 engine.singleThreadContext.launch {
@@ -526,14 +526,16 @@ class EditorComponents(val engine: EngineImpl,
         private fun addTextureTask() {
             val textureBand = JRibbonBand("Texture", null).apply {
                 val addTextureCommand = Command.builder()
-                        .setText("Create")
+                        .setText("Add Texture")
                         .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
                         .setAction {
                             val fc = JFileChooser()
                             val returnVal = fc.showOpenDialog(editor)
                             if (returnVal == JFileChooser.APPROVE_OPTION) {
                                 val file = fc.selectedFile
-                                engine.textureManager.getTexture(file.name, file = file)
+                                GlobalScope.launch {
+                                    engine.textureManager.getTexture(file.name, file = file)
+                                }
                             }
                         }
                         .setActionRichTooltip(RichTooltip.builder()
@@ -542,6 +544,27 @@ class EditorComponents(val engine: EngineImpl,
                                 .build())
                         .build()
                 addRibbonCommand(addTextureCommand.project(CommandButtonPresentationModel.builder()
+                        .setTextClickAction()
+                        .build()), JRibbonBand.PresentationPriority.TOP)
+                val addCubeMapCommand = Command.builder()
+                        .setText("Add CubeMap")
+                        .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
+                        .setAction {
+                            val fc = JFileChooser()
+                            val returnVal = fc.showOpenDialog(editor)
+                            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                                val file = fc.selectedFile
+                                GlobalScope.launch {
+                                    engine.textureManager.getCubeMap(file.name, file = file)
+                                }
+                            }
+                        }
+                        .setActionRichTooltip(RichTooltip.builder()
+                                .setTitle("CubeMap")
+                                .addDescriptionSection("Creates a cubemap from the selected image")
+                                .build())
+                        .build()
+                addRibbonCommand(addCubeMapCommand.project(CommandButtonPresentationModel.builder()
                         .setTextClickAction()
                         .build()), JRibbonBand.PresentationPriority.TOP)
 

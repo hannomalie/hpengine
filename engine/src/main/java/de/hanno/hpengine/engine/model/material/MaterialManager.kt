@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
+import de.hanno.struct.resize
 import de.hanno.struct.shrinkToBytes
 import org.joml.Vector3f
 import java.util.HashMap
@@ -149,6 +150,7 @@ class MaterialManager(val config: Config,
 //        TODO: Remove most of this
         renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
+        materialsAsStructs.resize(materials.size)
         for ((index, material) in materials.withIndex()) {
             val target = materialsAsStructs[index]
             target.diffuse.set(material.materialInfo.diffuse)
@@ -159,6 +161,7 @@ class MaterialManager(val config: Config,
             target.parallaxScale = material.materialInfo.parallaxScale
             target.transparency = material.materialInfo.transparency
             target.materialType = material.materialInfo.materialType
+            target.environmentMapId = material.materialInfo.maps[MAP.ENVIRONMENT]?.id ?: 0
             target.diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
             target.normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
             target.specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
@@ -166,8 +169,8 @@ class MaterialManager(val config: Config,
             target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
             target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
         }
-        materialsAsStructs = materialsAsStructs.shrinkToBytes(renderState.entitiesState.materialBuffer.buffer.capacity())
-        materialsAsStructs.buffer.copyTo(renderState.entitiesState.materialBuffer.buffer)
+        renderState.entitiesState.materialBuffer.resize(materialsAsStructs.size)
+        materialsAsStructs.copyTo(renderState.entitiesState.materialBuffer, true)
         renderState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
     }
 

@@ -274,7 +274,7 @@ class VoxelConeTracingExtension(
                     GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                     GL42.glBindImageTexture(6, currentVoxelGrid.grid2, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                     voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
-                    voxelizer.bindShaderStorageBuffer(1, renderState.materialBuffer)
+                    voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                     voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                     voxelizer.bindShaderStorageBuffer(5, voxelGridState.voxelGridBuffer)
 

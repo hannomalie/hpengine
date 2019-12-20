@@ -75,7 +75,7 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         //         TODO: Shadowmap should use pipeline for animated object support
         renderTarget.use(gpuContext, true)
         directionalShadowPassProgram.use()
-        directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+        directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
         directionalShadowPassProgram.bindShaderStorageBuffer(2, renderState.directionalLightBuffer)
         directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
 

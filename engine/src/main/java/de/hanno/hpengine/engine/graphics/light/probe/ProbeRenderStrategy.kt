@@ -99,7 +99,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
                 val probePosition = Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
 
                 probeProgram.use()
-                probeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+                probeProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                 probeProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                 probeProgram.setUniform("probePositionWorld", probePosition)
                 val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(probePosition)

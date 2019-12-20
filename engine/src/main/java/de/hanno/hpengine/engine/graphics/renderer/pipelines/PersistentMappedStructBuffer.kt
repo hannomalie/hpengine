@@ -21,8 +21,12 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
                                                               val factory: () -> T,
                                                               val gpuContext: GpuContext<*>,
                                                               val target: Int = GL43.GL_SHADER_STORAGE_BUFFER): Array<T> {
-    val slidingWindow = SlidingWindow(factory()).apply {
-        underlying.provideBuffer = { buffer }
+    val slidingWindow = createSlidingWindow()
+
+    fun createSlidingWindow(): SlidingWindow<T> {
+        return SlidingWindow(factory()).apply {
+            underlying.provideBuffer = { buffer }
+        }
     }
 
     override lateinit var buffer: ByteBuffer
@@ -152,6 +156,10 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         val currentSlidingWindow = slidingWindow
         currentSlidingWindow.localByteOffset = (index * currentSlidingWindow.sizeInBytes).toLong()
         return currentSlidingWindow.underlying
+    }
+    operator fun get(index: Int, slidingWindow: SlidingWindow<T>): T {
+        slidingWindow.localByteOffset = (index * slidingWindow.sizeInBytes).toLong()
+        return slidingWindow.underlying
     }
 
     fun addAll(elements: StructArray<T>) {

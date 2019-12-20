@@ -91,7 +91,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
 
                 val light = pointLights[i]
                 pointCubeShadowPassProgram.use()
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                 pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.position)
                 pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)

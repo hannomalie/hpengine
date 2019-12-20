@@ -10,7 +10,7 @@ struct Material {
 	float transparency;
 	int materialtype;
 	int transparencyType;
-	float dummy1;
+	int environmentMapId;
 
     uvec2 handleDiffuse;
     uvec2 handleNormal;
