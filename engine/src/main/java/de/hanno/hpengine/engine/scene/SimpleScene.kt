@@ -88,7 +88,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             .apply { addComponent(DirectionalLight(this)) }
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
             .apply {
-                engine.singleThreadContext.locked {
+                engine.addResourceContext.locked {
                     with(this@SimpleScene) { add(this@apply) }
                 }
             }
@@ -99,7 +99,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override val camera = cameraComponentSystem.create(cameraEntity)
             .apply { cameraEntity.addComponent(this) }
             .apply {
-                engine.singleThreadContext.locked {
+                engine.addResourceContext.locked {
                     with(this@SimpleScene) { add(cameraEntity) }
                 }
             }

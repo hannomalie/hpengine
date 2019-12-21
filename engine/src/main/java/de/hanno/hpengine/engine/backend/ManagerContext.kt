@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.util.commandqueue.CommandQueue
 
 interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
     val engineContext: EngineContext<TYPE>
@@ -29,8 +28,6 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
         get() = engineContext.backend
     override val input: Input
         get() = engineContext.input
-    override val commandQueue: CommandQueue
-        get() = engineContext.commandQueue
     override val config: Config
         get() = engineContext.config
     override val renderSystems: MutableList<RenderSystem>
@@ -43,6 +40,6 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
         get() = engineContext.materialManager
     override val window: Window<TYPE>
         get() = engineContext.window
-    override val singleThreadContext: AddResourceContext
-        get() = engineContext.singleThreadContext
+    override val addResourceContext: AddResourceContext
+        get() = engineContext.addResourceContext
 }

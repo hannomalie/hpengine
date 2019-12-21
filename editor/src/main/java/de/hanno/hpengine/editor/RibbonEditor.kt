@@ -187,7 +187,7 @@ class EditorComponents(val engine: EngineImpl,
                                                                         engine.scene.materialManager,
                                                                         engine.directories.gameDir,
                                                                         selection).execute()
-                                                                engine.singleThreadContext.launch {
+                                                                engine.addResourceContext.launch {
                                                                     with(engine.scene) {
                                                                         addAll(loadedModels.entities)
                                                                     }
@@ -201,7 +201,7 @@ class EditorComponents(val engine: EngineImpl,
                                                 add(JMenuItem("PointLight").apply {
                                                     addActionListener {
                                                         val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
-                                                        engine.singleThreadContext.launch {
+                                                        engine.addResourceContext.launch {
                                                             selection.addComponent(component)
 
                                                             with(engine.managers) {
@@ -468,7 +468,7 @@ class EditorComponents(val engine: EngineImpl,
                         .setText("Create")
                         .setIconFactory { getResizableIconFromSvgResource("add-24px.svg") }
                         .setAction {
-                            engine.singleThreadContext.launch {
+                            engine.addResourceContext.launch {
                                 with(engine.sceneManager)  {
                                     add(Entity("NewEntity_${engine.scene.getEntities().count { it.name.startsWith("NewEntity") }}"))
                                 }

@@ -37,13 +37,13 @@ interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
         set(value) {
             managerContext.beforeSetScene(value)
 
-            managerContext.singleThreadContext.locked {
+            managerContext.addResourceContext.locked {
                 sceneManager.scene = value
             }
             managerContext.afterSetScene()
         }
-    override val singleThreadContext: AddResourceContext
-        get() = managerContext.singleThreadContext
+    override val addResourceContext: AddResourceContext
+        get() = managerContext.addResourceContext
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
@@ -55,13 +55,11 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     private val function: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScope = Executors.newFixedThreadPool(8, function).asCoroutineDispatcher()
     val updateConsumer = Consumer<Float> {
-        with(this@EngineImpl) {
-            singleThreadContext.locked {
-                val job = GlobalScope.launch(updateScope) {
-                        update(it)
-                }
-                while(!job.isCompleted) {}
+        addResourceContext.locked {
+            val job = GlobalScope.launch(updateScope) {
+                    update(it)
             }
+            while(!job.isCompleted) {}
         }
     }
     val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
@@ -82,7 +80,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     fun CoroutineScope.update(deltaSeconds: Float) = try {
         gpuContext.execute("updateInput") { input.update() }
         gpuContext.update(deltaSeconds)
-        engineContext.commandQueue.executeCommands()
         with(managerContext.managers) {
             update(deltaSeconds)
         }

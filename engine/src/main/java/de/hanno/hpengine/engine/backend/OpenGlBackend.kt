@@ -37,7 +37,7 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val programManager: ProgramManager<OpenGl>,
                     override val textureManager: TextureManager,
                     override val input: Input,
-                    override val singleThreadContext: AddResourceContext) : Backend<OpenGl> {
+                    override val addResourceContext: AddResourceContext) : Backend<OpenGl> {
 
     companion object {
         operator fun invoke(window: Window<OpenGl>, config: Config): OpenGlBackend {
@@ -55,14 +55,13 @@ class OpenGlBackend(override val eventBus: EventBus,
 
 class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { UpdateThread.isUpdateThread() })
 
-class EngineContextImpl(override val commandQueue: CommandQueue = UpdateCommandQueue(),
-                        override val config: Config,
+class EngineContextImpl(override val config: Config,
                         override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
                         override val backend: Backend<OpenGl> = OpenGlBackend(window, config),
                         override val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
                         override val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
                         override val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },
-                        override val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager, backend.singleThreadContext)) : EngineContext<OpenGl>
+                        override val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager, backend.addResourceContext)) : EngineContext<OpenGl>
 
 class ManagerContextImpl(
         override val engineContext: EngineContext<OpenGl>,

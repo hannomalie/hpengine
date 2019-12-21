@@ -11,7 +11,7 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
     var scene: Scene = SimpleScene("InitialScene", managerContext)
 
     fun addAll(entities: List<Entity>) {
-        managerContext.singleThreadContext.locked {
+        managerContext.addResourceContext.locked {
             addAll(entities)
         }
     }

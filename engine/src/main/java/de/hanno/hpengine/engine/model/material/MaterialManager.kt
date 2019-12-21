@@ -28,7 +28,7 @@ class MaterialManager(val config: Config,
                 config: Config = engineContext.config,
                 eventBus: EventBus = engineContext.eventBus,
                 textureManager: TextureManager = engineContext.textureManager,
-                singleThreadContext: AddResourceContext = engineContext.singleThreadContext): this(config, eventBus, textureManager, singleThreadContext)
+                singleThreadContext: AddResourceContext = engineContext.addResourceContext): this(config, eventBus, textureManager, singleThreadContext)
 
     val skyboxMaterial: SimpleMaterial
 

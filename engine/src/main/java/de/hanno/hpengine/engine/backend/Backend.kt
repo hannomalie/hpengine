@@ -13,7 +13,7 @@ interface Backend<Type: BackendType> {
     val programManager: ProgramManager<Type>
     val textureManager: TextureManager
     val input: Input
-    val singleThreadContext: AddResourceContext
+    val addResourceContext: AddResourceContext
 
     companion object
 }
