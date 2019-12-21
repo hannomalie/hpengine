@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 
 interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
@@ -23,6 +23,7 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
     val physicsManager: PhysicsManager
 
     fun beforeSetScene(nextScene: Scene)
+    fun afterSetScene()
 
     override val backend: Backend<TYPE>
         get() = engineContext.backend
@@ -42,6 +43,6 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
         get() = engineContext.materialManager
     override val window: Window<TYPE>
         get() = engineContext.window
-    override val singleThreadContext: SingleThreadContext
+    override val singleThreadContext: AddResourceContext
         get() = engineContext.singleThreadContext
 }

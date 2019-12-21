@@ -4,19 +4,16 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.event.MaterialAddedEvent
-import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.resize
-import de.hanno.struct.shrinkToBytes
 import org.joml.Vector3f
 import java.util.HashMap
 import java.util.LinkedHashMap
@@ -25,13 +22,13 @@ import java.util.logging.Logger
 class MaterialManager(val config: Config,
                       private val eventBus: EventBus,
                       val textureManager: TextureManager,
-                      val singleThreadContext: SingleThreadContext) : Manager {
+                      val singleThreadContext: AddResourceContext) : Manager {
 
     constructor(engineContext: EngineContext<*>,
                 config: Config = engineContext.config,
                 eventBus: EventBus = engineContext.eventBus,
                 textureManager: TextureManager = engineContext.textureManager,
-                singleThreadContext: SingleThreadContext = engineContext.singleThreadContext): this(config, eventBus, textureManager, singleThreadContext)
+                singleThreadContext: AddResourceContext = engineContext.singleThreadContext): this(config, eventBus, textureManager, singleThreadContext)
 
     val skyboxMaterial: SimpleMaterial
 
@@ -125,7 +122,7 @@ class MaterialManager(val config: Config,
         return MATERIALS[materialName] ?: return defaultMaterial
     }
 
-    private fun addMaterial(key: String, material: SimpleMaterial) = singleThreadContext.runBlocking {
+    private fun addMaterial(key: String, material: SimpleMaterial) = singleThreadContext.locked {
         MATERIALS[key] = material
         eventBus.post(MaterialAddedEvent())
     }

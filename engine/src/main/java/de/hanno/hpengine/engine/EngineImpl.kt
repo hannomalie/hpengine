@@ -17,7 +17,7 @@ import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.threads.UpdateThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
@@ -37,14 +37,12 @@ interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
         set(value) {
             managerContext.beforeSetScene(value)
 
-//            managerContext.commandQueue.execute(Runnable {
-//                sceneManager.scene = value
-//            }, true)
-            managerContext.singleThreadContext.runBlocking {
+            managerContext.singleThreadContext.locked {
                 sceneManager.scene = value
             }
+            managerContext.afterSetScene()
         }
-    override val singleThreadContext: SingleThreadContext
+    override val singleThreadContext: AddResourceContext
         get() = managerContext.singleThreadContext
 }
 
@@ -53,16 +51,16 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                                            override val renderManager: RenderManager = RenderManager(engineContext),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
-    private val updateScope = Executors.newFixedThreadPool(8).asCoroutineDispatcher()
+    private var updateThreadCounter = 0
+    private val function: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
+    private val updateScope = Executors.newFixedThreadPool(8, function).asCoroutineDispatcher()
     val updateConsumer = Consumer<Float> {
         with(this@EngineImpl) {
-            singleThreadContext.runBlocking {
+            singleThreadContext.locked {
                 val job = GlobalScope.launch(updateScope) {
-                    update(it)
+                        update(it)
                 }
-                // block singleThreadContext while updating, not suspending
-                while (!job.isCompleted) {
-                }
+                while(!job.isCompleted) {}
             }
         }
     }

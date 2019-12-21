@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -9,7 +8,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.UpdateLock
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.logging.Logger
@@ -41,12 +41,12 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         return Entity(name, position)
     }
 
-    fun SingleThreadContext.add(entity: Entity) {
+    fun UpdateLock.add(entity: Entity) {
         entityContainer.add(entity)
         entity.index = entityContainer.entities.indexOf(entity)
     }
 
-    fun SingleThreadContext.add(entities: List<Entity>) {
+    fun UpdateLock.add(entities: List<Entity>) {
         for (entity in entities) {
             add(entity)
         }

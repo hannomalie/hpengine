@@ -82,6 +82,7 @@ interface IEffectsConfig {
 }
 
 class ProfilingConfig {
+    var showFps = false
     var dumpAverages by GPUProfiler::DUMP_AVERAGES
     var profiling by GPUProfiler::PROFILING_ENABLED
     var printing by GPUProfiler::PRINTING_ENABLED
@@ -148,13 +149,11 @@ data class EffectsConfig(
 
 interface IPerformanceConfig {
     val isIndirectRendering: Boolean
-    val isLockFps: Boolean
     val isVsync: Boolean
 }
 
 data class PerformanceConfig(
     override var isIndirectRendering: Boolean = true,
-    override var isLockFps: Boolean = false,
     override var isVsync: Boolean = true
 ) : IPerformanceConfig
 

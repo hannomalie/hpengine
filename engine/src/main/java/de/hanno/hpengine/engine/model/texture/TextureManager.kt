@@ -19,13 +19,13 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.engine.model.texture.DDSConverter.getFullPathAsDDS
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import jogl.DDSImage
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
@@ -75,7 +75,7 @@ import javax.imageio.ImageIO
 class TextureManager(val config: Config,
                      programManager: OpenGlProgramManager,
                      val gpuContext: OpenGLContext,
-                     val singleThreadContext: SingleThreadContext) : Manager {
+                     val singleThreadContext: AddResourceContext) : Manager {
 
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
@@ -159,7 +159,7 @@ class TextureManager(val config: Config,
     @JvmOverloads
     fun getTexture(resourceName: String,
                    srgba: Boolean = false,
-                   directory: AbstractDirectory = config.directories.gameDir): Texture = singleThreadContext.runBlocking {
+                   directory: AbstractDirectory = config.directories.gameDir): Texture = singleThreadContext.locked {
 
         textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
@@ -167,7 +167,7 @@ class TextureManager(val config: Config,
     }
 
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture = singleThreadContext.runBlocking {
+    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture = singleThreadContext.locked {
         textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
         } as Texture
@@ -176,7 +176,7 @@ class TextureManager(val config: Config,
     private inline fun <T> MutableMap<String,T>.ifAbsentPutInSingleThreadContext(resourceName: String, block: () -> T): T {
         return if(!containsKey(resourceName)) {
             block().apply {
-                singleThreadContext.runBlocking { put(resourceName, this@apply) }
+                singleThreadContext.locked { put(resourceName, this@apply) }
             }
         } else this[resourceName]!!
     }
@@ -496,7 +496,7 @@ class TextureManager(val config: Config,
 
     }
 
-    override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
+    override fun UpdateLock.onEntityAdded(entities: List<Entity>) {
 
     }
 

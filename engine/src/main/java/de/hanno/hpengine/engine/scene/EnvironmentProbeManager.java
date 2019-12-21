@@ -341,7 +341,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void onEntityAdded(SingleThreadContext scope, @NotNull List<? extends Entity> entities) {
+	public void onEntityAdded(UpdateLock scope, @NotNull List<? extends Entity> entities) {
 
 	}
 

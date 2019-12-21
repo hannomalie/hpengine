@@ -3,14 +3,15 @@ package de.hanno.hpengine.engine.entity
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.UpdateLock
 import kotlinx.coroutines.CoroutineScope
 
 interface EntitySystem {
     @JvmDefault
     fun CoroutineScope.update(deltaSeconds: Float) {}
     fun gatherEntities()
-    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
+    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
 
@@ -45,7 +46,7 @@ interface EntitySystemRegistry {
         } else return clazz.cast(firstOrNull)
     }
 
-    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
+    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
         for(system in getSystems()) {
             with(system) { onEntityAdded(entities) }
         }

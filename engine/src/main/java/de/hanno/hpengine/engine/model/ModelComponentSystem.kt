@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.BufferableMatrix4f
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -17,7 +16,8 @@ import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
@@ -60,7 +60,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         updateGpuJointsArray()
     }
 
-    override fun SingleThreadContext.addComponent(component: ModelComponent) {
+    override fun UpdateLock.addComponent(component: ModelComponent) {
         allocateVertexIndexBufferSpace(listOf(component.entity))
         components.add(component)
     }
@@ -217,8 +217,8 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         vertexIndexBufferAnimated.resetAllocations()
     }
 
-    override fun SingleThreadContext.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
-        val result = onEntityAddedImpl(this, entities)
+    override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+        val result = onEntityAddedImpl(context, entities)
         updateCache = true
         return result
     }

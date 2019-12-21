@@ -22,7 +22,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -37,11 +37,11 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val programManager: ProgramManager<OpenGl>,
                     override val textureManager: TextureManager,
                     override val input: Input,
-                    override val singleThreadContext: SingleThreadContext) : Backend<OpenGl> {
+                    override val singleThreadContext: AddResourceContext) : Backend<OpenGl> {
 
     companion object {
         operator fun invoke(window: Window<OpenGl>, config: Config): OpenGlBackend {
-            val singleThreadContext = SingleThreadContext
+            val singleThreadContext = AddResourceContext()
             val eventBus = MBassadorEventBus()
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
@@ -83,6 +83,12 @@ class ManagerContextImpl(
     override fun beforeSetScene(nextScene: Scene) {
         for (manager in managers.managers) {
             manager.value.beforeSetScene(nextScene)
+        }
+    }
+
+    override fun afterSetScene() {
+        for (manager in managers.managers) {
+            manager.value.afterSetScene()
         }
     }
 }

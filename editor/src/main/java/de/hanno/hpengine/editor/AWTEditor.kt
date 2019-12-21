@@ -20,7 +20,7 @@ import java.util.concurrent.Callable
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
 
-class AWTEditor: Window<OpenGl>, OpenGlExecutor {
+class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
     override var openGLThreadId: Long = -1
 
     override var handle: Long = 0
@@ -32,7 +32,7 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
             JRibbonFrame.setDefaultLookAndFeelDecorated(true)
             SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
             frame = RibbonEditor()
-            frame.preferredSize = Dimension(600,600)
+            frame.preferredSize = Dimension(config.width, config.height)
         }
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
 
@@ -42,7 +42,7 @@ class AWTEditor: Window<OpenGl>, OpenGlExecutor {
             forwardCompatible = true
 //    profile = GLData.Profile.COMPATIBILITY
             samples = 4
-            swapInterval = 0
+            swapInterval = if(config.performance.isVsync) 1 else 0
 //    this.debug = true
         }
 

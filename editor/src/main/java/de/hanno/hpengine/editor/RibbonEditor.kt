@@ -1,12 +1,10 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.ConfigGrid
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.EngineContextImpl
-import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.executeInitScript
@@ -120,7 +118,14 @@ class EditorComponents(val engine: EngineImpl,
                                 if (DUMP_AVERAGES) {
                                     drawResult += currentAverages
                                 }
-                                textArea.text = currentAverages + "\n\n" + currentTimings
+                                val fpsCounter = engine.renderManager.fpsCounter
+                                textArea.text = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms\n\n" +
+                                        currentAverages + "\n\n" + currentTimings
+                            }
+                        } else if(config.profiling.showFps) {
+                            SwingUtils.invokeLater {
+                                val fpsCounter = engine.renderManager.fpsCounter
+                                textArea.text = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms\n\n"
                             }
                         }
                     }
@@ -136,7 +141,9 @@ class EditorComponents(val engine: EngineImpl,
                 .setIconFactory { getResizableIconFromSvgResource("create_new_folder-24px.svg") }
                 .setExtraText("Creates an empty scene")
                 .setAction {
-                    engine.scene = SimpleScene("Scene_${System.currentTimeMillis()}", engine)
+                    GlobalScope.launch {
+                        engine.scene = SimpleScene("Scene_${System.currentTimeMillis()}", engine)
+                    }
                 }
                 .build()
         val applicationMenu = RibbonApplicationMenu(CommandGroup(appMenuNew))
@@ -824,7 +831,7 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
         fun main(args: Array<String>) {
             val config = retrieveConfig(args)
 
-            val window = AWTEditor()
+            val window = AWTEditor(config)
             val engineContext = EngineContextImpl(config = config, window = window)
             val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
             val engine = EngineImpl(

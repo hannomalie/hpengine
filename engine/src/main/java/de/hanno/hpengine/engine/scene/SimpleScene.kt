@@ -78,7 +78,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         override fun clear() {}
         override fun CoroutineScope.update(deltaSeconds: Float) {}
         override fun gatherEntities() {}
-        override fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {
+        override fun UpdateLock.onEntityAdded(entities: List<Entity>) {
             engine.eventBus.post(MaterialAddedEvent())
             engine.eventBus.post(EntityAddedEvent())
         }
@@ -88,7 +88,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             .apply { addComponent(DirectionalLight(this)) }
             .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
             .apply {
-                engine.singleThreadContext.runBlocking {
+                engine.singleThreadContext.locked {
                     with(this@SimpleScene) { add(this@apply) }
                 }
             }
@@ -99,7 +99,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override val camera = cameraComponentSystem.create(cameraEntity)
             .apply { cameraEntity.addComponent(this) }
             .apply {
-                engine.singleThreadContext.runBlocking {
+                engine.singleThreadContext.locked {
                     with(this@SimpleScene) { add(cameraEntity) }
                 }
             }
@@ -143,7 +143,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         }
     }
 
-    override fun SingleThreadContext.onComponentAdded(component: Component) {
+    override fun UpdateLock.onComponentAdded(component: Component) {
         with(componentSystems) { onComponentAdded(component) }
         with(managers) { onComponentAdded(component) }
     }

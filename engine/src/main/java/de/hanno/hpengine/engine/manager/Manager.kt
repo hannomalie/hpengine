@@ -4,7 +4,8 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.UpdateLock
 import kotlinx.coroutines.CoroutineScope
 
 interface Manager {
@@ -18,15 +19,18 @@ interface Manager {
     fun clear() {}
 
     @JvmDefault
-    fun SingleThreadContext.onEntityAdded(entities: List<Entity>) {}
+    fun UpdateLock.onEntityAdded(entities: List<Entity>) {}
 
     @JvmDefault
-    fun SingleThreadContext.onComponentAdded(component: Component) {}
+    fun UpdateLock.onComponentAdded(component: Component) {}
 
     @JvmDefault
     fun extract(renderState: RenderState) {}
 
     @JvmDefault
     fun beforeSetScene(nextScene: Scene) { }
+
+    @JvmDefault
+    fun afterSetScene() { }
 
 }

@@ -10,7 +10,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.SingleThreadContext
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 
 interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
@@ -33,6 +33,6 @@ interface EngineContext<TYPE: BackendType>: Backend<TYPE> {
         get() = backend.textureManager
     override val input: Input
         get() = backend.input
-    override val singleThreadContext: SingleThreadContext
+    override val singleThreadContext: AddResourceContext
         get() = backend.singleThreadContext
 }
