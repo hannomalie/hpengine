@@ -1,18 +1,17 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.event.PointLightMovedEvent
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
-import de.hanno.hpengine.engine.scene.SimpleScene
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
@@ -21,7 +20,8 @@ import kotlinx.coroutines.CoroutineScope
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java)
 
-class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): SimpleEntitySystem(engine, simpleScene, listOf(PointLight::class.java)), RenderSystem {
+class PointLightSystem(val engine: EngineContext<OpenGl>,
+                       scene: Scene): SimpleEntitySystem(scene, listOf(PointLight::class.java)), RenderSystem {
 
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
 
@@ -33,7 +33,7 @@ class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): Simple
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     val shadowMapStrategy = if (engine.config.quality.isUseDpsm) {
-            DualParaboloidShadowMapStrategy(engine, this, cameraEntity)
+            DualParaboloidShadowMapStrategy(engine, this, cameraEntity, scene.entityManager, scene.modelComponentSystem)
         } else {
             CubeShadowMapStrategy(engine, this)
         }
@@ -56,15 +56,14 @@ class PointLightSystem(engine: Engine<OpenGl>, simpleScene: SimpleScene): Simple
     fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
-        val pointLights = this@PointLightSystem.getComponents(PointLight::class.java)
+        val pointLights = getComponents(PointLight::class.java)
 
         for (i in 0 until pointLights.size) {
             val pointLight = pointLights[i]
             if (!pointLight.entity.hasMoved()) {
                 continue
             }
-            this@PointLightSystem.pointLightMovedInCycle = this@PointLightSystem.engine.renderManager.drawCycle.get()
-            this@PointLightSystem.engine.eventBus.post(PointLightMovedEvent())
+            pointLightMovedInCycle = scene.currentCycle
             pointLight.entity.isHasMoved = false
         }
 

@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.util.ressources.FileMonitor
 
-class ScriptComponentSystem(val engine: Engine<*>): SimpleComponentSystem<ScriptComponent>(ScriptComponent::class.java) {
+class ScriptComponentSystem() : SimpleComponentSystem<ScriptComponent>(ScriptComponent::class.java) {
 
     override fun SingleThreadContext.addComponent(component: ScriptComponent) = with(component) {
         if (codeSource.isFileBased) {

@@ -1,9 +1,24 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.selection
 
+import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.RibbonEditor
+import de.hanno.hpengine.editor.SelectionMode
+import de.hanno.hpengine.editor.SwingUtils
+import de.hanno.hpengine.editor.TransformSpace
+import de.hanno.hpengine.editor.doWithRefresh
+import de.hanno.hpengine.editor.grids.CameraGrid
+import de.hanno.hpengine.editor.grids.DirectionalLightGrid
+import de.hanno.hpengine.editor.grids.EntityGrid
+import de.hanno.hpengine.editor.grids.MaterialGrid
+import de.hanno.hpengine.editor.grids.MeshGrid
+import de.hanno.hpengine.editor.grids.PointLightGrid
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
@@ -25,6 +40,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.lang.IllegalStateException
 import java.util.function.Consumer
 import javax.swing.JButton
 import javax.swing.JPanel
@@ -102,10 +118,18 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             mouseClicked = null
         }
 
-        selection?.let { entityOrMeshSelection ->
+        selection?.let { selection ->
 
-            val entity = if(entityOrMeshSelection is MeshSelection) entityOrMeshSelection.entity else entityOrMeshSelection as Entity
-            val mesh = if(entityOrMeshSelection is MeshSelection) entityOrMeshSelection.mesh else null
+//            TODO:MIES
+            val entity = when (selection) {
+                is MeshSelection -> selection.entity
+                is Entity -> selection
+                is PointLight -> selection.entity
+                is DirectionalLight -> selection.entity
+                is Camera -> selection.entity
+                else -> throw IllegalStateException("Unsupported selection: $selection")
+            }
+            val mesh = if(selection is MeshSelection) selection.mesh else null
 
             engine.gpuContext.disable(GlCap.DEPTH_TEST)
             engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
@@ -178,26 +202,33 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
+    fun selectPointLight(pickedPointLight: PointLight) {
+        selection = pickedPointLight
+        sidePanel.doWithRefresh {
+            addUnselectButton()
+            add(PointLightGrid(pickedPointLight))
+        }
+    }
     fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
         selection = pickedEntity
         sidePanel.doWithRefresh {
-            add(JButton("Unselect").apply {
-                addActionListener {
-                    unselect()
-                }
-            })
+            addUnselectButton()
             add(EntityGrid(pickedEntity))
         }
+    }
+
+    private fun JPanel.addUnselectButton() {
+        add(JButton("Unselect").apply {
+            addActionListener {
+                unselect()
+            }
+        })
     }
 
     fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeAndWait {
         selection = pickedMesh
         sidePanel.doWithRefresh {
-            add(JButton("Unselect").apply {
-                addActionListener {
-                    unselect()
-                }
-            })
+            addUnselectButton()
             add(MeshGrid(pickedMesh.mesh, engine.scene.materialManager))
         }
     }
@@ -205,11 +236,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     fun selectMaterial(pickedMaterial: Material) = SwingUtils.invokeAndWait {
         selection = pickedMaterial
         sidePanel.doWithRefresh {
-            add(JButton("Unselect").apply {
-                addActionListener {
-                    unselect()
-                }
-            })
+            addUnselectButton()
             add(MaterialGrid(engine.textureManager, pickedMaterial))
         }
     }
@@ -219,5 +246,22 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         sidePanel.removeAll()
         sidePanel.revalidate()
         sidePanel.repaint()
+    }
+
+    fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight) {
+        selection = pickedDirectionalLight
+        sidePanel.doWithRefresh {
+            addUnselectButton()
+            add(DirectionalLightGrid(pickedDirectionalLight))
+            add(CameraGrid(pickedDirectionalLight))
+        }
+    }
+
+    fun selectCamera(pickedCamera: Camera) {
+        selection = pickedCamera
+        sidePanel.doWithRefresh {
+            addUnselectButton()
+            add(CameraGrid(pickedCamera))
+        }
     }
 }

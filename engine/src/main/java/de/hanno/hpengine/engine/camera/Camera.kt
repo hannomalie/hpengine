@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
@@ -224,10 +225,10 @@ open class Camera @JvmOverloads constructor(
 
 }
 
-class CameraComponentSystem(val engine: Engine<*>): ComponentSystem<Camera>, RenderSystem {
+class CameraComponentSystem(val engine: EngineContext<*>): ComponentSystem<Camera>, RenderSystem {
 
     // TODO: Remove this cast
-    private val lineRenderer = LineRendererImpl(engine as Engine<OpenGl>)
+    private val lineRenderer = LineRendererImpl(engine as EngineContext<OpenGl>)
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(deltaSeconds: Float) {
         getComponents().forEach {

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.material.Material
@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import net.miginfocom.swing.MigLayout
 import javax.swing.JComboBox
-import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import kotlin.reflect.KMutableProperty0

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.instancing
 
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
@@ -123,7 +122,7 @@ class ClustersComponent(override val entity: Entity): Component {
 
 }
 
-class ClustersComponentSystem(val engine: EngineContext<*>) : ComponentSystem<ClustersComponent> {
+class ClustersComponentSystem() : ComponentSystem<ClustersComponent> {
     override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()

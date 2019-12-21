@@ -1,5 +1,9 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.grids.CameraGrid
+import de.hanno.hpengine.editor.grids.ConfigGrid
+import de.hanno.hpengine.editor.grids.MaterialGrid
+import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.camera.Camera
@@ -132,7 +136,7 @@ class EditorComponents(val engine: EngineImpl,
                 .setIconFactory { getResizableIconFromSvgResource("create_new_folder-24px.svg") }
                 .setExtraText("Creates an empty scene")
                 .setAction {
-                    engine.sceneManager.scene = SimpleScene("Scene_${System.currentTimeMillis()}", engine)
+                    engine.scene = SimpleScene("Scene_${System.currentTimeMillis()}", engine)
                 }
                 .build()
         val applicationMenu = RibbonApplicationMenu(CommandGroup(appMenuNew))
@@ -159,20 +163,7 @@ class EditorComponents(val engine: EngineImpl,
 
                 fun handleContextMenu(mouseEvent: MouseEvent) {
 
-                    if(mouseEvent.button == MouseEvent.BUTTON1) {
-
-                        when(val selection = selectedTreeElement) {
-                            is Camera -> {
-                                sidePanel.doWithRefresh {
-                                    addUnselectButton {
-                                        selectedTreeElement = null
-                                        this@apply.clearSelection()
-                                    }
-                                    add(CameraGrid(selection))
-                                }
-                            }
-                        }
-                    } else if (mouseEvent.isPopupTrigger) {
+                    if (mouseEvent.isPopupTrigger) {
 
                         when(val selection = selectedTreeElement) {
                             is Entity -> {

@@ -1,11 +1,12 @@
 package de.hanno.hpengine.engine.scene;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
@@ -23,7 +24,6 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
-import de.hanno.hpengine.engine.model.texture.TextureDimension2D;
 import de.hanno.hpengine.engine.model.texture.TextureDimension3D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
@@ -53,7 +53,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	public static final int CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION);
 	
 	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
-	private final Engine engine;
+	private final EngineContext engine;
 
 	private List<EnvironmentProbe> probes = new ArrayList<>();
 
@@ -70,7 +70,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(100*3);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(100*3);
 
-	public EnvironmentProbeManager(Engine engineContext, LineRenderer renderer) {
+	public EnvironmentProbeManager(EngineContext engineContext) {
     	this.engine = engineContext;
 		TextureDimension3D dimension = TextureDimension.Companion.invoke(RESOLUTION, RESOLUTION, MAX_PROBES);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
@@ -83,7 +83,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
         this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(gpuContext, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, new Vector4f(0, 0, 0, 0), environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
-		this.renderer = renderer;
+		this.renderer = new LineRendererImpl(engineContext);
 	}
 
 	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {

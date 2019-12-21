@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.environmentsampler;
 
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
@@ -18,8 +18,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
-import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.graphics.shader.ShaderKt;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -27,6 +27,7 @@ import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBufferExtensionsKt;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager;
@@ -34,6 +35,7 @@ import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.Spatial;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
+import org.jetbrains.annotations.NotNull;
 import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -68,9 +70,7 @@ import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 
 public class EnvironmentSampler extends Entity {
 	public static volatile boolean deferredRenderingForProbes = false;
-	@org.jetbrains.annotations.NotNull
-	private final Engine engine;
-	@org.jetbrains.annotations.NotNull
+	@NotNull
 	private final EnvironmentProbeManager environmentProbeManager;
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
@@ -97,9 +97,24 @@ public class EnvironmentSampler extends Entity {
 	private RenderTarget renderTarget;
 	private Camera camera;
 
-	public EnvironmentSampler(Entity entity, Engine engine, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex, EnvironmentProbeManager environmentProbeManager) throws Exception {
-		this.engine = engine;
+//	 TODO: Populate this somehow
+	private Scene scene = null;
+
+	GpuContext gpuContext;
+	private final Config config;
+	private TextureManager textureManager;
+
+	public EnvironmentSampler(Entity entity,
+							  EnvironmentProbe probe,
+							  Vector3f position,
+							  int width, int height, int probeIndex,
+							  EnvironmentProbeManager environmentProbeManager,
+							  ProgramManager programManager, Config config,
+							  TextureManager textureManager) throws Exception {
 		this.environmentProbeManager = environmentProbeManager;
+		this.gpuContext = programManager.getGpuContext();
+		this.config = config;
+		this.textureManager = textureManager;
 		Camera camera = new Camera(entity, 0.1f, 5000f, 90f, 1f);
 		entity.addComponent(camera);
         camera.setWidth(width);
@@ -118,7 +133,6 @@ public class EnvironmentSampler extends Entity {
 		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
 		rotate(cubeMapCamInitialOrientation);
 
-        OpenGlProgramManager programManager = (OpenGlProgramManager) engine.getProgramManager();
 		cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		cubeMapLightingProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
@@ -153,16 +167,15 @@ public class EnvironmentSampler extends Entity {
         GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getId(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probeIndex, 6);
 
 
-		renderTarget = new RenderTargetBuilder<>(engine.getGpuContext()).setWidth(EnvironmentProbeManager.RESOLUTION )
+		renderTarget = new RenderTargetBuilder<>(gpuContext).setWidth(EnvironmentProbeManager.RESOLUTION )
 								.setName("Environment Sampler")
 								.setHeight(EnvironmentProbeManager.RESOLUTION )
 								.add(new ColorAttachmentDefinition("Environment Diffuse")
 										.setInternalFormat(diffuseInternalFormat))
 								.build();
 
-		fullscreenBuffer = new QuadVertexBuffer(engine.getGpuContext(), true);
+		fullscreenBuffer = new QuadVertexBuffer(gpuContext, true);
 		fullscreenBuffer.upload();
-		engine.getEventBus().register(this);
 		GpuContext.exitOnGLError("EnvironmentSampler constructor");
 	}
 
@@ -170,22 +183,21 @@ public class EnvironmentSampler extends Entity {
 		drawCubeMapSides(urgent, extract);
 	}
 
-	private void drawCubeMapSides(boolean urgent, RenderState extract) {
-		Scene scene = engine.getSceneManager().getScene();
+	private void drawCubeMapSides(boolean urgent, RenderState renderState) {
 
 		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();
 
-		DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
-		engine.getGpuContext().bindTexture(8, environmentProbeManager.getEnvironmentMapsArray());
-		engine.getGpuContext().bindTexture(10, environmentProbeManager.getEnvironmentMapsArray(0));
+		DirectionalLight light = scene.getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
+		gpuContext.bindTexture(8, environmentProbeManager.getEnvironmentMapsArray());
+		gpuContext.bindTexture(10, environmentProbeManager.getEnvironmentMapsArray(0));
 
-		engine.getGpuContext().disable(DEPTH_TEST);
-		engine.getGpuContext().depthFunc(LEQUAL);
+		gpuContext.disable(DEPTH_TEST);
+		gpuContext.depthFunc(LEQUAL);
 
-		renderTarget.use(engine.getGpuContext(), false);
+		renderTarget.use(gpuContext, false);
 		Program cubeMapProgram = this.cubeMapProgram;
-		bindProgramSpecificsPerCubeMap(cubeMapProgram);
+		bindProgramSpecificsPerCubeMap(cubeMapProgram, renderState);
 
 		boolean filteringRequired = false;
 		TypedTuple<Matrix4f[], Matrix4f[]> viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(getPosition());
@@ -203,7 +215,7 @@ public class EnvironmentSampler extends Entity {
 			boolean aPointLightHasMoved = !scene.getPointLights().stream()
 					.filter(e -> probe.getBox().containsOrIntersectsSphere(e.getEntity().getPosition(), e.getRadius()))
 					.filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !engine.getScene().getAreaLightSystem().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().stream().filter(e -> e.getEntity().hasMoved()).collect(Collectors.toList()).isEmpty();
 			boolean reRenderLightingRequired = light.getEntity().hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullReRenderRequired && !reRenderLightingRequired;
 
@@ -221,24 +233,24 @@ public class EnvironmentSampler extends Entity {
 					environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), i);
 					environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(1, probe.getIndex(), i);
 					environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(2, probe.getIndex(), i);
-					engine.getGpuContext().clearDepthAndColorBuffer();
+					gpuContext.clearDepthAndColorBuffer();
 
-					drawFirstPass(i, this.getCamera(), extract);
+					drawFirstPass(i, this.getCamera(), renderState);
 					environmentProbeManager.getCubeMapArrayRenderTarget().resetAttachments();
 
 				}
 
 				environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
-				engine.getGpuContext().clearDepthAndColorBuffer();
+				gpuContext.clearDepthAndColorBuffer();
 				drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights());
 				registerSideAsDrawn(i);
 			} else {
-				engine.getGpuContext().depthMask(true);
-				engine.getGpuContext().enable(DEPTH_TEST);
-				engine.getGpuContext().depthFunc(LEQUAL);
+				gpuContext.depthMask(true);
+				gpuContext.enable(DEPTH_TEST);
+				gpuContext.depthFunc(LEQUAL);
 				environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
-				engine.getGpuContext().clearDepthAndColorBuffer();
-				drawEntities(extract, cubeMapProgram, viewMatrixBuffer, projectionMatrixBuffer, viewProjectionMatrixBuffer);
+				gpuContext.clearDepthAndColorBuffer();
+				drawEntities(renderState, cubeMapProgram, viewMatrixBuffer, projectionMatrixBuffer, viewProjectionMatrixBuffer);
 			}
 		}
 		if (filteringRequired) {
@@ -263,27 +275,27 @@ public class EnvironmentSampler extends Entity {
 	@Subscribe
 	public void handle(MaterialChangedEvent e) {
 		resetDrawing();
-		engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
-		engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
-		engine.getScene().getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
+		scene.getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
+		scene.getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
+		scene.getEnvironmentProbeManager().addRenderProbeCommand(probe, true);
 	}
 
-	private void bindProgramSpecificsPerCubeMap(Program program) {
+	private void bindProgramSpecificsPerCubeMap(Program program, RenderState renderState) {
 		program.use();
 		program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		program.setUniform("probePosition", probe.getEntity().getCenter());
 		program.setUniform("probeSize", probe.getSize());
-		program.setUniform("activePointLightCount", engine.getSceneManager().getScene().getPointLights().size());
-		program.bindShaderStorageBuffer(3, engine.getRenderManager().getRenderState().getCurrentReadState().getEntitiesBuffer());
-		program.bindShaderStorageBuffer(5, engine.getScene().getPointLightSystem().getLightBuffer());
+		program.setUniform("activePointLightCount", scene.getPointLights().size());
+		program.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
+		program.bindShaderStorageBuffer(5, scene.getPointLightSystem().getLightBuffer());
 
-		program.setUniform("activeAreaLightCount", engine.getSceneManager().getScene().getAreaLights().size());
-		program.bindShaderStorageBuffer(6, engine.getScene().getAreaLightSystem().getLightBuffer());
+		program.setUniform("activeAreaLightCount", scene.getAreaLights().size());
+		program.bindShaderStorageBuffer(6, scene.getAreaLightSystem().getLightBuffer());
 
-		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), MAX_AREALIGHT_SHADOWMAPS); i++) {
-			AreaLight areaLight = engine.getSceneManager().getScene().getAreaLights().get(i);
-            engine.getGpuContext().bindTexture(9 + i, TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
-            program.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", engine.getScene().getAreaLightSystem().getShadowMatrixForAreaLight(areaLight));
+		for(int i = 0; i < Math.min(scene.getAreaLights().size(), MAX_AREALIGHT_SHADOWMAPS); i++) {
+			AreaLight areaLight = scene.getAreaLights().get(i);
+            gpuContext.bindTexture(9 + i, TEXTURE_2D, scene.getAreaLightSystem().getDepthMapForAreaLight(areaLight));
+            program.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", scene.getAreaLightSystem().getShadowMatrixForAreaLight(areaLight));
 		}
 		
 		program.setUniform("probeIndex", probe.getIndex());
@@ -309,22 +321,22 @@ public class EnvironmentSampler extends Entity {
         environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(1, probe.getIndex(), sideIndex);
         environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(2, probe.getIndex(), sideIndex);
 
-        engine.getGpuContext().clearDepthAndColorBuffer();
-        engine.getGpuContext().enable(CULL_FACE);
-        engine.getGpuContext().depthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().depthFunc(LEQUAL);
-        engine.getGpuContext().disable(BLEND);
+        gpuContext.clearDepthAndColorBuffer();
+        gpuContext.enable(CULL_FACE);
+        gpuContext.depthMask(true);
+        gpuContext.enable(DEPTH_TEST);
+        gpuContext.depthFunc(LEQUAL);
+        gpuContext.disable(BLEND);
 
         firstPassDefaultProgram.use();
         firstPassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
-        firstPassDefaultProgram.setUniform("useRainEffect", engine.getConfig().getEffects().getRainEffect() != 0.0);
-        firstPassDefaultProgram.setUniform("rainEffect", engine.getConfig().getEffects().getRainEffect());
+        firstPassDefaultProgram.setUniform("useRainEffect", config.getEffects().getRainEffect() != 0.0);
+        firstPassDefaultProgram.setUniform("rainEffect", config.getEffects().getRainEffect());
         firstPassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         firstPassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstPassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstPassDefaultProgram.setUniform("eyePosition", camera.getEntity().getPosition());
-        firstPassDefaultProgram.setUniform("lightDirection", engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().getViewDirection());
+        firstPassDefaultProgram.setUniform("lightDirection", scene.getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight().getViewDirection());
         firstPassDefaultProgram.setUniform("near", camera.getNear());
         firstPassDefaultProgram.setUniform("far", camera.getFar());
         firstPassDefaultProgram.setUniform("timeGpu", (int)System.currentTimeMillis());
@@ -336,7 +348,7 @@ public class EnvironmentSampler extends Entity {
 //			TODO: program usage is wrong for animated things..
             draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
         }
-        engine.getGpuContext().enable(CULL_FACE);
+        gpuContext.enable(CULL_FACE);
 	}
 
 	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
@@ -345,22 +357,22 @@ public class EnvironmentSampler extends Entity {
 		camPosition.add(getViewDirection().mul(getCamera().getNear()));
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
-        engine.getGpuContext().depthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().depthFunc(LESS);
-        engine.getGpuContext().enable(BLEND);
-        engine.getGpuContext().blendEquation(FUNC_ADD);
-        engine.getGpuContext().blendFunc(ONE, ONE);
+        gpuContext.depthMask(true);
+        gpuContext.enable(DEPTH_TEST);
+        gpuContext.depthFunc(LESS);
+        gpuContext.enable(BLEND);
+        gpuContext.blendEquation(FUNC_ADD);
+        gpuContext.blendFunc(ONE, ONE);
 
-        engine.getGpuContext().bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
-        engine.getGpuContext().bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
-        engine.getGpuContext().bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
-        engine.getGpuContext().bindTexture(4, engine.getTextureManager().getCubeMap());
+        gpuContext.bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
+        gpuContext.bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
+        gpuContext.bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
+        gpuContext.bindTexture(4, textureManager.getCubeMap());
 
 		secondPassDirectionalProgram.use();
 		secondPassDirectionalProgram.setUniform("eyePosition", getPosition());
-		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", engine.getConfig().getEffects().getAmbientocclusionRadius());
-		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", engine.getConfig().getEffects().getAmbientocclusionTotalStrength());
+		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", config.getEffects().getAmbientocclusionRadius());
+		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", config.getEffects().getAmbientocclusionTotalStrength());
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeManager.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeManager.RESOLUTION);
 		FloatBuffer viewMatrix = getCamera().getViewMatrixAsBuffer();
@@ -377,15 +389,15 @@ public class EnvironmentSampler extends Entity {
 		VertexBufferExtensionsKt.draw(fullscreenBuffer);
 
 
-        engine.getGpuContext().enable(CULL_FACE);
+        gpuContext.enable(CULL_FACE);
 		doPointLights(this.getCamera(), pointLights, camPosition, viewMatrix, projectionMatrix);
-        engine.getGpuContext().disable(CULL_FACE);
+        gpuContext.disable(CULL_FACE);
 
 		doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
 
 		doAreaLights(areaLights, viewMatrix, projectionMatrix);
 
-        engine.getGpuContext().disable(BLEND);
+        gpuContext.disable(BLEND);
 
 		if (DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE) {
 			renderReflectionsSecondBounce(viewMatrix, projectionMatrix,
@@ -393,9 +405,9 @@ public class EnvironmentSampler extends Entity {
 					cubeMapFaceViews[1][sideIndex],
 					cubeMapFaceViews[2][sideIndex], sideIndex);
 		}
-        engine.getGpuContext().enable(CULL_FACE);
-        engine.getGpuContext().cullFace(BACK);
-        engine.getGpuContext().depthFunc(LESS);
+        gpuContext.enable(CULL_FACE);
+        gpuContext.cullFace(BACK);
+        gpuContext.depthFunc(LESS);
 
 //		GL11.glDeleteTextures(cubeMapFaceView);
 //		GL11.glDeleteTextures(cubeMapFaceView1);
@@ -403,14 +415,14 @@ public class EnvironmentSampler extends Entity {
 	}
 	
 	private void renderReflectionsSecondBounce(FloatBuffer viewMatrix, FloatBuffer projectionMatrix, int positionMap, int normalMap, int colorMap, int sideIndex) {
-        engine.getGpuContext().bindTexture(0, TEXTURE_2D, positionMap);
-        engine.getGpuContext().bindTexture(1, TEXTURE_2D, normalMap);
-        engine.getGpuContext().bindTexture(2, TEXTURE_2D, colorMap);
-        engine.getGpuContext().bindTexture(8, TEXTURE_2D, colorMap);
-		engine.getGpuContext().bindTexture(8, environmentProbeManager.getEnvironmentMapsArray(3));
-        engine.getGpuContext().bindTexture(9, engine.getTextureManager().getCubeMap());
+        gpuContext.bindTexture(0, TEXTURE_2D, positionMap);
+        gpuContext.bindTexture(1, TEXTURE_2D, normalMap);
+        gpuContext.bindTexture(2, TEXTURE_2D, colorMap);
+        gpuContext.bindTexture(8, TEXTURE_2D, colorMap);
+		gpuContext.bindTexture(8, environmentProbeManager.getEnvironmentMapsArray(3));
+        gpuContext.bindTexture(9, textureManager.getCubeMap());
 
-        engine.getGpuContext().bindImageTexture(6, environmentProbeManager.getCubeMapArrayRenderTarget().getCubeMapArray(3).getId(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+        gpuContext.bindImageTexture(6, environmentProbeManager.getCubeMapArrayRenderTarget().getCubeMapArray(3).getId(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();
 		tiledProbeLightingProgram.setUniform("secondBounce", DeferredRenderingBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
 		tiledProbeLightingProgram.setUniform("screenWidth", (float) EnvironmentProbeManager.RESOLUTION);
@@ -425,10 +437,10 @@ public class EnvironmentSampler extends Entity {
 	}
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer, FloatBuffer viewProjectionMatrixAsBuffer, Program program) {
-		DirectionalLight light = engine.getScene().getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
+		DirectionalLight light = scene.getEntitySystems().get(DirectionalLightSystem.class).getDirectionalLight();
 		program.setUniform("lightDirection", light.getEntity().getViewDirection());
 		program.setUniform("lightDiffuse", light.getColor());
-		program.setUniform("lightAmbient", engine.getConfig().getEffects().getAmbientLight());
+		program.setUniform("lightAmbient", config.getEffects().getAmbientLight());
 		program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 		program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
 		program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
@@ -436,11 +448,11 @@ public class EnvironmentSampler extends Entity {
 	}
 
 	private void generateCubeMapMipMaps() {
-		if(engine.getConfig().getQuality().isUsePrecomputedRadiance()) {
+		if(config.getQuality().isUsePrecomputedRadiance()) {
 			
 			_generateCubeMapMipMaps();
 			
-			if (engine.getConfig().getQuality().isCalculateActualRadiance()) {
+			if (config.getQuality().isCalculateActualRadiance()) {
 
                 CubeMapArray cubeMapArray = environmentProbeManager.getEnvironmentMapsArray(3);
 				int internalFormat = cubeMapArray.getInternalFormat();
@@ -474,9 +486,9 @@ public class EnvironmentSampler extends Entity {
 		
 		cubemapRadianceFragmentProgram.use();
         CubeMapArrayRenderTarget cubeMapArrayRenderTarget = environmentProbeManager.getCubeMapArrayRenderTarget();
-		renderTarget.use(engine.getGpuContext(), false);
+		renderTarget.use(gpuContext, false);
 
-        engine.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP, cubeMapView);
+        gpuContext.bindTexture(8, TEXTURE_CUBE_MAP, cubeMapView);
 		//GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentMap().getTextureId());
 		
 		for (int i = 0; i < 6; i++) {
@@ -492,15 +504,15 @@ public class EnvironmentSampler extends Entity {
 				width /= 2;
 				height /= 2;
 
-                engine.getGpuContext().clearColorBuffer();
-                engine.getGpuContext().clearColor(0, 0, 0, 0);
+                gpuContext.clearColorBuffer();
+                gpuContext.clearColor(0, 0, 0, 0);
 
 				cubemapRadianceFragmentProgram.setUniform("currentCubemapSide", i);
 				cubemapRadianceFragmentProgram.setUniform("currentProbe", probe.getIndex());
 				cubemapRadianceFragmentProgram.setUniform("screenWidth", (float) width);
 				cubemapRadianceFragmentProgram.setUniform("screenHeight", (float) height);
                 environmentProbeManager.bindEnvironmentProbePositions(cubemapRadianceFragmentProgram);
-                engine.getGpuContext().viewPort(0, 0, width, height);
+                gpuContext.viewPort(0, 0, width, height);
 				VertexBufferExtensionsKt.draw(fullscreenBuffer);
 			}
 		}
@@ -519,7 +531,7 @@ public class EnvironmentSampler extends Entity {
 				GL42.glBindImageTexture(z, cubemapArrayColorTextureId, z + 1, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
 			}
 
-            engine.getGpuContext().bindTexture(8, TEXTURE_CUBE_MAP, cubemapCopy);
+            gpuContext.bindTexture(8, TEXTURE_CUBE_MAP, cubemapCopy);
 
 			cubemapRadianceProgram.setUniform("currentCubemapSide", i);
 			cubemapRadianceProgram.setUniform("currentProbe", probe.getIndex());
@@ -538,14 +550,14 @@ public class EnvironmentSampler extends Entity {
 			for (int i = 0; i < 6; i++) {
 				int cubeMapFaceView = GL11.glGenTextures();
                 GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getId(), cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6 * probe.getIndex() + i, 1);
-                engine.getTextureManager().generateMipMaps(TEXTURE_2D, cubeMapFaceView);
+                textureManager.generateMipMaps(TEXTURE_2D, cubeMapFaceView);
 				GL11.glDeleteTextures(cubeMapFaceView);
 			}
 			
 		} else {
 			int cubeMapView = GL11.glGenTextures();
             GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getId(), cubeMapArray.getInternalFormat(), 0, environmentProbeManager.CUBEMAP_MIPMAP_COUNT, 6*probe.getIndex(), 6);
-            engine.getTextureManager().generateMipMaps(TEXTURE_CUBE_MAP, cubeMapView);
+            textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapView);
 			GL11.glDeleteTextures(cubeMapView);
 		}
 	}
@@ -646,8 +658,8 @@ public class EnvironmentSampler extends Entity {
 		secondPassAreaProgram.setUniform("screenHeight", (float) EnvironmentProbeManager.RESOLUTION);
 		secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-        engine.getGpuContext().disable(CULL_FACE);
-        engine.getGpuContext().disable(DEPTH_TEST);
+        gpuContext.disable(CULL_FACE);
+        gpuContext.disable(DEPTH_TEST);
 		for (AreaLight areaLight : areaLights) {
 //			boolean camInsideLightVolume = new AABB(areaLight.getPosition(), 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
 //			if (camInsideLightVolume) {
@@ -665,7 +677,7 @@ public class EnvironmentSampler extends Entity {
 			secondPassAreaProgram.setUniform("lightHeight", areaLight.getHeight());
 			secondPassAreaProgram.setUniform("lightRange", areaLight.getRange());
 			secondPassAreaProgram.setUniform("lightDiffuse", areaLight.getColor());
-            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", engine.getScene().getAreaLightSystem().getShadowMatrixForAreaLight(areaLight));
+            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", scene.getAreaLightSystem().getShadowMatrixForAreaLight(areaLight));
 
 			// TODO: Add textures to arealights
 //			try {
@@ -676,7 +688,7 @@ public class EnvironmentSampler extends Entity {
 //				e.printStackTrace();
 //			}
 
-            engine.getGpuContext().bindTexture(9, TEXTURE_2D, engine.getScene().getAreaLightSystem().getDepthMapForAreaLight(areaLight));
+            gpuContext.bindTexture(9, TEXTURE_2D, scene.getAreaLightSystem().getDepthMapForAreaLight(areaLight));
 			VertexBufferExtensionsKt.draw(fullscreenBuffer);
 //			areaLight.getVertexBuffer().drawDebug();
 		}

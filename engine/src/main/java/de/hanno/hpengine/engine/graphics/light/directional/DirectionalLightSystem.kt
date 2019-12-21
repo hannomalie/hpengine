@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.light.directional
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
@@ -9,18 +8,19 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.scene.SimpleScene
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 
-class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleScene, val eventBus: EventBus): SimpleEntitySystem(_engine, simpleScene, listOf(DirectionalLight::class.java)), RenderSystem {
+class DirectionalLightSystem(val engine: EngineContext<OpenGl>,
+                             scene: Scene,
+                             val eventBus: EventBus): SimpleEntitySystem(scene, listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
 
     private var shadowMapExtension: DirectionalLightShadowMapExtension
 
     init {
         eventBus.register(this)
-        shadowMapExtension = DirectionalLightShadowMapExtension(_engine)
+        shadowMapExtension = DirectionalLightShadowMapExtension(engine)
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
@@ -30,7 +30,7 @@ class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleSce
             update(deltaSeconds)
         }
         if (light.entity.hasMoved()) {
-            this@DirectionalLightSystem.directionalLightMovedInCycle = this@DirectionalLightSystem.engine.scene.currentCycle
+            this@DirectionalLightSystem.directionalLightMovedInCycle = scene.currentCycle
             light.entity.isHasMoved = false
         }
     }
@@ -53,6 +53,6 @@ class DirectionalLightSystem(val _engine: Engine<OpenGl>, simpleScene: SimpleSce
         }
     }
     override fun render(result: DrawResult, state: RenderState) {
-        shadowMapExtension.renderFirstPass(_engine.backend, _engine.gpuContext, result.firstPassResult, state)
+        shadowMapExtension.renderFirstPass(engine.backend, engine.gpuContext, result.firstPassResult, state)
     }
 }

@@ -43,7 +43,7 @@ class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
 
 class VoxelConeTracingExtension(
         private val engine: EngineContext<OpenGl>,
-        directionalLightShadowMapExtension: DirectionalLightShadowMapExtension,
+        directionalLightShadowMapExtension: DirectionalLightShadowMapExtension?,
         val renderer: RenderSystem) : RenderExtension<OpenGl> {
 
     val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
@@ -146,7 +146,7 @@ class VoxelConeTracingExtension(
     private var litInCycle: Long = -1
 
     init {
-        directionalLightShadowMapExtension.voxelConeTracingExtension = this
+        directionalLightShadowMapExtension?.voxelConeTracingExtension = this
     }
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {

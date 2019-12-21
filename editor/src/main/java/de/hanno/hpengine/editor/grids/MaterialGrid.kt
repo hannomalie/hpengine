@@ -1,4 +1,4 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.grids
 
 import com.bric.colorpicker.ColorPicker
 import de.hanno.hpengine.engine.model.material.Material
@@ -8,18 +8,18 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
-import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
+import org.joml.Vector4f
 import java.awt.Color
-import java.lang.IllegalStateException
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import kotlin.math.min
 import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KProperty0
 
 class MaterialGrid(val textureManager: TextureManager, val material: Material) : JPanel() {
     private val info = material.materialInfo as SimpleMaterialInfo
@@ -125,7 +125,7 @@ fun <T : Enum<*>> KMutableProperty0<T>.toComboBox(values: Array<T>): JComboBox<T
     }
 }
 
-fun KMutableProperty0<Vector3f>.toColorPickerInput(): JComponent {
+fun KProperty0<Vector3f>.toColorPickerInput(): JComponent {
     return ColorPicker(false, false).apply {
         val initialValue = get()
         color = Color(
@@ -139,5 +139,20 @@ fun KMutableProperty0<Vector3f>.toColorPickerInput(): JComponent {
             get().z = it.color.blue.toFloat() / 255f
         }
     }
-
+}
+@JvmName("toVec4ColorPickerInput")
+fun KProperty0<Vector4f>.toColorPickerInput(): JComponent {
+    return ColorPicker(false, false).apply {
+        val initialValue = get()
+        color = Color(
+                (initialValue.x * 255f).toInt(),
+                (initialValue.y * 255f).toInt(),
+                (initialValue.z * 255f).toInt()
+        )
+        addColorListener {
+            get().x = it.color.red.toFloat() / 255f
+            get().y = it.color.green.toFloat() / 255f
+            get().z = it.color.blue.toFloat() / 255f
+        }
+    }
 }

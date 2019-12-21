@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
@@ -15,6 +16,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.StructArray
@@ -22,7 +24,8 @@ import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelComponent> {
+class ModelComponentSystem(val engine: EngineContext<*>,
+                           val materialManager: MaterialManager) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
     val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
@@ -89,7 +92,7 @@ class ModelComponentSystem(val engine: Engine<*>) : ComponentSystem<ModelCompone
 
         gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
         gpuEntitiesArray.buffer.rewind()
-        val materials = engine.scene.materialManager.materials
+        val materials = materialManager.materials
 
         for(modelComponent in components) {
             val allocation = allocations[modelComponent]!!

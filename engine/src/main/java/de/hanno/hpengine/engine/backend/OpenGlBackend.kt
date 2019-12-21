@@ -80,9 +80,9 @@ class ManagerContextImpl(
         engineContext.renderSystems.add(physicsManager)
     }
 
-    override fun onSetScene(nextScene: Scene) {
+    override fun beforeSetScene(nextScene: Scene) {
         for (manager in managers.managers) {
-            manager.value.onSetScene(nextScene)
+            manager.value.beforeSetScene(nextScene)
         }
     }
 }

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent

@@ -1,4 +1,4 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.camera.Camera
 import net.miginfocom.swing.MigLayout

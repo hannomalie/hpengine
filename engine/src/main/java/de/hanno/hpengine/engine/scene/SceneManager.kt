@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.event.SceneInitEvent
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -15,8 +14,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 
@@ -76,15 +73,7 @@ object SingleThreadContext {
 
 class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
 
-    var scene: Scene = SimpleScene("InitScene", TempEngineImpl(managerContext, this@SceneManager))
-        set(value) {
-            onSetScene(value)
-            managerContext.commandQueue.execute(Runnable {
-                field = value
-            }, true)
-            managerContext.eventBus.post(SceneInitEvent())
-        }
-
+    var scene: Scene = SimpleScene("InitialScene", managerContext)
 
     fun addAll(entities: List<Entity>) {
         managerContext.singleThreadContext.runBlocking {
@@ -107,7 +96,7 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
     }
 
-    override fun onSetScene(nextScene: Scene) {
+    override fun beforeSetScene(nextScene: Scene) {
         scene.environmentProbeManager.clearProbes()
         managerContext.physicsManager.clearWorld()
         managerContext.renderManager.clear()

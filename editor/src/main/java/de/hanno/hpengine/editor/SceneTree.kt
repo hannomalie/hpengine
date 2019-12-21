@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent

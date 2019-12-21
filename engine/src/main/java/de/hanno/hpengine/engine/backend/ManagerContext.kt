@@ -22,7 +22,7 @@ interface ManagerContext<TYPE: BackendType>: EngineContext<TYPE> {
     val renderManager: RenderManager
     val physicsManager: PhysicsManager
 
-    fun onSetScene(nextScene: Scene)
+    fun beforeSetScene(nextScene: Scene)
 
     override val backend: Backend<TYPE>
         get() = engineContext.backend

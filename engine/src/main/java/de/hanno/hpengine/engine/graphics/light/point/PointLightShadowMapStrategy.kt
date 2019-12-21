@@ -1,10 +1,10 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
 import de.hanno.hpengine.engine.graphics.profiled
@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.engine.model.texture.TextureDimension
@@ -125,7 +126,11 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
     }
 }
 
-class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, private val pointLightSystem: PointLightSystem, val cameraEntity: Entity): PointLightShadowMapStrategy {
+class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
+                                      private val pointLightSystem: PointLightSystem,
+                                      val cameraEntity: Entity,
+                                      val entityManager: EntityManager,
+                                      val modelComponentSystem: ModelComponentSystem): PointLightShadowMapStrategy {
     private var pointShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "pointlight_shadow_vertex.glsl")), getShaderSource(File(Shader.directory + "pointlight_shadow_fragment.glsl")))
 
     var pointLightDepthMapsArrayFront: Int = 0
@@ -165,8 +170,8 @@ class DualParaboloidShadowMapStrategy(private val engine: Engine<OpenGl>, privat
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
-        val entities = engine.scene.entityManager.getEntities()
-        val modelComponentSystem = engine.scene.modelComponentSystem
+        val entities = entityManager.getEntities()
+        val modelComponentSystem = modelComponentSystem
         val gpuContext = engine.gpuContext
 
         profiled("PointLight shadowmaps") {

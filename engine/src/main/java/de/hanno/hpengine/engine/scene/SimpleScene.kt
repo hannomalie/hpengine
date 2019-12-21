@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.ScriptComponentSystem
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
@@ -34,8 +34,8 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
-
-class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(), val engine: Engine<OpenGl>) : Scene {
+class SimpleScene @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(),
+                                            val engine: EngineContext<OpenGl>) : Scene {
     @Transient
     override var currentCycle: Long = 0
     @Transient
@@ -44,26 +44,27 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
 
     override val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     override val managers: ManagerRegistry = SimpleManagerRegistry()
+    override val materialManager = managers.register(MaterialManager(engine))
     override val entitySystems = SimpleEntitySystemRegistry()
 
     private val customComponentSystem = componentSystems.register(CustomComponentSystem())
-    private val scriptComponentSystem = componentSystems.register(ScriptComponentSystem(engine))
-    private val clusterComponentSystem = componentSystems.register(ClustersComponentSystem(engine))
+    private val scriptComponentSystem = componentSystems.register(ScriptComponentSystem())
+    private val clusterComponentSystem = componentSystems.register(ClustersComponentSystem())
     private val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine)).also {
         engine.renderSystems.add(it)
     }
+
     private val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
-    override val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine))
+    override val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine, materialManager))
     val pointLightComponentSystem = componentSystems.register(PointLightComponentSystem())
     private val areaLightComponentSystem = componentSystems.register(AreaLightComponentSystem())
     private val tubeLightComponentSystem = componentSystems.register(TubeLightComponentSystem())
 
     override val entityManager = EntityManager(engine, engine.eventBus, this).apply { managers.register(this) }
-    override val environmentProbeManager: EnvironmentProbeManager = EnvironmentProbeManager(engine, engine.renderManager.lineRenderer).also {
+    override val environmentProbeManager: EnvironmentProbeManager = EnvironmentProbeManager(engine).also {
         managers.register(it)
         engine.renderSystems.add(it)
     }
-    override val materialManager = managers.register(MaterialManager(engine))
 
     val directionalLightSystem = DirectionalLightSystem(engine, this, engine.eventBus).apply {
         entitySystems.register(this)
@@ -71,7 +72,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     }
     val pointLightSystemX = entitySystems.register(PointLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
     private val areaLightSystemX = entitySystems.register(AreaLightSystem(engine, this)).apply { engine.renderSystems.add(this) }
-    val probeSystem = entitySystems.register(ProbeSystem(engine, this))
+    val probeSystem = entitySystems.register(ProbeSystem(this))
     //    TODO: Move this event/debug stuff outside of scene class
     val eventSystem = entitySystems.register(object : EntitySystem {
         override fun clear() {}

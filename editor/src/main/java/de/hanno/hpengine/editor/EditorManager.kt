@@ -56,7 +56,7 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
         }
     }
 
-    override fun onSetScene(nextScene: Scene) {
+    override fun beforeSetScene(nextScene: Scene) {
         editorComponents.sceneTree.reload()
     }
 

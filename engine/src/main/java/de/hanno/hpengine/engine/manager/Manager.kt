@@ -27,6 +27,6 @@ interface Manager {
     fun extract(renderState: RenderState) {}
 
     @JvmDefault
-    fun onSetScene(nextScene: Scene) { }
+    fun beforeSetScene(nextScene: Scene) { }
 
 }

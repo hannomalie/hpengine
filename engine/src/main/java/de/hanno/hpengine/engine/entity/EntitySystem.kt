@@ -1,14 +1,10 @@
 package de.hanno.hpengine.engine.entity
 
-import com.google.common.eventbus.Subscribe
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.event.EntityAddedEvent
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import kotlinx.coroutines.CoroutineScope
-import net.engio.mbassy.listener.Handler
 
 interface EntitySystem {
     @JvmDefault
@@ -70,17 +66,13 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
     }
 }
 
-abstract class SimpleEntitySystem(val engine: Engine<*>, val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
+abstract class SimpleEntitySystem(val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
     protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {
         componentClasses.forEach {
             this[it] = emptyList()
         }
-    }
-
-    init {
-        engine.eventBus.register(this)
     }
 
     override fun gatherEntities() {
@@ -115,15 +107,6 @@ abstract class SimpleEntitySystem(val engine: Engine<*>, val scene: Scene, val c
     inline fun <reified T: Component> getComponents(type: Class<T>): List<T> {
         val list = components[type] ?: emptyList()
         return list as List<T>
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(e: EntityAddedEvent) {
-        engine.commandQueue.execute( Runnable {
-            gatherEntities()
-            gatherComponents()
-        }, false)
     }
 
     override fun clear() {

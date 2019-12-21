@@ -1,7 +1,11 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.selection
 
+import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.RibbonEditor
+import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.model.Mesh
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import javax.swing.JTree
 import javax.swing.event.TreeSelectionEvent
@@ -40,15 +44,23 @@ class SelectionListener(internal var tree: JTree,
         // TODO: MIIIIEEEEEES
         if (node is EnvironmentProbe) {
         } else if (node is Entity) {
-            if(node == editorComponents?.selectionSystem?.selection) {
-                editorComponents.selectionSystem.unselect()
-            } else {
-                editorComponents.selectionSystem.selectEntity(node)
-            }
-        } else if (node is Mesh<*>) {
-//            entityViewFrame.contentPane.removeAll()
-//            entityViewFrame.add(MeshView(engine, node))
-//            entityViewFrame.isVisible = true
+            unselectOr(node) { editorComponents.selectionSystem.selectEntity(it) }
+        } else if (node is SelectionSystem.MeshSelection) {
+            unselectOr(node) { editorComponents.selectionSystem.selectMesh(node) }
+        } else if (node is PointLight) {
+            unselectOr(node) { editorComponents.selectionSystem.selectPointLight(node) }
+        } else if (node is DirectionalLight) {
+            unselectOr(node) { editorComponents.selectionSystem.selectDirectionalLight(node) }
+        } else if (node is Camera) {
+            unselectOr(node) { editorComponents.selectionSystem.selectCamera(node) }
+        }
+    }
+
+    private fun <T> unselectOr(node: T, block: (T) -> Unit) {
+        if (node == editorComponents.selectionSystem.selection) {
+            editorComponents.selectionSystem.unselect()
+        } else {
+            block(node)
         }
     }
 }

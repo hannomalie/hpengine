@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.SingleThreadContext
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -31,8 +32,18 @@ interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
     val sceneManager: SceneManager
 
-    val scene
+    var scene: Scene
         get() = sceneManager.scene
+        set(value) {
+            managerContext.beforeSetScene(value)
+
+//            managerContext.commandQueue.execute(Runnable {
+//                sceneManager.scene = value
+//            }, true)
+            managerContext.singleThreadContext.runBlocking {
+                sceneManager.scene = value
+            }
+        }
     override val singleThreadContext: SingleThreadContext
         get() = managerContext.singleThreadContext
 }
