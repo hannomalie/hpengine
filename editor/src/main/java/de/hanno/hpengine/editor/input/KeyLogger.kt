@@ -1,4 +1,4 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.input
 
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener

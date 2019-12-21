@@ -1,10 +1,10 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.input.KeyUpDownProperty
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f

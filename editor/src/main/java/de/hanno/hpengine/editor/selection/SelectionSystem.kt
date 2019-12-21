@@ -2,9 +2,9 @@ package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.editor.SelectionMode
+import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.TransformSpace
+import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
@@ -264,4 +264,13 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             add(CameraGrid(pickedCamera))
         }
     }
+}
+
+fun JPanel.addUnselectButton(additionalOnClick: () -> Unit = {}) {
+    add(JButton("Unselect").apply {
+        addActionListener {
+            removeAll()
+            additionalOnClick()
+        }
+    })
 }

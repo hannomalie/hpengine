@@ -63,7 +63,7 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
 
         }.apply {
             isFocusable = true
-            frame.addCanvas(this)
+            frame.init(this)
             SwingUtilities.invokeAndWait {
                 frame.pack()
             }

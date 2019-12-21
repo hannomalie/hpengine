@@ -1,7 +1,6 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.input
 
-import de.hanno.struct.BooleanProperty
-import org.jetbrains.kotlin.ir.backend.js.validationAction
+import de.hanno.hpengine.editor.RibbonEditor
 import java.awt.Event.SHIFT_MASK
 import java.awt.event.ActionEvent
 import javax.swing.AbstractAction

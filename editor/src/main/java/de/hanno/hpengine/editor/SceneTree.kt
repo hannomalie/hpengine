@@ -5,17 +5,28 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import org.joml.Vector4f
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.logging.Logger
+import javax.swing.JFileChooser
+import javax.swing.JMenu
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
 import javax.swing.JTree
 import javax.swing.SwingUtilities
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
-class SceneTree(private val engine: Engine<*>,
-                private val editorComponents: EditorComponents,
-                private val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode("Scene")) : JTree(rootNode) {
+open class SceneTree(val engine: Engine<*>,
+                val editorComponents: EditorComponents,
+                val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode("Scene")) : JTree(rootNode) {
 
     private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null
@@ -85,4 +96,67 @@ class SceneTree(private val engine: Engine<*>,
         private val LOGGER = Logger.getLogger(SceneTree::class.java.name)
     }
 
+}
+
+    fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
+        if (mouseEvent.isPopupTrigger) {
+            when (selection) {
+                is Entity -> {
+                    JPopupMenu().apply {
+                        val menu = JMenu("Add").apply {
+                            val modelComponentMenuItem = JMenuItem("ModelComponent").apply {
+                                addActionListener {
+                                    JFileChooser(engine.directories.gameDir).apply {
+                                        if (showOpenDialog(editorComponents.editor) == JFileChooser.APPROVE_OPTION) {
+                                            GlobalScope.launch {
+                                                val loadedModels = LoadModelCommand(selectedFile,
+                                                        "Model_${System.currentTimeMillis()}",
+                                                        engine.scene.materialManager,
+                                                        engine.directories.gameDir,
+                                                        selection).execute()
+                                                engine.addResourceContext.launch {
+                                                    with(engine.scene) {
+                                                        addAll(loadedModels.entities)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            val lightMenuItem = JMenu("Light").apply {
+                                add(JMenuItem("PointLight").apply {
+                                    addActionListener {
+                                        val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
+                                        engine.addResourceContext.launch {
+                                            selection.addComponent(component)
+
+                                            with(engine.managers) {
+                                                onComponentAdded(component)
+                                            }
+                                        }
+                                    }
+                                })
+                            }
+
+                            add(modelComponentMenuItem)
+                            add(lightMenuItem)
+                        }
+                        add(menu)
+                        show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
+                    }
+                }
+            }
+        }
+    }
+
+fun SceneTree.addDefaultMouseListener() {
+    addMouseListener(object : MouseAdapter() {
+        override fun mousePressed(mouseEvent: MouseEvent) {
+            setSelectionRow(getClosestRowForLocation(mouseEvent.x, mouseEvent.y))
+            val selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
+
+            handleContextMenu(mouseEvent, selectedTreeElement)
+        }
+    })
 }

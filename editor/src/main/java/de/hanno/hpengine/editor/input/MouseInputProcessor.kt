@@ -1,5 +1,6 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.input
 
+import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.Entity
 import org.joml.Matrix4f
