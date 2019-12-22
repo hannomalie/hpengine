@@ -15,6 +15,9 @@ import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
@@ -34,7 +37,7 @@ class EditorComponents(val engine: EngineImpl,
 
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-
+    val sphereHolder = SphereHolder(engine)
 
     val sceneTree = SwingUtils.invokeAndWait {
         SceneTree(engine, this).apply {
@@ -49,10 +52,21 @@ class EditorComponents(val engine: EngineImpl,
         }
     }
 
-    val selectionSystem = SelectionSystem(this).apply {
-        engine.renderSystems.add(this)
+    val selectionSystem = SelectionSystem(this)
+    val textureRenderer = SimpleTextureRenderer(engine, engine.deferredRenderingBuffer.colorReflectivenessTexture)
+
+    override fun render(result: DrawResult, state: RenderState) {
+        selectionSystem.render(result, state)
+        sphereHolder.render(result, state)
+        if(config.debug.isUseDirectTextureOutput) {
+            textureRenderer.drawToQuad(engine.window.frontBuffer, config.debug.directTextureOutputTextureIndex)
+        } else {
+            textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
+        }
     }
+
     init {
+        engine.renderSystems.add(this)
         SwingUtils.invokeLater {
             TimingsFrame(engine)
             ribbon.setApplicationMenuCommand(ApplicationMenu(engine))

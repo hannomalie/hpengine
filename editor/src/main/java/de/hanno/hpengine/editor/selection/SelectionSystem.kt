@@ -51,8 +51,6 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val sidePanel: JPanel = editorComponents.editor.sidePanel
     val lineRenderer = LineRendererImpl(engine)
 
-    val textureRenderer = SimpleTextureRenderer(engine, engine.deferredRenderingBuffer.colorReflectivenessTexture)
-
     val simpleColorProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
     val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
@@ -197,8 +195,6 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                 draw(state.vertexIndexBufferStatic.vertexBuffer,
                      state.vertexIndexBufferStatic.indexBuffer, it, simpleColorProgramStatic, false, false)
             }
-
-            textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
         }
     }
 

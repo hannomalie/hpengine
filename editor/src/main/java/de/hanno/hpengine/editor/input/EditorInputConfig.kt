@@ -7,15 +7,21 @@ interface EditorInputConfig {
     var transformMode: TransformMode
     var transformSpace: TransformSpace
     var selectionMode: SelectionMode
+    var rotateAround: RotateAround
 }
 
 class EditorInputConfigImpl(
         override var constraintAxis: AxisConstraint = AxisConstraint.None,
-        override var transformMode: TransformMode = TransformMode.None,
+        override var transformMode: TransformMode = TransformMode.Translate,
         override var transformSpace: TransformSpace = TransformSpace.World,
-        override var selectionMode: SelectionMode = SelectionMode.Entity
+        override var selectionMode: SelectionMode = SelectionMode.Entity,
+        override var rotateAround: RotateAround = RotateAround.Self
 ): EditorInputConfig
 
+enum class RotateAround {
+    Self,
+    Pivot
+}
 enum class AxisConstraint(val axis: Vector3f) {
     None(Vector3f()),
     X(Vector3f(1f, 0f, 0f)),

@@ -79,6 +79,9 @@ open class SceneTree(val engine: Engine<*>,
             val current = DefaultMutableTreeNode(entity)
             rootEntityMappings[entity.parent]!!.add(current)
         }
+        if(parent.isRoot) {
+            parent.add(DefaultMutableTreeNode(editorComponents.sphereHolder.sphereEntity))
+        }
     }
 
     private fun addComponentNode(current: DefaultMutableTreeNode, component: Component) {

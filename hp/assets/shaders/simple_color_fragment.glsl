@@ -8,7 +8,6 @@ layout(location=0)out vec4 out_color;
 
 void main()
 {
-	//vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 1);
-    
+//    out_color = vec4(1,0,0,1);
     out_color = vec4(diffuseColor,1);
 }

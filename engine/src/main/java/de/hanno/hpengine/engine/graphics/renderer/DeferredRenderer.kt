@@ -31,7 +31,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipelin
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -39,19 +38,15 @@ import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
-import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.QuadVertexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer
 import de.hanno.hpengine.engine.model.draw
-import de.hanno.hpengine.engine.model.drawDebugLines
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.glFinish
-import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
@@ -59,10 +54,7 @@ import org.lwjgl.opengl.GL43
 import java.io.File
 import java.nio.FloatBuffer
 import java.util.ArrayList
-import java.util.EnumSet
-import java.util.function.Consumer
 import javax.vecmath.Vector2f
-import kotlin.math.min
 
 class DeferredRenderer
             @Throws(Exception::class) constructor(private val materialManager: MaterialManager,
@@ -588,51 +580,6 @@ class DeferredRenderer
         var USE_COMPUTESHADER_FOR_REFLECTIONS = false
         @Volatile
         var IMPORTANCE_SAMPLE_COUNT = 8
-    }
-}
-
-class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
-
-    private val programManager: ProgramManager<OpenGl> = engineContext.programManager
-    private val linePoints = ArrayList<Vector3f>()
-    private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
-
-//    TODO: This has to be implemented in context
-    private val maxLineWidth = engineContext.backend.gpuContext.calculate { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
-    private val buffer = VertexBuffer(engineContext.gpuContext, EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).apply {
-        upload()
-    }
-
-    override fun batchLine(from: Vector3f, to: Vector3f) {
-        linePoints.add(from)
-        linePoints.add(to)
-    }
-
-    override fun batchPointForLine(point: Vector3f) {
-        linePoints.add(point)
-    }
-
-    override fun drawAllLines(lineWidth: Float, action: Consumer<Program>) {
-        linesProgram.use()
-        action.accept(linesProgram)
-        drawLines(linesProgram, lineWidth)
-        linePoints.clear()
-    }
-
-    override fun drawLines(program: Program, lineWidth: Float): Int {
-        val points = FloatArray(linePoints.size * 3)
-        for (i in linePoints.indices) {
-            val point = linePoints[i]
-            points[3 * i] = point.x
-            points[3 * i + 1] = point.y
-            points[3 * i + 2] = point.z
-        }
-        buffer.putValues(*points)
-        buffer.upload().join()
-        buffer.drawDebugLines(min(lineWidth, maxLineWidth))
-        glFinish()
-        linePoints.clear()
-        return points.size / 3 / 2
     }
 }
 

@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor.tasks
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.input.EditorInputConfig
+import de.hanno.hpengine.editor.input.RotateAround
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
@@ -101,7 +102,34 @@ object TransformTask {
                             .build())
             addFlowComponent(transformSpaceCommandGroupProjection)
         }
+        val rotateAroundBand = JFlowRibbonBand("Rotate Around", null).apply {
+            resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
 
-        return RibbonTask("Transform", activeAxesBand, transformModeBand, transformSpaceBand)
+            val rotateAroundToggleGroup = CommandToggleGroupModel()
+
+            val commands = listOf(
+                    Pair(RotateAround.Self, inputConfig::rotateAround),
+                    Pair(RotateAround.Pivot, inputConfig::rotateAround)).map {
+                Command.builder()
+                        .setToggle()
+                        .setToggleSelected(inputConfig.rotateAround == it.first)
+                        .setText(it.first.toString())
+                        .setIconFactory { EditorComponents.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                        .inToggleGroup(rotateAroundToggleGroup)
+                        .setAction { event ->
+                            if (it.second.get() == it.first) it.second.set(RotateAround.Self) else it.second.set(it.first)
+                            event.command.isToggleSelected = it.second.get() == it.first
+                        }
+                        .build()
+            }
+            val rotateAroundCommandGroupProjection = CommandStripProjection(CommandGroup(commands),
+                    CommandStripPresentationModel.builder()
+                            .setCommandPresentationState(CommandButtonPresentationState.MEDIUM)
+                            .build())
+            addFlowComponent(rotateAroundCommandGroupProjection)
+        }
+
+
+        return RibbonTask("Transform", activeAxesBand, transformModeBand, transformSpaceBand, rotateAroundBand)
     }
 }

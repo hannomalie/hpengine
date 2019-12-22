@@ -3,7 +3,10 @@ package de.hanno.hpengine.editor.input
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.Entity
+import org.joml.AxisAngle4f
 import org.joml.Matrix4f
+import org.joml.Quaternionf
+import org.joml.Quaternionfc
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -91,21 +94,59 @@ class MouseInputProcessor(val engine: Engine<*>,
                 }
             }
             fun handleRotation() {
-                when(editorComponents.transformSpace) {
-                    TransformSpace.World -> when(editorComponents.constraintAxis) {
-                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).rotateLocalX(degreesX))
-                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).rotateLocalY(degreesY))
-                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).rotateLocalZ(degreesY))
-                        AxisConstraint.None -> Unit
+                val cameraRight = engine.scene.activeCamera.getRightDirection()
+                val cameraUp = engine.scene.activeCamera.getUpDirection()
+                val cameraView = engine.scene.activeCamera.getViewDirection()
+
+                val entityRight = entityOrNull.rightDirection
+                val entityUp = entityOrNull.upDirection
+                val entityView = entityOrNull.viewDirection
+
+                val pivot = editorComponents.sphereHolder.sphereEntity.position
+
+                when(editorComponents.rotateAround) {
+                    RotateAround.Self -> when(editorComponents.transformSpace) {
+                        TransformSpace.Local -> when(editorComponents.constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateX(degreesX))
+                            AxisConstraint.Y -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateY(degreesY))
+                            AxisConstraint.Z -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateZ(degreesY))
+                            AxisConstraint.None -> Unit
+                        }
+                        TransformSpace.World -> when(editorComponents.constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesX, 1f, 0f, 0f))
+                            AxisConstraint.Y -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesY, 0f, 1f, 0f))
+                            AxisConstraint.Z -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesY, 0f, 0f, 1f))
+                            AxisConstraint.None -> Unit
+                        }
+                        TransformSpace.View -> when(editorComponents.constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesX, cameraRight.x, cameraRight.y, cameraRight.z))
+                            AxisConstraint.Y -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesY, cameraUp.x, cameraUp.y, cameraUp.z))
+                            AxisConstraint.Z -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesY, cameraView.x, cameraView.y, cameraView.z))
+                            AxisConstraint.None -> Unit
+                        }
                     }
-                    TransformSpace.Local -> when(editorComponents.constraintAxis) {
-                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).rotateX(degreesX))
-                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).rotateY(degreesY))
-                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).rotateZ(degreesY))
-                        AxisConstraint.None -> Unit
+                    RotateAround.Pivot -> when(editorComponents.transformSpace) {
+                        TransformSpace.Local -> when(editorComponents.constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).rotateAroundLocal(AxisAngle4f(degreesX, entityRight), pivot))
+                            AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).rotateAroundLocal(AxisAngle4f(degreesY, entityUp), pivot))
+                            AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).rotateAroundLocal(AxisAngle4f(degreesY, entityView), pivot))
+                            AxisConstraint.None -> Unit
+                        }
+                        TransformSpace.World -> when(editorComponents.constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).rotateAroundLocal(AxisAngle4f(degreesX, 1f, 0f, 0f), pivot))
+                            AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).rotateAroundLocal(AxisAngle4f(degreesY, 0f, 1f, 0f), pivot))
+                            AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).rotateAroundLocal(AxisAngle4f(degreesY, 0f, 0f, 1f), pivot))
+                            AxisConstraint.None -> Unit
+                        }
+                        TransformSpace.View -> when(editorComponents.constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesX, cameraRight))
+                            AxisConstraint.Y -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesY, cameraUp))
+                            AxisConstraint.Z -> entityOrNull.set(oldTransform).mul(Matrix4f().identity().rotateAffine(degreesY, cameraView))
+                            AxisConstraint.None -> Unit
+                        }
                     }
-                    TransformSpace.View -> Unit
-                }
+                }.let {  }
+
 
             }
             fun handleScaling() {
@@ -125,3 +166,8 @@ class MouseInputProcessor(val engine: Engine<*>,
         }
     }
 }
+
+fun Matrix4f.rotateAroundLocal(axisAngle: AxisAngle4f, o: Vector3f): Matrix4f = rotateAroundLocal(Quaternionf(axisAngle), o.x, o.y, o.z)
+fun Matrix4f.rotateAroundLocal(quat: Quaternionfc, o: Vector3f): Matrix4f = rotateAroundLocal(quat, o.x, o.y, o.z)
+fun Matrix4f.rotateAffine(angle: Float, axis: Vector3f): Matrix4f = rotateAffine(angle, axis.x, axis.y, axis.z)
+fun AxisAngle4f(angle: Float, axis: Vector3f) = AxisAngle4f(angle, axis.x, axis.y, axis.z)
