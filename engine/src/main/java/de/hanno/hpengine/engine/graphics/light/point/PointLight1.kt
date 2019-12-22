@@ -11,14 +11,9 @@ import org.joml.Vector4f
 import java.io.Serializable
 import java.nio.ByteBuffer
 
-class PointLight(override val entity: Entity, val color: Vector4f, radius: Float) : Component, Serializable, Bufferable {
-
-    var radius: Float
-        get() = entity.scale.x
-        set(radius) {
-            val position = entity.position
-            entity.identity().scale(radius).transformPosition(position)
-        }
+class PointLight(override val entity: Entity,
+                 val color: Vector4f,
+                 var radius: Float = 10f) : Component, Serializable, Bufferable {
 
     fun draw(program: Program?) {
         throw IllegalStateException("Currently not implemented!")

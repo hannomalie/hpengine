@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
@@ -29,9 +31,6 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
     val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
-//    TODO: This has to be part of a custom renderstate!
-    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
-
     val shadowMapStrategy = if (engine.config.quality.isUseDpsm) {
             DualParaboloidShadowMapStrategy(engine, this, cameraEntity, scene.entityManager, scene.modelComponentSystem)
         } else {
@@ -47,10 +46,6 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
             target.radius = pointLight.radius
             target.color.set(pointLight.color)
         }
-        lightBuffer.ensureCapacityInBytes(pointLights.size * PointLightStruct.getBytesPerInstance())
-        lightBuffer.buffer.rewind()
-        gpuPointLightArray.copyTo(lightBuffer.buffer)
-        lightBuffer.buffer.rewind()
     }
 
     fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
@@ -92,7 +87,7 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
         renderState.pointLightMovedInCycle = pointLightMovedInCycle
 
         renderState.lightState.pointLights = getPointLights()
-        renderState.lightState.pointLightBuffer = lightBuffer
+        gpuPointLightArray.safeCopyTo(renderState.lightState.pointLightBuffer)
         renderState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
     }
 

@@ -287,7 +287,7 @@ public class EnvironmentSampler extends Entity {
 		program.setUniform("probeSize", probe.getSize());
 		program.setUniform("activePointLightCount", scene.getPointLights().size());
 		program.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-		program.bindShaderStorageBuffer(5, scene.getPointLightSystem().getLightBuffer());
+		program.bindShaderStorageBuffer(5, renderState.getLightState().getPointLightBuffer());
 
 		program.setUniform("activeAreaLightCount", scene.getAreaLights().size());
 		program.bindShaderStorageBuffer(6, scene.getAreaLightSystem().getLightBuffer());

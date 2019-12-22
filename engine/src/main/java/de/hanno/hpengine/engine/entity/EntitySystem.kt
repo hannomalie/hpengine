@@ -14,6 +14,9 @@ interface EntitySystem {
     fun UpdateLock.onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
+    fun UpdateLock.onComponentAdded(component: Component) {
+        gatherEntities()
+    }
 
     fun clear()
     fun extract(renderState: RenderState) {}
@@ -49,6 +52,11 @@ interface EntitySystemRegistry {
     fun UpdateLock.onEntityAdded(entities: List<Entity>) {
         for(system in getSystems()) {
             with(system) { onEntityAdded(entities) }
+        }
+    }
+    fun UpdateLock.onComponentAdded(component: Component) {
+        for(system in getSystems()) {
+            with(system) { onComponentAdded(component) }
         }
     }
 

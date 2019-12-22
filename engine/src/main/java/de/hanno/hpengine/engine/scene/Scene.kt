@@ -60,7 +60,11 @@ interface Scene : Updatable, Serializable {
         entityManager.entityAddedInCycle = currentCycle
     }
 
-    fun UpdateLock.onComponentAdded(component: Component)
+    fun UpdateLock.onComponentAdded(component: Component) {
+        with(componentSystems) { onComponentAdded(component) }
+        with(managers) { onComponentAdded(component) }
+        with(entitySystems) { onComponentAdded(component) }
+    }
 
     fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
     fun getTubeLights(): List<TubeLight> = componentSystems.get(TubeLightComponentSystem::class.java).getComponents()

@@ -142,10 +142,4 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             manager.value.extract(currentWriteState)
         }
     }
-
-    override fun UpdateLock.onComponentAdded(component: Component) {
-        with(componentSystems) { onComponentAdded(component) }
-        with(managers) { onComponentAdded(component) }
-    }
-
 }
