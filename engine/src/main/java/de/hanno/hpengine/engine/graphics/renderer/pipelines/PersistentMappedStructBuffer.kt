@@ -80,7 +80,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         }
 
         if (::buffer.isInitialized) {
-            val needsResize = buffer.capacity() <= capacityInBytes
+            val needsResize = buffer.capacity() < capacityInBytes
             if (needsResize) {
                 gpuContext.calculate {
                     val (newId, newBuffer) = createBuffer(capacityInBytes)
