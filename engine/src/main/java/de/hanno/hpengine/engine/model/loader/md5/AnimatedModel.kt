@@ -25,9 +25,9 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
             mesh.setModel(this)
         }
     }
-    override val verticesStructArray = StructArray(compiledVertices.size) { AnimatedVertexStruct() }.apply {
-        for (i in compiledVertices.indices) {
-            val animatedVertex = compiledVertices[i]
+    override val verticesStructArray = StructArray(uniqueVertices.size) { AnimatedVertexStruct() }.apply {
+        for (i in uniqueVertices.indices) {
+            val animatedVertex = uniqueVertices[i]
             val (position, texCoord, normal, weights, jointIndices) = animatedVertex
             val target = getAtIndex(i)
             target.position.set(position)
@@ -37,10 +37,10 @@ class AnimatedModel(meshes: Array<MD5Mesh>,
             target.jointIndices.set(jointIndices)
         }
     }
-    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.compiledVertices.size }) { AnimatedVertexStructPacked() }.apply {
+    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.uniqueVertices.size }) { AnimatedVertexStructPacked() }.apply {
         var counter = 0
         for (mesh in meshes) {
-            for(animatedVertex in mesh.compiledVertices) {
+            for(animatedVertex in mesh.uniqueVertices) {
                 val (position, texCoord, normal, weights, jointIndices) = animatedVertex
                 val target = getAtIndex(counter)
                 target.position.set(position)

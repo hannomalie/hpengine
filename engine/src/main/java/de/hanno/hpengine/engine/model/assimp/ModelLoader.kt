@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model.assimp
 
 import de.hanno.hpengine.engine.directory.AbstractDirectory
-import de.hanno.hpengine.engine.model.Face
+import de.hanno.hpengine.engine.model.IndexedFace
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.material.Material
@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.scene.Vertex
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -99,7 +100,7 @@ class ModelLoader {
     }
     private fun AIMesh.processMesh(materials: List<Material>): StaticMesh {
 
-        val vertices = retrieveVertices()
+        val positions = retrievePositions()
         val normals = retrieveNormals()
         val texCoords = retrieveTexCoords()
         val indices = retrieveFaces()
@@ -109,21 +110,23 @@ class ModelLoader {
         } else {
             SimpleMaterial(SimpleMaterialInfo(mName().dataString() + "_material"))
         }
-        return StaticMesh(mName().dataString(), vertices,
-                texCoords,
-                normals,
+        val vertices = positions.indices.map {
+            Vertex(positions[it], texCoords[it], normals[it])
+        }
+        return StaticMesh(mName().dataString(),
+                vertices,
                 indices,
                 material
         )
     }
-    private fun AIMesh.retrieveVertices(): List<Vector3f> {
-        val vertices: MutableList<Vector3f> = ArrayList()
-        val aiVertices = mVertices()
-        while (aiVertices.remaining() > 0) {
-            val aiVertex = aiVertices.get()
-            vertices.add(Vector3f(aiVertex.x(), aiVertex.y(), aiVertex.z()))
+    private fun AIMesh.retrievePositions(): List<Vector3f> {
+        val positions: MutableList<Vector3f> = ArrayList()
+        val aiPositions = mVertices()
+        while (aiPositions.remaining() > 0) {
+            val aiPosition = aiPositions.get()
+            positions.add(Vector3f(aiPosition.x(), aiPosition.y(), aiPosition.z()))
         }
-        return vertices
+        return positions
     }
     private fun AIMesh.retrieveNormals(): List<Vector3f> {
         val normals: MutableList<Vector3f> = ArrayList()
@@ -147,23 +150,17 @@ class ModelLoader {
         }
         return texCoords
     }
-    private fun AIMesh.retrieveFaces(): MutableList<Face> {
-        val faces: MutableList<Face> = ArrayList()
+    private fun AIMesh.retrieveFaces(): List<IndexedFace> {
+        val faces: MutableList<IndexedFace> = ArrayList()
         val aiFaces = mFaces()
         while (aiFaces.remaining() > 0) {
             val aiFace = aiFaces.get()
             if(aiFace.mNumIndices() == 3) {
-                // +1 is a hack in order to be compatible with obj format, which uses 1 base dindices
-                val indices = intArrayOf(aiFace.mIndices()[0]+1, aiFace.mIndices()[1]+1, aiFace.mIndices()[2]+1)
-                faces.add(Face(indices, indices, indices))
+                faces.add(IndexedFace(aiFace.mIndices()[0], aiFace.mIndices()[1], aiFace.mIndices()[2]))
             } else if(aiFace.mNumIndices() == 2) { // no textureCoords
-                // +1 is a hack in order to be compatible with obj format, which uses 1 base dindices
-                val indices = intArrayOf(aiFace.mIndices()[0]+1, aiFace.mIndices()[0]+1, aiFace.mIndices()[1]+1)
-                faces.add(Face(indices, indices, indices))
+                faces.add(IndexedFace(aiFace.mIndices()[0], aiFace.mIndices()[0], aiFace.mIndices()[1]))
             } else if(aiFace.mNumIndices() == 1) { // no textureCoords, no normals
-                // +1 is a hack in order to be compatible with obj format, which uses 1 base dindices
-                val indices = intArrayOf(aiFace.mIndices()[0]+1, aiFace.mIndices()[0]+1, aiFace.mIndices()[0]+1)
-                faces.add(Face(indices, indices, indices))
+                faces.add(IndexedFace(aiFace.mIndices()[0], aiFace.mIndices()[0], aiFace.mIndices()[0]))
             } else throw IllegalStateException("Cannot process faces with more than 3 or less than 1 indices. Got indices: ${aiFace.mNumIndices()}")
         }
         return faces

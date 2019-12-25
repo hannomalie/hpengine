@@ -20,9 +20,7 @@ import java.util.ArrayList
 import java.util.regex.Pattern
 
 class MD5Mesh() : Mesh<AnimatedVertex> {
-    override var compiledVertices: List<AnimatedVertex> = mutableListOf()
-    override val uniqueVertices: Set<AnimatedVertex>
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+    override val uniqueVertices = mutableListOf<AnimatedVertex>()
     var positionsArray: FloatArray = floatArrayOf()
     private var textCoordsArr: FloatArray = floatArrayOf()
     private var normalsArr: FloatArray = floatArrayOf()
@@ -49,9 +47,6 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
 
     override val boundingSphereRadius: Float
         get() = model!!.boundingSphereRadius
-
-    override val faces: List<StaticMesh.CompiledFace>
-        get() = emptyList()
 
     constructor(positionsArr: FloatArray, textCoordsArr: FloatArray, normalsArr: FloatArray, indicesArr: IntArray, jointIndicesArr: IntArray, weightsArr: FloatArray) : this() {
         this.positionsArray = positionsArr
@@ -86,7 +81,7 @@ class MD5Mesh() : Mesh<AnimatedVertex> {
     }
 
     constructor(positionsArr: FloatArray, textCoordsArr: FloatArray, normalsArr: FloatArray, indicesArr: IntArray, jointIndicesArr: IntArray, weightsArr: FloatArray, vertices: List<AnimCompiledVertex>) : this(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr) {
-        this.compiledVertices = vertices.map { convert(it) }
+        uniqueVertices.addAll(vertices.map { convert(it) })
     }
 
     private fun convert(input: AnimCompiledVertex): AnimatedVertex {

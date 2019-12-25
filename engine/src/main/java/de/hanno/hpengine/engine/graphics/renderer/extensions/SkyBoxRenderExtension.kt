@@ -20,11 +20,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.material.MaterialStruct
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.struct.SlidingWindow
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.io.File

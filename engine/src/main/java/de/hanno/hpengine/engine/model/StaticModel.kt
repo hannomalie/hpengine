@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
-import org.joml.Vector3f
 
 class StaticModel(private val path: String,
                   meshes: List<StaticMesh>) : AbstractModel<Vertex>(meshes) {
@@ -20,9 +19,9 @@ class StaticModel(private val path: String,
     }
     override val bytesPerVertex = VertexStruct.sizeInBytes
 
-    override val verticesStructArray = StructArray(compiledVertices.size) { VertexStruct() }.apply {
-        for (i in compiledVertices.indices) {
-            val vertex = compiledVertices[i]
+    override val verticesStructArray = StructArray(uniqueVertices.size) { VertexStruct() }.apply {
+        for (i in uniqueVertices.indices) {
+            val vertex = uniqueVertices[i]
             val (position, texCoord, normal) = vertex
             val target = getAtIndex(i)
             target.position.set(position)
@@ -57,10 +56,10 @@ class StaticModel(private val path: String,
 //            }
 //        }
 //    }
-    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.compiledVertices.size }) { VertexStructPacked() }.apply {
+    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.uniqueVertices.size }) { VertexStructPacked() }.apply {
         var counter = 0
         for(mesh in meshes) {
-            for(vertex in mesh.compiledVertices) {
+            for(vertex in mesh.uniqueVertices) {
                 val (position, texCoord, normal) = vertex
                 val target = getAtIndex(counter)
                 target.position.set(position)

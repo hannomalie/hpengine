@@ -14,9 +14,7 @@ interface Mesh<T> {
     var material: Material
     val boundingSphereRadius: Float
     var name: String
-    val faces: List<StaticMesh.CompiledFace>
-    val compiledVertices: List<T>
-    val uniqueVertices: Set<T>
+    val uniqueVertices: List<T>
     val minMax: AABB
         get() = getMinMax(IDENTITY)
 

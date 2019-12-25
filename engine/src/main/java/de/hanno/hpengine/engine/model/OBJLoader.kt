@@ -98,67 +98,6 @@ class OBJLoader {
     @Throws(Exception::class)
     fun loadTexturedModel(materialManager: MaterialManager, f: File, resourcesDir: AbstractDirectory): StaticModel {
         return ModelLoader().load(f, materialManager, resourcesDir)
-        if(!f.isFile) {
-            throw IllegalArgumentException("File does not exist: ${f.absolutePath}")
-        }
-        val reader = BufferedReader(FileReader(f))
-
-        var currentMesh: MeshData? = null
-        var currentMaterial: Material? = null
-
-        var usemtlCounter = 0
-
-        val vertices = mutableListOf<Vector3f>()
-        val normals = mutableListOf<Vector3f>()
-        val texCoords = mutableListOf<Vector2f>()
-        val meshData = mutableListOf<MeshData>()
-
-        var line: String? = reader.readLine()
-        while (line != null) {
-
-            val tokens = line.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
-
-            var firstToken = ""
-            if (tokens.isNotEmpty()) {
-                firstToken = tokens[0]
-            }
-            if ("mtllib" == firstToken) {
-                val materialLib = parseMaterialLib(materialManager.textureManager, line, f)
-                materialManager.putAll(materialLib)
-            } else if ("usemtl" == firstToken) {
-                val materialName = line.replace("usemtl ", "")
-                currentMaterial = materialManager.getMaterial(materialName)
-                usemtlCounter++
-            } else if ("o" == firstToken || "g" == firstToken || line.startsWith("# object ")) {
-                currentMesh = newMeshHelper(vertices, texCoords, normals, line, line.replace("o ", "").replace("# object ", "").replace("g ", ""), materialManager.defaultMaterial)
-                meshData.add(currentMesh)
-                usemtlCounter = 0
-            } else if ("v" == firstToken) {
-                currentState = State.READING_VERTEX
-                vertices.add(parseVertex(line))
-            } else if ("vt" == firstToken) {
-                currentState = State.READING_UV
-                texCoords.add(parseTexCoords(line))
-            } else if ("vn" == firstToken) {
-                currentState = State.READING_NORMAL
-                normals.add(parseVertex(line))
-            } else if ("f" == firstToken) {
-                currentState = State.READING_FACE
-                if (usemtlCounter > 1) {
-                    currentMesh = newMeshHelper(vertices, texCoords, normals, line, currentMesh!!.name + Random().nextInt(), currentMaterial!!)
-                    meshData.add(currentMesh)
-                    usemtlCounter = 0
-                }
-                currentMesh!!.material = currentMaterial!!
-                currentMesh.indexedFaces.add(parseFace(line))
-            }
-
-            line = reader.readLine()
-        }
-        reader.close()
-
-        val meshes = meshData.map { StaticMesh(it.name, it.positions, it.texCoords, it.normals, it.indexedFaces, it.material) }
-        return StaticModel(f.path, meshes)
     }
 
     data class MeshData(var name: String = "",

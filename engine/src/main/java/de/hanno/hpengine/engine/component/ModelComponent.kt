@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
@@ -17,9 +16,6 @@ import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
-import org.joml.Vector2f
-import org.joml.Vector3f
-import java.lang.IllegalStateException
 import java.util.EnumSet
 import java.util.logging.Logger
 
@@ -130,14 +126,14 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 }
 
 fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
-    return allocate(modelComponent.model.compiledVertices.size, modelComponent.indices.size)
+    return allocate(modelComponent.model.uniqueVertices.size, modelComponent.indices.size)
 }
 fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
                                vertexIndexBuffer: VertexIndexBuffer,
                                vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
 
     synchronized(vertexIndexBuffer) {
-        val compiledVertices = model.compiledVertices
+        val compiledVertices = model.uniqueVertices
 
         val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
@@ -169,9 +165,9 @@ fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexO
 
     val meshVertexIndexOffsets = model.meshes.indices.map { i ->
         val mesh = model.meshes[i] as Mesh<*>
-        VertexIndexOffsets(currentIndexOffset, currentVertexOffset).apply {
+        VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
             currentIndexOffset += mesh.indexBufferValues.size
-            currentVertexOffset += mesh.compiledVertices.size
+            currentVertexOffset += mesh.uniqueVertices.size
         }
     }
     return meshVertexIndexOffsets

@@ -26,7 +26,7 @@ interface Model<T> {
 
     val meshIndices: Array<IntArray>
 
-    val compiledVertices: List<T>
+    val uniqueVertices: List<T>
 
     val isStatic: Boolean
         get() = true
