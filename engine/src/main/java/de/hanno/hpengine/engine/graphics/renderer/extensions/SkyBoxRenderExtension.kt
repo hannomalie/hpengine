@@ -27,6 +27,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.SlidingWindow
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
+import java.io.File
 
 class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
 
@@ -38,7 +39,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
     private val gpuContext = engineContext.gpuContext
     private val skyBoxEntity = Entity("Skybox")
 
-    private val skyBox = OBJLoader().loadTexturedModel(materialManager, engineContext.config.directories.engineDir.resolve("assets/models/skybox.obj"))
+    private val skyBox = OBJLoader().loadTexturedModel(materialManager, File("assets/models/skybox.obj"), engineContext.config.directories.engineDir)
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox, materialManager.defaultMaterial).apply {
         skyBoxEntity.addComponent(this)
     }

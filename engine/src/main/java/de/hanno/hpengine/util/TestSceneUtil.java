@@ -20,6 +20,7 @@ import kotlin.io.FilesKt;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +42,7 @@ public class TestSceneUtil {
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, FilesKt.resolve(engineDir.getModels(), "sphere.obj"));
+            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, new File("assets/models/sphere.obj"), engineDir);
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {

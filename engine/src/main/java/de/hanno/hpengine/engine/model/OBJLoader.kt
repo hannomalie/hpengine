@@ -1,12 +1,14 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.directory.AbstractDirectory
+import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.model.assimp.ModelLoader
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.log.ConsoleLogger
 import org.joml.Vector2f
@@ -94,7 +96,8 @@ class OBJLoader {
     }
 
     @Throws(Exception::class)
-    fun loadTexturedModel(materialManager: MaterialManager, f: File): StaticModel {
+    fun loadTexturedModel(materialManager: MaterialManager, f: File, resourcesDir: AbstractDirectory): StaticModel {
+        return ModelLoader().load(f, materialManager, resourcesDir)
         if(!f.isFile) {
             throw IllegalArgumentException("File does not exist: ${f.absolutePath}")
         }
@@ -155,7 +158,7 @@ class OBJLoader {
         reader.close()
 
         val meshes = meshData.map { StaticMesh(it.name, it.positions, it.texCoords, it.normals, it.indexedFaces, it.material) }
-        return StaticModel(f.path, vertices, texCoords, normals, meshes)
+        return StaticModel(f.path, meshes)
     }
 
     data class MeshData(var name: String = "",

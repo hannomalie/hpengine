@@ -16,11 +16,13 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.model.assimp.ModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
+import java.io.File
 
 class SphereHolder(val engine: EngineContext<OpenGl>) : RenderSystem {
 
@@ -29,7 +31,8 @@ class SphereHolder(val engine: EngineContext<OpenGl>) : RenderSystem {
     val sphereEntity = Entity("[Editor] Pivot")
     private val sphereProgram = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
 
-    private val sphere = OBJLoader().loadTexturedModel(materialManager, engine.config.directories.engineDir.resolve("assets/models/sphere.obj"))
+    private val sphere = OBJLoader().loadTexturedModel(materialManager, File("assets/models/sphere.obj"), engine.config.directories.engineDir)
+
     private val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {
         sphereEntity.addComponent(this)
     }

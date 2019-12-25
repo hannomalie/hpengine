@@ -70,7 +70,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
             MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
             model = MD5Loader.process(materialManager, parsedModel, parsedAnimModel, textureDir);
         } else {
-            model = new OBJLoader().loadTexturedModel(materialManager, file);
+            model = new OBJLoader().loadTexturedModel(materialManager, file, gameDir);
         }
         return model;
     }

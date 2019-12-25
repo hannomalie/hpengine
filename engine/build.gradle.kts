@@ -46,12 +46,14 @@ dependencies {
     api("org.lwjgl:lwjgl-nanovg:$lwjgl_version")
     api("org.lwjgl:lwjgl-opencl:$lwjgl_version")
     api("org.lwjgl:lwjgl-opengl:$lwjgl_version")
+    api("org.lwjgl:lwjgl-assimp:$lwjgl_version")
 
     api("org.lwjgl", "lwjgl", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-glfw", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-jemalloc", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-nanovg", lwjgl_version, classifier = lwjgl_natives)
     api("org.lwjgl", "lwjgl-opengl", lwjgl_version, classifier = lwjgl_natives)
+    api("org.lwjgl", "lwjgl-assimp", lwjgl_version, classifier = lwjgl_natives)
 
     api("org.joml:joml:1.9.3")
     api("", "lwjgl3-awt", "0.1.6")

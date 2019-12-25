@@ -1,20 +1,14 @@
 package de.hanno.hpengine.engine.model
 
-import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
-import org.joml.Vector2f
 import org.joml.Vector3f
-import java.lang.IllegalStateException
 
 class StaticModel(private val path: String,
-                  val vertices: List<Vector3f>,
-                  val texCoords: List<Vector2f>,
-                  val normals: List<Vector3f>,
                   meshes: List<StaticMesh>) : AbstractModel<Vertex>(meshes) {
 
     init {
