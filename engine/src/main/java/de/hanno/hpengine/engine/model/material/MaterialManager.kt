@@ -92,8 +92,10 @@ class MaterialManager(val config: Config,
 
     fun getMaterial(materialInfo: MaterialInfo): SimpleMaterial {
         if ("" == materialInfo.name) {
-            throw IllegalArgumentException("Don't pass a material with null or empty name")
+//            throw IllegalArgumentException("Don't pass a material with null or empty name")
+            materialInfo.name = System.currentTimeMillis().toString()
         }
+
         fun readOrCreateMaterial(): SimpleMaterial {
             val newMaterial = SimpleMaterial(materialInfo)
             newMaterial.materialIndex = MATERIALS.size

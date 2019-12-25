@@ -2,12 +2,12 @@ package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.instanceCount
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
+import java.lang.IllegalStateException
 import java.util.EnumSet
 import java.util.logging.Logger
 
@@ -24,7 +25,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     var material = initMaterial
         set(value) {
             field = value
-            model.setMaterial(value)
+            model.material = value
             for (child in entity.children) {
                 child.getComponentOption(ModelComponent::class.java).ifPresent { c -> c.material = value }
             }
@@ -144,7 +145,7 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
             vertexIndexBuffer.vertexStructArray.addAll(model.verticesStructArrayPacked)
         } else if(model is AnimatedModel) {
             vertexIndexBuffer.animatedVertexStructArray.addAll(model.verticesStructArrayPacked)
-        }
+        } else throw IllegalStateException("Unsupported mode") // TODO: sealed classes!!
 
         gpuContext.execute("ModelComponent.putToBuffer") {
             val neededSizeInBytes = bytesPerObject * compiledVertices.size

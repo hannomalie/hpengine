@@ -3,9 +3,11 @@ package de.hanno.hpengine.editor.selection
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.model.Model
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import javax.swing.JTree
 import javax.swing.event.TreeSelectionEvent
@@ -47,6 +49,8 @@ class SelectionListener(internal var tree: JTree,
             unselectOr(node) { editorComponents.selectionSystem.selectEntity(it) }
         } else if (node is SelectionSystem.MeshSelection) {
             unselectOr(node) { editorComponents.selectionSystem.selectMesh(node) }
+        }  else if (node is ModelComponent) {
+            unselectOr(node) { editorComponents.selectionSystem.selectModel(SelectionSystem.ModelSelection(node.model, node.entity)) }
         } else if (node is PointLight) {
             unselectOr(node) { editorComponents.selectionSystem.selectPointLight(node) }
         } else if (node is DirectionalLight) {

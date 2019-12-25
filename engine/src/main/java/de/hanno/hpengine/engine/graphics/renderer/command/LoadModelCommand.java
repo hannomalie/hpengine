@@ -6,7 +6,8 @@ import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
-import de.hanno.hpengine.engine.model.loader.md5.*;
+import de.hanno.hpengine.engine.model.assimp.AnimatedModelLoader;
+import de.hanno.hpengine.engine.model.assimp.StaticModelLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 
 import java.io.File;
@@ -66,11 +67,9 @@ public class LoadModelCommand implements Command<EntityListResult> {
     protected Model getModel(MaterialManager materialManager, AbstractDirectory textureDir) throws Exception {
         Model model;
         if(file.getAbsolutePath().endsWith("md5mesh")) {
-            MD5Model parsedModel = MD5Model.parse(file.getAbsolutePath());
-            MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
-            model = MD5Loader.process(materialManager, parsedModel, parsedAnimModel, textureDir);
+            model = new AnimatedModelLoader().load(file, materialManager, gameDir);
         } else {
-            model = new OBJLoader().loadTexturedModel(materialManager, file, gameDir);
+            model = new StaticModelLoader().load(file, materialManager, gameDir);
         }
         return model;
     }

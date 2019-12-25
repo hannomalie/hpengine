@@ -36,7 +36,6 @@ class StaticMesh(override var name: String = "",
         calculateMinMax(null, minMax.min, minMax.max, uniqueVertices, faces)
     }
 
-//    override val indexBufferValues = (0 until faces.size * 3).map { it }.toIntArray()
     override val indexBufferValues = IntArrayList().apply {
         faces.forEach { face ->
             add(face.a)
@@ -45,21 +44,6 @@ class StaticMesh(override var name: String = "",
         }
     }.toArray()
 
-//    override val vertexBufferValues = FloatArrayList().apply {
-//        faces.forEach { currentFace ->
-//            for(i in listOf(currentFace.a, currentFace.b, currentFace.c)) {
-//                val vertex = uniqueVertices[i]
-//                add(vertex.position.x)
-//                add(vertex.position.y)
-//                add(vertex.position.z)
-//                add(vertex.texCoord.x)
-//                add(vertex.texCoord.y)
-//                add(vertex.normal.x)
-//                add(vertex.normal.y)
-//                add(vertex.normal.z)
-//            }
-//        }
-//    }.toArray()
     override val vertexBufferValues = FloatArrayList().apply {
         uniqueVertices.forEach { vertex ->
             add(vertex.position.x)

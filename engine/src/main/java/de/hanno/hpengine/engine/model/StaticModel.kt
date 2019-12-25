@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.scene.VertexStructPacked
@@ -7,8 +8,9 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 
-class StaticModel(private val path: String,
-                  meshes: List<StaticMesh>) : AbstractModel<Vertex>(meshes) {
+class StaticModel(override val path: String,
+                  meshes: List<StaticMesh>,
+                  material: Material = meshes.first().material) : AbstractModel<Vertex>(meshes, material) {
 
     init {
         for (i in meshes.indices) {

@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.directory.AbstractDirectory
-import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.model.assimp.ModelLoader
+import de.hanno.hpengine.engine.model.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -22,7 +21,6 @@ import java.lang.Integer.parseInt
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.HashMap
-import java.util.Random
 import java.util.concurrent.CompletableFuture
 
 class OBJLoader {
@@ -95,9 +93,8 @@ class OBJLoader {
         return Face(vertexIndices, texCoordsIndices, normalIndices)
     }
 
-    @Throws(Exception::class)
     fun loadTexturedModel(materialManager: MaterialManager, f: File, resourcesDir: AbstractDirectory): StaticModel {
-        return ModelLoader().load(f, materialManager, resourcesDir)
+        return StaticModelLoader().load(f, materialManager, resourcesDir)
     }
 
     data class MeshData(var name: String = "",

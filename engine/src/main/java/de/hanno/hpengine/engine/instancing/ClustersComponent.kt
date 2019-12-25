@@ -5,9 +5,10 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController
+import de.hanno.hpengine.engine.model.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.transform.AABB
@@ -103,7 +104,7 @@ class ClustersComponent(override val entity: Entity): Component {
             addInstance(entity, clustersComponent.getOrCreateFirstCluster(), transform, spatial)
         }
         @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform<*>, spatial: Spatial) {
-            cluster.add(Instance(entity, transform, animationController = AnimationController(0, 0f), spatial = spatial))
+            cluster.add(Instance(entity, transform, animationController = null, spatial = spatial))
 //            eventBus.post(EntityAddedEvent()) TODO: Move this to call site
         }
         @JvmStatic fun addInstance(entity: Entity,
@@ -111,7 +112,7 @@ class ClustersComponent(override val entity: Entity): Component {
                                    transform: Transform<*>,
                                    modelComponent: ModelComponent,
                                    materials: List<Material> = modelComponent.materials,
-                                   animationController: AnimationController = if (modelComponent.isStatic) AnimationController(0, 0f) else AnimationController(120, 24f),
+                                   animationController: AnimationController? = if (modelComponent.isStatic) null else AnimationController((modelComponent.model as AnimatedModel).animation),
                                    spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
 
             val instance = Instance(entity, transform, materials, animationController, spatial)

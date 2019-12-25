@@ -26,6 +26,7 @@ import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import jogl.DDSImage
 import kotlinx.coroutines.CoroutineScope
+import org.apache.batik.ext.awt.image.codec.imageio.ImageIOJPEGRegistryEntry
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
@@ -67,16 +68,19 @@ import java.nio.FloatBuffer
 import java.util.ArrayList
 import java.util.Hashtable
 import java.util.LinkedHashMap
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
+import javax.imageio.ImageReader
+import javax.imageio.spi.ImageReaderSpi
+
 
 class TextureManager(val config: Config,
                      programManager: OpenGlProgramManager,
                      val gpuContext: OpenGLContext,
                      val singleThreadContext: AddResourceContext) : Manager {
-
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
     val engineDir = config.directories.engineDir
@@ -163,14 +167,14 @@ class TextureManager(val config: Config,
 
         textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
-        } as Texture
+        }
     }
 
     @JvmOverloads
     fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture = singleThreadContext.locked {
         textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
-        } as Texture
+        }
     }
 
     private inline fun <T> MutableMap<String,T>.ifAbsentPutInSingleThreadContext(resourceName: String, block: () -> T): T {

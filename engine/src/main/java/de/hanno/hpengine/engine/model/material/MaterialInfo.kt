@@ -37,7 +37,7 @@ class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMA
 }
 
 interface MaterialInfo {
-    val name: String
+    var name: String
     val environmentMapType: ENVIRONMENTMAP_TYPE
     val diffuse: Vector3f
     val roughness: Float
@@ -61,7 +61,7 @@ interface MaterialInfo {
     fun remove(map: MAP)
 }
 
-data class SimpleMaterialInfo @JvmOverloads constructor(override val name: String,
+data class SimpleMaterialInfo @JvmOverloads constructor(override var name: String,
                                                         override var diffuse: Vector3f = Vector3f(1f, 1f, 1f),
                                                         override var roughness: Float = 0.95f,
                                                         override var metallic: Float = 0f,

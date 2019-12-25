@@ -14,7 +14,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
@@ -198,7 +197,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                 val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
 
-                val elements = (c.model as AnimatedModel).frames
+                val elements = (c.model as AnimatedModel).animation.frames
                         .flatMap { frame -> frame.jointMatrices.toList() }
                 val jointsOffset = joints.size
                 joints.addAll(elements)

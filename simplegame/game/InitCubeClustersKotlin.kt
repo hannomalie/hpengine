@@ -7,13 +7,12 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController
+import de.hanno.hpengine.engine.model.AnimationController
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.CodeSource
 import org.joml.Vector3f
-import java.io.File
 import java.util.ArrayList
 import java.util.Random
 import javax.inject.Inject

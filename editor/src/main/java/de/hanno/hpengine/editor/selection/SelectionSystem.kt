@@ -11,6 +11,7 @@ import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.grids.MeshGrid
+import de.hanno.hpengine.editor.grids.ModelGrid
 import de.hanno.hpengine.editor.grids.PointLightGrid
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -32,6 +33,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Mesh
+import de.hanno.hpengine.engine.model.Model
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.joml.Vector2f
@@ -72,6 +74,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     }
 
     data class MeshSelection(val mesh: Mesh<*>, val entity: Entity)
+    data class ModelSelection(val model: Model<*>, val entity: Entity)
 
     override fun render(result: DrawResult, state: RenderState) {
         mouseClicked?.let { event ->
@@ -100,6 +103,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                     }
                 }
                 is Entity -> if(selection.name == pickedEntity.name) unselect() else selectEntity(pickedEntity)
+                is ModelSelection -> if(selection.model.path == modelComponent!!.model.path) unselect() else selectModel(selection)
                 is MeshSelection -> {
                     val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
                     when {
@@ -121,6 +125,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
 //            TODO:MIES
             val entity = when (selection) {
                 is MeshSelection -> selection.entity
+                is ModelSelection -> selection.entity
                 is Entity -> selection
                 is PointLight -> selection.entity
                 is DirectionalLight -> selection.entity
@@ -219,6 +224,14 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                 unselect()
             }
         })
+    }
+
+    fun selectModel(pickedModel: ModelSelection) = SwingUtils.invokeAndWait {
+        selection = pickedModel
+        sidePanel.doWithRefresh {
+            addUnselectButton()
+            add(ModelGrid(pickedModel.model, engine.scene.materialManager))
+        }
     }
 
     fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeAndWait {

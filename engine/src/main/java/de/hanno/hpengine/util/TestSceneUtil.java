@@ -1,7 +1,6 @@
 package de.hanno.hpengine.util;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.directory.EngineDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.entity.EntityManager;
@@ -11,12 +10,12 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight;
 import de.hanno.hpengine.engine.model.ModelComponentSystem;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.StaticModel;
+import de.hanno.hpengine.engine.model.assimp.StaticModelLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.engine.scene.Scene;
-import kotlin.io.FilesKt;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -37,12 +36,7 @@ public class TestSceneUtil {
         GpuContext.exitOnGLError("loadTestScene");
 
         try {
-//            StaticMesh skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
-//            Entity skyBoxEntity = EntityContainer.getInstance().getEntity(new Vector3f(), skyBox);
-//            skyBoxEntity.setScale(100);
-//            entities.add(skyBoxEntity);
-
-            StaticModel sphere = new OBJLoader().loadTexturedModel(materialManager, new File("assets/models/sphere.obj"), engineDir);
+            StaticModel sphere = new StaticModelLoader().load(new File("assets/models/sphere.obj"), materialManager, engineDir);
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {

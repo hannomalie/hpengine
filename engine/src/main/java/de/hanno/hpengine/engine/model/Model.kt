@@ -8,6 +8,8 @@ import de.hanno.struct.StructArray
 
 interface Model<T> {
 
+    val path: String
+
     val verticesStructArray: StructArray<out Struct>
 
     val verticesStructArrayPacked: StructArray<out Struct>
@@ -36,12 +38,6 @@ interface Model<T> {
 
     val bytesPerVertex: Int
 
-    fun setMaterial(material: Material) {
-        for (mesh in meshes) {
-            mesh.material = material
-        }
-    }
-
     fun getMinMax(transform: Transform<*>): AABB
 
     fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
@@ -55,4 +51,5 @@ interface Model<T> {
     fun getMinMax(mesh: Mesh<*>): AABB {
         return mesh.minMax
     }
+    var material: Material
 }
