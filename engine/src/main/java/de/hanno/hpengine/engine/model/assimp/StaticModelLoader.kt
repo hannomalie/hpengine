@@ -16,8 +16,13 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.Vertex
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector2f
@@ -61,13 +66,17 @@ class StaticModelLoader {
         val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).absolutePath, flags) ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
-        val materials = (0 until numMaterials).map { i ->
+        val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            aiMaterial.processMaterial(file.parentFile, materialManager, resourcesDir)
+            GlobalScope.async { aiMaterial.processMaterial(file.parentFile, resourcesDir, materialManager.textureManager) }
         }
 
         val numMeshes: Int = aiScene.mNumMeshes()
         val aiMeshes: PointerBuffer = aiScene.mMeshes()!!
+        val materials = runBlocking {
+            deferredMaterials.awaitAll()
+        }
+        materialManager.addMaterials(materials)
         val meshes: List<StaticMesh> = (0 until numMeshes).map { i ->
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)
@@ -75,8 +84,7 @@ class StaticModelLoader {
         return StaticModel(file.absolutePath, meshes)
     }
 
-    private fun AIMaterial.processMaterial(texturesDir: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): Material {
-        val textureManager = materialManager.textureManager
+    private fun AIMaterial.processMaterial(texturesDir: File, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
@@ -111,7 +119,7 @@ class StaticModelLoader {
         materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
         materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
 
-        return materialManager.getMaterial(materialInfo)
+        return SimpleMaterial(materialInfo)
     }
     private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)

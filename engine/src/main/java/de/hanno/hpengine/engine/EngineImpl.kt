@@ -61,6 +61,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             }
             while(!job.isCompleted) {}
         }
+        Thread.sleep(1)
     }
     val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
 

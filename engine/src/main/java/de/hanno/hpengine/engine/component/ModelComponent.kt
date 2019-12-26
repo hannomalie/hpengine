@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.DataChannels
 import de.hanno.hpengine.engine.model.Mesh
@@ -35,7 +36,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     val boundingSphereRadius: Float
         get() = model.boundingSphereRadius
 
-    val indices: IntArray
+    val indices: StructArray<IntStruct>
         get() = model.indices
 
     val triangleCount: Int
@@ -73,7 +74,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 
     fun getMinMax(transform: Transform<*>): AABB = model.getMinMax(transform)
 
-    fun getIndexCount(i: Int): Int = model.meshIndices[i].size
+    fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         if (model is AnimatedModel) {
@@ -152,7 +153,7 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
             val vertexOffsetInBytes = vertexIndexOffsets.vertexOffset * bytesPerObject
             vertexIndexBuffer.vertexBuffer.ensureCapacityInBytes(vertexOffsetInBytes + neededSizeInBytes)
             result.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexOffsetInBytes)
-            vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, *indices)
+            vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, indices)
             vertexIndexBuffer.vertexBuffer.upload()
         }
 
@@ -168,7 +169,7 @@ fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexO
         val mesh = model.meshes[i] as Mesh<*>
         VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
             currentIndexOffset += mesh.indexBufferValues.size
-            currentVertexOffset += mesh.uniqueVertices.size
+            currentVertexOffset += mesh.vertices.size
         }
     }
     return meshVertexIndexOffsets

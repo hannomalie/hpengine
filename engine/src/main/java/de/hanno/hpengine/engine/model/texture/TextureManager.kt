@@ -163,16 +163,16 @@ class TextureManager(val config: Config,
     @JvmOverloads
     fun getTexture(resourceName: String,
                    srgba: Boolean = false,
-                   directory: AbstractDirectory = config.directories.gameDir): Texture = singleThreadContext.locked {
+                   directory: AbstractDirectory = config.directories.gameDir): Texture  {
 
-        textures.ifAbsentPutInSingleThreadContext(resourceName) {
+        return textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, directory, srgba)
         }
     }
 
     @JvmOverloads
-    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture = singleThreadContext.locked {
-        textures.ifAbsentPutInSingleThreadContext(resourceName) {
+    fun getTexture(resourceName: String, srgba: Boolean = false, file: File): Texture  {
+        return textures.ifAbsentPutInSingleThreadContext(resourceName) {
             FileBasedTexture2D(gpuContext, resourceName, file, srgba)
         }
     }

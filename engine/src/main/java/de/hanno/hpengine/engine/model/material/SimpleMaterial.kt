@@ -8,6 +8,7 @@ import java.lang.Double.BYTES
 import java.lang.Float
 
 interface Material {
+    var materialIndex: Int
     val materialInfo: MaterialInfo
 
     fun put(map: SimpleMaterial.MAP, texture: Texture) {
@@ -20,7 +21,7 @@ interface Material {
 
 class SimpleMaterial(override val materialInfo: MaterialInfo): Material {
 
-    var materialIndex = -1
+    override var materialIndex = -1
 
     enum class MaterialType {
         DEFAULT,

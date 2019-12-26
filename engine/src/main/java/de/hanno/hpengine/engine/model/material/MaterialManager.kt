@@ -96,14 +96,22 @@ class MaterialManager(val config: Config,
             materialInfo.name = System.currentTimeMillis().toString()
         }
 
-        fun readOrCreateMaterial(): SimpleMaterial {
-            val newMaterial = SimpleMaterial(materialInfo)
-            newMaterial.materialIndex = MATERIALS.size
-
-            return newMaterial
+        return SimpleMaterial(materialInfo).apply {
+            addMaterial(this)
         }
-        addMaterial(materialInfo.name, readOrCreateMaterial())
-        return MATERIALS[materialInfo.name]!!
+    }
+
+    fun addMaterial(material: SimpleMaterial) = singleThreadContext.launch {
+        material.materialIndex = MATERIALS.size
+        MATERIALS[material.materialInfo.name] = material
+        eventBus.post(MaterialAddedEvent())
+    }
+    fun addMaterials(materials: List<SimpleMaterial>) = singleThreadContext.launch {
+        materials.forEach { material ->
+            material.materialIndex = MATERIALS.size
+            MATERIALS[material.materialInfo.name] = material
+        }
+        eventBus.post(MaterialAddedEvent())
     }
 
     fun getMaterial(hashMap: HashMap<MAP, String>): SimpleMaterial {
@@ -122,11 +130,6 @@ class MaterialManager(val config: Config,
 
     fun getMaterial(materialName: String): SimpleMaterial {
         return MATERIALS[materialName] ?: return defaultMaterial
-    }
-
-    private fun addMaterial(key: String, material: SimpleMaterial) = singleThreadContext.locked {
-        MATERIALS[key] = material
-        eventBus.post(MaterialAddedEvent())
     }
 
     fun putAll(materialLib: Map<String, MaterialInfo>) {

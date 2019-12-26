@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine.model
 
-import com.carrotsearch.hppc.FloatArrayList
-import com.carrotsearch.hppc.IntArrayList
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
@@ -14,33 +13,19 @@ import de.hanno.struct.StructArray
 import org.joml.Vector3f
 
 class AnimatedMesh(override var name: String,
-                   override val uniqueVertices: List<AnimatedVertex>,
-                   val faces: List<IndexedFace>,
+                   override val vertices: List<AnimatedVertex>,
+                   override val faces: List<IndexedFace>,
                    override var material: Material): Mesh<AnimatedVertex> {
     internal var centerTemp = Vector3f()
     var model: AnimatedModel? = null
 
-    override val indexBufferValues = IntArrayList().apply {
-        faces.forEach { face ->
-            add(face.a)
-            add(face.b)
-            add(face.c)
+    override val indexBufferValues = StructArray(faces.size*3) { IntStruct() }.apply {
+        faces.forEachIndexed { index, face ->
+            this.getAtIndex(3*index).value = face.a
+            this.getAtIndex(3*index+1).value = face.b
+            this.getAtIndex(3*index+2).value = face.c
         }
-    }.toArray()
-
-    override val vertexBufferValues = FloatArrayList().apply {
-        uniqueVertices.forEach { vertex ->
-            add(vertex.position.x)
-            add(vertex.position.y)
-            add(vertex.position.z)
-            add(vertex.texCoord.x)
-            add(vertex.texCoord.y)
-            add(vertex.normal.x)
-            add(vertex.normal.y)
-            add(vertex.normal.z)
-        }
-    }.toArray()
-
+    }
 
     override val triangleCount: Int
         get() = faces.size
@@ -83,10 +68,10 @@ class AnimatedModel(override val path: String, meshes: List<AnimatedMesh>,
             target.jointIndices.set(jointIndices)
         }
     }
-    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.uniqueVertices.size }) { AnimatedVertexStructPacked() }.apply {
+    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.vertices.size }) { AnimatedVertexStructPacked() }.apply {
         var counter = 0
         for (mesh in meshes) {
-            for(animatedVertex in mesh.uniqueVertices) {
+            for(animatedVertex in mesh.vertices) {
                 val (position, texCoord, normal, weights, jointIndices) = animatedVertex
                 val target = getAtIndex(counter)
                 target.position.set(position)

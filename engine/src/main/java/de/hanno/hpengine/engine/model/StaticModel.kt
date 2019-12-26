@@ -58,10 +58,10 @@ class StaticModel(override val path: String,
 //            }
 //        }
 //    }
-    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.uniqueVertices.size }) { VertexStructPacked() }.apply {
+    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.vertices.size }) { VertexStructPacked() }.apply {
         var counter = 0
         for(mesh in meshes) {
-            for(vertex in mesh.uniqueVertices) {
+            for(vertex in mesh.vertices) {
                 val (position, texCoord, normal) = vertex
                 val target = getAtIndex(counter)
                 target.position.set(position)

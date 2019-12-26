@@ -279,7 +279,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                 val compressedTextures = true
                 if(compressedTextures) {
                     val image = Texture2DUploadInfo(TextureDimension(ddsImage.width, ddsImage.height), ddsImage.getMipMap(0).data, dataCompressed = true, srgba = srgba)
-                    Texture2D(gpuContext, Texture2DUploadInfo(TextureDimension(ddsImage.width, ddsImage.height), ddsImage.getMipMap(0).data, dataCompressed = true, srgba = srgba))
+                    Texture2D(gpuContext, image)
                 } else {
                     Texture2D(gpuContext, DDSUtil.decompressTexture(ddsImage.getMipMap(0).data, ddsImage.width, ddsImage.height, ddsImage.compressionFormat).apply {
                         with(DDSConverter) { this@apply.rescaleToNextPowerOfTwo() }
@@ -289,8 +289,9 @@ data class Texture2D(override val dimension: TextureDimension2D,
 
         }
         operator fun invoke(gpuContext: GpuContext<OpenGl>, image: BufferedImage, srgba: Boolean = false): Texture2D {
-            val image1 = Texture2DUploadInfo(TextureDimension(image.width, image.height), image.toByteBuffer(), srgba = srgba)
-            return Texture2D(gpuContext, Texture2DUploadInfo(TextureDimension(image.width, image.height), image.toByteBuffer(), srgba = srgba), internalFormat = if (image1.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+            val buffer = image.toByteBuffer()
+            val image1 = Texture2DUploadInfo(TextureDimension(image.width, image.height), buffer, srgba = srgba)
+            return Texture2D(gpuContext, Texture2DUploadInfo(TextureDimension(image.width, image.height), buffer, srgba = srgba), internalFormat = if (image1.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
         }
 
         private fun BufferedImage.toByteBuffer(): ByteBuffer {

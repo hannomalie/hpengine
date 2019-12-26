@@ -2,6 +2,10 @@ package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct;
+import de.hanno.struct.ArrayKt;
+import de.hanno.struct.StructArray;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.IntBuffer;
 
@@ -64,5 +68,11 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
 
     public int getSize() {
         return getSizeInBytes() / Integer.BYTES;
+    }
+
+    public void appendIndices(int indexOffset, @NotNull StructArray<IntStruct> indices) {
+        getBuffer().rewind();
+        ensureCapacityInBytes((indexOffset + indices.getSize()) * Integer.BYTES);
+        ArrayKt.copyTo(indices.getBuffer(), getBuffer(), true, indexOffset * Integer.BYTES);
     }
 }

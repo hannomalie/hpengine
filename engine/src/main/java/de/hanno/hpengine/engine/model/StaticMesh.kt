@@ -1,68 +1,49 @@
 package de.hanno.hpengine.engine.model
 
-import com.carrotsearch.hppc.FloatArrayList
-import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
-import org.jetbrains.kotlin.codegen.unwrapInitialSignatureDescriptor
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.io.Serializable
-import java.util.ArrayList
-import java.util.SortedSet
 import java.util.UUID
 
 
 data class IndexedFace(val a: Int, val b: Int, val c: Int)
 class StaticMesh(override var name: String = "",
-                 override val uniqueVertices: List<Vertex>,
-                 val faces: List<IndexedFace>,
+                 override val vertices: List<Vertex>,
+                 override val faces: List<IndexedFace>,
                  override var material: Material) : SimpleSpatial(), Serializable, Mesh<Vertex> {
 
     val uuid = UUID.randomUUID()
 
-    private val valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS)
     override val minMax = AABB(Vector3f(), Vector3f())
 
     init {
-        calculateMinMax(null, minMax.min, minMax.max, uniqueVertices, faces)
+        calculateMinMax(null, minMax.min, minMax.max, vertices, faces)
     }
 
-    override val indexBufferValues = IntArrayList().apply {
-        faces.forEach { face ->
-            add(face.a)
-            add(face.b)
-            add(face.c)
+    override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
+        faces.withIndex().forEach { (index, face) ->
+            getAtIndex(index*3).value = face.a
+            getAtIndex(index*3+1).value = face.b
+            getAtIndex(index*3+2).value = face.c
         }
-    }.toArray()
-
-    override val vertexBufferValues = FloatArrayList().apply {
-        uniqueVertices.forEach { vertex ->
-            add(vertex.position.x)
-            add(vertex.position.y)
-            add(vertex.position.z)
-            add(vertex.texCoord.x)
-            add(vertex.texCoord.y)
-            add(vertex.normal.x)
-            add(vertex.normal.y)
-            add(vertex.normal.z)
-        }
-    }.toArray()
+    }
 
     override val triangleCount: Int
         get() = faces.size
 
     override fun getMinMax(transform: Transform<*>): AABB {
         if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, uniqueVertices, faces)
+            calculateMinMax(transform, minMax.min, minMax.max, vertices, faces)
         }
         return super.getMinMaxWorld(transform)
     }
@@ -73,7 +54,7 @@ class StaticMesh(override var name: String = "",
 
     override fun getCenterWorld(transform: Transform<*>): Vector3f {
         if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, uniqueVertices, faces)
+            calculateMinMax(transform, minMax.min, minMax.max, vertices, faces)
         }
         return super.getCenterWorld(transform)
     }
@@ -84,7 +65,7 @@ class StaticMesh(override var name: String = "",
 
     override fun getBoundingSphereRadius(transform: Transform<*>): Float {
         if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, uniqueVertices, faces)
+            calculateMinMax(transform, minMax.min, minMax.max, vertices, faces)
         }
         return super.getBoundingSphereRadius(transform)
     }

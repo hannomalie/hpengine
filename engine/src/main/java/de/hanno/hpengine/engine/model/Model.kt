@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
@@ -20,13 +21,9 @@ interface Model<T> {
 
     val triangleCount: Int
 
-    val vertexBufferValuesArray: FloatArray
-
-    val indices: IntArray
-
     val minMax: AABB
 
-    val meshIndices: Array<IntArray>
+    val indices: StructArray<IntStruct>
 
     val uniqueVertices: List<T>
 
@@ -52,4 +49,5 @@ interface Model<T> {
         return mesh.minMax
     }
     var material: Material
+    val meshIndexCounts: List<Int>
 }
