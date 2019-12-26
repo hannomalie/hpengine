@@ -94,6 +94,11 @@ interface Scene : Updatable, Serializable {
         }
     }
 
+    fun UpdateLock.addComponent(selection: Entity, component: Component) {
+        selection.addComponent(component)
+        onComponentAdded(component)
+    }
+
     var initialized: Boolean
     val modelComponentSystem: ModelComponentSystem
 }

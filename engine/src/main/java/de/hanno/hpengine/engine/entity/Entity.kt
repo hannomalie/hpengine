@@ -17,7 +17,6 @@ import org.joml.Vector3f
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.Optional
-import java.util.concurrent.Callable
 import java.util.function.Supplier
 
 open class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentTimeMillis().toString(),
@@ -100,20 +99,11 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
             clazz = clazz.superclass as Class<Component>
         }
         addComponent(component, clazz)
-        return this@Entity
+        return this
     }
 
     fun addComponent(component: Component, clazz: Class<Component>) {
         components[clazz] = component
-    }
-
-    fun <T : Component> CoroutineScope.getOrAddComponent(type: Class<T>, supplier: Supplier<T>): T? {
-        if (!hasComponent(type)) {
-            val component = supplier.get()
-            addComponent(component)
-            return component
-        }
-        return getComponent(type)
     }
 
     fun <T : Component> getComponent(type: Class<T>): T? {

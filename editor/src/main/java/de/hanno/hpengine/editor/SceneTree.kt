@@ -132,10 +132,8 @@ open class SceneTree(val engine: Engine<*>,
                                     addActionListener {
                                         val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
                                         engine.addResourceContext.launch {
-                                            selection.addComponent(component)
-
-                                            with(engine.managers) {
-                                                onComponentAdded(component)
+                                            with(engine.scene){
+                                                addComponent(selection, component)
                                             }
                                         }
                                     }

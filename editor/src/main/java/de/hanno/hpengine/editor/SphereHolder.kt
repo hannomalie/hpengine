@@ -68,5 +68,15 @@ class SphereHolder(val engine: EngineContext<OpenGl>) : RenderSystem {
         draw(sphereVertexIndexBuffer.vertexBuffer,
                 sphereVertexIndexBuffer.indexBuffer,
                 sphereRenderBatch, sphereProgram, false, false)
+
+        state.lightState.pointLights.forEach {
+            val transformationPointLight = SimpleTransform().scale(scaling).translate(it.entity.position)
+            sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
+            sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
+
+            draw(sphereVertexIndexBuffer.vertexBuffer,
+                    sphereVertexIndexBuffer.indexBuffer,
+                    sphereRenderBatch, sphereProgram, false, false)
+        }
     }
 }
