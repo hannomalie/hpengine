@@ -53,9 +53,8 @@ import java.util.ArrayList
 import kotlin.math.max
 
 
-const val flags = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices // + Assimp.aiProcess_FixInfacingNormals
+const val flags = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices
 const val flagsAnimated = flags + aiProcess_LimitBoneWeights
-
 
 class StaticModelLoader {
     fun load(file: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {
@@ -173,16 +172,16 @@ class AnimatedModelLoader {
         for (i in 0 until numAnimations) {
             val aiAnimation = AIAnimation.create(aiAnimations!![i])
             // Calculate transformation matrices for each node
-            val numChanels = aiAnimation.mNumChannels()
+            val numChannels = aiAnimation.mNumChannels()
             val aiChannels = aiAnimation.mChannels()
-            for (j in 0 until numChanels) {
+            for (j in 0 until numChannels) {
                 val aiNodeAnim = AINodeAnim.create(aiChannels!![j])
                 val nodeName = aiNodeAnim.mNodeName().dataString()
                 val node: Node = rootNode.findByName(nodeName)!!
                 buildTransFormationMatrices(aiNodeAnim, node)
             }
             val frames: List<AnimatedFrame> = buildAnimationFrames(boneList, rootNode, rootTransformation)
-            val animation = Animation(aiAnimation.mName().dataString(),
+            val animation = Animation(aiAnimation.mName().dataString().takeUnless { it.isBlank() } ?: "Default",
                     frames,
                     aiAnimation.mDuration().toFloat(),
                     aiAnimation.mTicksPerSecond().toFloat())
