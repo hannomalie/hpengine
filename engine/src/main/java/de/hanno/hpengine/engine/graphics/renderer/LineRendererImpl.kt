@@ -4,9 +4,9 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.model.DataChannels
-import de.hanno.hpengine.engine.model.VertexBuffer
-import de.hanno.hpengine.engine.model.drawDebugLines
+import de.hanno.hpengine.engine.vertexbuffer.DataChannels
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.drawDebugLines
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12

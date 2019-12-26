@@ -1,8 +1,7 @@
-package de.hanno.hpengine.engine.model
+package de.hanno.hpengine.engine.model.animation
 
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import org.joml.Matrix4f
-import java.util.Arrays
 
 class AnimatedFrame {
     val jointMatrices = (0 until MAX_JOINTS).map {

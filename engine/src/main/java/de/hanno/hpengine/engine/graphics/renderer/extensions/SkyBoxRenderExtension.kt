@@ -17,9 +17,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.OBJLoader
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.model.assimp.StaticModelLoader
+import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import org.joml.Vector3f
@@ -37,7 +36,6 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
     private val skyBoxEntity = Entity("Skybox")
 
     private val skyBox = run {
-        OBJLoader()
         StaticModelLoader().load(File("assets/models/skybox.obj"), materialManager, engineContext.config.directories.engineDir)
     }
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox, materialManager.defaultMaterial).apply {

@@ -26,7 +26,7 @@ import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.model.draw
+import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector4f

@@ -6,10 +6,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.*
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.concurrent.Callable

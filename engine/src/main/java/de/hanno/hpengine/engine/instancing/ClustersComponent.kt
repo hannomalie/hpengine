@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.AnimationController
+import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.transform.AABB

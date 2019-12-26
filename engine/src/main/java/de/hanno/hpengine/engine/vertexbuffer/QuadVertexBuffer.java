@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.model;
+package de.hanno.hpengine.engine.vertexbuffer;
 
 import de.hanno.hpengine.engine.graphics.GpuContext;
 

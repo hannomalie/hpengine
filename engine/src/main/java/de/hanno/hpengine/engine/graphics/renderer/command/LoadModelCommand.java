@@ -6,8 +6,8 @@ import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
-import de.hanno.hpengine.engine.model.assimp.AnimatedModelLoader;
-import de.hanno.hpengine.engine.model.assimp.StaticModelLoader;
+import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader;
+import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 
 import java.io.File;

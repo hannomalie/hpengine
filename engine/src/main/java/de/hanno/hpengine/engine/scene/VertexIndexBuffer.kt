@@ -2,9 +2,9 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.model.DataChannels
-import de.hanno.hpengine.engine.model.IndexBuffer
-import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.DataChannels
+import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import org.lwjgl.BufferUtils
 import java.util.EnumSet
 

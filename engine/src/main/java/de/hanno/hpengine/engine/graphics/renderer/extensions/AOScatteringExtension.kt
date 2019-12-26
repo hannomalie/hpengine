@@ -9,8 +9,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.draw
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
+import de.hanno.hpengine.engine.vertexbuffer.draw
 import org.lwjgl.opengl.GL11
 
 class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {

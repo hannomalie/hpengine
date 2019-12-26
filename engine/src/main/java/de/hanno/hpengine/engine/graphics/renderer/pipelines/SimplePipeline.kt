@@ -15,12 +15,12 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.drawLinesInstancedIndirectBaseVertex
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.multiDrawElementsIndirectCount
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.drawLinesInstancedIndirectBaseVertex
+import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.struct.copyTo
 
 open class SimplePipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,

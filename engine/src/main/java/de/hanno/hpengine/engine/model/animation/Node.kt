@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.model
+package de.hanno.hpengine.engine.model.animation
 
 import org.joml.Matrix4f
 import java.util.ArrayList

@@ -5,16 +5,16 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.model.IndexBuffer
-import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.engine.model.drawInstancedBaseVertex
-import de.hanno.hpengine.engine.model.drawLinesInstancedBaseVertex
+import de.hanno.hpengine.engine.vertexbuffer.drawInstancedBaseVertex
+import de.hanno.hpengine.engine.vertexbuffer.drawLinesInstancedBaseVertex
 import org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
 import org.lwjgl.opengl.GL42.glMemoryBarrier
 

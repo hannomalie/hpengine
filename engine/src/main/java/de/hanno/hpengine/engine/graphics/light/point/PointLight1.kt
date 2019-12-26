@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.model.IndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
 import org.joml.Matrix4f
 import org.joml.Vector4f
 import java.io.Serializable

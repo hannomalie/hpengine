@@ -1,14 +1,11 @@
 package de.hanno.hpengine.engine.scene
 
 import com.google.common.collect.ImmutableSet
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable
-import de.hanno.hpengine.engine.model.DataChannelComponent.*
-import de.hanno.hpengine.engine.model.DataChannelProvider
+import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.*
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.Vector4i
-import java.nio.ByteBuffer
 
 data class AnimatedVertex (val position: Vector3f = Vector3f(),
                   val texCoord: Vector2f = Vector2f(),

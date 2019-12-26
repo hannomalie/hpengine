@@ -10,8 +10,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.QuadVertexBuffer
-import de.hanno.hpengine.engine.model.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart

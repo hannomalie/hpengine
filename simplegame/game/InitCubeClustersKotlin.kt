@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.AnimationController
+import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Transform

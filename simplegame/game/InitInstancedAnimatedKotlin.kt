@@ -3,7 +3,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
-import de.hanno.hpengine.engine.model.AnimationController
+import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.joml.Vector3f

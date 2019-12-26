@@ -1,14 +1,11 @@
 package de.hanno.hpengine.engine.scene
 
 import com.google.common.collect.ImmutableSet
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable
-import de.hanno.hpengine.engine.model.DataChannelComponent.FloatThree
-import de.hanno.hpengine.engine.model.DataChannelComponent.FloatTwo
-import de.hanno.hpengine.engine.model.DataChannelProvider
+import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.FloatThree
+import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.FloatTwo
 import de.hanno.struct.Struct
 import org.joml.Vector2f
 import org.joml.Vector3f
-import java.nio.ByteBuffer
 
 typealias HpVector3f = de.hanno.hpengine.engine.math.Vector3f
 typealias HpVector4f = de.hanno.hpengine.engine.math.Vector4f

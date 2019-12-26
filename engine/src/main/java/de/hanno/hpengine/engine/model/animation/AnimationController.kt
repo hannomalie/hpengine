@@ -1,4 +1,4 @@
-package de.hanno.hpengine.engine.model
+package de.hanno.hpengine.engine.model.animation
 
 import de.hanno.hpengine.engine.config.getValue
 import de.hanno.hpengine.engine.config.setValue

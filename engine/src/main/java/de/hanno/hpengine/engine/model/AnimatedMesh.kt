@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.model
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
+import de.hanno.hpengine.engine.model.animation.Animation
+import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct

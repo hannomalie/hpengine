@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.Updatable
+import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial

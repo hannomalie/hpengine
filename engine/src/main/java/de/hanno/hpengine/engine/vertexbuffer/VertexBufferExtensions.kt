@@ -1,9 +1,10 @@
-package de.hanno.hpengine.engine.model
+package de.hanno.hpengine.engine.vertexbuffer
 
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import org.lwjgl.opengl.ARBIndirectParameters
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL31
@@ -99,9 +100,9 @@ fun VertexBuffer.drawInstancedBaseVertex(indexBuffer: IndexBuffer?, indexCount: 
 }
 
 fun VertexBuffer.multiDrawElementsIndirectCount(indexBuffer: IndexBuffer,
-                                                commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
-                                                drawCountBuffer: AtomicCounterBuffer,
-                                                maxDrawCount: Int) {
+                                                                                                         commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                                                                                                         drawCountBuffer: AtomicCounterBuffer,
+                                                                                                         maxDrawCount: Int) {
     drawCountBuffer.bindAsParameterBuffer()
     bind()
     indexBuffer.bind()

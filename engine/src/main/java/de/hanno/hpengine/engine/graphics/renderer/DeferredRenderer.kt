@@ -38,9 +38,9 @@ import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
-import de.hanno.hpengine.engine.model.QuadVertexBuffer
-import de.hanno.hpengine.engine.model.VertexBuffer
-import de.hanno.hpengine.engine.model.draw
+import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager.bindEnvironmentProbePositions
 import de.hanno.hpengine.log.ConsoleLogger.getLogger

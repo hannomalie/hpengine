@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.model.DataChannels
+import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
