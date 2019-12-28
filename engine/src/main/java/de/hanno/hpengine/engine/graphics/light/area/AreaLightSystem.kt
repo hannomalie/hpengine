@@ -16,7 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
@@ -47,7 +47,7 @@ class AreaLightSystem(val engine: EngineContext<*>, simpleScene: SimpleScene) : 
 
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
-    private val renderTarget: CubeRenderTarget = CubeRenderTarget(engine, CubeRenderTargetBuilder(engine)
+    private val mapRenderTarget: CubeMapRenderTarget = CubeMapRenderTarget(engine, CubeRenderTargetBuilder(engine)
             .setName("AreaLight Shadow")
             .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
             .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
@@ -78,11 +78,11 @@ class AreaLightSystem(val engine: EngineContext<*>, simpleScene: SimpleScene) : 
             engine.gpuContext.depthMask(true)
             engine.gpuContext.enable(GlCap.DEPTH_TEST)
             engine.gpuContext.disable(GlCap.CULL_FACE)
-            renderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
+            mapRenderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
 
             for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 
-                renderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
+                mapRenderTarget.setTargetTexture(areaLightDepthMaps[i], 0)
 
                 engine.gpuContext.clearDepthAndColorBuffer()
 

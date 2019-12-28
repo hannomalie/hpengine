@@ -11,7 +11,7 @@ import org.lwjgl.opengl.GL14;
 import static de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetKt.toCubeMaps;
 import static org.lwjgl.opengl.GL11.GL_REPEAT;
 
-public class CubeRenderTarget extends RenderTarget {
+public class CubeMapRenderTarget extends RenderTarget {
 
 	static DepthBuffer getDepthBufferOrNull(Backend engine, CubeRenderTargetBuilder builder) {
 		if(builder.useDepthBuffer) {
@@ -25,7 +25,7 @@ public class CubeRenderTarget extends RenderTarget {
 		} else return null;
 	}
 
-	public CubeRenderTarget(Backend engine, CubeRenderTargetBuilder builder) {
+	public CubeMapRenderTarget(Backend engine, CubeRenderTargetBuilder builder) {
         super(
 			FrameBuffer.Companion.invoke(engine.getGpuContext(), getDepthBufferOrNull(engine, builder)),
 			builder.width,

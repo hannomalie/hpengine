@@ -1,11 +1,15 @@
 package de.hanno.hpengine.editor.tasks
 
 import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.OutputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.util.gui.DirectTextureOutputItem
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
+import de.hanno.hpengine.engine.model.texture.CubeMap
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
@@ -20,12 +24,15 @@ import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.ComponentPresentationModel
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.RibbonDefaultComboBoxContentModel
 import org.pushingpixels.flamingo.api.ribbon.synapse.projection.RibbonComboBoxProjection
-import java.util.ArrayList
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
+import kotlin.reflect.KMutableProperty0
 
 object ViewTask {
-    operator fun invoke(engine: Engine<*>, config: ConfigImpl, inputConfig: EditorInputConfig): RibbonTask {
+    operator fun invoke(engine: Engine<*>,
+                        config: ConfigImpl,
+                        inputConfig: EditorInputConfig,
+                        outputConfig: KMutableProperty0<OutputConfig>): RibbonTask {
         val outputBand = JRibbonBand("Output", null).apply {
 
             val command = Command.builder()
@@ -43,34 +50,64 @@ object ViewTask {
             resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
         }
 
+        val directTextureOutputArrayIndexComboBoxModel = RibbonDefaultComboBoxContentModel.builder<Int>()
+            .setItems((0 until 100).toList().toTypedArray())
+                .build()
+                .apply {
+                    addListDataListener(object : ListDataListener {
+                        override fun intervalRemoved(e: ListDataEvent?) {}
+                        override fun intervalAdded(e: ListDataEvent?) {}
 
-        val outputIndexBand = JFlowRibbonBand("Output", null).apply {
-            val renderTargetTextures = ArrayList<DirectTextureOutputItem>()
+                        override fun contentsChanged(e: ListDataEvent) {
+                            when (val currentConfig = outputConfig.get()) {
+                                OutputConfig.Default, is OutputConfig.Texture2D, is OutputConfig.TextureCubeMap -> Unit
+                                is OutputConfig.RenderTargetCubeMapArray -> {
+                                    outputConfig.set(currentConfig.copy(cubeMapIndex = (selectedItem as Int).coerceIn(0, currentConfig.renderTarget.arraySize - 1)))
+                                }
+                            }.let { }
+                        }
+                    })
+                }
+        val outputFlowBand = JFlowRibbonBand("Output", null).apply {
+            val renderTargetTextures = mutableListOf<OutputConfig>()
             for (target in engine.gpuContext.registeredRenderTargets) {
-                for (i in 0 until target.textures.size) {
+                for (i in target.textures.indices) {
                     val name = target.name + " - " + i // TODO: Revive names here
-                    renderTargetTextures.add(DirectTextureOutputItem(target, name, target.getRenderedTexture(i)))
+                    if(target is CubeMapArrayRenderTarget) {
+                        renderTargetTextures.add(OutputConfig.RenderTargetCubeMapArray(target, i.coerceIn(0, target.textures[i].dimension.depth)))
+                    } else if(target is CubeMapRenderTarget) {
+                        renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i] as CubeMap))
+                    } else {
+                        renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D))
+                    }
                 }
             }
 
-            val directTextureOutputComboBoxModel = RibbonDefaultComboBoxContentModel.builder<DirectTextureOutputItem>()
-                    .setItems(renderTargetTextures.toTypedArray())
-                    .build()
+            val outputFlowBandModel = RibbonDefaultComboBoxContentModel.builder<OutputConfig>()
+                .setItems(renderTargetTextures.toTypedArray())
+                .build().apply {
+                    addListDataListener(object : ListDataListener {
+                        override fun intervalRemoved(e: ListDataEvent?) {}
+                        override fun intervalAdded(e: ListDataEvent?) {}
 
-            directTextureOutputComboBoxModel.addListDataListener(object : ListDataListener {
-                override fun intervalRemoved(e: ListDataEvent?) {}
-                override fun intervalAdded(e: ListDataEvent?) {}
-
-                override fun contentsChanged(e: ListDataEvent) {
-                    val newSelection = directTextureOutputComboBoxModel.selectedItem as DirectTextureOutputItem
-                    config.debug.directTextureOutputTextureIndex = newSelection.textureId
+                        override fun contentsChanged(e: ListDataEvent) {
+                            val newConfig = selectedItem as OutputConfig
+                            when(newConfig) {
+                                OutputConfig.Default, is OutputConfig.Texture2D, is OutputConfig.TextureCubeMap -> newConfig
+                                is OutputConfig.RenderTargetCubeMapArray -> newConfig.copy(cubeMapIndex = directTextureOutputArrayIndexComboBoxModel.selectedItem as Int)
+                            }.let {  }
+                            outputConfig.set(newConfig)
+                        }
+                    })
                 }
-            })
-
-            addFlowComponent(RibbonComboBoxProjection(directTextureOutputComboBoxModel, ComponentPresentationModel.builder().build()))
-
+            addFlowComponent(RibbonComboBoxProjection(outputFlowBandModel, ComponentPresentationModel.builder().build()))
         }
 
+        val outputArrayIndexBand = JFlowRibbonBand("CubeMap Index", null).apply {
+
+            addFlowComponent(RibbonComboBoxProjection(directTextureOutputArrayIndexComboBoxModel, ComponentPresentationModel.builder().build()))
+
+        }
         val selectionModeBand = JFlowRibbonBand("Selection Mode", null).apply {
             resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
 
@@ -98,6 +135,6 @@ object ViewTask {
             addFlowComponent(selectionModeCommandGroupProjection)
         }
 
-         return RibbonTask("Viewport", outputBand, outputIndexBand, selectionModeBand)
+         return RibbonTask("Viewport", outputBand, outputFlowBand, outputArrayIndexBand, selectionModeBand)
     }
 }

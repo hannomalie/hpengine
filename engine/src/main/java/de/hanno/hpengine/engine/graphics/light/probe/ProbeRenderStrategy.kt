@@ -20,7 +20,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
@@ -49,7 +49,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
-    val cubeMapRenderTarget = CubeRenderTarget(engine, CubeRenderTargetBuilder(engine)
+    val cubeMapRenderTarget = CubeMapRenderTarget(engine, CubeRenderTargetBuilder(engine)
             .setWidth(resolution)
             .setHeight(resolution)
             .add(ColorAttachmentDefinition("Diffuse")

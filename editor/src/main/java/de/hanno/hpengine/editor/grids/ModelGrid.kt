@@ -36,4 +36,3 @@ class ModelGrid(val model: Model<*>, val materialManager: MaterialManager): JPan
         }
     }
 }
-

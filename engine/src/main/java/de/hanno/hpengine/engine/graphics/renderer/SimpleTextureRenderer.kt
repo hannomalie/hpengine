@@ -14,10 +14,13 @@ import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.engine.model.texture.createView
+import org.lwjgl.opengl.GL11
 import java.io.File
 
 open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
@@ -62,6 +65,19 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
                     program = debugFrameProgram,
                     buffer = gpuContext.sixDebugBuffers[faceIndex],
                     clear = false)
+        }
+    }
+    fun renderCubeMapDebug(renderTarget: RenderTarget<Texture2D> = engineContext.window.frontBuffer,
+                           cubeMap: CubeMap) {
+
+        (0..5).map { faceIndex ->
+            val textureView = cubeMap.createView(engineContext.gpuContext, faceIndex)
+            draw(renderTarget = renderTarget,
+                    texture = textureView.id,
+                    program = debugFrameProgram,
+                    buffer = gpuContext.sixDebugBuffers[faceIndex],
+                    clear = false)
+            GL11.glDeleteTextures(textureView.id)
         }
     }
     private fun draw(renderTarget: RenderTarget<Texture2D>, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program, clear: Boolean) {

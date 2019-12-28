@@ -32,18 +32,14 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 		return new DepthBuffer<>(CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_DEPTH_COMPONENT24, GL_REPEAT));
 	}
 
-	static List<CubeMapArray> toList(CubeMapArray... arrays) {
-		return Arrays.asList(arrays);
-	}
-
-	public CubeMapArrayRenderTarget(GpuContext<OpenGl> gpuContext, int width, int height, Vector4f clear, CubeMapArray... cubeMapArray) {
+	public CubeMapArrayRenderTarget(GpuContext<OpenGl> gpuContext, int width, int height, Vector4f clear, String name, CubeMapArray... cubeMapArray) {
 		super(
-			FrameBuffer.Companion.invoke(gpuContext, getDepthBuffer(gpuContext, width, height, cubeMapArray.length)),
-			width,
-			height,
-			toList(cubeMapArray),
-			"CubeMapArrayRenderTarget",
-			clear
+				FrameBuffer.Companion.invoke(gpuContext, getDepthBuffer(gpuContext, width, height, cubeMapArray.length)),
+				width,
+				height,
+				toList(cubeMapArray),
+				name,
+				clear
 		);
 		cubeMapViews = new ArrayList<>();
 		cubeMapFaceViews = new ArrayList<>();
@@ -54,7 +50,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 			CubeMapArray cma = cubeMapArray[cubeMapArrayIndex];
 			gpuContext.execute("createViews for " + cubeMapArrayIndex, () -> {
 				gpuContext.bindTexture(cma);
-				for(int cubeMapIndex = 0; cubeMapIndex < cubeMapArray.length; cubeMapIndex++) {
+				for(int cubeMapIndex = 0; cubeMapIndex < cma.getDimension().getDepth(); cubeMapIndex++) {
 					CubeMap cubeMapView = createView(cma, gpuContext, cubeMapIndex);
 					cubeMapViews.add(cubeMapView);
 					for(int faceIndex = 0; faceIndex < 6; faceIndex++) {
@@ -63,6 +59,10 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 				}
 			});
 		}
+	}
+
+	static List<CubeMapArray> toList(CubeMapArray... arrays) {
+		return Arrays.asList(arrays);
 	}
 
 	public void setCubeMapFace(int attachmentIndex, int cubeMapIndex, int faceIndex) {
@@ -82,4 +82,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget<CubeMapArray> {
 		return getTextures().get(i);
 	}
 
+	public int getArraySize() {
+		return getTextures().get(0).getDimension().getDepth();
+	}
 }

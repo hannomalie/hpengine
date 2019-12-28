@@ -47,7 +47,7 @@ class InitCubeClustersKotlin @Inject constructor(engine: Engine<*>) : Updatable 
                                 trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance * x, randomFloat * maxDistance * y, randomFloat * maxDistance * z)))
                                 val modelComponent = current.getComponent(ModelComponent::class.java)
                                 val materials = modelComponent?.materials ?: ArrayList()
-                                cluster.add(Instance(current, trafo, materials, AnimationController(0, 0f), object : SimpleSpatial() {
+                                cluster.add(Instance(current, trafo, materials, null, object : SimpleSpatial() {
                                     override val minMax: AABB
                                         get() = current.minMax
                                 }))

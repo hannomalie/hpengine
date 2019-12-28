@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
@@ -30,11 +31,28 @@ import java.awt.Dimension
 import java.awt.Image
 import javax.swing.BorderFactory
 
+sealed class OutputConfig {
+    object Default : OutputConfig()
+    class Texture2D(val name: String, val texture: de.hanno.hpengine.engine.model.texture.Texture2D) : OutputConfig() {
+        override fun toString() = name
+    }
+    class TextureCubeMap(val name: String, val texture: de.hanno.hpengine.engine.model.texture.CubeMap) : OutputConfig(){
+        override fun toString() = name
+    }
+    data class RenderTargetCubeMapArray(val renderTarget: CubeMapArrayRenderTarget, val cubeMapIndex: Int) : OutputConfig(){
+        init {
+            val cubeMapArraySize = renderTarget.arraySize
+            require(cubeMapIndex < cubeMapArraySize) { "CubeMap index $cubeMapIndex is ot of bounds. Should be smaller than $cubeMapArraySize" }
+        }
+        override fun toString() = renderTarget.name + cubeMapIndex.toString()
+    }
+}
 
 class EditorComponents(val engine: EngineImpl,
                        val config: ConfigImpl,
                        val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
 
+    private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
     val sphereHolder = SphereHolder(engine)
@@ -58,11 +76,21 @@ class EditorComponents(val engine: EngineImpl,
     override fun render(result: DrawResult, state: RenderState) {
         selectionSystem.render(result, state)
         sphereHolder.render(result, state)
-        if(config.debug.isUseDirectTextureOutput) {
-            textureRenderer.drawToQuad(engine.window.frontBuffer, config.debug.directTextureOutputTextureIndex)
-        } else {
-            textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
-        }
+        when (val selection = outPutConfig) {
+            OutputConfig.Default -> {
+                textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
+            }
+            is OutputConfig.Texture2D -> {
+                textureRenderer.drawToQuad(engine.window.frontBuffer, selection.texture)
+            }
+            is OutputConfig.TextureCubeMap -> {
+                textureRenderer.renderCubeMapDebug(engine.window.frontBuffer, selection.texture)
+            }
+            is OutputConfig.RenderTargetCubeMapArray -> {
+                textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
+                textureRenderer.renderCubeMapDebug(engine.window.frontBuffer, selection.renderTarget, selection.cubeMapIndex)
+            }
+        }.let { }
     }
 
     init {
@@ -71,7 +99,7 @@ class EditorComponents(val engine: EngineImpl,
             TimingsFrame(engine)
             ribbon.setApplicationMenuCommand(ApplicationMenu(engine))
 
-            addTask(ViewTask(engine, config, this))
+            addTask(ViewTask(engine, config, this, ::outPutConfig))
             addTask(SceneTask(engine))
             addTask(TransformTask(this))
             addTask(TextureTask(engine, editor))
@@ -92,9 +120,10 @@ class EditorComponents(val engine: EngineImpl,
     val keyLogger = KeyLogger().apply {
         editor.addKeyListener(this)
     }
+
     fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
 
-    private fun showConfigFrame() = SwingUtils.invokeLater  {
+    private fun showConfigFrame() = SwingUtils.invokeLater {
         ConfigFrame(engine, config, editor)
     }
 

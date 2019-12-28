@@ -36,9 +36,11 @@ in ivec4 in_JointIndices;
 #endif
 
 out vec4 vs_pass_WorldPosition;
-out vec4 pass_ProjectedPosition;
+out vec4 vs_pass_ProjectedPosition;
 out vec2 vs_pass_texCoord;
-out float clip;
+out float vs_clip;
+flat out Entity vs_pass_Entity;
+flat out Material vs_pass_Material;
 
 void main()
 {
@@ -46,6 +48,8 @@ void main()
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
     Entity entity = entities[entityBufferIndex];
+	vs_pass_Entity = entity;
+	vs_pass_Material = materials[entity.materialIndex];
     mat4 modelMatrix = entity.modelMatrix;
 
 	vs_pass_WorldPosition = modelMatrix * vec4(in_Position.xyz,1);

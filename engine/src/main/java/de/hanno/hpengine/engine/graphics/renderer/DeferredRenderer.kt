@@ -83,7 +83,7 @@ class DeferredRenderer
         }
     }
 
-    private val sixDebugBuffers: ArrayList<VertexBuffer> = gpuContext.setupBuffers()
+    private val sixDebugBuffers: ArrayList<VertexBuffer> = gpuContext.createSixDebugBuffers()
 
     private val gBuffer: DeferredRenderingBuffer = deferredRenderingBuffer
     private val forwardRenderer = ForwardRenderExtension(engineContext)
@@ -138,26 +138,6 @@ class DeferredRenderer
 
     private fun registerRenderExtension(extension: RenderExtension<OpenGl>) {
         renderExtensions.add(extension)
-    }
-
-    private fun GpuContext<OpenGl>.setupBuffers(): ArrayList<VertexBuffer> {
-        return calculate {
-            val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
-                init {
-                    val height = -2f / 3f
-                    val width = 2f
-                    val widthDiv = width / 6f
-                    for (i in 0..5) {
-                        val quadVertexBuffer = QuadVertexBuffer(backend.gpuContext, Vector2f(-1f + i * widthDiv, -1f), Vector2f(-1 + (i + 1) * widthDiv, height))
-                        add(quadVertexBuffer)
-                        quadVertexBuffer.upload()
-                    }
-                }
-            }
-
-            gpuContext.getExceptionOnError("setupBuffers")
-            sixDebugBuffers
-        }
     }
 
     private fun GpuContext<OpenGl>.enableSeamlessCubeMapFiltering() {
@@ -580,6 +560,7 @@ class DeferredRenderer
         var USE_COMPUTESHADER_FOR_REFLECTIONS = false
         @Volatile
         var IMPORTANCE_SAMPLE_COUNT = 8
+
     }
 }
 
@@ -645,5 +626,25 @@ fun LineRenderer.batchAABBLines(minWorld: Vector3f, maxWorld: Vector3f) {
         val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
         val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
         batchLine(min, max)
+    }
+}
+
+fun GpuContext<OpenGl>.createSixDebugBuffers(): ArrayList<VertexBuffer> {
+    return calculate {
+        val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
+            init {
+                val height = -2f / 3f
+                val width = 2f
+                val widthDiv = width / 6f
+                for (i in 0..5) {
+                    val quadVertexBuffer = QuadVertexBuffer(backend.gpuContext, Vector2f(-1f + i * widthDiv, -1f), Vector2f(-1 + (i + 1) * widthDiv, height))
+                    add(quadVertexBuffer)
+                    quadVertexBuffer.upload()
+                }
+            }
+        }
+
+        getExceptionOnError("setupBuffers")
+        sixDebugBuffers
     }
 }

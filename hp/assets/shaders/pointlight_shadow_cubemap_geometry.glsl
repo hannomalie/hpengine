@@ -1,6 +1,8 @@
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 18) out; // 6 faces * 3 vertices per cubemap
 
+//include(globals_structs.glsl)
+
 in vec4 vs_pass_WorldPosition[3];
 in vec4 vs_pass_ProjectedPosition[3];
 in float vs_clip[3];
@@ -20,6 +22,9 @@ uniform vec3 pointLightPositionWorld;
 out vec4 pass_WorldPosition;
 out vec4 pass_ProjectedPosition;
 out float clip;
+out vec2 pass_texCoord;
+flat out Entity pass_Entity;
+flat out Material pass_Material;
 
 void main() {
 
@@ -55,6 +60,7 @@ void main() {
               vec4 projectedPosition = projectionMatrices[layer] * viewMatrices[layer] * vec4(positionWorld,1);
               pass_WorldPosition = vec4(positionWorld,1);
               pass_ProjectedPosition = projectedPosition;
+              pass_texCoord = vs_pass_texCoord[i];
 
               gl_Position = projectedPosition;
               clip = 1.0;

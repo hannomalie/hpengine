@@ -15,8 +15,8 @@ public class CubeRenderTargetBuilder extends RenderTargetBuilder<CubeRenderTarge
     }
 
     @Override
-    public CubeRenderTarget build() {
-        return engine.getGpuContext().calculate((Callable<CubeRenderTarget>) () -> new CubeRenderTarget(engine, this));
+    public CubeMapRenderTarget build() {
+        return engine.getGpuContext().calculate((Callable<CubeMapRenderTarget>) () -> new CubeMapRenderTarget(engine, this));
     }
 
 }

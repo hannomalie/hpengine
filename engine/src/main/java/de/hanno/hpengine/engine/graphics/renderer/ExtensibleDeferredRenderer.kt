@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.EnvironmentProbeExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
@@ -63,7 +64,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         ForwardRenderExtension(engineContext),
         DirectionalLightSecondPassExtension(engineContext),
         PointLightSecondPassExtension(engineContext),
-        AOScatteringExtension(engineContext)
+        AOScatteringExtension(engineContext),
+        EnvironmentProbeExtension(engineContext)
     )
 
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
@@ -122,9 +124,12 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
                     postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
                 }
             } else {
+//                textureRenderer.renderCubeMapDebug(engineContext.window.frontBuffer, textureManager.cubeMap)
                 textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
             }
-        }.onFailure { println("Not able to render texture") }
+        }.onFailure {
+            println("Not able to render texture")
+        }
 
     }
 }

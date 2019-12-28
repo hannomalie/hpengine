@@ -14,6 +14,7 @@ import jogl.DDSImage
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL12.GL_MAX_3D_TEXTURE_SIZE
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL13.glCompressedTexSubImage2D
 import java.awt.image.BufferedImage
@@ -148,7 +149,7 @@ fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploa
             }
             GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY -> {
                 val info = info as Texture3DUploadInfo
-                GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, info.dimension.getMipMapCount(), internalFormat, info.dimension.width, info.dimension.height, info.dimension.depth * 6)
+                GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, TextureDimension2D(info.dimension.width, info.dimension.height).getMipMapCount(), internalFormat, info.dimension.width, info.dimension.height, info.dimension.depth * 6)
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, wrapMode)
             }
         }
@@ -167,6 +168,9 @@ data class CubeMapArray(override val dimension: TextureDimension3D,
                         override val textureFilterConfig: TextureFilterConfig,
                         override val wrapMode: Int,
                         override var uploadState: UploadState) : Texture {
+
+    val size: Int
+        get() = dimension.depth
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension3D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int): CubeMapArray {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture3DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, filterConfig, internalFormat, wrapMode)

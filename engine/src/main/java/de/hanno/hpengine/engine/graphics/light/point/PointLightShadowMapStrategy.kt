@@ -64,6 +64,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
             cubeMapArray.dimension.width,
             cubeMapArray.dimension.height,
             Vector4f(0f, 0f, 0f, 0f),
+            "CubeMapArrayRenderTarget",
             cubeMapArray
     )
 
