@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
@@ -30,12 +31,15 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
 
-    val drawCycle = AtomicLong()
-    var cpuGpuSyncTimeNs: Long = 0
-        set(cpuGpuSyncTimeNs) {
-            field = (this.cpuGpuSyncTimeNs + cpuGpuSyncTimeNs) / 2
-        }
+    val updateCycle = AtomicLong()
 
+    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
+        updateCycle.getAndIncrement()
+    }
+
+    override fun extract(renderState: RenderState) {
+        renderState.cycle = updateCycle.get()
+    }
     init {
         var lastTimeSwapped = true
         val runnable = object: Runnable {

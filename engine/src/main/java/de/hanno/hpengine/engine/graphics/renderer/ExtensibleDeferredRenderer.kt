@@ -101,7 +101,9 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
                 }
                 deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
                 for (extension in extensions) {
-                    extension.renderSecondPassFullScreen(state, result.secondPassResult)
+                    profiled(extension.javaClass.simpleName) {
+                        extension.renderSecondPassFullScreen(state, result.secondPassResult)
+                    }
                 }
             }
             deferredRenderingBuffer.lightAccumulationBuffer.unuse(gpuContext)

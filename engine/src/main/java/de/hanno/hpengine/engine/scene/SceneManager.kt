@@ -24,7 +24,7 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
     fun UpdateLock.add(entity: Entity) = addAll(listOf(entity))
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
-        val newDrawCycle = managerContext.renderManager.drawCycle.get()
+        val newDrawCycle = managerContext.renderManager.updateCycle.get()
         scene.currentCycle = newDrawCycle
         with(scene) {
             update(deltaSeconds)

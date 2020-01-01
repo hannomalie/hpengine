@@ -4,7 +4,7 @@ layout(std430, binding=4) buffer _probePositions {
 
 layout(binding=8) uniform samplerCubeArray probeCubeMaps;
 uniform int probeCount = 64; // TODO: How to pass that into this shader
-uniform float probeDimensions = 50;
+uniform vec3 probeDimensions = vec3(50);
 uniform int probeIndex = 0;
 
 uniform sampler2D renderedTexture;
@@ -21,7 +21,7 @@ void main()
 {
     vec3 positionWorld = pass_WorldPosition.xyz;
     vec3 normalWorld = normal_world;
-    float probeDimensionsHalf = probeDimensions * 0.5f;
+    vec3 probeDimensionsHalf = probeDimensions * 0.5f;
 
     vec4 result = vec4(0,0,0,1);
     result.rgb += textureLod(probeCubeMaps, vec4(normalWorld, probeIndex),0).rgb;

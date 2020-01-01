@@ -1,6 +1,8 @@
 package de.hanno.hpengine.editor.input
 
 import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.selection.EntitySelection
+import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.Entity
 import org.joml.AxisAngle4f
@@ -14,7 +16,7 @@ import java.awt.event.MouseEvent
 import kotlin.reflect.KProperty0
 
 class MouseInputProcessor(val engine: Engine<*>,
-                          val selectedEntity: KProperty0<Any?>,
+                          val selection: KProperty0<Selection>,
                           val editorComponents: EditorComponents) : MouseAdapter() {
     private var lastX: Float? = null
     private var lastY: Float? = null
@@ -28,12 +30,14 @@ class MouseInputProcessor(val engine: Engine<*>,
         lastX = e.x.toFloat()
         lastY = e.y.toFloat()
 
-        val entityOrNull = selectedEntity.call() as? Entity
+        val entityOrNull = getEntityOrNull()
         entityOrNull?.transformation?.get(oldTransform)
     }
 
+    private fun getEntityOrNull() = (selection.call() as? EntitySelection)?.entity
+
     override fun mouseReleased(e: MouseEvent?) {
-        val entityOrNull = selectedEntity.call() as? Entity
+        val entityOrNull = getEntityOrNull()
         entityOrNull?.transformation?.get(oldTransform)
     }
 
@@ -50,7 +54,7 @@ class MouseInputProcessor(val engine: Engine<*>,
         yaw += yawAmount.toFloat()
         pitch += pitchAmount.toFloat()
 
-        val entityOrNull = selectedEntity.call() as? Entity
+        val entityOrNull = getEntityOrNull()
         if(entityOrNull == null) {
             val entity = engine.scene.camera.entity
             val oldTranslation = entity.getTranslation(Vector3f())

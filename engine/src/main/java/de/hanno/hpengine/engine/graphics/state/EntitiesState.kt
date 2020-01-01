@@ -15,9 +15,9 @@ import java.util.HashMap
 
 class EntitiesState(gpuContext: GpuContext<*>) {
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()
-    var entityMovedInCycle: Long = 0
-    var staticEntityMovedInCycle: Long = 0
-    var entityAddedInCycle: Long = 0
+    var entityMovedInCycle: Long = -1
+    var staticEntityMovedInCycle: Long = -1
+    var entityAddedInCycle: Long = -1
     var renderBatchesStatic = RenderBatches()
     var renderBatchesAnimated = RenderBatches()
     var vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10, 10, DEFAULTCHANNELS)

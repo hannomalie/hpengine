@@ -24,7 +24,10 @@ uniform mat4 modelMatrix;
 
 uniform vec3 eyePosition = vec3(0);
 uniform int probeCount = 64;
-uniform float probeDimensions = 50;
+uniform vec3 sceneCenter = vec3(0);
+uniform vec3 sceneMin = vec3(0);
+uniform vec3 probesPerDimension = vec3(4);
+uniform vec3 probeDimensions = vec3(50);
 
 layout(std430, binding=4) buffer _probePositions {
 	vec4 probePositions[];
@@ -36,7 +39,7 @@ void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
-	float probeDimensionsHalf = probeDimensions * 0.5f;
+	vec3 probeDimensionsHalf = probeDimensions * 0.5f;
 
 	vec3 positionView = textureLod(positionMap, st, 0).xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1.0f)).xyz;
@@ -46,17 +49,26 @@ void main(void) {
 	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView, 0.0f)).xyz;
 
 	vec4 result = vec4(0,0,0,0);
-	for(int i = 0; i < probeCount; i++) {
-		vec3 currentProbeMin = probePositions[i].xyz - vec3(probeDimensionsHalf);
-		vec3 currentProbeMax = probePositions[i].xyz + vec3(probeDimensionsHalf);
-		bool greaterThanMin = all(greaterThanEqual(positionWorld, currentProbeMin));
-		bool lessThanMax = all(lessThan(positionWorld, currentProbeMax));
-		if(greaterThanMin && lessThanMax)
-		{
-			float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
-			result.rgb += 0.1f*textureLod(probeCubeMaps, vec4(normalWorld, i), mipMap).rgb;
-			break;
-		}
-	}
+	ivec3 probeIndexOffsets = ivec3(positionWorld-sceneMin)/ivec3(probeDimensions);
+	ivec3 probesPerDimensionInt = ivec3(probesPerDimension);
+	int resultingProbeIndex = probesPerDimensionInt.x * probeIndexOffsets.x
+							+ probesPerDimensionInt.y * probeIndexOffsets.y
+							+ probesPerDimensionInt.z * probeIndexOffsets.z;
+
+	float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
+	result.rgb += textureLod(probeCubeMaps, vec4(normalWorld, resultingProbeIndex), mipMap).rgb;
+
+//	for(int i = 0; i < probeCount; i++) {
+//		vec3 currentProbeMin = probePositions[i].xyz - probeDimensionsHalf;
+//		vec3 currentProbeMax = probePositions[i].xyz + probeDimensionsHalf;
+//		bool greaterThanMin = all(greaterThanEqual(positionWorld, currentProbeMin));
+//		bool lessThanMax = all(lessThan(positionWorld, currentProbeMax));
+//		if(greaterThanMin && lessThanMax)
+//		{
+//			float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
+//			result.rgb += 0.1f*textureLod(probeCubeMaps, vec4(normalWorld, i), mipMap).rgb;
+//			break;
+//		}
+//	}
 	out_indirectDiffuse = result;
 }
