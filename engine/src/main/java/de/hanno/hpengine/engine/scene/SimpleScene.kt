@@ -142,4 +142,6 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
             manager.value.extract(currentWriteState)
         }
     }
+
+    override fun toString() = name
 }

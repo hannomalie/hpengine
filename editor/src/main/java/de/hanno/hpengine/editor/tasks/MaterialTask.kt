@@ -5,6 +5,7 @@ import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.MaterialGrid
+import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.addUnselectButton
 import de.hanno.hpengine.engine.Engine
@@ -51,7 +52,8 @@ object MaterialTask {
                     .setAction { event ->
                         // unselect and select material here
                         if (event.command.isToggleSelected) {
-                            if (selectionSystem.selection == material) {
+                            val selection = selectionSystem.selection
+                            if (selection is MaterialSelection && selection.material == material) {
                                 selectionSystem.unselect()
                             } else {
                                 editor.sidePanel.doWithRefresh {

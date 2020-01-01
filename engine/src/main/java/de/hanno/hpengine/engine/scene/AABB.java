@@ -240,13 +240,13 @@ public class AABB implements Serializable {
 			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getMinMaxWorld();
 			Vector3f currentMin = minMaxWorld.getMin();
 			Vector3f currentMax = minMaxWorld.getMax();
-			getMin().x = (currentMin.x < getMin().x) ? currentMin.x : getMin().x;
-			getMin().y = (currentMin.y < getMin().y) ? currentMin.y : getMin().y;
-			getMin().z = (currentMin.z < getMin().z) ? currentMin.z : getMin().z;
+			getMin().x = Math.min(currentMin.x, getMin().x);
+			getMin().y = Math.min(currentMin.y, getMin().y);
+			getMin().z = Math.min(currentMin.z, getMin().z);
 
-			getMax().x = (currentMax.x > getMax().x) ? currentMax.x : getMax().x;
-			getMax().y = (currentMax.y > getMax().y) ? currentMax.y : getMax().y;
-			getMax().z = (currentMax.z > getMax().z) ? currentMax.z : getMax().z;
+			getMax().x = Math.max(currentMax.x, getMax().x);
+			getMax().y = Math.max(currentMax.y, getMax().y);
+			getMax().z = Math.max(currentMax.z, getMax().z);
 		}
 	}
 }

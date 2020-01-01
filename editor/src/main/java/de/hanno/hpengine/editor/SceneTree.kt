@@ -26,7 +26,7 @@ import javax.swing.tree.DefaultTreeModel
 
 open class SceneTree(val engine: Engine<*>,
                 val editorComponents: EditorComponents,
-                val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode("Scene")) : JTree(rootNode) {
+                val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(engine.scene)) : JTree(rootNode) {
 
     private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null

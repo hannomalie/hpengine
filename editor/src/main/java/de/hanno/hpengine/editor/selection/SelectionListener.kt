@@ -7,8 +7,8 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
-import de.hanno.hpengine.engine.model.Model
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
+import de.hanno.hpengine.engine.scene.Scene
 import javax.swing.JTree
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
@@ -43,20 +43,21 @@ class SelectionListener(internal var tree: JTree,
 
         val node = treeNode.userObject
 
-        // TODO: MIIIIEEEEEES
         if (node is EnvironmentProbe) {
         } else if (node is Entity) {
             unselectOr(node) { editorComponents.selectionSystem.selectEntity(it) }
-        } else if (node is SelectionSystem.MeshSelection) {
+        } else if (node is MeshSelection) {
             unselectOr(node) { editorComponents.selectionSystem.selectMesh(node) }
         }  else if (node is ModelComponent) {
-            unselectOr(node) { editorComponents.selectionSystem.selectModel(SelectionSystem.ModelSelection(node.model, node.entity)) }
+            unselectOr(node) { editorComponents.selectionSystem.selectModel(ModelSelection(node.entity, node.model)) }
         } else if (node is PointLight) {
             unselectOr(node) { editorComponents.selectionSystem.selectPointLight(node) }
         } else if (node is DirectionalLight) {
             unselectOr(node) { editorComponents.selectionSystem.selectDirectionalLight(node) }
         } else if (node is Camera) {
             unselectOr(node) { editorComponents.selectionSystem.selectCamera(node) }
+        } else if (node is Scene) {
+            unselectOr(node) { editorComponents.selectionSystem.selectScene(node)}
         }
     }
 
