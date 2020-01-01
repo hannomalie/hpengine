@@ -5,7 +5,7 @@ uniform vec3 pointLightPositionWorld;
 in vec4 pass_WorldPosition;
 in vec4 pass_ProjectedPosition;
 in float clip;
-in vec2 texCoord;
+in vec2 pass_texCoord;
 
 out vec4 out_Color;
 out vec4 out_Diffuse;
@@ -26,8 +26,7 @@ void main()
 
 	float moment1 = (depth);
 	float moment2 = moment1 * moment1;
-	vec4 result;
-	result = vec4(moment1, moment2,0,0);
+	vec4 result = vec4(moment1, moment2,0,0);
 	out_Color = result;
 
 //	if(gl_Layer == 0) {
@@ -45,7 +44,7 @@ void main()
     
 //    out_Color = vec4(moment1,moment2,0,0);//encode(normal_world));
     //out_Color.rgba = vec4(1,0,0,1);
-    //out_Diffuse = vec4(normal_world,1);
+//	out_Color = vec4(pass_texCoord, 0, 1);
     /*vec3 diffuse = color;
     out_Diffuse = vec4(diffuse,1);
     out_Position = vec4(pass_WorldPosition.xyz, 0);*/

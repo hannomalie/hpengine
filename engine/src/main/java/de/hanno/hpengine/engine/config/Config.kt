@@ -51,6 +51,7 @@ interface IQualityConfig {
 }
 
 interface IDebugConfig {
+    var reRenderProbes: Boolean
     val isUseCpuFrustumCulling: Boolean
     val isUseGpuOcclusionCulling: Boolean
     val isDrawLines: Boolean
@@ -92,6 +93,9 @@ class ProfilingConfig {
 operator fun <T> KMutableProperty0<T>.setValue(receiver: Any?, property: KProperty<*>, any: T) = set(any)
 operator fun <T> KMutableProperty0<T>.getValue(receiver: Any?, property: KProperty<*>): T = getter.call()
 
+@Target(AnnotationTarget.PROPERTY)
+annotation class Button
+
 data class QualityConfig(
     override var isUseAmbientOcclusion: Boolean = false,
     override var isUseParallax: Boolean = false,
@@ -115,6 +119,7 @@ data class QualityConfig(
 ) : IQualityConfig
 
 data class DebugConfig(
+    override @Button var reRenderProbes: Boolean = true,
     override var isUseCpuFrustumCulling: Boolean = true,
     override var isUseGpuOcclusionCulling: Boolean = false,
     override var isDrawLines: Boolean = false,

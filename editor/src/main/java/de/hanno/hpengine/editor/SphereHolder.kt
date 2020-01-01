@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -23,12 +24,12 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.io.File
 
-class SphereHolder(val engine: EngineContext<OpenGl>) : RenderSystem {
+class SphereHolder(val engine: EngineContext<OpenGl>,
+                   private val sphereProgram: Program = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
 
     private val materialManager: MaterialManager = engine.materialManager
     private val gpuContext = engine.gpuContext
     val sphereEntity = Entity("[Editor] Pivot")
-    private val sphereProgram = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
 
     private val sphere = run {
         StaticModelLoader().load(File("assets/models/sphere.obj"), materialManager, engine.config.directories.engineDir)
@@ -52,18 +53,22 @@ class SphereHolder(val engine: EngineContext<OpenGl>) : RenderSystem {
     private val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)
     }
-
     override fun render(result: DrawResult, state: RenderState) {
+        render(state, sphereEntity.position, Vector3f(0f, 0f, 1f))
+    }
+    fun render(state: RenderState, spherePosition: Vector3f, color: Vector3f, beforeDraw: (Program.() -> Unit)? = null) {
+
         val scaling = (0.1f * sphereEntity.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
-        val transformation = SimpleTransform().scale(scaling).translate(sphereEntity.position)
+        val transformation = SimpleTransform().scale(scaling).translate(spherePosition)
         engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
         sphereProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-        sphereProgram.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
+        sphereProgram.setUniform("diffuseColor", color)
         sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
+        if (beforeDraw != null) { sphereProgram.beforeDraw() }
 
         draw(sphereVertexIndexBuffer.vertexBuffer,
                 sphereVertexIndexBuffer.indexBuffer,

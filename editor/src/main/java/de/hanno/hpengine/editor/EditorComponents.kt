@@ -15,12 +15,18 @@ import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
 import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.extensions.EnvironmentProbeExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.engine.graphics.shader.define.Define
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import org.joml.Vector3f
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.neon.api.icon.ResizableIcon
@@ -56,6 +62,7 @@ class EditorComponents(val engine: EngineImpl,
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
     val sphereHolder = SphereHolder(engine)
+    val environmentProbeSphereHolder = SphereHolder(engine, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val sceneTree = SwingUtils.invokeAndWait {
         SceneTree(engine, this).apply {
@@ -76,6 +83,28 @@ class EditorComponents(val engine: EngineImpl,
     override fun render(result: DrawResult, state: RenderState) {
         selectionSystem.render(result, state)
         sphereHolder.render(result, state)
+
+        engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+            it.extensions.filterIsInstance<EnvironmentProbeExtension>().firstOrNull()?.let {
+                it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
+                    val color = when(val outputConfig = outPutConfig) {
+                        is OutputConfig.RenderTargetCubeMapArray -> {
+                            if(outputConfig.cubeMapIndex == probeIndex) Vector3f(0f, 1f, 0f) else Vector3f(0f, 0f, 1f)
+                        }
+                        else -> {
+                            Vector3f(0f,0f,1f)
+                        }
+                    }
+                    environmentProbeSphereHolder.render(state, position, color) {
+                        setUniform("pointLightPositionWorld", it.probeRenderer.probePositions[probeIndex])
+                        setUniform("probeIndex", probeIndex)
+                        setUniform("probeDimensions", it.probeRenderer.probeDimensions)
+                        bindShaderStorageBuffer(4, it.probeRenderer.probePositionsStructBuffer)
+                        engine.gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, it.probeRenderer.probesArrayCube)
+                    }
+                }
+            }
+        }
         when (val selection = outPutConfig) {
             OutputConfig.Default -> {
                 textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)

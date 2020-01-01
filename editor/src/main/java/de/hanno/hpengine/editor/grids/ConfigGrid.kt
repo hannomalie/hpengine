@@ -1,9 +1,11 @@
 package de.hanno.hpengine.editor.grids
 
+import de.hanno.hpengine.engine.config.Button
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import net.miginfocom.swing.MigLayout
+import java.awt.Component
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -13,7 +15,8 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.jvm.javaType
 import javax.swing.BorderFactory
-
+import javax.swing.JButton
+import kotlin.reflect.full.findAnnotation
 
 class ConfigGrid(val config: ConfigImpl, val eventBus: EventBus): JPanel() {
     init {
@@ -30,7 +33,14 @@ class ConfigGrid(val config: ConfigImpl, val eventBus: EventBus): JPanel() {
         val checkBoxes = T::class.declaredMembers.mapNotNull {
             if (it.returnType.javaType == Boolean::class.java) {
                 when (it) {
-                    is KMutableProperty1<*, *> -> (it as? KMutableProperty1<T, Boolean>)?.toCheckBox(debugConfig)
+                    is KMutableProperty1<*, *> -> {
+                        val element: JComponent? = if(it.findAnnotation<Button>() != null) {
+                            (it as? KMutableProperty1<T, Boolean>)?.toButton(debugConfig)
+                        } else {
+                            (it as? KMutableProperty1<T, Boolean>)?.toCheckBox(debugConfig)
+                        }
+                        element
+                    }
                     else -> (it as? KProperty1<T, Boolean>)?.toCheckBox(debugConfig)
                 }
             } else null
@@ -50,6 +60,13 @@ class ConfigGrid(val config: ConfigImpl, val eventBus: EventBus): JPanel() {
             addActionListener {
                 this@toCheckBox.set(receiver, isSelected)
                 eventBus.post(GlobalDefineChangedEvent())
+            }
+        }
+    }
+    private fun <R> KMutableProperty1<R, Boolean>.toButton(receiver: R): JButton {
+        return JButton(name).apply {
+            addActionListener {
+                this@toButton.set(receiver, true)
             }
         }
     }

@@ -7,6 +7,8 @@ in vec4 vs_pass_WorldPosition[3];
 in vec4 vs_pass_ProjectedPosition[3];
 in float vs_clip[3];
 in vec2 vs_pass_texCoord[3];
+flat in Entity vs_pass_Entity[3];
+flat in Material vs_pass_Material[3];
 
 uniform mat4[6] viewProjectionMatrices;
 uniform mat4[6] viewMatrices;
@@ -54,13 +56,16 @@ void main() {
 
 // frustum culling seems to make it worse if no instancing present
 //if(inFrustum && frontFace) {
-    if(frontFace) {
+//  if(frontFace) {
+      if(true) {
         for(int i = 0; i < 3; i++) { // You used triangles, so it's always 3
               vec3 positionWorld = vs_pass_WorldPosition[i].xyz;
               vec4 projectedPosition = projectionMatrices[layer] * viewMatrices[layer] * vec4(positionWorld,1);
               pass_WorldPosition = vec4(positionWorld,1);
               pass_ProjectedPosition = projectedPosition;
               pass_texCoord = vs_pass_texCoord[i];
+              pass_Entity = vs_pass_Entity[i];
+              pass_Material = vs_pass_Material[i];
 
               gl_Position = projectedPosition;
               clip = 1.0;
