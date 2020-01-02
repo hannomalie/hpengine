@@ -491,23 +491,6 @@ class TextureManager(val config: Config,
         }
     }
 
-
-    override fun clear() {
-
-    }
-
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-
-    }
-
-    override fun UpdateLock.onEntityAdded(entities: List<Entity>) {
-
-    }
-
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-
-    }
-
     companion object {
         private val LOGGER = Logger.getLogger(TextureManager::class.java.name)
         private val TEXTURE_FACTORY_THREAD_COUNT = 1

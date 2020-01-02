@@ -57,7 +57,8 @@ interface Scene : Updatable, Serializable {
 
         minMax.calculateMinMax(entityManager.getEntities())
 
-        entityManager.entityAddedInCycle = currentCycle
+        // TODO: This is not too correct but the cycle counter gets updated just before this happens
+        entityManager.entityAddedInCycle = currentCycle-1
     }
 
     fun UpdateLock.onComponentAdded(component: Component) {
@@ -89,6 +90,10 @@ interface Scene : Updatable, Serializable {
         with(entitySystems) {
             update(deltaSeconds)
         }
+    }
+
+    @JvmDefault
+    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
         with(managers) {
             afterUpdate(deltaSeconds)
         }

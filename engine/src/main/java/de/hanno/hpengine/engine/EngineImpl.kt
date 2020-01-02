@@ -57,7 +57,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     val updateConsumer = Consumer<Float> {
         addResourceContext.locked {
             val job = GlobalScope.launch(updateScope) {
-                    update(it)
+                update(it)
             }
             while(!job.isCompleted) {}
         }
@@ -83,6 +83,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         gpuContext.update(deltaSeconds)
         with(managerContext.managers) {
             update(deltaSeconds)
+            afterUpdate(deltaSeconds)
         }
         updateRenderState()
     } catch (e: Exception) {
@@ -100,7 +101,6 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 scene.extract(renderState.currentWriteState)
                 renderState.update()
             }
-            drawCycle.getAndIncrement()
         }
     }
 

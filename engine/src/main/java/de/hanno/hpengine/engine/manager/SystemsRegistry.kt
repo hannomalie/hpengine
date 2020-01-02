@@ -10,7 +10,7 @@ interface ManagerRegistry {
     val managers: Map<Class<*>, Manager>
     fun <T : Manager> get(managerClass: Class<T>): T
     fun CoroutineScope.update(deltaSeconds: Float) {
-        this@ManagerRegistry.managers.forEach{
+        managers.forEach {
             with(it.value) { update(deltaSeconds) }
         }
     }
