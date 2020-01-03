@@ -25,6 +25,7 @@ out vec4 pass_WorldPosition;
 out vec4 pass_ProjectedPosition;
 out float clip;
 out vec2 pass_texCoord;
+out vec3 pass_normal;
 flat out Entity pass_Entity;
 flat out Material pass_Material;
 
@@ -64,6 +65,7 @@ void main() {
               pass_WorldPosition = vec4(positionWorld,1);
               pass_ProjectedPosition = projectedPosition;
               pass_texCoord = vs_pass_texCoord[i];
+              pass_normal = normal;
               pass_Entity = vs_pass_Entity[i];
               pass_Material = vs_pass_Material[i];
 

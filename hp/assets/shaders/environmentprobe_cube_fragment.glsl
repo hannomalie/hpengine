@@ -4,7 +4,14 @@ uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
 	PointLight pointLights[100];
 };
+layout(std430, binding=6) buffer _directionalLightState {
+	DirectionalLightState directionalLight;
+};
 
+#ifdef BINDLESSTEXTURES
+#else
+layout(binding=8) uniform sampler2D directionalLightShadowMap;
+#endif
 #ifdef BINDLESSTEXTURES
 #else
 layout(binding=0) uniform sampler2D diffuseMap;
@@ -24,12 +31,20 @@ uniform bool hasRoughnessMap = false;
 #endif
 layout(binding=8) uniform samplerCube skyBox;
 
+layout(std430, binding=5) buffer _probeAmbientCubeValuesOld {
+	vec4 probeAmbientCubeValuesOld[];
+};
+
 uniform vec3 pointLightPositionWorld;
+uniform vec3 sceneMin = vec3(0);
+uniform vec3 probesPerDimension = vec3(4);
+uniform vec3 probeDimensions = vec3(50);
 
 in vec4 pass_WorldPosition;
 in vec4 pass_ProjectedPosition;
 in float clip;
 in vec2 pass_texCoord;
+in vec3 pass_normal;
 flat in Entity pass_Entity;
 flat in Material pass_Material;
 
@@ -38,6 +53,8 @@ out vec4 out_Diffuse;
 out vec4 out_Position;
 
 //include(globals.glsl)
+//include(global_lighting.glsl)
+
 
 float calculateAttenuation(float dist, float lightRadius) {
 	float distDivRadius = (dist / lightRadius);
@@ -45,6 +62,15 @@ float calculateAttenuation(float dist, float lightRadius) {
 	atten_factor = pow(atten_factor, 2);
 	return atten_factor;
 }
+
+const vec3[6] directions = {
+	vec3(1, 0, 0),
+	vec3(-1, 0, 0),
+	vec3(0, 1, 0),
+	vec3(0, -1, 0),
+	vec3(0, 0, 1),
+	vec3(0, 0, -1)
+};
 
 void main()
 {
@@ -78,8 +104,14 @@ void main()
 
 	float moment1 = (depth);
 	float moment2 = moment1 * moment1;
-	float ambient = 0.025f;
+	float ambient =  material.ambient;
 	vec4 result = color * ambient;
+	vec3 normal = pass_normal;
+
+	vec3 V = vec3(0,0,-1);
+	vec3 specularColor = color.rgb;
+	float roughness = 1.0f;
+	float metallic = 0.0f;
 
 	for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
@@ -94,11 +126,6 @@ void main()
 			float attenuation = calculateAttenuation(length(pointLight.position - pass_WorldPosition.xyz), float(pointLight.radius));
 
 			vec3 temp;
-			vec3 normal = vec3(0,1,0); // TODO: Use proper normal here
-			vec3 specularColor = color.rgb;
-			vec3 V = vec3(0,0,-1);
-			float roughness = 1.0f;
-			float metallic = 0.0f;
 
 			if(int(material.materialtype) == 1) {
 				temp = cookTorrance(lightDirection, lightDiffuse,
@@ -114,6 +141,31 @@ void main()
 			result.rgb += temp.rgb;
 		}
 	}
+
+	#if BINDLESS_TEXTURES
+	float visibility = getVisibility(pass_WorldPosition, directionalLight);
+	#else
+	float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight, directionalLightShadowMap);
+	#endif
+	result.rgb += visibility * cookTorrance(-directionalLight.direction, directionalLight.color, 1.0f, V, pointLightPositionWorld, normal, roughness, metallic, color.rgb, vec3(0));
+
+
+	ivec3 probeIndexOffsets = ivec3(pass_WorldPosition.xyz-sceneMin)/ivec3(probeDimensions);
+	ivec3 probesPerDimensionInt = ivec3(probesPerDimension);
+	int resultingProbeIndex = probesPerDimensionInt.x * probeIndexOffsets.x
+		+ probesPerDimensionInt.y * probeIndexOffsets.y
+		+ probesPerDimensionInt.z * probeIndexOffsets.z;
+
+	//	float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
+	//	result.rgb += textureLod(probeCubeMaps, vec4(normalWorld, resultingProbeIndex), mipMap).rgb;
+
+//	TODO: second bounce
+//	int baseProbeIndex = resultingProbeIndex*6;
+//	for(int faceIndex = 0; faceIndex < 6; faceIndex++) {
+//		float dotProd = clamp(dot(normal, directions[faceIndex]), 0, 1);
+//		result.rgb += dotProd * probeAmbientCubeValuesOld[baseProbeIndex+faceIndex].rgb;
+//	}
+
 	out_Color = 4.0f * result;
 	//	out_Color = vec4(UV, 0.0f, 1.0f);
 //	vec3 sampleToProbe = pass_WorldPosition.xyz - pointLightPositionWorld;

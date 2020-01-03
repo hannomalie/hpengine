@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.extensions.EnvironmentProbeExtension
@@ -84,23 +85,19 @@ class EditorComponents(val engine: EngineImpl,
         selectionSystem.render(result, state)
         sphereHolder.render(result, state)
 
-        engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
-            it.extensions.filterIsInstance<EnvironmentProbeExtension>().firstOrNull()?.let {
-                it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                    val color = when(val outputConfig = outPutConfig) {
-                        is OutputConfig.RenderTargetCubeMapArray -> {
-                            if(outputConfig.cubeMapIndex == probeIndex) Vector3f(0f, 1f, 0f) else Vector3f(0f, 0f, 1f)
+        if(config.debug.visualizeProbes) {
+            engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+                it.extensions.filterIsInstance<EnvironmentProbeExtension>().firstOrNull()?.let {
+                    engine.gpuContext.depthMask(true)
+                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
+                    it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
+                        environmentProbeSphereHolder.render(state, position, Vector3f()) {
+                            setUniform("pointLightPositionWorld", it.probeRenderer.probePositions[probeIndex])
+                            setUniform("probeIndex", probeIndex)
+                            setUniform("probeDimensions", it.probeRenderer.probeDimensions)
+                            bindShaderStorageBuffer(4, it.probeRenderer.probePositionsStructBuffer)
+                            bindShaderStorageBuffer(5, it.probeRenderer.probeAmbientCubeValues)
                         }
-                        else -> {
-                            Vector3f(0f,0f,1f)
-                        }
-                    }
-                    environmentProbeSphereHolder.render(state, position, color) {
-                        setUniform("pointLightPositionWorld", it.probeRenderer.probePositions[probeIndex])
-                        setUniform("probeIndex", probeIndex)
-                        setUniform("probeDimensions", it.probeRenderer.probeDimensions)
-                        bindShaderStorageBuffer(4, it.probeRenderer.probePositionsStructBuffer)
-                        engine.gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, it.probeRenderer.probesArrayCube)
                     }
                 }
             }
