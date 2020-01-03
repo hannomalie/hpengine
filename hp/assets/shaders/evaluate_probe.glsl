@@ -32,8 +32,20 @@ uniform vec3 probeDimensions = vec3(50);
 layout(std430, binding=4) buffer _probePositions {
 	vec4 probePositions[];
 };
+layout(std430, binding=5) buffer _probeAmbientCubeValues {
+	vec4 probeAmbientCubeValues[];
+};
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_indirectDiffuse;
+
+const vec3[6] directions = {
+	vec3(1, 0, 0),
+	vec3(-1, 0, 0),
+	vec3(0, 1, 0),
+	vec3(0, -1, 0),
+	vec3(0, 0, 1),
+	vec3(0, 0, -1)
+};
 
 void main(void) {
 	vec2 st;
@@ -55,20 +67,14 @@ void main(void) {
 							+ probesPerDimensionInt.y * probeIndexOffsets.y
 							+ probesPerDimensionInt.z * probeIndexOffsets.z;
 
-	float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
-	result.rgb += textureLod(probeCubeMaps, vec4(normalWorld, resultingProbeIndex), mipMap).rgb;
+//	float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
+//	result.rgb += textureLod(probeCubeMaps, vec4(normalWorld, resultingProbeIndex), mipMap).rgb;
 
-//	for(int i = 0; i < probeCount; i++) {
-//		vec3 currentProbeMin = probePositions[i].xyz - probeDimensionsHalf;
-//		vec3 currentProbeMax = probePositions[i].xyz + probeDimensionsHalf;
-//		bool greaterThanMin = all(greaterThanEqual(positionWorld, currentProbeMin));
-//		bool lessThanMax = all(lessThan(positionWorld, currentProbeMax));
-//		if(greaterThanMin && lessThanMax)
-//		{
-//			float mipMap = float(textureQueryLevels(probeCubeMaps)-2); // TODO: Figure out why -2
-//			result.rgb += 0.1f*textureLod(probeCubeMaps, vec4(normalWorld, i), mipMap).rgb;
-//			break;
-//		}
-//	}
+	int baseProbeIndex = resultingProbeIndex*6;
+	for(int faceIndex = 0; faceIndex < 6; faceIndex++) {
+		float dotProd = clamp(dot(normalWorld, directions[faceIndex]), 0, 1);
+		result.rgb += dotProd * probeAmbientCubeValues[baseProbeIndex+faceIndex].rgb;
+	}
+
 	out_indirectDiffuse = result;
 }

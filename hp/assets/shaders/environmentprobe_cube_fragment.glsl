@@ -115,7 +115,7 @@ void main()
 		}
 	}
 	out_Color = 4.0f * result;
-//	out_Color = vec4(UV, 0.0f, 1.0f);
+	//	out_Color = vec4(UV, 0.0f, 1.0f);
 //	vec3 sampleToProbe = pass_WorldPosition.xyz - pointLightPositionWorld;
 //	vec3 skyBoxSample = textureLod(skyBox, sampleToProbe, 0).rgb;
 //	out_Color = vec4(skyBoxSample, 1.0f);
