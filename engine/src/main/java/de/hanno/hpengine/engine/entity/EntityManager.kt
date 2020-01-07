@@ -20,6 +20,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
     var entityMovedInCycle: Long = 0
     var staticEntityMovedInCycle: Long = 0
     var entityAddedInCycle: Long = 0
+    var componentAddedInCycle: Long = 0
 
     var entityHasMoved = false
     var staticEntityHasMoved = false
@@ -98,6 +99,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
         renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
+        renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
     }
 
     fun setEntityMovedInCycleToCycle(currentCycle: Long) {

@@ -147,7 +147,8 @@ void main()
 	#else
 	float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight, directionalLightShadowMap);
 	#endif
-	result.rgb += visibility * cookTorrance(-directionalLight.direction, directionalLight.color, 1.0f, V, pointLightPositionWorld, normal, roughness, metallic, color.rgb, vec3(0));
+//	TODO: Enable directional light stuff
+	//result.rgb += visibility * cookTorrance(-directionalLight.direction, directionalLight.color, 1.0f, V, pointLightPositionWorld, normal, roughness, metallic, color.rgb, vec3(0));
 
 
 	ivec3 probeIndexOffsets = ivec3(pass_WorldPosition.xyz-sceneMin)/ivec3(probeDimensions);

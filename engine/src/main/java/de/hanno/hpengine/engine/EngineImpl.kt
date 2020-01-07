@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
@@ -18,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.threads.UpdateThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
@@ -42,6 +44,7 @@ interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
             }
             managerContext.afterSetScene()
         }
+
     override val addResourceContext: AddResourceContext
         get() = managerContext.addResourceContext
 }

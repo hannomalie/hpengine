@@ -18,6 +18,7 @@ class EntitiesState(gpuContext: GpuContext<*>) {
     var entityMovedInCycle: Long = -1
     var staticEntityMovedInCycle: Long = -1
     var entityAddedInCycle: Long = -1
+    var componentAddedInCycle: Long = -1
     var renderBatchesStatic = RenderBatches()
     var renderBatchesAnimated = RenderBatches()
     var vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10, 10, DEFAULTCHANNELS)

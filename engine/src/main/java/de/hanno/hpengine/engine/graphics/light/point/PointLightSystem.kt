@@ -77,9 +77,14 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
     private var shadowMapsRenderedInCycle: Long = -1
 
     override fun render(result: DrawResult, state: RenderState) {
-        if(state.entityWasAdded() || state.pointLightMovedInCycle > shadowMapsRenderedInCycle || state.entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle) {
-            shadowMapsRenderedInCycle = state.cycle
+        val needsRerender = state.entityWasAdded() ||
+                state.pointLightMovedInCycle > shadowMapsRenderedInCycle ||
+                state.entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
+                state.entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
+                state.entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
+        if(needsRerender) {
             shadowMapStrategy.renderPointLightShadowMaps(state)
+            shadowMapsRenderedInCycle = state.cycle
         }
     }
 

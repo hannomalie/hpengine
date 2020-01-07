@@ -65,6 +65,9 @@ interface Scene : Updatable, Serializable {
         with(componentSystems) { onComponentAdded(component) }
         with(managers) { onComponentAdded(component) }
         with(entitySystems) { onComponentAdded(component) }
+
+        // TODO: This is not too correct but the cycle counter gets updated just before this happens
+        entityManager.componentAddedInCycle = currentCycle-1
     }
 
     fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
