@@ -62,7 +62,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             val job = GlobalScope.launch(updateScope) {
                 update(it)
             }
-            while(!job.isCompleted) {}
+            while(job.isActive) {}
         }
         Thread.sleep(1)
     }
