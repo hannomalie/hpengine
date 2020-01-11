@@ -42,7 +42,7 @@ import org.lwjgl.opengl.GL45
 import java.io.File
 import java.nio.FloatBuffer
 
-class EnvironmentProbeExtension(val engineContext: EngineContext<OpenGl>) : RenderExtension<OpenGl> {
+class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : RenderExtension<OpenGl> {
 
     private var renderedInCycle: Long = -1
     val probeRenderer = ProbeRenderer(engineContext)
@@ -94,7 +94,7 @@ class EnvironmentProbeExtension(val engineContext: EngineContext<OpenGl>) : Rend
 class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
-    val probesPerDimension = Vector3i(14, 4, 14)
+    val probesPerDimension = Vector3i(20, 6, 20)
     val probesPerDimensionFloat = Vector3f(probesPerDimension.x.toFloat(), probesPerDimension.y.toFloat(), probesPerDimension.z.toFloat())
     val probesPerDimensionHalfFloat = Vector3f(probesPerDimensionFloat).div(2f)
     val probesPerDimensionHalf = Vector3i(probesPerDimensionHalfFloat.x.toInt(), probesPerDimensionHalfFloat.y.toInt(), probesPerDimensionHalfFloat.z.toInt())

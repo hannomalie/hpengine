@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.EnvironmentProbeExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
@@ -65,7 +65,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         DirectionalLightSecondPassExtension(engineContext),
         PointLightSecondPassExtension(engineContext),
         AOScatteringExtension(engineContext),
-        EnvironmentProbeExtension(engineContext)
+//        AmbientCubeGridExtension(engineContext)
     )
 
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {

@@ -54,13 +54,13 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
         SimpleTransform().get(this)
     }
     override fun render(result: DrawResult, state: RenderState) {
-        render(state, sphereEntity.position, Vector3f(0f, 0f, 1f))
+        render(state, sphereEntity.position, Vector3f(0f, 0f, 1f), true)
     }
-    fun render(state: RenderState, spherePosition: Vector3f, color: Vector3f, beforeDraw: (Program.() -> Unit)? = null) {
+    fun render(state: RenderState, spherePosition: Vector3f, color: Vector3f, drawPointLights: Boolean = false, beforeDraw: (Program.() -> Unit)? = null) {
 
         val scaling = (0.1f * sphereEntity.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = SimpleTransform().scale(scaling).translate(spherePosition)
-        engine.gpuContext.disable(GlCap.DEPTH_TEST)
+//        engine.gpuContext.enable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
@@ -74,14 +74,17 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
                 sphereVertexIndexBuffer.indexBuffer,
                 sphereRenderBatch, sphereProgram, false, false)
 
-        state.lightState.pointLights.forEach {
-            val transformationPointLight = SimpleTransform().scale(scaling).translate(it.entity.position)
-            sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
-            sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
+//         TODO: This sucks, remove
+        if(drawPointLights) {
+            state.lightState.pointLights.forEach {
+                val transformationPointLight = SimpleTransform().scale(scaling).translate(it.entity.position)
+                sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
+                sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
-            draw(sphereVertexIndexBuffer.vertexBuffer,
-                    sphereVertexIndexBuffer.indexBuffer,
-                    sphereRenderBatch, sphereProgram, false, false)
+                draw(sphereVertexIndexBuffer.vertexBuffer,
+                        sphereVertexIndexBuffer.indexBuffer,
+                        sphereRenderBatch, sphereProgram, false, false)
+            }
         }
     }
 }

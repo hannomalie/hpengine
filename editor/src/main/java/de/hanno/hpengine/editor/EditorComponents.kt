@@ -18,9 +18,8 @@ import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.extensions.EnvironmentProbeExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -87,9 +86,10 @@ class EditorComponents(val engine: EngineImpl,
 
         if(config.debug.visualizeProbes) {
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
-                it.extensions.filterIsInstance<EnvironmentProbeExtension>().firstOrNull()?.let {
+                it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let {
                     engine.gpuContext.depthMask(true)
-                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
+                    engine.gpuContext.disable(GlCap.BLEND)
+//                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
                     it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
                         environmentProbeSphereHolder.render(state, position, Vector3f()) {
                             setUniform("pointLightPositionWorld", it.probeRenderer.probePositions[probeIndex])
