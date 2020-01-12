@@ -110,24 +110,13 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
             combinePassExtension.renderCombinePass(state)
         }
 
-        val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
-            engineContext.config.debug.directTextureOutputTextureIndex
-        } else if(engineContext.config.debug.isDrawBoundingVolumes) {
-            deferredRenderingBuffer.colorReflectivenessMap
-        } else if(engineContext.config.debug.isDrawPointLightShadowMaps) {
-            deferredRenderingBuffer.positionMap
-        } else {
-            deferredRenderingBuffer.finalMap
-        }
-
         runCatching {
             if(config.effects.isEnablePostprocessing) {
+                // TODO This has to be implemented differently, so that
+                // it is written to the final texture somehow
                 profiled("PostProcessing") {
                     postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
                 }
-            } else {
-//                textureRenderer.renderCubeMapDebug(engineContext.window.frontBuffer, textureManager.cubeMap)
-                textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
             }
         }.onFailure {
             println("Not able to render texture")

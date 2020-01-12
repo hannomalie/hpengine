@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
@@ -23,6 +24,9 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,
                     val lineRenderer: LineRenderer = LineRendererImpl(engineContext),
                     val materialManager: MaterialManager = engineContext.materialManager) : Manager {
+
+    val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
+    private val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
     inline val renderState: TripleBuffer<RenderState>
         get() = renderStateManager.renderState
@@ -64,6 +68,18 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                                     it.afterFrameFinished()
 //                                }
                             }
+                        }
+
+                        val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
+                            engineContext.config.debug.directTextureOutputTextureIndex
+                        } else {
+                            deferredRenderingBuffer.finalMap
+                        }
+
+                        runCatching {
+                            textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
+                        }.onFailure {
+                            println("Not able to render texture")
                         }
 
                         profiled("checkCommandSyncs") {
