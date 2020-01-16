@@ -271,3 +271,68 @@ interface LineRenderer {
         }
     }
 }
+
+fun LineRenderer.batchAABBLines(minWorld: Vector3f, maxWorld: Vector3f) {
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+
+
+    run {
+        val min = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
+        val max = Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z())
+        val max = Vector3f(maxWorld.x(), minWorld.y(), minWorld.z())
+        batchLine(min, max)
+    }
+    run {
+        val min = Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z())
+        val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
+        batchLine(min, max)
+    }
+}

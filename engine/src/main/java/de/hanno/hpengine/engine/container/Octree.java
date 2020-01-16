@@ -20,7 +20,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static de.hanno.hpengine.engine.graphics.renderer.DeferredRendererKt.batchAABBLines;
+import static de.hanno.hpengine.engine.graphics.renderer.RendererKt.batchAABBLines;
 
 public class Octree implements Updatable, Serializable, EntityContainer {
 	private static final long serialVersionUID = 1L;

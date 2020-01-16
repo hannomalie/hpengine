@@ -1,13 +1,16 @@
 package de.hanno.hpengine.engine.vertexbuffer
 
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import org.lwjgl.opengl.GL15
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
+import java.util.ArrayList
 import java.util.EnumSet
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
+import javax.vecmath.Vector2f
 
 open class VertexBuffer(gpuContext: GpuContext<*>,
                         val channels: EnumSet<DataChannels>,
@@ -166,5 +169,25 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
             floatBuffer.asFloatBuffer().get(floatArray)
             return calculateVerticesCount(floatArray, channels)
         }
+    }
+}
+
+fun GpuContext<OpenGl>.createSixDebugBuffers(): ArrayList<VertexBuffer> {
+    return calculate {
+        val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
+            init {
+                val height = -2f / 3f
+                val width = 2f
+                val widthDiv = width / 6f
+                for (i in 0..5) {
+                    val quadVertexBuffer = QuadVertexBuffer(backend.gpuContext, Vector2f(-1f + i * widthDiv, -1f), Vector2f(-1 + (i + 1) * widthDiv, height))
+                    add(quadVertexBuffer)
+                    quadVertexBuffer.upload()
+                }
+            }
+        }
+
+        getExceptionOnError("setupBuffers")
+        sixDebugBuffers
     }
 }
