@@ -33,22 +33,6 @@ object ViewTask {
                         config: ConfigImpl,
                         inputConfig: EditorInputConfig,
                         outputConfig: KMutableProperty0<OutputConfig>): RibbonTask {
-        val outputBand = JRibbonBand("Output", null).apply {
-
-            val command = Command.builder()
-                    .setText("Direct texture output")
-                    .setToggle()
-                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
-                    .setAction {
-                        config.debug.isUseDirectTextureOutput = it.command.isToggleSelected
-                    }
-                    .build()
-            addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
-                    .setTextClickAction()
-                    .build()), JRibbonBand.PresentationPriority.TOP)
-
-            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
-        }
 
         val directTextureOutputArrayIndexComboBoxModel = RibbonDefaultComboBoxContentModel.builder<Int>()
             .setItems((0 until 100).toList().toTypedArray())
@@ -69,7 +53,7 @@ object ViewTask {
                     })
                 }
         val outputFlowBand = JFlowRibbonBand("Output", null).apply {
-            val renderTargetTextures = mutableListOf<OutputConfig>()
+            val renderTargetTextures = mutableListOf<OutputConfig>(OutputConfig.Default)
             for (target in engine.gpuContext.registeredRenderTargets) {
                 for (i in target.textures.indices) {
                     val name = target.name + " - " + i // TODO: Revive names here
@@ -99,6 +83,7 @@ object ViewTask {
                             outputConfig.set(newConfig)
                         }
                     })
+                    this.selectedItem = OutputConfig.Default
                 }
             addFlowComponent(RibbonComboBoxProjection(outputFlowBandModel, ComponentPresentationModel.builder().build()))
         }
@@ -135,6 +120,6 @@ object ViewTask {
             addFlowComponent(selectionModeCommandGroupProjection)
         }
 
-         return RibbonTask("Viewport", outputBand, outputFlowBand, outputArrayIndexBand, selectionModeBand)
+         return RibbonTask("Viewport", outputFlowBand, outputArrayIndexBand, selectionModeBand)
     }
 }

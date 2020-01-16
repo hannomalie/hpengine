@@ -60,7 +60,6 @@ interface IDebugConfig {
     val isDrawPointLightShadowMaps: Boolean
     val isDrawCameras: Boolean
     val isDrawScene: Boolean
-    val isUseDirectTextureOutput: Boolean
     val isDebugframeEnabled: Boolean
     val isDrawlightsEnabled: Boolean
     val isPrintPipelineDebugOutput: Boolean
@@ -129,7 +128,6 @@ data class DebugConfig(
     override var isDrawPointLightShadowMaps: Boolean = false,
     override var isDrawCameras: Boolean = true,
     override var isDrawScene: Boolean = true,
-    override var isUseDirectTextureOutput: Boolean = false,
     override var isDebugframeEnabled: Boolean = false,
     override var isDrawlightsEnabled: Boolean = false,
     override var isPrintPipelineDebugOutput: Boolean = false,

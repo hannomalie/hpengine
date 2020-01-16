@@ -38,7 +38,9 @@ import java.awt.Image
 import javax.swing.BorderFactory
 
 sealed class OutputConfig {
-    object Default : OutputConfig()
+    object Default : OutputConfig() {
+        override fun toString(): String = "Default"
+    }
     class Texture2D(val name: String, val texture: de.hanno.hpengine.engine.model.texture.Texture2D) : OutputConfig() {
         override fun toString() = name
     }
