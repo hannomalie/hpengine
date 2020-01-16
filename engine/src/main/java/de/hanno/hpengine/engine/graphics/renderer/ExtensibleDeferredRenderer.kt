@@ -115,8 +115,11 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
                 // TODO This has to be implemented differently, so that
                 // it is written to the final texture somehow
                 profiled("PostProcessing") {
+                    throw IllegalStateException("Render me to final map")
                     postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
                 }
+            } else {
+//                textureRenderer.drawToQuad(deferredRenderingBuffer.finalBuffer, deferredRenderingBuffer.lightAccumulationMapOneId)
             }
         }.onFailure {
             println("Not able to render texture")

@@ -104,17 +104,16 @@ class EditorComponents(val engine: EngineImpl,
         }
         when (val selection = outPutConfig) {
             OutputConfig.Default -> {
-                textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
+                textureRenderer.drawToQuad(engine.deferredRenderingBuffer.finalBuffer, engine.deferredRenderingBuffer.finalMap)
             }
             is OutputConfig.Texture2D -> {
-                textureRenderer.drawToQuad(engine.window.frontBuffer, selection.texture)
+                textureRenderer.drawToQuad(engine.deferredRenderingBuffer.finalBuffer, selection.texture)
             }
             is OutputConfig.TextureCubeMap -> {
-                textureRenderer.renderCubeMapDebug(engine.window.frontBuffer, selection.texture)
+                textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.texture)
             }
             is OutputConfig.RenderTargetCubeMapArray -> {
-                textureRenderer.drawToQuad(engine.window.frontBuffer, engine.deferredRenderingBuffer.finalMap)
-                textureRenderer.renderCubeMapDebug(engine.window.frontBuffer, selection.renderTarget, selection.cubeMapIndex)
+                textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
             }
         }.let { }
     }

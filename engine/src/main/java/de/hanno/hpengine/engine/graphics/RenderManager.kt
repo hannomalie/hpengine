@@ -64,23 +64,11 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                         profiled("finishFrame") {
                             engineContext.gpuContext.finishFrame(renderState.currentReadState)
                             engineContext.renderSystems.forEach {
-//                                profiled(it.javaClass.simpleName) {
-                                    it.afterFrameFinished()
-//                                }
+                                it.afterFrameFinished()
                             }
                         }
 
-                        val finalImage = if(engineContext.config.debug.isUseDirectTextureOutput) {
-                            engineContext.config.debug.directTextureOutputTextureIndex
-                        } else {
-                            deferredRenderingBuffer.finalMap
-                        }
-
-                        runCatching {
-                            textureRenderer.drawToQuad(engineContext.window.frontBuffer, finalImage)
-                        }.onFailure {
-                            println("Not able to render texture")
-                        }
+                        textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
 
                         profiled("checkCommandSyncs") {
                             engineContext.gpuContext.checkCommandSyncs()

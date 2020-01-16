@@ -44,7 +44,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
                    texture: Int = finalImage,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
                    program: Program = renderToQuadProgram) {
-        draw(renderTarget, texture, buffer, program, true)
+        draw(renderTarget, texture, buffer, program, false)
     }
 
     fun drawToQuad(renderTarget: RenderTarget<Texture2D> = engineContext.window.frontBuffer,
