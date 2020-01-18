@@ -15,3 +15,7 @@ data class ColorAttachmentDefinition @JvmOverloads constructor(val name: String,
 }
 
 data class ColorAttachmentDefinitions @JvmOverloads constructor(val names: Array<String>, var internalFormat: Int = GL11.GL_RGB, var textureFilter: TextureFilterConfig = TextureFilterConfig())
+
+fun ColorAttachmentDefinitions.toList(): List<ColorAttachmentDefinition> {
+    return names.map { ColorAttachmentDefinition(it, internalFormat, textureFilter) }
+}
