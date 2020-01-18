@@ -35,12 +35,12 @@ val borderColorBuffer = BufferUtils.createFloatBuffer(4).apply {
     rewind()
 }
 
-open class RenderTarget<T: Texture> @JvmOverloads constructor(val frameBuffer: FrameBuffer,
-                                                            open val width: Int = 1280,
-                                                            open val height: Int = 720,
-                                                            val textures: List<T> = emptyList(),
-                                                            val name: String,
-                                                            val clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)) {
+open class RenderTarget<T : Texture> @JvmOverloads constructor(val frameBuffer: FrameBuffer,
+                                                               open val width: Int = 1280,
+                                                               open val height: Int = 720,
+                                                               val textures: List<T> = emptyList(),
+                                                               val name: String,
+                                                               val clear: Vector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f)) {
 
     var renderedTextures: IntArray = IntArray(textures.size)
     var renderedTextureHandles: LongArray = LongArray(textures.size)
@@ -54,7 +54,7 @@ open class RenderTarget<T: Texture> @JvmOverloads constructor(val frameBuffer: F
             configureBorderColor()
 
             textures.forEachIndexed { index, it ->
-                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
                 drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index
                 renderedTextureHandles[index] = it.handle
                 renderedTextures[index] = it.id // TODO: Remove me and the line above me
@@ -161,17 +161,7 @@ open class RenderTarget<T: Texture> @JvmOverloads constructor(val frameBuffer: F
 
         operator fun invoke(gpuContext: GpuContext<OpenGl>, renderTargetBuilder: RenderTargetBuilder<*, *>): RenderTarget<Texture2D> {
             val depthBuffer = if (renderTargetBuilder.useDepthBuffer) {
-                val dimension = TextureDimension(renderTargetBuilder.width, renderTargetBuilder.height)
-                val filterConfig = TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST)
-                val textureTarget = GlTextureTarget.TEXTURE_2D
-                val internalFormat1 = GL_DEPTH_COMPONENT24
-                val (textureId, internalFormat, handle) = allocateTexture(
-                        gpuContext,
-                        Texture2DUploadInfo(dimension),
-                        textureTarget,
-                        filterConfig, internalFormat1)
-
-                DepthBuffer(Texture2D(dimension, textureId, textureTarget, internalFormat, handle, filterConfig, GL11.GL_REPEAT, UploadState.UPLOADED))
+                DepthBuffer(gpuContext, renderTargetBuilder.width, renderTargetBuilder.height)
             } else null
             return RenderTarget(
                     frameBuffer = FrameBuffer(gpuContext, depthBuffer),
@@ -180,7 +170,7 @@ open class RenderTarget<T: Texture> @JvmOverloads constructor(val frameBuffer: F
                     textures = renderTargetBuilder.colorAttachments.toTextures(gpuContext, renderTargetBuilder.width, renderTargetBuilder.height),
                     name = renderTargetBuilder.name).apply {
 
-                if(renderTargetBuilder.colorAttachments.isNotEmpty()) initialize(gpuContext)
+                if (renderTargetBuilder.colorAttachments.isNotEmpty()) initialize(gpuContext)
             }
         }
 
@@ -228,20 +218,21 @@ open class RenderTarget<T: Texture> @JvmOverloads constructor(val frameBuffer: F
 }
 
 fun List<ColorAttachmentDefinition>.toTextures(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): List<Texture2D> = map {
-    Texture2D.invoke(
-            gpuContext = gpuContext,
-            info = Texture2DUploadInfo(dimension = TextureDimension(width, height)),
-            textureFilterConfig = it.textureFilter,
-            internalFormat = it.internalFormat
+    Texture2D(
+        gpuContext = gpuContext,
+        info = Texture2DUploadInfo(dimension = TextureDimension(width, height)),
+        textureFilterConfig = it.textureFilter,
+        internalFormat = it.internalFormat
     )
 }
+
 fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): List<CubeMap> = map {
-    CubeMap.invoke(
-            gpuContext = gpuContext,
-            filterConfig = it.textureFilter,
-            internalFormat = it.internalFormat,
-            dimension = TextureDimension(width, height),
-            wrapMode = GL11.GL_REPEAT
+    CubeMap(
+        gpuContext = gpuContext,
+        filterConfig = it.textureFilter,
+        internalFormat = it.internalFormat,
+        dimension = TextureDimension(width, height),
+        wrapMode = GL11.GL_REPEAT
     )
 }
 
@@ -250,7 +241,7 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, depthBuffer: DepthBuffer<*>?): FrameBuffer {
             return FrameBuffer(gpuContext.calculate { glGenFramebuffers() }, depthBuffer).apply {
-                if(depthBuffer != null) {
+                if (depthBuffer != null) {
                     gpuContext.execute("glFramebufferTexture") {
                         gpuContext.bindFrameBuffer(this)
                         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer.texture.id, 0)
@@ -263,7 +254,7 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
     }
 }
 
-class DepthBuffer<T: Texture>(val texture: T) {
+class DepthBuffer<T : Texture>(val texture: T) {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): DepthBuffer<Texture2D> {
             val dimension = TextureDimension(width, height)

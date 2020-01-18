@@ -18,6 +18,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -27,6 +29,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
+import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.util.Util
 import org.joml.Vector4f
@@ -137,14 +141,18 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0
 
-    private val renderTarget = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget<*>>(engine.gpuContext)
-            .setName("PointLight Shadow")
-            .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
-            .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
-            .add(ColorAttachmentDefinition("Shadow")
-                    .setInternalFormat(GL30.GL_RGBA32F)
-                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
-            .build()
+    private val renderTarget = RenderTarget(
+            frameBuffer = FrameBuffer(engine.gpuContext, DepthBuffer(engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)),
+            width = AREALIGHT_SHADOWMAP_RESOLUTION,
+            height = AREALIGHT_SHADOWMAP_RESOLUTION,
+            textures = listOf(Texture2D.invoke(
+                gpuContext = engine.gpuContext,
+                info = Texture2DUploadInfo(TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)),
+                textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR),
+                internalFormat = GL30.GL_RGBA32F
+                )
+            ),
+            name = "PointLight Shadow")
 
     init {
         pointLightDepthMapsArrayFront = GL11.glGenTextures()

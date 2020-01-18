@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
@@ -13,7 +14,10 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
@@ -23,6 +27,9 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
+import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.ressources.CodeSource
 import org.lwjgl.opengl.ARBClearTexture
@@ -49,12 +56,18 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     val appendDrawcommandsProgram = engine.programManager.getProgramFromFileNames("append_drawcommands_vertex.glsl")
     val appendDrawCommandComputeProgram = engine.programManager.getComputeProgram("append_drawcommands_compute.glsl")
 
-    var highZBuffer: RenderTarget<*> = RenderTargetBuilder<RenderTargetBuilder<*,*>, RenderTarget<*>>(engine.gpuContext)
-            .setName("GPUCulledPipeline")
-            .setWidth(engine.config.width / 2).setHeight(engine.config.height / 2)
-            .add(ColorAttachmentDefinition("HighZ").setInternalFormat(Pipeline.HIGHZ_FORMAT)
-                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
-            .build()
+
+    private val highZBuffer = RenderTarget(
+        frameBuffer = FrameBuffer(engine.gpuContext, DepthBuffer(engine.gpuContext, AreaLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, AreaLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)),
+        width = engine.config.width / 2,
+        height = engine.config.height / 2,
+        textures = listOf(Texture2D.invoke(
+            gpuContext = engine.gpuContext,
+            info = Texture2DUploadInfo(TextureDimension(engine.config.width / 2, engine.config.height / 2)),
+            textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR),
+            internalFormat = HIGHZ_FORMAT)
+        ), name = "GPUCulledPipeline")
+
 
     override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
         ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, VoxelConeTracingExtension.ZERO_BUFFER)
