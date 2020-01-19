@@ -2,10 +2,12 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWErrorCallbackI
@@ -38,7 +40,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
             glfwSetWindowTitle(handle, value)
             field = value
         }
-    override val frontBuffer: RenderTarget<Texture2D>
+    override val frontBuffer: FrontBufferTarget
 
     //     TODO: Avoid this somehow, move to update, but only when update is called before all the
 //    contexts and stuff, or the fresh window will get a message dialog that it doesnt respond
@@ -147,8 +149,12 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
 
 }
 
-fun Window<*>.createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
-    return object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer.FrontBuffer, name = "FrontBuffer") {
+fun Window<*>.createFrontBufferRenderTarget(): FrontBufferTarget {
+    return object: FrontBufferTarget {
+        override val frameBuffer = FrameBuffer.FrontBuffer
+        override val name = "FrontBuffer"
+        override val clear = Vector4f()
+
         override var width: Int
             get() = this@createFrontBufferRenderTarget.width
             set(value) {
@@ -162,7 +168,11 @@ fun Window<*>.createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
             }
 
         override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
-            super.use(gpuContext, false)
+            gpuContext.bindFrameBuffer(frameBuffer)
+            gpuContext.viewPort(0, 0, width, height)
+            if (clear) {
+                gpuContext.clearDepthAndColorBuffer()
+            }
         }
     }
 }

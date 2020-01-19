@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
@@ -106,7 +105,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
                     }
                 }
             }
-            deferredRenderingBuffer.lightAccumulationBuffer.unuse(gpuContext)
+            deferredRenderingBuffer.lightAccumulationBuffer.unUse()
             combinePassExtension.renderCombinePass(state)
         }
 

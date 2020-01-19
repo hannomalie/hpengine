@@ -59,7 +59,7 @@ class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderEx
 
         }
         engineContext.gpuContext.disable(GlCap.BLEND)
-        deferredRenderingBuffer.forwardBuffer.unuse(gpuContext)
+        deferredRenderingBuffer.forwardBuffer.unUse()
     }
 
     companion object {

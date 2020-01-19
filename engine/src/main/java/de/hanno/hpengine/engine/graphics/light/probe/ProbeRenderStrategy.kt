@@ -20,8 +20,10 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTargetBuilder
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -36,7 +38,7 @@ import org.joml.Vector3i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
-import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30.GL_RG16F
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.glFinish
@@ -49,15 +51,25 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
-    val cubeMapRenderTarget = CubeMapRenderTarget(engine, CubeRenderTargetBuilder(engine)
-            .setWidth(resolution)
-            .setHeight(resolution)
-            .add(ColorAttachmentDefinition("Diffuse")
-                    .setInternalFormat(GL_RGBA16F)
-                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)))
-            .add(ColorAttachmentDefinition("Radial Distance")
-                    .setInternalFormat(GL_RG16F)
-                    .setTextureFilter(TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR))))
+    private val cubeMapRenderTarget = RenderTarget(
+            gpuContext = engine.gpuContext,
+            frameBuffer = FrameBuffer(
+                    gpuContext = engine.gpuContext,
+                    depthBuffer = DepthBuffer(CubeMap(
+                            engine.gpuContext,
+                            TextureDimension(resolution, resolution),
+                            TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
+                            GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT)
+                    )
+            ),
+            width = resolution,
+            height = resolution,
+            textures = listOf(
+                    ColorAttachmentDefinition("Diffuse", GL_RGBA16F, TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)),
+                    ColorAttachmentDefinition("Radial Distance", GL_RG16F, TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR))
+            ).toCubeMaps(engine.gpuContext, resolution, resolution),
+            name = "Probes"
+    )
 
     private var probeProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), getShaderSource(File(Shader.directory + "probe_cube_fragment.glsl")), getShaderSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
 
@@ -130,7 +142,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
                     val dimension = TextureDimension(resolution, resolution)
                     val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
                     val cubeMap = CubeMap.invoke(engine.gpuContext, dimension, filterConfig, GL11.GL_RGBA8)
-                    val distanceCubeMap = CubeMap(engine.gpuContext, dimension, filterConfig, GL30.GL_RG16F)
+                    val distanceCubeMap = CubeMap(engine.gpuContext, dimension, filterConfig, GL_RG16F)
                     AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 

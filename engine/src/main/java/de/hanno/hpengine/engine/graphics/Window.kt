@@ -3,12 +3,14 @@ package de.hanno.hpengine.engine.graphics
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.swing.SwingDispatcher
+import org.joml.Vector4f
 import org.lwjgl.opengl.awt.AWTGLCanvas
 import org.lwjgl.opengl.awt.GLData
 import java.awt.event.MouseEvent
@@ -38,7 +40,7 @@ interface Window<T: BackendType>: OpenGlExecutor {
     fun pollEvents()
     fun swapBuffers()
 
-    val frontBuffer: RenderTarget<Texture2D>
+    val frontBuffer: FrontBufferTarget
 }
 
 abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
@@ -59,8 +61,11 @@ abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
         platformCanvas.lock()
     }
 
-    fun createFrontBufferRenderTarget(): RenderTarget<Texture2D> {
-        return object: RenderTarget<Texture2D>(frameBuffer = FrameBuffer.FrontBuffer, name = "FrontBuffer") {
+    fun createFrontBufferRenderTarget(): FrontBufferTarget {
+        return object: FrontBufferTarget {
+            override val frameBuffer = FrameBuffer.FrontBuffer
+            override val name = "FrontBuffer"
+
             override val width: Int
                 get() = this@CustomGlCanvas.width
 
@@ -68,8 +73,14 @@ abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
                 get() = this@CustomGlCanvas.height
 
             override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
-                super.use(gpuContext, false)
+                gpuContext.bindFrameBuffer(frameBuffer)
+                gpuContext.viewPort(0, 0, width, height)
+                if (clear) {
+                    gpuContext.clearDepthAndColorBuffer()
+                }
             }
+
+            override val clear = Vector4f()
         }
     }
 }

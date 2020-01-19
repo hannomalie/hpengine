@@ -12,13 +12,11 @@ import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.model.Command
-import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandGroup
 import org.pushingpixels.flamingo.api.common.model.CommandStripPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandToggleGroupModel
 import org.pushingpixels.flamingo.api.common.projection.CommandStripProjection
 import org.pushingpixels.flamingo.api.ribbon.JFlowRibbonBand
-import org.pushingpixels.flamingo.api.ribbon.JRibbonBand
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.ComponentPresentationModel
@@ -59,8 +57,8 @@ object ViewTask {
                     val name = target.name + " - " + i // TODO: Revive names here
                     if(target is CubeMapArrayRenderTarget) {
                         renderTargetTextures.add(OutputConfig.RenderTargetCubeMapArray(target, i.coerceIn(0, target.textures[i].dimension.depth)))
-                    } else if(target is CubeMapRenderTarget) {
-                        renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i] as CubeMap))
+                    } else if(target is CubeMapRenderTarget){
+                        renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i]))
                     } else {
                         renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D))
                     }

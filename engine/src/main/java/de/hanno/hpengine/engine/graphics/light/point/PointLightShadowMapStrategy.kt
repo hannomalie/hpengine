@@ -16,12 +16,10 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
@@ -67,10 +65,11 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
             engine.gpuContext,
             cubeMapArray.dimension.width,
             cubeMapArray.dimension.height,
-            Vector4f(0f, 0f, 0f, 0f),
             "CubeMapArrayRenderTarget",
+            Vector4f(0f, 0f, 0f, 0f),
             cubeMapArray
     )
+    // TODO: Remove CubeMapArrayRenderTarget to new api
 
     override fun bindTextures() {
         engine.gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
@@ -141,7 +140,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0
 
-    private val renderTarget = RenderTarget(
+    private val renderTarget = RenderTarget(engine.gpuContext,
             frameBuffer = FrameBuffer(engine.gpuContext, DepthBuffer(engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)),
             width = AREALIGHT_SHADOWMAP_RESOLUTION,
             height = AREALIGHT_SHADOWMAP_RESOLUTION,

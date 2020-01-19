@@ -17,14 +17,17 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTargetBuilder
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
+import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.model.texture.mipmapCount
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.vertexbuffer.draw
@@ -33,9 +36,11 @@ import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FLOAT
 import org.lwjgl.opengl.GL11.GL_RGBA
 import org.lwjgl.opengl.GL11.glEnable
+import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GL45
@@ -145,16 +150,25 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
             getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
             getShaderSource(File(Shader.directory + "environmentprobe_cube_fragment.glsl")),
             getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
-    var cubeMapRenderTarget = CubeMapRenderTarget(
-            engine.backend,
-            CubeRenderTargetBuilder(engine).add(
-                ColorAttachmentDefinition("Probes", GL30.GL_RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
-            )
-            .setWidth(probeResolution)
-            .setHeight(probeResolution)
-    ).apply {
-        engine.gpuContext.register(this)
-    }
+
+    val cubeMapRenderTarget = RenderTarget(
+            gpuContext = engine.gpuContext,
+            frameBuffer = FrameBuffer(
+                    gpuContext = engine.gpuContext,
+                    depthBuffer = DepthBuffer(CubeMap(
+                            engine.gpuContext,
+                            TextureDimension(probeResolution, probeResolution),
+                            TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
+                            GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT)
+                    )
+            ),
+            width = probeResolution,
+            height = probeResolution,
+            textures = listOf(
+                    ColorAttachmentDefinition("Probes", GL30.GL_RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
+            ).toCubeMaps(engine.gpuContext, probeResolution, probeResolution),
+            name = "Probes"
+    )
 
     fun renderProbes(renderState: RenderState, entityWasAdded: Boolean) {
         if (sceneMin != renderState.sceneMin || sceneMax != renderState.sceneMax) {

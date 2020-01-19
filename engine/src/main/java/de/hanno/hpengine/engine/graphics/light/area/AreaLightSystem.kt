@@ -17,7 +17,10 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeRenderTargetBuilder
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
@@ -25,6 +28,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
+import de.hanno.hpengine.engine.model.texture.CubeMap
+import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
@@ -32,6 +37,7 @@ import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
+import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
 import java.io.File
 import java.nio.FloatBuffer
@@ -40,20 +46,29 @@ import java.util.concurrent.Callable
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
-class AreaLightSystem(val engine: EngineContext<*>, simpleScene: SimpleScene) : SimpleEntitySystem(simpleScene, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScene) : SimpleEntitySystem(simpleScene, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
 
     val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
-    private val mapRenderTarget: CubeMapRenderTarget = CubeMapRenderTarget(engine, CubeRenderTargetBuilder(engine)
-            .setName("AreaLight Shadow")
-            .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
-            .setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
-            .add(ColorAttachmentDefinition("Shadow")
-                    .setInternalFormat(GL30.GL_RGBA32F)
-                    .setTextureFilter(TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR))))
+    private val mapRenderTarget = CubeMapRenderTarget(engine.gpuContext, RenderTarget(
+        engine.gpuContext,
+        FrameBuffer(
+            engine.gpuContext,
+            DepthBuffer(CubeMap(
+                engine.gpuContext,
+                TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
+                TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
+                GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT)
+            )
+        ),
+        AREALIGHT_SHADOWMAP_RESOLUTION,
+        AREALIGHT_SHADOWMAP_RESOLUTION,
+        listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA32F, TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR))).toCubeMaps(engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION),
+        "AreaLight Shadow"
+    ))
 
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
     private val areaLightDepthMaps = ArrayList<Int>().apply {

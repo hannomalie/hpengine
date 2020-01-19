@@ -15,11 +15,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
@@ -58,6 +56,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
 
     private val highZBuffer = RenderTarget(
+        gpuContext = engine.gpuContext,
         frameBuffer = FrameBuffer(engine.gpuContext, DepthBuffer(engine.gpuContext, AreaLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION, AreaLightSystem.AREALIGHT_SHADOWMAP_RESOLUTION)),
         width = engine.config.width / 2,
         height = engine.config.height / 2,
