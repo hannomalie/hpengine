@@ -93,7 +93,12 @@ class EditorComponents(val engine: EngineImpl,
                     engine.gpuContext.disable(GlCap.BLEND)
 //                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
                     it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                        environmentProbeSphereHolder.render(state, position, Vector3f()) {
+                        environmentProbeSphereHolder.render(
+                                state = state,
+                                spherePosition = position,
+                                useDepthTest = true,
+                                color = Vector3f()) {
+
                             setUniform("pointLightPositionWorld", it.probeRenderer.probePositions[probeIndex])
                             setUniform("probeIndex", probeIndex)
                             setUniform("probeDimensions", it.probeRenderer.probeDimensions)

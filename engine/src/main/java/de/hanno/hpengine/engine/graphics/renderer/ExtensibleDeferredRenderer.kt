@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
@@ -63,8 +64,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         ForwardRenderExtension(engineContext),
         DirectionalLightSecondPassExtension(engineContext),
         PointLightSecondPassExtension(engineContext),
-        AOScatteringExtension(engineContext)
-//        AmbientCubeGridExtension(engineContext)
+        AOScatteringExtension(engineContext),
+        AmbientCubeGridExtension(engineContext)
     )
 
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {

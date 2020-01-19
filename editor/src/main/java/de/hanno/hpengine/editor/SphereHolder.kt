@@ -56,11 +56,14 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
     override fun render(result: DrawResult, state: RenderState) {
         render(state, sphereEntity.position, Vector3f(0f, 0f, 1f), true)
     }
-    fun render(state: RenderState, spherePosition: Vector3f, color: Vector3f, drawPointLights: Boolean = false, beforeDraw: (Program.() -> Unit)? = null) {
+    fun render(state: RenderState, spherePosition: Vector3f,
+               color: Vector3f, drawPointLights: Boolean = false,
+               useDepthTest: Boolean = true,
+               beforeDraw: (Program.() -> Unit)? = null) {
 
         val scaling = (0.1f * sphereEntity.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = SimpleTransform().scale(scaling).translate(spherePosition)
-//        engine.gpuContext.enable(GlCap.DEPTH_TEST)
+        if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
