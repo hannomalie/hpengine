@@ -32,7 +32,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
 
     private val batchingSystem = BatchingSystem()
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
-    var updateCache = true
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
 
@@ -62,17 +61,15 @@ class ModelComponentSystem(val engine: EngineContext<*>,
     override fun UpdateLock.addComponent(component: ModelComponent) {
         allocateVertexIndexBufferSpace(listOf(component.entity))
         components.add(component)
+        cacheEntityIndices()
     }
 
     private fun cacheEntityIndices() {
-        if (updateCache) {
-            updateCache = false
-            entityIndices.clear()
-            var index = 0
-            for (current in getComponents()) {
-                entityIndices[current] = index
-                index += current.entity.instanceCount * current.meshes.size
-            }
+        entityIndices.clear()
+        var index = 0
+        for (current in getComponents()) {
+            entityIndices[current] = index
+            index += current.entity.instanceCount * current.meshes.size
         }
     }
 
@@ -200,8 +197,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                 joints.addAll(elements)
                 Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
             }
-        }.apply {
-            updateCache = true
         }
 
         this.allocations.putAll(allocations)
@@ -215,7 +210,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
 
     override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
         val result = onEntityAddedImpl(context, entities)
-        updateCache = true
+        cacheEntityIndices()
         return result
     }
 

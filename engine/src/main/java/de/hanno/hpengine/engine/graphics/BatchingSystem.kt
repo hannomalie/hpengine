@@ -24,7 +24,6 @@ class BatchingSystem {
 
         for (modelComponent in modelComponents) {
             val entity = modelComponent.entity
-            val distanceToCamera = tempDistVector.length()
 
             val entityIndexOf = entityIndices[modelComponent]!!
 
