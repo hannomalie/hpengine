@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirect
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
-import de.hanno.hpengine.engine.transform.AABB
 import org.joml.Vector3f
 
 import java.util.ArrayList
@@ -25,7 +24,6 @@ class RenderBatch {
     var centerWorld = Vector3f()
     private var animated = false
     var boundingSphereRadius = 0.0f
-    private val instanceMinMaxWorlds = ArrayList<AABB>()
     var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy")
         private set
 
@@ -40,7 +38,7 @@ class RenderBatch {
     val isStatic: Boolean
         get() = !animated
 
-    fun init(entityBufferIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, instanceMinMaxWorlds: List<AABB>, materialInfo: MaterialInfo, entityIndex: Int, meshIndex: Int): RenderBatch {
+    fun init(entityBufferIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, materialInfo: MaterialInfo, entityIndex: Int, meshIndex: Int): RenderBatch {
         this.isVisible = isVisible
         this.isSelected = isSelected
         this.isDrawLines = drawLines
@@ -50,8 +48,6 @@ class RenderBatch {
         this.update = update
         this.minWorld.set(minWorld)
         this.maxWorld.set(maxWorld)
-        this.instanceMinMaxWorlds.clear()
-        this.instanceMinMaxWorlds.addAll(instanceMinMaxWorlds)
         this.boundingSphereRadius = boundingSphereRadius
         this.centerWorld.set(centerWorld)
         this.drawElementsIndirectCommand.count = indexCount
@@ -65,10 +61,6 @@ class RenderBatch {
         this.entityIndex = entityIndex
         this.meshIndex = meshIndex
         return this
-    }
-
-    fun getInstanceMinMaxWorlds(): List<AABB> {
-        return instanceMinMaxWorlds
     }
 
     class RenderBatches : ArrayList<RenderBatch>()

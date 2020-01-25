@@ -47,8 +47,8 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
             Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC,
             Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(),
             1000f, sphere.indices.size, vertexIndexOffsets.indexOffset,
-            vertexIndexOffsets.vertexOffset, false, sphereEntity.instanceMinMaxWorlds,
-            sphereModelComponent.material.materialInfo, sphereEntity.index, 0)
+            vertexIndexOffsets.vertexOffset, false, sphereModelComponent.material.materialInfo,
+            sphereEntity.index, 0)
 
     private val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)

@@ -49,7 +49,7 @@ class BatchingSystem {
                         min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(meshIndex),
                         allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset,
                         allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset,
-                        !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index, meshIndex)
+                        !modelComponent.model.isStatic, mesh.material.materialInfo, entity.index, meshIndex)
 
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)

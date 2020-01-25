@@ -69,9 +69,6 @@ class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
                 val renderAABBs = true
                 if (renderAABBs) {
                     lineRenderer.batchAABBLines(batch.minWorld, batch.maxWorld)
-                    for ((min, max) in batch.getInstanceMinMaxWorlds()) {
-                        lineRenderer.batchAABBLines(min, max)
-                    }
                 } else {
                     val radius = batch.boundingSphereRadius
                     val center = batch.centerWorld

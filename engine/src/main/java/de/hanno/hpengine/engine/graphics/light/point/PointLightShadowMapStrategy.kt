@@ -214,8 +214,8 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                                 e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld,
                                 e.boundingSphereRadius, allocation.forMeshes[0].indexOffset,
                                 allocation.indexOffset,
-                                allocation.vertexOffset, false, e.instanceMinMaxWorlds,
-                                modelComponent.material.materialInfo, e.index, 0)
+                                allocation.vertexOffset, false, modelComponent.material.materialInfo,
+                                e.index, 0)
 
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
@@ -236,8 +236,8 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                                 e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true,
                                 e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius,
                                 allocation.forMeshes[0].indexOffset, allocation.indexOffset,
-                                allocation.vertexOffset, false, e.instanceMinMaxWorlds,
-                                modelComponent.material.materialInfo, e.index, 0)
+                                allocation.vertexOffset, false, modelComponent.material.materialInfo,
+                                e.index, 0)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }
