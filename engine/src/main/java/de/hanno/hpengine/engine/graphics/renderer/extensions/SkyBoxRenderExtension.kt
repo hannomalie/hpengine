@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -46,7 +47,27 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
     private val vertexIndexOffsets = skyboxVertexIndexBuffer.allocateForComponent(skyBoxModelComponent).apply {
         skyBoxModelComponent.putToBuffer(engineContext.gpuContext, skyboxVertexIndexBuffer, this)
     }
-    private val skyBoxRenderBatch = RenderBatch().init(0, true, false, false, Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC, Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(), 1000f, skyBox.indices.size, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false, skyBoxModelComponent.material.materialInfo, skyBoxEntity.index, 0)
+    private val skyBoxCommand = DrawElementsIndirectCommand().apply {
+        primCount = 1
+        count = skyBox.indices.size
+        firstIndex = vertexIndexOffsets.indexOffset
+        baseVertex = vertexIndexOffsets.vertexOffset
+    }
+    private val skyBoxRenderBatch = RenderBatch(
+            entityBufferIndex = 0,
+            isDrawLines = false,
+            cameraWorldPosition = Vector3f(0f, 0f, 0f),
+            isVisibleForCamera = true,
+            update = Update.DYNAMIC,
+            minWorld = Vector3f(0f, 0f, 0f),
+            maxWorld = Vector3f(0f, 0f, 0f),
+            centerWorld = Vector3f(),
+            boundingSphereRadius = 1000f,
+            animated = false,
+            materialInfo = skyBoxModelComponent.material.materialInfo,
+            entityIndex = skyBoxEntity.index,
+            meshIndex = 0
+    )
 
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {

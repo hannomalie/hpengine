@@ -347,11 +347,11 @@ public class EnvironmentSampler extends Entity {
         firstPassDefaultProgram.setUniform("timeGpu", (int)System.currentTimeMillis());
 
 		for (RenderBatch entity : extract.getRenderBatchesStatic()) {
-            draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
+            draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisibleForCamera(), true);
         }
 		for (RenderBatch entity : extract.getRenderBatchesAnimated()) {
 //			TODO: program usage is wrong for animated things..
-            draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisible() || !entity.isVisibleForCamera(), true);
+            draw(extract.getVertexIndexBufferStatic().getVertexBuffer(), extract.getVertexIndexBufferStatic().getIndexBuffer(), entity, firstPassDefaultProgram, !entity.isVisibleForCamera(), true);
         }
         gpuContext.enable(CULL_FACE);
 	}

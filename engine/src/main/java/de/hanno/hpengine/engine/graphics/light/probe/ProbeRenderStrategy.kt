@@ -133,7 +133,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
 
                 profiled("Probe entity rendering") {
                     for (e in renderState.renderBatchesStatic) {
-                        draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, !e.isVisible, true)
+                        draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, false, true)
                     }
                 }
                 engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)

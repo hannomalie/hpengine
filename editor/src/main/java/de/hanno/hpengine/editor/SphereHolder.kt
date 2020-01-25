@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -43,12 +44,18 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
     private val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
         sphereModelComponent.putToBuffer(engine.gpuContext, sphereVertexIndexBuffer, this)
     }
-    private val sphereRenderBatch = RenderBatch().init(0, true, false, false,
-            Vector3f(0f, 0f, 0f), true, 1, true, Update.DYNAMIC,
-            Vector3f(0f, 0f, 0f), Vector3f(0f, 0f, 0f), Vector3f(),
-            1000f, sphere.indices.size, vertexIndexOffsets.indexOffset,
-            vertexIndexOffsets.vertexOffset, false, sphereModelComponent.material.materialInfo,
-            sphereEntity.index, 0)
+    private val sphereCommand = DrawElementsIndirectCommand().apply {
+        count = sphere.indices.size
+        primCount = 1
+        firstIndex = vertexIndexOffsets.indexOffset
+        baseVertex = vertexIndexOffsets.vertexOffset
+        baseInstance = 0
+    }
+    private val sphereRenderBatch = RenderBatch(entityBufferIndex = 0, isDrawLines = false,
+            cameraWorldPosition = Vector3f(0f, 0f, 0f), drawElementsIndirectCommand = sphereCommand, isVisibleForCamera = true, update = Update.DYNAMIC,
+            minWorld = Vector3f(0f, 0f, 0f), maxWorld = Vector3f(0f, 0f, 0f), centerWorld = Vector3f(),
+            boundingSphereRadius = 1000f, animated = false, materialInfo = sphereModelComponent.material.materialInfo,
+            entityIndex = sphereEntity.index, meshIndex = 0)
 
     private val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)

@@ -52,7 +52,6 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
 
     open var name = "Entity_" + System.currentTimeMillis()
 
-    open var isSelected = false
     var isVisible = true
 
     var components: MutableMap<Class<out Component>, Component> = HashMap()

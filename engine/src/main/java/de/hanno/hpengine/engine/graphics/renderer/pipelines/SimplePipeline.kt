@@ -139,7 +139,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     fun RenderBatch.shouldBeSkipped(): Boolean {
         val culled = engine.config.debug.isUseCpuFrustumCulling && useFrustumCulling && !isVisibleForCamera
         val isForward = materialInfo.transparencyType.needsForwardRendering
-        return !isVisible || culled || isForward
+        return culled || isForward
     }
 
     override fun update(writeState: RenderState) {

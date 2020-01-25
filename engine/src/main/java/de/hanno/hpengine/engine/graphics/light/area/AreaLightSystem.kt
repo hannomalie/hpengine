@@ -113,7 +113,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
                     draw(renderState.vertexIndexBufferStatic.vertexBuffer,
                             renderState.vertexIndexBufferStatic.indexBuffer,
                             e,
-                            areaShadowPassProgram, !e.isVisible, drawLines)
+                            areaShadowPassProgram, false, drawLines)
                 }
             }
         }
