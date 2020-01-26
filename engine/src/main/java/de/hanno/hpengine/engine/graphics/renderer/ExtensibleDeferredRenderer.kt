@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
+import org.jetbrains.kotlin.ir.backend.js.compile
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
@@ -68,6 +69,10 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         AmbientCubeGridExtension(engineContext)
     )
 
+    override fun update(deltaSeconds: Float) {
+        val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
+        currentWriteState.customState[pipeline].update(currentWriteState)
+    }
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
         gpuContext.depthMask(true)
         deferredRenderingBuffer.use(gpuContext, true)

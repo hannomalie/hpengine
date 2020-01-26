@@ -22,7 +22,6 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.getShaderSource
-import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -39,7 +38,7 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL42
 import java.io.File
 
-class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer): CustomState
+class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer)
 
 class VoxelConeTracingExtension(
         private val engine: EngineContext<OpenGl>,

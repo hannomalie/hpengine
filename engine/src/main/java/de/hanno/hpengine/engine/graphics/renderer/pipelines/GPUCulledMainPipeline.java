@@ -26,9 +26,4 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 //    public void renderHighZMap() {
 //
 //    }
-
-    @Override
-    public void update(@NotNull RenderState writeState) {
-        prepare(writeState);
-    }
 }

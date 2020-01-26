@@ -92,6 +92,14 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         engineContext.gpuContext.execute("Foo", runnable, false, true)
     }
 
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        profiled("renderSystems") {
+            engineContext.renderSystems.forEach {
+                it.update(deltaSeconds)
+            }
+        }
+    }
+
     fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
 
     fun getDeltaInS() = getDeltaInMS() / 1000.0

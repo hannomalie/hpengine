@@ -142,7 +142,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         return culled || isForward
     }
 
-    override fun update(writeState: RenderState) {
+    fun update(writeState: RenderState) {
         prepare(writeState)
     }
 

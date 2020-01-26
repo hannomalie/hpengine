@@ -109,7 +109,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         entitiesState.renderBatchesAnimated.add(batch)
     }
 
-    fun add(state: CustomState) = customState.add(state)
+    fun add(state: Any) = customState.add(state)
 
     operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
 
@@ -119,25 +119,20 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 }
 
 class CustomStates {
-    private val states = mutableListOf<CustomState>()
-    fun add(state: CustomState) {
+    private val states = mutableListOf<Any>()
+    fun add(state: Any) {
         states.add(state)
     }
 
-    operator fun <T> get(ref: StateRef<T>) = states[ref.index]
-
-    fun update(writeState: RenderState) = states.forEach { it.update(writeState) }
+    operator fun <T> get(ref: StateRef<T>) = states[ref.index] as T
 
     fun clear() = states.clear()
-}
-
-interface CustomState {
-    fun update(writeState: RenderState) {}
 }
 
 class StateRef<out T>(val index: Int)
 
 interface RenderSystem {
     @JvmDefault fun render(result: DrawResult, state: RenderState) { }
+    @JvmDefault fun update(deltaSeconds: Float) { }
     @JvmDefault fun afterFrameFinished() { }
 }
