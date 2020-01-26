@@ -218,7 +218,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
                                 isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.position,
-                                isVisibleForCamera = true, update = e.updateType, minWorld = e.minMaxWorld.min, maxWorld = e.minMaxWorld.max, centerWorld = e.centerWorld,
+                                isVisibleForCamera = true, update = e.updateType, entityMinWorld = e.minMaxWorld.min, entityMaxWorld = e.minMaxWorld.max, centerWorld = e.centerWorld,
                                 boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
@@ -246,7 +246,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
                                 isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.position, isVisibleForCamera = true,
-                                update = e.updateType, minWorld = e.minMaxWorld.min, maxWorld = e.minMaxWorld.max, centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
+                                update = e.updateType, entityMinWorld = e.minMaxWorld.min, entityMaxWorld = e.minMaxWorld.max, centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)

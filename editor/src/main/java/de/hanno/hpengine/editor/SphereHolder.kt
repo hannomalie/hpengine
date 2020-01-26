@@ -53,7 +53,7 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
     }
     private val sphereRenderBatch = RenderBatch(entityBufferIndex = 0, isDrawLines = false,
             cameraWorldPosition = Vector3f(0f, 0f, 0f), drawElementsIndirectCommand = sphereCommand, isVisibleForCamera = true, update = Update.DYNAMIC,
-            minWorld = Vector3f(0f, 0f, 0f), maxWorld = Vector3f(0f, 0f, 0f), centerWorld = Vector3f(),
+            entityMinWorld = Vector3f(0f, 0f, 0f), entityMaxWorld = Vector3f(0f, 0f, 0f), centerWorld = Vector3f(),
             boundingSphereRadius = 1000f, animated = false, materialInfo = sphereModelComponent.material.materialInfo,
             entityIndex = sphereEntity.index, meshIndex = 0)
 

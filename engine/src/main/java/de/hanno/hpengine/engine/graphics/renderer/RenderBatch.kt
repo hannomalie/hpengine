@@ -8,20 +8,22 @@ import org.joml.Vector3f
 import java.util.ArrayList
 
 class RenderBatch(
-    var entityIndex: Int = -1,
-    var meshIndex: Int = -1,
-    var isDrawLines: Boolean = false,
-    var minWorld: Vector3f = Vector3f(),
-    var maxWorld: Vector3f = Vector3f(),
-    var cameraWorldPosition: Vector3f = Vector3f(),
-    var isVisibleForCamera: Boolean = false,
-    var update: Update = Update.STATIC,
-    val drawElementsIndirectCommand: DrawElementsIndirectCommand = DrawElementsIndirectCommand(),
-    var centerWorld: Vector3f = Vector3f(),
-    var animated : Boolean = false,
-    var boundingSphereRadius: Float = 0.0f,
-    var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
-    var entityBufferIndex: Int = 0) {
+        var entityIndex: Int = -1,
+        var meshIndex: Int = -1,
+        var isDrawLines: Boolean = false,
+        var entityMinWorld: Vector3f = Vector3f(),
+        var entityMaxWorld: Vector3f = Vector3f(),
+        var meshMinWorld: Vector3f = Vector3f(),
+        var meshMaxWorld: Vector3f = Vector3f(),
+        var cameraWorldPosition: Vector3f = Vector3f(),
+        var isVisibleForCamera: Boolean = false,
+        var update: Update = Update.STATIC,
+        val drawElementsIndirectCommand: DrawElementsIndirectCommand = DrawElementsIndirectCommand(),
+        var centerWorld: Vector3f = Vector3f(),
+        var animated : Boolean = false,
+        var boundingSphereRadius: Float = 0.0f,
+        var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
+        var entityBufferIndex: Int = 0) {
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount

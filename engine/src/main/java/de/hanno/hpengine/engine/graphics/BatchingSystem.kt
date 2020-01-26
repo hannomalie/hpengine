@@ -47,8 +47,10 @@ class BatchingSystem {
                     this.cameraWorldPosition = cameraWorldPosition
                     this.isVisibleForCamera = visibleForCamera
                     update = entity.updateType
-                    minWorld = min1
-                    maxWorld = max1
+                    entityMinWorld = entity.minMaxWorld.min
+                    entityMaxWorld = entity.minMaxWorld.max
+                    meshMinWorld = min1
+                    meshMaxWorld = max1
                     centerWorld = meshCenter
                     this.boundingSphereRadius = boundingSphereRadius
                     with(drawElementsIndirectCommand) {
