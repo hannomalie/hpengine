@@ -278,7 +278,7 @@ class VoxelConeTracingExtension(
                     voxelizer.bindShaderStorageBuffer(5, voxelGridState.voxelGridBuffer)
 
                     voxelizer.setUniform("writeVoxels", true)
-                    engine.gpuContext.depthMask(false)
+                    engine.gpuContext.depthMask = false
                     engine.gpuContext.disable(DEPTH_TEST)
                     engine.gpuContext.disable(BLEND)
                     engine.gpuContext.disable(CULL_FACE)

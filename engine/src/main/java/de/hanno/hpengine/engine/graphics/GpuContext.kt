@@ -62,6 +62,10 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun update(seconds: Float)
 
+    var cullFace: Boolean
+    var depthTest: Boolean
+    var blend: Boolean
+
     fun enable(cap: GlCap)
 
     fun disable(cap: GlCap)
@@ -103,9 +107,9 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun bindFrameBuffer(frameBuffer: Int)
 
-    fun depthMask(flag: Boolean)
+    var depthMask: Boolean
 
-    fun depthFunc(func: GlDepthFunc)
+    fun setDepthFunc(func: GlDepthFunc)
 
     fun readBuffer(colorAttachmentIndex: Int)
 

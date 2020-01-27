@@ -191,7 +191,7 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
 
         profiled("Probes") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.disable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.CULL_FACE)
             cubeMapRenderTarget.use(engine.gpuContext, true)

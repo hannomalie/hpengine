@@ -198,7 +198,7 @@ public class EnvironmentSampler extends Entity {
 		gpuContext.bindTexture(10, environmentProbeManager.getEnvironmentMapsArray(0));
 
 		gpuContext.disable(DEPTH_TEST);
-		gpuContext.depthFunc(LEQUAL);
+		gpuContext.setDepthFunc(LEQUAL);
 
 		renderTarget.use(gpuContext, false);
 		Program cubeMapProgram = this.cubeMapProgram;
@@ -250,9 +250,9 @@ public class EnvironmentSampler extends Entity {
 				drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights());
 				registerSideAsDrawn(i);
 			} else {
-				gpuContext.depthMask(true);
+				gpuContext.setDepthMask(true);
 				gpuContext.enable(DEPTH_TEST);
-				gpuContext.depthFunc(LEQUAL);
+				gpuContext.setDepthFunc(LEQUAL);
 				environmentProbeManager.getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				gpuContext.clearDepthAndColorBuffer();
 				drawEntities(renderState, cubeMapProgram, viewMatrixBuffer, projectionMatrixBuffer, viewProjectionMatrixBuffer);
@@ -328,9 +328,9 @@ public class EnvironmentSampler extends Entity {
 
         gpuContext.clearDepthAndColorBuffer();
         gpuContext.enable(CULL_FACE);
-        gpuContext.depthMask(true);
+        gpuContext.setDepthMask(true);
         gpuContext.enable(DEPTH_TEST);
-        gpuContext.depthFunc(LEQUAL);
+        gpuContext.setDepthFunc(LEQUAL);
         gpuContext.disable(BLEND);
 
         firstPassDefaultProgram.use();
@@ -362,9 +362,9 @@ public class EnvironmentSampler extends Entity {
 		camPosition.add(getViewDirection().mul(getCamera().getNear()));
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
-        gpuContext.depthMask(true);
+        gpuContext.setDepthMask(true);
         gpuContext.enable(DEPTH_TEST);
-        gpuContext.depthFunc(LESS);
+        gpuContext.setDepthFunc(LESS);
         gpuContext.enable(BLEND);
         gpuContext.blendEquation(FUNC_ADD);
         gpuContext.blendFunc(ONE, ONE);
@@ -412,7 +412,7 @@ public class EnvironmentSampler extends Entity {
 		}
         gpuContext.enable(CULL_FACE);
         gpuContext.cullFace(BACK);
-        gpuContext.depthFunc(LESS);
+        gpuContext.setDepthFunc(LESS);
 
 //		GL11.glDeleteTextures(cubeMapFaceView);
 //		GL11.glDeleteTextures(cubeMapFaceView1);

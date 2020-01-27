@@ -65,9 +65,9 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
 
     private fun drawShadowMap(renderState: RenderState, firstPassResult: FirstPassResult) {
         gpuContext.disable(BLEND)
-        gpuContext.depthMask(true)
+        gpuContext.depthMask = true
         gpuContext.enable(DEPTH_TEST)
-        gpuContext.depthFunc(GlDepthFunc.LESS)
+        gpuContext.setDepthFunc(GlDepthFunc.LESS)
         gpuContext.disable(CULL_FACE)
 
         // TODO: Better instance culling

@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlFlag
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
@@ -24,6 +25,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.lwjgl.BufferUtils
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
@@ -151,6 +153,18 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         cap.disable()
     }
 
+    override var cullFace: Boolean
+        get() = GlCap.CULL_FACE.enabled
+        set(value) = GlCap.CULL_FACE.run { if(value) enable() else disable() }
+
+    override var depthTest: Boolean
+        get() = GlCap.DEPTH_TEST.enabled
+        set(value) = GlCap.DEPTH_TEST.run { if(value) enable() else disable() }
+
+    override var blend: Boolean
+        get() = GlCap.BLEND.enabled
+        set(value) = GlCap.BLEND.run { if(value) enable() else disable() }
+
     override fun activeTexture(textureUnitIndex: Int) {
         if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
@@ -218,11 +232,11 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         })
     }
 
-    override fun depthMask(flag: Boolean) {
-        GL11.glDepthMask(flag)
-    }
+    override var depthMask: Boolean
+        get() = GlFlag.DEPTH_MASK.enabled
+        set(value) = GlFlag.DEPTH_MASK.run { if(value) enable() else disable() }
 
-    override fun depthFunc(func: GlDepthFunc) {
+    override fun setDepthFunc(func: GlDepthFunc) {
         GL11.glDepthFunc(func.glFunc)
     }
 

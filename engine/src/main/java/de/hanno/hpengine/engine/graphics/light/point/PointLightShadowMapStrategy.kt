@@ -86,7 +86,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
 
         profiled("PointLight shadowmaps") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.enable(GlCap.CULL_FACE)
             cubemapArrayRenderTarget.use(engine.gpuContext, true)
@@ -185,7 +185,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
 
         profiled("PointLight shadowmaps") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.CULL_FACE)
             renderTarget.use(engine.gpuContext, false)

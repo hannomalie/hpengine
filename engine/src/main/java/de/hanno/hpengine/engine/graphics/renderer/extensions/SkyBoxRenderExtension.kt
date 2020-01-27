@@ -79,7 +79,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
         gpuContext.enable(GlCap.DEPTH_TEST)
         gpuContext.disable(GlCap.CULL_FACE)
         gpuContext.disable(GlCap.BLEND)
-        gpuContext.depthMask(true)
+        gpuContext.depthMask = true
         skyBoxEntity.identity().scale(10f)
         skyBoxEntity.setTranslation(camera.getPosition())
         skyBoxProgram.use()

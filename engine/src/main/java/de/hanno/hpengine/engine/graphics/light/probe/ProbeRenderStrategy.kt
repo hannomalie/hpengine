@@ -90,7 +90,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
 
         profiled("PointLight shadowmaps") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.enable(GlCap.CULL_FACE)
 
@@ -103,7 +103,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
 //            gpuContext.cullFace(CullMode.BACK)
 //            gpuContext.enable(GlCap.CULL_FACE)
                 gpuContext.disable(GlCap.CULL_FACE)
-                gpuContext.depthMask(true)
+                gpuContext.depthMask = true
                 gpuContext.clearColor(0f,0f,0f,0f)
                 cubeMapRenderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
                 gpuContext.viewPort(0, 0, resolution, resolution)

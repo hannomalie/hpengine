@@ -89,7 +89,7 @@ class EditorComponents(val engine: EngineImpl,
         if(config.debug.visualizeProbes) {
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let {
-                    engine.gpuContext.depthMask(true)
+                    engine.gpuContext.depthMask = true
                     engine.gpuContext.disable(GlCap.BLEND)
 //                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
                     it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->

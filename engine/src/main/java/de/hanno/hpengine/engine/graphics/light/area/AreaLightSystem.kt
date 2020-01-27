@@ -90,7 +90,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
         val areaLights = getComponents(AreaLight::class.java)
 
         profiled("Arealight shadowmaps") {
-            engine.gpuContext.depthMask(true)
+            engine.gpuContext.depthMask = true
             engine.gpuContext.enable(GlCap.DEPTH_TEST)
             engine.gpuContext.disable(GlCap.CULL_FACE)
             mapRenderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast

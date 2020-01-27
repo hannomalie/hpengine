@@ -45,7 +45,7 @@ class CombinePassRenderExtension(val engineContext: EngineContext<OpenGl>): Rend
 
             gpuContext.disable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.BLEND)
-            gpuContext.depthMask(false)
+            gpuContext.depthMask = false
             gpuContext.disable(GlCap.CULL_FACE)
 
             gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)

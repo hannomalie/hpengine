@@ -182,7 +182,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void prepareProbeRendering() {
-        engine.getGpuContext().depthMask(true);
+        engine.getGpuContext().setDepthMask(true);
         engine.getGpuContext().enable(DEPTH_TEST);
         engine.getGpuContext().enable(CULL_FACE);
 		cubeMapArrayRenderTarget.use(engine.getGpuContext(), false);

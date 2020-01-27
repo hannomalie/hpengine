@@ -39,20 +39,17 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
     val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
         object: DirectPipeline(engineContext) {
             override fun customBeforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
-                customBeforeDraw(renderState, program, renderCam)
+                customBeforeDraw()
             }
             override fun customBeforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
-                customBeforeDraw(renderState, program, renderCam)
+                customBeforeDraw()
             }
-            private fun customBeforeDraw(renderState: RenderState, program: Program, renderCam: Camera) {
-
+            private fun customBeforeDraw() {
                 deferredRenderingBuffer.use(gpuContext, false)
-                super.beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
-
-                gpuContext.enable(GlCap.CULL_FACE)
-                gpuContext.depthMask(true)
+                gpuContext.cullFace = true
+                gpuContext.depthMask = true
                 gpuContext.enable(GlCap.DEPTH_TEST)
-                gpuContext.depthFunc(GlDepthFunc.LESS)
+                gpuContext.setDepthFunc(GlDepthFunc.LESS)
                 gpuContext.disable(GlCap.BLEND)
             }
         }
@@ -72,7 +69,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
     }
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
-        gpuContext.depthMask(true)
+        gpuContext.depthMask = true
         deferredRenderingBuffer.use(gpuContext, true)
 
         if(engineContext.config.debug.isDrawBoundingVolumes) {
