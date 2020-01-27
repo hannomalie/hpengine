@@ -24,7 +24,6 @@ import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
@@ -39,12 +38,9 @@ import org.lwjgl.opengl.GL43
 import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
-                                                              renderer: RenderSystem,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
-                                                              useLineDrawing: Boolean = true,
-                                                              renderCam: Camera? = null,
-                                                              cullCam: Camera? = renderCam) : SimplePipeline(engine, cullCam, renderCam, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+                                                              useLineDrawing: Boolean = true) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
@@ -73,9 +69,9 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         val cullAndRender = { profilerString: String,
                               phase: Pipeline.CoarseCullingPhase ->
             profiled(profilerString) {
-                cullAndRender(drawDescriptionStatic, { beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program) }, phase.staticPhase)
+                cullAndRender(drawDescriptionStatic, { beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program, drawDescriptionStatic.drawCam) }, phase.staticPhase)
                 debugPrintPhase1(drawDescriptionStatic, Pipeline.CullingPhase.STATIC_ONE)
-                cullAndRender(drawDescriptionAnimated, { beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program) }, phase.animatedPhase)
+                cullAndRender(drawDescriptionAnimated, { beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program, drawDescriptionAnimated.drawCam) }, phase.animatedPhase)
                 debugPrintPhase1(drawDescriptionAnimated, Pipeline.CullingPhase.ANIMATED_ONE)
                 renderHighZMap()
             }
@@ -139,7 +135,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             val targetCommandBuffer = commandBuffer
 
             with(drawDescription) {
-                cullPhase(renderState, commandOrganization, drawCountBuffer, targetCommandBuffer, phase)
+                cullPhase(renderState, commandOrganization, drawCountBuffer, targetCommandBuffer, phase, cullCam)
                 render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase)
             }
         }
@@ -149,8 +145,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                           commandOrganization: CommandOrganization,
                           drawCountBuffer: AtomicCounterBuffer,
                           targetCommandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
-                          phase: Pipeline.CullingPhase) = profiled("Culling Phase") {
-        cull(renderState, commandOrganization, phase)
+                          phase: Pipeline.CullingPhase, cullCam: Camera) = profiled("Culling Phase") {
+        cull(renderState, commandOrganization, phase, cullCam)
 
         drawCountBuffer.put(0, 0)
         val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
@@ -220,7 +216,9 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commandCount, drawCountBufferToUse)
     }
 
-    private fun cull(renderState: RenderState, commandOrganization: CommandOrganization, phase: Pipeline.CullingPhase) = profiled("Visibility detection") {
+    private fun cull(renderState: RenderState,
+                     commandOrganization: CommandOrganization,
+                     phase: Pipeline.CullingPhase, cullCam: Camera) = profiled("Visibility detection") {
         val occlusionCullingPhase = if (phase.coarsePhase == Pipeline.CoarseCullingPhase.ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
         with(occlusionCullingPhase) {
 //            commandOrganization.commands.map { it.primCount }.reduce({ a, b -> a + b })
@@ -240,7 +238,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                 bindShaderStorageBuffer(13, currentCompactedPointers)
             }
             setUniform("maxDrawCommands", commandOrganization.commandCount)
-            val camera = cullCam ?: renderState.camera
+            val camera = cullCam
             setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
             setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
             setUniform("camPosition", camera.entity.position)

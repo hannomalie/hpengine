@@ -39,15 +39,12 @@ interface Pipeline {
         val HIGHZ_FORMAT = GL30.GL_R32F
 
         inline fun <reified T> create(engine: Engine<OpenGl>,
-                                      renderer: RenderSystem,
                                       useFrustumCulling: Boolean,
                                       useBackfaceCulling: Boolean,
-                                      useLineDrawingIfActivated: Boolean,
-                                      renderCam: Camera? = null,
-                                      cullCam: Camera? = renderCam): Pipeline {
+                                      useLineDrawingIfActivated: Boolean): Pipeline {
             return when(T::class) {
-                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
-                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
+                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
                 else -> SimplePipeline(engine,
                         useFrustumCulling = useFrustumCulling,
                         useBackFaceCulling = useBackfaceCulling,

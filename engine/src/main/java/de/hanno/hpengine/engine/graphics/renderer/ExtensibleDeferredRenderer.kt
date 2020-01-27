@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -38,18 +39,18 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
         object: SimplePipeline(engineContext) {
-            override fun beforeDrawAnimated(renderState: RenderState, program: Program) {
-                customBeforeDraw(renderState, program)
-                super.beforeDrawAnimated(renderState, program)
+            override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+                customBeforeDraw(renderState, program, renderCam)
+                super.beforeDrawAnimated(renderState, program, renderCam)
             }
-            override fun beforeDrawStatic(renderState: RenderState, program: Program) {
-                customBeforeDraw(renderState, program)
-                super.beforeDrawStatic(renderState, program)
+            override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+                customBeforeDraw(renderState, program, renderCam)
+                super.beforeDrawStatic(renderState, program, renderCam)
             }
-            private fun customBeforeDraw(renderState: RenderState, program: Program) {
+            private fun customBeforeDraw(renderState: RenderState, program: Program, renderCam: Camera) {
 
                 deferredRenderingBuffer.use(gpuContext, false)
-                super.beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray)
+                super.beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
 
                 gpuContext.enable(GlCap.CULL_FACE)
                 gpuContext.depthMask(true)
@@ -71,7 +72,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     override fun update(deltaSeconds: Float) {
         val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
-        currentWriteState.customState[pipeline].update(currentWriteState)
+        currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
     }
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
         gpuContext.depthMask(true)
@@ -88,7 +89,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
             profiled("FirstPass") {
 
                 profiled("MainPipeline") {
-                    state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
+                    state[pipeline].draw(state, simpleColorProgramStatic,
+                            simpleColorProgramAnimated, result.firstPassResult, state.camera)
                 }
 
                 for (extension in extensions) {
