@@ -155,7 +155,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
         val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.primCount > 1 // TODO: Better culling for instances
 
-        val culled = engine.config.debug.isUseCpuFrustumCulling && useFrustumCulling && !visibleForCamera
+        val culled = useFrustumCulling && !visibleForCamera
         val isForward = materialInfo.transparencyType.needsForwardRendering
         return culled || isForward
     }

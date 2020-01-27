@@ -18,14 +18,13 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtens
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
-import org.jetbrains.kotlin.ir.backend.js.compile
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
@@ -37,15 +36,13 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
-    val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
-        object: SimplePipeline(engineContext) {
-            override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+    val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
+        object: DirectPipeline(engineContext) {
+            override fun customBeforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
                 customBeforeDraw(renderState, program, renderCam)
-                super.beforeDrawAnimated(renderState, program, renderCam)
             }
-            override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+            override fun customBeforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
                 customBeforeDraw(renderState, program, renderCam)
-                super.beforeDrawStatic(renderState, program, renderCam)
             }
             private fun customBeforeDraw(renderState: RenderState, program: Program, renderCam: Camera) {
 

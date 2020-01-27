@@ -53,7 +53,6 @@ interface IQualityConfig {
 interface IDebugConfig {
     var reRenderProbes: Boolean
     var visualizeProbes: Boolean
-    val isUseCpuFrustumCulling: Boolean
     val isUseGpuOcclusionCulling: Boolean
     val isDrawLines: Boolean
     val isDrawBoundingVolumes: Boolean
@@ -121,7 +120,6 @@ data class QualityConfig(
 data class DebugConfig(
     override @Button var reRenderProbes: Boolean = true,
     override var visualizeProbes: Boolean = false,
-    override var isUseCpuFrustumCulling: Boolean = true,
     override var isUseGpuOcclusionCulling: Boolean = false,
     override var isDrawLines: Boolean = false,
     override var isDrawBoundingVolumes: Boolean = false,
