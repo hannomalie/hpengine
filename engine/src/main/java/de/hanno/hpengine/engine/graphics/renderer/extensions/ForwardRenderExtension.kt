@@ -37,9 +37,9 @@ class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderEx
 //        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
         engineContext.gpuContext.depthMask = false
-        engineContext.gpuContext.setDepthFunc(GlDepthFunc.LEQUAL)
-        engineContext.gpuContext.enable(GlCap.BLEND)
-        engineContext.gpuContext.blendEquation(BlendMode.FUNC_ADD)
+        engineContext.gpuContext.depthFunc = GlDepthFunc.LEQUAL
+        engineContext.gpuContext.blend = true
+        engineContext.gpuContext.blendEquation = BlendMode.FUNC_ADD
         glBlendFunci(0, GL_ONE, GL_ONE)
         glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
 

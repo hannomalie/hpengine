@@ -195,7 +195,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                     batch.entityIndex == entity.index && meshFilter
                 }.forEach {
                     engine.gpuContext.enable(GlCap.BLEND)
-                    engine.gpuContext.blendEquation(BlendMode.FUNC_ADD)
+                    engine.gpuContext.blendEquation = BlendMode.FUNC_ADD
                     engine.gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
 //                TODO: Enable as soon as builder stuff for rendertargets is fixed
 //                engine.gpuContext.enable(GlCap.DEPTH_TEST)

@@ -24,17 +24,23 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.joml.Vector4fc
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_COLOR_CLEAR_VALUE
+import org.lwjgl.opengl.GL11.GL_CULL_FACE_MODE
+import org.lwjgl.opengl.GL11.GL_DEPTH_FUNC
 import org.lwjgl.opengl.GL11.GL_VERSION
+import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL30.GL_BLEND_EQUATION_RGB
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
@@ -47,7 +53,9 @@ import java.util.ArrayList
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.logging.Logger
+import javax.vecmath.Tuple4f
 import javax.vecmath.Vector2f
+import javax.vecmath.Vector4f
 import kotlin.coroutines.CoroutineContext
 
 class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
@@ -157,6 +165,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         get() = GlCap.CULL_FACE.enabled
         set(value) = GlCap.CULL_FACE.run { if(value) enable() else disable() }
 
+    override var cullMode: CullMode
+        get() = CullMode.values().first { it.glMode == GL11.glGetInteger(GL_CULL_FACE_MODE) }
+        set(value) = GL11.glCullFace(value.glMode)
+
     override var depthTest: Boolean
         get() = GlCap.DEPTH_TEST.enabled
         set(value) = GlCap.DEPTH_TEST.run { if(value) enable() else disable() }
@@ -236,29 +248,36 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         get() = GlFlag.DEPTH_MASK.enabled
         set(value) = GlFlag.DEPTH_MASK.run { if(value) enable() else disable() }
 
-    override fun setDepthFunc(func: GlDepthFunc) {
-        GL11.glDepthFunc(func.glFunc)
-    }
+    override var depthFunc: GlDepthFunc
+        get() = GlDepthFunc.values().first { it.glFunc == GL11.glGetInteger(GL_DEPTH_FUNC) }
+        set(value) { glDepthFunc(value.glFunc) }
 
     override fun readBuffer(colorAttachmentIndex: Int) {
         val colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex
         GL11.glReadBuffer(colorAttachment)
     }
 
-    override fun blendEquation(mode: BlendMode) {
-        GL14.glBlendEquation(mode.mode)
-    }
+    override var blendEquation: BlendMode
+        get() = BlendMode.values().first { it.mode == GL11.glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
+        set(value) { GL14.glBlendEquation(value.mode) }
 
     override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) {
         GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor)
     }
 
-    override fun cullFace(mode: CullMode) {
-        GL11.glCullFace(mode.glMode)
-    }
+    private val clearColorArray = floatArrayOf(0f,0f,0f,0f)
+    private val clearColorVector = Vector4f()
+    override var clearColor: Tuple4f
+        get() = GL11.glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let { clearColorVector.apply { set(clearColorArray) } }
+        set(value) = GL11.glClearColor(value.x, value.y, value.z, value.w)
 
     override fun clearColor(r: Float, g: Float, b: Float, a: Float) {
-        calculate(Callable { GL11.glClearColor(r, g, b, a) })
+        clearColor = clearColorVector.apply {
+            x = r
+            y = g
+            z = b
+            w = a
+        }
     }
 
     override fun bindImageTexture(unit: Int, textureId: Int, level: Int, layered: Boolean, layer: Int, access: Int, internalFormat: Int) {

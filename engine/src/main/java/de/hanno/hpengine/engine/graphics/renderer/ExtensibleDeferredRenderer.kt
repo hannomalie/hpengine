@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.engine.graphics.profiled
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
@@ -48,9 +47,9 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
                 deferredRenderingBuffer.use(gpuContext, false)
                 gpuContext.cullFace = true
                 gpuContext.depthMask = true
-                gpuContext.enable(GlCap.DEPTH_TEST)
-                gpuContext.setDepthFunc(GlDepthFunc.LESS)
-                gpuContext.disable(GlCap.BLEND)
+                gpuContext.depthTest = true
+                gpuContext.depthFunc = GlDepthFunc.LESS
+                gpuContext.blend = false
             }
         }
     }

@@ -33,9 +33,9 @@ class DirectionalLightSecondPassExtension(val engineContext: EngineContext<OpenG
             val projectionMatrix = renderState.camera.projectionMatrixAsBuffer
 
             gpuContext.depthMask = false
-            gpuContext.disable(GlCap.DEPTH_TEST)
-            gpuContext.enable(GlCap.BLEND)
-            gpuContext.blendEquation(BlendMode.FUNC_ADD)
+            gpuContext.depthTest = false
+            gpuContext.blend = true
+            gpuContext.blendEquation = BlendMode.FUNC_ADD
             gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
 
             deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)

@@ -366,7 +366,7 @@ public class EnvironmentSampler extends Entity {
         gpuContext.enable(DEPTH_TEST);
         gpuContext.setDepthFunc(LESS);
         gpuContext.enable(BLEND);
-        gpuContext.blendEquation(FUNC_ADD);
+        gpuContext.setBlendEquation(FUNC_ADD);
         gpuContext.blendFunc(ONE, ONE);
 
         gpuContext.bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
@@ -411,7 +411,8 @@ public class EnvironmentSampler extends Entity {
 					cubeMapFaceViews[2][sideIndex], sideIndex);
 		}
         gpuContext.enable(CULL_FACE);
-        gpuContext.cullFace(BACK);
+        gpuContext.setCullFace(true);
+        gpuContext.setCullMode(BACK);
         gpuContext.setDepthFunc(LESS);
 
 //		GL11.glDeleteTextures(cubeMapFaceView);
