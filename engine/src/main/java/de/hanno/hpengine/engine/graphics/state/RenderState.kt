@@ -62,13 +62,10 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     val staticEntityHasMoved: Boolean
         get() = entitiesState.staticEntityMovedInCycle == cycle
+
     var deltaInS: Float = 0.1f
     var sceneInitialized: Boolean = false
 
-    /**
-     * Copy constructor
-     * @param source
-     */
     constructor(source: RenderState) : this(source.gpuContext) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
@@ -113,7 +110,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
 
-    fun pointLightHasMoved() = pointLightMovedInCycle >= cycle
     fun entityHasMoved() = entitiesState.entityMovedInCycle >= cycle
     fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
 }

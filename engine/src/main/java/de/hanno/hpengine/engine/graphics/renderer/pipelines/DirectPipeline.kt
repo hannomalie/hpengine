@@ -59,11 +59,9 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
                                             drawDescriptionAnimated: DrawDescription) {
         fun DrawDescription.drawDirect(renderBatches: List<RenderBatch>, beforeDrawAction: (RenderState, Program, Camera) -> Unit) {
             beforeDrawAction(renderState, program, drawCam)
-            program.use()
-            var indicesCount = 0
             for (batch in renderBatches) {
                 program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                indicesCount += draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
+                draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
             }
         }
         drawDescriptionStatic.drawDirect(filteredRenderBatchesStatic, ::beforeDrawStatic)

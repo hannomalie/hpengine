@@ -290,10 +290,11 @@ class VoxelConeTracingExtension(
                     } else {
                         for (entity in renderState.renderBatchesStatic) {
                             val isStatic = entity.update == Update.STATIC
-                            if (renderState.sceneInitiallyDrawn && !engine.config.debug.isForceRevoxelization && isStatic && !renderState.staticEntityHasMoved) {
+                            if (renderState.sceneInitiallyDrawn && !engine.config.debug.isForceRevoxelization
+                                    && isStatic && !renderState.staticEntityHasMoved) {
                                 continue
                             }
-                            val currentVerticesCount = draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
+                            draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
 
                             //                TODO: Count this somehow?
                             //                firstPassResult.verticesDrawn += currentVerticesCount;
