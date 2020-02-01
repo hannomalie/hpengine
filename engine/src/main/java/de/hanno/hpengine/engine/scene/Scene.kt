@@ -20,6 +20,8 @@ import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.CubeMap
+import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.calculateMinMax
 import kotlinx.coroutines.CoroutineScope
 import java.io.Serializable
 import java.util.Optional

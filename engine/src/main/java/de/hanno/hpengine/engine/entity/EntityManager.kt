@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.transform.calculateMinMax
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.logging.Logger

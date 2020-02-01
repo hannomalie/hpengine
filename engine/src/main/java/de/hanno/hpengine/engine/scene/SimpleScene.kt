@@ -31,6 +31,7 @@ import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.transform.AABB
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
@@ -40,7 +41,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override var currentCycle: Long = 0
     @Transient
     override var isInitiallyDrawn: Boolean = false
-    override val minMax = AABB(Vector3f(), 100f)
+    override val minMax = AABB(Vector3f(), 50f)
 
     override val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     override val managers: ManagerRegistry = SimpleManagerRegistry()

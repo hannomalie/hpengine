@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.Vector3f;
 
 import java.util.Random;
@@ -32,7 +33,7 @@ public class EnvironmentProbe implements Component {
 		this.environmentProbeManager = environmentProbeManager;
 		this.entity = entity;
 		this.update = update;
-		box = new AABB(center, size.x, size.y, size.z);
+		box = new AABB(center, size);
 		sampler = new EnvironmentSampler(entity, this, center,
 				resolution, resolution, probeIndex,
 				this.environmentProbeManager, engine.getProgramManager(),
@@ -80,19 +81,8 @@ public class EnvironmentProbe implements Component {
 		return update;
 	}
 
-	public void setSize(float size) {
-		resetAllProbes();
-		box.setSize(size);
-        environmentProbeManager.updateBuffers();
-	}
-	public void setSize(float sizeX, float sizeY, float sizeZ) {
-		resetAllProbes();
-		box.setSize(sizeX, sizeY, sizeZ);
-        environmentProbeManager.updateBuffers();
-	}
-
 	public Vector3f getSize() {
-		return new Vector3f(box.sizeX, box.sizeY, box.sizeZ);
+		return new Vector3f(box.getExtents());
 	}
 
 	public Camera getCamera(){

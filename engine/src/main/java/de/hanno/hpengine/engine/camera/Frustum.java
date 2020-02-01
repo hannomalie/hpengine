@@ -8,8 +8,7 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
 
-import de.hanno.hpengine.engine.scene.AABB;
-
+import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
@@ -281,7 +280,7 @@ public class Frustum implements Serializable {
 
 	public boolean boxInFrustum(AABB aabb) {
 		
-		return cubeInFrustum(aabb.getCenter(), Math.max(aabb.sizeX, Math.max(aabb.sizeY, aabb.sizeZ))/2f);
+		return cubeInFrustum(new Vector3f(aabb.getMin()).add(aabb.getHalfExtents()), Math.max(aabb.getHalfExtents().x, Math.max(aabb.getHalfExtents().y, aabb.getHalfExtents().z)));
 //		return sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size/2);
 //		return (pointInFrustum(aabb.getBottomLeftBackCorner().x, aabb.getBottomLeftBackCorner().y, aabb.getBottomLeftBackCorner().z) ||
 //				pointInFrustum(aabb.getTopRightForeCorner().x, aabb.getTopRightForeCorner().y, aabb.getTopRightForeCorner().z));

@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.entity.Entity;
-import de.hanno.hpengine.engine.scene.AABB;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.RendererKt.batchAABBLines;
+import static de.hanno.hpengine.engine.transform.AABBKt.isInFrustum;
 
 public class Octree implements Updatable, Serializable, EntityContainer {
 	private static final long serialVersionUID = 1L;
@@ -295,7 +296,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 		
 
 		public boolean isVisible(Camera camera) {
-			return looseAabb.isInFrustum(camera);
+			return isInFrustum(looseAabb, camera);
 		}
 		
 		private List<Entity> getAllEntitiesInAndBelowThreaded() {

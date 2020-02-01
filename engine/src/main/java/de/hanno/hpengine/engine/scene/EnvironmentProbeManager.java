@@ -20,6 +20,7 @@ import de.hanno.hpengine.engine.graphics.state.EnvironmentProbeState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.manager.Manager;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels;
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
@@ -111,10 +112,10 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		
 		for(int i = 0; i < probes.size(); i++) {
 			AABB box = probes.get(i).getBox();
-			box.setCenter(new Vector3f());
+			box.move(new Vector3f(box.getMin()).add(box.getHalfExtents()).negate());
 			box.move(probes.get(i).getEntity().getPosition());
-			Vector3f min = box.getBottomLeftBackCorner();
-			Vector3f max = box.getTopRightForeCorner();
+			Vector3f min = box.getMin();
+			Vector3f max = box.getMax();
 			float weight = probes.get(i).getWeight();
 			
 			srcMinPositions[3*i] = min.x;
