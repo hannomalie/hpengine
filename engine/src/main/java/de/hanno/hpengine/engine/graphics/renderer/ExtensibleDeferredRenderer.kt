@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLi
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
@@ -60,7 +61,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         DirectionalLightSecondPassExtension(engineContext),
         PointLightSecondPassExtension(engineContext),
         AOScatteringExtension(engineContext),
-        AmbientCubeGridExtension(engineContext)
+        AmbientCubeGridExtension(engineContext),
+        BvHPointLightSecondPassExtension(engineContext)
     )
 
     override fun update(deltaSeconds: Float) {
