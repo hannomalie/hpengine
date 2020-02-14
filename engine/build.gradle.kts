@@ -81,6 +81,7 @@ dependencies {
     api("org.pushing-pixels:radiance-photon:$radianceVersion")
     api("org.pushing-pixels:radiance-meteor:$radianceVersion")
     api("com.miglayout:miglayout:3.7.4")
+    api("com.dreizak:miniball:1.0.3")
 
     testImplementation("junit:junit:4.12")
 }

@@ -93,10 +93,8 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
-        profiled("renderSystems") {
-            engineContext.renderSystems.forEach {
-                it.update(deltaSeconds)
-            }
+        engineContext.renderSystems.forEach {
+            it.update(deltaSeconds)
         }
     }
 
