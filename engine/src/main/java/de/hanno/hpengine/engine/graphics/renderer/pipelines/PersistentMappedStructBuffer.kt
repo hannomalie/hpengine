@@ -179,6 +179,7 @@ fun CommandBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMapped
 
 class IntStruct: Struct() {
     var value by 0
+    override fun toString() = "$value"
 }
 
 fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<IntStruct> {

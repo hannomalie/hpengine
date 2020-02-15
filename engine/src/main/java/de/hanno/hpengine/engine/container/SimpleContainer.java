@@ -8,7 +8,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class SimpleContainer implements EntityContainer {
 
-    private Set<Entity> entities = new LinkedHashSet<>();//new CopyOnWriteArraySet<>();
+    private List<Entity> entities = new ArrayList<>();//new CopyOnWriteArraySet<>();
     List<Entity> result = new ArrayList<>();//new CopyOnWriteArrayList<>();
 
     @Override

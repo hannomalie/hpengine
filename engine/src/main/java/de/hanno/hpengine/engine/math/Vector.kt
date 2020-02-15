@@ -22,6 +22,7 @@ class Vector3f : Struct() {
     }
 
     fun toJoml(): org.joml.Vector3f = org.joml.Vector3f(x, y, z)
+    override fun toString() = "($x, $y, $z)"
 }
 
 fun org.joml.Vector3f.toHp() = Vector3f().apply {
@@ -51,6 +52,8 @@ class Vector4f : Struct() {
         this.x = target.x
         this.y = target.y
     }
+
+    override fun toString() = "($x, $y, $z, $w)"
 }
 class Vector4i : Struct() {
     var x by 0
@@ -64,6 +67,7 @@ class Vector4i : Struct() {
         this.z = target.z
         this.w = target.w
     }
+    override fun toString() = "($x, $y, $z, $w)"
 }
 class Vector2f : Struct() {
     var x by 0.0f
@@ -73,6 +77,7 @@ class Vector2f : Struct() {
         this.x = target.x
         this.y = target.y
     }
+    override fun toString() = "($x, $y)"
 }
 class Matrix4f : Struct() {
     var m00 by 0.0f

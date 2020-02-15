@@ -208,7 +208,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         vertexIndexBufferAnimated.resetAllocations()
     }
 
-    override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+    override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
         val result = onEntityAddedImpl(context, entities)
         cacheEntityIndices()
         return result
