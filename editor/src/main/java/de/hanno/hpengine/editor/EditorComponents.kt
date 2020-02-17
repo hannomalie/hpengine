@@ -20,6 +20,9 @@ import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.nodes
+import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -86,6 +89,12 @@ class EditorComponents(val engine: EngineImpl,
         selectionSystem.render(result, state)
         sphereHolder.render(result, state)
 
+
+        if(config.debug.isEditorOverlay) {
+            engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+                it.extensions.forEach { it.renderEditor(state, result) }
+            }
+        }
         if(config.debug.visualizeProbes) {
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let {

@@ -244,14 +244,15 @@ void main(void) {
 	vec4 finalColor = vec4(0);
 	int nextIndex = 0;
 
-	uint maxIterations = 10;
+	uint maxIterations = 350;
 	while(nextIndex < nodeCount && maxIterations > 0) {
 		BvhNode node = nodes[nextIndex];
 		int hitPointer = nextIndex += 1;
 		bool isLeaf = node.missPointer == hitPointer;
 		if(isInsideSphere(positionWorld.xyz, node.positionRadius)) {
 			if(isLeaf) {
-				finalColor.rgb += diffuseColor * calculateAttenuation(distance(positionWorld, node.positionRadius.xyz), node.positionRadius.w) * node.color;
+				float attenuation = calculateAttenuation(distance(positionWorld, node.positionRadius.xyz), node.positionRadius.w);
+				finalColor.rgb += diffuseColor * attenuation * node.color;
 			}
 			nextIndex = hitPointer;
 		} else {
@@ -261,8 +262,8 @@ void main(void) {
 		maxIterations--;
 	}
 
-//	if(isInsideSphere(positionWorld.xyz, nodes[1].positionRadius)) {
-//		finalColor.rgb = nodes[2].color;
+//	if(isInsideSphere(positionWorld.xyz, nodes[0].positionRadius)) {
+//		finalColor.rgb = vec3(1.0f,0.0f,0.0f);
 //	}
 
 

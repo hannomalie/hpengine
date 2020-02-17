@@ -59,7 +59,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         SkyBoxRenderExtension(engineContext),
         ForwardRenderExtension(engineContext),
         DirectionalLightSecondPassExtension(engineContext),
-        PointLightSecondPassExtension(engineContext),
+//        PointLightSecondPassExtension(engineContext),
         AOScatteringExtension(engineContext),
         AmbientCubeGridExtension(engineContext),
         BvHPointLightSecondPassExtension(engineContext)

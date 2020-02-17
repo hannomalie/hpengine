@@ -84,10 +84,10 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
                 sphereVertexIndexBuffer.indexBuffer,
                 sphereRenderBatch, sphereProgram, false, false)
 
-//         TODO: This sucks, remove
+//         TODO: This sucks, removeS
         if(drawPointLights) {
             state.lightState.pointLights.forEach {
-                val transformationPointLight = SimpleTransform().scale(it.radius*0.1f).translate(it.entity.position)
+                val transformationPointLight = SimpleTransform().translate(it.entity.position)
                 sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
                 sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
