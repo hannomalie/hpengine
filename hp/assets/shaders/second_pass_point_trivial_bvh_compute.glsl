@@ -267,7 +267,8 @@ void main(void) {
 //	}
 
 
-	imageStore(out_DiffuseSpecular, storePos, vec4(finalColor.rgb,0));
+	vec4 oldSample = imageLoad(out_DiffuseSpecular, storePos).rgba;
+	imageStore(out_DiffuseSpecular, storePos, vec4(0.5*oldSample.rgb + 0.5 * finalColor.rgb,0));
 
 //	imageStore(out_DiffuseSpecular, storePos, vec4(st,0,0));
 }
