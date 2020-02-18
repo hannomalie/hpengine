@@ -88,13 +88,15 @@ class EditorComponents(val engine: EngineImpl,
         selectionSystem.render(result, state)
         sphereHolder.render(state, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
-                val transformationPointLight = SimpleTransform().translate(it.entity.position)
-                sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
-                sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
+                if(it.renderedSphereRadius > 0f) {
+                    val transformationPointLight = SimpleTransform().scaleAround(it.renderedSphereRadius, it.entity.position.x, it.entity.position.y, it.entity.position.z).translate(it.entity.position)
+                    sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
+                    sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
-                draw(sphereVertexIndexBuffer.vertexBuffer,
-                        sphereVertexIndexBuffer.indexBuffer,
-                        sphereRenderBatch, sphereProgram, false, false)
+                    draw(sphereVertexIndexBuffer.vertexBuffer,
+                            sphereVertexIndexBuffer.indexBuffer,
+                            sphereRenderBatch, sphereProgram, false, false)
+                }
             }
         })
 
