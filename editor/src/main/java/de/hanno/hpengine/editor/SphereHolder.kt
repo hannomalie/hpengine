@@ -26,46 +26,45 @@ import org.lwjgl.BufferUtils
 import java.io.File
 
 class SphereHolder(val engine: EngineContext<OpenGl>,
-                   private val sphereProgram: Program = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
+                   val sphereProgram: Program = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
 
-    private val materialManager: MaterialManager = engine.materialManager
-    private val gpuContext = engine.gpuContext
+    val materialManager: MaterialManager = engine.materialManager
+    val gpuContext = engine.gpuContext
     val sphereEntity = Entity("[Editor] Pivot")
 
-    private val sphere = run {
+    val sphere = run {
         StaticModelLoader().load(File("assets/models/sphere.obj"), materialManager, engine.config.directories.engineDir)
     }
 
-    private val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {
+    val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {
         sphereEntity.addComponent(this)
     }
-    private val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
 
-    private val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
+    val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
         sphereModelComponent.putToBuffer(engine.gpuContext, sphereVertexIndexBuffer, this)
     }
-    private val sphereCommand = DrawElementsIndirectCommand().apply {
+    val sphereCommand = DrawElementsIndirectCommand().apply {
         count = sphere.indices.size
         primCount = 1
         firstIndex = vertexIndexOffsets.indexOffset
         baseVertex = vertexIndexOffsets.vertexOffset
         baseInstance = 0
     }
-    private val sphereRenderBatch = RenderBatch(entityBufferIndex = 0, isDrawLines = false,
+    val sphereRenderBatch = RenderBatch(entityBufferIndex = 0, isDrawLines = false,
             cameraWorldPosition = Vector3f(0f, 0f, 0f), drawElementsIndirectCommand = sphereCommand, isVisibleForCamera = true, update = Update.DYNAMIC,
             entityMinWorld = Vector3f(0f, 0f, 0f), entityMaxWorld = Vector3f(0f, 0f, 0f), centerWorld = Vector3f(),
             boundingSphereRadius = 1000f, animated = false, materialInfo = sphereModelComponent.material.materialInfo,
             entityIndex = sphereEntity.index, meshIndex = 0)
 
-    private val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
+    val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)
     }
     override fun render(result: DrawResult, state: RenderState) {
-        render(state, sphereEntity.position, Vector3f(0f, 0f, 1f), true)
+        render(state, sphereEntity.position, Vector3f(0f, 0f, 1f))
     }
     fun render(state: RenderState, spherePosition: Vector3f,
-               color: Vector3f, drawPointLights: Boolean = false,
-               useDepthTest: Boolean = true,
+               color: Vector3f, useDepthTest: Boolean = true,
                beforeDraw: (Program.() -> Unit)? = null) {
 
         val scaling = (0.1f * sphereEntity.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
@@ -84,17 +83,20 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
                 sphereVertexIndexBuffer.indexBuffer,
                 sphereRenderBatch, sphereProgram, false, false)
 
-//         TODO: This sucks, removeS
-        if(drawPointLights) {
-            state.lightState.pointLights.forEach {
-                val transformationPointLight = SimpleTransform().translate(it.entity.position)
-                sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
-                sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
+    }
+    fun render(state: RenderState, useDepthTest: Boolean = true,
+               draw: (SphereHolder.(RenderState) -> Unit)) {
 
-                draw(sphereVertexIndexBuffer.vertexBuffer,
-                        sphereVertexIndexBuffer.indexBuffer,
-                        sphereRenderBatch, sphereProgram, false, false)
-            }
-        }
+        val transformation = SimpleTransform()
+        if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
+        engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+        sphereProgram.use()
+        sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+        sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+        sphereProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+        sphereProgram.setUniform("diffuseColor", Vector3f(1f,0f,0f))
+        sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
+
+        draw(state)
     }
 }

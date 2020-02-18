@@ -19,15 +19,14 @@ import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.nodes
-import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import org.joml.Vector3f
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
@@ -87,7 +86,17 @@ class EditorComponents(val engine: EngineImpl,
 
     override fun render(result: DrawResult, state: RenderState) {
         selectionSystem.render(result, state)
-        sphereHolder.render(result, state)
+        sphereHolder.render(state, draw = { state: RenderState ->
+            state.lightState.pointLights.forEach {
+                val transformationPointLight = SimpleTransform().translate(it.entity.position)
+                sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
+                sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
+
+                draw(sphereVertexIndexBuffer.vertexBuffer,
+                        sphereVertexIndexBuffer.indexBuffer,
+                        sphereRenderBatch, sphereProgram, false, false)
+            }
+        })
 
 
         if(config.debug.isEditorOverlay) {
@@ -97,22 +106,24 @@ class EditorComponents(val engine: EngineImpl,
         }
         if(config.debug.visualizeProbes) {
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
-                it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let {
+                it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let { extension ->
                     engine.gpuContext.depthMask = true
                     engine.gpuContext.disable(GlCap.BLEND)
 //                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
-                    it.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                        environmentProbeSphereHolder.render(
-                                state = state,
-                                spherePosition = position,
-                                useDepthTest = true,
-                                color = Vector3f()) {
+                    environmentProbeSphereHolder.render(state) {
 
-                            setUniform("pointLightPositionWorld", it.probeRenderer.probePositions[probeIndex])
-                            setUniform("probeIndex", probeIndex)
-                            setUniform("probeDimensions", it.probeRenderer.probeDimensions)
-                            bindShaderStorageBuffer(4, it.probeRenderer.probePositionsStructBuffer)
-                            bindShaderStorageBuffer(5, it.probeRenderer.probeAmbientCubeValues)
+                        extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
+                            val transformation = SimpleTransform().translate(position)
+                            sphereProgram.setUniform("pointLightPositionWorld", extension.probeRenderer.probePositions[probeIndex])
+                            sphereProgram.setUniform("probeIndex", probeIndex)
+                            sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                            sphereProgram.setUniform("probeDimensions", extension.probeRenderer.probeDimensions)
+                            sphereProgram.bindShaderStorageBuffer(4, extension.probeRenderer.probePositionsStructBuffer)
+                            sphereProgram.bindShaderStorageBuffer(5, extension.probeRenderer.probeAmbientCubeValues)
+
+                            draw(sphereVertexIndexBuffer.vertexBuffer,
+                                    sphereVertexIndexBuffer.indexBuffer,
+                                    sphereRenderBatch, sphereProgram, false, false)
                         }
                     }
                 }
