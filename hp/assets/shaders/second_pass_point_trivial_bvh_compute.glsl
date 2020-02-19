@@ -40,6 +40,34 @@ layout(std430, binding=3) buffer _bvh {
 
 //include(globals.glsl)
 
+
+float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
+	vec3 pointLightPositionWorld = pointLight.position;
+
+	vec3 fragToLight = positionWorld - pointLightPositionWorld;
+	vec4 textureSample = textureLod(pointLightShadowMapsCube, vec4(fragToLight, pointLightIndex), 0);
+	float closestDepth = textureSample.r;
+	vec2 moments = textureSample.xy;
+	//    closestDepth *= 250.0;
+	float currentDepth = length(fragToLight);
+	float bias = 0.2;
+	float shadow = currentDepth - bias < closestDepth ? 1.0 : 0.0;
+
+	//	const float SHADOW_EPSILON = 0.001;
+	//	float E_x2 = moments.y;
+	//	float Ex_2 = moments.x * moments.x;
+	//	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
+	//	float m_d = (moments.x - currentDepth);
+	//	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
+	//	shadow = max(shadow, p + 0.05f);
+
+	return shadow;
+}
+float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+	return getVisibilityCubemap(positionWorld, pointLightIndex, pointLight);
+}
+
 void main(void) {
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 workGroup = ivec2(gl_WorkGroupID);
@@ -81,7 +109,30 @@ void main(void) {
 			if(isLeaf) {
 				PointLight light = pointLights[node.lightIndex];
 				float attenuation = calculateAttenuation(distance(positionWorld, node.positionRadius.xyz), node.positionRadius.w);
-				finalColor.rgb += diffuseColor * attenuation * light.color;
+
+				int materialIndex = int(textureLod(visibilityMap, st, 0).b);
+				Material material = materials[materialIndex];
+				vec3 lightPositionView = (viewMatrix * vec4(light.position, 1)).xyz;
+				vec3 lightDiffuse = light.color;
+				vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
+
+				vec3 temp;
+				if(int(material.materialtype) == 1) {
+					temp = cookTorrance(lightDirectionView, lightDiffuse,
+					attenuation, V, positionView, normalView,
+					roughness, 0, diffuseColor, specularColor);
+					temp = attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
+				} else {
+					temp = cookTorrance(lightDirectionView, lightDiffuse,
+					attenuation, V, positionView, normalView,
+					roughness, metallic, diffuseColor, specularColor);
+				}
+				temp = temp * light.color;
+
+				float visibility = getVisibility(positionWorld, node.lightIndex, light);
+
+				finalColor.rgb += temp*visibility;
+//				finalColor.rgb += diffuseColor * attenuation * light.color;
 			}
 			nextIndex = hitPointer;
 		} else {
