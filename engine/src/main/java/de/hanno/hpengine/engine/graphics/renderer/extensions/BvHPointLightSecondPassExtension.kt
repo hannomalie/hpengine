@@ -48,11 +48,9 @@ import java.util.function.Consumer
 class BvhNodeGpu: Struct() {
     val positionRadius by HpVector4f()
     val missPointer by IntStruct()
+    val lightIndex by IntStruct()
     val dummy0 by IntStruct()
     val dummy1 by IntStruct()
-    val dummy2 by IntStruct()
-    val color by HpVector3f()
-    val dummy3 by IntStruct()
 }
 typealias BoundingSphere = Vector4f
 typealias Bvh = BvhNode
@@ -65,7 +63,7 @@ sealed class BvhNode(val boundingSphere: BoundingSphere) {
             children.add(child)
         }
     }
-    class Leaf(boundingSphere: BoundingSphere, val color: Vector4f): BvhNode(boundingSphere)
+    class Leaf(boundingSphere: BoundingSphere, val lightIndex: Int): BvhNode(boundingSphere)
 }
 
 val BvhNode.nodes: List<BvhNode>
@@ -164,7 +162,7 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): Rende
                     bvh[counter].apply {
                         positionRadius.set(boundingSphere)
                         missPointer.value = counter + 1
-                        this@apply.color.set(this@putToBufferHelper.color)
+                        lightIndex.value = this@putToBufferHelper.lightIndex
                     }
                     counter++
                 }
@@ -179,11 +177,11 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): Rende
         }
         if(bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
             bvhReconstructedInCycle = renderState.cycle
-            val leafNodes = renderState.lightState.pointLights.map {
+            val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->
                 BvhNode.Leaf(Vector4f().apply {
-                    set(it.entity.position)
-                    w = it.radius
-                }, it.color)
+                    set(light.entity.position)
+                    w = light.radius
+                }, index)
             }.toMutableList()
             tree = leafNodes.toTree().apply {
                 putToBuffer()

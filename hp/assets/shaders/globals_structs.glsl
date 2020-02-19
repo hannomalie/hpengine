@@ -177,9 +177,7 @@ struct VertexAnimatedPacked {
 struct BvhNode {
     vec4 positionRadius;
     int missPointer;
+    int lightIndex;
     int dummy0;
     int dummy1;
-    int dummy2;
-    vec3 color;
-    int dummy3;
 };

@@ -79,8 +79,9 @@ void main(void) {
 		bool isLeaf = node.missPointer == hitPointer;
 		if(isInsideSphere(positionWorld.xyz, node.positionRadius)) {
 			if(isLeaf) {
+				PointLight light = pointLights[node.lightIndex];
 				float attenuation = calculateAttenuation(distance(positionWorld, node.positionRadius.xyz), node.positionRadius.w);
-				finalColor.rgb += diffuseColor * attenuation * node.color;
+				finalColor.rgb += diffuseColor * attenuation * light.color;
 			}
 			nextIndex = hitPointer;
 		} else {
