@@ -1,5 +1,5 @@
 #define kPI 3.1415926536f
-
+const int END_TRAVERSAL = 2147483647;
 const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				2.0/16.0, 4.0/16.0, 2.0/16.0,
 				1.0/16.0, 2.0/16.0, 1.0/16.0 };
@@ -780,4 +780,19 @@ vec3 findMainAxis(vec3 theInput) {
 }
 bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
     return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition)));
+}
+
+float calculateAttenuation(float dist, float lightRadius) {
+    float distDivRadius = (dist / lightRadius);
+    float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
+    atten_factor = pow(atten_factor, 2);
+    return atten_factor;
+}
+
+bool isInsideSphere(vec3 position, vec4 positionRadius) {
+    return distance(position, positionRadius.xyz) <= positionRadius.w;
+}
+
+bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
+    return distance(positionSphere, positionToTest) < radius;
 }

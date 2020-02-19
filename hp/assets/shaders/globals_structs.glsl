@@ -174,3 +174,12 @@ struct VertexAnimatedPacked {
     vec4 dummy1;
     vec4 dummy2;
 };
+struct BvhNode {
+    vec4 positionRadius;
+    int missPointer;
+    int dummy0;
+    int dummy1;
+    int dummy2;
+    vec3 color;
+    int dummy3;
+};
