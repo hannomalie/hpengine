@@ -44,7 +44,6 @@ in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_DiffuseSpecular;
 layout(location=1)out vec4 out_AOReflection;
 
-//include(globals_structs.glsl)
 //include(globals.glsl)
 
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
@@ -54,6 +53,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
+#ifdef BINDLESSTEXTURES
 vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 	vec3 rayVector = worldPos.xyz - startPosition;
 
@@ -66,9 +66,9 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 	vec3 accumAlbedo = vec3(0,0,0);
 	vec3 normalValue = vec3(0,0,0);
 	vec3 isStaticValue = vec3(0,0,0);
-	float accumAlpha = 0;
+	float accumAlpha = 0.0f;
 
-	float mipLevel = 0f;
+	float mipLevel = 0.0f;
 	const int NB_STEPS = int(1530/(mipLevel+1));
 	const float stepSize = 0.25f*(mipLevel+1);
 	vec3 step = rayDirection * stepSize;
@@ -84,7 +84,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
         vec3 step_accumAlbedo = vec3(0,0,0);
         vec3 step_normalValue = vec3(0,0,0);
         vec3 step_isStaticValue = vec3(0,0,0);
-        float step_accumAlpha = 0;
+        float step_accumAlpha = 0.0f;
 
 		float minScale = 1000000.0;
         for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
@@ -125,7 +125,13 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 	accumAlbedo *= accumAlpha;
 	return lit2.rgb;
 }
+#else
+vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
+    return vec3(0.0f);
+}
+#endif
 
+#ifdef BINDLESSTEXTURES
 vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 
     vec4 accum = vec4(0.0);
@@ -182,55 +188,12 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
     }
 	return vec4(accum.rgb, alpha);
 }
+#else
+vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
+    return vec4(1,0,0,0);
+}
+#endif
 
-vec4 voxelTraceConeXXXTwoGrids(VoxelGridArray voxelGridArray, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
-
-     vec4 accum = vec4(0.0);
-     float alpha = 0;
-     float dist = 0;
-     vec3 samplePos = origin;// + dir;
-
-     while (dist <= maxDist && alpha < 1.0)
-     {
-         float minScale = 100000.0;
-         int canditateIndex = -1;
-         VoxelGrid voxelGrid;
-         for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
-             VoxelGrid candidate = voxelGridArray.voxelGrids[voxelGridIndex];
-             if(isInsideVoxelGrid(samplePos, candidate) && candidate.scale < minScale) {
-                 canditateIndex = voxelGridIndex;
-                 minScale = candidate.scale;
-                 voxelGrid = candidate;
-             }
-         }
-
-         float minVoxelDiameter = 0.25f*voxelGrid.scale;
-         float minVoxelDiameterInv = 1.0/minVoxelDiameter;
-         vec4 ambientLightColor = vec4(0.);
-         float diameter = max(minVoxelDiameter, 2 * coneRatio * (1+dist));
-         float increment = diameter;
-
-         if(canditateIndex != -1) {
-             sampler3D grid = toSampler(voxelGrid.gridHandle);
-             sampler3D grid2 = toSampler(voxelGrid.grid2Handle);
-             int gridSize = voxelGrid.resolution;
-
-             float sampleLOD = log2(diameter * minVoxelDiameterInv);
-             vec4 sampleValue = voxelFetch(voxelGrid, grid, samplePos, sampleLOD);
-             sampleValue += voxelFetch(voxelGrid, grid2, samplePos, sampleLOD);
-             vec4 albedoValue;// = voxelFetch(voxelGrid, toSampler(voxelGrid.albedoGridHandle), samplePos, sampleLOD);
-
-             accum.rgb += max(sampleValue.rgb, 0.015*albedoValue.rgb);
-             float a = 1 - alpha;
-             alpha += a * max(sampleValue.a, albedoValue.a);
-         }
-
-         dist += increment;
-         samplePos = origin + dir * dist;
-         increment *= 1.25f;
-     }
- 	return vec4(accum.rgb, alpha);
- }
 void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
@@ -283,9 +246,9 @@ void main(void) {
 	const float boost = 1.;
 
     if(!debugVoxels && useVoxelConeTracing) {
-        vec4 voxelDiffuse = 4*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
-        float aperture = 0.1*roughness;//tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
-        vec4 voxelSpecular = 4*voxelTraceConeXXX(voxelGridArray, GRID2, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
+        vec4 voxelDiffuse = vec4(4.0f);//*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
+        float aperture = 0.1f*roughness;//tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+        vec4 voxelSpecular = vec4(4.0f);//*voxelTraceConeXXX(voxelGridArray, GRID2, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
 
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
 
@@ -311,7 +274,10 @@ void main(void) {
         const bool onlySample = false;
         if(onlySample) {
             VoxelGrid voxelGrid = voxelGridArray.voxelGrids[0];
+
+            #ifdef BINDLESSTEXTURES
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
+            #endif
         }
     }
     out_DiffuseSpecular.rgb = vct;

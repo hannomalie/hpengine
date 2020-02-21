@@ -3,6 +3,12 @@
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
 layout(binding=0, rgba8) writeonly uniform image3D outputVoxelGrid;
 
+#ifdef BINDLESSTEXTURES
+#else
+layout(binding=1) uniform sampler3D albedoGrid;
+layout(binding=2) uniform sampler3D normalGrid;
+layout(binding=3) uniform sampler3D grid;
+#endif
 uniform int bounces = 1;
 uniform int lightInjectedFramesAgo = 1;
 
@@ -45,6 +51,8 @@ vec4 voxelTraceConeXXX(VoxelGrid voxelGrid, sampler3D grid, vec3 origin, vec3 di
     }
 	return vec4(accum.rgb, alpha);
 }
+
+#ifdef BINDLESSTEXTURES
 vec4 traceVoxelsDiffuse2(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
     vec4 voxelDiffuse;
     for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
@@ -79,6 +87,11 @@ vec4 traceVoxelsDiffuse2(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 p
 
     return voxelDiffuse;
 }
+#else
+vec4 traceVoxelsDiffuse2(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
+    return vec4(1,0,0,0);
+}
+#endif
 
 void main(void) {
     VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
@@ -87,9 +100,11 @@ void main(void) {
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
 	ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
 
+    #ifdef BINDLESSTEXTURES
     sampler3D albedoGrid = toSampler(voxelGrid.albedoGridHandle);
     sampler3D normalGrid = toSampler(voxelGrid.normalGridHandle);
     sampler3D grid = toSampler(voxelGrid.gridHandle);
+    #endif
 
 	vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);
 

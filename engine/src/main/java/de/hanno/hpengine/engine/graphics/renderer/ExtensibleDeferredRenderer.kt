@@ -65,7 +65,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 //        PointLightSecondPassExtension(engineContext),
         AOScatteringExtension(engineContext),
 //        AmbientCubeGridExtension(engineContext),
-//        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
+        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
         BvHPointLightSecondPassExtension(engineContext)
     )
 

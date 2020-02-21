@@ -4,6 +4,11 @@ layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_siz
 layout(binding=0, rgba8) writeonly uniform image3D targetVoxelGrid;
 layout(binding=6) uniform sampler2D shadowMap;
 
+#ifdef BINDLESSTEXTURES
+#else
+layout(binding=1) uniform sampler3D albedoGrid;
+layout(binding=2) uniform sampler3D normalGrid;
+#endif
 uniform mat4 shadowMatrix;
 
 uniform int bounces = 1;
@@ -41,10 +46,10 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	//moments /= 3;
 
 	// Surface is fully lit. as the current fragment is before the lights occluder
-	if (dist <= moments.x + 0.001) {
-		return vec3(1.0,1.0,1.0);
+	if (dist <= moments.x + 0.001f) {
+		return vec3(1.0f);
 	}
-	else { return vec3(0.); }
+	else { return vec3(0.0f); }
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
@@ -66,20 +71,16 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	return vec3(p_max,p_max,p_max);
 }
 
-float calculateAttenuation(float dist, float lightRadius) {
-    float distDivRadius = (dist / lightRadius);
-    float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
-    atten_factor = pow(atten_factor, 2);
-    return atten_factor;
-}
 void main(void) {
 
     VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
     float sceneScale = voxelGrid.scale;
-    float inverseSceneScale = 1f/sceneScale;
+    float inverseSceneScale = 1.0f/sceneScale;
 
+    #ifdef BINDLESSTEXTURES
     sampler3D albedoGrid = sampler3D((voxelGrid.albedoGridHandle));
     sampler3D normalGrid = sampler3D((voxelGrid.normalGridHandle));
+    #endif
 
     ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 workGroup = ivec3(gl_WorkGroupID);
@@ -89,9 +90,9 @@ void main(void) {
     vec4 sourceValue = vec4(0);
     float weightSum = 0;
 
-    float visibility = 1.0;
+    float visibility = 1.0f;
     vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);
-    vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5);
+    vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5f);
 
     vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0);
     vec4 normalStatic = voxelFetch(voxelGrid, normalGrid, positionWorld, 0);
@@ -101,7 +102,7 @@ void main(void) {
     float isStatic = normalStatic.a;
 
     //second bounce?
-    vec3 ambientAmount = vec3(0.0);
+    vec3 ambientAmount = vec3(0.0f);
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
     float emissive = 0;// TODO: Readd emissive materials like before with normalStatic.a;
@@ -111,12 +112,12 @@ void main(void) {
     positionShadow.xyz /= positionShadow.w;
     float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-    visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0, 1.0).r;
+    visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1.0f).r;
 
     vec3 lightDirectionTemp = directionalLight.direction;
-    float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
+    float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0f, 1.0f));
 
-    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(directionalLight-color,1)*visibility*vec4(voxelColor,1)).rgb;
+    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(directionalLight.color,1)*visibility*vec4(voxelColor,1)).rgb;
 
     for(int i = 0; i < pointLightCount; i++) {
         PointLight pointLight = pointLights[i];
@@ -125,7 +126,7 @@ void main(void) {
         vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
         float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
 
-        finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
+        finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1f;
     }
     imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }

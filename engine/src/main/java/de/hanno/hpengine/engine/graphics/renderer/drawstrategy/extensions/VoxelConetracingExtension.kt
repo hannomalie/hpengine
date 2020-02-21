@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
@@ -294,6 +295,7 @@ class VoxelConeTracingExtension(
                                     && isStatic && !renderState.staticEntityHasMoved) {
                                 continue
                             }
+                            voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
                             draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
 
                             //                TODO: Count this somehow?

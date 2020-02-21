@@ -582,15 +582,15 @@ vec4 voxelTraceConeTwoGrids(VoxelGrid voxelGrid, sampler3D grid, sampler3D grid2
 	return vec4(accum.rgb, alpha);
 }
 
+int ALBEDOGRID = 0;
+int NORMALGRID = 1;
+int GRID1 = 2;
+int GRID2 = 3;
 #ifdef SHADER5
 sampler3D toSampler(uvec2 handle) {
     return sampler3D(handle);
 }
 
-int ALBEDOGRID = 0;
-int NORMALGRID = 1;
-int GRID1 = 2;
-int GRID2 = 3;
 vec4 voxelTraceCone(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 
     vec4 accum = vec4(0.0);
@@ -637,6 +637,7 @@ vec4 voxelTraceCone(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, v
 	return vec4(accum.rgb, alpha);
 }
 
+#ifdef BINDLESSTEXTURES
 vec4 traceVoxelsDiffuse(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
     vec4 voxelDiffuse;
     for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
@@ -728,6 +729,11 @@ vec4 traceVoxelsDiffuse(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 po
 
     return voxelDiffuse;
 }
+#else
+vec4 traceVoxelsDiffuse(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
+    return vec4(1,0,0,0);
+}
+#endif
 
 vec4 traceVoxelsDiffuseTwoGrids(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
     vec4 voxelDiffuse;
