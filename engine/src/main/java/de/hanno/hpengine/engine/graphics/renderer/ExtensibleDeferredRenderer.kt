@@ -7,15 +7,15 @@ import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.PointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
@@ -55,19 +55,26 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         }
     }
 
+    val shadowMapExtension = DirectionalLightShadowMapExtension(engineContext)
+    val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
     val extensions: List<RenderExtension<OpenGl>> = listOf(
+        shadowMapExtension,
         SkyBoxRenderExtension(engineContext),
         ForwardRenderExtension(engineContext),
-        DirectionalLightSecondPassExtension(engineContext),
+        directionalLightSecondPassExtension,
 //        PointLightSecondPassExtension(engineContext),
         AOScatteringExtension(engineContext),
-        AmbientCubeGridExtension(engineContext),
+//        AmbientCubeGridExtension(engineContext),
+//        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
         BvHPointLightSecondPassExtension(engineContext)
     )
 
     override fun update(deltaSeconds: Float) {
         val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
+
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
+        currentWriteState.directionalLightState[0].shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
+        currentWriteState.directionalLightState[0].shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
     }
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
         gpuContext.depthMask = true
