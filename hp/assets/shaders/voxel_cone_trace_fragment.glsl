@@ -10,6 +10,14 @@ layout(binding=8) uniform samplerCubeArray probes;
 
 layout(binding=11) uniform sampler2D aoScattering;
 
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
+#else
+layout(binding=9) uniform sampler3D grid;
+layout(binding=10) uniform sampler3D grid2;
+layout(binding=12) uniform sampler3D albedoGrid;
+layout(binding=13) uniform sampler3D normalGrid;
+#endif
+
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
@@ -53,7 +61,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-#ifdef BINDLESSTEXTURES
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
 vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 	vec3 rayVector = worldPos.xyz - startPosition;
 
@@ -131,7 +139,8 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 }
 #endif
 
-#ifdef BINDLESSTEXTURES
+
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
 vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 
     vec4 accum = vec4(0.0);
@@ -194,6 +203,42 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
 }
 #endif
 
+// P - ray origin position
+// V - ray direction
+// cone_ratio - using 1 large cone lead to poor results, multiple ones with some sane ratio looks a lot better
+// max_dist - maximum acceptable distance for cone to travel (usable for AO F.e.)
+// step_mult - in case we want "faster" and even less-precise stepping
+vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, in float step_mult)
+{
+    float min_voxel_diameter = voxelGridArray.voxelGrids[0].scale;
+    float min_voxel_diameter_inv = 1.0 / min_voxel_diameter;
+
+    vec4 accum = vec4(0.0f);
+
+    // push out the starting point to avoid self-intersection
+    float dist = min_voxel_diameter;
+
+    // Marching!
+    while (dist <= max_dist && accum.a < 1.0f)
+    {
+        // Calculate which level to sample
+        float sample_diameter = max(min_voxel_diameter, cone_ratio * dist);
+        float sample_lod = log2(sample_diameter * min_voxel_diameter_inv);
+
+        // Step
+        vec3 sample_pos = P + V * dist;
+        dist += sample_diameter * step_mult;
+
+        // Sample from 3D texture (in performance superior to Sparse Voxel Octrees, hence use these)
+        vec4 sample_value = voxelFetch(voxelGridArray.voxelGrids[0], albedoGrid, sample_pos, sample_lod);
+
+        float a = 1.0 - accum.a;
+        accum += sample_value * a;
+    }
+
+    return accum;
+}
+
 void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
@@ -246,7 +291,12 @@ void main(void) {
 	const float boost = 1.;
 
     if(!debugVoxels && useVoxelConeTracing) {
-        vec4 voxelDiffuse = vec4(4.0f);//*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
+
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
+        vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
+#else
+        vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld, grid, grid2);
+#endif
         float aperture = 0.1f*roughness;//tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
         vec4 voxelSpecular = vec4(4.0f);//*voxelTraceConeXXX(voxelGridArray, GRID2, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
 
@@ -271,12 +321,19 @@ void main(void) {
         if(temp.x > 0 || temp.y > 0 || temp.z > 0) {
             vct += temp;
         }
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
         const bool onlySample = false;
+#else
+        const bool onlySample = true;
+#endif
         if(onlySample) {
             VoxelGrid voxelGrid = voxelGridArray.voxelGrids[0];
 
-            #ifdef BINDLESSTEXTURES
+            #if defined(BINDLESSTEXTURES) && defined(SHADER5)
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
+            #else
+            vct = voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
+//            vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, 4.9f, 100.0f, 2.0f).rgb;
             #endif
         }
     }

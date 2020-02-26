@@ -1,10 +1,10 @@
 #define WORK_GROUP_SIZE 8
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
-layout(binding=0, rgba8) writeonly uniform image3D targetVoxelGrid;
+layout(binding=0) writeonly uniform image3D targetVoxelGrid;
 layout(binding=6) uniform sampler2D shadowMap;
 
-#ifdef BINDLESSTEXTURES
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
 #else
 layout(binding=1) uniform sampler3D albedoGrid;
 layout(binding=2) uniform sampler3D normalGrid;
@@ -77,10 +77,10 @@ void main(void) {
     float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1.0f/sceneScale;
 
-    #ifdef BINDLESSTEXTURES
-    sampler3D albedoGrid = sampler3D((voxelGrid.albedoGridHandle));
-    sampler3D normalGrid = sampler3D((voxelGrid.normalGridHandle));
-    #endif
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
+    sampler3D albedoGrid = sampler3D(voxelGrid.albedoGridHandle);
+    sampler3D normalGrid = sampler3D(voxelGrid.normalGridHandle);
+#endif
 
     ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 workGroup = ivec3(gl_WorkGroupID);
@@ -128,5 +128,6 @@ void main(void) {
 
         finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1f;
     }
-    imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
+//    imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
+    imageStore(targetVoxelGrid, storePos, vec4(0,0,1.0f, 1.0f));
 }

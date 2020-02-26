@@ -1,5 +1,5 @@
 
-#ifdef BINDLESSTEXTURES
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
 #else
 layout(binding=0) uniform sampler2D diffuseMap;
 uniform bool hasDiffuseMap = false;
@@ -55,7 +55,7 @@ uniform vec3 lightColor;
 uniform int voxelGridIndex = 0;
 
 
-#ifdef BINDLESSTEXTURES
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
 vec4 traceVoxelsDiffuseBla(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld) {
     vec4 voxelDiffuse;
     for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
@@ -111,14 +111,14 @@ void main()
 	float metallic = float(material.metallic);
 
 
-#ifdef BINDLESSTEXTURES
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
     sampler2D diffuseMap;
     if(uint64_t(material.handleDiffuse) > 0) {
-        diffuseMap = sampler2D((material.handleDiffuse));
+        diffuseMap = sampler2D(material.handleDiffuse);
     }
     sampler2D roughnessMap;
 	if(uint64_t(material.handleRoughness) > 0) {
-        roughnessMap = sampler2D((material.handleRoughness));
+        roughnessMap = sampler2D(material.handleRoughness);
     }
 #endif
 

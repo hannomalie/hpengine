@@ -17,7 +17,7 @@ class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsum
         val random = Random.Default
         val randomExtent = 235f
         val randomExtentHalf = randomExtent * 0.5f
-        val pointLights = (0..499).map {
+        val pointLights = (0..99).map {
             Entity().apply {
                 val randomRadius = random.nextFloat()
                 val randomY = random.nextFloat()

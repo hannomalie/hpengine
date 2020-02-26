@@ -24,9 +24,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.joml.Vector4fc
 import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
@@ -40,7 +38,6 @@ import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL30.GL_BLEND_EQUATION_RGB
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
@@ -101,9 +98,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override val features = run {
         val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
         val drawParameters = if(capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
-        val shader5 = if(capabilities.GL_NV_gpu_shader5) Shader5 else null
+        val nvShader5 = if(capabilities.GL_NV_gpu_shader5) NvShader5 else null
+        val arbShader5 = if(capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
 
-        listOfNotNull(bindlessTextures, drawParameters, shader5)
+        listOfNotNull(bindlessTextures, drawParameters, arbShader5)
     }
 
     override fun createNewGPUFenceForReadState(currentReadState: RenderState) {
@@ -388,11 +386,12 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
         fun String.appendIfSupported(feature: GpuFeature, string: String): String {
             val supported = isSupported(feature)
-            val defineString = if (supported) "#define ${feature.toString().toUpperCase()} true\n" else ""
+            val defineString = if (supported) "#define ${feature.defineString.toUpperCase()} true\n" else ""
             val featureStringOrEmpty = if (supported) " $string\n" else ""
             return "${this}$featureStringOrEmpty$defineString"
         }
-        return "".appendIfSupported(Shader5, "#extension GL_NV_gpu_shader5 : enable")
+        return "".appendIfSupported(NvShader5, "#extension GL_NV_gpu_shader5 : enable")
+                .appendIfSupported(ArbShader5, "#extension GL_ARB_gpu_shader5 : enable")
                 .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable")
                 .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable")
     }

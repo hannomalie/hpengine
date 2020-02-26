@@ -38,6 +38,7 @@ import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL42
 import java.io.File
+import kotlin.math.max
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer)
 
@@ -57,7 +58,6 @@ class VoxelConeTracingExtension(
                 grid = id
                 gridHandle = handle
             }
-
             engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
                     MinFilter.LINEAR_MIPMAP_LINEAR,
                     MagFilter.LINEAR,
@@ -180,7 +180,7 @@ class VoxelConeTracingExtension(
             val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
             val useVoxelConeTracing = true
             val clearVoxels = true
-            val bounces = 2
+            val bounces = 1
 
             val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || engine.config.debug.isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
 
@@ -191,6 +191,7 @@ class VoxelConeTracingExtension(
 
             voxelizeScene(renderState, voxelGridState, clearVoxels, needsRevoxelization)
             injectLight(renderState, bounces, needsLightInjection)
+            engine.config.debug.isForceRevoxelization = false
         }
     }
 
@@ -200,7 +201,8 @@ class VoxelConeTracingExtension(
             profiled("grid shading") {
                 for(voxelGridIndex in 0 until voxelGrids.size) {
                     val currentVoxelGrid = voxelGrids[voxelGridIndex]
-                    val num_groups_xyz = Math.max(currentVoxelGrid.gridSize / 8, 1)
+
+                    val numGroupsXyz = max(currentVoxelGrid.gridSize / 8, 1)
 
                     if(lightInjectedFramesAgo == 0) {
                         with(injectLightComputeProgram) {
@@ -213,32 +215,28 @@ class VoxelConeTracingExtension(
                             setUniform("bounces", bounces)
                             setUniform("voxelGridIndex", voxelGridIndex)
 
-                            dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
+                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
                             mipmapGrid(currentVoxelGrid.grid)
                         }
                     }
-                    if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
-                        with(injectMultipleBounceLightComputeProgram) {
-                            use()
-                            GL42.glBindImageTexture(0, currentVoxelGrid.grid2, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                            setUniform("bounces", bounces)
-                            setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
-                            setUniform("voxelGridIndex", voxelGridIndex)
-                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
-                            dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
-                            mipmapGrid(currentVoxelGrid.grid2)
-                        }
-                    }
+//                    if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
+//                        with(injectMultipleBounceLightComputeProgram) {
+//                            use()
+//                            GL42.glBindImageTexture(0, currentVoxelGrid.grid2, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+//                            setUniform("bounces", bounces)
+//                            setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
+//                            setUniform("voxelGridIndex", voxelGridIndex)
+//                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
+//                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
+//                            mipmapGrid(currentVoxelGrid.grid2)
+//                        }
+//                    }
                 }
 
-//            for(voxelGridIndex in 0 until voxelGrids.size) {
-//                voxelGrids[voxelGridIndex].switchCurrentVoxelGrid()
-//            }
+                GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
                 lightInjectedFramesAgo++
             }
         }
-
-        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
         GL11.glColorMask(true, true, true, true)
     }
 
@@ -351,12 +349,17 @@ class VoxelConeTracingExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if(!renderState.sceneInitialized) return
         profiled("VCT second pass") {
+
             engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.deferredRenderingBuffer.positionMap)
             engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.deferredRenderingBuffer.normalMap)
             engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.deferredRenderingBuffer.colorReflectivenessMap)
             engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.deferredRenderingBuffer.motionMap)
             engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.deferredRenderingBuffer.visibilityMap)
+            engine.gpuContext.bindTexture(9, TEXTURE_3D, voxelGrids[0].grid)
+            engine.gpuContext.bindTexture(10, TEXTURE_3D, voxelGrids[0].grid2)
             engine.gpuContext.bindTexture(11, TEXTURE_2D, engine.deferredRenderingBuffer.ambientOcclusionScatteringMap)
+            engine.gpuContext.bindTexture(12, TEXTURE_3D, voxelGrids[0].albedoGrid)
+            engine.gpuContext.bindTexture(13, TEXTURE_3D, voxelGrids[0].normalGrid)
 
             voxelConeTraceProgram.use()
             val camTranslation = Vector3f()
@@ -395,14 +398,19 @@ class VoxelConeTracingExtension(
         val gridTextureFormat = GL11.GL_RGBA//GL11.GL_R;
         val gridTextureFormatSized = GL11.GL_RGBA8//GL30.GL_R32UI;
 
-        var ZERO_BUFFER = BufferUtils.createFloatBuffer(4)
-
-        init {
-            ZERO_BUFFER.put(0f)
-            ZERO_BUFFER.put(0f)
-            ZERO_BUFFER.put(0f)
-            ZERO_BUFFER.put(0f)
-            ZERO_BUFFER.rewind()
+        var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {
+            put(0f)
+            put(0f)
+            put(0f)
+            put(0f)
+            rewind()
+        }
+        var BLUE_BUFFER = BufferUtils.createFloatBuffer(4).apply {
+            put(0f)
+            put(0f)
+            put(1f)
+            put(0f)
+            rewind()
         }
     }
 }
