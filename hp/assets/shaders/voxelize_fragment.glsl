@@ -127,7 +127,7 @@ void main()
 
     ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);
 
-	imageStore(out_secondBounce, positionGridSpace, vec4(color.rgb*traceVoxelsDiffuseBla(voxelGridArray, normalize(g_normal), g_posWorld).rgb, opacity));
+//	imageStore(out_secondBounce, positionGridSpace, vec4(color.rgb*traceVoxelsDiffuseBla(voxelGridArray, normalize(g_normal), g_posWorld).rgb, opacity));
 	imageStore(out_voxelAlbedo, positionGridSpace, vec4(color.rgb, opacity));
 	imageStore(out_voxelNormal, positionGridSpace, vec4(normalize(g_normal), g_isStatic));
 //	TODO: Add emissive 0.25*float(material.ambient)

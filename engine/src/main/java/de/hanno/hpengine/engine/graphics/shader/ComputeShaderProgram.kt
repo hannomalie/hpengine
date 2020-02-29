@@ -7,6 +7,7 @@ import de.hanno.hpengine.util.ressources.Reloadable
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL20.glGetProgramInfoLog
+import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.util.StringJoiner
 import java.util.logging.Logger
@@ -65,7 +66,7 @@ class ComputeShaderProgram @JvmOverloads constructor(
 
     fun dispatchCompute(num_groups_x: Int, num_groups_y: Int, num_groups_z: Int) {
         GL43.glDispatchCompute(num_groups_x, num_groups_y, num_groups_z)
-        //		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
+        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
     }
 
     override fun unload() {

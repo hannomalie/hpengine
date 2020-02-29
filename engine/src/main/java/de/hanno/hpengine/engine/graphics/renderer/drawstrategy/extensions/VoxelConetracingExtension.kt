@@ -33,11 +33,18 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.ARBClearTexture
+import org.lwjgl.opengl.ARBDirectStateAccess.glGetTextureLevelParameteriv
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_FLOAT
+import org.lwjgl.opengl.GL11.GL_TEXTURE_WIDTH
+import org.lwjgl.opengl.GL11.glGetTexImage
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL42
+import org.lwjgl.opengl.GL45
+import org.lwjgl.opengl.GL45.glGetTextureLevelParameteri
 import java.io.File
+import java.nio.ByteBuffer
 import kotlin.math.max
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer)
@@ -207,7 +214,9 @@ class VoxelConeTracingExtension(
                     if(lightInjectedFramesAgo == 0) {
                         with(injectLightComputeProgram) {
                             use()
-                            GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                            engine.gpuContext.bindTexture(1, TEXTURE_3D, voxelGrids[0].albedoGrid)
+                            engine.gpuContext.bindTexture(2, TEXTURE_3D, voxelGrids[0].normalGrid)
+                            GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                             setUniform("pointLightCount", renderState.lightState.pointLights.size)
                             bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
                             bindShaderStorageBuffer(3, renderState.directionalLightState)
@@ -246,10 +255,10 @@ class VoxelConeTracingExtension(
             if (needsRevoxelization && clearVoxels) {
                 profiled("Clear voxels") {
                     if (engine.config.debug.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid2, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid2, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
                     } else {
                         clearDynamicVoxelsComputeProgram.use()
                         val num_groups_xyz = Math.max(currentVoxelGrid.gridSize / 8, 1)
@@ -295,12 +304,6 @@ class VoxelConeTracingExtension(
                             }
                             voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
                             draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
-
-                            //                TODO: Count this somehow?
-                            //                firstPassResult.verticesDrawn += currentVerticesCount;
-                            //                if (currentVerticesCount > 0) {
-                            //                    firstPassResult.entitiesDrawn++;
-                            //                }
                         }
                     }
                 }
@@ -349,7 +352,6 @@ class VoxelConeTracingExtension(
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if(!renderState.sceneInitialized) return
         profiled("VCT second pass") {
-
             engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.deferredRenderingBuffer.positionMap)
             engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.deferredRenderingBuffer.normalMap)
             engine.gpuContext.bindTexture(2, TEXTURE_2D, engine.deferredRenderingBuffer.colorReflectivenessMap)

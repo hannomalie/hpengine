@@ -203,6 +203,7 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
 }
 #endif
 
+// https://www.gamedev.net/forums/topic/695881-voxel-grid-traversal-algorithm/ THANKS!
 // P - ray origin position
 // V - ray direction
 // cone_ratio - using 1 large cone lead to poor results, multiple ones with some sane ratio looks a lot better
@@ -311,8 +312,9 @@ void main(void) {
 //            }
     }
 
+    vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, 10.0f*roughness, 100.0f, 1.0f).rgb;
     if(useAmbientOcclusion){
-        vec4 AOscattering = textureLod(aoScattering, st, 0);
+        vec4 AOscattering = textureLod(aoScattering, 0.5f*st, 0);
         vct *= clamp(AOscattering.r,0.0,1.0);
     }
 
@@ -332,8 +334,7 @@ void main(void) {
             #if defined(BINDLESSTEXTURES) && defined(SHADER5)
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
             #else
-            vct = voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
-//            vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, 4.9f, 100.0f, 2.0f).rgb;
+            vct = voxelFetch(voxelGrid, grid, positionWorld.xyz, 0).rgb;
             #endif
         }
     }

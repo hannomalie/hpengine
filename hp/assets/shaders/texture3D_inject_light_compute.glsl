@@ -128,6 +128,6 @@ void main(void) {
 
         finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1f;
     }
-//    imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
-    imageStore(targetVoxelGrid, storePos, vec4(0,0,1.0f, 1.0f));
+    imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
+//    imageStore(targetVoxelGrid, storePos, vec4(voxelColor.rgb, 1.0f));
 }
