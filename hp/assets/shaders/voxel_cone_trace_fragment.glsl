@@ -231,7 +231,7 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
         dist += sample_diameter * step_mult;
 
         // Sample from 3D texture (in performance superior to Sparse Voxel Octrees, hence use these)
-        vec4 sample_value = voxelFetch(voxelGridArray.voxelGrids[0], albedoGrid, sample_pos, sample_lod);
+        vec4 sample_value = voxelFetch(voxelGridArray.voxelGrids[0], grid, sample_pos, sample_lod);
 
         float a = 1.0 - accum.a;
         accum += sample_value * a;
@@ -291,6 +291,8 @@ void main(void) {
 
 	const float boost = 1.;
 
+    float aperture = tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
+
     if(!debugVoxels && useVoxelConeTracing) {
 
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
@@ -298,7 +300,6 @@ void main(void) {
 #else
         vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld, grid, grid2);
 #endif
-        float aperture = 0.1f*roughness;//tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
         vec4 voxelSpecular = vec4(4.0f);//*voxelTraceConeXXX(voxelGridArray, GRID2, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
 
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
@@ -312,7 +313,8 @@ void main(void) {
 //            }
     }
 
-    vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, 10.0f*roughness, 100.0f, 1.0f).rgb;
+    vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 100.0f, 1.0f).rgb;
+
     if(useAmbientOcclusion){
         vec4 AOscattering = textureLod(aoScattering, 0.5f*st, 0);
         vct *= clamp(AOscattering.r,0.0,1.0);
@@ -338,5 +340,5 @@ void main(void) {
             #endif
         }
     }
-    out_DiffuseSpecular.rgb = vct;
+    out_DiffuseSpecular.rgb = 4.0f*vct;
 }

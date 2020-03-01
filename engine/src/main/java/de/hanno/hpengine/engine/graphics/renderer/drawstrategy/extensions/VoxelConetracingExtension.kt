@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.SizedArray
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
@@ -33,18 +34,11 @@ import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.ARBClearTexture
-import org.lwjgl.opengl.ARBDirectStateAccess.glGetTextureLevelParameteriv
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_FLOAT
-import org.lwjgl.opengl.GL11.GL_TEXTURE_WIDTH
-import org.lwjgl.opengl.GL11.glGetTexImage
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL42
-import org.lwjgl.opengl.GL45
-import org.lwjgl.opengl.GL45.glGetTextureLevelParameteri
 import java.io.File
-import java.nio.ByteBuffer
 import kotlin.math.max
 
 class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer)
@@ -55,77 +49,47 @@ class VoxelConeTracingExtension(
         val renderer: RenderSystem) : RenderExtension<OpenGl> {
 
     val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
-        array[0].apply { gridSize = 256 }.apply {
-            setPosition(Vector3f(50f,0f,0f))
+        array[0].initGrid(Vector3f(50f, 0f, 0f))
+        array[1].apply {
+            initGrid(Vector3f(-50f, 0f, 0f))
+            scale = 1.0f
+        }
+    }
 
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                grid = id
-                gridHandle = handle
-            }
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                grid2 = id
-                grid2Handle = handle
-            }
+    private fun VoxelGrid.initGrid(position: Vector3f) {
+        gridSize = 256
+        setPosition(position)
 
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                albedoGrid = id
-                albedoGridHandle = handle
-            }
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                normalGrid = id
-                normalGridHandle = handle
-            }
+        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR,
+                GL12.GL_CLAMP_TO_EDGE).apply {
+            grid = id
+            gridHandle = handle
+        }
+        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR,
+                GL12.GL_CLAMP_TO_EDGE).apply {
+            grid2 = id
+            grid2Handle = handle
+        }
 
+        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR,
+                GL12.GL_CLAMP_TO_EDGE).apply {
+            albedoGrid = id
+            albedoGridHandle = handle
+        }
+        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
+                MinFilter.LINEAR_MIPMAP_LINEAR,
+                MagFilter.LINEAR,
+                GL12.GL_CLAMP_TO_EDGE).apply {
+            normalGrid = id
+            normalGridHandle = handle
+        }
 //             TODO: Add emissive
-
-        }
-        array[1].apply { gridSize = 256 }.apply {
-            setPosition(Vector3f(-50f,0f,0f))
-
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                grid = id
-                gridHandle = handle
-            }
-
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                grid2 = id
-                grid2Handle = handle
-            }
-
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                albedoGrid = id
-                albedoGridHandle = handle
-            }
-            engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                    MinFilter.LINEAR_MIPMAP_LINEAR,
-                    MagFilter.LINEAR,
-                    GL12.GL_CLAMP_TO_EDGE).apply {
-                normalGrid = id
-                normalGridHandle = handle
-            }
-
-        }
     }
 
     val voxelGridBufferRef = engine.renderStateManager.renderState.registerState {
@@ -177,7 +141,6 @@ class VoxelConeTracingExtension(
             globalGrid.setPosition(Vector3f(0f,0f,0f))
             val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
             globalGrid.scale = sceneScale // TODO: scenescale for first grid, other scale for other grids
-            voxelGrids[1].scale = 1.0f
             val voxelGridState = renderState.get(voxelGridBufferRef)
             voxelGrids.buffer.copyTo(voxelGridState.voxelGridBuffer.buffer, true)
 
@@ -206,7 +169,8 @@ class VoxelConeTracingExtension(
         if (needsLightInjection) {
             litInCycle = renderState.cycle
             profiled("grid shading") {
-                for(voxelGridIndex in 0 until voxelGrids.size) {
+                val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
+                for(voxelGridIndex in 0 until maxGridCount) {
                     val currentVoxelGrid = voxelGrids[voxelGridIndex]
 
                     val numGroupsXyz = max(currentVoxelGrid.gridSize / 8, 1)
@@ -250,7 +214,8 @@ class VoxelConeTracingExtension(
     }
 
     fun voxelizeScene(renderState: RenderState, voxelGridState: VoxelGridsState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
-        for(voxelGridIndex in 0 until voxelGrids.size) {
+        val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
+        for(voxelGridIndex in 0 until maxGridCount) {
             val currentVoxelGrid = voxelGrids[voxelGridIndex]
             if (needsRevoxelization && clearVoxels) {
                 profiled("Clear voxels") {
