@@ -510,12 +510,24 @@ bool isInsideVoxelGrid(vec3 positionWorld, VoxelGrid voxelGrid) {
 }
 vec4 voxelFetch(VoxelGrid voxelGrid, sampler3D grid, vec3 positionWorld, float LoD) {
     if(!isInsideVoxelGrid(positionWorld, voxelGrid)) {
-       return vec4(0);
+        return vec4(0);
     }
 
     vec3 positionInGridSpaceMipMapAdjusted = worldToGridPositionFloat(positionWorld, voxelGrid, LoD);
     float normalizer = voxelGrid.resolution/pow(2, LoD);
     vec4 result = textureLod(grid, positionInGridSpaceMipMapAdjusted/normalizer, LoD);
+
+    return result;
+
+}
+ivec4 voxelFetchI(VoxelGrid voxelGrid, isampler3D grid, vec3 positionWorld, float LoD) {
+    if(!isInsideVoxelGrid(positionWorld, voxelGrid)) {
+        return ivec4(0);
+    }
+
+    vec3 positionInGridSpaceMipMapAdjusted = worldToGridPositionFloat(positionWorld, voxelGrid, LoD);
+    float normalizer = voxelGrid.resolution/pow(2, LoD);
+    ivec4 result = textureLod(grid, positionInGridSpaceMipMapAdjusted/normalizer, LoD);
 
     return result;
 

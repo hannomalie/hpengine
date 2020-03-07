@@ -10,6 +10,7 @@ in vec2 v_texcoord[3];
 in vec4 position_world[3];
 
 in int v_materialIndex[3];
+in int v_entityIndex[3];
 in int v_isStatic[3];
 
 out vec3 g_normal;
@@ -17,6 +18,7 @@ out vec3 g_pos;
 out vec3 g_posWorld;
 out vec2 g_texcoord;
 flat out int g_materialIndex;
+flat out int g_entityIndex;
 flat out int g_isStatic;
 
 flat out int g_axis;   //indicate which axis the projection uses
@@ -112,8 +114,9 @@ void main()
         g_pos = pos[i].xyz;
         g_normal = v_normal[i];
         g_texcoord = v_texcoord[i];
-        g_texcoord.y = 1-g_texcoord.y;
+        g_texcoord.y = g_texcoord.y;//1-g_texcoord.y;
         g_materialIndex = v_materialIndex[i];
+        g_entityIndex = v_entityIndex[i];
         g_isStatic = v_isStatic[i];
         EmitVertex();
 	}

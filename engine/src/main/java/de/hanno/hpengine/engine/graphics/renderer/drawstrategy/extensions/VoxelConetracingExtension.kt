@@ -37,6 +37,8 @@ import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL30.GL_RED_INTEGER
 import org.lwjgl.opengl.GL42
 import java.io.File
 import kotlin.math.max
@@ -67,12 +69,12 @@ class VoxelConeTracingExtension(
             grid = id
             gridHandle = handle
         }
-        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                MinFilter.LINEAR_MIPMAP_LINEAR,
-                MagFilter.LINEAR,
+        engine.textureManager.getTexture3D(gridSize, indexGridTextureFormatSized,
+                MinFilter.NEAREST,
+                MagFilter.NEAREST,
                 GL12.GL_CLAMP_TO_EDGE).apply {
-            grid2 = id
-            grid2Handle = handle
+            indexGrid = id
+            indexGridHandle = handle
         }
 
         engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
@@ -165,54 +167,6 @@ class VoxelConeTracingExtension(
         }
     }
 
-    fun injectLight(renderState: RenderState, bounces: Int, needsLightInjection: Boolean) {
-        if (needsLightInjection) {
-            litInCycle = renderState.cycle
-            profiled("grid shading") {
-                val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
-                for(voxelGridIndex in 0 until maxGridCount) {
-                    val currentVoxelGrid = voxelGrids[voxelGridIndex]
-
-                    val numGroupsXyz = max(currentVoxelGrid.gridSize / 8, 1)
-
-                    if(lightInjectedFramesAgo == 0) {
-                        with(injectLightComputeProgram) {
-                            use()
-                            engine.gpuContext.bindTexture(1, TEXTURE_3D, voxelGrids[0].albedoGrid)
-                            engine.gpuContext.bindTexture(2, TEXTURE_3D, voxelGrids[0].normalGrid)
-                            GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                            setUniform("pointLightCount", renderState.lightState.pointLights.size)
-                            bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-                            bindShaderStorageBuffer(3, renderState.directionalLightState)
-                            bindShaderStorageBuffer(5, renderState[voxelGridBufferRef].voxelGridBuffer)
-                            setUniform("bounces", bounces)
-                            setUniform("voxelGridIndex", voxelGridIndex)
-
-                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
-                            mipmapGrid(currentVoxelGrid.grid)
-                        }
-                    }
-//                    if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
-//                        with(injectMultipleBounceLightComputeProgram) {
-//                            use()
-//                            GL42.glBindImageTexture(0, currentVoxelGrid.grid2, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-//                            setUniform("bounces", bounces)
-//                            setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
-//                            setUniform("voxelGridIndex", voxelGridIndex)
-//                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
-//                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
-//                            mipmapGrid(currentVoxelGrid.grid2)
-//                        }
-//                    }
-                }
-
-                GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
-                lightInjectedFramesAgo++
-            }
-        }
-        GL11.glColorMask(true, true, true, true)
-    }
-
     fun voxelizeScene(renderState: RenderState, voxelGridState: VoxelGridsState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
         val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
         for(voxelGridIndex in 0 until maxGridCount) {
@@ -221,7 +175,7 @@ class VoxelConeTracingExtension(
                 profiled("Clear voxels") {
                     if (engine.config.debug.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid2, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                        ARBClearTexture.glClearTexImage(currentVoxelGrid.indexGrid, 0, indexGridTextureFormat, GL11.GL_INT, ZERO_BUFFER_INT)
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
                     } else {
@@ -244,7 +198,7 @@ class VoxelConeTracingExtension(
                     voxelizer.use()
                     GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                     GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                    GL42.glBindImageTexture(6, currentVoxelGrid.grid2, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                    GL42.glBindImageTexture(6, currentVoxelGrid.indexGrid, 0, true, 0, GL15.GL_WRITE_ONLY, indexGridTextureFormatSized)
                     voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
                     voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                     voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
@@ -281,6 +235,57 @@ class VoxelConeTracingExtension(
                 }
             }
         }
+    }
+
+    fun injectLight(renderState: RenderState, bounces: Int, needsLightInjection: Boolean) {
+        if (needsLightInjection) {
+            litInCycle = renderState.cycle
+            profiled("grid shading") {
+                val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
+                for(voxelGridIndex in 0 until maxGridCount) {
+                    val currentVoxelGrid = voxelGrids[voxelGridIndex]
+
+                    val numGroupsXyz = max(currentVoxelGrid.gridSize / 8, 1)
+
+                    if(lightInjectedFramesAgo == 0) {
+                        with(injectLightComputeProgram) {
+                            use()
+                            engine.gpuContext.bindTexture(1, TEXTURE_3D, voxelGrids[0].albedoGrid)
+                            engine.gpuContext.bindTexture(2, TEXTURE_3D, voxelGrids[0].normalGrid)
+                            engine.gpuContext.bindTexture(3, TEXTURE_3D, voxelGrids[0].indexGrid)
+                            GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                            setUniform("pointLightCount", renderState.lightState.pointLights.size)
+                            bindShaderStorageBuffer(1, renderState.materialBuffer)
+                            bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
+                            bindShaderStorageBuffer(3, renderState.directionalLightState)
+                            bindShaderStorageBuffer(4, renderState.entitiesBuffer)
+                            bindShaderStorageBuffer(5, renderState[voxelGridBufferRef].voxelGridBuffer)
+                            setUniform("bounces", bounces)
+                            setUniform("voxelGridIndex", voxelGridIndex)
+
+                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
+                            mipmapGrid(currentVoxelGrid.grid)
+                        }
+                    }
+//                    if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
+//                        with(injectMultipleBounceLightComputeProgram) {
+//                            use()
+//                            GL42.glBindImageTexture(0, currentVoxelGrid.grid2, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+//                            setUniform("bounces", bounces)
+//                            setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
+//                            setUniform("voxelGridIndex", voxelGridIndex)
+//                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
+//                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
+//                            mipmapGrid(currentVoxelGrid.grid2)
+//                        }
+//                    }
+                }
+
+                GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
+                lightInjectedFramesAgo++
+            }
+        }
+        GL11.glColorMask(true, true, true, true)
     }
 
     override fun update() = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
@@ -323,7 +328,7 @@ class VoxelConeTracingExtension(
             engine.gpuContext.bindTexture(3, TEXTURE_2D, engine.deferredRenderingBuffer.motionMap)
             engine.gpuContext.bindTexture(7, TEXTURE_2D, engine.deferredRenderingBuffer.visibilityMap)
             engine.gpuContext.bindTexture(9, TEXTURE_3D, voxelGrids[0].grid)
-            engine.gpuContext.bindTexture(10, TEXTURE_3D, voxelGrids[0].grid2)
+            engine.gpuContext.bindTexture(10, TEXTURE_3D, voxelGrids[0].indexGrid)
             engine.gpuContext.bindTexture(11, TEXTURE_2D, engine.deferredRenderingBuffer.ambientOcclusionScatteringMap)
             engine.gpuContext.bindTexture(12, TEXTURE_3D, voxelGrids[0].albedoGrid)
             engine.gpuContext.bindTexture(13, TEXTURE_3D, voxelGrids[0].normalGrid)
@@ -364,12 +369,21 @@ class VoxelConeTracingExtension(
     companion object {
         val gridTextureFormat = GL11.GL_RGBA//GL11.GL_R;
         val gridTextureFormatSized = GL11.GL_RGBA8//GL30.GL_R32UI;
+        val indexGridTextureFormat = GL_RED_INTEGER//GL30.GL_R32UI;
+        val indexGridTextureFormatSized = GL30.GL_R16I//GL30.GL_R32UI;
 
         var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {
             put(0f)
             put(0f)
             put(0f)
             put(0f)
+            rewind()
+        }
+        var ZERO_BUFFER_INT = BufferUtils.createIntBuffer(4).apply {
+            put(0)
+            put(0)
+            put(0)
+            put(0)
             rewind()
         }
         var BLUE_BUFFER = BufferUtils.createFloatBuffer(4).apply {

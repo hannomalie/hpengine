@@ -91,7 +91,7 @@ struct VoxelGrid {
     int albedoGrid;
     int normalGrid;
     int grid;
-    int grid2;
+    int indexGrid;
 
     int resolution;
     int resolutionHalf;
@@ -107,7 +107,7 @@ struct VoxelGrid {
     uvec2 normalGridHandle;
 
     uvec2 gridHandle;
-    uvec2 grid2Handle;
+    uvec2 indexGridHandle;
 };
 
 struct VoxelGridArray {

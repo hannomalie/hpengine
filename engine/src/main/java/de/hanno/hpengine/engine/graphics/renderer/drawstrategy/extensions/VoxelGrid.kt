@@ -14,7 +14,7 @@ open class VoxelGrid : Struct() {
     var albedoGrid by 0
     var normalGrid by 0
     var grid by 0
-    var grid2 by 0
+    var indexGrid by 0
 
     private var _gridSize by 0
     private var _gridSizeHalf by 0
@@ -38,7 +38,7 @@ open class VoxelGrid : Struct() {
     var albedoGridHandle by 0L
     var normalGridHandle by 0L
     var gridHandle by 0L
-    var grid2Handle by 0L
+    var indexGridHandle by 0L
 
     private val transform = SimpleTransform()
     val spatial = TransformSpatial(transform)
@@ -86,7 +86,7 @@ open class VoxelGrid : Struct() {
     }
     private val tempTranslation = Vector3f()
     val currentVoxelTarget: Int
-        get() = grid2
+        get() = indexGrid
     val currentVoxelSource: Int
         get() = grid
 

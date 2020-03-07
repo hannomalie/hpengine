@@ -31,6 +31,7 @@ out vec3 v_vertex;
 out vec3 v_normal;
 out vec2 v_texcoord;
 out int v_materialIndex;
+out int v_entityIndex;
 out int v_isStatic;
 
 
@@ -52,6 +53,7 @@ void main(void) {
     int materialIndex = int(entity.materialIndex);
     Material material = materials[materialIndex];
     v_materialIndex = materialIndex;
+    v_entityIndex = entityBufferIndex;
 
     mat4 modelMatrix = mat4(entity.modelMatrix);
 

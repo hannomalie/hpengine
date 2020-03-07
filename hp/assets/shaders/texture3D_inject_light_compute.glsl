@@ -8,6 +8,7 @@ layout(binding=6) uniform sampler2D shadowMap;
 #else
 layout(binding=1) uniform sampler3D albedoGrid;
 layout(binding=2) uniform sampler3D normalGrid;
+layout(binding=3) uniform isampler3D indexGrid;
 #endif
 uniform mat4 shadowMatrix;
 
@@ -15,6 +16,9 @@ uniform int bounces = 1;
 //include(globals_structs.glsl)
 //include(globals.glsl)
 
+layout(std430, binding=1) buffer _materials {
+    Material materials[100];
+};
 uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
 	PointLight pointLights[100];
@@ -22,7 +26,9 @@ layout(std430, binding=2) buffer _lights {
 layout(std430, binding=3) buffer _directionalLightState {
 	DirectionalLightState directionalLight;
 };
-
+layout(std430, binding=4) buffer _entities {
+    Entity entities[2000];
+};
 layout(std430, binding=5) buffer _voxelGrids {
     VoxelGridArray voxelGridArray;
 };
@@ -94,18 +100,23 @@ void main(void) {
     vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);
     vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5f);
 
-    vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0);
-    vec4 normalStatic = voxelFetch(voxelGrid, normalGrid, positionWorld, 0);
+    vec4 color = voxelFetch(voxelGrid, albedoGrid, positionWorld, 0.0f);
+    vec4 normalStatic = voxelFetch(voxelGrid, normalGrid, positionWorld, 0.0f);
+    int entityIndex = voxelFetchI(voxelGrid, indexGrid, positionWorld, 0.0f).r;
+
+    Entity entity = entities[entityIndex];
+    Material material = materials[entity.materialIndex];
+
     vec3 g_normal = normalize(normalStatic.rgb);
     vec3 g_pos = positionWorld;
     float opacity = color.a;
-    float isStatic = normalStatic.a;
+    float isStatic = entity.isStatic;
 
     //second bounce?
     vec3 ambientAmount = vec3(0.0f);
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
-    float emissive = 0;// TODO: Readd emissive materials like before with normalStatic.a;
+    float emissive = 4.0f * material.ambient;// TODO: Readd emissive materials like before with normalStatic.a;
     vec3 voxelColorAmbient = (vec3(ambientAmount)+float(emissive))*voxelColor;
 
     vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
@@ -129,5 +140,8 @@ void main(void) {
         finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor;
     }
     imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
-//    imageStore(targetVoxelGrid, storePos, vec4(voxelColor.rgb, 1.0f));
+//    if(entityIndex < 15)
+//    {
+//        imageStore(targetVoxelGrid, storePos, vec4(1.0f, 1.0f, 0.0f, opacity));
+//    }
 }

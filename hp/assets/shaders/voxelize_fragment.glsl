@@ -19,7 +19,7 @@ uniform bool hasRoughnessMap = false;
 
 layout(binding=3, rgba8) uniform image3D out_voxelNormal;
 layout(binding=5, rgba8) uniform image3D out_voxelAlbedo;
-layout(binding=6, rgba8) uniform image3D out_secondBounce;
+layout(binding=6, r16i) uniform iimage3D out_index;
 
 flat in int g_axis;   //indicate which axis the projection uses
 flat in vec4 g_AABB;
@@ -29,6 +29,7 @@ in vec3 g_pos;
 in vec3 g_posWorld;
 in vec2 g_texcoord;
 flat in int g_materialIndex;
+flat in int g_entityIndex;
 flat in int g_isStatic;
 //layout (pixel_center_integer) in vec4 gl_FragCoord;
 
@@ -129,6 +130,8 @@ void main()
 
 //	imageStore(out_secondBounce, positionGridSpace, vec4(color.rgb*traceVoxelsDiffuseBla(voxelGridArray, normalize(g_normal), g_posWorld).rgb, opacity));
 	imageStore(out_voxelAlbedo, positionGridSpace, vec4(color.rgb, opacity));
-	imageStore(out_voxelNormal, positionGridSpace, vec4(normalize(g_normal), g_isStatic));
+    imageStore(out_voxelNormal, positionGridSpace, vec4(normalize(g_normal), g_isStatic));
+    imageStore(out_index, positionGridSpace, ivec4(g_entityIndex,0,0,0));
+//    imageStore(out_index, positionGridSpace, ivec4(18,0,0,0));
 //	TODO: Add emissive 0.25*float(material.ambient)
 }
