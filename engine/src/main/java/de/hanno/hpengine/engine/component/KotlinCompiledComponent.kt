@@ -73,7 +73,7 @@ data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSourc
                             .split(System.getProperty("path.separator"))
                             .filter {
                                 File(it).exists() && File(it).canRead()
-                            }.joinToString(":")
+                            }.joinToString(System.getProperty("path.separator"))
                     noStdlib = true
                     noReflect = true
                     skipRuntimeVersionCheck = true

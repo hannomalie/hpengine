@@ -103,11 +103,11 @@ void main(void) {
 	int UNLIT = 2;
 	vec3 lightDiffuse = directionalLight.color;
 
-	#if BINDLESS_TEXTURES
+#ifdef BINDLESSTEXTURES
 	float visibility = getVisibility(positionWorld, directionalLight);
-	#else
+#else
 	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap);
-	#endif
+#endif
 
 	if(materialType == FOLIAGE) {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,

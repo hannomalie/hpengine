@@ -120,7 +120,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
             extensions = supportedExtensions.joinToString(" ")
 
-            val debug = true
+            val debug = false
             if (debug) {
                 val debugProc = GLUtil.setupDebugMessageCallback()
             }
