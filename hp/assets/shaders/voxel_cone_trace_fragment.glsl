@@ -18,6 +18,8 @@ layout(binding=12) uniform sampler3D albedoGrid;
 layout(binding=13) uniform sampler3D normalGrid;
 #endif
 
+uniform int voxelGridIndex = 0;
+
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
@@ -211,7 +213,7 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
 // step_mult - in case we want "faster" and even less-precise stepping
 vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, in float step_mult)
 {
-    float min_voxel_diameter = voxelGridArray.voxelGrids[0].scale;
+    float min_voxel_diameter = voxelGridArray.voxelGrids[voxelGridIndex].scale;
     float min_voxel_diameter_inv = 1.0 / min_voxel_diameter;
 
     vec4 accum = vec4(0.0f);
@@ -231,7 +233,7 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
         dist += sample_diameter * step_mult;
 
         // Sample from 3D texture (in performance superior to Sparse Voxel Octrees, hence use these)
-        vec4 sample_value = voxelFetch(voxelGridArray.voxelGrids[0], grid, sample_pos, sample_lod);
+        vec4 sample_value = voxelFetch(voxelGridArray.voxelGrids[voxelGridIndex], grid, sample_pos, sample_lod);
 
         float a = 1.0 - accum.a;
         accum += sample_value * a;
@@ -331,7 +333,7 @@ void main(void) {
         const bool onlySample = true;
 #endif
         if(onlySample) {
-            VoxelGrid voxelGrid = voxelGridArray.voxelGrids[0];
+            VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
 
             #if defined(BINDLESSTEXTURES) && defined(SHADER5)
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
@@ -340,5 +342,6 @@ void main(void) {
             #endif
         }
     }
+
     out_DiffuseSpecular.rgb = 4.0f*vct;
 }
