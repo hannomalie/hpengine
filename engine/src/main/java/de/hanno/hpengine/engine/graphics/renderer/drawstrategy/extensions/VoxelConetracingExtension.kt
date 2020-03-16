@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
@@ -21,7 +20,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
@@ -136,14 +134,14 @@ class VoxelConeTracingExtension(
             }
             val needsLightInjection = lightInjectedFramesAgo < bounces
 
-            voxelizeScene(renderState, renderState[voxelGrids], clearVoxels, needsRevoxelization)
+            voxelizeScene(renderState, clearVoxels, needsRevoxelization)
             injectLight(renderState, bounces, needsLightInjection)
             engine.config.debug.isForceRevoxelization = false
         }
     }
 
-    fun voxelizeScene(renderState: RenderState, voxelGrids: PersistentMappedStructBuffer<VoxelGrid>, clearVoxels: Boolean, needsRevoxelization: Boolean) {
-//        val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
+    fun voxelizeScene(renderState: RenderState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
+        val voxelGrids = renderState[this.voxelGrids]
         val maxGridCount = voxelGrids.size
         for(voxelGridIndex in 0 until maxGridCount) {
             val currentVoxelGrid = voxelGrids[voxelGridIndex]

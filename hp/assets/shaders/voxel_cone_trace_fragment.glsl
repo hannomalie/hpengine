@@ -272,12 +272,12 @@ void main(void) {
 	V = positionView;
 	V = -normalize((positionWorld.xyz - eyePosition.xyz).xyz);
 
-	// skip background
-	if (int(visibility.b) == skyBoxMaterialIndex) {
-	  discard;
-	}
-	vec4 normalAmbient = texture(normalMap, st);
-	vec3 normalView = normalAmbient.xyz;
+    vec4 normalAmbient = texture(normalMap, st);
+    vec3 normalView = normalAmbient.xyz;
+    // skip background
+    if (length(normalView) < 0.5f) {
+        discard;
+    }
 	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
 
 	float metallic = textureLod(diffuseMap, st, 0).a;

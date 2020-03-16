@@ -45,7 +45,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
     }
 
     override val indices
-        get() = 0 until size-1
+        get() = 0 until size
 
     override val sizeInBytes: Int
         get() = size * slidingWindow.sizeInBytes
