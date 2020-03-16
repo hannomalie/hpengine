@@ -19,13 +19,14 @@ layout(binding=13) uniform sampler3D normalGrid;
 #endif
 
 uniform int voxelGridIndex = 0;
+uniform int voxelGridCount = 0;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    VoxelGridArray voxelGridArray;
+    VoxelGrid[10] voxelGrids;
 };
 
 uniform float screenWidth = 1280;
@@ -64,7 +65,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 }
 
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
-vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
+vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGrid[MAX_VOXELGRIDS] voxelGridArray) {
 	vec3 rayVector = worldPos.xyz - startPosition;
 
 	vec3 rayDirection = normalize(rayVector);
@@ -97,8 +98,8 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
         float step_accumAlpha = 0.0f;
 
 		float minScale = 1000000.0;
-        for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
-            VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        for(int voxelGridIndex = 0; voxelGridIndex < voxelGridCount; voxelGridIndex++) {
+            VoxelGrid voxelGrid = voxelGrids[voxelGridIndex];
 
             if(!isInsideVoxelGrid(currentPosition, voxelGrid)) {
                 continue;
@@ -136,14 +137,14 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
 	return lit2.rgb;
 }
 #else
-vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGridArray voxelGridArray) {
+vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGrid[MAX_VOXELGRIDS] voxelGridArray) {
     return vec3(0.0f);
 }
 #endif
 
 
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
-vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
+vec4 voxelTraceConeXXX(VoxelGrid[MAX_VOXELGRIDS] voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 
     vec4 accum = vec4(0.0);
     float alpha = 0;
@@ -155,8 +156,8 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
         float minScale = 100000.0;
         int canditateIndex = -1;
         VoxelGrid voxelGrid;
-        for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
-            VoxelGrid candidate = voxelGridArray.voxelGrids[voxelGridIndex];
+        for(int voxelGridIndex = 0; voxelGridIndex < voxelGridCount; voxelGridIndex++) {
+            VoxelGrid candidate = voxelGridArray[voxelGridIndex];
             if(isInsideVoxelGrid(samplePos, candidate) && candidate.scale < minScale) {
                 canditateIndex = voxelGridIndex;
                 minScale = candidate.scale;
@@ -213,7 +214,7 @@ vec4 voxelTraceConeXXX(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin
 // step_mult - in case we want "faster" and even less-precise stepping
 vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, in float step_mult)
 {
-    float min_voxel_diameter = voxelGridArray.voxelGrids[voxelGridIndex].scale;
+    float min_voxel_diameter = voxelGrids[voxelGridIndex].scale;
     float min_voxel_diameter_inv = 1.0 / min_voxel_diameter;
 
     vec4 accum = vec4(0.0f);
@@ -233,7 +234,7 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
         dist += sample_diameter * step_mult;
 
         // Sample from 3D texture (in performance superior to Sparse Voxel Octrees, hence use these)
-        vec4 sample_value = voxelFetch(voxelGridArray.voxelGrids[voxelGridIndex], grid, sample_pos, sample_lod);
+        vec4 sample_value = voxelFetch(voxelGrids[voxelGridIndex], grid, sample_pos, sample_lod);
 
         float a = 1.0 - accum.a;
         accum += sample_value * a;
@@ -243,6 +244,11 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
 }
 
 void main(void) {
+
+    VoxelGridArray voxelGridArray;
+    voxelGridArray.size = voxelGridCount;
+    voxelGridArray.voxelGrids = voxelGrids;
+
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
@@ -323,7 +329,7 @@ void main(void) {
     }
 
     if(debugVoxels) {
-        vec3 temp = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, voxelGridArray);
+        vec3 temp = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, voxelGridArray.voxelGrids);
         if(temp.x > 0 || temp.y > 0 || temp.z > 0) {
             vct += temp;
         }

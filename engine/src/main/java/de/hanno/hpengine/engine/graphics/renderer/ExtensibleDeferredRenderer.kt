@@ -57,7 +57,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val shadowMapExtension = DirectionalLightShadowMapExtension(engineContext)
     val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
-    val extensions: List<RenderExtension<OpenGl>> = listOf(
+    val extensions = mutableListOf(
         shadowMapExtension,
         SkyBoxRenderExtension(engineContext),
         ForwardRenderExtension(engineContext),
@@ -65,7 +65,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 //        PointLightSecondPassExtension(engineContext),
         AOScatteringExtension(engineContext),
 //        AmbientCubeGridExtension(engineContext),
-        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
+//        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
         BvHPointLightSecondPassExtension(engineContext)
     )
 

@@ -110,12 +110,13 @@ struct VoxelGrid {
     uvec2 indexGridHandle;
 };
 
+#define MAX_VOXELGRIDS 10
 struct VoxelGridArray {
     int size;
     int dummy0;
     int dummy1;
     int dummy2;
-	VoxelGrid voxelGrids[10];
+	VoxelGrid voxelGrids[MAX_VOXELGRIDS];
 };
 
 struct DirectionalLightState {

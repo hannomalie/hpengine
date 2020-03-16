@@ -123,6 +123,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Text
 }
 
 fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploadInfo, textureTarget: GlTextureTarget, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int = GL12.GL_REPEAT): Triple<Int, Int, Long> {
+    info.validate()
     return gpuContext.calculate {
         val textureId = glGenTextures()
         val glTarget = textureTarget.glTarget
@@ -153,7 +154,9 @@ fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploa
                 glTexParameteri(glTarget, GL_TEXTURE_WRAP_R, wrapMode)
             }
         }
-        GL30.glGenerateMipmap(glTarget)
+        if(filterConfig.minFilter.isMipMapped) {
+            GL30.glGenerateMipmap(glTarget)
+        }
 
         val handle = if(gpuContext.isSupported(BindlessTextures)) ARBBindlessTexture.glGetTextureHandleARB(textureId) else -1
         Triple(textureId, internalFormat, handle)
@@ -392,6 +395,26 @@ data class Texture2D(override val dimension: TextureDimension2D,
         data class CubeMapArrayUploadInfo(val dimension: TextureDimension3D): TextureUploadInfo()
     }
 }
+fun Texture2D.TextureUploadInfo.validate(): Unit = when(this) {
+    is Texture2DUploadInfo -> {
+        require(dimension.width > 0) { "Illegal width $dimension" }
+        require(dimension.height > 0) { "Illegal height $dimension" }
+    }
+    is Texture3DUploadInfo -> {
+        require(dimension.width > 0) { "Illegal width $dimension" }
+        require(dimension.height > 0) { "Illegal height $dimension" }
+        require(dimension.depth > 0) { "Illegal depth $dimension" }
+    }
+    is CubeMapUploadInfo -> {
+        require(dimension.width > 0) { "Illegal width $dimension" }
+        require(dimension.height > 0) { "Illegal height $dimension" }
+    }
+    is CubeMapArrayUploadInfo -> {
+        require(dimension.width > 0) { "Illegal width $dimension" }
+        require(dimension.height > 0) { "Illegal height $dimension" }
+        require(dimension.depth > 0) { "Illegal depth $dimension" }
+    }
+}.let {}
 
 data class FileBasedTexture2D(val path: String, val file: File, val backingTexture: Texture2D): Texture by backingTexture {
     companion object {

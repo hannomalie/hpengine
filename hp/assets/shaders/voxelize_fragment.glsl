@@ -47,13 +47,14 @@ layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    VoxelGridArray voxelGridArray;
+    VoxelGrid[MAX_VOXELGRIDS] voxelGrids;
 };
 
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
 uniform int voxelGridIndex = 0;
+uniform int voxelGridCount = 0;
 
 
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
@@ -101,6 +102,9 @@ vec4 traceVoxelsDiffuseBla(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3
 void main()
 {
 
+    VoxelGridArray voxelGridArray;
+    voxelGridArray.size = voxelGridCount;
+    voxelGridArray.voxelGrids = voxelGrids;
     VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
 
 	Material material = materials[g_materialIndex];

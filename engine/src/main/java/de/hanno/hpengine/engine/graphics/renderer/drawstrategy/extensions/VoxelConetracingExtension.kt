@@ -1,13 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
-import de.hanno.hpengine.engine.SizedArray
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.graphics.BindlessTextures
+import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
@@ -16,9 +17,12 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXT
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_3D
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
@@ -28,12 +32,13 @@ import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.model.texture.Texture3D
+import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.engine.vertexbuffer.draw
-import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
-import org.lwjgl.glfw.GLFW
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
@@ -42,61 +47,47 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_RED_INTEGER
 import org.lwjgl.opengl.GL42
 import java.io.File
+import java.util.function.Consumer
 import kotlin.math.max
 
-class VoxelGridsState(val voxelGridBuffer: PersistentMappedBuffer)
+fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExtension.GIVolumeGrids {
+    return VoxelConeTracingExtension.GIVolumeGrids(
+            getTexture3D(gridSize, VoxelConeTracingExtension.gridTextureFormatSized,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE),
+            getTexture3D(gridSize, VoxelConeTracingExtension.indexGridTextureFormatSized,
+                    MinFilter.NEAREST,
+                    MagFilter.NEAREST,
+                    GL12.GL_CLAMP_TO_EDGE),
+            getTexture3D(gridSize, VoxelConeTracingExtension.gridTextureFormatSized,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE),
+            getTexture3D(gridSize, VoxelConeTracingExtension.gridTextureFormatSized,
+                    MinFilter.LINEAR_MIPMAP_LINEAR,
+                    MagFilter.LINEAR,
+                    GL12.GL_CLAMP_TO_EDGE)
+    )
+}
 
 class VoxelConeTracingExtension(
         private val engine: EngineContext<OpenGl>,
         directionalLightShadowMapExtension: DirectionalLightShadowMapExtension?,
         val renderer: RenderSystem) : RenderExtension<OpenGl> {
 
-    val voxelGrids = SizedArray(2) { VoxelGrid() }.apply {
-        array[0].initGrid(Vector3f(50f, 0f, 0f))
-        array[1].apply {
-            initGrid(Vector3f(-50f, 0f, 0f))
-            scale = 1.0f
-        }
+    private val lineRenderer = LineRendererImpl(engine)
+    val voxelGrids = engine.renderStateManager.renderState.registerState {
+        PersistentMappedStructBuffer(0, engine.gpuContext, { VoxelGrid() })
     }
+    data class GIVolumeGrids(val grid: Texture3D,
+                             val indexGrid: Texture3D,
+                             val albedoGrid: Texture3D,
+                             val normalGrid: Texture3D)
 
     private fun VoxelGrid.initGrid(position: Vector3f) {
         gridSize = 256
         setPosition(position)
-
-        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                MinFilter.LINEAR_MIPMAP_LINEAR,
-                MagFilter.LINEAR,
-                GL12.GL_CLAMP_TO_EDGE).apply {
-            grid = id
-            gridHandle = handle
-        }
-        engine.textureManager.getTexture3D(gridSize, indexGridTextureFormatSized,
-                MinFilter.NEAREST,
-                MagFilter.NEAREST,
-                GL12.GL_CLAMP_TO_EDGE).apply {
-            indexGrid = id
-            indexGridHandle = handle
-        }
-
-        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                MinFilter.LINEAR_MIPMAP_LINEAR,
-                MagFilter.LINEAR,
-                GL12.GL_CLAMP_TO_EDGE).apply {
-            albedoGrid = id
-            albedoGridHandle = handle
-        }
-        engine.textureManager.getTexture3D(gridSize, gridTextureFormatSized,
-                MinFilter.LINEAR_MIPMAP_LINEAR,
-                MagFilter.LINEAR,
-                GL12.GL_CLAMP_TO_EDGE).apply {
-            normalGrid = id
-            normalGridHandle = handle
-        }
-//             TODO: Add emissive
-    }
-
-    val voxelGridBufferRef = engine.renderStateManager.renderState.registerState {
-        VoxelGridsState(PersistentMappedBuffer(engine.gpuContext, voxelGrids.sizeInBytes))
     }
 
     private val voxelizer: Program = this.engine.programManager.getProgram(getShaderSource(File(Shader.directory + "voxelize_vertex.glsl")), getShaderSource(File(Shader.directory + "voxelize_fragment.glsl")), getShaderSource(File(Shader.directory + "voxelize_geometry.glsl")))
@@ -128,24 +119,7 @@ class VoxelConeTracingExtension(
 
         profiled("VCT first pass") {
 
-            //         TODO: Move to update somehow
-
-            val movableGrid = voxelGrids[1]
-            val gridMoved = if(backend.input.isKeyPressed(GLFW.GLFW_KEY_1)) {
-                movableGrid.move(Vector3f(-1.5f, 0f, 0f))
-                println(movableGrid.position.x)
-                true
-            } else if(backend.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
-                movableGrid.move(Vector3f(1.5f, 0f, 0f))
-                println(movableGrid.position.x)
-                true
-            } else false
-            val globalGrid = voxelGrids[0]
-            globalGrid.setPosition(Vector3f(0f,0f,0f))
-            val sceneScale = getSceneScale(renderState, globalGrid.gridSizeHalf)
-            globalGrid.scale = sceneScale // TODO: scenescale for first grid, other scale for other grids
-            val voxelGridState = renderState.get(voxelGridBufferRef)
-            voxelGrids.buffer.copyTo(voxelGridState.voxelGridBuffer.buffer, true)
+            val gridMoved = false
 
             val entityMoved = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
             val entityAdded = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
@@ -162,13 +136,13 @@ class VoxelConeTracingExtension(
             }
             val needsLightInjection = lightInjectedFramesAgo < bounces
 
-            voxelizeScene(renderState, voxelGridState, clearVoxels, needsRevoxelization)
+            voxelizeScene(renderState, renderState[voxelGrids], clearVoxels, needsRevoxelization)
             injectLight(renderState, bounces, needsLightInjection)
             engine.config.debug.isForceRevoxelization = false
         }
     }
 
-    fun voxelizeScene(renderState: RenderState, voxelGridState: VoxelGridsState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
+    fun voxelizeScene(renderState: RenderState, voxelGrids: PersistentMappedStructBuffer<VoxelGrid>, clearVoxels: Boolean, needsRevoxelization: Boolean) {
 //        val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
         val maxGridCount = voxelGrids.size
         for(voxelGridIndex in 0 until maxGridCount) {
@@ -186,7 +160,7 @@ class VoxelConeTracingExtension(
                         GL42.glBindImageTexture(0, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                         GL42.glBindImageTexture(1, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
                         GL42.glBindImageTexture(3, currentVoxelGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                        clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
+                        clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, voxelGrids)
                         clearDynamicVoxelsComputeProgram.setUniform("voxelGridIndex", voxelGridIndex)
                         clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                     }
@@ -202,9 +176,10 @@ class VoxelConeTracingExtension(
                     GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                     GL42.glBindImageTexture(6, currentVoxelGrid.indexGrid, 0, true, 0, GL15.GL_WRITE_ONLY, indexGridTextureFormatSized)
                     voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
+                    voxelizer.setUniform("voxelGridCount", voxelGrids.size)
                     voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                     voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-                    voxelizer.bindShaderStorageBuffer(5, voxelGridState.voxelGridBuffer)
+                    voxelizer.bindShaderStorageBuffer(5, voxelGrids)
 
                     voxelizer.setUniform("writeVoxels", true)
                     engine.gpuContext.depthMask = false
@@ -233,7 +208,7 @@ class VoxelConeTracingExtension(
 
                 if(engine.config.debug.isDebugVoxels) {
                     GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
-                    mipmapGrid(currentVoxelGrid.currentVoxelSource, texture3DMipMapAlphaBlendComputeProgram)
+                    mipmapGrid(currentVoxelGrid.currentVoxelSource, texture3DMipMapAlphaBlendComputeProgram, renderState)
                 }
             }
         }
@@ -241,6 +216,7 @@ class VoxelConeTracingExtension(
 
     fun injectLight(renderState: RenderState, bounces: Int, needsLightInjection: Boolean) {
         if (needsLightInjection) {
+            val voxelGrids = renderState[this.voxelGrids]
             litInCycle = renderState.cycle
             profiled("grid shading") {
 //                val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
@@ -262,12 +238,13 @@ class VoxelConeTracingExtension(
                             bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
                             bindShaderStorageBuffer(3, renderState.directionalLightState)
                             bindShaderStorageBuffer(4, renderState.entitiesBuffer)
-                            bindShaderStorageBuffer(5, renderState[voxelGridBufferRef].voxelGridBuffer)
+                            bindShaderStorageBuffer(5, voxelGrids)
                             setUniform("bounces", bounces)
                             setUniform("voxelGridIndex", voxelGridIndex)
+                            setUniform("voxelGridCount", voxelGrids.size)
 
                             dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
-                            mipmapGrid(currentVoxelGrid.grid)
+                            mipmapGrid(currentVoxelGrid.grid, renderState = renderState)
                         }
                     }
 //                    if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
@@ -293,14 +270,15 @@ class VoxelConeTracingExtension(
 
     override fun update() = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
 
-    private fun mipmapGrid(textureId: Int) = profiled("grid mipmap") {
+    private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
-        mipmapGrid(textureId, texture3DMipMapAlphaBlendComputeProgram)
+        mipmapGrid(textureId, texture3DMipMapAlphaBlendComputeProgram, renderState)
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
     }
 
-    private fun mipmapGrid(texture3D: Int, shader: ComputeShaderProgram) {
+    private fun mipmapGrid(texture3D: Int, shader: ComputeShaderProgram, renderState: RenderState) {
         shader.use()
+        val voxelGrids = renderState[this.voxelGrids]
         val globalGrid = voxelGrids[0]
         val size = globalGrid.gridSize
         var currentSizeSource = 2 * size
@@ -324,6 +302,7 @@ class VoxelConeTracingExtension(
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if(!renderState.sceneInitialized) return
+        val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {
 
             engine.gpuContext.blend = true
@@ -332,6 +311,7 @@ class VoxelConeTracingExtension(
             val maxGridCount = voxelGrids.size
             for(voxelGridIndex in 0 until maxGridCount) {
                 val currentVoxelGrid = voxelGrids[voxelGridIndex]
+                if(currentVoxelGrid.scale < 0.1f) continue
 
                 engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.deferredRenderingBuffer.positionMap)
                 engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.deferredRenderingBuffer.normalMap)
@@ -351,7 +331,8 @@ class VoxelConeTracingExtension(
                 voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
                 voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
                 voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.deferredRenderingBuffer.exposureBuffer)
-                voxelConeTraceProgram.bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
+                voxelConeTraceProgram.bindShaderStorageBuffer(5, voxelGrids)
+                voxelConeTraceProgram.setUniform("voxelGridCount", voxelGrids.size)
                 voxelConeTraceProgram.setUniform("useAmbientOcclusion", engine.config.quality.isUseAmbientOcclusion)
                 voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat())
                 voxelConeTraceProgram.setUniform("screenHeight", engine.config.height.toFloat())
@@ -379,11 +360,56 @@ class VoxelConeTracingExtension(
         return sceneScale
     }
 
+    fun extract(renderState: RenderState, list: List<GIVolumeComponent>) {
+        val targetSize = list.size
+        renderState[voxelGrids].resize(targetSize)
+        for (index in renderState[voxelGrids].indices) {
+            val target = renderState[voxelGrids][index]
+            val source = list[index]
+            val giVolumeGrids = source.giVolumeGrids
+            target.grid = giVolumeGrids.grid.id
+            target.gridHandle = giVolumeGrids.grid.handle
+            target.indexGrid = giVolumeGrids.indexGrid.id
+            target.indexGridHandle = giVolumeGrids.indexGrid.handle
+            target.albedoGrid = giVolumeGrids.albedoGrid.id
+            target.albedoGridHandle = giVolumeGrids.albedoGrid.handle
+            target.normalGrid = giVolumeGrids.normalGrid.id
+            target.normalGridHandle = giVolumeGrids.normalGrid.handle
+            target.gridSize = source.giVolumeGrids.albedoGrid.dimension.width
+            target.setPosition(source.entity.position)
+            target.scale = source.extents[source.extents.maxComponent()] / source.giVolumeGrids.albedoGrid.dimension.width.toFloat()
+        }
+    }
+
+    override fun renderEditor(renderState: RenderState, result: DrawResult) {
+        val grids = renderState[voxelGrids]
+        for(gridIndex in grids.indices) {
+            val grid = grids[gridIndex]
+            lineRenderer.batchAABBLines(
+                grid.position.toJoml().sub(Vector3f(grid.gridSizeHalfScaled.toFloat())),
+                grid.position.toJoml().sub(Vector3f(grid.gridSizeHalfScaled.toFloat()))
+            )
+        }
+        engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+        engine.gpuContext.blend = false
+        lineRenderer.drawAllLines(5f, Consumer { program ->
+            program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
+            program.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
+            program.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+            program.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
+        })
+    }
+
     companion object {
         val gridTextureFormat = GL11.GL_RGBA//GL11.GL_R;
         val gridTextureFormatSized = GL11.GL_RGBA8//GL30.GL_R32UI;
         val indexGridTextureFormat = GL_RED_INTEGER//GL30.GL_R32UI;
         val indexGridTextureFormatSized = GL30.GL_R16I//GL30.GL_R32UI;
+
+
+        private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
+            SimpleTransform().get(this)
+        }
 
         var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {
             put(0f)

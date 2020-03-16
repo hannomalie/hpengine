@@ -30,9 +30,10 @@ layout(std430, binding=4) buffer _entities {
     Entity entities[2000];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    VoxelGridArray voxelGridArray;
+    VoxelGrid[10] voxelGrids;
 };
 uniform int voxelGridIndex = 0;
+uniform int voxelGridCount = 0;
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
@@ -79,7 +80,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 
 void main(void) {
 
-    VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+    VoxelGrid voxelGrid = voxelGrids[voxelGridIndex];
     float sceneScale = voxelGrid.scale;
     float inverseSceneScale = 1.0f/sceneScale;
 

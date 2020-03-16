@@ -68,13 +68,15 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     }
     val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
 
+    init {
+        engineContext.renderSystems.add(0, renderer)
+    }
     override val sceneManager = managerContext.managers.register(SceneManager(managerContext))
 
     init {
         engineContext.eventBus.register(this)
         startSimulation()
         engineContext.eventBus.post(EngineInitializedEvent())
-        engineContext.renderSystems.add(0, renderer)
     }
 
     fun startSimulation() {
