@@ -7,6 +7,7 @@ import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
+import de.hanno.hpengine.editor.grids.GiVolumeGrid
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.grids.MeshGrid
 import de.hanno.hpengine.editor.grids.ModelGrid
@@ -17,6 +18,7 @@ import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -260,6 +262,14 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         sidePanel.doWithRefresh {
             addUnselectButton()
             add(MaterialGrid(engine.textureManager, pickedMaterial))
+        }
+    }
+
+    fun selectGiVolume(giVolumeComponent: GIVolumeComponent) {
+        selection = GiVolumeSelection(giVolumeComponent)
+        sidePanel.doWithRefresh {
+            addUnselectButton()
+            add(GiVolumeGrid(giVolumeComponent, engine))
         }
     }
 

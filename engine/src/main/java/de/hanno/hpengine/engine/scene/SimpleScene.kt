@@ -110,7 +110,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         }
     }
     val secondGiGrid = Entity("SecondGiGrid").apply {
-        translation(Vector3f(50f,0f,0f))
+        translation(Vector3f(0f,0f,50f))
         addComponent(GIVolumeComponent(this, engine.textureManager.createGIVolumeGrids(), Vector3f(30f)))
         engine.addResourceContext.locked {
             with(this@SimpleScene) { add(this@apply) }

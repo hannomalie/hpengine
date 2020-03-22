@@ -23,7 +23,7 @@ uniform int voxelGridCount = 0;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
-	Material materials[100];
+	Material materials[];
 };
 layout(std430, binding=5) buffer _voxelGrids {
     VoxelGrid[10] voxelGrids;
@@ -222,6 +222,8 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
     // push out the starting point to avoid self-intersection
     float dist = min_voxel_diameter;
 
+    VoxelGrid voxelGrid = voxelGrids[voxelGridIndex];
+
     // Marching!
     while (dist <= max_dist && accum.a < 1.0f)
     {
@@ -234,7 +236,7 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
         dist += sample_diameter * step_mult;
 
         // Sample from 3D texture (in performance superior to Sparse Voxel Octrees, hence use these)
-        vec4 sample_value = voxelFetch(voxelGrids[voxelGridIndex], grid, sample_pos, sample_lod);
+        vec4 sample_value = voxelFetch(voxelGrid, grid, sample_pos, sample_lod);
 
         float a = 1.0 - accum.a;
         accum += sample_value * a;
@@ -259,6 +261,9 @@ void main(void) {
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
 	//positionView = positionViewPreW.xyz / positionViewPreW.w;
+    if(!isInsideVoxelGrid(positionWorld, voxelGrids[voxelGridIndex])) {
+        discard;
+    }
 
     vec4 colorTransparency = texture2D(diffuseMap, st);
 	vec3 color = colorTransparency.xyz;
@@ -301,7 +306,7 @@ void main(void) {
 
     float aperture = tan(0.0003474660443456835 + (roughness * (1.3331290497744692 - (roughness * 0.5040552688878546))));
 
-    if(!debugVoxels && useVoxelConeTracing) {
+    if(false && !debugVoxels && useVoxelConeTracing) {
 
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
         vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
@@ -321,12 +326,12 @@ void main(void) {
 //            }
     }
 
-    vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 100.0f, 1.0f).rgb;
-
     if(useAmbientOcclusion){
         vec4 AOscattering = textureLod(aoScattering, 0.5f*st, 0);
         vct *= clamp(AOscattering.r,0.0,1.0);
     }
+
+    VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
 
     if(debugVoxels) {
         vec3 temp = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition, voxelGridArray.voxelGrids);
@@ -339,14 +344,17 @@ void main(void) {
         const bool onlySample = true;
 #endif
         if(onlySample) {
-            VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
 
             #if defined(BINDLESSTEXTURES) && defined(SHADER5)
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
             #else
-            vct = voxelFetch(voxelGrid, grid, positionWorld.xyz, 0).rgb;
+            if(voxelGridIndex == 0) {
+                vct = voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
+            }
             #endif
         }
+    } else {
+        vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 100.0f, 2.0f).rgb;
     }
 
     out_DiffuseSpecular.rgb = 4.0f*vct;

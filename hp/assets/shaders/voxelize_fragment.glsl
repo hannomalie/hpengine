@@ -127,7 +127,9 @@ void main()
     }
 #endif
 
-    color = texture(diffuseMap, g_texcoord);
+    if(hasDiffuseMap) {
+        color = texture(diffuseMap, g_texcoord);
+    }
     roughness = texture(roughnessMap, g_texcoord).r;
 
     ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);

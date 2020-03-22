@@ -66,7 +66,11 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
                         }
                     }
                     selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
-                        TextureSelection.SelectionCube(foundTexture.key, value)
+                        if(foundTexture == null) {
+                            TextureSelection.None
+                        } else {
+                            TextureSelection.SelectionCube(foundTexture.key, value)
+                        }
                     }
                 }
             }
@@ -81,7 +85,11 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
                         }
                     }
                     selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
-                        TextureSelection.Selection2D(foundTexture.key, value)
+                        if(foundTexture == null) {
+                            TextureSelection.None
+                        } else {
+                            TextureSelection.Selection2D(foundTexture.key, value)
+                        }
                     }
                 }
             }
@@ -97,10 +105,10 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
 
 private fun SimpleMaterialInfo.retrieveInitialSelection(mapType: SimpleMaterial.MAP,
                                                         textureManager: TextureManager,
-                                                        createSelection: (MutableMap.MutableEntry<String, Texture>, Texture) -> TextureSelection): TextureSelection {
+                                                        createSelection: (MutableMap.MutableEntry<String, Texture>?, Texture) -> TextureSelection): TextureSelection {
     return if (maps.containsKey(mapType)) {
         val value = maps[mapType]!!
-        val foundTexture = textureManager.textures.entries.first { it.value == value }
+        val foundTexture = textureManager.textures.entries.firstOrNull { it.value == value }
         createSelection(foundTexture, value)
     } else TextureSelection.None
 }

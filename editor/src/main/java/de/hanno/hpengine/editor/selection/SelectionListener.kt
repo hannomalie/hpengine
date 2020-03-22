@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor.selection
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -58,6 +59,8 @@ class SelectionListener(internal var tree: JTree,
             unselectOr(node) { editorComponents.selectionSystem.selectCamera(node) }
         } else if (node is Scene) {
             unselectOr(node) { editorComponents.selectionSystem.selectScene(node)}
+        } else if (node is GIVolumeComponent) {
+            unselectOr(node) { editorComponents.selectionSystem.selectGiVolume(node) }
         }
     }
 

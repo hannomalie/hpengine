@@ -94,10 +94,9 @@ void main()
 //    cr_pos[2].xy = pos[2].xy + pl*( (e1.xy/dot(e1.xy,n2.xy)) + (e2.xy/dot(e2.xy,n1.xy)) );
 
 
-
 	for(int i = 0; i < 3; i++) {
 	    g_posWorld = pos[i];
-        vec4 vertexTemp = (projectionMatrix * (vec4(pos[i] - grid.position,1)) / grid.scale);
+        vec4 vertexTemp = (projectionMatrix * (vec4(pos[i] - grid.position,1)));
 
 //        select dominant action
         if( x > y && x > z ) {
@@ -115,7 +114,6 @@ void main()
         g_pos = pos[i].xyz;
         g_normal = v_normal[i];
         g_texcoord = v_texcoord[i];
-        g_texcoord.y = g_texcoord.y;//1-g_texcoord.y;
         g_materialIndex = v_materialIndex[i];
         g_entityIndex = v_entityIndex[i];
         g_isStatic = v_isStatic[i];

@@ -81,11 +81,10 @@ class VoxelConeTracingExtension(
     data class GIVolumeGrids(val grid: Texture3D,
                              val indexGrid: Texture3D,
                              val albedoGrid: Texture3D,
-                             val normalGrid: Texture3D)
+                             val normalGrid: Texture3D) {
 
-    private fun VoxelGrid.initGrid(position: Vector3f) {
-        gridSize = 256
-        setPosition(position)
+        val gridSize: Int = albedoGrid.dimension.width
+
     }
 
     private val voxelizer: Program = this.engine.programManager.getProgram(getShaderSource(File(Shader.directory + "voxelize_vertex.glsl")), getShaderSource(File(Shader.directory + "voxelize_fragment.glsl")), getShaderSource(File(Shader.directory + "voxelize_geometry.glsl")))
@@ -168,7 +167,7 @@ class VoxelConeTracingExtension(
             if (needsRevoxelization) {
                 voxelizedInCycle = renderState.cycle
                 profiled("Voxelization") {
-                    engine.gpuContext.viewPort(0, 0, currentVoxelGrid.gridSizeScaled, currentVoxelGrid.gridSizeScaled)
+                    engine.gpuContext.viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
                     voxelizer.use()
                     GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                     GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
@@ -178,6 +177,7 @@ class VoxelConeTracingExtension(
                     voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                     voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
                     voxelizer.bindShaderStorageBuffer(5, voxelGrids)
+                    voxelizer.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
 
                     voxelizer.setUniform("writeVoxels", true)
                     engine.gpuContext.depthMask = false
@@ -303,13 +303,13 @@ class VoxelConeTracingExtension(
         val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {
 
-            engine.gpuContext.blend = true
-            engine.gpuContext.blendEquation = BlendMode.FUNC_ADD
+//            engine.gpuContext.blend = true
+//            engine.gpuContext.blendEquation = BlendMode.FUNC_ADD
 //                val maxGridCount = if(engine.gpuContext.isSupported(BindlessTextures)) voxelGrids.size else 1
             val maxGridCount = voxelGrids.size
             for(voxelGridIndex in 0 until maxGridCount) {
                 val currentVoxelGrid = voxelGrids[voxelGridIndex]
-                if(currentVoxelGrid.scale < 0.1f) continue
+                if(currentVoxelGrid.scale < 0.1f) continue // Just for safety, if voxelgrid data is not initialized, to not freeze your pc
 
                 engine.gpuContext.bindTexture(0, TEXTURE_2D, engine.deferredRenderingBuffer.positionMap)
                 engine.gpuContext.bindTexture(1, TEXTURE_2D, engine.deferredRenderingBuffer.normalMap)
@@ -373,9 +373,10 @@ class VoxelConeTracingExtension(
             target.albedoGridHandle = giVolumeGrids.albedoGrid.handle
             target.normalGrid = giVolumeGrids.normalGrid.id
             target.normalGridHandle = giVolumeGrids.normalGrid.handle
-            target.gridSize = source.giVolumeGrids.albedoGrid.dimension.width
-            target.setPosition(source.entity.position)
-            target.scale = source.extents[source.extents.maxComponent()] / source.giVolumeGrids.albedoGrid.dimension.width.toFloat()
+            target.gridSize = source.giVolumeGrids.gridSize
+            target.position.set(source.entity.position)
+            target.scale = source.scale
+            target.projectionMatrix.set(source.orthoCam.projectionMatrix)
         }
     }
 
@@ -385,7 +386,7 @@ class VoxelConeTracingExtension(
             val grid = grids[gridIndex]
             lineRenderer.batchAABBLines(
                 grid.position.toJoml().sub(Vector3f(grid.gridSizeHalfScaled.toFloat())),
-                grid.position.toJoml().sub(Vector3f(grid.gridSizeHalfScaled.toFloat()))
+                grid.position.toJoml().add(Vector3f(grid.gridSizeHalfScaled.toFloat()))
             )
         }
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)

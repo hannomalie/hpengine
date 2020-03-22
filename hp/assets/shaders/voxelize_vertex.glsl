@@ -16,6 +16,9 @@ layout(std430, binding=4) buffer _entityOffsets {
 layout(std430, binding=5) buffer _voxelGrids {
     VoxelGrid[MAX_VOXELGRIDS] voxelGrids;
 };
+layout(std430, binding=7) buffer _vertices {
+    VertexPacked vertices[];
+};
 
 in vec3 in_Position;
 in vec4 in_Color;
@@ -26,7 +29,6 @@ in vec3 in_Binormal;
 
 out vec3 normal_world;
 out vec4 position_world;
-
 out vec3 v_vertex;
 out vec3 v_normal;
 out vec2 v_texcoord;
@@ -44,6 +46,9 @@ void main(void) {
     int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
+    VertexPacked vertex = vertices[gl_VertexID];
+    vertex.position.w = 1;
+
     VoxelGrid grid = voxelGrids[voxelGridIndex];
     int gridSize = grid.resolution;
 
@@ -57,7 +62,7 @@ void main(void) {
 
     mat4 modelMatrix = mat4(entity.modelMatrix);
 
-	vec4 positionModel = vec4(in_Position.xyz,1);
+	vec4 positionModel = vec4(vertex.position.xyz,1);
 	position_world = modelMatrix * positionModel;
 
 	vec3 normal_model = in_Normal;
@@ -66,7 +71,11 @@ void main(void) {
 
 	v_vertex = position_world.xyz;
 	v_normal = normal_world.xyz;
-	v_texcoord = in_TextureCoord;
+	v_texcoord = vertex.texCoord.xy;
+
+    if(entity.invertTexcoordY == 1) {
+        v_texcoord.y = 1 - v_texcoord.y;
+    }
 
 //    gl_Position = position_world;
 }
