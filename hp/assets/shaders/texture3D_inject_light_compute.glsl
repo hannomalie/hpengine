@@ -35,6 +35,11 @@ layout(std430, binding=5) buffer _voxelGrids {
 uniform int voxelGridIndex = 0;
 uniform int voxelGridCount = 0;
 
+uniform int nodeCount = 1;
+layout(std430, binding=6) buffer _bvh {
+    BvhNode nodes[1000];
+};
+
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
@@ -131,15 +136,41 @@ void main(void) {
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(directionalLight.color,1)*visibility*vec4(voxelColor,1)).rgb;
 
-    for(int i = 0; i < pointLightCount; i++) {
-        PointLight pointLight = pointLights[i];
-        vec3 lightPosition = pointLight.position;
-        vec3 lightDiffuse = pointLight.color;
-        vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
-        float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
+//    for(int i = 0; i < pointLightCount; i++) {
+//        PointLight pointLight = pointLights[i];
+//        vec3 lightPosition = pointLight.position;
+//        vec3 lightDiffuse = pointLight.color;
+//        vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
+//        float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
+//
+//        finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor;
+//    }
 
-        finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor;
+    int nextIndex = 0;
+
+    uint maxIterations = 350;
+    while(nextIndex < nodeCount && maxIterations > 0) {
+        BvhNode node = nodes[nextIndex];
+        int hitPointer = nextIndex += 1;
+        bool isLeaf = node.missPointer == hitPointer;
+        if(isInsideSphere(positionWorld.xyz, node.positionRadius)) {
+            if(isLeaf) {
+                PointLight pointLight = pointLights[node.lightIndex];
+                vec3 lightPosition = pointLight.position;
+                vec3 lightDiffuse = pointLight.color;
+                vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
+                float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
+
+                finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor;
+            }
+            nextIndex = hitPointer;
+        } else {
+            nextIndex = node.missPointer;
+        }
+
+        maxIterations--;
     }
+
     imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
 //    if(entityIndex < 15)
 //    {

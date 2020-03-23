@@ -4,12 +4,15 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
 import java.util.ArrayList
 
 data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) {
-    val extents = Vector3f(max).sub(min)
-    val halfExtents = Vector3f(extents).mul(0.5f)
+    val extents: Vector3f
+            get() = Vector3f(max).sub(min)
+    val halfExtents: Vector3f
+            get() = Vector3f(extents).mul(0.5f)
 
     constructor(center: Vector3f, halfExtents: Float):
             this(Vector3f(center).sub(Vector3f(halfExtents)), Vector3f(center).add(Vector3f(halfExtents)))

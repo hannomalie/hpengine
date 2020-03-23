@@ -132,7 +132,7 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): Rende
         SimpleTransform().get(this)
     }
     private val lineRenderer = LineRendererImpl(engine)
-    private val bvh = PersistentMappedStructBuffer(0, engine.gpuContext, { BvhNodeGpu() })
+    val bvh = PersistentMappedStructBuffer(0, engine.gpuContext, { BvhNodeGpu() })
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -140,7 +140,7 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): Rende
         z = other.z
     }
     private var bvhReconstructedInCycle = -1L
-    private var nodeCount = 0
+    var nodeCount = 0
     var tree: Bvh? = null
 
     private fun BvhNode.Inner.putToBuffer() {

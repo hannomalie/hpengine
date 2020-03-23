@@ -155,7 +155,7 @@ class EditorComponents(val engine: EngineImpl,
 
             addTask(ViewTask(engine, config, this, ::outPutConfig))
             addTask(SceneTask(engine))
-            addTask(TransformTask(this))
+            addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(engine, editor))
             addTask(MaterialTask(engine, editor, selectionSystem))
             showConfigFrame()

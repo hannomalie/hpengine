@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
-import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -20,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
@@ -72,7 +72,8 @@ fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExt
 class VoxelConeTracingExtension(
         private val engine: EngineContext<OpenGl>,
         directionalLightShadowMapExtension: DirectionalLightShadowMapExtension?,
-        val renderer: RenderSystem) : RenderExtension<OpenGl> {
+        val renderer: RenderSystem,
+        val pointLightExtension: BvHPointLightSecondPassExtension) : RenderExtension<OpenGl> {
 
     private val lineRenderer = LineRendererImpl(engine)
     val voxelGrids = engine.renderStateManager.renderState.registerState {
@@ -237,6 +238,8 @@ class VoxelConeTracingExtension(
                             bindShaderStorageBuffer(3, renderState.directionalLightState)
                             bindShaderStorageBuffer(4, renderState.entitiesBuffer)
                             bindShaderStorageBuffer(5, voxelGrids)
+                            bindShaderStorageBuffer(6, pointLightExtension.bvh)
+                            setUniform("nodeCount", pointLightExtension.nodeCount)
                             setUniform("bounces", bounces)
                             setUniform("voxelGridIndex", voxelGridIndex)
                             setUniform("voxelGridCount", voxelGrids.size)

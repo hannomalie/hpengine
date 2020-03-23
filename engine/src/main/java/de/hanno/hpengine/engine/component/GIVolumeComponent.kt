@@ -9,19 +9,35 @@ import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
 data class GIVolumeComponent(override val entity: Entity,
-                        val giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids,
-                        val extents: Vector3f) : Component {
-    val halfExtents = Vector3f(extents).mul(0.5f)
+                        val giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
+
+    constructor(entity: Entity, giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids, extents: Vector3f): this(entity, giVolumeGrids) {
+        spatial.minMax.min.set(extents).mul(-0.5f)
+        spatial.minMax.max.set(extents).mul(0.5f)
+    }
+    val spatial = TransformSpatial(entity, AABB(Vector3f(-1f), Vector3f(1f)))
+
+    val minMax: AABB
+        get() = spatial.minMax
+
+    val extents: Vector3f
+        get() = minMax.extents
+
+    val halfExtents: Vector3f
+        get() = minMax.halfExtents
 
     val orthoCam = Camera(this.entity, createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
     val scale: Float
-        get() = extents[extents.maxComponent()] / giVolumeGrids.gridSize.toFloat()
+        get() = minMax.extents[minMax.extents.maxComponent()] / giVolumeGrids.gridSize.toFloat()
 
     val gridSizeScaled: Int
         get() = (giVolumeGrids.gridSize * scale).toInt()
@@ -44,10 +60,10 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
                      scene: Scene) : SimpleEntitySystem(scene, listOf(GIVolumeComponent::class.java)) {
 
     val voxelConeTracingExtension: VoxelConeTracingExtension? = run {
-        engine.extensibleDeferredRenderer?.let { it ->
-            val voxelConeTracingExtension = VoxelConeTracingExtension(engine, it.shadowMapExtension, it)
+        engine.extensibleDeferredRenderer?.let { renderer ->
+            val voxelConeTracingExtension = VoxelConeTracingExtension(engine, renderer.shadowMapExtension, renderer, renderer.extensions.firstIsInstance())
             engine.addResourceContext.locked {
-                it.extensions.add(voxelConeTracingExtension)
+                renderer.extensions.add(voxelConeTracingExtension)
             }
             voxelConeTracingExtension
         }
@@ -58,9 +74,9 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
         if(giComponents.isNotEmpty()) {
             val globalGrid = giComponents.first()
             val halfExtents = Vector3f(scene.minMax.max).sub(scene.minMax.min).mul(0.5f)
-            globalGrid.entity.position.set(Vector3f(scene.minMax.min).add(halfExtents))
-            globalGrid.extents.set(halfExtents).mul(2f)
-            globalGrid.halfExtents.set(globalGrid.extents).mul(0.5f)
+            globalGrid.entity.translation(Vector3f(scene.minMax.min).add(halfExtents))
+            globalGrid.minMax.min.set(scene.minMax.min)
+            globalGrid.minMax.max.set(scene.minMax.max)
         }
     }
 

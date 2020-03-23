@@ -155,10 +155,14 @@ class MouseInputProcessor(val engine: Engine<*>,
             }
             fun handleScaling() {
                 when(editorComponents.constraintAxis) {
-                    AxisConstraint.X -> entityOrNull.set(Matrix4f().scale(Vector3f(1f + moveAmountX, 1f, 1f))).mul(oldTransform)
-                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().scale(Vector3f(1f, 1f + moveAmountY, 1f))).mul(oldTransform)
-                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().scale(Vector3f(1f, 1f, 1f + moveAmountY))).mul(oldTransform)
-                    AxisConstraint.None -> entityOrNull.set(Matrix4f().scale(Vector3f(1f + moveAmountY))).mul(oldTransform)
+//                    AxisConstraint.X -> entityOrNull.set(Matrix4f().scale(Vector3f(1f + moveAmountX, 1f, 1f))).mul(oldTransform)
+//                    AxisConstraint.Y -> entityOrNull.set(Matrix4f().scale(Vector3f(1f, 1f + moveAmountY, 1f))).mul(oldTransform)
+//                    AxisConstraint.Z -> entityOrNull.set(Matrix4f().scale(Vector3f(1f, 1f, 1f + moveAmountY))).mul(oldTransform)
+//                    AxisConstraint.None -> entityOrNull.set(Matrix4f().scale(Vector3f(1f + moveAmountY))).mul(oldTransform)
+                    AxisConstraint.X -> entityOrNull.scaleAroundLocal(1f + moveAmountX, 1f, 1f, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
+                    AxisConstraint.Y -> entityOrNull.scaleAroundLocal(1f, 1f + moveAmountY, 1f, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
+                    AxisConstraint.Z -> entityOrNull.scaleAroundLocal(1f, 1f, 1f + moveAmountY, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
+                    AxisConstraint.None -> entityOrNull.scaleAroundLocal(1f + moveAmountX, 1f + moveAmountY, 1f, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
                 }.let {  }
             }
             when(editorComponents.transformMode) {

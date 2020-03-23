@@ -10,14 +10,14 @@ import kotlin.random.Random
 
 class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
     init {
-        val modelFile = engine.config.directories.gameDir.resolve("assets/models/bpcem_playground.obj")
+        val modelFile = engine.config.directories.gameDir.resolve("assets/models/sponza.obj")
         val loaded = LoadModelCommand(modelFile, "sponza", engine.scene.materialManager, engine.config.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
         engine.sceneManager.addAll(loaded.entities)
         val random = Random.Default
         val randomExtent = 235f
         val randomExtentHalf = randomExtent * 0.5f
-        val pointLights = (0..99).map {
+        val pointLights = (0..19).map {
             Entity().apply {
                 val randomRadius = random.nextFloat()
                 val randomY = random.nextFloat()

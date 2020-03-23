@@ -348,13 +348,14 @@ void main(void) {
             #if defined(BINDLESSTEXTURES) && defined(SHADER5)
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
             #else
-            if(voxelGridIndex == 0) {
-                vct = voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
-            }
+//            if(voxelGridIndex == 1) {
+                vct = 0.25f*voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
+//            }
             #endif
         }
     } else {
-        vct = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 100.0f, 2.0f).rgb;
+        vec3 traced = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 100.0f, 1.50f).rgb;
+        vct = diffuseColor*traced + specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 100.0f, 1.50f).rgb;
     }
 
     out_DiffuseSpecular.rgb = 4.0f*vct;
