@@ -349,13 +349,13 @@ void main(void) {
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
             #else
 //            if(voxelGridIndex == 1) {
-                vct = 0.25f*voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
+                vct = 0.25f*voxelFetch(voxelGrid, grid, positionWorld.xyz, 0).rgb;
 //            }
             #endif
         }
     } else {
-        vec3 traced = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 100.0f, 1.50f).rgb;
-        vct = diffuseColor*traced + specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 100.0f, 1.50f).rgb;
+        vec3 traced = ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 150.0f, 1.50f).rgb;
+        vct = diffuseColor*traced + specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 250.0f, 1.50f).rgb;
     }
 
     out_DiffuseSpecular.rgb = 4.0f*vct;

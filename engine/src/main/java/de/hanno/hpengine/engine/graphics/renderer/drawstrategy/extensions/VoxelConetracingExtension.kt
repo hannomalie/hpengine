@@ -231,6 +231,9 @@ class VoxelConeTracingExtension(
                             engine.gpuContext.bindTexture(1, TEXTURE_3D, currentVoxelGrid.albedoGrid)
                             engine.gpuContext.bindTexture(2, TEXTURE_3D, currentVoxelGrid.normalGrid)
                             engine.gpuContext.bindTexture(3, TEXTURE_3D, currentVoxelGrid.indexGrid)
+                            if(renderState.directionalLightState.size > 0) {
+                                engine.gpuContext.bindTexture(6, TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
+                            }
                             GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                             setUniform("pointLightCount", renderState.lightState.pointLights.size)
                             bindShaderStorageBuffer(1, renderState.materialBuffer)

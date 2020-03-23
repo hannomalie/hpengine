@@ -15,6 +15,7 @@ uniform mat4 shadowMatrix;
 uniform int bounces = 1;
 //include(globals_structs.glsl)
 //include(globals.glsl)
+//include(global_lighting.glsl)
 
 layout(std430, binding=1) buffer _materials {
     Material materials[100];
@@ -37,51 +38,8 @@ uniform int voxelGridCount = 0;
 
 uniform int nodeCount = 1;
 layout(std430, binding=6) buffer _bvh {
-    BvhNode nodes[1000];
+    BvhNode nodes[];
 };
-
-vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
-{
-  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-//  		float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
-		return vec3(0,0,0);
-	}
-
-	// We retrive the two moments previously stored (depth and depth*depth)
-	vec4 shadowMapSample = textureLod(shadowMap,ShadowCoordPostW.xy, 2);
-	vec2 moments = shadowMapSample.rg;
-	vec2 momentsUnblurred = moments;
-
-//	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0125, 1).rg;
-	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
-	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
-	//moments /= 3;
-
-	// Surface is fully lit. as the current fragment is before the lights occluder
-	if (dist <= moments.x + 0.001f) {
-		return vec3(1.0f);
-	}
-	else { return vec3(0.0f); }
-
-	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
-	// How likely this pixel is to be lit (p_max)
-	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.0005);
-
-	float d = dist - moments.x;
-	//float p_max = (variance / (variance + d*d));
-	// thanks, for lights bleeding reduction, FOOGYWOO! http://dontnormalize.me/
-	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
-
-	p_max = smoothstep(0.1, 1.0, p_max);
-
-	float darknessFactor = 420.0;
-	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
-
-	//p_max = blurESM(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
-
-	return vec3(p_max,p_max,p_max);
-}
 
 void main(void) {
 
@@ -102,7 +60,6 @@ void main(void) {
     vec4 sourceValue = vec4(0);
     float weightSum = 0;
 
-    float visibility = 1.0f;
     vec3 positionWorld = gridToWorldPosition(voxelGrid, storePos);
     vec3 samplePositionNormalized = vec3(positionWorld)/vec3(voxelGrid.resolution)+vec3(0.5f);
 
@@ -129,9 +86,15 @@ void main(void) {
     positionShadow.xyz /= positionShadow.w;
     float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-    visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1.0f).r;
+//    float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1.0f).r;
 
-    vec3 lightDirectionTemp = directionalLight.direction;
+    #if BINDLESS_TEXTURES
+    float visibility = getVisibility(positionWorld, directionalLight);
+    #else
+    float visibility = getVisibility(positionWorld.xyz, directionalLight, shadowMap);
+    #endif
+
+    vec3 lightDirectionTemp = -directionalLight.direction;
     float NdotL = max(0.1, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0f, 1.0f));
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(directionalLight.color,1)*visibility*vec4(voxelColor,1)).rgb;
