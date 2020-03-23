@@ -18,20 +18,20 @@ uniform int bounces = 1;
 //include(global_lighting.glsl)
 
 layout(std430, binding=1) buffer _materials {
-    Material materials[100];
+    Material materials[];
 };
 uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
-	PointLight pointLights[100];
+	PointLight pointLights[];
 };
 layout(std430, binding=3) buffer _directionalLightState {
 	DirectionalLightState directionalLight;
 };
 layout(std430, binding=4) buffer _entities {
-    Entity entities[2000];
+    Entity entities[];
 };
 layout(std430, binding=5) buffer _voxelGrids {
-    VoxelGrid[10] voxelGrids;
+    VoxelGrid[] voxelGrids;
 };
 uniform int voxelGridIndex = 0;
 uniform int voxelGridCount = 0;
@@ -99,16 +99,6 @@ void main(void) {
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(directionalLight.color,1)*visibility*vec4(voxelColor,1)).rgb;
 
-//    for(int i = 0; i < pointLightCount; i++) {
-//        PointLight pointLight = pointLights[i];
-//        vec3 lightPosition = pointLight.position;
-//        vec3 lightDiffuse = pointLight.color;
-//        vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
-//        float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
-//
-//        finalVoxelColor += attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor;
-//    }
-
     int nextIndex = 0;
 
     uint maxIterations = 350;
@@ -135,8 +125,4 @@ void main(void) {
     }
 
     imageStore(targetVoxelGrid, storePos, vec4(finalVoxelColor, opacity));
-//    if(entityIndex < 15)
-//    {
-//        imageStore(targetVoxelGrid, storePos, vec4(1.0f, 1.0f, 0.0f, opacity));
-//    }
 }

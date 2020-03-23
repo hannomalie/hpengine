@@ -395,7 +395,7 @@ void main(void) {
 	resultingAdditiveness += min(2*(1-resultingRevealage), 1);
 
 	vec4 AOscattering = textureLod(aoScattering, st, 3);
-	vec3 scattering = textureLod(aoScattering, st, 2).gba;//AOscattering.gba;
+	vec3 scattering = textureLod(aoScattering, 0.5f*st, 2).gba;//AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;

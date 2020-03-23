@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -74,7 +75,10 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             }
         }
 
-        for (entity in entityContainer.entities.filter { it != scene.activeCamera.entity }) {
+        val predicate: (Entity) -> Boolean = {
+            it != scene.activeCamera.entity && it.components.containsKey(ModelComponent::class.java)
+        }
+        for (entity in entityContainer.entities.filter(predicate)) {
             if (!entity.hasMoved()) {
                 continue
             }
