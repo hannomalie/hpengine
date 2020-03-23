@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -304,8 +305,9 @@ class VoxelConeTracingExtension(
         }
     }
 
-    override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+    override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if(!renderState.sceneInitialized) return
+        engine.gpuContext.depthTest = false
         val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {
 
@@ -338,8 +340,8 @@ class VoxelConeTracingExtension(
                 voxelConeTraceProgram.bindShaderStorageBuffer(5, voxelGrids)
                 voxelConeTraceProgram.setUniform("voxelGridCount", voxelGrids.size)
                 voxelConeTraceProgram.setUniform("useAmbientOcclusion", engine.config.quality.isUseAmbientOcclusion)
-                voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat())
-                voxelConeTraceProgram.setUniform("screenHeight", engine.config.height.toFloat())
+                voxelConeTraceProgram.setUniform("screenWidth", engine.config.width.toFloat() / 2f)
+                voxelConeTraceProgram.setUniform("screenHeight", engine.config.height.toFloat() / 2f)
                 voxelConeTraceProgram.setUniform("skyBoxMaterialIndex", renderState.skyBoxMaterialIndex)
                 voxelConeTraceProgram.setUniform("debugVoxels", engine.config.debug.isDebugVoxels)
                 engine.gpuContext.fullscreenBuffer.draw()
@@ -351,6 +353,7 @@ class VoxelConeTracingExtension(
                 //        }
             }
         }
+        engine.gpuContext.depthTest = true
     }
 
     private var maxExtents = Vector4f()

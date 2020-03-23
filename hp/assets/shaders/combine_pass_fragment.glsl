@@ -12,6 +12,7 @@ layout(binding=9) uniform sampler2D refractedMap;
 layout(binding=11) uniform sampler2D aoScattering;
 layout(binding=13) uniform sampler3D grid;
 layout(binding=14) uniform samplerCube environmentMap;
+layout(binding=15) uniform sampler2D indirectHalfScreen;
 
 layout(std430, binding=0) buffer myBlock
 {
@@ -385,6 +386,7 @@ void main(void) {
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
+	lightDiffuseSpecular += textureLod(indirectHalfScreen, 	st, 0);
 
 	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
 	float additiveness = textureLod(forwardRenderedRevealageMap, st, 0).a;
@@ -395,7 +397,7 @@ void main(void) {
 	resultingAdditiveness += min(2*(1-resultingRevealage), 1);
 
 	vec4 AOscattering = textureLod(aoScattering, st, 3);
-	vec3 scattering = textureLod(aoScattering, 0.5f*st, 2).gba;//AOscattering.gba;
+	vec3 scattering = textureLod(aoScattering, st, 2).gba;//AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;

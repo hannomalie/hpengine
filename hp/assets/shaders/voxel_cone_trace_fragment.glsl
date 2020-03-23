@@ -265,9 +265,9 @@ void main(void) {
         discard;
     }
 
-    vec4 colorTransparency = texture2D(diffuseMap, st);
+    vec4 colorTransparency = textureLod(diffuseMap, st, 0);
 	vec3 color = colorTransparency.xyz;
-	float roughness = texture2D(positionMap, st).a;
+	float roughness = textureLod(positionMap, st, 0).a;
 
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -277,7 +277,7 @@ void main(void) {
 	V = positionView;
 	V = -normalize((positionWorld.xyz - eyePosition.xyz).xyz);
 
-    vec4 normalAmbient = texture(normalMap, st);
+    vec4 normalAmbient = textureLod(normalMap, st, 0);
     vec3 normalView = normalAmbient.xyz;
     // skip background
     if (length(normalView) < 0.5f) {
@@ -287,7 +287,7 @@ void main(void) {
 
 	float metallic = textureLod(diffuseMap, st, 0).a;
 
-    vec4 motionVecProbeIndices = texture(motionMap, st);
+    vec4 motionVecProbeIndices = textureLod(motionMap, st, 0);
   	vec2 motion = motionVecProbeIndices.xy;
   	float transparency = motionVecProbeIndices.a;
 
@@ -358,5 +358,5 @@ void main(void) {
             + specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 250.0f, 1.0f).rgb;
     }
 
-    out_DiffuseSpecular.rgb = 4.0f*vct;
+    out_AOReflection.rgb = 4.0f*vct;
 }

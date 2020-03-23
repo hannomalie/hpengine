@@ -79,7 +79,10 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             name = "Half Screen",
             width = width / 2,
             height = height / 2,
-            textures = listOf(ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F)).toTextures(gpuContext, width, height)
+            textures = listOf(
+                    ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F),
+                    ColorAttachmentDefinition("Indirect", GL30.GL_RGBA16F)
+            ).toTextures(gpuContext, width / 2, height / 2)
     )
 
     val fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height))
