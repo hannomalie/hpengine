@@ -5,6 +5,7 @@ import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfigImpl
 import de.hanno.hpengine.editor.input.KeyLogger
 import de.hanno.hpengine.editor.input.MouseInputProcessor
+import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
@@ -26,8 +27,10 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
@@ -37,6 +40,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
+import java.io.File
 import javax.swing.BorderFactory
 
 sealed class OutputConfig {
@@ -66,6 +70,8 @@ class EditorComponents(val engine: EngineImpl,
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
     val sphereHolder = SphereHolder(engine)
+    val boxRenderer = SimpleModelRenderer(engine)
+    val pyramidRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
     val environmentProbeSphereHolder = SphereHolder(engine, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val sceneTree = SwingUtils.invokeAndWait {
@@ -99,6 +105,7 @@ class EditorComponents(val engine: EngineImpl,
                 }
             }
         })
+        drawTransformationArrows(state)
 
 
         if(config.debug.isEditorOverlay) {
@@ -145,6 +152,41 @@ class EditorComponents(val engine: EngineImpl,
                 textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
             }
         }.let { }
+    }
+
+    private fun drawTransformationArrows(state: RenderState) {
+        data class Arrow(val scale: Vector3f, val color: Vector3f)
+
+        boxRenderer.render(state, draw = { state: RenderState ->
+            listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                    Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                    Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
+                val transformation = SimpleTransform().translate(Vector3f(arrow.scale).mul(0.1f)).scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
+                program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                program.setUniform("diffuseColor", arrow.color)
+
+                draw(modelVertexIndexBuffer.vertexBuffer,
+                        modelVertexIndexBuffer.indexBuffer,
+                        modelRenderBatch, program, false, false)
+            }
+        })
+        val ninetyDegrees = Math.toRadians(90.0).toFloat()
+        val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
+        val renderer = if(transformMode == TransformMode.Translate) pyramidRenderer else boxRenderer
+        renderer.render(state, draw = { state: RenderState ->
+            listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                    Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                    Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
+
+                val transformation = SimpleTransform().rotate(rotations[index]).translateLocal(Vector3f(arrow.scale))
+                program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                program.setUniform("diffuseColor", arrow.color)
+
+                draw(modelVertexIndexBuffer.vertexBuffer,
+                        modelVertexIndexBuffer.indexBuffer,
+                        modelRenderBatch, program, false, false)
+            }
+        })
     }
 
     init {
