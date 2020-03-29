@@ -157,13 +157,15 @@ data class EffectsConfig(
 ) : IEffectsConfig
 
 interface IPerformanceConfig {
+    val updateGiOnSceneChange: Boolean
     val isIndirectRendering: Boolean
     val isVsync: Boolean
 }
 
 data class PerformanceConfig(
-    override var isIndirectRendering: Boolean = true,
-    override var isVsync: Boolean = true
+        override var updateGiOnSceneChange: Boolean = false,
+        override var isIndirectRendering: Boolean = true,
+        override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
 class ConfigImpl(override val gameDir: String = Directories.GAMEDIR_NAME,

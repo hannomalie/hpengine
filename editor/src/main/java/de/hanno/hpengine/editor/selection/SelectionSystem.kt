@@ -13,6 +13,7 @@ import de.hanno.hpengine.editor.grids.MeshGrid
 import de.hanno.hpengine.editor.grids.ModelGrid
 import de.hanno.hpengine.editor.grids.PointLightGrid
 import de.hanno.hpengine.editor.grids.SceneGrid
+import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.engine.Engine
@@ -21,6 +22,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
@@ -56,7 +58,37 @@ fun JPanel.addUnselectButton(additionalOnClick: () -> Unit = {}) {
     })
 }
 
+class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
+    var mouseClicked: MouseEvent? = null
+        private set
+    var mousePressed: MouseEvent? = null
+        private set
+    var mousePressStarted = false
+        private set
+    init {
+        canvas.addMouseListener(this)
+    }
+    override fun mouseClicked(e: MouseEvent) {
+        mouseClicked = e
+    }
+
+    override fun mousePressed(e: MouseEvent) {
+        if(mousePressed == null) mousePressStarted = true
+        mousePressed = e
+    }
+
+    override fun mouseReleased(e: MouseEvent) {
+        mousePressed = null
+        mousePressStarted = false
+    }
+    fun reset() {
+        mouseClicked = null
+        mousePressStarted = false
+    }
+}
+
 class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
+    val mouseAdapter = editorComponents.mouseAdapter
     val engine: Engine<OpenGl> = editorComponents.engine
     val editor: RibbonEditor = editorComponents.editor
     val sidePanel: JPanel = editorComponents.editor.sidePanel
@@ -65,18 +97,11 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val simpleColorProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
     val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
-    init {
-        editor.canvas.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                mouseClicked = e
-            }
-        })
-    }
+    var axisDragged: AxisConstraint = AxisConstraint.None
 
     val floatBuffer = BufferUtils.createFloatBuffer(4)
 
     var selection: Selection = Selection.None
-    var mouseClicked: MouseEvent? = null
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         SimpleTransform().get(this)
@@ -84,8 +109,9 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
 
     override fun render(result: DrawResult, state: RenderState) {
         val selection = selection
+        if(axisDragged != AxisConstraint.None) return
 
-        mouseClicked?.let { event ->
+        mouseAdapter.mouseClicked?.let { event ->
             engine.deferredRenderingBuffer.use(engine.gpuContext, false)
             engine.gpuContext.readBuffer(4)
             floatBuffer.rewind()
@@ -129,7 +155,6 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                 is Material -> selectMaterial(selection)
                 else -> Unit
             }.let {}
-            mouseClicked = null
         }
 
         when(selection) {
@@ -145,75 +170,75 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                 })
             }
             is EntitySelection -> {
-                val entity = selection.entity
-                val mesh = if (selection is MeshSelection) selection.mesh else null
-
-                engine.gpuContext.disable(GlCap.DEPTH_TEST)
-                engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-                val origin = if (mesh != null) Vector3f(mesh.minMax.min).add(Vector3f(mesh.minMax.max).sub(mesh.minMax.min).mul(0.5f)) else entity.position
-                val arrowLength = state.camera.getPosition().distance(origin).coerceIn(0.5f, 20f)
-                lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.rightDirection).mul(arrowLength)))
-                lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.upDirection).mul(arrowLength)))
-                lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.viewDirection).mul(arrowLength)))
-                lineRenderer.drawAllLines(5f, Consumer { program ->
-                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
-                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                    program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
-                })
-                val constraintAxisVectorWorld = Vector3f(editorComponents.constraintAxis.axis)
-                val constraintAxisVector = when (editorComponents.transformSpace) {
-                    TransformSpace.World -> constraintAxisVectorWorld
-                    TransformSpace.Local -> constraintAxisVectorWorld.rotate(entity.rotation)
-                    TransformSpace.View -> constraintAxisVectorWorld
-                }
-                lineRenderer.batchLine(origin, Vector3f(origin).add(constraintAxisVector.mul(arrowLength)))
-                lineRenderer.drawAllLines(5f, Consumer { program ->
-                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
-                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                    program.setUniform("diffuseColor", Vector3f(1f, 0f, 1f))
-                })
-
-                if (mesh != null) {
-                    lineRenderer.batchAABBLines(mesh.minMax.min, mesh.minMax.max)
-                } else {
-                    lineRenderer.batchAABBLines(entity.minMax.min, entity.minMax.max)
-                }
-                lineRenderer.drawAllLines(5f, Consumer { program ->
-                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
-                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                    program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
-                })
-
-                state.renderBatchesStatic.filter { batch ->
-                    val modelComponent = entity.getComponent(ModelComponent::class.java)
-                    val meshFilter = mesh?.let {
-                        val meshIndex = modelComponent?.meshes?.indexOf(it) ?: -100
-                        batch.meshIndex == meshIndex
-                    } ?: true
-
-                    batch.entityIndex == entity.index && meshFilter
-                }.forEach {
-                    engine.gpuContext.enable(GlCap.BLEND)
-                    engine.gpuContext.blendEquation = BlendMode.FUNC_ADD
-                    engine.gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
-//                TODO: Enable as soon as builder stuff for rendertargets is fixed
-//                engine.gpuContext.enable(GlCap.DEPTH_TEST)
-//                engine.gpuContext.depthFunc(GlDepthFunc.EQUAL)
-                    simpleColorProgramStatic.use()
-                    simpleColorProgramStatic.bindShaderStorageBuffer(1, state.entitiesState.materialBuffer)
-                    simpleColorProgramStatic.bindShaderStorageBuffer(3, state.entitiesState.entitiesBuffer)
-                    simpleColorProgramStatic.bindShaderStorageBuffer(6, state.entitiesState.jointsBuffer)
-                    simpleColorProgramStatic.bindShaderStorageBuffer(7, state.entitiesState.vertexIndexBufferStatic.vertexStructArray)
-                    simpleColorProgramStatic.setTextureUniforms(engine.gpuContext, it.materialInfo.maps)
-                    simpleColorProgramStatic.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                    simpleColorProgramStatic.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                    simpleColorProgramStatic.setUniformAsMatrix4("viewProjectionMatrix", state.camera.viewProjectionMatrixAsBuffer)
-                    draw(state.vertexIndexBufferStatic.vertexBuffer,
-                            state.vertexIndexBufferStatic.indexBuffer, it, simpleColorProgramStatic, false, false)
-                }
+//                val entity = selection.entity
+//                val mesh = if (selection is MeshSelection) selection.mesh else null
+//
+//                engine.gpuContext.disable(GlCap.DEPTH_TEST)
+//                engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+//                val origin = if (mesh != null) Vector3f(mesh.minMax.min).add(Vector3f(mesh.minMax.max).sub(mesh.minMax.min).mul(0.5f)) else entity.position
+//                val arrowLength = state.camera.getPosition().distance(origin).coerceIn(0.5f, 20f)
+//                lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.rightDirection).mul(arrowLength)))
+//                lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.upDirection).mul(arrowLength)))
+//                lineRenderer.batchLine(origin, Vector3f(origin).add(Vector3f(entity.viewDirection).mul(arrowLength)))
+//                lineRenderer.drawAllLines(5f, Consumer { program ->
+//                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
+//                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+//                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+//                    program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
+//                })
+//                val constraintAxisVectorWorld = Vector3f(editorComponents.constraintAxis.axis)
+//                val constraintAxisVector = when (editorComponents.transformSpace) {
+//                    TransformSpace.World -> constraintAxisVectorWorld
+//                    TransformSpace.Local -> constraintAxisVectorWorld.rotate(entity.rotation)
+//                    TransformSpace.View -> constraintAxisVectorWorld
+//                }
+//                lineRenderer.batchLine(origin, Vector3f(origin).add(constraintAxisVector.mul(arrowLength)))
+//                lineRenderer.drawAllLines(5f, Consumer { program ->
+//                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
+//                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+//                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+//                    program.setUniform("diffuseColor", Vector3f(1f, 0f, 1f))
+//                })
+//
+//                if (mesh != null) {
+//                    lineRenderer.batchAABBLines(mesh.minMax.min, mesh.minMax.max)
+//                } else {
+//                    lineRenderer.batchAABBLines(entity.minMax.min, entity.minMax.max)
+//                }
+//                lineRenderer.drawAllLines(5f, Consumer { program ->
+//                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
+//                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+//                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+//                    program.setUniform("diffuseColor", Vector3f(0f, 0f, 1f))
+//                })
+//
+//                state.renderBatchesStatic.filter { batch ->
+//                    val modelComponent = entity.getComponent(ModelComponent::class.java)
+//                    val meshFilter = mesh?.let {
+//                        val meshIndex = modelComponent?.meshes?.indexOf(it) ?: -100
+//                        batch.meshIndex == meshIndex
+//                    } ?: true
+//
+//                    batch.entityIndex == entity.index && meshFilter
+//                }.forEach {
+//                    engine.gpuContext.enable(GlCap.BLEND)
+//                    engine.gpuContext.blendEquation = BlendMode.FUNC_ADD
+//                    engine.gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
+////                TODO: Enable as soon as builder stuff for rendertargets is fixed
+////                engine.gpuContext.enable(GlCap.DEPTH_TEST)
+////                engine.gpuContext.depthFunc(GlDepthFunc.EQUAL)
+//                    simpleColorProgramStatic.use()
+//                    simpleColorProgramStatic.bindShaderStorageBuffer(1, state.entitiesState.materialBuffer)
+//                    simpleColorProgramStatic.bindShaderStorageBuffer(3, state.entitiesState.entitiesBuffer)
+//                    simpleColorProgramStatic.bindShaderStorageBuffer(6, state.entitiesState.jointsBuffer)
+//                    simpleColorProgramStatic.bindShaderStorageBuffer(7, state.entitiesState.vertexIndexBufferStatic.vertexStructArray)
+//                    simpleColorProgramStatic.setTextureUniforms(engine.gpuContext, it.materialInfo.maps)
+//                    simpleColorProgramStatic.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+//                    simpleColorProgramStatic.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+//                    simpleColorProgramStatic.setUniformAsMatrix4("viewProjectionMatrix", state.camera.viewProjectionMatrixAsBuffer)
+//                    draw(state.vertexIndexBufferStatic.vertexBuffer,
+//                            state.vertexIndexBufferStatic.indexBuffer, it, simpleColorProgramStatic, false, false)
+//                }
             }
         }
     }

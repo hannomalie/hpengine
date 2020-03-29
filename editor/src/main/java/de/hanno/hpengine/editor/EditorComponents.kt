@@ -1,11 +1,18 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.editor.appmenu.ApplicationMenu
+import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfigImpl
 import de.hanno.hpengine.editor.input.KeyLogger
 import de.hanno.hpengine.editor.input.MouseInputProcessor
 import de.hanno.hpengine.editor.input.TransformMode
+import de.hanno.hpengine.editor.selection.EntitySelection
+import de.hanno.hpengine.editor.selection.GiVolumeSelection
+import de.hanno.hpengine.editor.selection.MaterialSelection
+import de.hanno.hpengine.editor.selection.MouseAdapterImpl
+import de.hanno.hpengine.editor.selection.SceneSelection
+import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
@@ -15,6 +22,7 @@ import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
 import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -30,8 +38,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.joml.AxisAngle4f
+import org.joml.Vector2f
 import org.joml.Vector3f
+import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.neon.api.icon.ResizableIcon
@@ -87,10 +98,12 @@ class EditorComponents(val engine: EngineImpl,
         }
     }
 
+    val mouseAdapter = MouseAdapterImpl(editor.canvas)
     val selectionSystem = SelectionSystem(this)
     val textureRenderer = SimpleTextureRenderer(engine, engine.deferredRenderingBuffer.colorReflectivenessTexture)
 
     override fun render(result: DrawResult, state: RenderState) {
+
         selectionSystem.render(result, state)
         sphereHolder.render(state, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
@@ -107,6 +120,30 @@ class EditorComponents(val engine: EngineImpl,
         })
         drawTransformationArrows(state)
 
+        engine.gpuContext.readBuffer(0)
+        selectionSystem.floatBuffer.rewind()
+        if(mouseAdapter.mousePressStarted) {
+            mouseAdapter.mousePressed?.let { event ->
+                run {
+                    engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+                    val ratio = Vector2f(editor.canvas.width.toFloat() / engine.config.width.toFloat(),
+                            editor.canvas.height.toFloat() / engine.config.height.toFloat())
+                    val adjustedX = (event.x / ratio.x).toInt()
+                    val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
+                    GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, selectionSystem.floatBuffer)
+
+                    val color = Vector3f(selectionSystem.floatBuffer.get(),selectionSystem.floatBuffer.get(),selectionSystem.floatBuffer.get())
+                    val axis = if(color.x > 0.9f && color.y < 0.01f && color.z < 0.01f) {
+                        AxisConstraint.X
+                    } else if(color.y > 0.9f && color.x < 0.01f && color.z < 0.01f) {
+                        AxisConstraint.Z
+                    } else if (color.z > 0.9f && color.x < 0.01f && color.y < 0.01f) {
+                        AxisConstraint.Y
+                    } else AxisConstraint.None
+                    selectionSystem.axisDragged = axis
+                }
+            }
+        }
 
         if(config.debug.isEditorOverlay) {
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
@@ -152,41 +189,48 @@ class EditorComponents(val engine: EngineImpl,
                 textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
             }
         }.let { }
+
+        mouseAdapter.reset()
     }
 
     private fun drawTransformationArrows(state: RenderState) {
         data class Arrow(val scale: Vector3f, val color: Vector3f)
 
-        boxRenderer.render(state, draw = { state: RenderState ->
-            listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
-                    Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
-                    Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
-                val transformation = SimpleTransform().translate(Vector3f(arrow.scale).mul(0.1f)).scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
-                program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-                program.setUniform("diffuseColor", arrow.color)
+        when(val selection = selectionSystem.selection) {
+            is EntitySelection -> {
+                val entity = selection.entity
+                boxRenderer.render(state, draw = { state: RenderState ->
+                    listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                            Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                            Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
+                        val transformation = SimpleTransform().scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z).translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.position))
+                        program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                        program.setUniform("diffuseColor", arrow.color)
 
-                draw(modelVertexIndexBuffer.vertexBuffer,
-                        modelVertexIndexBuffer.indexBuffer,
-                        modelRenderBatch, program, false, false)
+                        draw(modelVertexIndexBuffer.vertexBuffer,
+                                modelVertexIndexBuffer.indexBuffer,
+                                modelRenderBatch, program, false, false)
+                    }
+                })
+                val ninetyDegrees = Math.toRadians(90.0).toFloat()
+                val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
+                val renderer = if(transformMode == TransformMode.Translate) pyramidRenderer else boxRenderer
+                renderer.render(state, draw = { state: RenderState ->
+                    listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                            Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                            Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
+
+                        val transformation = SimpleTransform().rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.position))
+                        program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                        program.setUniform("diffuseColor", arrow.color)
+
+                        draw(modelVertexIndexBuffer.vertexBuffer,
+                                modelVertexIndexBuffer.indexBuffer,
+                                modelRenderBatch, program, false, false)
+                    }
+                })
             }
-        })
-        val ninetyDegrees = Math.toRadians(90.0).toFloat()
-        val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
-        val renderer = if(transformMode == TransformMode.Translate) pyramidRenderer else boxRenderer
-        renderer.render(state, draw = { state: RenderState ->
-            listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
-                    Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
-                    Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
-
-                val transformation = SimpleTransform().rotate(rotations[index]).translateLocal(Vector3f(arrow.scale))
-                program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-                program.setUniform("diffuseColor", arrow.color)
-
-                draw(modelVertexIndexBuffer.vertexBuffer,
-                        modelVertexIndexBuffer.indexBuffer,
-                        modelRenderBatch, program, false, false)
-            }
-        })
+        }
     }
 
     init {

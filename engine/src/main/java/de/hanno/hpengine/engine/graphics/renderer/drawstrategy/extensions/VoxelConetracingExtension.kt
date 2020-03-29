@@ -128,9 +128,11 @@ class VoxelConeTracingExtension(
             val clearVoxels = true
             val bounces = 1
 
-            val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved || engine.config.debug.isForceRevoxelization || entityMoved || entityAdded || renderState.entityHasMoved() && renderState.renderBatchesStatic.stream().anyMatch { info -> info.update == Update.DYNAMIC })
+            val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved
+                    || engine.config.debug.isForceRevoxelization || entityMoved || entityAdded
+                    || renderState.entityHasMoved() && renderState.renderBatchesStatic.any { info -> info.update == Update.DYNAMIC })
 
-            if (needsRevoxelization || directionalLightMoved || pointlightMoved) {
+            if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
                 lightInjectedFramesAgo = 0
             }
             val needsLightInjection = lightInjectedFramesAgo < bounces
@@ -204,7 +206,7 @@ class VoxelConeTracingExtension(
                     }
                 }
 
-                engine.textureManager.generateMipMaps(TEXTURE_3D, currentVoxelGrid.albedoGrid)
+//                engine.textureManager.generateMipMaps(TEXTURE_3D, currentVoxelGrid.grid)
 
                 if(engine.config.debug.isDebugVoxels) {
                     GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
