@@ -4,12 +4,13 @@ import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Quaternionfc
 import org.joml.Vector3f
+import org.joml.Vector4f
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -45,17 +46,14 @@ class MouseInputProcessor(val engine: Engine<*>,
         val rotationDelta = 10f
         val rotationAmount = 2.0f * 0.05 * rotationDelta
 
-        val deltaX = (lastX ?: e.x.toFloat()) - e.x.toFloat()
-        val deltaY = (lastY ?: e.y.toFloat()) - e.y.toFloat()
+        val deltaX = if(lastX != null) e.x.toFloat() - lastX!! else 0f
+        val deltaY = if(lastY != null) -(e.y.toFloat() - lastY!!) else 0f
 
         val pitchAmount = Math.toRadians((deltaY * rotationAmount % 360))
-        val yawAmount = Math.toRadians((-deltaX * rotationAmount % 360))
+        val yawAmount = Math.toRadians((deltaX * rotationAmount % 360))
 
         yaw += yawAmount.toFloat()
         pitch += pitchAmount.toFloat()
-
-        println("deltaX = ${deltaX}")
-        println("deltaY = ${deltaY}")
 
         val entityOrNull = getEntityOrNull()
         if(entityOrNull == null) {
@@ -66,50 +64,50 @@ class MouseInputProcessor(val engine: Engine<*>,
             entity.rotateLocalY((-yawAmount).toFloat())
             entity.translateLocal(oldTranslation)
         } else {
+            val activeCamera = engine.scene.activeCamera
+
+            val viewPort = intArrayOf(0, 0, engine.window.width, engine.window.height)
+            val entityPositionClip = Vector4f()
+            activeCamera.viewProjectionMatrix.project(entityOrNull.position, viewPort, entityPositionClip)
+            val entityPositionDevice = entityPositionClip
+            val positionDeviceNew = entityPositionDevice.xyz.add(Vector3f(deltaX, deltaY, 0f))
+            val entityNewWorldPosition = Vector4f()
+            activeCamera.viewProjectionMatrix.unproject(positionDeviceNew, viewPort, entityNewWorldPosition)
+
             val turbo = if (editorComponents.isKeyPressed(KeyEvent.VK_SHIFT)) 3f else 1f
+            println("entityPositionDevice = ${entityPositionDevice.x},${entityPositionDevice.y}")
+            println("entityPositionWorld = ${entityOrNull.position.x},${entityOrNull.position.y},${entityOrNull.position.z}")
+            println("entityPositionWorldNew = ${entityNewWorldPosition.x},${entityNewWorldPosition.y},${entityNewWorldPosition.z}")
+            val distanceWorld = entityNewWorldPosition.xyz.sub(entityOrNull.position)
+            println("distanceWorld ${distanceWorld.x},${distanceWorld.y},${distanceWorld.z}")
+            println("delta = $deltaX - $deltaY")
 
-            val moveAmountX = 0.1f * deltaX * turbo
-            val moveAmountY = 0.1f * deltaY * turbo
-            val degreesX = Math.toDegrees(moveAmountX.toDouble()).toFloat() * 0.0001f
-            val degreesY = Math.toDegrees(moveAmountX.toDouble()).toFloat() * 0.0001f
-            val axisFlip = Vector3f(
-                if(engine.scene.activeCamera.getRightDirection().x.sign.toInt() == entityOrNull.getRightDirection().x.sign.toInt()) -1f else 1f,
-                if(engine.scene.activeCamera.getUpDirection().y.sign.toInt() == entityOrNull.getUpDirection().y.sign.toInt()) 1f else -1f,
-                if(engine.scene.activeCamera.getViewDirection().z.sign.toInt() == entityOrNull.getViewDirection().z.sign.toInt()) -1f else 1f
-            )
+            val constraintAxis = editorComponents.selectionSystem.axisDragged
 
-            val constraintAxis = editorComponents.selectionSystem.axisDragged//editorComponents.constraintAxis
+            val movement = entityNewWorldPosition.xyz.sub(entityOrNull.position)
+            val axisConstrainedMovement = when(constraintAxis) {
+                AxisConstraint.X -> Vector3f(movement.x, 0f, 0f)
+                AxisConstraint.Y -> Vector3f(0f, movement.y, 0f)
+                AxisConstraint.Z -> Vector3f(0f, 0f, movement.z)
+                AxisConstraint.None -> movement
+            }
+
+            val scaleAmount = Vector3f(1f).add(Vector3f(axisConstrainedMovement).mul(0.01f))
+//            val scaleAmount = Vector3f(movement).mul(0.01f)
+            val degreesX = Math.toDegrees(movement.y.toDouble()).toFloat() * 0.001f
+            val degreesY = Math.toDegrees(movement.x.toDouble()).toFloat() * 0.001f
+
             fun handleTranslation() {
                 when(editorComponents.transformSpace) {
-                    TransformSpace.World -> when(constraintAxis) {
-                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(Vector3f(moveAmountX, 0f, 0f).mul(axisFlip)))
-                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(Vector3f(0f, moveAmountY, 0f).mul(axisFlip)))
-                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(Vector3f(0f, 0f, -moveAmountX).mul(axisFlip)))
-                        AxisConstraint.None -> Unit
-                    }
-                    TransformSpace.Local -> when(constraintAxis) {
-                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).translate(Vector3f(moveAmountX, 0f, 0f)))
-                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).translate(Vector3f(0f, moveAmountY, 0f)))
-                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).translate(Vector3f(0f, 0f, moveAmountY)))
-                        AxisConstraint.None -> Unit
-                    }
-                    TransformSpace.View -> when(constraintAxis) {
-                        AxisConstraint.X -> entityOrNull.set(Matrix4f(oldTransform).translate(engine.scene.activeCamera.getRightDirection().mul(Vector3f(moveAmountX, 0f, 0f))))
-                        AxisConstraint.Y -> entityOrNull.set(Matrix4f(oldTransform).translate(engine.scene.activeCamera.getUpDirection().mul(Vector3f(0f, moveAmountY, 0f))))
-                        AxisConstraint.Z -> entityOrNull.set(Matrix4f(oldTransform).translate(engine.scene.activeCamera.getViewDirection().mul(Vector3f(0f, 0f, moveAmountY))))
-                    AxisConstraint.None -> {
-                            val x = Vector3f(engine.scene.activeCamera.getRightDirection()).mul(moveAmountX)
-                            val y = Vector3f(engine.scene.activeCamera.getUpDirection()).mul(moveAmountY)
-                            x.add(y)
-                            entityOrNull.set(Matrix4f(oldTransform).translate(x))
-                        }
-                    }
+                    TransformSpace.World -> entityOrNull.set(Matrix4f(oldTransform).translateLocal(axisConstrainedMovement))
+                    TransformSpace.Local -> entityOrNull.set(Matrix4f(oldTransform).translate(axisConstrainedMovement))
+                    TransformSpace.View -> entityOrNull.set(Matrix4f(oldTransform).translate(activeCamera.getViewDirection().mul(axisConstrainedMovement)))
                 }
             }
             fun handleRotation() {
-                val cameraRight = engine.scene.activeCamera.getRightDirection()
-                val cameraUp = engine.scene.activeCamera.getUpDirection()
-                val cameraView = engine.scene.activeCamera.getViewDirection()
+                val cameraRight = activeCamera.getRightDirection()
+                val cameraUp = activeCamera.getUpDirection()
+                val cameraView = activeCamera.getViewDirection()
 
                 val entityRight = entityOrNull.rightDirection
                 val entityUp = entityOrNull.upDirection
@@ -163,12 +161,27 @@ class MouseInputProcessor(val engine: Engine<*>,
 
             }
             fun handleScaling() {
-                when(constraintAxis) {
-                    AxisConstraint.X -> entityOrNull.set(oldTransform).scaleAroundLocal(1f + moveAmountX, 1f, 1f, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
-                    AxisConstraint.Y -> entityOrNull.set(oldTransform).scaleAroundLocal(1f, 1f + moveAmountY, 1f, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
-                    AxisConstraint.Z -> entityOrNull.set(oldTransform).scaleAroundLocal(1f, 1f, 1f + moveAmountY, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
-                    AxisConstraint.None -> entityOrNull.set(oldTransform).scaleAroundLocal(1f + moveAmountX, 1f + moveAmountY, 1f, entityOrNull.position.x, entityOrNull.position.y, entityOrNull.position.z)
-                }.let {  }
+
+                when(editorComponents.transformSpace) {
+                    TransformSpace.World -> when(constraintAxis) {
+                            AxisConstraint.X -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount, entityOrNull.position)
+                            AxisConstraint.Y -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount, entityOrNull.position)
+                            AxisConstraint.Z -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount, entityOrNull.position)
+                            AxisConstraint.None -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount, entityOrNull.position)
+                        }.let {  }
+                    TransformSpace.Local -> when(constraintAxis) {
+                        AxisConstraint.X -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(entityOrNull.rotation), entityOrNull.position)
+                        AxisConstraint.Y -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(entityOrNull.rotation), entityOrNull.position)
+                        AxisConstraint.Z -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(entityOrNull.rotation), entityOrNull.position)
+                        AxisConstraint.None -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount, entityOrNull.position)
+                    }.let {  }
+                    TransformSpace.View -> when(constraintAxis) {
+                        AxisConstraint.X -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(activeCamera.entity.rotation), entityOrNull.position)
+                        AxisConstraint.Y -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(activeCamera.entity.rotation), entityOrNull.position)
+                        AxisConstraint.Z -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(activeCamera.entity.rotation), entityOrNull.position)
+                        AxisConstraint.None -> entityOrNull.set(oldTransform).scaleAroundLocal(scaleAmount.rotate(activeCamera.entity.rotation), entityOrNull.position)
+                    }.let {  }
+                }
             }
             when(editorComponents.transformMode) {
                 TransformMode.Translate -> handleTranslation()
@@ -180,6 +193,9 @@ class MouseInputProcessor(val engine: Engine<*>,
     }
 }
 
+
+fun Matrix4f.scaleAroundLocal(factor: Vector3f, o: Vector3f) = scaleAroundLocal(factor.x, factor.y, factor.z, o.x, o.y, o.z)
+fun Matrix4f.scaleAroundLocal(factor: Vector3f, ox: Float, oy: Float, oz: Float) = scaleAroundLocal(factor.x, factor.y, factor.z, ox, oy, oz)
 fun Matrix4f.rotateAroundLocal(axisAngle: AxisAngle4f, o: Vector3f): Matrix4f = rotateAroundLocal(Quaternionf(axisAngle), o.x, o.y, o.z)
 fun Matrix4f.rotateAroundLocal(quat: Quaternionfc, o: Vector3f): Matrix4f = rotateAroundLocal(quat, o.x, o.y, o.z)
 fun Matrix4f.rotateAffine(angle: Float, axis: Vector3f): Matrix4f = rotateAffine(angle, axis.x, axis.y, axis.z)
