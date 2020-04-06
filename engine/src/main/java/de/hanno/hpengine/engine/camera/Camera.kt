@@ -57,12 +57,12 @@ open class Camera @JvmOverloads constructor(
 
     var frustum = Frustum()
 
-    var near = 1f
+    var near = 0.1f
         set(value) {
             field = value
             updateProjectionMatrixAndFrustum()
         }
-    var far = 7000f
+    var far = 2000f
         set(value) {
             field = value
             updateProjectionMatrixAndFrustum()

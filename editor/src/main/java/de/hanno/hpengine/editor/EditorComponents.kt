@@ -86,6 +86,7 @@ class EditorComponents(val engine: EngineImpl,
     val sphereHolder = SphereHolder(engine)
     val boxRenderer = SimpleModelRenderer(engine)
     val pyramidRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
+    val torusRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/torus.obj"), engine.materialManager, engine.config.directories.engineDir))
     val environmentProbeSphereHolder = SphereHolder(engine, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val sceneTree = SwingUtils.invokeAndWait {
@@ -198,53 +199,83 @@ class EditorComponents(val engine: EngineImpl,
 
     private fun drawTransformationArrows(state: RenderState) {
         data class Arrow(val scale: Vector3f, val color: Vector3f)
+        val ninetyDegrees = Math.toRadians(90.0).toFloat()
 
         when(val selection = selectionSystem.selection) {
             is EntitySelection -> {
                 val entity = selection.entity
-                boxRenderer.render(state, draw = { state: RenderState ->
-                    listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
-                            Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
-                            Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
-                        val transformation = SimpleTransform()
-                        transformation.scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
-                        transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.position))
-                        when(transformSpace) {
-                            TransformSpace.World -> Unit
-                            TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                            TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                if(transformMode == TransformMode.Rotate) {
+                    torusRenderer.render(state, draw = { state: RenderState ->
+                        listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                                Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                                Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
+                            val transformation = SimpleTransform()
+                            transformation.scaleLocal(3f)
+                            if(arrow.scale.x > 2f) {
+                                transformation.rotateAffine(ninetyDegrees, 0f, 0f, 1f)
+                            } else if (arrow.scale.y > 2f) {
+                                transformation.rotateAffine(ninetyDegrees, 0f, 1f, 0f)
+                            } else {
+                                transformation.rotateAffine(ninetyDegrees, 1f, 0f, 0f)
+                            }
+                            when(transformSpace) {
+                                TransformSpace.World -> Unit
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                            }
+                            program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                            program.setUniform("diffuseColor", arrow.color)
+
+                            draw(modelVertexIndexBuffer.vertexBuffer,
+                                    modelVertexIndexBuffer.indexBuffer,
+                                    modelRenderBatch, program, false, false)
                         }
-                        program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-                        program.setUniform("diffuseColor", arrow.color)
+                    })
+                } else {
 
-                        draw(modelVertexIndexBuffer.vertexBuffer,
-                                modelVertexIndexBuffer.indexBuffer,
-                                modelRenderBatch, program, false, false)
-                    }
-                })
-                val ninetyDegrees = Math.toRadians(90.0).toFloat()
-                val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
-                val renderer = if(transformMode == TransformMode.Translate) pyramidRenderer else boxRenderer
-                renderer.render(state, draw = { state: RenderState ->
-                    listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
-                            Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
-                            Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
+                    boxRenderer.render(state, draw = { state: RenderState ->
+                        listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                                Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                                Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
+                            val transformation = SimpleTransform()
+                            transformation.scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
+                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.position))
+                            when(transformSpace) {
+                                TransformSpace.World -> Unit
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                            }
+                            program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                            program.setUniform("diffuseColor", arrow.color)
 
-                        val transformation = SimpleTransform()
-                        transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.position))
-                        when(transformSpace) {
-                            TransformSpace.World -> Unit
-                            TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                            TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                            draw(modelVertexIndexBuffer.vertexBuffer,
+                                    modelVertexIndexBuffer.indexBuffer,
+                                    modelRenderBatch, program, false, false)
                         }
-                        program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-                        program.setUniform("diffuseColor", arrow.color)
+                    })
+                    val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
+                    val renderer = if(transformMode == TransformMode.Translate) pyramidRenderer else boxRenderer
+                    renderer.render(state, draw = { state: RenderState ->
+                        listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
+                                Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
+                                Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
 
-                        draw(modelVertexIndexBuffer.vertexBuffer,
-                                modelVertexIndexBuffer.indexBuffer,
-                                modelRenderBatch, program, false, false)
-                    }
-                })
+                            val transformation = SimpleTransform()
+                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.position))
+                            when(transformSpace) {
+                                TransformSpace.World -> Unit
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                            }
+                            program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
+                            program.setUniform("diffuseColor", arrow.color)
+
+                            draw(modelVertexIndexBuffer.vertexBuffer,
+                                    modelVertexIndexBuffer.indexBuffer,
+                                    modelRenderBatch, program, false, false)
+                        }
+                    })
+                }
             }
         }
     }
