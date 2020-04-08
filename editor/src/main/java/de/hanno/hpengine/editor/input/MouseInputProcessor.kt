@@ -58,7 +58,6 @@ class MouseInputProcessor(val engine: Engine<*>,
         if(entityOrNull == null) {
             val entity = engine.scene.camera.entity
             val oldTranslation = entity.getTranslation(Vector3f())
-            entity.setTranslation(Vector3f(0f, 0f, 0f))
             entity.rotationX(pitchAmount.toFloat())
             entity.rotateLocalY((-yawAmount).toFloat())
             entity.translateLocal(oldTranslation)

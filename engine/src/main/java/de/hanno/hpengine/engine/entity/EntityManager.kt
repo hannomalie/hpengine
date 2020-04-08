@@ -82,12 +82,15 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             if (!entity.hasMoved()) {
                 continue
             }
-            scene.minMax.calculateMinMax(scene.entityManager.getEntities())
-            entityMovedInCycle = scene.currentCycle
-            entityHasMoved = true
+
             if (entity.updateType == Update.STATIC) {
                 staticEntityHasMoved = true
                 staticEntityMovedInCycle = scene.currentCycle
+                scene.minMax.calculateMinMax(scene.entityManager.getEntities())
+            } else {
+                entityHasMoved = true
+                entityMovedInCycle = scene.currentCycle
+                scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             }
             break
         }
@@ -105,10 +108,6 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
         renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
-    }
-
-    fun setEntityMovedInCycleToCycle(currentCycle: Long) {
-        entityMovedInCycle = currentCycle
     }
 
     companion object {

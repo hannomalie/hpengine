@@ -120,17 +120,17 @@ class VoxelConeTracingExtension(
 
             val gridMoved = false
 
-            val entityMoved = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
-            val entityAdded = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
+            val entityAdded = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
+            val entityMoved = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
             val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
             val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
-            val useVoxelConeTracing = true
             val clearVoxels = true
             val bounces = 1
 
-            val needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || gridMoved
-                    || engine.config.debug.isForceRevoxelization || entityMoved || entityAdded
-                    || renderState.entityHasMoved() && renderState.renderBatchesStatic.any { info -> info.update == Update.DYNAMIC })
+            val containsADynamic = renderState.renderBatchesStatic.any { info -> info.update == Update.DYNAMIC }
+            val needsRevoxelization = !renderState.sceneInitiallyDrawn || gridMoved
+                    || engine.config.debug.isForceRevoxelization
+                    || entityMoved || entityAdded || containsADynamic
 
             if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
                 lightInjectedFramesAgo = 0
@@ -195,9 +195,7 @@ class VoxelConeTracingExtension(
                         pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
                     } else {
                         for (entity in renderState.renderBatchesStatic) {
-                            val isStatic = entity.update == Update.STATIC
-                            if (renderState.sceneInitiallyDrawn && !engine.config.debug.isForceRevoxelization
-                                    && isStatic && !renderState.staticEntityHasMoved) {
+                            if (renderState.sceneInitiallyDrawn && !engine.config.debug.isForceRevoxelization) {
                                 continue
                             }
                             voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
