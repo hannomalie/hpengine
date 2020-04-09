@@ -60,9 +60,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val materialBuffer: PersistentMappedStructBuffer<MaterialStruct>
         get() = entitiesState.materialBuffer
 
-    val staticEntityHasMoved: Boolean
-        get() = entitiesState.staticEntityMovedInCycle == cycle
-
     var deltaInS: Float = 0.1f
     var sceneInitialized: Boolean = false
 

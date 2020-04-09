@@ -7,8 +7,8 @@ import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -118,37 +118,42 @@ class VoxelConeTracingExtension(
 
         profiled("VCT first pass") {
 
-            val gridMoved = false
-
-            val entityAdded = renderState.entitiesState.entityAddedInCycle > voxelizedInCycle
-            val entityMoved = renderState.entitiesState.entityMovedInCycle > voxelizedInCycle
             val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
             val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
-            val clearVoxels = true
             val bounces = 1
 
-            val containsADynamic = renderState.renderBatchesStatic.any { info -> info.update == Update.DYNAMIC }
-            val needsRevoxelization = !renderState.sceneInitiallyDrawn || gridMoved
-                    || engine.config.debug.isForceRevoxelization
-                    || entityMoved || entityAdded || containsADynamic
+            val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization) {
+                renderState.renderBatchesStatic
+            } else {
+                renderState.renderBatchesStatic.filter { batch ->
+                    val entityVoxelizationCycle = entityVoxeliedInCycle[batch.entityIndex] ?: 0L
+                    batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC
+                }
+            }
+
+            val needsRevoxelization = entitiesToVoxelize.isNotEmpty()
+            voxelizeScene(renderState, entitiesToVoxelize)
+
 
             if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
                 lightInjectedFramesAgo = 0
             }
             val needsLightInjection = lightInjectedFramesAgo < bounces
 
-            voxelizeScene(renderState, clearVoxels, needsRevoxelization)
+
             injectLight(renderState, bounces, needsLightInjection)
             engine.config.debug.isForceRevoxelization = false
         }
     }
 
-    fun voxelizeScene(renderState: RenderState, clearVoxels: Boolean, needsRevoxelization: Boolean) {
+    private val entityVoxeliedInCycle = mutableMapOf<Int, Long>()
+    fun voxelizeScene(renderState: RenderState, batches: List<RenderBatch>) {
+        if(batches.isEmpty()) return
+
         val voxelGrids = renderState[this.voxelGrids]
         val maxGridCount = voxelGrids.size
         for(voxelGridIndex in 0 until maxGridCount) {
             val currentVoxelGrid = voxelGrids[voxelGridIndex]
-            if (needsRevoxelization && clearVoxels) {
                 profiled("Clear voxels") {
                     if (engine.config.debug.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
                         ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
@@ -166,45 +171,38 @@ class VoxelConeTracingExtension(
                         clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                     }
                 }
-            }
 
-            if (needsRevoxelization) {
                 voxelizedInCycle = renderState.cycle
                 profiled("Voxelization") {
-                    engine.gpuContext.viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
-                    voxelizer.use()
-                    GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                    GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                    GL42.glBindImageTexture(6, currentVoxelGrid.indexGrid, 0, true, 0, GL15.GL_WRITE_ONLY, indexGridTextureFormatSized)
-                    voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
-                    voxelizer.setUniform("voxelGridCount", voxelGrids.size)
-                    voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                    voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-                    voxelizer.bindShaderStorageBuffer(5, voxelGrids)
-                    voxelizer.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
+                engine.gpuContext.viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
+                voxelizer.use()
+                GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                GL42.glBindImageTexture(6, currentVoxelGrid.indexGrid, 0, true, 0, GL15.GL_WRITE_ONLY, indexGridTextureFormatSized)
+                voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
+                voxelizer.setUniform("voxelGridCount", voxelGrids.size)
+                voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
+                voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                voxelizer.bindShaderStorageBuffer(5, voxelGrids)
+                voxelizer.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
 
-                    voxelizer.setUniform("writeVoxels", true)
-                    engine.gpuContext.depthMask = false
-                    engine.gpuContext.disable(DEPTH_TEST)
-                    engine.gpuContext.disable(BLEND)
-                    engine.gpuContext.disable(CULL_FACE)
-                    GL11.glColorMask(false, false, false, false)
+                voxelizer.setUniform("writeVoxels", true)
+                engine.gpuContext.depthMask = false
+                engine.gpuContext.disable(DEPTH_TEST)
+                engine.gpuContext.disable(BLEND)
+                engine.gpuContext.disable(CULL_FACE)
+                GL11.glColorMask(false, false, false, false)
 
-                    if (useIndirectDrawing && engine.config.performance.isIndirectRendering) {
-                        firstPassResult.reset()
-                        pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
-                    } else {
-                        for (entity in renderState.renderBatchesStatic) {
-                            if (renderState.sceneInitiallyDrawn && !engine.config.debug.isForceRevoxelization) {
-                                continue
-                            }
-                            voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
-                            draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
-                        }
+                if (useIndirectDrawing && engine.config.performance.isIndirectRendering) {
+                    firstPassResult.reset()
+                    pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
+                } else {
+                    for (entity in batches) {
+                        voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
+                        draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
+                        entityVoxeliedInCycle[entity.entityIndex] = renderState.cycle
                     }
                 }
-
-//                engine.textureManager.generateMipMaps(TEXTURE_3D, currentVoxelGrid.grid)
 
                 if(engine.config.debug.isDebugVoxels) {
                     GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)

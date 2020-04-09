@@ -21,6 +21,7 @@ import java.util.function.Supplier
 
 open class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentTimeMillis().toString(),
                                             position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
+    var movedInCycle = 0L
     internal var managerRegistry: ManagerRegistry? = null
 
     val spatial: SimpleSpatial = object : SimpleSpatial() {

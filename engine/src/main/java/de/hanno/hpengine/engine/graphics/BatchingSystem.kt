@@ -43,6 +43,7 @@ class BatchingSystem {
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
                 with(batch){ entityBufferIndex = meshBufferIndex
+                    this.movedInCycle = entity.movedInCycle
                     this.isDrawLines = drawLines
                     this.cameraWorldPosition = cameraWorldPosition
                     this.isVisibleForCamera = visibleForCamera

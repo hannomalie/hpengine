@@ -10,6 +10,7 @@ import java.util.ArrayList
 class RenderBatch(
         var entityIndex: Int = -1,
         var meshIndex: Int = -1,
+        var movedInCycle: Long = 0L,
         var isDrawLines: Boolean = false,
         var entityMinWorld: Vector3f = Vector3f(),
         var entityMaxWorld: Vector3f = Vector3f(),

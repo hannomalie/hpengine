@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.transform.calculateMinMax
 import kotlinx.coroutines.CoroutineScope
@@ -92,6 +91,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
                 entityMovedInCycle = scene.currentCycle
                 scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             }
+            entity.movedInCycle = scene.currentCycle
             break
         }
     }
