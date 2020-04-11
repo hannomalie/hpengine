@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
@@ -16,19 +15,16 @@ import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
-import de.hanno.hpengine.engine.threads.UpdateThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.io.File
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
@@ -55,19 +51,8 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
     private var updateThreadCounter = 0
-    private val function: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
-    private val updateScope = Executors.newFixedThreadPool(8, function).asCoroutineDispatcher()
-    val updateConsumer = Consumer<Float> {
-        addResourceContext.locked {
-            val job = GlobalScope.launch(updateScope) {
-                update(it)
-            }
-            while(job.isActive) {}
-        }
-        Thread.sleep(1)
-    }
-    val updateThread: UpdateThread = UpdateThread(engineContext, updateConsumer, "Update", TimeUnit.MILLISECONDS.toSeconds(8).toFloat())
-
+    private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
+    private val updateScope = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
     init {
         engineContext.renderSystems.add(0, renderer)
     }
@@ -80,7 +65,26 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     }
 
     fun startSimulation() {
-        updateThread.start()
+        GlobalScope.launch(updateScope) {
+
+            var currentTimeNs = System.nanoTime()
+            val dtS = 1 / 60.0
+
+            while (true) {
+                val newTimeNs = System.nanoTime()
+                val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
+                var frameTimeS = frameTimeNs / 1000000000.0
+                currentTimeNs = newTimeNs
+                while (frameTimeS > 0.0) {
+                    val deltaTime = Math.min(frameTimeS, dtS)
+                    addResourceContext.locked {
+                        update(dtS.toFloat())
+                    }
+                    frameTimeS -= deltaTime
+                    yield()
+                }
+            }
+        }
     }
 
     fun CoroutineScope.update(deltaSeconds: Float) = try {
