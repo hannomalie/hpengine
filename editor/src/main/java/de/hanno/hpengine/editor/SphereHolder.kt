@@ -89,6 +89,7 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
 
         val transformation = SimpleTransform()
         if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
+        engine.gpuContext.cullFace = false
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))

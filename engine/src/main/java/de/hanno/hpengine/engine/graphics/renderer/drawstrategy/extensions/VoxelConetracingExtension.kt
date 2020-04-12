@@ -126,7 +126,7 @@ class VoxelConeTracingExtension(
                 renderState.renderBatchesStatic
             } else {
                 renderState.renderBatchesStatic.filter { batch ->
-                    val entityVoxelizationCycle = entityVoxeliedInCycle[batch.entityIndex] ?: 0L
+                    val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityIndex] ?: 0L
                     batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC
                 }
             }
@@ -146,7 +146,7 @@ class VoxelConeTracingExtension(
         }
     }
 
-    private val entityVoxeliedInCycle = mutableMapOf<Int, Long>()
+    private val entityVoxelizedInCycle = mutableMapOf<Int, Long>()
     fun voxelizeScene(renderState: RenderState, batches: List<RenderBatch>) {
         if(batches.isEmpty()) return
 
@@ -200,7 +200,7 @@ class VoxelConeTracingExtension(
                     for (entity in batches) {
                         voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
-                        entityVoxeliedInCycle[entity.entityIndex] = renderState.cycle
+                        entityVoxelizedInCycle[entity.entityIndex] = renderState.cycle
                     }
                 }
 

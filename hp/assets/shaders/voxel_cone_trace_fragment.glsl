@@ -354,8 +354,29 @@ void main(void) {
             #endif
         }
     } else {
-        vct = diffuseColor * ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 150.0f, 1.0f).rgb
-            + specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 250.0f, 1.0f).rgb;
+
+        const int sampleCount = 5;
+        for (int k = 0; k < sampleCount; k++) {
+            const float PI = 3.1415926536;
+            vec2 Xi = hammersley2d(k, sampleCount);
+            float Phi = 2 * PI * Xi.x;
+            float a = 0.5;
+            float CosTheta = sqrt((1 - Xi.y) / ((1 + (a*a - 1) * Xi.y)));
+            float SinTheta = sqrt(1 - CosTheta * CosTheta);
+
+            vec3 H;
+            H.x = SinTheta * cos(Phi);
+            H.y = SinTheta * sin(Phi);
+            H.z = CosTheta;
+            H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+
+            vct = diffuseColor * ConeTraceGI(positionWorld.xyz, H, 0.5f*aperture, 150.0f, 1.0f).rgb;
+
+        }
+        vct += specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 250.0f, 1.0f).rgb;
+
+//        vct = diffuseColor * ConeTraceGI(positionWorld.xyz, normalWorld.xyz, aperture, 150.0f, 1.0f).rgb
+//            + specularColor * ConeTraceGI(positionWorld.xyz, reflect(-V, normalWorld.xyz), aperture, 250.0f, 1.0f).rgb;
     }
 
     out_AOReflection.rgb = 4.0f*vct;
