@@ -8,23 +8,19 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture
-import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.concurrent.Callable
+import java.util.concurrent.Future
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
 
 interface OpenGlExecutor {
     val openGLThreadId: Long
 
-    fun execute(actionName: String, runnable: Runnable) = execute(actionName, runnable, true, false)
-    fun execute(actionName: String, runnable: Runnable, andBlock: Boolean) = execute(actionName, runnable, andBlock, false)
-    fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean)
-
-    fun execute(actionName: String, runnable: () -> Unit) = execute(actionName, Runnable(runnable), true, false)
-    fun execute(actionName: String, andBlock: Boolean, runnable: () -> Unit) = execute(actionName, andBlock, false, runnable)
-    fun execute(actionName: String, andBlock: Boolean, forceAsync: Boolean, runnable: () -> Unit) = execute(actionName, Runnable(runnable), andBlock, forceAsync)
+    fun execute(runnable: () -> Unit) = execute(Runnable(runnable))
+    fun execute(runnable: Runnable): Future<Unit>
+    suspend fun <T> execute(block: () -> T): T
 
     fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE
     fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculate(Callable(callable))

@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.query;
 
 import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import kotlin.Unit;
 
 import java.util.concurrent.Callable;
 
@@ -31,8 +32,9 @@ public class GLTimerQuery implements GLQuery<Float> {
     @Override
     public GLTimerQuery begin() {
         finished = false;
-        gpuContext.execute("GLTimerQuery.begin", () -> {
+        gpuContext.execute(() -> {
             glQueryCounter(start, GL_TIMESTAMP);
+            return Unit.INSTANCE;
         });
         started = true;
         return this;
@@ -43,8 +45,9 @@ public class GLTimerQuery implements GLQuery<Float> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        gpuContext.execute("GLTimerQuery.end", () -> {
+        gpuContext.execute(() -> {
             glQueryCounter(end, GL_TIMESTAMP);
+            return Unit.INSTANCE;
         });
         finished = true;
     }

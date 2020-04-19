@@ -14,6 +14,9 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
@@ -85,11 +88,19 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-                engineContext.gpuContext.execute("Foo", this, false, true)
+//                engineContext.gpuContext.execute(this).get()
             }
 
         }
-        engineContext.gpuContext.execute("Foo", runnable, false, true)
+//        engineContext.gpuContext.execute(runnable)
+        GlobalScope.launch {
+            while(true) {
+                engineContext.gpuContext.execute(block = {
+                    runnable.run()
+                })
+//                yield()
+            }
+        }
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {

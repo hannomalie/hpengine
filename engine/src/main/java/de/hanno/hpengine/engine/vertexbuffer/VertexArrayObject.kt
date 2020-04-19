@@ -13,12 +13,12 @@ class VertexArrayObject private constructor(private val gpuContext: GpuContext<*
         setUpAttributes()
     }
 
-    fun bind() = gpuContext.execute("VertexArrayObject.bind") {
+    fun bind() = gpuContext.execute() {
         GL30.glBindVertexArray(id)
     }
 
     private fun setUpAttributes() {
-        gpuContext.execute("VertexArrayObject.setUpAttributes") {
+        gpuContext.execute() {
             bind()
             var currentOffset = 0
             for (channel in channels) {

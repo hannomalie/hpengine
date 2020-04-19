@@ -9,9 +9,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
+import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
-import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.model.texture.UploadState
 import de.hanno.hpengine.engine.model.texture.allocateTexture
@@ -25,7 +25,24 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL32.*
+import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL32.GL_COLOR_ATTACHMENT0
+import org.lwjgl.opengl.GL32.GL_DEPTH_ATTACHMENT
+import org.lwjgl.opengl.GL32.GL_FRAMEBUFFER
+import org.lwjgl.opengl.GL32.GL_FRAMEBUFFER_COMPLETE
+import org.lwjgl.opengl.GL32.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT
+import org.lwjgl.opengl.GL32.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT
+import org.lwjgl.opengl.GL32.GL_R32F
+import org.lwjgl.opengl.GL32.GL_RENDERBUFFER
+import org.lwjgl.opengl.GL32.GL_RGBA16F
+import org.lwjgl.opengl.GL32.GL_RGBA32F
+import org.lwjgl.opengl.GL32.glBindRenderbuffer
+import org.lwjgl.opengl.GL32.glCheckFramebufferStatus
+import org.lwjgl.opengl.GL32.glFramebufferTexture
+import org.lwjgl.opengl.GL32.glFramebufferTexture2D
+import org.lwjgl.opengl.GL32.glFramebufferTextureLayer
+import org.lwjgl.opengl.GL32.glGenFramebuffers
+import org.lwjgl.opengl.GL32.glGenRenderbuffers
 import java.util.logging.Logger
 import kotlin.math.max
 
@@ -135,7 +152,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
     override var mipMapCount = Util.calculateMipMapCount(max(width, height))
 
     init {
-        gpuContext.execute("RenderTarget") {
+        gpuContext.execute() {
             gpuContext.bindFrameBuffer(frameBuffer)
 
             configureBorderColor()
@@ -191,13 +208,13 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
 //        resizeTextures(gpuContext)
 //    }
 
-    override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) = gpuContext.execute("Rendertarget.use") {
+    override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) = gpuContext.execute {
         gpuContext.bindFrameBuffer(frameBuffer)
         gpuContext.viewPort(0, 0, width, height)
         if (clear) {
             gpuContext.clearDepthAndColorBuffer()
         }
-    }
+    }.get()
 
     @JvmOverloads
     override fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int) {
@@ -238,10 +255,14 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
             val frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)
             if (frameBufferStatus != GL_FRAMEBUFFER_COMPLETE) {
                 LOGGER.severe("RenderTarget fucked up")
-                if (frameBufferStatus == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
-                    LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
-                } else if (frameBufferStatus == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
-                    LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
+                when (frameBufferStatus) {
+                    GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT")
+                    GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT")
+                    GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER")
+                    GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER")
+                    GL_FRAMEBUFFER_UNSUPPORTED -> LOGGER.severe("GL_FRAMEBUFFER_UNSUPPORTED")
+                    GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE")
+                    GL_FRAMEBUFFER_UNDEFINED -> LOGGER.severe("GL_FRAMEBUFFER_UNDEFINED")
                 }
                 throw RuntimeException()
             }
@@ -312,7 +333,7 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, depthBuffer: DepthBuffer<*>?): FrameBuffer {
             return FrameBuffer(gpuContext.calculate { glGenFramebuffers() }, depthBuffer).apply {
                 if (depthBuffer != null) {
-                    gpuContext.execute("glFramebufferTexture") {
+                    gpuContext.execute() {
                         gpuContext.bindFrameBuffer(this)
                         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer.texture.id, 0)
                     }
@@ -345,7 +366,7 @@ class DepthBuffer<T : Texture>(val texture: T) {
 }
 
 class RenderBuffer private constructor(val renderBuffer: Int, val width: Int, val height: Int) {
-    fun bind(gpuContext: GpuContext<OpenGl>) = gpuContext.execute("BindRenderBuffer") {
+    fun bind(gpuContext: GpuContext<OpenGl>) = gpuContext.execute() {
         glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
     }
 

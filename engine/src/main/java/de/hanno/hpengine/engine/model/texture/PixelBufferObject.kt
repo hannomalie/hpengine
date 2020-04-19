@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL21
 import org.lwjgl.opengl.GL21.*
 import java.nio.ByteBuffer
 
@@ -32,7 +31,7 @@ class PixelBufferObject(val id: Int) {
     }
 
     fun unmap(gpuContext: GpuContext<OpenGl>) {
-        gpuContext.execute("PixelBufferObject.put") {
+        gpuContext.execute() {
             bind()
             val isMapped = GL15.glGetBufferParameteri(GL_PIXEL_UNPACK_BUFFER, GL15.GL_BUFFER_MAPPED) == GL11.GL_TRUE
             val zeroIsBound = GL11.glGetInteger(GL_PIXEL_UNPACK_BUFFER_BINDING) == 0

@@ -14,16 +14,19 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
@@ -48,14 +51,16 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
 import java.util.concurrent.Callable
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
 import javax.vecmath.Vector2f
 import javax.vecmath.Vector4f
 import kotlin.coroutines.CoroutineContext
 
-class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
+class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl>, OpenGlExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     init {
         privateInit()
@@ -91,7 +96,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override val isError: Boolean
         get() {
-            return calculate(Callable{ GL11.glGetError() != GL11.GL_NO_ERROR })!!
+            return window.calculate(Callable{ GL11.glGetError() != GL11.GL_NO_ERROR })!!
         }
 
 
@@ -115,11 +120,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     internal fun privateInit() {
-        window.execute("XXX", Runnable {
-//            window.openGLThreadId = Thread.currentThread().id
-
-//            window.makeContextCurrent()
-
+        window.execute {
             capabilities = GL.getCapabilities()
 
             println("OpenGL version: " + GL11.glGetString(GL_VERSION))
@@ -142,7 +143,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
             isInitialized = true
 
-        }, false, true)
+        }
     }
 
     override fun update(seconds: Float) { }
@@ -178,7 +179,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override fun activeTexture(textureUnitIndex: Int) {
         if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
-        execute("activeTexture", Runnable { GL13.glActiveTexture(textureIndexGLInt) })
+        window.execute { GL13.glActiveTexture(textureIndexGLInt) }
     }
 
     private fun getCleanedTextureUnitValue(textureUnit: Int): Int {
@@ -190,33 +191,33 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
     override fun bindTexture(target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
-        execute("bindTexture0", Runnable {
+        window.execute {
             GL11.glBindTexture(target.glTarget, textureId)
             getExceptionOnError("")?.let{ throw it }
-        })
+        }
     }
 
     override fun bindTexture(textureUnitIndex: Int, target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
-        execute("bindTexture1", Runnable {
+        window.execute {
             getExceptionOnError("beforeBindTexture")?.let{ throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
             GL11.glBindTexture(target.glTarget, textureId)
             getExceptionOnError("bindTexture")?.let{ throw it }
-        })
+        }
     }
 
     override fun bindTextures(textureIds: IntBuffer) {
-        execute("bindTextures0", Runnable { GL44.glBindTextures(0, textureIds) })
+        window.execute { GL44.glBindTextures(0, textureIds) }
     }
 
     override fun bindTextures(count: Int, textureIds: IntBuffer) {
-        execute("bindTextures1", Runnable { GL44.glBindTextures(0, textureIds) })
+        window.execute { GL44.glBindTextures(0, textureIds) }
     }
 
     override fun bindTextures(firstUnit: Int, count: Int, textureIds: IntBuffer) {
-        execute("bindTextures2", Runnable { GL44.glBindTextures(firstUnit, textureIds) })
+        window.execute { GL44.glBindTextures(firstUnit, textureIds) }
     }
 
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
@@ -237,9 +238,9 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun bindFrameBuffer(frameBuffer: Int) {
-        execute("bindFrameBuffer", Runnable{
+        window.execute {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer)
-        })
+        }
     }
 
     override var depthMask: Boolean
@@ -284,27 +285,23 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun genTextures(): Int {
-        return calculate(Callable { GL11.glGenTextures() })!!
+        return window.calculate(Callable { GL11.glGenTextures() })!!
     }
 
     override val availableVRAM: Int
-        get() = calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) })!!
+        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) })!!
 
     override val availableTotalVRAM: Int
-        get() = calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) })!!
+        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) })!!
 
     override val dedicatedVRAM: Int
-        get() = calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) })!!
+        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) })!!
 
     override val evictedVRAM: Int
-        get() = calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) })!!
+        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) })!!
 
     override val evictionCount: Int
-        get() = calculate(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
-
-    override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean, forceAsync: Boolean): Unit {
-        return window.execute(actionName, runnable, andBlock, forceAsync)
-    }
+        get() = window.calculate(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
 
     fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (GpuContext.CHECKERRORS) {
@@ -321,16 +318,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         return null
     }
 
-    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        return window.calculate(callable)
-    }
-
-    override fun shutdown() {
-        window.shutdown()
-    }
-
     override fun createProgramId(): Int {
-        return calculate(Callable{ GL20.glCreateProgram() })!!
+        return window.calculate(Callable{ GL20.glCreateProgram() })!!
     }
 
     override fun destroy() {
@@ -358,7 +347,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun genFrameBuffer(): Int {
-        return calculate(Callable{ glGenFramebuffers() })!!
+        return window.calculate(Callable{ glGenFramebuffers() })!!
     }
 
     override fun clearCubeMap(textureId: Int, textureFormat: Int) {
@@ -408,7 +397,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override fun bindFrameBuffer(frameBuffer: FrameBuffer) {
         bindFrameBuffer(frameBuffer.frameBuffer)
     }
-    fun checkGLError(errorMessage: () -> String) = execute("checkGLError") {
+    fun checkGLError(errorMessage: () -> String) = window.execute() {
         if (GpuContext.CHECKERRORS) {
 
             val errorValue = GL11.glGetError()
@@ -465,26 +454,18 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             throw IllegalStateException(getErrorString(error) + "\n$msg")
         }
     }
-    fun getError(): Int = calculate { GL11.glGetError() }
+    fun getError(): Int = window.calculate { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
-    override val openGLThreadId: Long
-        get() = window.openGLThreadId
 
 }
 
 
-class Executor: CoroutineScope, OpenGlExecutor {
-    override var openGLThreadId: Long = -1
-
-    internal val openGlExecutor = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable).apply {
-            name = OpenGLContext.OPENGL_THREAD_NAME
-        }
-    }.apply { this.submit {
-        openGLThreadId = Thread.currentThread().id
-    } }
-
-    val dispatcher = openGlExecutor.asCoroutineDispatcher()
+class Executor(val dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher())
+    : CoroutineScope, OpenGlExecutor {
+    override var openGLThreadId: Long = runBlocking(dispatcher) {
+        Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
+        Thread.currentThread().id
+    }
 
     override val coroutineContext
         get() = dispatcher + Job()
@@ -502,14 +483,10 @@ class Executor: CoroutineScope, OpenGlExecutor {
     }
 
     inline val isOpenGLThread: Boolean
-        get() {
-            return Thread.currentThread().isOpenGLThread
-        }
+        get() = Thread.currentThread().isOpenGLThread
 
     val Thread.isOpenGLThread: Boolean
-        get() {
-            return id == openGLThreadId
-        }
+        get() = id == openGLThreadId
 
     // duplicate code, because I had compilation issues with coroutines and this function somehow
     private fun executeExitOnGlErrorFunction(errorMessage: () -> String = {""}) {
@@ -527,17 +504,20 @@ class Executor: CoroutineScope, OpenGlExecutor {
         }
     }
 
-    override fun execute(actionName: String, runnable: java.lang.Runnable, andBlock: Boolean, forceAsync: Boolean) {
-        when {
-            isOpenGLThread && !forceAsync -> {
-                runnable.run()
-            }
-            andBlock -> runBlocking(coroutineContext) {
-                runnable.run()
-            }
-            else -> launch(coroutineContext) {
-                runnable.run()
-            }
+    override suspend fun <T> execute(block: () -> T): T {
+        if(isOpenGLThread) return block()
+
+        return withContext(coroutineContext) {
+            block()
+        }
+    }
+
+    private val unitFuture = CompletableFuture.completedFuture(Unit)
+    override fun execute(runnable: Runnable): Future<Unit> {
+        if(isOpenGLThread) return runnable.run().let { unitFuture }
+
+        return future(coroutineContext) {
+            runnable.run()
         }
     }
 
@@ -551,6 +531,5 @@ class Executor: CoroutineScope, OpenGlExecutor {
     }
 
     override fun shutdown() {
-        openGlExecutor.shutdown()
     }
 }

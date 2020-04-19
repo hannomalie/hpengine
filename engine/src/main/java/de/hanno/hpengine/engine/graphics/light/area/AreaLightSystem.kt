@@ -51,7 +51,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
 
-    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
+    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
     private val mapRenderTarget = CubeMapRenderTarget(engine.gpuContext, RenderTarget(
         engine.gpuContext,
@@ -72,7 +72,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
 
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
     private val areaLightDepthMaps = ArrayList<Int>().apply {
-        engine.gpuContext.execute("areaLightDepthMaps") {
+        engine.gpuContext.execute() {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = engine.gpuContext.genTextures()
                 engine.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)

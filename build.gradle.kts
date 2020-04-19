@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.50"
+    kotlin("jvm") version "1.3.71"
     application
 }
 version = "1.0.0-SNAPSHOT"
@@ -66,6 +66,7 @@ allprojects {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation(kotlin("reflect"))
     implementation(project("engine"))
     implementation(project("editor"))
 }

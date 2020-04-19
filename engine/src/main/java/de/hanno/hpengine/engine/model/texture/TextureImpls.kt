@@ -14,7 +14,6 @@ import jogl.DDSImage
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL12.GL_MAX_3D_TEXTURE_SIZE
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL13.glCompressedTexSubImage2D
 import java.awt.image.BufferedImage
@@ -87,7 +86,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Text
 
             val fileBasedCubeMap = FileBasedCubeMap(path, CubeMap(gpuContext, dimension, TextureFilterConfig(), internalFormat, GL_REPEAT))
 
-            fun load(cubeMapFaceTarget: Int, buffer: ByteBuffer) = gpuContext.execute("FileBasedCubeMap.load") {
+            fun load(cubeMapFaceTarget: Int, buffer: ByteBuffer) = gpuContext.execute() {
                 GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
                 glTexSubImage2D(cubeMapFaceTarget,
                         0,
@@ -99,7 +98,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Text
                         GL_UNSIGNED_BYTE,
                         buffer)
             }
-            fun FileBasedCubeMap.upload(info: CubeMapUploadInfo) = gpuContext.execute("FileBasedCubeMap.upload") {
+            fun FileBasedCubeMap.upload(info: CubeMapUploadInfo) = gpuContext.execute() {
                 gpuContext.bindTexture(fileBasedCubeMap)
 
                 load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[1]) //1
@@ -109,7 +108,7 @@ data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Text
                 load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, info.buffers[4])
                 load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, info.buffers[5])
 
-                gpuContext.execute("FileBasedCubeMap.mipmap") {
+                gpuContext.execute() {
                     GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_CUBE_MAP.glTarget)
                 }
             }
@@ -190,7 +189,7 @@ fun CubeMapArray.createViews(gpuContext: GpuContext<OpenGl>): List<CubeMap> {
 fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): CubeMap {
     val cubeMapView = gpuContext.genTextures()
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
-    gpuContext.execute("SimpleCubeMapArray.createView") {
+    gpuContext.execute() {
         GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, id,
                 internalFormat, 0, mipmapCount-1,
                 6 * index, 6)
@@ -198,7 +197,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): CubeMap
 
     val cubeMapHandle = if (gpuContext.isSupported(BindlessTextures)) {
         val handle = gpuContext.calculate { ARBBindlessTexture.glGetTextureHandleARB(cubeMapView) }
-        gpuContext.execute("SimpleCubeMapArray.createView.cubeMapHandle") { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+        gpuContext.execute() { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         handle
     } else -1
 
@@ -217,7 +216,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int, faceInde
     val cubeMapFaceView = gpuContext.genTextures()
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
     require(faceIndex < 6) { "Index out of bounds: $faceIndex / 6" }
-    gpuContext.execute("SimpleCubeMapArray.createView2") {
+    gpuContext.execute() {
         GL43.glTextureView(cubeMapFaceView, GL13.GL_TEXTURE_2D, id,
                 internalFormat, 0, 1,
                 6 * index + faceIndex, 1)
@@ -225,7 +224,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int, faceInde
 
     val cubeMapFaceHandle = if (gpuContext.isSupported(BindlessTextures)) {
         val handle = gpuContext.calculate { ARBBindlessTexture.glGetTextureHandleARB(cubeMapFaceView) }
-        gpuContext.execute("SimpleCubeMapArray.createView.cubeMapHandle") { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+        gpuContext.execute() { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         handle
     } else -1
 
@@ -243,7 +242,7 @@ fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int, faceInde
 fun CubeMap.createView(gpuContext: GpuContext<OpenGl>, faceIndex: Int): Texture2D {
     val cubeMapFaceView = gpuContext.genTextures()
     require(faceIndex < 6) { "Index out of bounds: $faceIndex / 6" }
-    gpuContext.execute("CubeMap.createView") {
+    gpuContext.execute() {
         GL43.glTextureView(cubeMapFaceView, GL13.GL_TEXTURE_2D, id,
                 internalFormat, 0, 1,
                 faceIndex, 1)
@@ -251,7 +250,7 @@ fun CubeMap.createView(gpuContext: GpuContext<OpenGl>, faceIndex: Int): Texture2
 
     val cubeMapFaceHandle = if (gpuContext.isSupported(BindlessTextures)) {
         val handle = gpuContext.calculate { ARBBindlessTexture.glGetTextureHandleARB(cubeMapFaceView) }
-        gpuContext.execute("SimpleCubeMapArray.createView.cubeMapHandle") { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
+        gpuContext.execute() { ARBBindlessTexture.glMakeTextureHandleResidentARB(handle) }
         handle
     } else -1
 
@@ -358,7 +357,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                 PixelBufferObject()
             }
             pbo.put(gpuContext, info.buffer)
-            gpuContext.execute("SimpleTexture2D.uploadWithPixelBuffer") {
+            gpuContext.execute() {
                 pbo.unmap(gpuContext)
                 pbo.bind()
                 glBindTexture(GL_TEXTURE_2D, id)
@@ -375,7 +374,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
         }
 
         private fun Texture2D.uploadWithoutPixelBuffer(gpuContext: GpuContext<*>, info: Texture2DUploadInfo, internalFormat: Int) {
-            gpuContext.execute("SimpleTexture2D.uploadWithoutPixelBuffer", false, {
+            gpuContext.execute {
                 glBindTexture(GL_TEXTURE_2D, id)
                 if (info.dataCompressed) {
                     glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.dimension.width, info.dimension.height, internalFormat, info.buffer)
@@ -384,7 +383,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                 }
                 GL30.glGenerateMipmap(GL_TEXTURE_2D)
                 uploadState = UploadState.UPLOADED
-            })
+            }
         }
     }
 

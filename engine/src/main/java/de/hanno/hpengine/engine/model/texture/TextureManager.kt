@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model.texture
 
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.AbstractDirectory
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -20,13 +19,10 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.engine.model.texture.DDSConverter.getFullPathAsDDS
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import jogl.DDSImage
-import kotlinx.coroutines.CoroutineScope
-import org.apache.batik.ext.awt.image.codec.imageio.ImageIOJPEGRegistryEntry
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
@@ -68,13 +64,10 @@ import java.nio.FloatBuffer
 import java.util.ArrayList
 import java.util.Hashtable
 import java.util.LinkedHashMap
-import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.imageio.ImageIO
-import javax.imageio.ImageReader
-import javax.imageio.spi.ImageReaderSpi
 
 
 class TextureManager(val config: Config,
@@ -304,7 +297,7 @@ class TextureManager(val config: Config,
 
     @JvmOverloads
     fun generateMipMaps(glTextureTarget: GlTextureTarget = TEXTURE_2D, textureId: Int) {
-        gpuContext.execute("generateMipMaps") {
+        gpuContext.execute() {
             gpuContext.bindTexture(glTextureTarget, textureId)
             GL30.glGenerateMipmap(glTextureTarget.glTarget)
         }
@@ -359,7 +352,7 @@ class TextureManager(val config: Config,
         gpuContext.bindTexture(target, textureId)
 
 
-        gpuContext.execute("getTexture") {
+        gpuContext.execute() {
             setupTextureParameters(target)
             texStorage(target, format, width, height, depth, 1)
         }
@@ -367,14 +360,14 @@ class TextureManager(val config: Config,
         return textureId
     }
 
-    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute("texStorage") {
+    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute() {
         when (target) {
             TEXTURE_CUBE_MAP_ARRAY -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, 6 * depth)
             TEXTURE_3D -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, depth)
             else -> GL42.glTexStorage2D(target.glTarget, mipMapCount, internalFormat, width, height)
         }
     }
-    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute("texImage") {
+    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute() {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         when {
             target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
@@ -386,7 +379,7 @@ class TextureManager(val config: Config,
     }
 
     //    TODO: The data buffer mustn't be null
-    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute("texSubImage") {
+    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute() {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         //null as FloatBuffer?)
         when (target) {
@@ -396,7 +389,7 @@ class TextureManager(val config: Config,
         }
     }
     //    TODO: The data buffer mustn't be null
-    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute("compressedTexSubImage") {
+    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute() {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         //null as FloatBuffer?)
         when (target) {
@@ -447,7 +440,7 @@ class TextureManager(val config: Config,
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.execute("blur2DTextureRGBA16F") {
+        gpuContext.execute() {
             blur2dProgramSeparableHorizontal.use()
             gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
             gpuContext.bindImageTexture(1, sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F)
@@ -477,7 +470,7 @@ class TextureManager(val config: Config,
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.execute("blurHorinzontal2DTextureRGBA16F") {
+        gpuContext.execute() {
             blur2dProgramSeparableHorizontal.use()
             gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
             gpuContext.bindImageTexture(1, sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F)
