@@ -26,13 +26,13 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     private int glGenQuery() {
-        return gpuContext.calculate((Callable<Integer>) () -> glGenQueries());
+        return gpuContext.calculateX(() -> glGenQueries());
     }
 
     @Override
     public GLTimerQuery begin() {
         finished = false;
-        gpuContext.execute(() -> {
+        gpuContext.calculate(() -> {
             glQueryCounter(start, GL_TIMESTAMP);
             return Unit.INSTANCE;
         });
@@ -63,11 +63,11 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     public long getStartTime() {
-        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
+        return gpuContext.calculateX(() -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
     }
 
     public long getEndTime() {
-        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
+        return gpuContext.calculateX(() -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
     }
 
     @Override

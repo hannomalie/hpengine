@@ -51,7 +51,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
 
-    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.calculate(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
+    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.calculateX(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
 
     private val mapRenderTarget = CubeMapRenderTarget(engine.gpuContext, RenderTarget(
         engine.gpuContext,

@@ -13,7 +13,6 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
 import java.util.concurrent.Callable
-import java.util.concurrent.Future
 import kotlin.system.exitProcess
 
 //     Don't make this a local field, we need a strong reference
@@ -126,7 +125,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         glfwMakeContextCurrent(handle)
     }
 
-    val executor = Executor().apply {
+    val executor = OpenGlExecutorImpl().apply {
         execute {
             makeContextCurrent()
             GL.createCapabilities()
@@ -138,10 +137,10 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override suspend fun <T> execute(block: () -> T): T {
         return executor.execute(block)
     }
-    override fun execute(runnable: Runnable): Future<Unit> = executor.execute(runnable)
+    override fun execute(runnable: Runnable) = executor.execute(runnable)
 
-    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        return executor.calculate(callable)
+    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+        return executor.calculateX(callable)
     }
 
     override fun shutdown() = executor.shutdown()

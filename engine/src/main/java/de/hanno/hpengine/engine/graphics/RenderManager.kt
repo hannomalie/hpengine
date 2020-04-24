@@ -15,6 +15,7 @@ import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.util.concurrent.atomic.AtomicLong
@@ -88,17 +89,17 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-//                engineContext.gpuContext.execute(this).get()
             }
 
         }
-//        engineContext.gpuContext.execute(runnable)
         GlobalScope.launch {
             while(true) {
                 engineContext.gpuContext.execute(block = {
                     runnable.run()
                 })
 //                yield()
+                delay(5)
+                // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
             }
         }
     }

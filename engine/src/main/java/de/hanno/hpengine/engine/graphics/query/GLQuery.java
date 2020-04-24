@@ -15,7 +15,7 @@ public interface GLQuery<RESULT> {
     void end();
 
     default boolean resultsAvailable(GpuContext<OpenGl> gpuContext) {
-        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT_AVAILABLE)) == GL_TRUE;
+        return gpuContext.calculateX(() -> glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT_AVAILABLE)) == GL_TRUE;
     }
 
     int getQueryToWaitFor();

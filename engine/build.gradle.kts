@@ -24,17 +24,18 @@ val lwjgl_natives = when (OperatingSystem.current()) {
     else -> throw Error("Unrecognized or unsupported Operating system. Please set \"lwjglNatives\" manually")
 }
 dependencies {
+
+    api(kotlin("stdlib"))
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
-    api("javax.inject:javax.inject:1")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.2")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
     api(kotlin("compiler-embeddable"))
 
+    api("javax.inject:javax.inject:1")
 
     api("de.swirtz:ktsRunner:0.0.7")
-
 
     api("", "PNGDecoder")
     api("", "dds", "1.0.1-SNAPSHOT")

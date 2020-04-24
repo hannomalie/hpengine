@@ -66,7 +66,13 @@ allprojects {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
+    implementation(kotlin("compiler-embeddable"))
+
     implementation(project("engine"))
     implementation(project("editor"))
 }

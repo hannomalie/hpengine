@@ -18,7 +18,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -53,7 +52,6 @@ import java.util.ArrayList
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
 import javax.vecmath.Vector2f
@@ -64,7 +62,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     init {
         privateInit()
-        println("OpenGLContext thread submitted with id ${window.openGLThreadId}")
     }
 
     private lateinit var capabilities: GLCapabilities
@@ -96,7 +93,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override val isError: Boolean
         get() {
-            return window.calculate(Callable{ GL11.glGetError() != GL11.GL_NO_ERROR })!!
+            return window.calculateX(Callable{ GL11.glGetError() != GL11.GL_NO_ERROR })!!
         }
 
 
@@ -123,7 +120,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         window.execute {
             capabilities = GL.getCapabilities()
 
-            println("OpenGL version: " + GL11.glGetString(GL_VERSION))
             val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
             val supportedExtensions = (0 until numExtensions).map { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
 
@@ -285,23 +281,23 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun genTextures(): Int {
-        return window.calculate(Callable { GL11.glGenTextures() })!!
+        return window.calculateX(Callable { GL11.glGenTextures() })!!
     }
 
     override val availableVRAM: Int
-        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) })!!
+        get() = window.calculateX(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) })!!
 
     override val availableTotalVRAM: Int
-        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) })!!
+        get() = window.calculateX(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) })!!
 
     override val dedicatedVRAM: Int
-        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) })!!
+        get() = window.calculateX(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) })!!
 
     override val evictedVRAM: Int
-        get() = window.calculate(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) })!!
+        get() = window.calculateX(Callable { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) })!!
 
     override val evictionCount: Int
-        get() = window.calculate(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
+        get() = window.calculateX(Callable{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) })!!
 
     fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (GpuContext.CHECKERRORS) {
@@ -319,7 +315,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun createProgramId(): Int {
-        return window.calculate(Callable{ GL20.glCreateProgram() })!!
+        return window.calculateX(Callable{ GL20.glCreateProgram() })!!
     }
 
     override fun destroy() {
@@ -347,7 +343,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun genFrameBuffer(): Int {
-        return window.calculate(Callable{ glGenFramebuffers() })!!
+        return window.calculateX(Callable{ glGenFramebuffers() })!!
     }
 
     override fun clearCubeMap(textureId: Int, textureFormat: Int) {
@@ -460,7 +456,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 }
 
 
-class Executor(val dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher())
+class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher())
     : CoroutineScope, OpenGlExecutor {
     override var openGLThreadId: Long = runBlocking(dispatcher) {
         Thread.currentThread().name = OpenGLContext.OPENGL_THREAD_NAME
@@ -512,16 +508,16 @@ class Executor(val dispatcher: CoroutineDispatcher = Executors.newSingleThreadEx
         }
     }
 
-    private val unitFuture = CompletableFuture.completedFuture(Unit)
-    override fun execute(runnable: Runnable): Future<Unit> {
-        if(isOpenGLThread) return runnable.run().let { unitFuture }
+    override fun execute(runnable: Runnable) {
 
-        return future(coroutineContext) {
+        if(isOpenGLThread) return runnable.run()
+
+        return runBlocking(coroutineContext) {
             runnable.run()
         }
     }
 
-    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
         if(isOpenGLThread) {
             return callable.call()
         }

@@ -152,7 +152,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
     override var mipMapCount = Util.calculateMipMapCount(max(width, height))
 
     init {
-        gpuContext.execute() {
+        gpuContext.execute {
             gpuContext.bindFrameBuffer(frameBuffer)
 
             configureBorderColor()
@@ -214,7 +214,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
         if (clear) {
             gpuContext.clearDepthAndColorBuffer()
         }
-    }.get()
+    }
 
     @JvmOverloads
     override fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int) {

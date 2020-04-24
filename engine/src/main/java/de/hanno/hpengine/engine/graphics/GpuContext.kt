@@ -11,7 +11,6 @@ import de.hanno.hpengine.engine.model.texture.Texture
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.concurrent.Callable
-import java.util.concurrent.Future
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
 
@@ -19,11 +18,11 @@ interface OpenGlExecutor {
     val openGLThreadId: Long
 
     fun execute(runnable: () -> Unit) = execute(Runnable(runnable))
-    fun execute(runnable: Runnable): Future<Unit>
+    fun execute(runnable: Runnable)
     suspend fun <T> execute(block: () -> T): T
 
-    fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE
-    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculate(Callable(callable))
+    fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE
+    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculateX(Callable(callable))
 
     fun shutdown()
 }
