@@ -1,6 +1,7 @@
 package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.model.Update
 import net.miginfocom.swing.MigLayout
 import javax.swing.JCheckBox
 import javax.swing.JComponent
@@ -16,6 +17,7 @@ class EntityGrid(val entity: Entity): JPanel() {
         layout = MigLayout("wrap 2")
         labeled("Name", entity::name.toTextField())
         labeled("Visible", entity::isVisible.toCheckBox())
+        labeled("Update", entity::updateType.toComboBox(Update.values()))
     }
 
 }

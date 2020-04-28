@@ -21,7 +21,7 @@ import org.lwjgl.opengl.GL42.glMemoryBarrier
 @JvmName("DrawUtils")
 
 fun draw(vertexIndexBuffer: VertexIndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
-    return draw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, renderBatch, program, !renderBatch.isVisible || !renderBatch.isVisibleForCamera, drawLines)
+    return draw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, renderBatch, program, !renderBatch.isVisibleForCamera, drawLines)
 }
 
 fun draw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, invisible: Boolean, drawLines: Boolean): Int {

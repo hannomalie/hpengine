@@ -11,9 +11,10 @@ import org.joml.Vector4f
 import java.io.Serializable
 import java.nio.ByteBuffer
 
-class PointLight(override val entity: Entity,
+class PointLight @JvmOverloads constructor(override val entity: Entity,
                  val color: Vector4f,
-                 var radius: Float = 10f) : Component, Serializable, Bufferable {
+                 var radius: Float = 10f,
+                 var renderedSphereRadius: Float = 0f) : Component, Serializable, Bufferable {
 
     fun draw(program: Program?) {
         throw IllegalStateException("Currently not implemented!")

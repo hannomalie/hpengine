@@ -45,7 +45,7 @@ class CombinePassRenderExtension(val engineContext: EngineContext<OpenGl>): Rend
 
             gpuContext.disable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.BLEND)
-            gpuContext.depthMask(false)
+            gpuContext.depthMask = false
             gpuContext.disable(GlCap.CULL_FACE)
 
             gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
@@ -61,6 +61,7 @@ class CombinePassRenderExtension(val engineContext: EngineContext<OpenGl>): Rend
             gpuContext.bindTexture(9, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.refractedMap)
             gpuContext.bindTexture(11, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.ambientOcclusionScatteringMap)
             gpuContext.bindTexture(14, GlTextureTarget.TEXTURE_CUBE_MAP, engineContext.textureManager.cubeMap!!.id)
+            gpuContext.bindTexture(15, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.halfScreenBuffer.renderedTextures[1])
 
             gpuContext.fullscreenBuffer.draw()
 

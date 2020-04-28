@@ -10,6 +10,7 @@ in vec2 v_texcoord[3];
 in vec4 position_world[3];
 
 in int v_materialIndex[3];
+in int v_entityIndex[3];
 in int v_isStatic[3];
 
 out vec3 g_normal;
@@ -17,6 +18,7 @@ out vec3 g_pos;
 out vec3 g_posWorld;
 out vec2 g_texcoord;
 flat out int g_materialIndex;
+flat out int g_entityIndex;
 flat out int g_isStatic;
 
 flat out int g_axis;   //indicate which axis the projection uses
@@ -34,13 +36,14 @@ uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
 layout(std430, binding=5) buffer _voxelGrids {
-    VoxelGridArray voxelGridArray;
+    VoxelGrid[MAX_VOXELGRIDS] voxelGrids;
 };
 uniform int voxelGridIndex = 0;
+uniform int voxelGridCount = 0;
 
 void main()
 {
-    VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
+    VoxelGrid grid = voxelGrids[voxelGridIndex];
     mat4 projectionMatrix = grid.projectionMatrix;
 
 	vec3 faceNormal = normalize( cross( v_vertex[1]-v_vertex[0], v_vertex[2]-v_vertex[0] ) );
@@ -91,10 +94,9 @@ void main()
 //    cr_pos[2].xy = pos[2].xy + pl*( (e1.xy/dot(e1.xy,n2.xy)) + (e2.xy/dot(e2.xy,n1.xy)) );
 
 
-
 	for(int i = 0; i < 3; i++) {
 	    g_posWorld = pos[i];
-        vec4 vertexTemp = (projectionMatrix * (vec4(pos[i] - grid.position,1)) / grid.scale);
+        vec4 vertexTemp = (projectionMatrix * (vec4(pos[i] - grid.position,1)));
 
 //        select dominant action
         if( x > y && x > z ) {
@@ -112,8 +114,8 @@ void main()
         g_pos = pos[i].xyz;
         g_normal = v_normal[i];
         g_texcoord = v_texcoord[i];
-        g_texcoord.y = 1-g_texcoord.y;
         g_materialIndex = v_materialIndex[i];
+        g_entityIndex = v_entityIndex[i];
         g_isStatic = v_isStatic[i];
         EmitVertex();
 	}

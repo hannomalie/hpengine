@@ -45,7 +45,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
     }
 
     override val indices
-        get() = IntRange(0, size)
+        get() = 0 until size
 
     override val sizeInBytes: Int
         get() = size * slidingWindow.sizeInBytes
@@ -179,6 +179,7 @@ fun CommandBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMapped
 
 class IntStruct: Struct() {
     var value by 0
+    override fun toString() = "$value"
 }
 
 fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000): PersistentMappedStructBuffer<IntStruct> {

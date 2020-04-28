@@ -10,7 +10,7 @@ import java.nio.FloatBuffer;
 public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 
     public GPUCulledMainPipeline(EngineContext engineContext, RenderSystem renderer) {
-        super(engineContext, renderer, true, true, true);
+        super(engineContext, true, true, true);
     }
 
 //    This can be used for debug drawing
@@ -26,9 +26,4 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 //    public void renderHighZMap() {
 //
 //    }
-
-    @Override
-    public void update(@NotNull RenderState writeState) {
-        prepare(writeState);
-    }
 }

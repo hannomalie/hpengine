@@ -55,14 +55,6 @@ out vec4 out_Position;
 //include(globals.glsl)
 //include(global_lighting.glsl)
 
-
-float calculateAttenuation(float dist, float lightRadius) {
-	float distDivRadius = (dist / lightRadius);
-	float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
-	atten_factor = pow(atten_factor, 2);
-	return atten_factor;
-}
-
 const vec3[6] directions = {
 	vec3(1, 0, 0),
 	vec3(-1, 0, 0),

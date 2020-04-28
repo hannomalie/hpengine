@@ -1,6 +1,7 @@
 package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
@@ -22,3 +23,4 @@ data class ModelSelection(private val _entity: Entity, val model: Model<*>): Ent
 data class PointLightSelection(val light: PointLight): EntitySelection(light.entity)
 data class DirectionalLightSelection(val light: DirectionalLight): EntitySelection(light.entity)
 data class CameraSelection(val camera: Camera): EntitySelection(camera.entity)
+data class GiVolumeSelection(val giVolumeComponent: GIVolumeComponent): Selection()

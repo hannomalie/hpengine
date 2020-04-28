@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlFlag
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
@@ -28,7 +29,11 @@ import org.lwjgl.opengl.ARBClearTexture.glClearTexImage
 import org.lwjgl.opengl.ARBClearTexture.glClearTexSubImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL11.GL_COLOR_CLEAR_VALUE
+import org.lwjgl.opengl.GL11.GL_CULL_FACE_MODE
+import org.lwjgl.opengl.GL11.GL_DEPTH_FUNC
 import org.lwjgl.opengl.GL11.GL_VERSION
+import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL20
@@ -45,7 +50,9 @@ import java.util.ArrayList
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.logging.Logger
+import javax.vecmath.Tuple4f
 import javax.vecmath.Vector2f
+import javax.vecmath.Vector4f
 import kotlin.coroutines.CoroutineContext
 
 class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl> {
@@ -91,9 +98,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override val features = run {
         val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
         val drawParameters = if(capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
-        val shader5 = if(capabilities.GL_NV_gpu_shader5) Shader5 else null
+        val nvShader5 = if(capabilities.GL_NV_gpu_shader5) NvShader5 else null
+        val arbShader5 = if(capabilities.GL_ARB_gpu_shader5) ArbShader5 else null
 
-        listOfNotNull(bindlessTextures, drawParameters, shader5)
+        listOfNotNull(bindlessTextures, drawParameters, arbShader5)
     }
 
     override fun createNewGPUFenceForReadState(currentReadState: RenderState) {
@@ -150,6 +158,22 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override fun disable(cap: GlCap) {
         cap.disable()
     }
+
+    override var cullFace: Boolean
+        get() = GlCap.CULL_FACE.enabled
+        set(value) = GlCap.CULL_FACE.run { if(value) enable() else disable() }
+
+    override var cullMode: CullMode
+        get() = CullMode.values().first { it.glMode == GL11.glGetInteger(GL_CULL_FACE_MODE) }
+        set(value) = GL11.glCullFace(value.glMode)
+
+    override var depthTest: Boolean
+        get() = GlCap.DEPTH_TEST.enabled
+        set(value) = GlCap.DEPTH_TEST.run { if(value) enable() else disable() }
+
+    override var blend: Boolean
+        get() = GlCap.BLEND.enabled
+        set(value) = GlCap.BLEND.run { if(value) enable() else disable() }
 
     override fun activeTexture(textureUnitIndex: Int) {
         if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
@@ -218,33 +242,40 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         })
     }
 
-    override fun depthMask(flag: Boolean) {
-        GL11.glDepthMask(flag)
-    }
+    override var depthMask: Boolean
+        get() = GlFlag.DEPTH_MASK.enabled
+        set(value) = GlFlag.DEPTH_MASK.run { if(value) enable() else disable() }
 
-    override fun depthFunc(func: GlDepthFunc) {
-        GL11.glDepthFunc(func.glFunc)
-    }
+    override var depthFunc: GlDepthFunc
+        get() = GlDepthFunc.values().first { it.glFunc == GL11.glGetInteger(GL_DEPTH_FUNC) }
+        set(value) { glDepthFunc(value.glFunc) }
 
     override fun readBuffer(colorAttachmentIndex: Int) {
         val colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex
         GL11.glReadBuffer(colorAttachment)
     }
 
-    override fun blendEquation(mode: BlendMode) {
-        GL14.glBlendEquation(mode.mode)
-    }
+    override var blendEquation: BlendMode
+        get() = BlendMode.values().first { it.mode == GL11.glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
+        set(value) { GL14.glBlendEquation(value.mode) }
 
     override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) {
         GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor)
     }
 
-    override fun cullFace(mode: CullMode) {
-        GL11.glCullFace(mode.glMode)
-    }
+    private val clearColorArray = floatArrayOf(0f,0f,0f,0f)
+    private val clearColorVector = Vector4f()
+    override var clearColor: Tuple4f
+        get() = GL11.glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let { clearColorVector.apply { set(clearColorArray) } }
+        set(value) = GL11.glClearColor(value.x, value.y, value.z, value.w)
 
     override fun clearColor(r: Float, g: Float, b: Float, a: Float) {
-        calculate(Callable { GL11.glClearColor(r, g, b, a) })
+        clearColor = clearColorVector.apply {
+            x = r
+            y = g
+            z = b
+            w = a
+        }
     }
 
     override fun bindImageTexture(unit: Int, textureId: Int, level: Int, layered: Boolean, layer: Int, access: Int, internalFormat: Int) {
@@ -355,11 +386,12 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
         fun String.appendIfSupported(feature: GpuFeature, string: String): String {
             val supported = isSupported(feature)
-            val defineString = if (supported) "#define ${feature.toString().toUpperCase()} true\n" else ""
+            val defineString = if (supported) "#define ${feature.defineString.toUpperCase()} true\n" else ""
             val featureStringOrEmpty = if (supported) " $string\n" else ""
             return "${this}$featureStringOrEmpty$defineString"
         }
-        return "".appendIfSupported(Shader5, "#extension GL_NV_gpu_shader5 : enable")
+        return "".appendIfSupported(NvShader5, "#extension GL_NV_gpu_shader5 : enable")
+                .appendIfSupported(ArbShader5, "#extension GL_ARB_gpu_shader5 : enable")
                 .appendIfSupported(BindlessTextures, "#extension GL_ARB_bindless_texture : enable")
                 .appendIfSupported(DrawParameters, "#extension GL_ARB_shader_draw_parameters : enable")
     }

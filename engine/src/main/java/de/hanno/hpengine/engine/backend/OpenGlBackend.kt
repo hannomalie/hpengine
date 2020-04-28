@@ -21,12 +21,9 @@ import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.threads.UpdateThread
-import de.hanno.hpengine.util.commandqueue.CommandQueue
+import de.hanno.hpengine.engine.scene.Scene
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
 
 interface OpenGl: BackendType {
     val gpuContext: OpenGLContext
@@ -52,8 +49,6 @@ class OpenGlBackend(override val eventBus: EventBus,
         }
     }
 }
-
-class UpdateCommandQueue: CommandQueue(Executors.newSingleThreadExecutor(), { UpdateThread.isUpdateThread() })
 
 class EngineContextImpl(override val config: Config,
                         override val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),

@@ -21,6 +21,7 @@ import java.util.function.Supplier
 
 open class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentTimeMillis().toString(),
                                             position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
+    var movedInCycle = 0L
     internal var managerRegistry: ManagerRegistry? = null
 
     val spatial: SimpleSpatial = object : SimpleSpatial() {
@@ -52,7 +53,6 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
 
     open var name = "Entity_" + System.currentTimeMillis()
 
-    open var isSelected = false
     var isVisible = true
 
     var components: MutableMap<Class<out Component>, Component> = HashMap()

@@ -32,7 +32,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
 
     private val batchingSystem = BatchingSystem()
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
-    var updateCache = true
 
     private val components = CopyOnWriteArrayList<ModelComponent>()
 
@@ -62,17 +61,15 @@ class ModelComponentSystem(val engine: EngineContext<*>,
     override fun UpdateLock.addComponent(component: ModelComponent) {
         allocateVertexIndexBufferSpace(listOf(component.entity))
         components.add(component)
+        cacheEntityIndices()
     }
 
     private fun cacheEntityIndices() {
-        if (updateCache) {
-            updateCache = false
-            entityIndices.clear()
-            var index = 0
-            for (current in getComponents()) {
-                entityIndices[current] = index
-                index += current.entity.instanceCount * current.meshes.size
-            }
+        entityIndices.clear()
+        var index = 0
+        for (current in getComponents()) {
+            entityIndices[current] = index
+            index += current.entity.instanceCount * current.meshes.size
         }
     }
 
@@ -104,7 +101,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
 
                 for ((meshIndex, mesh) in meshes.withIndex()) {
                     val materialIndex = materials.indexOf(mesh.material)
-                    target.selected = entity.isSelected
                     target.materialIndex = materialIndex
                     target.update = entity.updateType.asDouble.toInt()
                     target.meshBufferIndex = entityBufferIndex + meshIndex
@@ -126,7 +122,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                         val instanceMatrix = instance.transformation
                         val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
 
-                        target.selected = entity.isSelected
                         target.materialIndex = instanceMaterialIndex
                         target.update = entity.updateType.ordinal
                         target.meshBufferIndex = entityBufferIndex + meshIndex
@@ -148,7 +143,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                         for (instance in entity.instances) {
                             val instanceMatrix = instance.transformation
 
-                            target.selected = entity.isSelected
                             target.materialIndex = materialIndex
                             target.update = entity.updateType.ordinal
                             target.meshBufferIndex = entityBufferIndex + meshIndex
@@ -203,8 +197,6 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                 joints.addAll(elements)
                 Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
             }
-        }.apply {
-            updateCache = true
         }
 
         this.allocations.putAll(allocations)
@@ -216,9 +208,9 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         vertexIndexBufferAnimated.resetAllocations()
     }
 
-    override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, Component> {
+    override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
         val result = onEntityAddedImpl(context, entities)
-        updateCache = true
+        cacheEntityIndices()
         return result
     }
 

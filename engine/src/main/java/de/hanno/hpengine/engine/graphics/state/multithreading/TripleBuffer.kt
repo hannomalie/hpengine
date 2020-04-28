@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading
 
-import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.StateRef
 import java.util.concurrent.locks.ReentrantLock
@@ -47,13 +46,12 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
     }
 
     fun update(): Boolean {
-        currentWriteState.customState.update(currentWriteState)
         swapStaging()
         return true
     }
 
     private var customStateCounter = 0
-    fun <TYPE : CustomState> registerState(factory: () -> TYPE): StateRef<TYPE> {
+    fun <TYPE : Any> registerState(factory: () -> TYPE): StateRef<TYPE> {
         val newIndex = customStateCounter++
         instanceA.add(factory())
         instanceB.add(factory())

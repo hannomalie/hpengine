@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.component.ModelComponent.Companion.DEFAULTCHANNE
 import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch.RenderBatches
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatches
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.material.MaterialStruct

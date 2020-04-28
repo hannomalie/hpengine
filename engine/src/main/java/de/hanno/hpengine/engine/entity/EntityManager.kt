@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -8,8 +9,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.transform.calculateMinMax
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.logging.Logger
@@ -73,17 +74,24 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             }
         }
 
-        for (entity in entityContainer.entities.filter { it != scene.activeCamera.entity }) {
+        val predicate: (Entity) -> Boolean = {
+            it != scene.activeCamera.entity && it.components.containsKey(ModelComponent::class.java)
+        }
+        for (entity in entityContainer.entities.filter(predicate)) {
             if (!entity.hasMoved()) {
                 continue
             }
-            scene.minMax.calculateMinMax(scene.entityManager.getEntities())
-            entityMovedInCycle = scene.currentCycle
-            entityHasMoved = true
+
             if (entity.updateType == Update.STATIC) {
                 staticEntityHasMoved = true
                 staticEntityMovedInCycle = scene.currentCycle
+                scene.minMax.calculateMinMax(scene.entityManager.getEntities())
+            } else {
+                entityHasMoved = true
+                entityMovedInCycle = scene.currentCycle
+                scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             }
+            entity.movedInCycle = scene.currentCycle
             break
         }
     }
@@ -100,10 +108,6 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
         renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
-    }
-
-    fun setEntityMovedInCycleToCycle(currentCycle: Long) {
-        entityMovedInCycle = currentCycle
     }
 
     companion object {

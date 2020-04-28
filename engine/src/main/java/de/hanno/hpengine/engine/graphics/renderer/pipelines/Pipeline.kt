@@ -10,12 +10,11 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhas
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_ONE
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_TWO
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.state.CustomState
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.lwjgl.opengl.GL30
 
-interface Pipeline: CustomState {
+interface Pipeline {
     fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
     fun prepare(renderState: RenderState)
 
@@ -40,15 +39,12 @@ interface Pipeline: CustomState {
         val HIGHZ_FORMAT = GL30.GL_R32F
 
         inline fun <reified T> create(engine: Engine<OpenGl>,
-                                      renderer: RenderSystem,
                                       useFrustumCulling: Boolean,
                                       useBackfaceCulling: Boolean,
-                                      useLineDrawingIfActivated: Boolean,
-                                      renderCam: Camera? = null,
-                                      cullCam: Camera? = renderCam): Pipeline {
+                                      useLineDrawingIfActivated: Boolean): Pipeline {
             return when(T::class) {
-                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
-                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, renderer, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
+                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
                 else -> SimplePipeline(engine,
                         useFrustumCulling = useFrustumCulling,
                         useBackFaceCulling = useBackfaceCulling,

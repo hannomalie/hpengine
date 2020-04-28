@@ -60,15 +60,9 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val materialBuffer: PersistentMappedStructBuffer<MaterialStruct>
         get() = entitiesState.materialBuffer
 
-    val staticEntityHasMoved: Boolean
-        get() = entitiesState.staticEntityMovedInCycle == cycle
     var deltaInS: Float = 0.1f
     var sceneInitialized: Boolean = false
 
-    /**
-     * Copy constructor
-     * @param source
-     */
     constructor(source: RenderState) : this(source.gpuContext) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
@@ -109,35 +103,29 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         entitiesState.renderBatchesAnimated.add(batch)
     }
 
-    fun add(state: CustomState) = customState.add(state)
+    fun add(state: Any) = customState.add(state)
 
     operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
 
-    fun pointLightHasMoved() = pointLightMovedInCycle >= cycle
     fun entityHasMoved() = entitiesState.entityMovedInCycle >= cycle
     fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
 }
 
 class CustomStates {
-    private val states = mutableListOf<CustomState>()
-    fun add(state: CustomState) {
+    private val states = mutableListOf<Any>()
+    fun add(state: Any) {
         states.add(state)
     }
 
-    operator fun <T> get(ref: StateRef<T>) = states[ref.index]
-
-    fun update(writeState: RenderState) = states.forEach { it.update(writeState) }
+    operator fun <T> get(ref: StateRef<T>) = states[ref.index] as T
 
     fun clear() = states.clear()
-}
-
-interface CustomState {
-    fun update(writeState: RenderState) {}
 }
 
 class StateRef<out T>(val index: Int)
 
 interface RenderSystem {
     @JvmDefault fun render(result: DrawResult, state: RenderState) { }
+    @JvmDefault fun update(deltaSeconds: Float) { }
     @JvmDefault fun afterFrameFinished() { }
 }

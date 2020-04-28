@@ -12,6 +12,10 @@ layout(std430, binding=5) buffer _voxelGrids {
     VoxelGridArray voxelGridArray;
 };
 uniform int voxelGridIndex = 0;
+#ifdef BINDLESSTEXTURES
+#else
+uniform sampler3D normalGridTexture;
+#endif
 
 void main(void) {
 	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
@@ -21,13 +25,15 @@ void main(void) {
 
     VoxelGrid grid = voxelGridArray.voxelGrids[voxelGridIndex];
     float sceneScale = grid.scale;
-    float inverseSceneScale = 1f/sceneScale;
+    float inverseSceneScale = 1.0f/sceneScale;
 
-    sampler3D normalGridTexture = sampler3D((grid.normalGridHandle));
+#ifdef BINDLESSTEXTURES
+    sampler3D normalGridTexture = sampler3D(grid.normalGridHandle);
+#endif
 
 	vec4 currentValue = texelFetch(normalGridTexture, storePos, 0);
 	float isStatic = currentValue.b;
-	if((isStatic < 0.9))
+	if((isStatic < 0.9f))
 	{
         imageStore(albedoGrid, storePos, vec4(0,0,0,0));
         imageStore(normalGrid, storePos, vec4(0,0,0,0));

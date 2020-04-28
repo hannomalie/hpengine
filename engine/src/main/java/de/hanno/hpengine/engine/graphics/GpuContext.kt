@@ -8,10 +8,13 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture
+import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.concurrent.Callable
 import java.util.logging.Logger
+import javax.vecmath.Tuple4f
+
 interface OpenGlExecutor {
     val openGLThreadId: Long
 
@@ -62,6 +65,11 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun update(seconds: Float)
 
+    var cullFace: Boolean
+    var cullMode: CullMode
+    var depthTest: Boolean
+    var blend: Boolean
+
     fun enable(cap: GlCap)
 
     fun disable(cap: GlCap)
@@ -103,19 +111,18 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun bindFrameBuffer(frameBuffer: Int)
 
-    fun depthMask(flag: Boolean)
+    var depthMask: Boolean
 
-    fun depthFunc(func: GlDepthFunc)
+    var depthFunc: GlDepthFunc
 
     fun readBuffer(colorAttachmentIndex: Int)
 
-    fun blendEquation(mode: BlendMode)
+    var blendEquation: BlendMode
 
     fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor)
 
-    fun cullFace(mode: CullMode)
-
     fun clearColor(r: Float, g: Float, b: Float, a: Float)
+    val clearColor: Tuple4f
 
     fun bindImageTexture(unit: Int, textureId: Int, level: Int, layered: Boolean, layer: Int, access: Int, internalFormat: Int)
 

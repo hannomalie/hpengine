@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
@@ -85,7 +86,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
 
         profiled("PointLight shadowmaps") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.enable(GlCap.CULL_FACE)
             cubemapArrayRenderTarget.use(engine.gpuContext, true)
@@ -121,7 +122,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
                     for (batch in renderState.renderBatchesStatic) {
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer,
                                 renderState.vertexIndexBufferStatic.indexBuffer,
-                                batch, pointCubeShadowPassProgram, !batch.isVisible, false)
+                                batch, pointCubeShadowPassProgram, false, false)
                     }
                 }
             }
@@ -184,7 +185,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
 
         profiled("PointLight shadowmaps") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.CULL_FACE)
             renderTarget.use(engine.gpuContext, false)
@@ -209,13 +210,18 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                         pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
                         pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
 
-                        val batch = RenderBatch().init(modelComponentSystem.entityIndices[modelComponent]!!,
-                                e.isVisible, e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true,
-                                e.instanceCount, true, e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld,
-                                e.boundingSphereRadius, allocation.forMeshes[0].indexOffset,
-                                allocation.indexOffset,
-                                allocation.vertexOffset, false, e.instanceMinMaxWorlds,
-                                modelComponent.material.materialInfo, e.index, 0)
+                        val command = DrawElementsIndirectCommand().apply {
+                            primCount = e.instanceCount
+                            count = allocation.forMeshes[0].indexOffset
+                            firstIndex = allocation.indexOffset
+                            baseVertex = allocation.vertexOffset
+                        }
+                        val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
+                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.position,
+                                isVisibleForCamera = true, update = e.updateType, entityMinWorld = e.minMaxWorld.min, entityMaxWorld = e.minMaxWorld.max, centerWorld = e.centerWorld,
+                                boundingSphereRadius = e.boundingSphereRadius,
+                                animated = false, materialInfo = modelComponent.material.materialInfo,
+                                entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
 
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
@@ -232,12 +238,17 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                         pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
                         pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
 
-                        val batch = RenderBatch().init(modelComponentSystem.entityIndices[modelComponent]!!, e.isVisible,
-                                e.isSelected, engine.config.debug.isDrawLines, cameraEntity.position, true, e.instanceCount, true,
-                                e.updateType, e.minMaxWorld.min, e.minMaxWorld.max, e.centerWorld, e.boundingSphereRadius,
-                                allocation.forMeshes[0].indexOffset, allocation.indexOffset,
-                                allocation.vertexOffset, false, e.instanceMinMaxWorlds,
-                                modelComponent.material.materialInfo, e.index, 0)
+                        val command = DrawElementsIndirectCommand().apply {
+                            primCount = e.instanceCount
+                            count = allocation.forMeshes[0].indexOffset // what?
+                            firstIndex = allocation.indexOffset
+                            baseVertex = allocation.vertexOffset
+                        }
+                        val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
+                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.position, isVisibleForCamera = true,
+                                update = e.updateType, entityMinWorld = e.minMaxWorld.min, entityMaxWorld = e.minMaxWorld.max, centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
+                                animated = false, materialInfo = modelComponent.material.materialInfo,
+                                entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
                     }
                 }

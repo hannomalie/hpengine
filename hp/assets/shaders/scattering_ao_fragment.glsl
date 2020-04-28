@@ -47,10 +47,6 @@ in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_AOScattering;
 
 
-bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
-	return distance(positionSphere, positionToTest) < radius;
-}
-
 float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
 	vec3 pointLightPositionWorld = pointLight.position;

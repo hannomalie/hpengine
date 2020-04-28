@@ -1,5 +1,5 @@
 #define kPI 3.1415926536f
-
+const int END_TRAVERSAL = 2147483647;
 const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				2.0/16.0, 4.0/16.0, 2.0/16.0,
 				1.0/16.0, 2.0/16.0, 1.0/16.0 };
@@ -510,12 +510,24 @@ bool isInsideVoxelGrid(vec3 positionWorld, VoxelGrid voxelGrid) {
 }
 vec4 voxelFetch(VoxelGrid voxelGrid, sampler3D grid, vec3 positionWorld, float LoD) {
     if(!isInsideVoxelGrid(positionWorld, voxelGrid)) {
-       return vec4(0);
+        return vec4(0);
     }
 
     vec3 positionInGridSpaceMipMapAdjusted = worldToGridPositionFloat(positionWorld, voxelGrid, LoD);
     float normalizer = voxelGrid.resolution/pow(2, LoD);
     vec4 result = textureLod(grid, positionInGridSpaceMipMapAdjusted/normalizer, LoD);
+
+    return result;
+
+}
+ivec4 voxelFetchI(VoxelGrid voxelGrid, isampler3D grid, vec3 positionWorld, float LoD) {
+    if(!isInsideVoxelGrid(positionWorld, voxelGrid)) {
+        return ivec4(0);
+    }
+
+    vec3 positionInGridSpaceMipMapAdjusted = worldToGridPositionFloat(positionWorld, voxelGrid, LoD);
+    float normalizer = voxelGrid.resolution/pow(2, LoD);
+    ivec4 result = textureLod(grid, positionInGridSpaceMipMapAdjusted/normalizer, LoD);
 
     return result;
 
@@ -582,15 +594,15 @@ vec4 voxelTraceConeTwoGrids(VoxelGrid voxelGrid, sampler3D grid, sampler3D grid2
 	return vec4(accum.rgb, alpha);
 }
 
-#ifdef SHADER5
-sampler3D toSampler(uvec2 handle) {
-    return sampler3D(handle);
-}
-
 int ALBEDOGRID = 0;
 int NORMALGRID = 1;
 int GRID1 = 2;
 int GRID2 = 3;
+#if defined(BINDLESSTEXTURES) && defined(SHADER5)
+sampler3D toSampler(uvec2 handle) {
+    return sampler3D(handle);
+}
+
 vec4 voxelTraceCone(VoxelGridArray voxelGridArray, int gridIndex, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 
     vec4 accum = vec4(0.0);
@@ -765,6 +777,96 @@ vec4 traceVoxelsDiffuseTwoGrids(VoxelGridArray voxelGridArray, vec3 normalWorld,
 
     return voxelDiffuse;
 }
+#else
+vec4 traceVoxelsDiffuse(VoxelGridArray voxelGridArray, vec3 normalWorld, vec3 positionWorld, sampler3D grid, sampler3D grid2) {
+    vec4 voxelDiffuse;
+    for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
+        VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
+        int gridSize = voxelGrid.resolution;
+        float sceneScale = voxelGrid.scale;
+
+        float minVoxelDiameter = sceneScale;
+        float maxDist = 50;
+        const int SAMPLE_COUNT = 9;
+
+        const int UE4 = 0;
+        const int domme = 1;
+        const int thefranke = 2;
+        const int diffuseTracingMode = UE4;
+
+        if(diffuseTracingMode == UE4) {
+            for (int k = 0; k < SAMPLE_COUNT; k++) {
+                const float PI = 3.1415926536;
+                vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+                float Phi = 2 * PI * Xi.x;
+                float a = 0.5;
+                float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+                float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+
+                vec3 H;
+                H.x = SinTheta * cos( Phi );
+                H.y = SinTheta * sin( Phi );
+                H.z = CosTheta;
+                H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+
+                float coneRatio = 0.125 * sceneScale;
+                float dotProd = clamp(dot(normalWorld, H),0,1);
+                voxelDiffuse += vec4(dotProd) * voxelTraceCone(voxelGrid, grid, positionWorld, normalize(H), coneRatio, maxDist);
+                voxelDiffuse += vec4(dotProd) * voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(H), coneRatio, maxDist);
+            }
+        } else if(diffuseTracingMode == domme) {
+
+            vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
+            vec3 bitangent = cross(normalWorld, tangent);
+            float coneRatio = 2.;
+            //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
+            voxelDiffuse += voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(normalWorld), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(normalWorld + tangent), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(normalWorld - tangent), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(normalWorld + bitangent), coneRatio, maxDist);
+            voxelDiffuse += 0.707 * voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(normalWorld - bitangent), coneRatio, maxDist);
+
+        } else if(diffuseTracingMode == thefranke) {
+
+            //https://github.com/thefranke/dirtchamber/blob/master/shader/vct_tools.hlsl
+            vec3 diffdir = normalize(normalWorld.zxy);
+            vec3 crossdir = cross(normalWorld.xyz, diffdir);
+            vec3 crossdir2 = cross(normalWorld.xyz, crossdir);
+
+            // jitter cones
+            float j = 1.0 + (fract(sin(dot(vec2(0.5, 0.5), vec2(12.9898, 78.233))) * 43758.5453)) * 0.2;
+
+            vec3 directions[9] =
+            {
+            normalWorld,
+            normalize(crossdir   * j + normalWorld),
+            normalize(-crossdir  * j + normalWorld),
+            normalize(crossdir2  * j + normalWorld),
+            normalize(-crossdir2 * j + normalWorld),
+            normalize((crossdir + crossdir2)  * j + normalWorld),
+            normalize((crossdir - crossdir2)  * j + normalWorld),
+            normalize((-crossdir + crossdir2) * j + normalWorld),
+            normalize((-crossdir - crossdir2) * j + normalWorld),
+            };
+
+            float diff_angle = 0.6f;
+
+            vec4 diffuse = vec4(0, 0, 0, 0);
+
+            for (uint d = 0; d < 9; ++d)
+            {
+                vec3 D = directions[d];
+
+                float NdotL = clamp(dot(normalize(normalWorld), normalize(D)), 0, 1);
+
+                float minDiameter = 1.f;
+                voxelDiffuse += voxelTraceCone(voxelGrid, grid2, positionWorld, normalize(D), 1., maxDist) * NdotL;
+            }
+        }
+    }
+
+    return voxelDiffuse;
+}
 #endif
 
 float luminance(vec3 value) {
@@ -780,4 +882,19 @@ vec3 findMainAxis(vec3 theInput) {
 }
 bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
     return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition)));
+}
+
+float calculateAttenuation(float dist, float lightRadius) {
+    float distDivRadius = (dist / lightRadius);
+    float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
+    atten_factor = pow(atten_factor, 2);
+    return atten_factor;
+}
+
+bool isInsideSphere(vec3 position, vec4 positionRadius) {
+    return distance(position, positionRadius.xyz) <= positionRadius.w;
+}
+
+bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
+    return distance(positionSphere, positionToTest) < radius;
 }

@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
@@ -68,10 +67,7 @@ class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
             if (engine.config.debug.isDrawBoundingVolumes) {
                 val renderAABBs = true
                 if (renderAABBs) {
-                    lineRenderer.batchAABBLines(batch.minWorld, batch.maxWorld)
-                    for ((min, max) in batch.getInstanceMinMaxWorlds()) {
-                        lineRenderer.batchAABBLines(min, max)
-                    }
+                    lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
                 } else {
                     val radius = batch.boundingSphereRadius
                     val center = batch.centerWorld

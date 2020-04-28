@@ -91,7 +91,7 @@ struct VoxelGrid {
     int albedoGrid;
     int normalGrid;
     int grid;
-    int grid2;
+    int indexGrid;
 
     int resolution;
     int resolutionHalf;
@@ -107,15 +107,16 @@ struct VoxelGrid {
     uvec2 normalGridHandle;
 
     uvec2 gridHandle;
-    uvec2 grid2Handle;
+    uvec2 indexGridHandle;
 };
 
+#define MAX_VOXELGRIDS 10
 struct VoxelGridArray {
     int size;
     int dummy0;
     int dummy1;
     int dummy2;
-	VoxelGrid voxelGrids[10];
+	VoxelGrid voxelGrids[MAX_VOXELGRIDS];
 };
 
 struct DirectionalLightState {
@@ -173,4 +174,11 @@ struct VertexAnimatedPacked {
     vec4 dummy;
     vec4 dummy1;
     vec4 dummy2;
+};
+struct BvhNode {
+    vec4 positionRadius;
+    int missPointer;
+    int lightIndex;
+    int dummy0;
+    int dummy1;
 };

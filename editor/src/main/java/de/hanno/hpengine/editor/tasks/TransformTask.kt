@@ -6,19 +6,25 @@ import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.RotateAround
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
+import de.hanno.hpengine.editor.selection.EntitySelection
+import de.hanno.hpengine.editor.selection.SelectionSystem
+import de.hanno.hpengine.engine.transform.SimpleTransform
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
+import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
+import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandGroup
 import org.pushingpixels.flamingo.api.common.model.CommandStripPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandToggleGroupModel
 import org.pushingpixels.flamingo.api.common.projection.CommandStripProjection
 import org.pushingpixels.flamingo.api.ribbon.JFlowRibbonBand
+import org.pushingpixels.flamingo.api.ribbon.JRibbonBand
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 
 object TransformTask {
 
-    operator fun invoke(inputConfig: EditorInputConfig): RibbonTask {
+    operator fun invoke(inputConfig: EditorInputConfig, selectionSystem: SelectionSystem): RibbonTask {
         val activeAxesBand = JFlowRibbonBand("Active Axes", null).apply {
             resizePolicies = listOf(CoreRibbonResizePolicies.FlowTwoRows(this))
 
@@ -128,8 +134,27 @@ object TransformTask {
                             .build())
             addFlowComponent(rotateAroundCommandGroupProjection)
         }
+        val resetTransformationBand = JRibbonBand("Reset Transformation", null).apply {
+            val command = Command.builder()
+                    .setText("Identity")
+                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+                    .setAction {
+                        when(val selection = selectionSystem.selection) {
+                            is EntitySelection -> selection.entity.set(SimpleTransform())
+                        }
+                    }
+                    .setActionRichTooltip(RichTooltip.builder()
+                            .setTitle("Reset transformation")
+                            .addDescriptionSection("Resets an entity's transformation to identity transform")
+                            .build())
+                    .build()
+            addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
+                    .setTextClickAction()
+                    .build()), JRibbonBand.PresentationPriority.TOP)
+            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
+        }
 
 
-        return RibbonTask("Transform", activeAxesBand, transformModeBand, transformSpaceBand, rotateAroundBand)
+        return RibbonTask("Transform", activeAxesBand, transformModeBand, transformSpaceBand, rotateAroundBand, resetTransformationBand)
     }
 }

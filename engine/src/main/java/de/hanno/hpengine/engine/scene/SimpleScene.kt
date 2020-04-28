@@ -6,8 +6,9 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.CustomComponentSystem
+import de.hanno.hpengine.engine.component.GIVolumeComponent
+import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
@@ -23,14 +24,17 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.probe.ProbeSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.ManagerRegistry
+import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.transform.AABB
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
@@ -40,7 +44,7 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     override var currentCycle: Long = 0
     @Transient
     override var isInitiallyDrawn: Boolean = false
-    override val minMax = AABB(Vector3f(), 100f)
+    override val minMax = AABB(Vector3f(), 50f)
 
     override val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     override val managers: ManagerRegistry = SimpleManagerRegistry()
@@ -53,6 +57,9 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
     private val cameraComponentSystem = componentSystems.register(CameraComponentSystem(engine)).also {
         engine.renderSystems.add(it)
     }
+
+    val giVolumeComponentSystem = componentSystems.register(SimpleComponentSystem(GIVolumeComponent::class.java))
+    val giVolumeSystem = entitySystems.register(GIVolumeSystem(engine, this))
 
     private val inputComponentSystem = componentSystems.register(InputComponentSystem(engine))
     override val modelComponentSystem = componentSystems.register(ModelComponentSystem(engine, materialManager))
@@ -84,17 +91,32 @@ class SimpleScene @JvmOverloads constructor(override val name: String = "new-sce
         }
     })
 
-    val directionalLight = Entity("DirectionalLight")
-            .apply { addComponent(DirectionalLight(this)) }
-            .apply { addComponent(DirectionalLight.DirectionalLightController(engine, this)) }
-            .apply {
-                engine.addResourceContext.locked {
-                    with(this@SimpleScene) { add(this@apply) }
-                }
-            }
+    val directionalLight = Entity("DirectionalLight").apply {
+        addComponent(DirectionalLight(this))
+        addComponent(DirectionalLight.DirectionalLightController(engine, this))
+        engine.addResourceContext.locked {
+            with(this@SimpleScene) { add(this@apply) }
+        }
+    }
 
-    val cameraEntity = Entity("MainCamera")
-            .apply { addComponent(inputComponentSystem.create(this)) }
+    val cameraEntity = Entity("MainCamera").apply {
+        addComponent(inputComponentSystem.create(this))
+    }
+
+    val globalGiGrid = Entity("GlobalGiGrid").apply {
+        addComponent(GIVolumeComponent(this, engine.textureManager.createGIVolumeGrids(), Vector3f(100f)))
+        engine.addResourceContext.locked {
+            with(this@SimpleScene) { add(this@apply) }
+        }
+    }
+    val secondGiGrid = Entity("SecondGiGrid").apply {
+        translation(Vector3f(0f,0f,50f))
+        addComponent(GIVolumeComponent(this, engine.textureManager.createGIVolumeGrids(), Vector3f(30f)))
+        engine.addResourceContext.locked {
+            with(this@SimpleScene) { add(this@apply) }
+        }
+    }
+
 
     override val camera = cameraComponentSystem.create(cameraEntity)
             .apply { cameraEntity.addComponent(this) }

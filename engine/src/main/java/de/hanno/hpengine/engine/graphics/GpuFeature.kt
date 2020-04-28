@@ -1,11 +1,14 @@
 package de.hanno.hpengine.engine.graphics
 
-interface GpuFeature
+interface GpuFeature {
+    val defineString: String
+}
 
-abstract class AbstractGpuFeature: GpuFeature {
+abstract class AbstractGpuFeature(override val defineString: String): GpuFeature {
     override fun toString() = this::class.java.simpleName
 }
 
-object BindlessTextures: AbstractGpuFeature()
-object DrawParameters: AbstractGpuFeature()
-object Shader5: AbstractGpuFeature()
+object BindlessTextures: AbstractGpuFeature(BindlessTextures::class.java.simpleName)
+object DrawParameters: AbstractGpuFeature(DrawParameters::class.java.simpleName)
+object NvShader5: AbstractGpuFeature("SHADER5")
+object ArbShader5: AbstractGpuFeature("ARBSHADER5")

@@ -16,11 +16,8 @@ class DirectionalLightSystem(val engine: EngineContext<OpenGl>,
                              val eventBus: EventBus): SimpleEntitySystem(scene, listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
 
-    private var shadowMapExtension: DirectionalLightShadowMapExtension
-
     init {
         eventBus.register(this)
-        shadowMapExtension = DirectionalLightShadowMapExtension(engine)
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
@@ -48,11 +45,6 @@ class DirectionalLightSystem(val engine: EngineContext<OpenGl>,
             renderState.directionalLightState[0].viewMatrix.set(viewMatrix)
             renderState.directionalLightState[0].projectionMatrix.set(projectionMatrix)
             renderState.directionalLightState[0].viewProjectionMatrix.set(viewProjectionMatrix)
-            renderState.directionalLightState[0].shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
-            renderState.directionalLightState[0].shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
         }
-    }
-    override fun render(result: DrawResult, state: RenderState) {
-        shadowMapExtension.renderFirstPass(engine.backend, engine.gpuContext, result.firstPassResult, state)
     }
 }

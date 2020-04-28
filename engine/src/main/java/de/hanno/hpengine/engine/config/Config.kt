@@ -53,7 +53,8 @@ interface IQualityConfig {
 interface IDebugConfig {
     var reRenderProbes: Boolean
     var visualizeProbes: Boolean
-    val isUseCpuFrustumCulling: Boolean
+    var drawBvhInnerNodes: Boolean
+    var isEditorOverlay: Boolean
     val isUseGpuOcclusionCulling: Boolean
     val isDrawLines: Boolean
     val isDrawBoundingVolumes: Boolean
@@ -69,7 +70,7 @@ interface IDebugConfig {
     val isLockUpdaterate: Boolean
     val directTextureOutputTextureIndex: Int
     val directTextureOutputArrayIndex: Int
-    val isForceRevoxelization: Boolean
+    var isForceRevoxelization: Boolean
 }
 
 interface IEffectsConfig {
@@ -121,7 +122,8 @@ data class QualityConfig(
 data class DebugConfig(
     override @Button var reRenderProbes: Boolean = true,
     override var visualizeProbes: Boolean = false,
-    override var isUseCpuFrustumCulling: Boolean = true,
+    override var drawBvhInnerNodes: Boolean = false,
+    override var isEditorOverlay: Boolean = true,
     override var isUseGpuOcclusionCulling: Boolean = false,
     override var isDrawLines: Boolean = false,
     override var isDrawBoundingVolumes: Boolean = false,
@@ -137,7 +139,7 @@ data class DebugConfig(
     override var isLockUpdaterate: Boolean = true,
     override var directTextureOutputTextureIndex: Int = 0,
     override var directTextureOutputArrayIndex: Int = 0,
-    override var isForceRevoxelization: Boolean = false
+    override @Button var isForceRevoxelization: Boolean = false
 ) : IDebugConfig
 
 data class EffectsConfig(
@@ -155,13 +157,15 @@ data class EffectsConfig(
 ) : IEffectsConfig
 
 interface IPerformanceConfig {
+    val updateGiOnSceneChange: Boolean
     val isIndirectRendering: Boolean
     val isVsync: Boolean
 }
 
 data class PerformanceConfig(
-    override var isIndirectRendering: Boolean = true,
-    override var isVsync: Boolean = true
+        override var updateGiOnSceneChange: Boolean = false,
+        override var isIndirectRendering: Boolean = true,
+        override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
 class ConfigImpl(override val gameDir: String = Directories.GAMEDIR_NAME,

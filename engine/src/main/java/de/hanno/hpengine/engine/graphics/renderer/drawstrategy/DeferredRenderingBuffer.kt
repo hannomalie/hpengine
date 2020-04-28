@@ -23,9 +23,10 @@ import org.lwjgl.opengl.GL30
 
 class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height: Int) {
 
+    val depthBuffer = DepthBuffer(gpuContext, width, height)
     val gBuffer = RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext, DepthBuffer(gpuContext, width, height)),
+            FrameBuffer(gpuContext, depthBuffer),
             name = "GBuffer",
             width = width,
             height = height,
@@ -38,7 +39,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val reflectionBuffer = RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext, DepthBuffer(gpuContext, width, height)),
+            FrameBuffer(gpuContext, depthBuffer),
             name = "Reflection",
             width = width,
             height = height,
@@ -47,7 +48,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val forwardBuffer = RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext, DepthBuffer(gpuContext, width, height)),
+            FrameBuffer(gpuContext, depthBuffer),
             name = "Forward",
             width = width,
             height = height,
@@ -56,7 +57,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val laBuffer = RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext, DepthBuffer(gpuContext, width, height)),
+            FrameBuffer(gpuContext, depthBuffer),
             name = "LightAccum",
             width = width,
             height = height,
@@ -65,7 +66,7 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val finalBuffer = RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext, DepthBuffer(gpuContext, width, height)),
+            FrameBuffer(gpuContext, depthBuffer),
             name = "Final Image",
             width = width,
             height = height,
@@ -74,11 +75,14 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val halfScreenBuffer = RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext, DepthBuffer(gpuContext, width, height)),
+            FrameBuffer(gpuContext, depthBuffer),
             name = "Half Screen",
             width = width / 2,
             height = height / 2,
-            textures = listOf(ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F)).toTextures(gpuContext, width, height)
+            textures = listOf(
+                    ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F),
+                    ColorAttachmentDefinition("Indirect", GL30.GL_RGBA16F)
+            ).toTextures(gpuContext, width / 2, height / 2)
     )
 
     val fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(width, height))

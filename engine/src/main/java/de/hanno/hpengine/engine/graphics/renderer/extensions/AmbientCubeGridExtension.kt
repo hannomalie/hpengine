@@ -53,12 +53,21 @@ class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : Rende
     val probeRenderer = ProbeRenderer(engineContext)
     val evaluateProbeProgram = engineContext.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe.glsl")
 
+    private var renderCounter = 0
+    private val probesPerFrame = 12.apply {
+        require(probeRenderer.probeCount % this == 0) { "probecount has to be devidable by probesperframe" }
+    }
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         val entityAdded = renderState.entitiesState.entityAddedInCycle > renderedInCycle
-        if (engineContext.config.debug.reRenderProbes || entityAdded) {
-            probeRenderer.renderProbes(renderState, entityAdded)
+        val needsRerender = engineContext.config.debug.reRenderProbes || entityAdded
+        if (needsRerender) {
+            renderCounter = 0
             engineContext.config.debug.reRenderProbes = false
             renderedInCycle = renderState.cycle
+        }
+        if(renderCounter < probeRenderer.probeCount-probesPerFrame) {
+            probeRenderer.renderProbes(renderState, renderCounter, probesPerFrame)
+            renderCounter+=probesPerFrame
         }
     }
 
@@ -170,7 +179,7 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
             name = "Probes"
     )
 
-    fun renderProbes(renderState: RenderState, entityWasAdded: Boolean) {
+    fun renderProbes(renderState: RenderState, probeStartIndex: Int, probesPerFrame: Int) {
         if (sceneMin != renderState.sceneMin || sceneMax != renderState.sceneMax) {
             sceneMin.set(renderState.sceneMin)
             sceneMax.set(renderState.sceneMax)
@@ -182,14 +191,14 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
 
         profiled("Probes") {
 
-            gpuContext.depthMask(true)
+            gpuContext.depthMask = true
             gpuContext.disable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.CULL_FACE)
             cubeMapRenderTarget.use(engine.gpuContext, true)
 //            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, probeResolution, probeResolution)
 
-            for (probeIndex in 0 until probeCount) {
+            for (probeIndex in probeStartIndex until (probeStartIndex + probesPerFrame)) {
                 gpuContext.clearDepthBuffer()
 
                 val skyBox = engine.materialManager.skyboxMaterial.materialInfo.maps[SimpleMaterial.MAP.ENVIRONMENT]

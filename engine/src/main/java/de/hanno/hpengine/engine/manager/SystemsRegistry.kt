@@ -60,7 +60,7 @@ interface SystemsRegistry {
     }
 
     fun UpdateLock.onEntityAdded(entities: List<Entity>) {
-        val matchedComponents = mutableMapOf<Class<out Component>, Component>()
+        val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
         getSystems().forEach {
             matchedComponents += with(it) { onEntityAdded(entities) }
         }

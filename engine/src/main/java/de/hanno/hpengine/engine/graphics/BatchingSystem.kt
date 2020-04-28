@@ -24,8 +24,6 @@ class BatchingSystem {
 
         for (modelComponent in modelComponents) {
             val entity = modelComponent.entity
-            val distanceToCamera = tempDistVector.length()
-            val isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.boundingSphereRadius
 
             val entityIndexOf = entityIndices[modelComponent]!!
 
@@ -44,12 +42,29 @@ class BatchingSystem {
                 val meshBufferIndex = entityIndexOf + meshIndex * entity.instanceCount
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
-                batch.init(meshBufferIndex, entity.isVisible, entity.isSelected, drawLines, cameraWorldPosition,
-                        isInReachForTextureLoading, entity.instanceCount, visibleForCamera, entity.updateType,
-                        min1, max1, meshCenter, boundingSphereRadius, modelComponent.getIndexCount(meshIndex),
-                        allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset,
-                        allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset,
-                        !modelComponent.model.isStatic, entity.instanceMinMaxWorlds, mesh.material.materialInfo, entity.index, meshIndex)
+                with(batch){ entityBufferIndex = meshBufferIndex
+                    this.movedInCycle = entity.movedInCycle
+                    this.isDrawLines = drawLines
+                    this.cameraWorldPosition = cameraWorldPosition
+                    this.isVisibleForCamera = visibleForCamera
+                    update = entity.updateType
+                    entityMinWorld = entity.minMaxWorld.min
+                    entityMaxWorld = entity.minMaxWorld.max
+                    meshMinWorld = min1
+                    meshMaxWorld = max1
+                    centerWorld = meshCenter
+                    this.boundingSphereRadius = boundingSphereRadius
+                    with(drawElementsIndirectCommand) {
+                        this.primCount = entity.instanceCount
+                        this.count = modelComponent.getIndexCount(meshIndex)
+                        this.firstIndex = allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset
+                        this.baseVertex = allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset
+                    }
+                    this.animated = !modelComponent.model.isStatic
+                    materialInfo = mesh.material.materialInfo
+                    entityIndex = entity.index
+                    this.meshIndex = meshIndex
+                }
 
                 if (batch.isStatic) {
                     currentWriteState.addStatic(batch)

@@ -4,32 +4,27 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirect
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
-import de.hanno.hpengine.engine.transform.AABB
 import org.joml.Vector3f
-
 import java.util.ArrayList
 
-class RenderBatch {
-    var entityIndex = -1
-    var meshIndex = -1
-    var isVisible = false
-    var isSelected = false
-    var isDrawLines = false
-    var minWorld = Vector3f()
-    var maxWorld = Vector3f()
-    var cameraWorldPosition = Vector3f()
-    var isInReachForTextureLoading = false
-    var isVisibleForCamera = false
-    var update = Update.STATIC
-    val drawElementsIndirectCommand = DrawElementsIndirectCommand()
-    var centerWorld = Vector3f()
-    private var animated = false
-    var boundingSphereRadius = 0.0f
-    private val instanceMinMaxWorlds = ArrayList<AABB>()
-    var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy")
-        private set
-
-    var entityBufferIndex: Int = 0
+class RenderBatch(
+        var entityIndex: Int = -1,
+        var meshIndex: Int = -1,
+        var movedInCycle: Long = 0L,
+        var isDrawLines: Boolean = false,
+        var entityMinWorld: Vector3f = Vector3f(),
+        var entityMaxWorld: Vector3f = Vector3f(),
+        var meshMinWorld: Vector3f = Vector3f(),
+        var meshMaxWorld: Vector3f = Vector3f(),
+        var cameraWorldPosition: Vector3f = Vector3f(),
+        var isVisibleForCamera: Boolean = false,
+        var update: Update = Update.STATIC,
+        val drawElementsIndirectCommand: DrawElementsIndirectCommand = DrawElementsIndirectCommand(),
+        var centerWorld: Vector3f = Vector3f(),
+        var animated : Boolean = false,
+        var boundingSphereRadius: Float = 0.0f,
+        var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
+        var entityBufferIndex: Int = 0) {
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount
@@ -39,37 +34,5 @@ class RenderBatch {
 
     val isStatic: Boolean
         get() = !animated
-
-    fun init(entityBufferIndex: Int, isVisible: Boolean, isSelected: Boolean, drawLines: Boolean, cameraWorldPosition: Vector3f, isInReachForTextureStreaming: Boolean, instanceCount: Int, visibleForCamera: Boolean, update: Update, minWorld: Vector3f, maxWorld: Vector3f, centerWorld: Vector3f, boundingSphereRadius: Float, indexCount: Int, indexOffset: Int, baseVertex: Int, animated: Boolean, instanceMinMaxWorlds: List<AABB>, materialInfo: MaterialInfo, entityIndex: Int, meshIndex: Int): RenderBatch {
-        this.isVisible = isVisible
-        this.isSelected = isSelected
-        this.isDrawLines = drawLines
-        this.cameraWorldPosition.set(cameraWorldPosition)
-        this.isInReachForTextureLoading = isInReachForTextureStreaming
-        this.isVisibleForCamera = visibleForCamera
-        this.update = update
-        this.minWorld.set(minWorld)
-        this.maxWorld.set(maxWorld)
-        this.instanceMinMaxWorlds.clear()
-        this.instanceMinMaxWorlds.addAll(instanceMinMaxWorlds)
-        this.boundingSphereRadius = boundingSphereRadius
-        this.centerWorld.set(centerWorld)
-        this.drawElementsIndirectCommand.count = indexCount
-        this.drawElementsIndirectCommand.primCount = instanceCount
-        this.drawElementsIndirectCommand.firstIndex = indexOffset
-        this.drawElementsIndirectCommand.baseVertex = baseVertex
-        this.drawElementsIndirectCommand.baseInstance = 0
-        this.entityBufferIndex = entityBufferIndex
-        this.animated = animated
-        this.materialInfo = materialInfo
-        this.entityIndex = entityIndex
-        this.meshIndex = meshIndex
-        return this
-    }
-
-    fun getInstanceMinMaxWorlds(): List<AABB> {
-        return instanceMinMaxWorlds
-    }
-
-    class RenderBatches : ArrayList<RenderBatch>()
 }
+class RenderBatches : ArrayList<RenderBatch>()
