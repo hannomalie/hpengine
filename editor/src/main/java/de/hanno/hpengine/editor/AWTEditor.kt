@@ -47,19 +47,17 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
             majorVersion = 4
             minorVersion = 5
             forwardCompatible = true
-//    profile = GLData.Profile.COMPATIBILITY
             samples = 4
             swapInterval = if (config.performance.isVsync) 1 else 0
-//    this.debug = true
+            debug = true
         }
 
         canvas = object : CustomGlCanvas(glData) {
             override fun initGL() {
                 GL.createCapabilities()
                 println("OpenGL thread id: ${Thread.currentThread().id}")
+                println("OpenGL thread former name: ${Thread.currentThread().name}")
                 println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION))
-                GL11.glClearColor(0.3f, 0.4f, 0.5f, 1f)
-                glClear(GL_COLOR_BUFFER_BIT)
                 handle = context
                 openGLThreadId = Thread.currentThread().id
                 println("AWTWindow with OpenGL thread $openGLThreadId")
@@ -80,7 +78,9 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
             frame.transferFocus()
 
             runBlocking(executor.coroutineContext) {
-                render()
+                createContext()
+                makeCurrent()
+                init()
             }
         }
     }

@@ -80,6 +80,14 @@ interface RenderTarget<T : Texture> : FrontBufferTarget {
      */
     open fun setCubeMapFace(attachmentIndex: Int, textureId: Int, index: Int, mipmap: Int)
 
+
+    fun using(gpuContext: GpuContext<OpenGl>, clear: Boolean, block: () -> Unit) = try {
+        use(gpuContext, clear)
+        block()
+    } finally {
+        unUse()
+    }
+
     fun unUse()
     fun getRenderedTexture(index: Int): Int
     fun setRenderedTexture(renderedTexture: Int, index: Int)
@@ -305,6 +313,13 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
                 throw IllegalArgumentException("Component identifier missing for internalFormat $internalFormat")
             }
         }
+    }
+
+    override fun using(gpuContext: GpuContext<OpenGl>, clear: Boolean, block: () -> Unit) = try {
+        use(gpuContext, clear)
+        block()
+    } finally {
+        unUse()
     }
 }
 

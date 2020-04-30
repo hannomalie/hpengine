@@ -107,5 +107,6 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     companion object {
 
         var LOADED_PROGRAMS: MutableList<AbstractProgram> = CopyOnWriteArrayList()
+
     }
 }

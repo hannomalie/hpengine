@@ -62,7 +62,7 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
     }
 
     override fun load() {
-        gpuContext.execute() {
+        gpuContext.execute {
             clearUniforms()
 
             vertexShader = programManager.loadShader(VertexShader::class.java, vertexShaderSource!!, defines)
