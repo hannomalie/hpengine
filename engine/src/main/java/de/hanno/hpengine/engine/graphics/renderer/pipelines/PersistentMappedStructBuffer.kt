@@ -37,7 +37,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         private set
 
     init {
-        gpuContext.calculate {
+        gpuContext.window.calculate {
             val (id, newBuffer) = createBuffer(max(initialSize * slidingWindow.sizeInBytes, 1))
             this.buffer = newBuffer
             this.id = id
@@ -111,7 +111,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
 //    }
 
     fun bind() {
-        gpuContext.execute("PersistentMappedStructBuffer.bind") {
+        gpuContext.execute() {
             if (id <= 0) {
                 id = GL15.glGenBuffers()
             }
@@ -120,7 +120,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
     }
 
     fun unbind() {
-        gpuContext.execute("PersistentMappedStructBuffer.unbind") { GL15.glBindBuffer(target, 0) }
+        gpuContext.execute() { GL15.glBindBuffer(target, 0) }
     }
 
     @Synchronized

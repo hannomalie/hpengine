@@ -4,9 +4,14 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
+import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGlExecutor
 import de.hanno.hpengine.engine.graphics.Window
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.withContext
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
@@ -18,17 +23,19 @@ import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.Dimension
 import java.util.concurrent.Callable
 import javax.swing.JFrame
-import javax.swing.SwingUtilities
 
 class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
+    val executor = OpenGlExecutorImpl()
     override var openGLThreadId: Long = -1
 
     override var handle: Long = 0
         private set
-    lateinit var canvas: CustomGlCanvas
+    var canvas: CustomGlCanvas
     lateinit var frame: RibbonEditor
+
     init {
-        SwingUtilities.invokeAndWait {
+        System.setProperty("kotlinx.coroutines.stacktrace.recovery", "true")
+        SwingUtils.invokeAndWait {
             JRibbonFrame.setDefaultLookAndFeelDecorated(true)
             SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
             frame = RibbonEditor()
@@ -40,21 +47,21 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
             majorVersion = 4
             minorVersion = 5
             forwardCompatible = true
-//    profile = GLData.Profile.COMPATIBILITY
             samples = 4
-            swapInterval = if(config.performance.isVsync) 1 else 0
-//    this.debug = true
+            swapInterval = if (config.performance.isVsync) 1 else 0
+            debug = true
         }
 
         canvas = object : CustomGlCanvas(glData) {
             override fun initGL() {
                 GL.createCapabilities()
-                GL11.glClearColor(0.3f, 0.4f, 0.5f, 1f)
-                glClear(GL_COLOR_BUFFER_BIT)
+                println("OpenGL thread id: ${Thread.currentThread().id}")
+                println("OpenGL thread former name: ${Thread.currentThread().name}")
+                println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION))
                 handle = context
                 openGLThreadId = Thread.currentThread().id
                 println("AWTWindow with OpenGL thread $openGLThreadId")
-                Thread.currentThread().name  = "OpenGlAWTCanvas"
+                Thread.currentThread().name = "OpenGlAWTCanvas"
             }
 
             override fun paintGL() {
@@ -64,25 +71,17 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
         }.apply {
             isFocusable = true
             frame.init(this)
-            SwingUtilities.invokeAndWait {
+            SwingUtils.invokeAndWait {
                 frame.pack()
             }
             frame.isVisible = true
             frame.transferFocus()
 
-            SwingUtilities.invokeAndWait {
-                beforeRender()
-                unlock()
+            runBlocking(executor.coroutineContext) {
+                createContext()
+                makeCurrent()
+                init()
             }
-
-            val renderLoop = object: Runnable {
-                override fun run() {
-                    if (!canvas.isValid) return
-                    canvas.render()
-                    SwingUtilities.invokeLater(this)
-                }
-            }
-            SwingUtilities.invokeLater(renderLoop)
         }
     }
 
@@ -93,10 +92,14 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
         }
     override var width: Int
         get() = frame.width
-        set(value) { frame.size.width = value }
+        set(value) {
+            frame.size.width = value
+        }
     override var height: Int
         get() = frame.height
-        set(value) { frame.size.height = value }
+        set(value) {
+            frame.size.height = value
+        }
 
     override val vSync = false
 
@@ -117,11 +120,11 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
         return 0
     }
 
-    override fun showWindow() { }
+    override fun showWindow() {}
 
-    override fun hideWindow() { }
+    override fun hideWindow() {}
 
-    override fun pollEvents() { }
+    override fun pollEvents() {}
 
     override val frontBuffer = canvas.createFrontBufferRenderTarget()
 
@@ -132,44 +135,42 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
     override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
     }
 
-//    override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
-//        canvas.commandQueue.execute(runnable, andBlock, forceAsync)
-//    }
-    override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
-        if(isOpenGLThread && !forceAsync) {
-            runnable.run()
-            return
-        }
-
-        if(andBlock) {
-            SwingUtilities.invokeAndWait {
-                canvas.beforeRender()
-                runnable.run()
-                canvas.afterRender()
-            }
-        } else {
-            SwingUtilities.invokeLater {
-                canvas.beforeRender()
-                runnable.run()
-                canvas.afterRender()
+    override suspend fun <T> execute(block: () -> T): T {
+        return withContext(executor.coroutineContext) {
+            withLockedCanvas {
+                block()
             }
         }
     }
 
-//    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-//        return canvas.commandQueue.calculate(callable)
-//    }
+    override fun execute(runnable: Runnable) {
+        if(executor.isOpenGLThread) return runnable.run()
 
-    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        if(isOpenGLThread) return callable.call()
-
-        var result: RETURN_TYPE? = null
-        SwingUtilities.invokeAndWait {
-            canvas.beforeRender()
-            result = callable.call()
-            canvas.afterRender()
+        executor.execute {
+            withLockedCanvas {
+                runnable.run()
+            }
         }
-        return result!!
+    }
+
+    private inline fun <T> withLockedCanvas(block: () -> T): T = try {
+        canvas.beforeRender()
+        block()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        throw e
+    } finally {
+        canvas.afterRender()
+    }
+
+    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+        if(executor.isOpenGLThread) return callable.call()
+
+        return executor.calculate {
+            withLockedCanvas {
+                callable.call()
+            }
+        }
     }
 
     override fun shutdown() {
@@ -178,15 +179,4 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
     fun init(engine: EngineImpl, config: ConfigImpl) {
         frame.setEngine(engine, config)
     }
-
-    val Thread.isOpenGLThread: Boolean
-        get() {
-            return id == openGLThreadId
-        }
-
-    val isOpenGLThread: Boolean
-        get() {
-            return Thread.currentThread().isOpenGLThread
-        }
-
 }

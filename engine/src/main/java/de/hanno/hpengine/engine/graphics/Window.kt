@@ -4,19 +4,11 @@ import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.util.commandqueue.CommandQueue
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.swing.Swing
-import kotlinx.coroutines.swing.SwingDispatcher
 import org.joml.Vector4f
 import org.lwjgl.opengl.awt.AWTGLCanvas
 import org.lwjgl.opengl.awt.GLData
-import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
-import java.awt.event.MouseWheelEvent
-import java.util.concurrent.Callable
+import java.awt.AWTException
 import javax.swing.SwingUtilities
 
 
@@ -45,6 +37,28 @@ interface Window<T: BackendType>: OpenGlExecutor {
 
 abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
     val commandQueue = CommandQueue { SwingUtilities.isEventDispatchThread() }
+
+    fun init() {
+        if (!initCalled) {
+            initGL()
+            initCalled = true
+        }
+    }
+
+    fun makeCurrent() {
+        platformCanvas.makeCurrent(context)
+    }
+    fun isCurrent() = platformCanvas.isCurrent(context)
+
+    fun createContext() {
+        if (context == 0L) {
+            try {
+                context = platformCanvas.create(this, data, effective)
+            } catch (var3: AWTException) {
+                throw RuntimeException("Exception while creating the OpenGL context", var3)
+            }
+        }
+    }
 
     public override fun beforeRender() {
         super.beforeRender()

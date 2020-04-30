@@ -243,14 +243,14 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectPointLight(pickedPointLight: PointLight) {
+    fun selectPointLight(pickedPointLight: PointLight) = SwingUtils.invokeLater {
         selection = PointLightSelection(pickedPointLight)
         sidePanel.doWithRefresh {
             addUnselectButton()
             add(PointLightGrid(pickedPointLight))
         }
     }
-    fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeAndWait {
+    fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeLater {
         selection = EntitySelection(pickedEntity)
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -266,7 +266,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         })
     }
 
-    fun selectModel(pickedModel: ModelSelection) = SwingUtils.invokeAndWait {
+    fun selectModel(pickedModel: ModelSelection) = SwingUtils.invokeLater {
         selection = pickedModel
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -274,7 +274,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeAndWait {
+    fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeLater {
         selection = pickedMesh
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -282,7 +282,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectMaterial(pickedMaterial: Material) = SwingUtils.invokeAndWait {
+    fun selectMaterial(pickedMaterial: Material) = SwingUtils.invokeLater {
         selection = MaterialSelection(pickedMaterial)
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -290,7 +290,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectGiVolume(giVolumeComponent: GIVolumeComponent) {
+    fun selectGiVolume(giVolumeComponent: GIVolumeComponent) = SwingUtils.invokeLater {
         selection = GiVolumeSelection(giVolumeComponent)
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -305,7 +305,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         sidePanel.repaint()
     }
 
-    fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight) {
+    fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight) = SwingUtils.invokeLater {
         selection = DirectionalLightSelection(pickedDirectionalLight)
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -314,7 +314,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectCamera(pickedCamera: Camera) {
+    fun selectCamera(pickedCamera: Camera) = SwingUtils.invokeLater {
         selection = CameraSelection(pickedCamera)
         sidePanel.doWithRefresh {
             addUnselectButton()
@@ -322,7 +322,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectScene(pickedScene: Scene) {
+    fun selectScene(pickedScene: Scene) = SwingUtils.invokeLater {
         selection = SceneSelection(pickedScene)
         sidePanel.doWithRefresh {
             addUnselectButton()

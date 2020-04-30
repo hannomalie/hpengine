@@ -3,10 +3,6 @@ package de.hanno.hpengine.engine.graphics
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.model.texture.Texture2D
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -42,7 +38,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         }
     override val frontBuffer: FrontBufferTarget
 
-    //     TODO: Avoid this somehow, move to update, but only when update is called before all the
+//     TODO: Avoid this somehow, move to update, but only when update is called before all the
 //    contexts and stuff, or the fresh window will get a message dialog that it doesnt respond
     private val pollEventsThread = Thread({
         while(true) {
@@ -90,7 +86,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     }
 
     override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
-        gpuContext.execute("setVSync") {
+        execute() {
             glfwSwapInterval(if(vSync) 1 else 0)
             this.vSync = vSync
         }
@@ -129,20 +125,22 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         glfwMakeContextCurrent(handle)
     }
 
-    val executor = Executor().apply {
-        execute("Create Capabilities") {
+    val executor = OpenGlExecutorImpl().apply {
+        execute {
             makeContextCurrent()
             GL.createCapabilities()
         }
     }
     override val openGLThreadId: Long
         get() = executor.openGLThreadId
-    override fun execute(actionName: String, runnable: Runnable, andBlock: Boolean, forceAsync: Boolean) {
-        return executor.execute(actionName, runnable, andBlock, forceAsync)
-    }
 
-    override fun <RETURN_TYPE> calculate(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        return executor.calculate(callable)
+    override suspend fun <T> execute(block: () -> T): T {
+        return executor.execute(block)
+    }
+    override fun execute(runnable: Runnable) = executor.execute(runnable)
+
+    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
+        return executor.calculateX(callable)
     }
 
     override fun shutdown() = executor.shutdown()

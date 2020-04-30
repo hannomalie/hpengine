@@ -88,7 +88,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
     }
 
     fun CoroutineScope.update(deltaSeconds: Float) = try {
-        gpuContext.execute("updateInput") { input.update() }
+        window.execute() { input.update() }
         gpuContext.update(deltaSeconds)
         with(managerContext.managers) {
             update(deltaSeconds)

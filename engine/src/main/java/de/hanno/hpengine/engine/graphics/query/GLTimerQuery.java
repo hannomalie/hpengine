@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.query;
 
 import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.graphics.GpuContext;
+import kotlin.Unit;
 
 import java.util.concurrent.Callable;
 
@@ -25,14 +26,15 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     private int glGenQuery() {
-        return gpuContext.calculate((Callable<Integer>) () -> glGenQueries());
+        return gpuContext.calculateX(() -> glGenQueries());
     }
 
     @Override
     public GLTimerQuery begin() {
         finished = false;
-        gpuContext.execute("GLTimerQuery.begin", () -> {
+        gpuContext.calculate(() -> {
             glQueryCounter(start, GL_TIMESTAMP);
+            return Unit.INSTANCE;
         });
         started = true;
         return this;
@@ -43,8 +45,9 @@ public class GLTimerQuery implements GLQuery<Float> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        gpuContext.execute("GLTimerQuery.end", () -> {
+        gpuContext.execute(() -> {
             glQueryCounter(end, GL_TIMESTAMP);
+            return Unit.INSTANCE;
         });
         finished = true;
     }
@@ -60,11 +63,11 @@ public class GLTimerQuery implements GLQuery<Float> {
     }
 
     public long getStartTime() {
-        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
+        return gpuContext.calculateX(() -> glGetQueryObjectui64(start, GL_QUERY_RESULT));
     }
 
     public long getEndTime() {
-        return gpuContext.calculate((Callable<Long>) () -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
+        return gpuContext.calculateX(() -> glGetQueryObjectui64(end, GL_QUERY_RESULT));
     }
 
     @Override

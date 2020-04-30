@@ -14,6 +14,9 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
@@ -46,50 +49,57 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
     }
     init {
         var lastTimeSwapped = true
-        val runnable = object: Runnable {
-            override fun run() {
-                try {
-                    renderState.startRead()
+        val runnable = Runnable {
+            try {
+                renderState.startRead()
 
-                    if (lastTimeSwapped) {
-                        recorder.add(renderState.currentReadState)
-                        val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                if (lastTimeSwapped) {
+                    recorder.add(renderState.currentReadState)
+                    val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                        profiled("renderSystems") {
-                            engineContext.renderSystems.forEach {
-                                it.render(drawResult, renderState.currentReadState)
-                            }
+                    profiled("renderSystems") {
+                        engineContext.renderSystems.forEach {
+                            it.render(drawResult, renderState.currentReadState)
                         }
-
-                        profiled("finishFrame") {
-                            engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                            engineContext.renderSystems.forEach {
-                                it.afterFrameFinished()
-                            }
-                        }
-
-                        textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
-
-                        profiled("checkCommandSyncs") {
-                            engineContext.gpuContext.checkCommandSyncs()
-                        }
-
-                        GPUProfiler.dump()
-
-                        lastFrameTime = System.currentTimeMillis()
-                        fpsCounter.update()
-
                     }
-                    lastTimeSwapped = renderState.stopRead()
 
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    profiled("finishFrame") {
+                        engineContext.gpuContext.finishFrame(renderState.currentReadState)
+                        engineContext.renderSystems.forEach {
+                            it.afterFrameFinished()
+                        }
+                    }
+
+                    textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
+
+                    profiled("checkCommandSyncs") {
+                        engineContext.gpuContext.checkCommandSyncs()
+                    }
+
+                    GPUProfiler.dump()
+
+                    lastFrameTime = System.currentTimeMillis()
+                    fpsCounter.update()
+
                 }
-                engineContext.gpuContext.execute("Foo", this, false, true)
-            }
+                lastTimeSwapped = renderState.stopRead()
 
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
-        engineContext.gpuContext.execute("Foo", runnable, false, true)
+        GlobalScope.launch {
+            while(true) {
+                engineContext.gpuContext.execute(block = {
+                    runnable.run()
+                })
+                // https://bugs.openjdk.java.net/browse/JDK-4852178
+                // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
+                if(isUnix) {
+                    delay(5)
+                }
+            }
+        }
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
@@ -114,3 +124,7 @@ inline fun <T> profiled(name: String, action: () -> T): T {
     task?.end()
     return result
 }
+
+
+private val OS = System.getProperty("os.name").toLowerCase()
+private val isUnix = OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0

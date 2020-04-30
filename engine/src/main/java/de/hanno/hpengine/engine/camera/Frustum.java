@@ -66,12 +66,12 @@ public class Frustum implements Serializable {
 
     public void calculate(Camera camera) {
         buf.rewind();
-        camera.getProjectionMatrix().get(buf);
+        camera.getProjectionMatrix().get(0, buf);
 		buf.rewind();
 		buf.get(proj);
 
 		buf.rewind();
-		camera.getViewMatrix().get(buf);
+		camera.getViewMatrix().get(0, buf);
 		buf.rewind();
 		buf.get(modl);
 

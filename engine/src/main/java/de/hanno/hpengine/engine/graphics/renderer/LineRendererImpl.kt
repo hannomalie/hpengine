@@ -22,7 +22,7 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
     private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
 
 //    TODO: This has to be implemented in context
-    private val maxLineWidth = engineContext.backend.gpuContext.calculate { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
+    private val maxLineWidth = engineContext.backend.gpuContext.window.calculate { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
     private val buffer = VertexBuffer(engineContext.gpuContext, EnumSet.of(DataChannels.POSITION3), floatArrayOf(0f, 0f, 0f, 0f)).apply {
         upload()
     }

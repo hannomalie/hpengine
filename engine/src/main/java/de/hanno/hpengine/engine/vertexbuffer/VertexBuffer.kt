@@ -84,7 +84,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
     fun upload(): CompletableFuture<VertexBuffer> {
         buffer.rewind()
         val future = CompletableFuture<VertexBuffer>()
-        gpuContext.execute("VertexBuffer.upload") {
+        gpuContext.execute() {
             bind()
 //             Don't remove this, will break things
             vertexArrayObject = VertexArrayObject.getForChannels(gpuContext, channels)
