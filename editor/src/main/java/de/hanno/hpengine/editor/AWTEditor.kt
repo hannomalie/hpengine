@@ -47,9 +47,9 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
             majorVersion = 4
             minorVersion = 5
             forwardCompatible = true
-            samples = 4
+//            samples = 4
             swapInterval = if (config.performance.isVsync) 1 else 0
-            debug = true
+//            debug = true
         }
 
         canvas = object : CustomGlCanvas(glData) {

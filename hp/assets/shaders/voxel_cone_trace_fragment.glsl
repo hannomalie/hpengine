@@ -349,7 +349,8 @@ void main(void) {
             vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
             #else
 //            if(voxelGridIndex == 1) {
-                vct = 0.25f*voxelFetch(voxelGrid, grid, positionWorld.xyz, 0).rgb;
+                vct = 0.25f*voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
+//                vct = voxelFetch(voxelGrid, grid, positionWorld.xyz, 0).rgb;
 //            }
             #endif
         }
