@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.texture.TextureDimension3D
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.TransformSpatial
@@ -16,15 +17,23 @@ import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.joml.Vector3i
+import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty0
 
-data class GIVolumeComponent(override val entity: Entity,
-                        val giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
+class GIVolumeComponent(override val entity: Entity,
+                        giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
 
     constructor(entity: Entity, giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids, extents: Vector3f): this(entity, giVolumeGrids) {
         spatial.minMax.min.set(extents).mul(-0.5f)
         spatial.minMax.max.set(extents).mul(0.5f)
     }
+    var giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids = giVolumeGrids
+
     val spatial = TransformSpatial(entity, AABB(Vector3f(-1f), Vector3f(1f)))
+
+    val resolution: TextureDimension3D
+        get() = giVolumeGrids.albedoGrid.dimension
 
     val minMax: AABB
         get() = spatial.minMax

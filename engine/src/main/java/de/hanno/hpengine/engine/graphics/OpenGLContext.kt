@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
@@ -452,6 +453,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
     fun getError(): Int = window.calculate { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
+    fun Texture.delete() = execute { GL11.glDeleteTextures(id) }
 
 }
 

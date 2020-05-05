@@ -484,6 +484,10 @@ class TextureManager(val config: Config,
         }
     }
 
+    fun Texture.delete() = gpuContext.run {
+        delete()
+    }
+
     companion object {
         private val LOGGER = Logger.getLogger(TextureManager::class.java.name)
         private val TEXTURE_FACTORY_THREAD_COUNT = 1

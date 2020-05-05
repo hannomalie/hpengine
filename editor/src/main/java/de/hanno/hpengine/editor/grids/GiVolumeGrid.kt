@@ -3,15 +3,12 @@ package de.hanno.hpengine.editor.grids
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.GIVolumeComponent
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
-import java.beans.PropertyChangeListener
-import java.text.NumberFormat
 import javax.swing.JButton
 import javax.swing.JFormattedTextField
 import javax.swing.JPanel
-import javax.swing.JSlider
-import kotlin.reflect.KMutableProperty0
 
 class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<OpenGl>) : JPanel() {
     init {
@@ -28,6 +25,20 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<
         })
         labeled("Min", giVolumeComponent.minMax.min.toInput())
         labeled("Max", giVolumeComponent.minMax.max.toInput())
+        labeled("Resolution", JFormattedTextField(giVolumeComponent.giVolumeGrids.albedoGrid.dimension.width).apply {
+            this@apply.addPropertyChangeListener {
+                if(it.propertyName == "value" && it.newValue != it.oldValue) {
+                    val oldVolumeGrids = giVolumeComponent.giVolumeGrids
+                    giVolumeComponent.giVolumeGrids = engine.textureManager.createGIVolumeGrids(this.value as Int)
+                    engine.textureManager.run {
+                        oldVolumeGrids.albedoGrid.delete()
+                        oldVolumeGrids.normalGrid.delete()
+                        oldVolumeGrids.indexGrid.delete()
+                    }
+                    engine.config.debug.isForceRevoxelization = true
+                }
+            }
+        })
     }
 
 }
