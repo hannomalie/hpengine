@@ -23,7 +23,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -35,7 +34,6 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_COLOR_CLEAR_VALUE
 import org.lwjgl.opengl.GL11.GL_CULL_FACE_MODE
 import org.lwjgl.opengl.GL11.GL_DEPTH_FUNC
-import org.lwjgl.opengl.GL11.GL_VERSION
 import org.lwjgl.opengl.GL11.glDepthFunc
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14
@@ -51,7 +49,6 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
 import java.util.concurrent.Callable
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
@@ -111,10 +108,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         currentReadState.gpuCommandSync = createCommandSync()
     }
 
-    private fun createCommandSync(): OpenGlCommandSync {
-        val openGlCommandSync = OpenGlCommandSync()
-        commandSyncs.add(openGlCommandSync)
-        return openGlCommandSync
+    private fun createCommandSync(): OpenGlCommandSync = OpenGlCommandSync().apply {
+        commandSyncs.add(this)
     }
 
     internal fun privateInit() {
@@ -454,6 +449,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     fun getError(): Int = window.calculate { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
     fun Texture.delete() = execute { GL11.glDeleteTextures(id) }
+    fun finish() = GL11.glFinish()
 
 }
 
