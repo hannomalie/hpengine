@@ -30,6 +30,8 @@ class SelectionListener(internal var tree: JTree,
     override fun valueChanged(e: TreeSelectionEvent) {
         val treeNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return
 
+        if(e.oldLeadSelectionPath ==e.newLeadSelectionPath) return
+
         val paths = tree.selectionPaths
         val currentPath = e.path
 

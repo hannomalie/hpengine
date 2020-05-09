@@ -90,13 +90,9 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         return model.getMinMax(transform, mesh)
     }
 
-    override fun toString(): String {
-        return "ModelComponent (" + model.toString() + ")"
-    }
+    override fun toString(): String = "ModelComponent [" + model.toString() + "]"
 
-    fun getBytesPerObject(): Int {
-        return bytesPerInstance * meshes.size * entity.instanceCount
-    }
+    fun getBytesPerObject(): Int = bytesPerInstance * meshes.size * entity.instanceCount
 
     companion object {
         val COMPONENT_KEY = ModelComponent::class.java.simpleName

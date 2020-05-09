@@ -63,6 +63,8 @@ class GIVolumeComponent(override val entity: Entity,
         return Util.createOrthogonal(-gridSizeHalf, gridSizeHalf, gridSizeHalf, -gridSizeHalf, gridSizeHalf, -gridSizeHalf)
     }
 
+    override fun toString(): String = "GIVolumeComponent $resolution"
+
 }
 
 class GIVolumeSystem(val engine: EngineContext<OpenGl>,

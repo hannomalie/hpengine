@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 import org.joml.Vector4f
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -23,6 +24,7 @@ import javax.swing.JTree
 import javax.swing.SwingUtilities
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
 
 open class SceneTree(val engine: Engine<*>,
                 val editorComponents: EditorComponents,
@@ -34,6 +36,20 @@ open class SceneTree(val engine: Engine<*>,
     init {
         addSceneObjects()
         engine.eventBus.register(this)
+    }
+
+    private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
+        if(userObject == query) return this
+
+        return children().toList().filterIsInstance<DefaultMutableTreeNode>().firstNotNullResult { it.findChild(query) }
+    }
+    fun getSelectionPath(query: Any): TreePath? = rootNode.findChild(query)?.path?.let { TreePath(it) }
+
+    fun select(any: Any) = SwingUtils.invokeLater {
+        getSelectionPath(any).let {
+            this@SceneTree.selectionPath = it
+            this@SceneTree.scrollPathToVisible(it)
+        }
     }
 
     fun reload() {
