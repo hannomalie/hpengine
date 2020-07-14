@@ -7,11 +7,10 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import java.util.ArrayList
 import java.util.Random
@@ -32,7 +31,7 @@ class InitCubeClustersKotlin @Inject constructor(engine: Engine<*>) : Updatable 
             println("loaded entities : " + loaded.entities.size)
             for (current in loaded.entities) {
                 val componentScriptFile = engine.directories.gameDir.resolve("/scripts/SimpleMoveComponent.java")
-                current.addComponent(JavaComponent(engine, CodeSource(componentScriptFile), engine.directories.gameDir))
+                current.addComponent(JavaComponent(engine, FileBasedCodeSource(componentScriptFile), engine.directories.gameDir))
                 val clusters: MutableList<Cluster> = ArrayList()
                 for (clusterIndex in 0..4) {
                     val cluster = Cluster()

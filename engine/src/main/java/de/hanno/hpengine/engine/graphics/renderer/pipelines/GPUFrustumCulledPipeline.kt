@@ -28,7 +28,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
@@ -44,8 +44,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling1_vertex.glsl")))
-    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling2_vertex.glsl")))
+    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "occlusion_culling1_vertex.glsl")))
+    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "occlusion_culling2_vertex.glsl")))
 
     val appendDrawcommandsProgram = engine.programManager.getProgramFromFileNames("append_drawcommands_vertex.glsl")
     val appendDrawCommandComputeProgram = engine.programManager.getComputeProgram("append_drawcommands_compute.glsl")

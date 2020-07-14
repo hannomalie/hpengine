@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
-import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
 import de.hanno.hpengine.util.ressources.Reloadable
@@ -30,15 +30,15 @@ import java.util.HashMap
 import java.util.StringJoiner
 import java.util.logging.Logger
 
-class Program(private val programManager: OpenGlProgramManager, val vertexShaderSource: CodeSource?, val geometryShaderSource: CodeSource?, val fragmentShaderSource: CodeSource?,
-                                    defines: Defines) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
+class Program(private val programManager: OpenGlProgramManager, val vertexShaderSource: FileBasedCodeSource, val geometryShaderSource: FileBasedCodeSource?, val fragmentShaderSource: FileBasedCodeSource?,
+              defines: Defines) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
     private val gpuContext: GpuContext<OpenGl>
 
     private val needsTextures = true
 
     private val localDefines = HashMap<String, Any>()
 
-    private var vertexShader: VertexShader? = null
+    private lateinit var vertexShader: VertexShader
     private var geometryShader: GeometryShader? = null
     private var fragmentShader: FragmentShader? = null
 
@@ -65,33 +65,25 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         gpuContext.execute {
             clearUniforms()
 
-            vertexShader = programManager.loadShader(VertexShader::class.java, vertexShaderSource!!, defines)
+            vertexShader = VertexShader.load(programManager, vertexShaderSource, defines)
 
             try {
-                if (fragmentShaderSource != null) {
-                    fragmentShader = programManager.loadShader(FragmentShader::class.java, fragmentShaderSource, defines)
-                }
+                fragmentShader = fragmentShaderSource?.let { FragmentShader.load(programManager, it, defines) }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
-            if (geometryShaderSource != null) {
-                try {
-                    geometryShader = programManager.loadShader(GeometryShader::class.java, geometryShaderSource, defines)
-                    gpuContext.backend.gpuContext.exceptionOnError()
-                } catch (e: Exception) {
-                    LOGGER.severe("Not able to load geometry shader, so what else could be done...")
-                }
-
+            try {
+                geometryShader = geometryShaderSource?.let { GeometryShader.load(programManager, it, defines) }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
 
-            gpuContext.backend.gpuContext.exceptionOnError()
-            attachShader(vertexShader!!)
-            if (fragmentShader != null) attachShader(fragmentShader!!)
-            if (geometryShader != null) attachShader(geometryShader!!)
-            bindShaderAttributeChannels()
-            gpuContext.backend.gpuContext.exceptionOnError()
+            attachShader(vertexShader)
+            fragmentShader?.let { attachShader(it) }
+            geometryShader?.let { attachShader(it) }
 
+            bindShaderAttributeChannels()
             linkProgram()
             validateProgram()
 
@@ -169,10 +161,9 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         e.printStackTrace()
     }
 
-    override fun getName(): String {
-        return StringJoiner(", ").add(if (fragmentShaderSource != null) fragmentShaderSource.filename else "").add(vertexShaderSource!!.filename)
-                .toString()
-    }
+    override val name: String = StringJoiner(", ")
+            .add(if (fragmentShaderSource != null) fragmentShaderSource.filename else "")
+            .add(vertexShaderSource!!.filename).toString()
 
     override fun equals(other: Any?): Boolean {
         if (other !is Program || other == null) {
@@ -181,12 +172,10 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
 
         val otherProgram = other as Program?
 
-        return if ((this.geometryShaderSource == null && otherProgram!!.geometryShaderSource == null || this.geometryShaderSource == otherProgram!!.geometryShaderSource) &&
+        return (this.geometryShaderSource == null && otherProgram!!.geometryShaderSource == null || this.geometryShaderSource == otherProgram!!.geometryShaderSource) &&
                 this.vertexShaderSource == otherProgram.vertexShaderSource &&
                 this.fragmentShaderSource == otherProgram.fragmentShaderSource &&
-                this.defines.isEmpty()) {
-            true
-        } else false
+                this.defines.isEmpty()
     }
 
     override fun hashCode(): Int {
@@ -199,12 +188,11 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
     }
 
     private fun bindShaderAttributeChannels() {
-        //		LOGGER.de.hanno.hpengine.log(Level.INFO, "Binding de.hanno.hpengine.shader input channels:");
         val channels = EnumSet.allOf(DataChannels::class.java)
         for (channel in channels) {
             glBindAttribLocation(id, channel.location, channel.binding)
-            //			LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("Program(%d): Bound GL attribute location for %s with %s", id, channel.getLocation(), channel.getBinding()));
         }
+        gpuContext.backend.gpuContext.exceptionOnError()
     }
 
     fun delete() {
@@ -250,7 +238,7 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
 
 }
 
-private fun AbstractProgram.removeOldAndAddNewListeners(sources: List<CodeSource>, reloadable: Reloadable) {
+private fun AbstractProgram.removeOldAndAddNewListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
     fileListeners.apply {
         FileMonitor.monitor.observers.forEach { observer ->
             fileListeners.forEach { listener ->
@@ -263,16 +251,16 @@ private fun AbstractProgram.removeOldAndAddNewListeners(sources: List<CodeSource
 }
 
 fun Program.create() {
-    val sources: List<CodeSource> = listOfNotNull(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
+    val sources: List<FileBasedCodeSource> = listOfNotNull(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
     removeOldAndAddNewListeners(sources, this)
 }
 
 fun ComputeShaderProgram.create() {
-    val sources: List<CodeSource> = listOfNotNull(computeShaderSource)
+    val sources: List<FileBasedCodeSource> = listOfNotNull(computeShaderSource)
     removeOldAndAddNewListeners(sources, this)
 }
 
-fun List<CodeSource>.create(reloadable: Reloadable): List<OnFileChangeListener> {
+fun List<FileBasedCodeSource>.create(reloadable: Reloadable): List<OnFileChangeListener> {
     return map { codeSource ->
         FileMonitor.addOnFileChangeListener(
                 codeSource.file,

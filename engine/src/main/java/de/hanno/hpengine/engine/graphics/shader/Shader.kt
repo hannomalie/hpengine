@@ -18,9 +18,9 @@ interface Shader : Reloadable {
     var shaderSource: CodeSource
     var id: Int
 
-    val shaderType: OpenGLShader
+    val shaderType: ShaderType
 
-    enum class OpenGLShader constructor(val glShaderType: Int) {
+    enum class ShaderType constructor(val glShaderType: Int) {
         VertexShader(GL20.GL_VERTEX_SHADER),
         FragmentShader(GL20.GL_FRAGMENT_SHADER),
         GeometryShader(GL32.GL_GEOMETRY_SHADER),
@@ -35,6 +35,11 @@ interface Shader : Reloadable {
         }
 
     }
+
+    override fun load() = shaderSource.load()
+    override fun unload() = shaderSource.unload()
+    override val name: String
+        get() = shaderSource.name
 
     companion object {
 
@@ -76,16 +81,4 @@ interface Shader : Reloadable {
 
         const val directory: String = Directories.WORKDIR_NAME + "/assets/shaders/"
     }
-}
-
-fun getShaderSource(file: File): CodeSource = if (file.exists()) {
-        CodeSource(file)
-    } else {
-        throw IllegalStateException("File ${file.absolutePath} doesn't exist")
-    }
-
-fun getShaderSource(shaderSource: String): CodeSource? {
-    return if ("" == shaderSource) {
-        null
-    } else CodeSource(shaderSource)
 }

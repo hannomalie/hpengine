@@ -23,7 +23,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
@@ -32,6 +31,7 @@ import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.SimpleScene
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
@@ -70,7 +70,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
         "AreaLight Shadow"
     ))
 
-    private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
+    private val areaShadowPassProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "shadowmap_fragment.glsl")))
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         engine.gpuContext.execute() {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {

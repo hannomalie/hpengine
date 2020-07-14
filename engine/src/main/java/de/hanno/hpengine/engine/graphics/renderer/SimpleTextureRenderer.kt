@@ -8,11 +8,9 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -21,6 +19,7 @@ import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.createView
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
 import java.io.File
 
@@ -29,11 +28,11 @@ open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
                                  programManager: ProgramManager<OpenGl> = engineContext.programManager) : RenderSystem {
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
 
-    private val renderToQuadProgram: Program = programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "simpletexture_fragment.glsl")))
+    private val renderToQuadProgram: Program = programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "passthrough_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "simpletexture_fragment.glsl")))
 
     private val debugFrameProgram = programManager.getProgram(
-            getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")),
-            getShaderSource(File(Shader.directory + "debugframe_fragment.glsl")))
+            FileBasedCodeSource(File(Shader.directory + "passthrough_vertex.glsl")),
+            FileBasedCodeSource(File(Shader.directory + "debugframe_fragment.glsl")))
 
     open var finalImage = texture.id
 

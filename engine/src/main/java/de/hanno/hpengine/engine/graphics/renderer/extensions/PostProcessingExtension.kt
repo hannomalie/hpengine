@@ -7,15 +7,15 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.draw
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import java.io.File
 
 class PostProcessingExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
-    private val postProcessProgram = engineContext.programManager.getProgram(getShaderSource(File(Shader.directory + "passthrough_vertex.glsl")), getShaderSource(File(Shader.directory + "postprocess_fragment.glsl")))
+    private val postProcessProgram = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "passthrough_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "postprocess_fragment.glsl")))
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         engineContext.window.frontBuffer.use(gpuContext, true)

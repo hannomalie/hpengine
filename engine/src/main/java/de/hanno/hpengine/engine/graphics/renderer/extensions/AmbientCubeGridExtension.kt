@@ -23,7 +23,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -32,6 +31,7 @@ import de.hanno.hpengine.engine.model.texture.mipmapCount
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -156,9 +156,9 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(
-            getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
-            getShaderSource(File(Shader.directory + "environmentprobe_cube_fragment.glsl")),
-            getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
+            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
+            FileBasedCodeSource(File(Shader.directory + "environmentprobe_cube_fragment.glsl")),
+            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
 
     val cubeMapRenderTarget = RenderTarget(
             gpuContext = engine.gpuContext,

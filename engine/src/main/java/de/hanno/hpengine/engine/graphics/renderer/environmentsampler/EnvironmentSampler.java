@@ -22,7 +22,6 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
-import de.hanno.hpengine.engine.graphics.shader.ShaderKt;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.Texture2D;
@@ -37,6 +36,7 @@ import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer;
 import de.hanno.hpengine.engine.vertexbuffer.VertexBufferExtensionsKt;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource;
 import org.jetbrains.annotations.NotNull;
 import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
@@ -70,7 +70,6 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarg
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawUtilsKt.draw;
 import static de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetKt.toTextures;
-import static de.hanno.hpengine.engine.graphics.shader.ShaderKt.getShaderSource;
 import static de.hanno.hpengine.engine.scene.EnvironmentProbeManager.RESOLUTION;
 import static de.hanno.hpengine.engine.transform.AABBKt.containsOrIntersectsSphere;
 
@@ -145,11 +144,11 @@ public class EnvironmentSampler extends Entity {
 		tiledProbeLightingProgram = programManager.getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
 		cubemapRadianceProgram = programManager.getComputeProgram("cubemap_radiance_compute.glsl");
 		cubemapRadianceFragmentProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "cubemap_radiance_fragment.glsl");
-		secondPassPointProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), ShaderKt.getShaderSource(new File(Shader.directory + "second_pass_point_fragment.glsl")));
-		secondPassTubeProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_tube_fragment.glsl")));
-		secondPassAreaProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.directory + "second_pass_area_fragment.glsl")));
-		secondPassDirectionalProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "second_pass_directional_vertex.glsl")), ShaderKt.getShaderSource(new File(Shader.directory + "second_pass_directional_fragment.glsl")));
-		firstPassDefaultProgram = programManager.getProgram(getShaderSource(new File(Shader.directory + "first_pass_vertex.glsl")), getShaderSource(new File(Shader.directory + "first_pass_fragment.glsl")));
+		secondPassPointProgram = programManager.getProgram(new FileBasedCodeSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), new FileBasedCodeSource(new File(Shader.directory + "second_pass_point_fragment.glsl")));
+		secondPassTubeProgram = programManager.getProgram(new FileBasedCodeSource(new File(Shader.directory + "second_pass_point_vertex.glsl")), new FileBasedCodeSource(new File(Shader.directory + "second_pass_tube_fragment.glsl")));
+		secondPassAreaProgram = programManager.getProgram(new FileBasedCodeSource(new File(Shader.directory + "second_pass_area_vertex.glsl")), new FileBasedCodeSource(new File(Shader.directory + "second_pass_area_fragment.glsl")));
+		secondPassDirectionalProgram = programManager.getProgram(new FileBasedCodeSource(new File(Shader.directory + "second_pass_directional_vertex.glsl")), new FileBasedCodeSource(new File(Shader.directory + "second_pass_directional_fragment.glsl")));
+		firstPassDefaultProgram = programManager.getProgram(new FileBasedCodeSource(new File(Shader.directory + "first_pass_vertex.glsl")), new FileBasedCodeSource(new File(Shader.directory + "first_pass_fragment.glsl")));
 
         CubeMapArrayRenderTarget cubeMapArrayRenderTarget = environmentProbeManager.getCubeMapArrayRenderTarget();
 		cubeMapView = GL11.glGenTextures();

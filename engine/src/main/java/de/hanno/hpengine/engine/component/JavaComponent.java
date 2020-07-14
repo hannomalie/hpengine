@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
-import de.hanno.hpengine.util.ressources.CodeSource;
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource;
 import de.hanno.hpengine.util.ressources.Reloadable;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +24,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     private Engine<?> engine;
-    private final CodeSource javaCodeSource;
+    private final FileBasedCodeSource javaCodeSource;
     private final GameDirectory gameDirectory;
 
     private Map map = new HashMap<>();
@@ -33,7 +33,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private boolean isEngineConsumer;
     private Object instance;
 
-    public JavaComponent(Engine<?> engine, CodeSource codeSource, GameDirectory gameDirectory) {
+    public JavaComponent(Engine<?> engine, FileBasedCodeSource codeSource, GameDirectory gameDirectory) {
         super(new Entity());
         this.engine = engine;
         this.javaCodeSource = codeSource;
@@ -110,7 +110,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @NotNull
     @Override
-    public CodeSource getCodeSource() {
+    public FileBasedCodeSource getCodeSource() {
         return javaCodeSource;
     }
 }

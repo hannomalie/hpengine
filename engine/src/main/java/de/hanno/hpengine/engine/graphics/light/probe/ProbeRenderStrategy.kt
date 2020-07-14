@@ -27,12 +27,12 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -71,7 +71,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
             name = "Probes"
     )
 
-    private var probeProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), getShaderSource(File(Shader.directory + "probe_cube_fragment.glsl")), getShaderSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
+    private var probeProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cube_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
     private val visibilityValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()

@@ -13,9 +13,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL40.*
@@ -24,8 +24,8 @@ import java.io.File
 class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
-    val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "first_pass_vertex.glsl"))
-    val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.directory + "forward_fragment.glsl"))
+    val firstpassDefaultVertexshaderSource = FileBasedCodeSource(File(Shader.directory + "first_pass_vertex.glsl"))
+    val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(File(Shader.directory + "forward_fragment.glsl"))
 
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource)
 

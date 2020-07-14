@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.Reloadable
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
@@ -14,7 +14,7 @@ import java.util.logging.Logger
 
 class ComputeShaderProgram @JvmOverloads constructor(
         private val programManager: OpenGlProgramManager,
-        val computeShaderSource: CodeSource, defines: Defines = Defines()) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
+        val computeShaderSource: FileBasedCodeSource, defines: Defines = Defines()) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
     private var computeShader: ComputeShader? = null
 
     init {
@@ -94,10 +94,7 @@ class ComputeShaderProgram @JvmOverloads constructor(
         }
     }
 
-    override fun getName(): String {
-        return StringJoiner(", ").add(computeShaderSource!!.filename)
-                .toString()
-    }
+    override val name: String = StringJoiner(", ").add(computeShaderSource.filename).toString()
 
     override fun equals(other: Any?): Boolean {
         if (other !is ComputeShaderProgram) {
@@ -109,7 +106,7 @@ class ComputeShaderProgram @JvmOverloads constructor(
 
     override fun hashCode(): Int {
         var hash = 0
-        hash += computeShaderSource?.hashCode() ?: 0
+        hash += computeShaderSource.hashCode()
         hash += defines.hashCode()
         return hash
     }

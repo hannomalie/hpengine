@@ -5,13 +5,14 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import kotlinx.coroutines.CoroutineScope
 import java.util.HashMap
 
 class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(Entity()), ScriptComponent {
     init {
-        require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
+        require(codeSource is FileBasedCodeSource) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
         initWrappingComponent()
     }
 
@@ -22,9 +23,6 @@ class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource
     private var isEngineConsumer: Boolean = false
     var instance: Any? = null
         private set
-
-    val sourceCode: String
-        get() = codeSource.source
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         if (isLifeCycle) {
@@ -39,9 +37,7 @@ class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource
         load()
     }
 
-    override fun getName(): String {
-        return this.toString()
-    }
+    override val name: String = toString()
 
     override fun get(key: Any): Any {
         return map[key] ?: throw IllegalArgumentException("No entry for key $key")
@@ -53,6 +49,7 @@ class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource
 
     private fun initWrappingComponent() {
         try {
+            codeSource as FileBasedCodeSource
             objectLoader.engine.eval(codeSource.source)
             instance = objectLoader.engine.eval("${codeSource.filename}()")
             compiledClass = instance!!::class.java

@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.shader.Shader.Companion.directory
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import java.io.File
@@ -21,24 +21,24 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     }
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
-        val vertexShaderSource = getShaderSource(File(directory + vertexShaderFilename))
-        val fragmentShaderSource = fragmentShaderFileName?.run { getShaderSource(File(directory + this)) }
+        val vertexShaderSource = FileBasedCodeSource(File(directory + vertexShaderFilename))
+        val fragmentShaderSource = fragmentShaderFileName?.run { FileBasedCodeSource(File(directory + this)) }
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, defines = defines)
     }
 
     override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeShaderProgram {
         return gpuContext.calculate {
-            val program = ComputeShaderProgram(this, getShaderSource(File(directory + computeShaderLocation)), defines)
+            val program = ComputeShaderProgram(this, FileBasedCodeSource(File(directory + computeShaderLocation)), defines)
             LOADED_PROGRAMS.add(program)
             eventBus.register(program)
             program
         }
     }
 
-    override fun getProgram(vertexShaderSource: CodeSource,
-                            fragmentShaderSource: CodeSource?,
-                            geometryShaderSource: CodeSource?,
+    override fun getProgram(vertexShaderSource: FileBasedCodeSource,
+                            fragmentShaderSource: FileBasedCodeSource?,
+                            geometryShaderSource: FileBasedCodeSource?,
                             defines: Defines): Program {
 
         return gpuContext.calculate {
@@ -49,7 +49,8 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         }
     }
 
-    override fun <SHADERTYPE : Shader> loadShader(type: Class<SHADERTYPE>, shaderSource: CodeSource, defines: Defines): SHADERTYPE {
+
+    override fun loadShader(shaderType: Shader.ShaderType, shaderSource: FileBasedCodeSource, defines: Defines): Int {
 
         var resultingShaderSource = (gpuContext.getOpenGlVersionsDefine()
                 + gpuContext.getOpenGlExtensionsDefine()
@@ -69,24 +70,17 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
             e.printStackTrace()
         }
 
-        val shader: SHADERTYPE = type.newInstance().apply {
-                this.shaderSource = shaderSource
-            }
-
         val shaderId: Int = gpuContext.calculate {
-            GL20.glCreateShader(shader.shaderType.glShaderType).also { shaderId ->
+            GL20.glCreateShader(shaderType.glShaderType).also { shaderId ->
                 GL20.glShaderSource(shaderId, resultingShaderSource)
                 GL20.glCompileShader(shaderId)
             }
         }
-        shader.id = shaderId
-
-        shaderSource.resultingShaderSource = resultingShaderSource
 
         val shaderLoadFailed = gpuContext.calculate {
             val shaderStatus = GL20.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS)
             if (shaderStatus == GL11.GL_FALSE) {
-                System.err.println("Could not compile " + type.simpleName + ": " + shaderSource.filename)
+                System.err.println("Could not compile " + shaderType + ": " + shaderSource.filename)
                 var shaderInfoLog = GL20.glGetShaderInfoLog(shaderId, 10000)
                 shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, newlineCount)
                 System.err.println(shaderInfoLog)
@@ -99,9 +93,9 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         }
 
         Shader.LOGGER.finer(resultingShaderSource)
-        gpuContext.getExceptionOnError { "loadShader: " + type.simpleName + ": " + shaderSource.filename }
+        gpuContext.exceptionOnError("loadShader: " + shaderType + ": " + shaderSource.filename)
 
-        return shader
+        return shaderId
     }
 
     companion object {

@@ -27,7 +27,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -35,6 +34,7 @@ import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.transform.SimpleTransform
 import de.hanno.hpengine.engine.vertexbuffer.draw
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
@@ -89,7 +89,7 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer: Program = this.engine.programManager.getProgram(getShaderSource(File(Shader.directory + "voxelize_vertex.glsl")), getShaderSource(File(Shader.directory + "voxelize_fragment.glsl")), getShaderSource(File(Shader.directory + "voxelize_geometry.glsl")))
+    private val voxelizer: Program = this.engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "voxelize_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "voxelize_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "voxelize_geometry.glsl")))
     private val voxelConeTraceProgram: Program = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
     private val texture3DMipMapAlphaBlendComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
     private val texture3DMipMapComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
