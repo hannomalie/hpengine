@@ -114,8 +114,8 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
 
                     viewMatrices[floatBufferIndex]!!.rewind()
                     projectionMatrices[floatBufferIndex]!!.rewind()
-                    pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex])
-                    pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex])
+                    pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex]!!)
+                    pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex]!!)
                 }
 
                 profiled("PointLight shadowmap entity rendering") {

@@ -126,8 +126,8 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
 
                     viewMatrices[floatBufferIndex]!!.rewind()
                     projectionMatrices[floatBufferIndex]!!.rewind()
-                    probeProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex])
-                    probeProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex])
+                    probeProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex]!!)
+                    probeProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex]!!)
                     probeProgram.bindShaderStorageBuffer(5, renderState.directionalLightState)
                 }
 

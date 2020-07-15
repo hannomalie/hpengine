@@ -30,11 +30,14 @@ import java.util.HashMap
 import java.util.StringJoiner
 import java.util.logging.Logger
 
-class Program(private val programManager: OpenGlProgramManager, val vertexShaderSource: FileBasedCodeSource, val geometryShaderSource: FileBasedCodeSource?, val fragmentShaderSource: FileBasedCodeSource?,
-              defines: Defines) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
+class Program(
+        private val programManager: OpenGlProgramManager,
+        val vertexShaderSource: FileBasedCodeSource,
+        val geometryShaderSource: FileBasedCodeSource?,
+        val fragmentShaderSource: FileBasedCodeSource?,
+        defines: Defines
+) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
     private val gpuContext: GpuContext<OpenGl>
-
-    private val needsTextures = true
 
     private val localDefines = HashMap<String, Any>()
 
@@ -47,7 +50,7 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
             val builder = StringBuilder()
 
             for (shaderDefine in localDefines.entries) {
-                builder.append(getDefineTextForObject(shaderDefine))
+                builder.append(shaderDefine.defineText)
                 builder.append("\n")
             }
             return builder.toString()
@@ -57,7 +60,6 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         this.gpuContext = programManager.gpuContext
         this.defines = defines
 
-        create()
         load()
     }
 
@@ -112,13 +114,13 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
     }
 
     private fun attachShader(shader: Shader) {
-        glAttachShader(getId(), shader.id)
+        glAttachShader(id, shader.id)
         gpuContext.backend.gpuContext.exceptionOnError(shader.name)
 
     }
 
     private fun detachShader(shader: Shader) {
-        glDetachShader(getId(), shader.id)
+        glDetachShader(id, shader.id)
     }
 
     private fun printError(text: String): Boolean {
@@ -200,10 +202,6 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
         glDeleteProgram(id)
     }
 
-    override fun getId(): Int {
-        return id
-    }
-
     fun addDefine(name: String, define: Any) {
         localDefines[name] = define
     }
@@ -214,58 +212,55 @@ class Program(private val programManager: OpenGlProgramManager, val vertexShader
 
     @Subscribe
     @Handler
-    override fun handle(e: GlobalDefineChangedEvent) {
+    fun handle(e: GlobalDefineChangedEvent) {
         reload()
     }
 
     companion object {
         private val LOGGER = getLogger()
 
-        fun getDefineTextForObject(define: Map.Entry<String, Any>): String {
-            if (define.value is Boolean) {
-                return "const bool " + define.key + " = " + define.value.toString() + ";\n"
-            } else if (define.value is Int) {
-                return "const int " + define.key + " = " + define.value.toString() + ";\n"
-            } else if (define.value is Float) {
-                return "const float " + define.key + " = " + define.value.toString() + ";\n"
-            } else {
-                Logger.getGlobal().info("Local define not supported type for " + define.key + " - " + define.value)
-                return ""
+        val Map.Entry<String, Any>.defineText: String
+            get() = when (value) {
+                is Boolean -> "const bool $key = $value;\n"
+                is Int -> "const int $key = $value;\n"
+                is Float -> "const float $key = $value;\n"
+                else -> throw java.lang.IllegalStateException("Local define not supported type for $key - $value")
             }
-        }
 
     }
 
 }
 
-private fun AbstractProgram.removeOldAndAddNewListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
-    fileListeners.apply {
-        FileMonitor.monitor.observers.forEach { observer ->
-            fileListeners.forEach { listener ->
-                observer.removeListener(listener)
-            }
+private fun AbstractProgram.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
+    removeOldListeners()
+    fileListeners.addAll(sources.toFileChangeListeners(reloadable))
+}
+
+private fun AbstractProgram.removeOldListeners() {
+    FileMonitor.monitor.observers.forEach { observer ->
+        fileListeners.forEach { listener ->
+            observer.removeListener(listener)
         }
-        clear()
-        addAll(sources.create(reloadable))
     }
+    fileListeners.clear()
 }
 
 fun Program.create() {
     val sources: List<FileBasedCodeSource> = listOfNotNull(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
-    removeOldAndAddNewListeners(sources, this)
+    replaceOldListeners(sources, this)
 }
 
 fun ComputeShaderProgram.create() {
     val sources: List<FileBasedCodeSource> = listOfNotNull(computeShaderSource)
-    removeOldAndAddNewListeners(sources, this)
+    replaceOldListeners(sources, this)
 }
 
-fun List<FileBasedCodeSource>.create(reloadable: Reloadable): List<OnFileChangeListener> {
+fun List<FileBasedCodeSource>.toFileChangeListeners(reloadable: Reloadable): List<OnFileChangeListener> {
     return map { codeSource ->
         FileMonitor.addOnFileChangeListener(
                 codeSource.file,
                 { file -> file.name.startsWith("globals") },
-                { file -> reloadable.reload() }
+                { reloadable.reload() }
         )
     }
 }

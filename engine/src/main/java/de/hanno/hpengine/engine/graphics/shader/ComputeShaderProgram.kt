@@ -37,7 +37,7 @@ class ComputeShaderProgram @JvmOverloads constructor(
         GL20.glValidateProgram(id)
         printIfError("Validate program " + computeShaderSource.name)
 
-        if (GL20.glGetProgrami(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
+        if (GL20.glGetProgrami(id, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
             System.err.println("Could not link shader: " + computeShaderSource.filename)
             System.err.println(GL20.glGetProgramInfoLog(id, 10000))
         }
@@ -57,11 +57,11 @@ class ComputeShaderProgram @JvmOverloads constructor(
     }
 
     private fun attachShader(shader: Shader) {
-        GL20.glAttachShader(getId(), shader.id)
+        GL20.glAttachShader(id, shader.id)
     }
 
     private fun detachShader(shader: Shader) {
-        GL20.glDetachShader(getId(), shader.id)
+        GL20.glDetachShader(id, shader.id)
     }
 
     fun dispatchCompute(num_groups_x: Int, num_groups_y: Int, num_groups_z: Int) {
