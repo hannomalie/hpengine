@@ -14,7 +14,8 @@ abstract class AbstractSpatial : Serializable, Spatial {
 
     override var boundingSphereRadius = -1f
         protected set
-    @Transient private var lastUsedTransformationMatrix: Matrix4f? = null
+
+    private var lastUsedTransformationMatrix: Matrix4f? = null
 
     override fun getCenterWorld(transform: Transform<*>): Vector3f {
         recalculateIfNotClean(transform)
@@ -73,21 +74,15 @@ abstract class AbstractSpatial : Serializable, Spatial {
 
 open class SimpleSpatial(override val minMax: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : AbstractSpatial()
 
-open class TransformSpatial(val transform: Transform<*>, override val minMax: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : SimpleSpatial() {
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        super.recalculateIfNotClean(transform)
-    }
+class TransformSpatial(val transform: Transform<*>, override val minMax: AABB = AABB(Vector3f(-5f, -5f, -5f),Vector3f(5f, 5f, 5f))) : SimpleSpatial() {
+    override fun CoroutineScope.update(deltaSeconds: Float) = recalculateIfNotClean(transform)
 }
 open class StaticTransformSpatial(val transform: Transform<*>, val modelComponent: ModelComponent) : SimpleSpatial() {
     override val minMax
         get() = modelComponent.minMax
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        super.recalculateIfNotClean(transform)
-    }
+    override fun CoroutineScope.update(deltaSeconds: Float) = recalculateIfNotClean(transform)
 }
 open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent) {
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        recalculate(transform)
-    }
+    override fun CoroutineScope.update(deltaSeconds: Float) = recalculate(transform)
 }

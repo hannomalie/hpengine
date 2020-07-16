@@ -42,11 +42,6 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
         max.set(Spatial.MAX)
     }
 
-    private fun clear() {
-        min.set(0f,0f,0f)
-        max.set(0f,0f,0f)
-    }
-
     fun contains(position: Vector3f): Boolean = contains(Vector4f(position.x, position.y, position.z, 1.0f))
     fun contains(position: Vector4f): Boolean {
         return min.x < position.x && max.x > position.x &&

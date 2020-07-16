@@ -47,7 +47,7 @@ class ExtensionState<R, T>(val defaultValue: T): ReadWriteProperty<R, T> {
 fun <R, T> extensionState(defaultValue: T): ExtensionState<R, T> = ExtensionState(defaultValue)
 
 
-class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentTimeMillis().toString(),
+class Entity @JvmOverloads constructor(var name: String = "Entity" + System.currentTimeMillis().toString(),
                                             position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
     var movedInCycle = 0L
 
@@ -64,11 +64,10 @@ class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentT
     var index = -1
 
     var updateType = Update.DYNAMIC
-        get() {
-            return if (hasComponent(PhysicsComponent::class.java) && getComponent(PhysicsComponent::class.java)!!.isDynamic || hasComponent(ModelComponent::class.java) && !getComponent(ModelComponent::class.java)!!.model.isStatic) {
-                Update.DYNAMIC
-            } else field
-        }
+        get() = if (hasComponent(PhysicsComponent::class.java) && getComponent(PhysicsComponent::class.java)!!.isDynamic || hasComponent(ModelComponent::class.java) && !getComponent(ModelComponent::class.java)!!.model.isStatic) {
+            Update.DYNAMIC
+        } else field
+
         set(value) {
             field = value
             if (hasChildren()) {
@@ -77,8 +76,6 @@ class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentT
                 }
             }
         }
-
-    open var name = "Entity_" + System.currentTimeMillis()
 
     var isVisible = true
 
@@ -115,7 +112,6 @@ class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentT
         }
 
     init {
-        this.name = name
         setTranslation(position)
     }
 
