@@ -13,15 +13,15 @@ class AddResourceContext {
     private val updateLock: UpdateLock = PrivateUpdateLock(this)
     private val lock = ReentrantLock()
 
-    fun launch(block: UpdateLock.() -> Unit) {
+    fun launch(block: () -> Unit) {
         GlobalScope.launch {
             lock.withLock {
-                updateLock.block()
+                block()
             }
         }
     }
 
-    fun <T> locked(block: UpdateLock.() -> T): T = lock.withLock {
-        updateLock.block()
+    fun <T> locked(block: () -> T): T = lock.withLock {
+        block()
     }
 }

@@ -10,7 +10,7 @@ import de.hanno.hpengine.util.ressources.StringBasedCodeSource
 
 class ScriptComponentSystem : SimpleComponentSystem<ScriptComponent>(ScriptComponent::class.java) {
 
-    override fun UpdateLock.addComponent(component: ScriptComponent) = with(component) {
+    override fun addComponent(component: ScriptComponent) = with(component) {
         val codeSource = codeSource
         if (codeSource is FileBasedCodeSource) {
             FileMonitor.addOnFileChangeListener(codeSource.file) {

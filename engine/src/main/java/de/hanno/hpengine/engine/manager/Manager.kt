@@ -19,10 +19,10 @@ interface Manager {
     fun clear() {}
 
     @JvmDefault
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {}
+    fun onEntityAdded(entities: List<Entity>) {}
 
     @JvmDefault
-    fun UpdateLock.onComponentAdded(component: Component) {}
+    fun onComponentAdded(component: Component) {}
 
     @JvmDefault
     fun extract(renderState: RenderState) {}

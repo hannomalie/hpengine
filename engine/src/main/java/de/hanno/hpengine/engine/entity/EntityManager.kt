@@ -43,12 +43,12 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         return Entity(name, position)
     }
 
-    fun UpdateLock.add(entity: Entity) {
+    fun add(entity: Entity) {
         entityContainer.add(entity)
         entity.index = entityContainer.entities.indexOf(entity)
     }
 
-    fun UpdateLock.add(entities: List<Entity>) {
+    fun add(entities: List<Entity>) {
         for (entity in entities) {
             add(entity)
         }

@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 
 class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
 
-    var scene: Scene = SimpleScene("InitialScene", managerContext)
+    var scene: Scene = SceneImpl("InitialScene", managerContext)
 
     fun addAll(entities: List<Entity>) {
         managerContext.engineContext.addResourceContext.locked {
@@ -30,7 +30,7 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
     }
 
-    override fun UpdateLock.onComponentAdded(component: Component) {
+    override fun onComponentAdded(component: Component) {
         managerContext.managers.managers.values.filter { it !is SceneManager }.forEach {
             with(it) { onComponentAdded(component) }
         }

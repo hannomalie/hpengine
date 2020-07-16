@@ -243,7 +243,7 @@ class CameraComponentSystem(val engine: EngineContext<*>): ComponentSystem<Camer
     fun create(entity: Entity) = Camera(entity, engine.config.width.toFloat() / engine.config.height.toFloat())
     fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean) = Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { components.add(it); }
 
-    override fun UpdateLock.addComponent(component: Camera) {
+    override fun addComponent(component: Camera) {
         components.add(component)
     }
     override fun clear() = components.clear()

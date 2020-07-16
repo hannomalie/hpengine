@@ -161,7 +161,7 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
 
     }
 
-    override fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    override fun onEntityAdded(entities: List<Entity>) {
 
     }
 

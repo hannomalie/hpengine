@@ -140,7 +140,7 @@ class ClustersComponentSystem() : ComponentSystem<ClustersComponent> {
         }
     }
 
-    override fun UpdateLock.addComponent(component: ClustersComponent) {
+    override fun addComponent(component: ClustersComponent) {
         components.add(component)
         instances.addAll(component.getInstances())
         entityInstances[component.entity] = ArrayList(component.getInstances())

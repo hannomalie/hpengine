@@ -19,13 +19,13 @@ interface ManagerRegistry {
         managers.forEach { it.value.clear() }
     }
 
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(entities: List<Entity>) {
         managers.forEach {
             with(it.value) { onEntityAdded(entities) }
         }
     }
 
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         managers.forEach {
             with(it.value) { onComponentAdded(component) }
         }
@@ -59,7 +59,7 @@ interface SystemsRegistry {
         getSystems().forEach { it.clear() }
     }
 
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(entities: List<Entity>) {
         val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
         getSystems().forEach {
             matchedComponents += with(it) { onEntityAdded(entities) }
@@ -70,7 +70,7 @@ interface SystemsRegistry {
         }
     }
 
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         getSystems().forEach {
             with(it) { onComponentAdded(component) }
         }

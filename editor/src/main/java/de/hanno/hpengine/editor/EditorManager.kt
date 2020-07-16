@@ -20,11 +20,11 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
     private var ePressed by KeyUpDownProperty(editor, KeyEvent.VK_E, withShift = true)
     private var shiftPressed by KeyUpDownProperty(editor, KeyEvent.VK_SHIFT, withShift = true)
 
-    override fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    override fun onEntityAdded(entities: List<Entity>) {
         editorComponents.sceneTree.reload()
     }
 
-    override fun UpdateLock.onComponentAdded(component: Component) {
+    override fun onComponentAdded(component: Component) {
         editorComponents.sceneTree.reload()
     }
     override fun CoroutineScope.update(deltaSeconds: Float) {

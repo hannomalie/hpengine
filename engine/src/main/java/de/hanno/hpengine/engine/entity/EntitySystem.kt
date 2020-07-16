@@ -11,10 +11,10 @@ interface EntitySystem {
     @JvmDefault
     fun CoroutineScope.update(deltaSeconds: Float) {}
     fun gatherEntities()
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(entities: List<Entity>) {
         gatherEntities()
     }
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         gatherEntities()
     }
 
@@ -49,12 +49,12 @@ interface EntitySystemRegistry {
         } else return clazz.cast(firstOrNull)
     }
 
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(entities: List<Entity>) {
         for(system in getSystems()) {
             with(system) { onEntityAdded(entities) }
         }
     }
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         for(system in getSystems()) {
             with(system) { onComponentAdded(component) }
         }

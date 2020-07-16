@@ -58,7 +58,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         updateGpuJointsArray()
     }
 
-    override fun UpdateLock.addComponent(component: ModelComponent) {
+    override fun addComponent(component: ModelComponent) {
         allocateVertexIndexBufferSpace(listOf(component.entity))
         components.add(component)
         cacheEntityIndices()
@@ -208,8 +208,8 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         vertexIndexBufferAnimated.resetAllocations()
     }
 
-    override fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
-        val result = onEntityAddedImpl(context, entities)
+    override fun onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
+        val result = super.onEntityAdded(entities)
         cacheEntityIndices()
         return result
     }

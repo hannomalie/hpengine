@@ -41,9 +41,9 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     fun getProgram(vertexShaderSource: FileBasedCodeSource) = getProgram(vertexShaderSource, null, null, Defines())
 
 
-    fun loadShader(shadertype: Shader.ShaderType, shaderSource: FileBasedCodeSource, defines: Defines = Defines()): Int
+    fun loadShader(shaderType: Shader.ShaderType, shaderSource: FileBasedCodeSource, defines: Defines = Defines()): Int
 
     @JvmDefault
-    fun loadShader(shadertype: Shader.ShaderType, shaderSource: FileBasedCodeSource) = loadShader(shadertype, shaderSource, Defines())
+    fun loadShader(shaderType: Shader.ShaderType, shaderSource: FileBasedCodeSource) = loadShader(shaderType, shaderSource, Defines())
 
 }

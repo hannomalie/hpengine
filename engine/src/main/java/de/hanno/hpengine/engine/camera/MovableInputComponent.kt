@@ -111,7 +111,7 @@ class InputComponentSystem(val engine: EngineContext<*>): ComponentSystem<InputC
     override fun getComponents(): List<InputControllerComponent> = components
 
     fun create(entity: Entity) = MovableInputComponent(engine, entity)
-    override fun UpdateLock.addComponent(component: InputControllerComponent) {
+    override fun addComponent(component: InputControllerComponent) {
         components.add(component)
     }
     override fun clear() = components.clear()

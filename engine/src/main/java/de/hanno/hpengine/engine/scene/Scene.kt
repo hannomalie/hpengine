@@ -50,7 +50,7 @@ interface Scene : Updatable, Serializable {
     fun extract(currentWriteState: RenderState)
 
     fun getEntities() = entityManager.getEntities()
-    fun UpdateLock.addAll(entities: List<Entity>) {
+    fun addAll(entities: List<Entity>) {
         with(entityManager) { add(entities) }
 
         with(entitySystems) { onEntityAdded(entities) }
@@ -63,7 +63,7 @@ interface Scene : Updatable, Serializable {
         entityManager.entityAddedInCycle = currentCycle-1
     }
 
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         with(componentSystems) { onComponentAdded(component) }
         with(managers) { onComponentAdded(component) }
         with(entitySystems) { onComponentAdded(component) }
@@ -77,7 +77,7 @@ interface Scene : Updatable, Serializable {
     fun getAreaLights(): List<AreaLight> = componentSystems.get(AreaLightComponentSystem::class.java).getComponents()
     fun getAreaLightSystem(): AreaLightSystem = entitySystems.get(AreaLightSystem::class.java)
     fun getPointLightSystem(): PointLightSystem = entitySystems.get(PointLightSystem::class.java)
-    fun UpdateLock.add(entity: Entity) = addAll(listOf(entity))
+    fun add(entity: Entity) = addAll(listOf(entity))
     fun getEntity(name: String): Optional<Entity> {
         val candidate = entityManager.getEntities().find { e -> e.name == name }
         return Optional.ofNullable(candidate)
@@ -104,7 +104,7 @@ interface Scene : Updatable, Serializable {
         }
     }
 
-    fun UpdateLock.addComponent(selection: Entity, component: Component) {
+    fun addComponent(selection: Entity, component: Component) {
         selection.addComponent(component)
         onComponentAdded(component)
     }

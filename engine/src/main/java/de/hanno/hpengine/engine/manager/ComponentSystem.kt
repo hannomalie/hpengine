@@ -21,21 +21,18 @@ interface ComponentSystem<T : Component> {
         }
     }
     fun getComponents(): List<T>
-    fun UpdateLock.addComponent(component: T)
+    fun addComponent(component: T)
     fun clear()
     fun extract(renderState: RenderState) {}
     fun onSceneSet() {
         clear()
     }
-    fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
-        return onEntityAddedImpl(context, entities)
-    }
 
 //     Workaround for https://youtrack.jetbrains.com/issue/KT-11488?_ga=2.92346137.567661805.1573652933-1826229974.1518078622
-    fun onEntityAddedImpl(context: AddResourceContext, entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
+    fun onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
         val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
         for (entity in entities) {
-            val matched = context.locked { addCorrespondingComponents(entity.components) }
+            val matched = addCorrespondingComponents(entity.components)
             matched.forEach {
                 matchedComponents.putIfAbsent(it.key, mutableListOf())
                 matchedComponents[it.key]!!.add(it.value)
@@ -46,11 +43,11 @@ interface ComponentSystem<T : Component> {
     }
 
 
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         addCorrespondingComponents(mapOf(component::class.java to component))
     }
 
-    fun UpdateLock.addCorrespondingComponents(components: Map<Class<out Component>, Component>): Map<Class<out Component>, Component> {
+    fun addCorrespondingComponents(components: Map<Class<out Component>, Component>): Map<Class<out Component>, Component> {
         val correspondingComponents = components.filter { it.key == componentClass || componentClass.isAssignableFrom(it.key)}
 
         logger.debug("${correspondingComponents.size} components corresponding")
@@ -73,7 +70,7 @@ open class SimpleComponentSystem<T: Component>(override val componentClass: Clas
 
     override fun getComponents(): List<T> = components
 
-    override fun UpdateLock.addComponent(component: T) {
+    override fun addComponent(component: T) {
         addComponentImpl(component)
     }
 
