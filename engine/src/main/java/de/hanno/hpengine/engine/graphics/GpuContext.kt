@@ -19,9 +19,7 @@ interface OpenGlExecutor {
 
     fun execute(block: () -> Unit) = calculate(block)
     suspend fun <T> execute(block: () -> T): T
-
-    fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE
-    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculateX(Callable(callable))
+    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE
 
     fun shutdown()
 }

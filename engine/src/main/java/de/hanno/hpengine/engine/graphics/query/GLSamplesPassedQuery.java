@@ -20,7 +20,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
 
     public GLSamplesPassedQuery(GpuContext gpuContext) {
         this.gpuContext = gpuContext;
-        query = this.gpuContext.calculateX(() -> glGenQueries());
+        query = this.gpuContext.calculate(() -> glGenQueries());
     }
 
     @Override
@@ -56,6 +56,6 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
         while(!resultsAvailable(gpuContext)) {
         }
 
-        return gpuContext.calculateX(() -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
+        return gpuContext.calculate(() -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
     }
 }

@@ -134,12 +134,9 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override val openGLThreadId: Long
         get() = executor.openGLThreadId
 
-    override suspend fun <T> execute(block: () -> T): T {
-        return executor.execute(block)
-    }
-    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        return executor.calculateX(callable)
-    }
+    override suspend fun <T> execute(block: () -> T): T = executor.execute(block)
+
+    override fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = executor.calculate(callable)
 
     override fun shutdown() = executor.shutdown()
 

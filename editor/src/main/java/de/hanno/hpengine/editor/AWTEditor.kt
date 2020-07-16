@@ -8,20 +8,15 @@ import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGlExecutor
 import de.hanno.hpengine.engine.graphics.Window
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
-import org.lwjgl.opengl.GL11.glClear
 import org.lwjgl.opengl.awt.GLData
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.substance.api.SubstanceCortex
 import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.Dimension
-import java.util.concurrent.Callable
 import javax.swing.JFrame
 
 class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
@@ -153,12 +148,12 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
         canvas.afterRender()
     }
 
-    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        if(executor.isOpenGLThread) return callable.call()
+    override fun <RETURN_TYPE> calculate(block: () -> RETURN_TYPE): RETURN_TYPE {
+        if(executor.isOpenGLThread) return block()
 
         return executor.calculate {
             withLockedCanvas {
-                callable.call()
+                block()
             }
         }
     }
