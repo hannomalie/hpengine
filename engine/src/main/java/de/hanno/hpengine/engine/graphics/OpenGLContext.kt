@@ -14,12 +14,10 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
-import de.hanno.hpengine.util.commandqueue.FutureCallable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.lwjgl.BufferUtils
@@ -61,7 +59,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
             // Map the internal OpenGL coordinate system to the entire screen
             viewPort(0, 0, window.width, window.height)
-
         }
     }
 
@@ -108,11 +105,14 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         currentReadState.gpuCommandSync = createCommandSync()
     }
 
-    private fun createCommandSync(): OpenGlCommandSync = window.invoke {
-        OpenGlCommandSync().apply {
-            commandSyncs.add(this)
+    override fun createCommandSync(onSignaled: (() -> Unit)): OpenGlCommandSync = createCommandSync(onSignaled)
+    override fun createCommandSync(): OpenGlCommandSync = createCommandSyncImpl()
+
+    private fun createCommandSyncImpl(onSignaled: (() -> Unit)? = null): OpenGlCommandSync = window.invoke {
+            OpenGlCommandSync(onSignaled).also {
+                commandSyncs.add(it)
+            }
         }
-    }
 
     private fun getMaxCombinedTextureImageUnits() = window.invoke { GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
 
@@ -123,7 +123,16 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     override fun update(seconds: Float) { }
 
     override fun checkCommandSyncs() {
-        commandSyncs = checkCommandSyncsReturnUnsignaled(commandSyncs)
+        val signaledJustNow = commandSyncs.check()
+
+        window.invoke {
+            commandSyncs.filter { it.signaled }.forEach { it.delete() }
+        }
+        commandSyncs = commandSyncs.filter { !it.signaled }.toMutableList()
+
+        signaledJustNow.forEach {
+            it.onSignaled?.invoke()
+        }
     }
 
     override fun enable(cap: GlCap) = window.invoke { cap.enable() }
