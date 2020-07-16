@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.shader.Shader.Companion.directory
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileMonitor
+import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import java.io.File
@@ -16,9 +18,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                            private val eventBus: EventBus,
                            val config: Config) : ProgramManager<OpenGl> {
-    init {
-//        gpuContext.getExceptionOnError { "OpenGlProgramManager init" }
-    }
+
+    var programsCache: MutableList<AbstractProgram> = CopyOnWriteArrayList()
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
         val vertexShaderSource = FileBasedCodeSource(File(directory + vertexShaderFilename))
@@ -30,7 +31,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeShaderProgram {
         return gpuContext.calculate {
             val program = ComputeShaderProgram(this, FileBasedCodeSource(File(directory + computeShaderLocation)), defines)
-            LOADED_PROGRAMS.add(program)
+            programsCache.add(program)
             eventBus.register(program)
             program
         }
@@ -43,7 +44,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
 
         return gpuContext.calculate {
             val program = Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines)
-            LOADED_PROGRAMS.add(program)
+            programsCache.add(program)
             eventBus.register(program)
             program
         }
@@ -96,11 +97,5 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         gpuContext.exceptionOnError("loadShader: " + shaderType + ": " + shaderSource.filename)
 
         return shaderId
-    }
-
-    companion object {
-
-        var LOADED_PROGRAMS: MutableList<AbstractProgram> = CopyOnWriteArrayList()
-
     }
 }

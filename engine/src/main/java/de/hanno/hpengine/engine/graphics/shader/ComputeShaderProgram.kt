@@ -17,6 +17,8 @@ class ComputeShaderProgram @JvmOverloads constructor(
         val computeShaderSource: FileBasedCodeSource, defines: Defines = Defines()) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
     private var computeShader: ComputeShader? = null
 
+    override var shaders: List<Shader> = emptyList()
+
     init {
         this.defines = defines
 
@@ -43,6 +45,7 @@ class ComputeShaderProgram @JvmOverloads constructor(
         }
 
         printIfError("ComputeShader load ")
+        shaders = listOfNotNull(computeShader)
     }
 
     private fun printIfError(text: String): Boolean {

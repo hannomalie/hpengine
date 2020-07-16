@@ -41,6 +41,7 @@ class Program(
 
     private val localDefines = HashMap<String, Any>()
 
+    override var shaders: List<Shader> = emptyList()
     private lateinit var vertexShader: VertexShader
     private var geometryShader: GeometryShader? = null
     private var fragmentShader: FragmentShader? = null
@@ -92,6 +93,8 @@ class Program(
             gpuContext.backend.gpuContext.exceptionOnError()
 
             this.create()
+
+            shaders = listOfNotNull(vertexShader, fragmentShader, geometryShader)
         }
     }
 

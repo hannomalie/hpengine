@@ -17,6 +17,8 @@ import java.util.ArrayList
 import java.util.HashMap
 
 abstract class AbstractProgram(val id: Int) {
+    abstract var shaders: List<Shader>
+        protected set
     val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
     protected var uniforms = HashMap<String, Uniform?>()
     protected var defines = Defines()
