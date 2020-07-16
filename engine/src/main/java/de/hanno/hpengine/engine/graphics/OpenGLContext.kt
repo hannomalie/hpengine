@@ -17,13 +17,9 @@ import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.lwjgl.BufferUtils
@@ -42,7 +38,6 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
-import org.lwjgl.opengl.GLCapabilities
 import org.lwjgl.opengl.GLUtil
 import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
@@ -53,26 +48,32 @@ import java.util.logging.Logger
 import javax.vecmath.Tuple4f
 import javax.vecmath.Vector2f
 import javax.vecmath.Vector4f
-import kotlin.coroutines.CoroutineContext
 
-class OpenGLContext private constructor(override val window: Window<OpenGl>) : GpuContext<OpenGl>, OpenGlExecutor by window {
+class OpenGLContext private constructor(override val window: Window<OpenGl>, val debug: Boolean = true) : GpuContext<OpenGl>, OpenGlExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
+    private val capabilities = getCapabilities()
+    private val debugProc = window.invoke { if (debug) GLUtil.setupDebugMessageCallback() else null }
+
     init {
-        privateInit()
+        window.invoke {
+            enable(GlCap.DEPTH_TEST)
+            enable(GlCap.CULL_FACE)
+
+            // Map the internal OpenGL coordinate system to the entire screen
+            viewPort(0, 0, window.width, window.height)
+
+        }
     }
 
-    private lateinit var capabilities: GLCapabilities
+    private fun getCapabilities() = window { GL.getCapabilities() }
+
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext
     }
 
     override val registeredRenderTargets = ArrayList<RenderTarget<*>>()
 
-    internal val channel = Channel<FutureCallable<*>>(Channel.UNLIMITED)
-
-    override var isInitialized = false
-        private set
-    override var maxTextureUnits: Int = 0
+    override var maxTextureUnits = window { getMaxCombinedTextureImageUnits() }
 
     override val fullscreenBuffer = QuadVertexBuffer(this, true).apply { upload() }
     override val debugBuffer = QuadVertexBuffer(this, false).apply { upload() }
@@ -86,7 +87,10 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             quadVertexBuffer
         }
     }
-    private lateinit var extensions: String
+
+    private val extensions = window.invoke {
+        getSupportedExtensions()
+    }
 
     override val isError: Boolean
         get() = window.invoke { GL11.glGetError() != GL11.GL_NO_ERROR }
@@ -104,34 +108,16 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         currentReadState.gpuCommandSync = createCommandSync()
     }
 
-    private fun createCommandSync(): OpenGlCommandSync = OpenGlCommandSync().apply {
-        commandSyncs.add(this)
+    private fun createCommandSync(): OpenGlCommandSync = window.invoke {
+        OpenGlCommandSync().apply {
+            commandSyncs.add(this)
+        }
     }
 
-    internal fun privateInit() {
-        window.invoke {
-            capabilities = GL.getCapabilities()
+    private fun getMaxCombinedTextureImageUnits() = window.invoke { GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) }
 
-            val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
-            val supportedExtensions = (0 until numExtensions).map { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
-
-            extensions = supportedExtensions.joinToString(" ")
-
-            val debug = true
-            if (debug) {
-                val debugProc = GLUtil.setupDebugMessageCallback()
-            }
-
-            enable(GlCap.DEPTH_TEST)
-            enable(GlCap.CULL_FACE)
-
-            // Map the internal OpenGL coordinate system to the entire screen
-            viewPort(0, 0, window.width, window.height)
-            maxTextureUnits = GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
-
-            isInitialized = true
-
-        }
+    private fun getSupportedExtensions(): List<String> = window.invoke {
+        (0 until GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)).mapNotNull { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
     }
 
     override fun update(seconds: Float) { }
@@ -140,29 +126,24 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         commandSyncs = checkCommandSyncsReturnUnsignaled(commandSyncs)
     }
 
-    override fun enable(cap: GlCap) {
-        cap.enable()
-    }
-
-    override fun disable(cap: GlCap) {
-        cap.disable()
-    }
+    override fun enable(cap: GlCap) = window.invoke { cap.enable() }
+    override fun disable(cap: GlCap) = window.invoke { cap.disable() }
 
     override var cullFace: Boolean
         get() = GlCap.CULL_FACE.enabled
-        set(value) = GlCap.CULL_FACE.run { if(value) enable() else disable() }
+        set(value) = window.invoke { GlCap.CULL_FACE.run { if(value) enable() else disable() } }
 
     override var cullMode: CullMode
         get() = CullMode.values().first { it.glMode == GL11.glGetInteger(GL_CULL_FACE_MODE) }
-        set(value) = GL11.glCullFace(value.glMode)
+        set(value) = window.invoke { GL11.glCullFace(value.glMode) }
 
     override var depthTest: Boolean
         get() = GlCap.DEPTH_TEST.enabled
-        set(value) = GlCap.DEPTH_TEST.run { if(value) enable() else disable() }
+        set(value) = window.invoke { GlCap.DEPTH_TEST.run { if(value) enable() else disable() } }
 
     override var blend: Boolean
         get() = GlCap.BLEND.enabled
-        set(value) = GlCap.BLEND.run { if(value) enable() else disable() }
+        set(value) = window.invoke { GlCap.BLEND.run { if(value) enable() else disable() } }
 
     override fun activeTexture(textureUnitIndex: Int) {
         if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
@@ -233,30 +214,32 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override var depthMask: Boolean
         get() = GlFlag.DEPTH_MASK.enabled
-        set(value) = GlFlag.DEPTH_MASK.run { if(value) enable() else disable() }
+        set(value) = window.invoke { GlFlag.DEPTH_MASK.run { if(value) enable() else disable() } }
 
     override var depthFunc: GlDepthFunc
         get() = GlDepthFunc.values().first { it.glFunc == GL11.glGetInteger(GL_DEPTH_FUNC) }
-        set(value) { glDepthFunc(value.glFunc) }
+        set(value) = window.invoke { glDepthFunc(value.glFunc) }
 
     override fun readBuffer(colorAttachmentIndex: Int) {
         val colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex
-        GL11.glReadBuffer(colorAttachment)
+        window.invoke {
+            GL11.glReadBuffer(colorAttachment)
+        }
     }
 
     override var blendEquation: BlendMode
         get() = BlendMode.values().first { it.mode == GL11.glGetInteger(GL20.GL_BLEND_EQUATION_RGB) }
-        set(value) { GL14.glBlendEquation(value.mode) }
+        set(value) = window.invoke { GL14.glBlendEquation(value.mode) }
 
-    override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) {
+    override fun blendFunc(sfactor: BlendMode.Factor, dfactor: BlendMode.Factor) = window.invoke {
         GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor)
     }
 
     private val clearColorArray = floatArrayOf(0f,0f,0f,0f)
     private val clearColorVector = Vector4f()
     override var clearColor: Tuple4f
-        get() = GL11.glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let { clearColorVector.apply { set(clearColorArray) } }
-        set(value) = GL11.glClearColor(value.x, value.y, value.z, value.w)
+        get() = window.invoke { GL11.glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColorArray).let { clearColorVector.apply { set(clearColorArray) } } }
+        set(value) = window.invoke { GL11.glClearColor(value.x, value.y, value.z, value.w) }
 
     override fun clearColor(r: Float, g: Float, b: Float, a: Float) {
         clearColor = clearColorVector.apply {
@@ -318,27 +301,13 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
 
-    private fun waitForInitialization() {
-        OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization")
-        while (!isInitialized) {
-            OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization...")
-            try {
-                Thread.sleep(400)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-
-        }
-        OpenGLContext.LOGGER.info("OpenGLContext ready")
-    }
-
     override fun genFrameBuffer() = window.invoke { glGenFramebuffers() }
 
-    override fun clearCubeMap(textureId: Int, textureFormat: Int) {
+    override fun clearCubeMap(textureId: Int, textureFormat: Int) = window.invoke {
         glClearTexImage(textureId, 0, textureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
     }
 
-    override fun clearCubeMapInCubeMapArray(textureID: Int, internalFormat: Int, width: Int, height: Int, cubeMapIndex: Int) {
+    override fun clearCubeMapInCubeMapArray(textureID: Int, internalFormat: Int, width: Int, height: Int, cubeMapIndex: Int) = window.invoke {
         glClearTexSubImage(textureID, 0, 0, 0, 6 * cubeMapIndex, width, height, 6, internalFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
     }
 
@@ -456,22 +425,10 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
     override val coroutineContext
         get() = dispatcher + Job()
 
-    fun launch(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> Unit): Job {
-        val enhancedBlock: suspend CoroutineScope.() -> Unit = { block(); executeExitOnGlErrorFunction(); }
-        return (CoroutineScope::launch)(this, coroutineContext, start, enhancedBlock)
-    }
-    fun <T> async(start: CoroutineStart = CoroutineStart.DEFAULT, block: suspend CoroutineScope.() -> T): Deferred<T> {
-        val function = { coroutineScope: CoroutineScope,
-                         context: CoroutineContext,
-                         start: CoroutineStart,
-                         block: suspend CoroutineScope.() -> T -> coroutineScope.async(context, start, block) }
-        return function(this, coroutineContext, start, block)
-    }
-
     inline val isOpenGLThread: Boolean
         get() = Thread.currentThread().isOpenGLThread
 
-    val Thread.isOpenGLThread: Boolean
+    inline val Thread.isOpenGLThread: Boolean
         get() = id == openGLThreadId
 
     // duplicate code, because I had compilation issues with coroutines and this function somehow
@@ -498,15 +455,13 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
         }
     }
 
-    override fun <RETURN_TYPE> invoke(callable: () -> RETURN_TYPE): RETURN_TYPE {
-        if(isOpenGLThread) {
-            return callable()
-        }
+    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE {
+        if(isOpenGLThread) return block()
+
         return runBlocking(coroutineContext) {
-            callable()
+            block()
         }
     }
 
-    override fun shutdown() {
-    }
+    override fun shutdown() { }
 }

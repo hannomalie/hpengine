@@ -40,8 +40,6 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     val evictionCount: Int
 
-    val isInitialized: Boolean
-
     val maxTextureUnits: Int
 
     val fullscreenBuffer: VertexBuffer
