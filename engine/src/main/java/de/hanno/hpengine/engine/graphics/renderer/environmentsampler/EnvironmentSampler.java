@@ -18,7 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
+import de.hanno.hpengine.engine.graphics.shader.ComputeProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
@@ -80,8 +80,8 @@ public class EnvironmentSampler extends Entity {
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
 	private Program depthPrePassProgram;
-	private ComputeShaderProgram tiledProbeLightingProgram;
-	private ComputeShaderProgram cubemapRadianceProgram;
+	private ComputeProgram tiledProbeLightingProgram;
+	private ComputeProgram cubemapRadianceProgram;
 	private Program cubemapRadianceFragmentProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	transient private boolean drawnOnce = false;

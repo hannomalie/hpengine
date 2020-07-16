@@ -17,7 +17,7 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     fun getProgramFromFileNames(vertexShaderFilename: String)
             = getProgramFromFileNames(vertexShaderFilename, null, Defines())
 
-    fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeShaderProgram
+    fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeProgram
     @JvmDefault
     fun getComputeProgram(computeShaderLocation: String) = getComputeProgram(computeShaderLocation, Defines())
 

@@ -32,4 +32,4 @@ class FileBasedCodeSource(val file: File) : CodeSource() {
     }
 }
 
-fun CodeSource.didChange(reference: String): Boolean = reference != source
+fun CodeSource.hasChanged(reference: String): Boolean = reference != source

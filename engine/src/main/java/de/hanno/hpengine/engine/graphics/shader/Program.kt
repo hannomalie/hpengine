@@ -28,7 +28,6 @@ import org.lwjgl.opengl.GL20.glValidateProgram
 import java.util.EnumSet
 import java.util.HashMap
 import java.util.StringJoiner
-import java.util.logging.Logger
 
 class Program(
         private val programManager: OpenGlProgramManager,
@@ -36,7 +35,7 @@ class Program(
         val geometryShaderSource: FileBasedCodeSource?,
         val fragmentShaderSource: FileBasedCodeSource?,
         defines: Defines
-) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
+) : AbstractProgram(programManager.gpuContext.createProgramId()) {
     private val gpuContext: GpuContext<OpenGl>
 
     private val localDefines = HashMap<String, Any>()
@@ -253,7 +252,7 @@ fun Program.create() {
     replaceOldListeners(sources, this)
 }
 
-fun ComputeShaderProgram.create() {
+fun ComputeProgram.create() {
     val sources: List<FileBasedCodeSource> = listOfNotNull(computeShaderSource)
     replaceOldListeners(sources, this)
 }

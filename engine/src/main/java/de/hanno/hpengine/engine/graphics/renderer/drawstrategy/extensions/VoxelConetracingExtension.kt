@@ -24,7 +24,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecond
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
+import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -91,11 +91,11 @@ class VoxelConeTracingExtension(
 
     private val voxelizer: Program = this.engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "voxelize_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "voxelize_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "voxelize_geometry.glsl")))
     private val voxelConeTraceProgram: Program = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
-    private val texture3DMipMapAlphaBlendComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
-    private val texture3DMipMapComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
-    private val clearDynamicVoxelsComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl")
-    private val injectLightComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
-    private val injectMultipleBounceLightComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
+    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
+    private val texture3DMipMapComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
+    private val clearDynamicVoxelsComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl")
+    private val injectLightComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
+    private val injectMultipleBounceLightComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
 
     private var lightInjectedFramesAgo: Int = 0
 
@@ -279,7 +279,7 @@ class VoxelConeTracingExtension(
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
     }
 
-    private fun mipmapGrid(texture3D: Int, shader: ComputeShaderProgram, renderState: RenderState) {
+    private fun mipmapGrid(texture3D: Int, shader: ComputeProgram, renderState: RenderState) {
         shader.use()
         val voxelGrids = renderState[this.voxelGrids]
         val globalGrid = voxelGrids[0]

@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline
-import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
+import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
@@ -43,7 +43,7 @@ private fun actuallyDraw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, r
     }
 }
 
-fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: Int, baseHeight: Int, highZTexture: Int, highZProgram: ComputeShaderProgram) {
+fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: Int, baseHeight: Int, highZTexture: Int, highZProgram: ComputeProgram) {
     val task = GPUProfiler.start("HighZ map calculation")
     highZProgram.use()
     var lastWidth = baseWidth

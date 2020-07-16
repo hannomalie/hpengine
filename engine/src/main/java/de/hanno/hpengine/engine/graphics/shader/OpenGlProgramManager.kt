@@ -7,12 +7,14 @@ import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.shader.Shader.Companion.directory
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
-import de.hanno.hpengine.util.ressources.FileMonitor
+import de.hanno.hpengine.util.ressources.StringBasedCodeSource
+import de.hanno.hpengine.util.ressources.hasChanged
 import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import java.io.File
 import java.io.IOException
+import java.util.WeakHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 class OpenGlProgramManager(override val gpuContext: OpenGLContext,
@@ -28,9 +30,9 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         return getProgram(vertexShaderSource, fragmentShaderSource, null, defines = defines)
     }
 
-    override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeShaderProgram {
+    override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeProgram {
         return gpuContext.calculate {
-            val program = ComputeShaderProgram(this, FileBasedCodeSource(File(directory + computeShaderLocation)), defines)
+            val program = ComputeProgram(this, FileBasedCodeSource(File(directory + computeShaderLocation)), defines)
             programsCache.add(program)
             eventBus.register(program)
             program
@@ -50,6 +52,17 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         }
     }
 
+    var programsSourceCache: WeakHashMap<Shader, String> = WeakHashMap()
+    override fun CoroutineScope.update(deltaSeconds: Float) {
+        programsCache.forEach { program ->
+            program.shaders.forEach { shader ->
+                if(shader.shaderSource is StringBasedCodeSource) {
+                    programsSourceCache.putIfAbsent(shader, shader.shaderSource.source)
+                    if(shader.shaderSource.hasChanged(programsSourceCache[shader]!!)) program.reload()
+                }
+            }
+        }
+    }
 
     override fun loadShader(shaderType: Shader.ShaderType, shaderSource: FileBasedCodeSource, defines: Defines): Int {
 

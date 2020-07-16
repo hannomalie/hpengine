@@ -12,9 +12,9 @@ import org.lwjgl.opengl.GL43
 import java.util.StringJoiner
 import java.util.logging.Logger
 
-class ComputeShaderProgram @JvmOverloads constructor(
+class ComputeProgram @JvmOverloads constructor(
         private val programManager: OpenGlProgramManager,
-        val computeShaderSource: FileBasedCodeSource, defines: Defines = Defines()) : AbstractProgram(programManager.gpuContext.createProgramId()), Reloadable {
+        val computeShaderSource: FileBasedCodeSource, defines: Defines = Defines()) : AbstractProgram(programManager.gpuContext.createProgramId()) {
     private var computeShader: ComputeShader? = null
 
     override var shaders: List<Shader> = emptyList()
@@ -100,7 +100,7 @@ class ComputeShaderProgram @JvmOverloads constructor(
     override val name: String = StringJoiner(", ").add(computeShaderSource.filename).toString()
 
     override fun equals(other: Any?): Boolean {
-        if (other !is ComputeShaderProgram) {
+        if (other !is ComputeProgram) {
             return false
         }
 
@@ -115,6 +115,6 @@ class ComputeShaderProgram @JvmOverloads constructor(
     }
 
     companion object {
-        private val LOGGER = Logger.getLogger(ComputeShaderProgram::class.java.name)
+        private val LOGGER = Logger.getLogger(ComputeProgram::class.java.name)
     }
 }

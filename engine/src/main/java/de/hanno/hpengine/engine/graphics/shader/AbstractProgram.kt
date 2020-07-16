@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
+import de.hanno.hpengine.util.ressources.Reloadable
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20
@@ -16,7 +17,7 @@ import java.nio.LongBuffer
 import java.util.ArrayList
 import java.util.HashMap
 
-abstract class AbstractProgram(val id: Int) {
+abstract class AbstractProgram(val id: Int): Reloadable {
     abstract var shaders: List<Shader>
         protected set
     val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
