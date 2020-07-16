@@ -204,9 +204,9 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		renderer.batchLine(points.get(2), points.get(4));
 		renderer.batchLine(points.get(3), points.get(5));
 
-		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(5, 0, 0)));
-		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(0, 5, 0)));
-		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(0, 0, -5)));
+		renderer.batchLine(sampler.getEntity().getPosition(), new Vector3f(sampler.getEntity().getPosition()).add(new Vector3f(5, 0, 0)));
+		renderer.batchLine(sampler.getEntity().getPosition(), new Vector3f(sampler.getEntity().getPosition()).add(new Vector3f(0, 5, 0)));
+		renderer.batchLine(sampler.getEntity().getPosition(), new Vector3f(sampler.getEntity().getPosition()).add(new Vector3f(0, 0, -5)));
 
 		float temp = (float)probe.getIndex()/10;
 		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
@@ -342,7 +342,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void onEntityAdded(@NotNull List<? extends Entity> entities) {
+	public void onEntityAdded(@NotNull List<Entity> entities) {
 
 	}
 
