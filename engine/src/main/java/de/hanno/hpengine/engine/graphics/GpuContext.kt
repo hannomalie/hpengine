@@ -17,9 +17,8 @@ import javax.vecmath.Tuple4f
 interface OpenGlExecutor {
     val openGLThreadId: Long
 
-    fun execute(block: () -> Unit) = calculate(block)
     suspend fun <T> execute(block: () -> T): T
-    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE
+    operator fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE
 
     fun shutdown()
 }

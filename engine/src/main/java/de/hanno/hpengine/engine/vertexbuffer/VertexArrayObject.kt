@@ -8,17 +8,17 @@ import java.util.*
 class VertexArrayObject private constructor(private val gpuContext: GpuContext<*>, channels: EnumSet<DataChannels>) {
 
     private val channels: EnumSet<DataChannels> = channels.clone()
-    var id = gpuContext.calculate { GL30.glGenVertexArrays() }
+    var id = gpuContext.invoke { GL30.glGenVertexArrays() }
     init {
         setUpAttributes()
     }
 
-    fun bind() = gpuContext.execute() {
+    fun bind() = gpuContext.invoke {
         GL30.glBindVertexArray(id)
     }
 
     private fun setUpAttributes() {
-        gpuContext.execute() {
+        gpuContext.invoke {
             bind()
             var currentOffset = 0
             for (channel in channels) {

@@ -5,8 +5,6 @@ import de.hanno.hpengine.engine.graphics.GpuContext;
 import kotlin.Unit;
 import org.lwjgl.opengl.GL15;
 
-import java.util.concurrent.Callable;
-
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL33.glGetQueryObjectui64;
 
@@ -20,12 +18,12 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
 
     public GLSamplesPassedQuery(GpuContext gpuContext) {
         this.gpuContext = gpuContext;
-        query = this.gpuContext.calculate(() -> glGenQueries());
+        query = this.gpuContext.invoke(() -> glGenQueries());
     }
 
     @Override
     public GLTimerQuery begin() {
-        gpuContext.execute(() -> {
+        gpuContext.invoke(() -> {
             glBeginQuery(GL15.GL_SAMPLES_PASSED, query);
             return Unit.INSTANCE;
         });
@@ -38,7 +36,7 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
         if(!started) {
             throw new IllegalStateException("Don't end a query before it was started!");
         }
-        gpuContext.execute(() -> {
+        gpuContext.invoke(() -> {
             glEndQuery(target);
             return Unit.INSTANCE;
         });
@@ -56,6 +54,6 @@ public class GLSamplesPassedQuery implements GLQuery<Integer> {
         while(!resultsAvailable(gpuContext)) {
         }
 
-        return gpuContext.calculate(() -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
+        return gpuContext.invoke(() -> (int) glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT));
     }
 }

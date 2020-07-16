@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics.shader
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
-import de.hanno.hpengine.util.ressources.Reloadable
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL20.glGetProgramInfoLog
@@ -80,7 +79,7 @@ class ComputeProgram @JvmOverloads constructor(
     override fun reload() {
         val self = this
 
-        val result = programManager.gpuContext.calculate {
+        val result = programManager.gpuContext.invoke {
             detachShader(computeShader!!)
             try {
                 computeShader!!.reload()

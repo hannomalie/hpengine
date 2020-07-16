@@ -31,7 +31,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     }
 
     override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeProgram {
-        return gpuContext.calculate {
+        return gpuContext.invoke {
             val program = ComputeProgram(this, FileBasedCodeSource(File(directory + computeShaderLocation)), defines)
             programsCache.add(program)
             eventBus.register(program)
@@ -44,7 +44,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                             geometryShaderSource: FileBasedCodeSource?,
                             defines: Defines): Program {
 
-        return gpuContext.calculate {
+        return gpuContext.invoke {
             val program = Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines)
             programsCache.add(program)
             eventBus.register(program)
@@ -84,14 +84,14 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
             e.printStackTrace()
         }
 
-        val shaderId: Int = gpuContext.calculate {
+        val shaderId: Int = gpuContext.invoke {
             GL20.glCreateShader(shaderType.glShaderType).also { shaderId ->
                 GL20.glShaderSource(shaderId, resultingShaderSource)
                 GL20.glCompileShader(shaderId)
             }
         }
 
-        val shaderLoadFailed = gpuContext.calculate {
+        val shaderLoadFailed = gpuContext.invoke {
             val shaderStatus = GL20.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS)
             if (shaderStatus == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + shaderSource.filename)

@@ -37,7 +37,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         private set
 
     init {
-        gpuContext.window.calculate {
+        gpuContext.window.invoke {
             val (id, newBuffer) = createBuffer(max(initialSize * slidingWindow.sizeInBytes, 1))
             this.buffer = newBuffer
             this.id = id
@@ -82,7 +82,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         if (::buffer.isInitialized) {
             val needsResize = buffer.capacity() < capacityInBytes
             if (needsResize) {
-                gpuContext.calculate {
+                gpuContext.invoke {
                     val (newId, newBuffer) = createBuffer(capacityInBytes)
                     copyOldBufferTo(newBuffer)
                     val oldId = this.id
@@ -111,7 +111,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
 //    }
 
     fun bind() {
-        gpuContext.execute() {
+        gpuContext.invoke {
             if (id <= 0) {
                 id = GL15.glGenBuffers()
             }
@@ -120,7 +120,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
     }
 
     fun unbind() {
-        gpuContext.execute() { GL15.glBindBuffer(target, 0) }
+        gpuContext.invoke { GL15.glBindBuffer(target, 0) }
     }
 
     @Synchronized
@@ -128,7 +128,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
         ensureCapacityInBytes(requestedCapacity * slidingWindow.sizeInBytes)
     }
 
-    private fun createBuffer(capacityInBytes: Int): Pair<Int, ByteBuffer> = gpuContext.calculate {
+    private fun createBuffer(capacityInBytes: Int): Pair<Int, ByteBuffer> = gpuContext.invoke {
         val id = GL15.glGenBuffers()
         GL15.glBindBuffer(target, id)
         GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)

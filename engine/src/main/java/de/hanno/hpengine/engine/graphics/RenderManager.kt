@@ -90,7 +90,7 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         }
         GlobalScope.launch {
             while(true) {
-                engineContext.gpuContext.execute(block = {
+                engineContext.gpuContext.invoke(block = {
                     runnable.run()
                 })
                 // https://bugs.openjdk.java.net/browse/JDK-4852178

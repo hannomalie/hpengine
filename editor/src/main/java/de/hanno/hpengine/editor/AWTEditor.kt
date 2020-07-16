@@ -148,10 +148,10 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
         canvas.afterRender()
     }
 
-    override fun <RETURN_TYPE> calculate(block: () -> RETURN_TYPE): RETURN_TYPE {
+    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE {
         if(executor.isOpenGLThread) return block()
 
-        return executor.calculate {
+        return executor.invoke {
             withLockedCanvas {
                 block()
             }

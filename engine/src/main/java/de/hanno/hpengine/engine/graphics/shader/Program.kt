@@ -64,7 +64,7 @@ class Program(
     }
 
     override fun load() {
-        gpuContext.execute {
+        gpuContext.invoke {
             clearUniforms()
 
             vertexShader = VertexShader.load(programManager, vertexShaderSource, defines)
@@ -141,7 +141,7 @@ class Program(
     }
 
     override fun reload() = try {
-        val result = gpuContext.calculate {
+        val result = gpuContext.invoke {
             detachShader(vertexShader!!)
             if (fragmentShader != null) {
                 detachShader(fragmentShader!!)

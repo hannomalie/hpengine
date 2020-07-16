@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11
 import javax.swing.JButton
 import javax.swing.JFormattedTextField
 import javax.swing.JPanel
@@ -32,7 +31,7 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<
                     val oldVolumeGrids = giVolumeComponent.giVolumeGrids
                     giVolumeComponent.giVolumeGrids = engine.textureManager.createGIVolumeGrids(this.value as Int)
                     engine.textureManager.run {
-                        gpuContext.execute {
+                        gpuContext.invoke {
                             gpuContext.finish()
                             oldVolumeGrids.albedoGrid.delete()
                             oldVolumeGrids.normalGrid.delete()

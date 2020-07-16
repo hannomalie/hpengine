@@ -48,7 +48,6 @@ import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
-import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
@@ -90,7 +89,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     private lateinit var extensions: String
 
     override val isError: Boolean
-        get() = window.calculate { GL11.glGetError() != GL11.GL_NO_ERROR }
+        get() = window.invoke { GL11.glGetError() != GL11.GL_NO_ERROR }
 
     override val features = run {
         val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
@@ -110,7 +109,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     internal fun privateInit() {
-        window.execute {
+        window.invoke {
             capabilities = GL.getCapabilities()
 
             val numExtensions = GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)
@@ -168,7 +167,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override fun activeTexture(textureUnitIndex: Int) {
         if(textureUnitIndex < 0) { throw IllegalArgumentException("Passed textureUnitIndex of < 0") }
         val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
-        window.execute { GL13.glActiveTexture(textureIndexGLInt) }
+        window.invoke { GL13.glActiveTexture(textureIndexGLInt) }
     }
 
     private fun getCleanedTextureUnitValue(textureUnit: Int): Int {
@@ -180,7 +179,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
     override fun bindTexture(target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
-        window.execute {
+        window.invoke {
             GL11.glBindTexture(target.glTarget, textureId)
             getExceptionOnError("")?.let{ throw it }
         }
@@ -188,7 +187,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
 
     override fun bindTexture(textureUnitIndex: Int, target: GlTextureTarget, textureId: Int) {
         if(textureId < 0) { throw IllegalArgumentException("Passed textureId of < 0") }
-        window.execute {
+        window.invoke {
             getExceptionOnError("beforeBindTexture")?.let{ throw it }
             val textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex)
             GL13.glActiveTexture(textureIndexGLInt)
@@ -198,15 +197,15 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun bindTextures(textureIds: IntBuffer) {
-        window.execute { GL44.glBindTextures(0, textureIds) }
+        window.invoke { GL44.glBindTextures(0, textureIds) }
     }
 
     override fun bindTextures(count: Int, textureIds: IntBuffer) {
-        window.execute { GL44.glBindTextures(0, textureIds) }
+        window.invoke { GL44.glBindTextures(0, textureIds) }
     }
 
     override fun bindTextures(firstUnit: Int, count: Int, textureIds: IntBuffer) {
-        window.execute { GL44.glBindTextures(firstUnit, textureIds) }
+        window.invoke { GL44.glBindTextures(firstUnit, textureIds) }
     }
 
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
@@ -227,7 +226,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun bindFrameBuffer(frameBuffer: Int) {
-        window.execute {
+        window.invoke {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer)
         }
     }
@@ -274,23 +273,23 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     }
 
     override fun genTextures(): Int {
-        return window.calculate { GL11.glGenTextures() }
+        return window.invoke { GL11.glGenTextures() }
     }
 
     override val availableVRAM: Int
-        get() = window.calculate { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) }
+        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) }
 
     override val availableTotalVRAM: Int
-        get() = window.calculate { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) }
+        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX) }
 
     override val dedicatedVRAM: Int
-        get() = window.calculate { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) }
+        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX) }
 
     override val evictedVRAM: Int
-        get() = window.calculate { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
+        get() = window.invoke { GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX) }
 
     override val evictionCount: Int
-        get() = window.calculate{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
+        get() = window.invoke{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
 
     fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (GpuContext.CHECKERRORS) {
@@ -307,7 +306,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         return null
     }
 
-    override fun createProgramId(): Int = window.calculate { GL20.glCreateProgram() }
+    override fun createProgramId(): Int = window.invoke { GL20.glCreateProgram() }
 
     override fun destroy() {
         try {
@@ -333,7 +332,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
         OpenGLContext.LOGGER.info("OpenGLContext ready")
     }
 
-    override fun genFrameBuffer() = window.calculate { glGenFramebuffers() }
+    override fun genFrameBuffer() = window.invoke { glGenFramebuffers() }
 
     override fun clearCubeMap(textureId: Int, textureFormat: Int) {
         glClearTexImage(textureId, 0, textureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
@@ -382,7 +381,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
     override fun bindFrameBuffer(frameBuffer: FrameBuffer) {
         bindFrameBuffer(frameBuffer.frameBuffer)
     }
-    fun checkGLError(errorMessage: () -> String) = window.execute() {
+    fun checkGLError(errorMessage: () -> String) = window.invoke() {
         if (GpuContext.CHECKERRORS) {
 
             val errorValue = GL11.glGetError()
@@ -439,9 +438,9 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>) : G
             throw IllegalStateException(getErrorString(error) + "\n$msg")
         }
     }
-    fun getError(): Int = window.calculate { GL11.glGetError() }
+    fun getError(): Int = window.invoke { GL11.glGetError() }
     fun getErrorString(error: Int) = GLU.gluErrorString(error)
-    fun Texture.delete() = execute { GL11.glDeleteTextures(id) }
+    fun Texture.delete() = invoke { GL11.glDeleteTextures(id) }
     fun finish() = GL11.glFinish()
 
 }
@@ -499,7 +498,7 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
         }
     }
 
-    override fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE {
+    override fun <RETURN_TYPE> invoke(callable: () -> RETURN_TYPE): RETURN_TYPE {
         if(isOpenGLThread) {
             return callable()
         }

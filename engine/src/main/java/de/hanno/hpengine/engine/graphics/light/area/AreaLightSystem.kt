@@ -42,7 +42,6 @@ import org.lwjgl.opengl.GL30
 import java.io.File
 import java.nio.FloatBuffer
 import java.util.ArrayList
-import java.util.concurrent.Callable
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
@@ -51,7 +50,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, sceneImpl: SceneImpl) :
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
 
-    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.calculate { PersistentMappedBuffer(engine.gpuContext, 1000) }
+    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.invoke { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     private val mapRenderTarget = CubeMapRenderTarget(engine.gpuContext, RenderTarget(
         engine.gpuContext,
@@ -72,7 +71,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, sceneImpl: SceneImpl) :
 
     private val areaShadowPassProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "shadowmap_fragment.glsl")))
     private val areaLightDepthMaps = ArrayList<Int>().apply {
-        engine.gpuContext.execute() {
+        engine.gpuContext.invoke {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = engine.gpuContext.genTextures()
                 engine.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)

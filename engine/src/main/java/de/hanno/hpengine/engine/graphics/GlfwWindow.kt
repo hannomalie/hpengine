@@ -12,7 +12,6 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
-import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
 //     Don't make this a local field, we need a strong reference
@@ -86,7 +85,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     }
 
     override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
-        execute() {
+        invoke {
             glfwSwapInterval(if(vSync) 1 else 0)
             this.vSync = vSync
         }
@@ -126,7 +125,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     }
 
     val executor = OpenGlExecutorImpl().apply {
-        execute {
+        invoke {
             makeContextCurrent()
             GL.createCapabilities()
         }
@@ -136,7 +135,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
 
     override suspend fun <T> execute(block: () -> T): T = executor.execute(block)
 
-    override fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = executor.calculate(callable)
+    override fun <RETURN_TYPE> invoke(callable: () -> RETURN_TYPE): RETURN_TYPE = executor.invoke(callable)
 
     override fun shutdown() = executor.shutdown()
 

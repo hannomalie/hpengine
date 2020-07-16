@@ -119,18 +119,18 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
     val probeCount = probesPerDimension.x * probesPerDimension.y * probesPerDimension.z
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
-    val probePositionsStructBuffer = engine.gpuContext.window.calculate {
+    val probePositionsStructBuffer = engine.gpuContext.window.invoke {
         PersistentMappedStructBuffer(probeCount, engine.gpuContext, { HpVector4f() })
     }
-    val probeAmbientCubeValues = engine.gpuContext.window.calculate {
+    val probeAmbientCubeValues = engine.gpuContext.window.invoke {
         PersistentMappedStructBuffer(probeCount * 6, engine.gpuContext, { HpVector4f() })
     }
-    val probeAmbientCubeValuesOld = engine.gpuContext.window.calculate {
+    val probeAmbientCubeValuesOld = engine.gpuContext.window.invoke {
         PersistentMappedStructBuffer(probeCount * 6, engine.gpuContext, { HpVector4f() })
     }
 
     init {
-        engine.gpuContext.window.execute() {
+        engine.gpuContext.window.invoke {
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
         }
         initProbePositions()
