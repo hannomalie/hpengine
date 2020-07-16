@@ -143,16 +143,6 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
         }
     }
 
-    override fun execute(runnable: Runnable) {
-        if(executor.isOpenGLThread) return runnable.run()
-
-        executor.execute {
-            withLockedCanvas {
-                runnable.run()
-            }
-        }
-    }
-
     private inline fun <T> withLockedCanvas(block: () -> T): T = try {
         canvas.beforeRender()
         block()

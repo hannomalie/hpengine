@@ -506,15 +506,6 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
         }
     }
 
-    override fun execute(runnable: Runnable) {
-
-        if(isOpenGLThread) return runnable.run()
-
-        return runBlocking(coroutineContext) {
-            runnable.run()
-        }
-    }
-
     override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
         if(isOpenGLThread) {
             return callable.call()

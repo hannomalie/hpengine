@@ -137,8 +137,6 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override suspend fun <T> execute(block: () -> T): T {
         return executor.execute(block)
     }
-    override fun execute(runnable: Runnable) = executor.execute(runnable)
-
     override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
         return executor.calculateX(callable)
     }
