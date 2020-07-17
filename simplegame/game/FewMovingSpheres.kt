@@ -1,9 +1,5 @@
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.KotlinCompiledComponentLoader
-import de.hanno.hpengine.engine.component.ScriptComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Instance
@@ -30,7 +26,7 @@ class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
                 current.addComponent(clustersComponent)
                 val codeFile = engine.directories.gameDir.resolve("scripts").resolve("SimpleMoveComponentKotlin.kt")
                 val moveComponent = KotlinCompiledComponentLoader.load(engine, codeFile, current)
-                current.addComponent(moveComponent, ScriptComponent::class.java as Class<Component>)
+                current.addComponent(moveComponent)
             }
 
             engine.sceneManager.addAll(loaded.entities)

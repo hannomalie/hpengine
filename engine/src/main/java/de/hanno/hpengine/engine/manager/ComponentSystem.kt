@@ -28,30 +28,25 @@ interface ComponentSystem<T : Component> {
         clear()
     }
 
-//     Workaround for https://youtrack.jetbrains.com/issue/KT-11488?_ga=2.92346137.567661805.1573652933-1826229974.1518078622
-    fun onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
-        val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
+    fun onEntityAdded(entities: List<Entity>): MutableList<Component> {
+        val matchedComponents = mutableSetOf<Component>()
         for (entity in entities) {
-            val matched = addCorrespondingComponents(entity.components)
-            matched.forEach {
-                matchedComponents.putIfAbsent(it.key, mutableListOf())
-                matchedComponents[it.key]!!.add(it.value)
-            }
+            matchedComponents.addAll(addCorrespondingComponents(entity.components.toList()))
         }
-        logger.debug("${matchedComponents.entries.flatMap { it.value }.size} components matched")
-        return matchedComponents
+        logger.debug("${matchedComponents.size} components matched")
+        return matchedComponents.toMutableList()
     }
 
 
     fun onComponentAdded(component: Component) {
-        addCorrespondingComponents(mapOf(component::class.java to component))
+        addCorrespondingComponents(listOf(component))
     }
 
-    fun addCorrespondingComponents(components: Map<Class<out Component>, Component>): Map<Class<out Component>, Component> {
-        val correspondingComponents = components.filter { it.key == componentClass || componentClass.isAssignableFrom(it.key)}
+    fun addCorrespondingComponents(components: List<Component>): List<Component> {
+        val correspondingComponents = components.filter { componentClass.isAssignableFrom(it.javaClass) }
 
         logger.debug("${correspondingComponents.size} components corresponding")
-        correspondingComponents.forEach { addComponent(componentClass.cast(it.value)) }
+        correspondingComponents.forEach { component -> addComponent(componentClass.cast(component)) }
         return correspondingComponents
     }
 

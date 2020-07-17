@@ -75,7 +75,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         }
 
         val predicate: (Entity) -> Boolean = {
-            it != scene.activeCamera.entity && it.components.containsKey(ModelComponent::class.java)
+            it != scene.activeCamera.entity && it.hasComponent(ModelComponent::class.java)
         }
         for (entity in entityContainer.entities.filter(predicate)) {
             if (!entity.hasMoved()) {

@@ -3,8 +3,6 @@ package de.hanno.hpengine.engine.entity
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
 import kotlinx.coroutines.CoroutineScope
 
 interface EntitySystem {
@@ -78,18 +76,14 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
 abstract class SimpleEntitySystem(val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
-    protected val components = mutableMapOf<Class<out Component>, List<Component>>().apply {
-        componentClasses.forEach {
-            this[it] = emptyList()
-        }
-    }
+    protected val components = mutableListOf<Component>()
 
     override fun gatherEntities() {
         entities.clear()
         if(componentClasses.isEmpty()) {
             entities.addAll(scene.entityManager.getEntities())
         } else {
-            entities.addAll(scene.entityManager.getEntities().filter { it.components.keys.containsAll(componentClasses) })
+            entities.addAll(scene.entityManager.getEntities().filter { it.hasComponents(componentClasses) })
         }
         gatherComponents()
     }
@@ -98,25 +92,16 @@ abstract class SimpleEntitySystem(val scene: Scene, val componentClasses: List<C
         components.clear()
         if(componentClasses.isEmpty()) {
             for (entity in entities) {
-                for (component in entity.components) {
-                    val list: MutableList<Component> = mutableListOf(component.value)
-                    if(components[component.key] != null) {
-                        list.addAll(components[component.key]!!)
-                    }
-                    components[component.key] = list
-                }
+                components.addAll(entity.getComponents(componentClasses))
             }
         } else {
             for (clazz in componentClasses) {
-                components[clazz] = entities.mapNotNull { entity ->  entity.getComponent(clazz) }
+                components.addAll(entities.flatMap { entity ->  entity.getComponents(clazz) })
             }
         }
     }
 
-    inline fun <reified T: Component> getComponents(type: Class<T>): List<T> {
-        val list = components[type] ?: emptyList()
-        return list as List<T>
-    }
+    inline fun <reified T: Component> getComponents(type: Class<T>): List<T> = components.filterIsInstance<T>()
 
     override fun clear() {
         components.clear()

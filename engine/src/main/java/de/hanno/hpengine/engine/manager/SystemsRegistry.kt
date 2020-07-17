@@ -60,11 +60,12 @@ interface SystemsRegistry {
     }
 
     fun onEntityAdded(entities: List<Entity>) {
-        val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
-        getSystems().forEach {
-            matchedComponents += with(it) { onEntityAdded(entities) }
+        val allComponents = entities.flatMap { it.components }
+        val matchedComponents = getSystems().flatMap {
+            it.onEntityAdded(entities)
         }
-        val leftOvers = matchedComponents.keys.filter { !matchedComponents.keys.contains(it) }
+
+        val leftOvers = allComponents - matchedComponents
         if(leftOvers.isNotEmpty()) {
             throw IllegalStateException("Cannot find system for components: ${leftOvers.map { it::class.java }}")
         }

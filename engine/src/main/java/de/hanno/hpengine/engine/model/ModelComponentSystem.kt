@@ -179,7 +179,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
     }
 
     fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
-        val components = entities.flatMap { it.components.values.filterIsInstance<ModelComponent>() }
+        val components = entities.flatMap { it.components.filterIsInstance<ModelComponent>() }
         val allocations = components.associateWith { c ->
             if (c.model.isStatic) {
                 val vertexIndexBuffer = vertexIndexBufferStatic
@@ -208,7 +208,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         vertexIndexBufferAnimated.resetAllocations()
     }
 
-    override fun onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
+    override fun onEntityAdded(entities: List<Entity>): MutableList<Component> {
         val result = super.onEntityAdded(entities)
         cacheEntityIndices()
         return result

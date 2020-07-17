@@ -81,7 +81,7 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
-        val giComponents = components[GIVolumeComponent::class.java]!! as List<GIVolumeComponent>
+        val giComponents = components.filterIsInstance<GIVolumeComponent>()
         if(giComponents.isNotEmpty()) {
             val globalGrid = giComponents.first()
             val halfExtents = Vector3f(scene.minMax.max).sub(scene.minMax.min).mul(0.5f)
@@ -96,7 +96,7 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
     }
     private fun updateGiVolumes(renderState: RenderState) {
         voxelConeTracingExtension?.let { voxelConeTracingExtension ->
-            val componentList = components[GIVolumeComponent::class.java] as List<GIVolumeComponent>
+            val componentList = components.filterIsInstance<GIVolumeComponent>()
             if (componentList.isNotEmpty()) {
                 voxelConeTracingExtension.extract(renderState, componentList)
             }
