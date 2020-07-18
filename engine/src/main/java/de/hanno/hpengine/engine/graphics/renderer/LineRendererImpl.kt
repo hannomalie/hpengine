@@ -54,7 +54,7 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
         buffer.putValues(*points)
         buffer.upload().join()
         buffer.drawDebugLines(min(lineWidth, maxLineWidth))
-        GL11.glFinish()
+//        GL11.glFinish()
         linePoints.clear()
         return points.size / 3 / 2
     }

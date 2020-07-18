@@ -85,12 +85,11 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             if (entity.updateType == Update.STATIC) {
                 staticEntityHasMoved = true
                 staticEntityMovedInCycle = scene.currentCycle
-                scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             } else {
                 entityHasMoved = true
                 entityMovedInCycle = scene.currentCycle
-                scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             }
+            scene.minMax.calculateMinMax(scene.entityManager.getEntities())
             entity.movedInCycle = scene.currentCycle
             break
         }

@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.transform
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.isEqualTo
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -22,7 +23,8 @@ abstract class AbstractSpatial : Serializable, Spatial {
         return centerWorld
     }
     protected open fun isClean(transform: Transform<*>): Boolean {
-        return Util.equals(transform, lastUsedTransformationMatrix)
+        if(lastUsedTransformationMatrix == null) return false
+        return transform.isEqualTo(lastUsedTransformationMatrix!!)
     }
 
     private fun calculateCenters() {

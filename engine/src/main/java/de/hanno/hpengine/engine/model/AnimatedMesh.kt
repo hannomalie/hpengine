@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import org.joml.Vector3f
+import java.io.File
 
 class AnimatedMesh(override var name: String,
                    override val vertices: List<AnimatedVertex>,
@@ -47,9 +48,11 @@ class AnimatedMesh(override var name: String,
     }
 }
 
-class AnimatedModel(override val path: String, meshes: List<AnimatedMesh>,
+class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
                     val animations: Map<String, Animation>, material: Material = meshes.first().material): AbstractModel<AnimatedVertex>(meshes, material) {
     override val bytesPerVertex = AnimatedVertexStruct.sizeInBytes
+    override val path = file.absolutePath
+
     init {
         for (mesh in meshes) {
             mesh.model = this

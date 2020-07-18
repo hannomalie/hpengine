@@ -3,8 +3,6 @@ package de.hanno.hpengine.engine.manager
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
@@ -66,11 +64,6 @@ open class SimpleComponentSystem<T: Component>(override val componentClass: Clas
     override fun getComponents(): List<T> = components
 
     override fun addComponent(component: T) {
-        addComponentImpl(component)
-    }
-
-    // Workaroung for https://youtrack.jetbrains.com/issue/KT-11488?_ga=2.92346137.567661805.1573652933-1826229974.1518078622
-    protected fun addComponentImpl(component: T) {
         components.add(component)
         logger.debug("Added component $component")
     }

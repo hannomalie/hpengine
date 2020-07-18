@@ -62,7 +62,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val rootNode: Node = aiRootNode.processNodesHierarchy(null)
         val animations: Map<String, Animation> = aiScene.processAnimations(boneList, rootNode, rootTransfromation)
 
-        return AnimatedModel(file.absolutePath, meshes, animations)
+        return AnimatedModel(file, meshes, animations)
     }
     private fun AIScene.processAnimations(boneList: List<Bone>, rootNode: Node,
                                           rootTransformation: Matrix4f): Map<String, Animation> {

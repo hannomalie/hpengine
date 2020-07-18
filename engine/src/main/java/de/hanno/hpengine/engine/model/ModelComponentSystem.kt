@@ -14,10 +14,13 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
+import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileMonitor
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
@@ -62,6 +65,9 @@ class ModelComponentSystem(val engine: EngineContext<*>,
         allocateVertexIndexBufferSpace(listOf(component.entity))
         components.add(component)
         cacheEntityIndices()
+
+        // TODO: Implement for reload feature
+        // FileMonitor.addOnFileChangeListener(component.model.file) { }
     }
 
     private fun cacheEntityIndices() {

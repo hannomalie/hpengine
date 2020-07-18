@@ -6,8 +6,10 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
+import java.io.File
 
 interface Model<T> {
+    val file: File
 
     val path: String
 

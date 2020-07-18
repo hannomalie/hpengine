@@ -13,6 +13,8 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.hanno.hpengine.util.UtilKt.isEqualTo;
+
 public class Transform<T extends Transform> extends Matrix4f implements Parentable<T>, Serializable {
 	private Matrix4f lastState = new Matrix4f();
 	private static final long serialVersionUID = 1L;
@@ -89,7 +91,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 
 	public boolean isHasMoved() {
 		if(parent != null && parent.isHasMoved()) { return true; }
-		return !Util.equals(lastState, this);
+		return !isEqualTo(lastState, this);
 	}
 	public void setHasMoved(boolean hasMoved) {
 		lastState.set(this);

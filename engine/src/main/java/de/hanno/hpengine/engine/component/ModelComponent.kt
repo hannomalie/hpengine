@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.util.ressources.Reloadable
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +29,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
             field = value
             model.material = value
             for (child in entity.children) {
-                child.getComponentOption(ModelComponent::class.java).ifPresent { c -> c.material = value }
+                child.getComponent(ModelComponent::class.java)?.let { c -> c.material = value }
             }
         }
     var instanced = false
@@ -90,15 +91,9 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         return model.getMinMax(transform, mesh)
     }
 
-    override fun toString(): String = "ModelComponent [" + model.toString() + "]"
-
-    fun getBytesPerObject(): Int = bytesPerInstance * meshes.size * entity.instanceCount
+    override fun toString(): String = "ModelComponent [${model.path}]"
 
     companion object {
-        val COMPONENT_KEY = ModelComponent::class.java.simpleName
-        private val LOGGER = Logger.getLogger(ModelComponent::class.java.name)
-        private const val serialVersionUID = 1L
-
         var DEFAULTCHANNELS = EnumSet.of(
                 DataChannels.POSITION3,
                 DataChannels.TEXCOORD,

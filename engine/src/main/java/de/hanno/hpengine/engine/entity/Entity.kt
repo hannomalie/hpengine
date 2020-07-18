@@ -75,7 +75,7 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
 
     var isVisible = true
 
-    var components: MutableSet<Component> = HashSet()
+    var components: MutableList<Component> = ArrayList()
 
     val centerWorld: Vector3f
         get() = spatial.getCenterWorld(this)
@@ -93,18 +93,34 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
     }
 
     fun addComponent(component: Component) {
+        if(components.contains(component)) { return }
+
         components.add(component)
     }
 
-    fun <T : Component> getComponent(type: Class<T>): T? =
-            components.map { runCatching { type.cast(it) } }.mapNotNull { it.getOrNull() }.firstOrNull()
+    fun <T : Component> getComponent(type: Class<T>): T? {
+        var i = 0
+        val size = components.size
+        while(i < size) {
+            val component = components[i]
+            if(type.isAssignableFrom(component.javaClass)) return type.cast(component)
+            i++
+        }
+        return null
+//        Worse allocation performance than the above
+//        return components
+//                .filter { type.isAssignableFrom(it.javaClass) }
+//                .map { type.cast(it) }
+//                .firstOrNull()
+    }
 
-    fun <T : Component> getComponents(type: Class<T>): List<T> =
-            components.mapNotNull { runCatching { type.cast(it) }.getOrNull() }
+    fun <T : Component> getComponents(type: Class<T>): List<T> = components
+        .filter { type.isAssignableFrom(it.javaClass) }
+        .map { type.cast(it) }
 
     fun <T : Component> getComponentOption(type: Class<T>) = Optional.ofNullable(getComponent(type))
 
-    fun hasComponent(type: Class<out Component>): Boolean = components.any { it.javaClass.isAssignableFrom(type) }
+    fun hasComponent(type: Class<out Component>): Boolean = getComponent(type) != null
     fun hasComponents(types: List<Class<out Component>>) = types.all { type -> hasComponent(type) }
     fun getComponents(types: List<Class<out Component>>) = types.flatMap { type -> getComponents(type) }
 
@@ -163,7 +179,9 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
     fun hasMoved(): Boolean {
         val modelComponentOrNull = getComponent(ModelComponent::class.java)
         if (modelComponentOrNull != null) {
-            return true
+            if (modelComponentOrNull.isHasUpdated) {
+                return true
+            }
         }
 
         if (isHasMoved) {

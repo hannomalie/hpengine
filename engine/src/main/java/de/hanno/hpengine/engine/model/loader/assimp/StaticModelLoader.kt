@@ -63,7 +63,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)
         }
-        return StaticModel(file.absolutePath, meshes)
+        return StaticModel(file, meshes)
     }
 
     private fun AIMaterial.processMaterial(texturesDir: File, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {

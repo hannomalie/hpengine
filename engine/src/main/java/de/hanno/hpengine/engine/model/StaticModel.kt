@@ -7,10 +7,13 @@ import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
+import java.io.File
 
-class StaticModel(override val path: String,
+class StaticModel(override val file: File,
                   meshes: List<StaticMesh>,
                   material: Material = meshes.first().material) : AbstractModel<Vertex>(meshes, material) {
+
+    override val path: String = file.absolutePath
 
     init {
         for (i in meshes.indices) {
