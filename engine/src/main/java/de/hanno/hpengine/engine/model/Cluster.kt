@@ -10,7 +10,7 @@ import org.joml.Vector3f
 import java.util.ArrayList
 
 
-class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance>(), Updatable, Spatial by spatial {
+class Cluster(val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX)))) : ArrayList<Instance>(), Updatable, Spatial by spatial {
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         with(spatial) { update(deltaSeconds) }
@@ -36,25 +36,24 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             }
         }
 
-    var minMaxProperty: AABB = AABB(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX))
-
-    override val minMax: AABB
+    val minMaxLocal: AABB
         get() {
-            if(isHasMoved || minMaxProperty.min == Spatial.MIN) {
+            if(isHasMoved || spatial.minMaxLocal.min == Spatial.MIN) {
                 recalculate()
             }
-            return minMaxProperty
+            return spatial.minMaxLocal
         }
 
 
-    fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMaxWorld(get(i))
+    fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMax(get(i))
 
     fun recalculate() {
+        val minMaxProperty = spatial.minMaxLocal
         minMaxProperty.min.set(Spatial.MIN)
         minMaxProperty.max.set(Spatial.MAX)
 
         for (i in 0 until size) {
-            val currentMinMax = get(i).getMinMaxWorld(get(i))
+            val currentMinMax = get(i).getMinMax(get(i))
             val currentMin = currentMinMax.min
             val currentMax = currentMinMax.max
 
@@ -70,9 +69,9 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             }
         }
 
-        spatial.minMaxWorld.min.set(minMax.min)
-        spatial.minMaxWorld.max.set(minMax.max)
-        spatial.calculateCenter(spatial.centerWorld, minMaxWorld)
+        minMaxProperty.min.set(minMaxLocal.min)
+        minMaxProperty.max.set(minMaxLocal.max)
+        spatial.calculateCenter()
         spatial.calculateBoundSphereRadius()
     }
 }

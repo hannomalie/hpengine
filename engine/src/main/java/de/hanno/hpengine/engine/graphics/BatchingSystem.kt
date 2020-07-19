@@ -30,7 +30,7 @@ class BatchingSystem {
             val meshes = modelComponent.meshes
             for (meshIndex in meshes.indices) {
                 val mesh = meshes[meshIndex]
-                val meshCenter = mesh.getCenter(entity)
+                val meshCenter = mesh.spatial.getCenter(entity)
                 val boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh)
 
                 val (min1, max1) = modelComponent.model.getMinMax(mesh)

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.animation.AnimationController
@@ -8,14 +9,16 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import kotlinx.coroutines.CoroutineScope
+import org.joml.Vector3f
 import java.util.ArrayList
 
-open class Instance
+class Instance
     @JvmOverloads constructor(val entity: Entity, transform: Transform<out Transform<*>> = Transform(),
                               var materials: List<Material> = listOf(),
                               val animationController: AnimationController? = null,
-                              open val spatial: Spatial = SimpleSpatial())
+                              val spatial: TransformSpatial = TransformSpatial(transform, entity.getComponent(ModelComponent::class.java)?.spatial?.minMaxLocal ?: AABB()))
     : Transform<Transform<*>>(), Updatable, Spatial by spatial {
 
     private val children = ArrayList<Instance>()
@@ -38,9 +41,7 @@ open class Instance
         with(spatial) { update(deltaSeconds) }
     }
 
-    override val minMax: AABB
+    val minMax: AABB
         get() = spatial.minMax
 
-    override val minMaxWorld: AABB
-        get() = spatial.minMaxWorld
 }

@@ -8,9 +8,9 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.Optional
@@ -47,15 +47,9 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
                                             position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
     var movedInCycle = 0L
 
-    val spatial: SimpleSpatial = object : SimpleSpatial() {
-        override val minMax: AABB
-            get() = if (hasComponent(ModelComponent::class.java)) {
-                val modelComponent = getComponent(ModelComponent::class.java)
-                modelComponent!!.minMax
-            } else {
-                super.minMax
-            }
-    }
+    private val simpleSpatial = TransformSpatial(this, AABB(Vector3f(-5f), Vector3f(5f)))
+    private val spatial: TransformSpatial
+        get() = getComponent(ModelComponent::class.java)?.spatial ?: simpleSpatial
 
     var index = -1
 
@@ -78,10 +72,11 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
     var components: MutableList<Component> = ArrayList()
 
     val centerWorld: Vector3f
-        get() = spatial.getCenterWorld(this)
+        get() = spatial.getCenter(this)
 
     val minMaxWorld: AABB
-        get() = spatial.getMinMaxWorld(this)
+        get() = spatial.getMinMax(this)
+
     val minMax: AABB
         get() = spatial.minMax
 
@@ -142,7 +137,7 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
     }
 
     fun isInFrustum(camera: Camera): Boolean {
-        return Spatial.isInFrustum(camera, spatial.getCenterWorld(this), spatial.getMinMaxWorld(this).min, spatial.getMinMaxWorld(this).max)
+        return Spatial.isInFrustum(camera, spatial.getCenter(this), spatial.getMinMax(this).min, spatial.getMinMax(this).max)
     }
 
     override fun toString(): String {

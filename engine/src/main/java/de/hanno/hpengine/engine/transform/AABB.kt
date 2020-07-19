@@ -4,11 +4,13 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import org.joml.Vector3f
-import org.joml.Vector3fc
 import org.joml.Vector4f
 import java.util.ArrayList
 
-data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) {
+sealed class BoundingVolume
+data class BoundingSphere(val position: Vector3f, val radius: Float): BoundingVolume()
+
+data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()): BoundingVolume() {
     val extents: Vector3f
             get() = Vector3f(max).sub(min)
     val halfExtents: Vector3f
@@ -19,7 +21,7 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
 
     private val  corners = Array(8) { Vector3f() }
 
-    fun transform(transform: Transform<*>, minMaxWorldProperty: AABB) {
+    fun transform(transform: Transform<*>, target: AABB) {
         transform.transformPosition(min, corners[0])
         transform.transformPosition(corners[1].set(min.x, min.y, max.z), corners[1])
         transform.transformPosition(corners[2].set(max.x, min.y, min.z), corners[2])
@@ -30,10 +32,10 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
         transform.transformPosition(corners[6].set(max.x, max.y, min.z), corners[6])
         transform.transformPosition(corners[7].set(min.x, max.y, min.z), corners[7])
 
-        minMaxWorldProperty.resetToAbsoluteMinMax()
+        target.resetToAbsoluteMinMax()
         corners.forEach { corner ->
-            minMaxWorldProperty.min.min(corner)
-            minMaxWorldProperty.max.max(corner)
+            target.min.min(corner)
+            target.max.max(corner)
         }
     }
 

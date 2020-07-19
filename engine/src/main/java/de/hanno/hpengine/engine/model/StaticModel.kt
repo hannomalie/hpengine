@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.model.StaticMesh.Companion.calculateMinMax
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
@@ -14,13 +15,14 @@ class StaticModel(override val file: File,
                   material: Material = meshes.first().material) : AbstractModel<Vertex>(meshes, material) {
 
     override val path: String = file.absolutePath
-
-    init {
+    override val minMax: AABB = run {
+        val targetMinMax = AABB()
         for (i in meshes.indices) {
             val mesh = meshes[i]
-            val meshMinMax = mesh.minMax
-            StaticMesh.calculateMinMax(minMax.min, minMax.max, meshMinMax)
+            val meshMinMax = mesh.spatial.minMaxLocal
+            calculateMinMax(meshMinMax.min, meshMinMax.max, targetMinMax)
         }
+        targetMinMax
     }
     override val bytesPerVertex = VertexStruct.sizeInBytes
 
@@ -35,32 +37,6 @@ class StaticModel(override val file: File,
         }
     }
 
-//    val uniqueVertices: Set<Vertex> = compiledVertices.toSet()
-//    val uniqueIndices = IntArrayList().apply {
-//        meshes.map { mesh ->
-//            val vertices: List<Vertex> = mesh.faces.flatMap { face ->
-//                (0..2).map { i ->
-//                    Vertex(face.positions[i], face.texCoords[i], face.normals[i])
-//                }
-//            }
-//            vertices.forEach { add(uniqueVertices.indexOf(it)) }
-//        }
-//    }
-//  Use this and change baseVertex to model base vertex
-//    override val indices = uniqueIndices.toArray()
-//    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.uniqueVertices.size }) { VertexStructPacked() }.apply {
-//        var counter = 0
-//        for(mesh in meshes) {
-//            for(vertex in mesh.uniqueVertices) {
-//                val (position, texCoord, normal) = vertex
-//                val target = getAtIndex(counter)
-//                target.position.set(position)
-//                target.texCoord.set(texCoord)
-//                target.normal.set(normal)
-//                counter++
-//            }
-//        }
-//    }
     override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.vertices.size }) { VertexStructPacked() }.apply {
         var counter = 0
         for(mesh in meshes) {
@@ -75,15 +51,5 @@ class StaticModel(override val file: File,
         }
     }
 
-    fun getMesh(i: Int): Mesh<Vertex> {
-        return meshes[i]
-    }
-
-    override fun toString(): String {
-        return "StaticModel($path)"
-    }
-
-    override fun getMinMax(transform: Transform<*>): AABB {
-        return getMinMaxWorld(transform)
-    }
+    override fun toString(): String = "StaticModel($path)"
 }

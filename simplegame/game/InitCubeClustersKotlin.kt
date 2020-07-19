@@ -47,7 +47,7 @@ class InitCubeClustersKotlin @Inject constructor(engine: Engine<*>) : Updatable 
                                 val modelComponent = current.getComponent(ModelComponent::class.java)
                                 val materials = modelComponent?.materials ?: ArrayList()
                                 cluster.add(Instance(current, trafo, materials, null, object : SimpleSpatial() {
-                                    override val minMax: AABB
+                                    override val minMaxLocal: AABB
                                         get() = current.minMax
                                 }))
                             }

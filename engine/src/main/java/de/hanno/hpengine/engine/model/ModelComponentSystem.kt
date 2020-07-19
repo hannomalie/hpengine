@@ -137,7 +137,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                         target.baseJointIndex = allocation.baseJointIndex
                         target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                         target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                        val minMaxWorld = instance.minMaxWorld
+                        val minMaxWorld = instance.spatial.minMax
                         target.setTrafoMinMax(instanceMatrix, minMaxWorld.min, minMaxWorld.max)
 
                         counter++
@@ -158,7 +158,7 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                             target.baseJointIndex = allocation.baseJointIndex
                             target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                             target.isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
-                            val minMaxWorld = instance.minMaxWorld
+                            val minMaxWorld = instance.spatial.minMax
                             target.setTrafoMinMax(instanceMatrix, minMaxWorld.min, minMaxWorld.max)
 
                             counter++

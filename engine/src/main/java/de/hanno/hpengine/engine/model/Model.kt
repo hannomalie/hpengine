@@ -40,15 +40,15 @@ interface Model<T> {
     fun getMinMax(transform: Transform<*>): AABB
 
     fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
-        return mesh.boundingSphereRadius
+        return mesh.spatial.boundingSphereRadius
     }
 
     fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
-        return mesh.getMinMax(transform)
+        return mesh.spatial.getMinMax(transform)
     }
 
     fun getMinMax(mesh: Mesh<*>): AABB {
-        return mesh.minMax
+        return mesh.spatial.minMaxLocal
     }
     var material: Material
     val meshIndexCounts: List<Int>

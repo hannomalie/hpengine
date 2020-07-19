@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
@@ -26,7 +27,7 @@ class ClustersComponent(override val entity: Entity): Component {
     private val clusters = CopyOnWriteArrayList<Cluster>()
 
     fun getInstances(): List<Instance> = instances
-    fun getInstancesMinMaxWorlds(): List<AABB> = instances.map{ it.minMaxWorld }
+    fun getInstancesMinMaxWorlds(): List<AABB> = instances.map { it.minMax }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         for (cluster in clusters) {
@@ -100,10 +101,10 @@ class ClustersComponent(override val entity: Entity): Component {
         val clustersComponentType = ClustersComponent::class.java.simpleName
 
 
-        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform<*>, spatial: Spatial) {
+        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform<*>, spatial: TransformSpatial) {
             addInstance(entity, clustersComponent.getOrCreateFirstCluster(), transform, spatial)
         }
-        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform<*>, spatial: Spatial) {
+        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform<*>, spatial: TransformSpatial) {
             cluster.add(Instance(entity, transform, animationController = null, spatial = spatial))
 //            eventBus.post(EntityAddedEvent()) TODO: Move this to call site
         }
@@ -113,7 +114,7 @@ class ClustersComponent(override val entity: Entity): Component {
                                    modelComponent: ModelComponent,
                                    materials: List<Material> = modelComponent.materials,
                                    animationController: AnimationController? = if (modelComponent.isStatic) null else AnimationController((modelComponent.model as AnimatedModel).animation),
-                                   spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
+                                   spatial: TransformSpatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
 
             val instance = Instance(entity, transform, materials, animationController, spatial)
             cluster.add(instance)

@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
+import de.hanno.hpengine.engine.model.StaticMesh.Companion.calculateMinMax
 import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
@@ -10,6 +11,8 @@ import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import org.joml.Vector3f
@@ -34,18 +37,9 @@ class AnimatedMesh(override var name: String,
         get() = faces.size
 
 
-    override val boundingSphereRadius: Float
-        get() = model!!.boundingSphereRadius
+    override val spatial: SimpleSpatial
+        get() = model!!
 
-    override fun getMinMax(transform: Transform<*>): AABB {
-        return model!!.getMinMax(transform)
-    }
-
-    override fun getCenter(entity: Entity): Vector3f {
-        val component = entity.getComponent(ModelComponent::class.java)
-        val animatedModel = component!!.model as AnimatedModel
-        return entity.transformPosition(centerTemp)
-    }
 }
 
 class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
@@ -90,26 +84,6 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
     }
     override val isStatic = false
 
-//    override fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).boundingSphereRadius
-//    }
-//
-//    override fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).getMinMaxWorld(transform)
-//    }
-//
-//    override fun getMinMax(transform: Transform<*>): AABB {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).minMax
-//    }
-//
-//    override fun getMinMax(mesh: Mesh<*>): AABB {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).minMax
-//    }
-//
-//    fun getCurrentBoundInfo(frame: Int): MD5BoundInfo.MD5Bound {
-//        return animation.frames[frame].bounds[frame]
-//    }
-
     fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
     }
@@ -118,5 +92,15 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
     val aabb = AABB(Vector3f(-1000f), Vector3f(1000f))
     override fun getMinMax(transform: Transform<*>): AABB {
         return aabb
+    }
+
+    override val minMax: AABB = run {
+        val targetMinMax = AABB()
+        for (i in meshes.indices) {
+            val mesh = meshes[i]
+            val meshMinMax = mesh.spatial.minMaxLocal
+            calculateMinMax(meshMinMax.min, meshMinMax.max, targetMinMax)
+        }
+        targetMinMax
     }
 }

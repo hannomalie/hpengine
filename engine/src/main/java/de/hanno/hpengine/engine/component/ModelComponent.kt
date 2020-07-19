@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.ressources.Reloadable
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
@@ -24,6 +25,7 @@ import java.util.logging.Logger
 
 
 class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
+    val spatial: TransformSpatial = TransformSpatial(entity, getMinMax(entity))
     var material = initMaterial
         set(value) {
             field = value

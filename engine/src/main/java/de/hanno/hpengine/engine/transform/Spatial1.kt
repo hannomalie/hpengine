@@ -8,12 +8,10 @@ import org.joml.Vector3fc
 import java.lang.Float.MAX_VALUE
 
 interface Spatial : Updatable {
-    val minMax: AABB
-    val centerWorld: Vector3f
+    fun getCenter(transform: Transform<*>): Vector3f
+    fun getMinMax(transform: Transform<*>): AABB
+
     val boundingSphereRadius: Float
-    val minMaxWorld: AABB
-    fun getCenterWorld(transform: Transform<*>): Vector3f
-    fun getMinMaxWorld(transform: Transform<*>): AABB
     fun getBoundingSphereRadius(transform: Transform<*>): Float
 
     companion object {

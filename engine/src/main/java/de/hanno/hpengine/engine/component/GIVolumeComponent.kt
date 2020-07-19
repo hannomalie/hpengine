@@ -17,18 +17,14 @@ import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.joml.Vector3i
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty0
 
 class GIVolumeComponent(override val entity: Entity,
-                        giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
+                        var giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
 
     constructor(entity: Entity, giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids, extents: Vector3f): this(entity, giVolumeGrids) {
-        spatial.minMax.min.set(extents).mul(-0.5f)
-        spatial.minMax.max.set(extents).mul(0.5f)
+        spatial.minMaxLocal.min.set(extents).mul(-0.5f)
+        spatial.minMaxLocal.max.set(extents).mul(0.5f)
     }
-    var giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids = giVolumeGrids
 
     val spatial = TransformSpatial(entity, AABB(Vector3f(-1f), Vector3f(1f)))
 
@@ -36,7 +32,7 @@ class GIVolumeComponent(override val entity: Entity,
         get() = giVolumeGrids.albedoGrid.dimension
 
     val minMax: AABB
-        get() = spatial.minMax
+        get() = spatial.minMaxLocal
 
     val extents: Vector3f
         get() = minMax.extents

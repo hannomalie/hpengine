@@ -413,7 +413,7 @@ class VoxelConeTracingExtension(
         val indexGridTextureFormatSized = GL30.GL_R16I//GL30.GL_R32UI;
 
 
-        private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
+        val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
             SimpleTransform().get(this)
         }
 

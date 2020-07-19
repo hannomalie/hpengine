@@ -1,11 +1,12 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
+import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import org.joml.Matrix4f
@@ -17,17 +18,22 @@ import java.util.UUID
 
 
 data class IndexedFace(val a: Int, val b: Int, val c: Int)
+
 class StaticMesh(override var name: String = "",
                  override val vertices: List<Vertex>,
                  override val faces: List<IndexedFace>,
-                 override var material: Material) : SimpleSpatial(), Serializable, Mesh<Vertex> {
+                 override var material: Material
+                 ) : Serializable, Mesh<Vertex> {
 
     val uuid = UUID.randomUUID()
 
-    override val minMax = AABB(Vector3f(), Vector3f())
-
-    init {
-        calculateMinMax(null, minMax.min, minMax.max, vertices, faces)
+    override val spatial: SimpleSpatial = object: SimpleSpatial(AABB(Vector3f(), Vector3f())) {
+        override fun recalculate(transform: Transform<*>) {
+            calculateMinMax(transform, minMaxLocal.min, minMaxLocal.max, vertices, faces)
+            super.recalculate(transform)
+        }
+    }.apply {
+        calculateMinMax(IDENTITY, minLocal, maxLocal, vertices, faces)
     }
 
     override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
@@ -40,35 +46,6 @@ class StaticMesh(override var name: String = "",
 
     override val triangleCount: Int
         get() = faces.size
-
-    override fun getMinMax(transform: Transform<*>): AABB {
-        if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, vertices, faces)
-        }
-        return super.getMinMaxWorld(transform)
-    }
-
-    override fun getCenter(transform: Entity): Vector3f {
-        return super.getCenterWorld(transform)
-    }
-
-    override fun getCenterWorld(transform: Transform<*>): Vector3f {
-        if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, vertices, faces)
-        }
-        return super.getCenterWorld(transform)
-    }
-
-    override fun getMinMaxWorld(transform: Transform<*>): AABB {
-        return getMinMax(transform)
-    }
-
-    override fun getBoundingSphereRadius(transform: Transform<*>): Float {
-        if (!isClean(transform)) {
-            calculateMinMax(transform, minMax.min, minMax.max, vertices, faces)
-        }
-        return super.getBoundingSphereRadius(transform)
-    }
 
     class CompiledVertex(val position: Vector3f, val texCoords: Vector2f, val normal: Vector3f) {
         fun asFloats(): FloatArray {
@@ -201,4 +178,5 @@ class StaticMesh(override var name: String = "",
             return getBoundingSphereRadius(target, Vector3f(min.x, min.y, min.z), Vector3f(max.x, max.y, max.z))
         }
     }
+
 }

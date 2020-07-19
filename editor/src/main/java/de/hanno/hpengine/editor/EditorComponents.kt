@@ -26,10 +26,13 @@ import de.hanno.hpengine.engine.EngineImpl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
@@ -55,6 +58,7 @@ import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
 import java.io.File
+import java.util.function.Consumer
 import javax.swing.BorderFactory
 
 sealed class OutputConfig {
@@ -83,6 +87,7 @@ class EditorComponents(val engine: EngineImpl,
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
+    private val lineRenderer = LineRendererImpl(engine)
     val sphereHolder = SphereHolder(engine)
     val boxRenderer = SimpleModelRenderer(engine)
     val pyramidRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
@@ -153,6 +158,18 @@ class EditorComponents(val engine: EngineImpl,
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.forEach { it.renderEditor(state, result) }
             }
+
+            for(batch in state.renderBatchesStatic) {
+                lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            }
+            engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+            engine.gpuContext.blend = false
+            lineRenderer.drawAllLines(5f, Consumer { program ->
+                program.setUniformAsMatrix4("modelMatrix", VoxelConeTracingExtension.identityMatrix44Buffer)
+                program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+                program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+                program.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
+            })
         }
         if(config.debug.visualizeProbes) {
             engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
