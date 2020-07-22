@@ -63,6 +63,7 @@ class BatchingSystem {
                     this.animated = !modelComponent.model.isStatic
                     materialInfo = mesh.material.materialInfo
                     entityIndex = entity.index
+                    entityName = entity.name
                     this.meshIndex = meshIndex
                 }
 

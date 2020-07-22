@@ -10,6 +10,7 @@ import java.util.ArrayList
 
 class RenderBatch(
         var entityIndex: Int = -1,
+        var entityName: String = "Dummy",
         var meshIndex: Int = -1,
         var movedInCycle: Long = 0L,
         var isDrawLines: Boolean = false,

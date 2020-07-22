@@ -163,7 +163,7 @@ interface IPerformanceConfig {
 }
 
 data class PerformanceConfig(
-        override var updateGiOnSceneChange: Boolean = false,
+        override var updateGiOnSceneChange: Boolean = true,
         override var isIndirectRendering: Boolean = true,
         override var isVsync: Boolean = true
 ) : IPerformanceConfig
