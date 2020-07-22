@@ -2,18 +2,25 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
+import de.hanno.hpengine.engine.transform.absoluteMaximum
+import de.hanno.hpengine.engine.transform.absoluteMinimum
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.joml.Vector3f
 import java.util.ArrayList
 
 
-class Cluster(val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX)))) : ArrayList<Instance>(), Updatable, Spatial by spatial {
+class Cluster(minMax: AABBData = AABBData(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX))) : ArrayList<Instance>(), Updatable {
+    var minMax: AABBData = minMax
+        private set
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
-        with(spatial) { update(deltaSeconds) }
         for (i in 0 until size) {
             launch {
                 with(get(i)) { update(deltaSeconds) }
@@ -36,42 +43,30 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(Spatial.M
             }
         }
 
-    val minMaxLocal: AABB
+    val minMaxLocal: AABBData
         get() {
-            if(isHasMoved || spatial.minMaxLocal.min == Spatial.MIN) {
+            if(isHasMoved || minMax.min == Spatial.MIN) {
                 recalculate()
             }
-            return spatial.minMaxLocal
+            return minMax
         }
 
 
     fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMax(get(i))
 
-    fun recalculate() {
-        val minMaxProperty = spatial.minMaxLocal
-        minMaxProperty.min.set(Spatial.MIN)
-        minMaxProperty.max.set(Spatial.MAX)
+    private fun recalculate() {
+        val minResult = Vector3f(absoluteMaximum)
+        val maxResult = Vector3f(absoluteMinimum)
 
         for (i in 0 until size) {
             val currentMinMax = get(i).getMinMax(get(i))
             val currentMin = currentMinMax.min
             val currentMax = currentMinMax.max
 
-            with(minMaxProperty.min) {
-                x = Math.min(x, currentMin.x)
-                y = Math.min(y, currentMin.y)
-                z = Math.min(z, currentMin.z)
-            }
-            with(minMaxProperty.max) {
-                x = Math.max(x, currentMax.x)
-                y = Math.max(y, currentMax.y)
-                z = Math.max(z, currentMax.z)
-            }
+            minResult.min(currentMin)
+            maxResult.max(currentMax)
         }
 
-        minMaxProperty.min.set(minMaxLocal.min)
-        minMaxProperty.max.set(minMaxLocal.max)
-        spatial.calculateCenter()
-        spatial.calculateBoundSphereRadius()
+        minMax = AABBData(minResult, maxResult)
     }
 }

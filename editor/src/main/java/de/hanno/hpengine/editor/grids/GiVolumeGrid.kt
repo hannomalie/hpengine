@@ -4,11 +4,19 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
+import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JFormattedTextField
 import javax.swing.JPanel
+import kotlin.reflect.KMutableProperty0
 
 class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<OpenGl>) : JPanel() {
     init {
@@ -23,8 +31,7 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<
                 engine.sceneManager.scene.activeCamera = engine.sceneManager.scene.camera
             }
         })
-        labeled("Min", giVolumeComponent.minMax.min.toInput())
-        labeled("Max", giVolumeComponent.minMax.max.toInput())
+        addMinMaxInput()
         labeled("Resolution", JFormattedTextField(giVolumeComponent.giVolumeGrids.albedoGrid.dimension.width).apply {
             this@apply.addPropertyChangeListener {
                 if(it.propertyName == "value" && it.newValue != it.oldValue) {
@@ -44,6 +51,44 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<
         })
     }
 
+    private fun addMinMaxInput() {
+        labeled("Min", giVolumeComponent.minMax::localMin.toInput())
+        labeled("Max", giVolumeComponent.minMax::localMax.toInput())
+    }
+
+}
+
+private fun KMutableProperty0<Vector3fc>.toInput(): JComponent = JFormattedTextField(this.get()).apply {
+    columns = 5
+    val xInput = JFormattedTextField(this@toInput.get().x).apply {
+        columns = 5
+        addPropertyChangeListener("value") {
+            val newVector = Vector3f(this@toInput.get())
+            newVector.x = it.newValue as Float
+            this@toInput.set(newVector)
+        }
+    }
+    val yInput = JFormattedTextField(this@toInput.get().y).apply {
+        columns = 5
+        addPropertyChangeListener("value") {
+            val newVector = Vector3f(this@toInput.get())
+            newVector.y = it.newValue as Float
+            this@toInput.set(newVector)
+        }
+    }
+    val zInput = JFormattedTextField(this@toInput.get().z).apply {
+        columns = 5
+        addPropertyChangeListener("value") {
+            val newVector = Vector3f(this@toInput.get())
+            newVector.z = it.newValue as Float
+            this@toInput.set(newVector)
+        }
+    }
+    return JPanel().apply {
+        labeled("X", xInput)
+        labeled("Y", yInput)
+        labeled("Z", zInput)
+    }
 }
 
 private fun Vector3f.toInput(): JPanel {

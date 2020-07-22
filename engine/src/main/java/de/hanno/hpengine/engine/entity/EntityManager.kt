@@ -9,10 +9,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.UpdateLock
-import de.hanno.hpengine.engine.transform.calculateMinMax
+import de.hanno.hpengine.util.isEqualTo
 import kotlinx.coroutines.CoroutineScope
+import org.joml.Matrix4f
 import org.joml.Vector3f
+import java.util.WeakHashMap
 import java.util.logging.Logger
 
 class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, val scene: Scene) : Manager {
@@ -22,6 +23,8 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
     var staticEntityMovedInCycle: Long = 0
     var entityAddedInCycle: Long = 0
     var componentAddedInCycle: Long = 0
+
+    private var transformCache = WeakHashMap<Entity, Matrix4f>()
 
     var entityHasMoved = false
     var staticEntityHasMoved = false
@@ -78,10 +81,15 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             it != scene.activeCamera.entity && it.hasComponent(ModelComponent::class.java)
         }
         for (entity in entityContainer.entities.filter(predicate)) {
-            if (!entity.hasMoved()) {
+            transformCache.putIfAbsent(entity, Matrix4f(entity))
+
+            val cachedTransform = transformCache[entity]!!
+            val entityMoved = !cachedTransform.isEqualTo(entity)
+            if (!entityMoved) {
                 continue
             }
 
+            transformCache[entity] = Matrix4f(entity)
             if (entity.updateType == Update.STATIC) {
                 staticEntityHasMoved = true
                 staticEntityMovedInCycle = scene.currentCycle
@@ -89,7 +97,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
                 entityHasMoved = true
                 entityMovedInCycle = scene.currentCycle
             }
-            scene.minMax.calculateMinMax(scene.entityManager.getEntities())
+            scene.calculateMinMax()
             entity.movedInCycle = scene.currentCycle
             break
         }

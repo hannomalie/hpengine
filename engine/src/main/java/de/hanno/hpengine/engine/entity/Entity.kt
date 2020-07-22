@@ -48,8 +48,9 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
     var movedInCycle = 0L
 
     private val simpleSpatial = TransformSpatial(this, AABB(Vector3f(-5f), Vector3f(5f)))
-    private val spatial: TransformSpatial
-        get() = getComponent(ModelComponent::class.java)?.spatial ?: simpleSpatial
+//    val spatial: TransformSpatial
+//        get() = getComponent(ModelComponent::class.java)?.spatial ?: simpleSpatial
+    var spatial: TransformSpatial = simpleSpatial
 
     var index = -1
 

@@ -6,8 +6,9 @@ import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.struct.StructArray
+import org.joml.Vector3f
 import java.io.File
 
 class StaticModel(override val file: File,
@@ -16,13 +17,16 @@ class StaticModel(override val file: File,
 
     override val path: String = file.absolutePath
     override val minMax: AABB = run {
-        val targetMinMax = AABB()
+        var targetMinMax = AABBData()
         for (i in meshes.indices) {
             val mesh = meshes[i]
-            val meshMinMax = mesh.spatial.minMaxLocal
-            calculateMinMax(meshMinMax.min, meshMinMax.max, targetMinMax)
+            val meshMinMax = mesh.spatial.minMax.localAABB
+            val newMin = Vector3f(meshMinMax.min)
+            val newMax = Vector3f(meshMinMax.max)
+            calculateMinMax(newMin, newMax, targetMinMax)
+            targetMinMax = AABBData(newMin, newMax)
         }
-        targetMinMax
+        AABB(targetMinMax.min, targetMinMax.max)
     }
     override val bytesPerVertex = VertexStruct.sizeInBytes
 

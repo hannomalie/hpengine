@@ -8,11 +8,12 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import java.util.function.Consumer
 
 interface LineRenderer {
     fun batchPointForLine(point: Vector3f)
-    fun batchLine(from: Vector3f, to: Vector3f)
+    fun batchLine(from: Vector3fc, to: Vector3fc)
 
     @JvmDefault
     fun drawLines(program: Program) = drawLines(program, 2f)
@@ -272,7 +273,7 @@ interface LineRenderer {
     }
 }
 
-fun LineRenderer.batchAABBLines(minWorld: Vector3f, maxWorld: Vector3f) {
+fun LineRenderer.batchAABBLines(minWorld: Vector3fc, maxWorld: Vector3fc) {
     run {
         val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
         val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())

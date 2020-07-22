@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.Environment
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.util.Random;
 
@@ -61,7 +62,7 @@ public class EnvironmentProbe implements Component {
 		});
 	}
 
-	public boolean contains(Vector3f min, Vector3f max) {
+	public boolean contains(Vector3fc min, Vector3fc max) {
 		return box.contains(min) && box.contains(max);
 	}
 

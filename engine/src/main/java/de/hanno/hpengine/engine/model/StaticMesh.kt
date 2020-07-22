@@ -5,13 +5,17 @@ import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
-import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
 import java.io.Serializable
 import java.util.UUID
@@ -27,13 +31,11 @@ class StaticMesh(override var name: String = "",
 
     val uuid = UUID.randomUUID()
 
-    override val spatial: SimpleSpatial = object: SimpleSpatial(AABB(Vector3f(), Vector3f())) {
-        override fun recalculate(transform: Transform<*>) {
-            calculateMinMax(transform, minMaxLocal.min, minMaxLocal.max, vertices, faces)
-            super.recalculate(transform)
-        }
-    }.apply {
+    override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
+        val minLocal = Vector3f()
+        val maxLocal = Vector3f()
         calculateMinMax(IDENTITY, minLocal, maxLocal, vertices, faces)
+        minMax.setLocalAABB(minLocal, maxLocal)
     }
 
     override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
@@ -136,7 +138,7 @@ class StaticMesh(override var name: String = "",
         }
 
         //TODO: Move this away from here
-        fun calculateMinMax(targetMin: Vector3f, targetMax: Vector3f, candidate: AABB) {
+        fun calculateMinMax(targetMin: Vector3f, targetMax: Vector3f, candidate: AABBData) {
             targetMin.x = if (candidate.min.x < targetMin.x) candidate.min.x else targetMin.x
             targetMin.y = if (candidate.min.y < targetMin.y) candidate.min.y else targetMin.y
             targetMin.z = if (candidate.min.z < targetMin.z) candidate.min.z else targetMin.z
@@ -158,17 +160,18 @@ class StaticMesh(override var name: String = "",
             old.z = if (candidate.z > old.z) candidate.z else old.z
         }
 
-        fun calculateMinMax(transform: Matrix4f, min: Vector3f, max: Vector3f, current: AABB) {
-            current.min = transform.transformPosition(current.min)
-            current.max = transform.transformPosition(current.max)
-            min.x = if (current.min.x < min.x) current.min.x else min.x
-            min.y = if (current.min.y < min.y) current.min.y else min.y
-            min.z = if (current.min.z < min.z) current.min.z else min.z
-
-            max.x = if (current.max.x > max.x) current.max.x else max.x
-            max.y = if (current.max.y > max.y) current.max.y else max.y
-            max.z = if (current.max.z > max.z) current.max.z else max.z
-        }
+//         TODO: This is obsolete right?
+//        fun calculateMinMax(transform: Matrix4f, min: Vector3f, max: Vector3f, current: AABB) {
+//            current.min = transform.transformPosition(current.min)
+//            current.max = transform.transformPosition(current.max)
+//            min.x = if (current.min.x < min.x) current.min.x else min.x
+//            min.y = if (current.min.y < min.y) current.min.y else min.y
+//            min.z = if (current.min.z < min.z) current.min.z else min.z
+//
+//            max.x = if (current.max.x > max.x) current.max.x else max.x
+//            max.y = if (current.max.y > max.y) current.max.y else max.y
+//            max.z = if (current.max.z > max.z) current.max.z else max.z
+//        }
 
         fun getBoundingSphereRadius(target: Vector3f, min: Vector3f, max: Vector3f): Float {
             return target.set(max).sub(min).mul(0.5f).length()

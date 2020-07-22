@@ -21,7 +21,6 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.calculateMinMax
 import kotlinx.coroutines.CoroutineScope
 import java.io.Serializable
 import java.util.Optional
@@ -57,7 +56,7 @@ interface Scene : Updatable, Serializable {
         with(componentSystems) { onEntityAdded(entities) }
         with(managers) { onEntityAdded(entities) }
 
-        minMax.calculateMinMax(entityManager.getEntities())
+        calculateMinMax()
 
         // TODO: This is not too correct but the cycle counter gets updated just before this happens
         entityManager.entityAddedInCycle = currentCycle-1
@@ -107,6 +106,10 @@ interface Scene : Updatable, Serializable {
     fun addComponent(selection: Entity, component: Component) {
         selection.addComponent(component)
         onComponentAdded(component)
+    }
+
+    fun calculateMinMax() {
+        minMax.localAABB = minMax.calculateMinMax(entityManager.getEntities())
     }
 
     var initialized: Boolean

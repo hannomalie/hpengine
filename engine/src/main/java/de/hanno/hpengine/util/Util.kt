@@ -4,9 +4,7 @@ import org.joml.Matrix4f
 import org.joml.Matrix4fc
 import java.lang.Float.floatToIntBits
 
-internal fun Matrix4f.isEqualTo(b: Matrix4f): Boolean {
-    if (this === b) return true
-    val other: Matrix4fc = b
+internal fun Matrix4f.isEqualTo(other: Matrix4fc): Boolean {
     if (floatToIntBits(m00()) != floatToIntBits(other.m00())) return false
     if (floatToIntBits(m01()) != floatToIntBits(other.m01())) return false
     if (floatToIntBits(m02()) != floatToIntBits(other.m02())) return false

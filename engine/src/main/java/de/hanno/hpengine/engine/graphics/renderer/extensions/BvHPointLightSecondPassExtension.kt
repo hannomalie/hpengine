@@ -35,6 +35,9 @@ import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Vector3f
 import org.joml.Vector4f

@@ -1,7 +1,5 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.StaticMesh.Companion.calculateMinMax
 import de.hanno.hpengine.engine.model.animation.Animation
@@ -11,10 +9,11 @@ import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
-import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.File
 
@@ -88,19 +87,16 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
         animationController.update(deltaSeconds)
     }
 
-    // TODO: Implement this properly
-    val aabb = AABB(Vector3f(-1000f), Vector3f(1000f))
-    override fun getMinMax(transform: Transform<*>): AABB {
-        return aabb
-    }
-
     override val minMax: AABB = run {
-        val targetMinMax = AABB()
+        var targetMinMax = AABBData()
         for (i in meshes.indices) {
             val mesh = meshes[i]
-            val meshMinMax = mesh.spatial.minMaxLocal
-            calculateMinMax(meshMinMax.min, meshMinMax.max, targetMinMax)
+            val meshMinMax = mesh.spatial.minMax
+            val newMin = Vector3f(meshMinMax.min)
+            val newMax = Vector3f(meshMinMax.max)
+            calculateMinMax(newMin, newMax, targetMinMax)
+            targetMinMax = AABBData(newMin, newMax)
         }
-        targetMinMax
+        AABB(targetMinMax.min, targetMinMax.max)
     }
 }

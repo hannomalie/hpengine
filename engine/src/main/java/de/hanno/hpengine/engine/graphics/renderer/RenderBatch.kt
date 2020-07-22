@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import java.util.ArrayList
 
 class RenderBatch(

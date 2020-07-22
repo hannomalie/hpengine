@@ -31,6 +31,7 @@ import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
@@ -114,8 +115,8 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 			AABB box = probes.get(i).getBox();
 			box.move(new Vector3f(box.getMin()).add(box.getHalfExtents()).negate());
 			box.move(probes.get(i).getEntity().getPosition());
-			Vector3f min = box.getMin();
-			Vector3f max = box.getMax();
+			Vector3f min = new Vector3f(box.getMin());
+			Vector3f max = new Vector3f(box.getMax());
 			float weight = probes.get(i).getWeight();
 			
 			srcMinPositions[3*i] = min.x;
@@ -190,7 +191,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void drawDebug(EnvironmentProbe probe, Program program) {
-		List<Vector3f> points = probe.getBox().getPoints();
+		List<Vector3fc> points = probe.getBox().getPoints();
 		EnvironmentSampler sampler = probe.getSampler();
 		for (int i = 0; i < points.size() - 1; i++) {
 			renderer.batchLine(points.get(i), points.get(i + 1));

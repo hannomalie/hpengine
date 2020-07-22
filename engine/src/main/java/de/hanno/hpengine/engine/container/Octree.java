@@ -499,8 +499,8 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 
 
 		private boolean contains(de.hanno.hpengine.engine.transform.AABB minMaxWorld) {
-			Vector3f min = minMaxWorld.getMin();
-			Vector3f max = minMaxWorld.getMax();
+			Vector3f min = new Vector3f(minMaxWorld.getMin());
+			Vector3f max = new Vector3f(minMaxWorld.getMax());
 			
 			if (looseAabb.contains(min) && looseAabb.contains(max)) {
 //				LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("(%.2f, %.2f, %.2f) is in %s", min.x, min.y, min.z, aabb));

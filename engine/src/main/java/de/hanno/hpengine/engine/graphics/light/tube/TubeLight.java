@@ -133,13 +133,4 @@ public class TubeLight implements Component {
 		this.radius = radius;
 	}
 
-//	TODO do this properly
-	AABB aabb = new AABB();
-	public AABB getMinMaxWorld() {
-		aabb.setMin(new Vector3f(-length));
-		aabb.setMax(new Vector3f(length));
-		aabb.transform(getEntity(), aabb);
-		return aabb;
-	}
-
 }

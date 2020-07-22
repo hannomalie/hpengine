@@ -32,6 +32,7 @@ import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
+import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.transform.AABB
@@ -44,7 +45,9 @@ class SceneImpl @JvmOverloads constructor(override val name: String = "new-scene
     override var currentCycle: Long = 0
     @Transient
     override var isInitiallyDrawn: Boolean = false
-    override val minMax = AABB(Vector3f(), 50f)
+    override val minMax = AABB(Vector3f(), 50f).apply {
+        recalculate(IDENTITY)
+    }
 
     override val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     override val managers: ManagerRegistry = SimpleManagerRegistry()
@@ -151,8 +154,8 @@ class SceneImpl @JvmOverloads constructor(override val name: String = "new-scene
         currentWriteState.camera.init(activeCamera)
         currentWriteState.sceneInitiallyDrawn = isInitiallyDrawn
         currentWriteState.sceneInitialized = initialized
-        currentWriteState.sceneMin = minMax.min
-        currentWriteState.sceneMax = minMax.max
+        currentWriteState.sceneMin.set(minMax.min)
+        currentWriteState.sceneMax.set(minMax.max)
 
         for(system in componentSystems.getSystems()) {
             system.extract(currentWriteState)

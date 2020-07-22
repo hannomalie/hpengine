@@ -27,6 +27,9 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.threads.TimeStepThread
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import java.util.ArrayList

@@ -4,6 +4,9 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.math.Vector3f
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Matrix4f
 import java.nio.ByteBuffer
@@ -33,7 +36,7 @@ class EntityStruct : Struct() {
     val max by Vector3f()
     var dummy4 by 0.0f
 
-    fun setTrafoMinMax(source: Matrix4f, min: org.joml.Vector3f, max: org.joml.Vector3f) {
+    fun setTrafoMinMax(source: Matrix4f, min: org.joml.Vector3fc, max: org.joml.Vector3fc) {
 //        val baseByteOffset = baseByteOffset
 //        source.get((baseByteOffset + trafo.localByteOffset).toInt(), buffer)
 //        min.get((baseByteOffset + this.min.localByteOffset).toInt(), buffer)

@@ -75,6 +75,10 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     val materials: List<Material>
         get() = meshes.map { it.material }
 
+    init {
+        entity.spatial = spatial
+    }
+
     fun getMinMax(transform: Transform<*>): AABB = model.getMinMax(transform)
 
     fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]

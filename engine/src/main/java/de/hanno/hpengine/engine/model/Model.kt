@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
+import org.joml.Matrix4f
 import java.io.File
 
 interface Model<T> {
@@ -37,18 +38,21 @@ interface Model<T> {
 
     val bytesPerVertex: Int
 
-    fun getMinMax(transform: Transform<*>): AABB
+    fun getMinMax(transform: Matrix4f): AABB {
+        minMax.recalculate(transform)
+        return minMax
+    }
 
     fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
         return mesh.spatial.boundingSphereRadius
     }
 
-    fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
+    fun getMinMax(transform: Matrix4f, mesh: Mesh<*>): AABB {
         return mesh.spatial.getMinMax(transform)
     }
 
     fun getMinMax(mesh: Mesh<*>): AABB {
-        return mesh.spatial.minMaxLocal
+        return mesh.spatial.minMax
     }
     var material: Material
     val meshIndexCounts: List<Int>

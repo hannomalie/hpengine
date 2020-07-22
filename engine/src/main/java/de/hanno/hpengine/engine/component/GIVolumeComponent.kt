@@ -22,8 +22,7 @@ class GIVolumeComponent(override val entity: Entity,
                         var giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
 
     constructor(entity: Entity, giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids, extents: Vector3f): this(entity, giVolumeGrids) {
-        spatial.minMaxLocal.min.set(extents).mul(-0.5f)
-        spatial.minMaxLocal.max.set(extents).mul(0.5f)
+        spatial.xxx.setLocalAABB(Vector3f(extents).mul(-0.5f), Vector3f(extents).mul(0.5f))
     }
 
     val spatial = TransformSpatial(entity, AABB(Vector3f(-1f), Vector3f(1f)))
@@ -32,7 +31,7 @@ class GIVolumeComponent(override val entity: Entity,
         get() = giVolumeGrids.albedoGrid.dimension
 
     val minMax: AABB
-        get() = spatial.minMaxLocal
+        get() = spatial.xxx
 
     val extents: Vector3f
         get() = minMax.extents
@@ -50,6 +49,9 @@ class GIVolumeComponent(override val entity: Entity,
     val gridSizeHalfScaled: Int
         get() = (giVolumeGrids.gridSize * scale * 0.5f).toInt()
 
+    init {
+        entity.spatial = spatial
+    }
     override fun CoroutineScope.update(deltaSeconds: Float) {
         val gridSizeHalf = halfExtents[halfExtents.maxComponent()]
         orthoCam.init(createOrthoMatrix(), gridSizeHalf, -gridSizeHalf, 90f, 1f, orthoCam.exposure, orthoCam.focalDepth, orthoCam.focalLength, orthoCam.fStop)
@@ -82,8 +84,7 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
             val globalGrid = giComponents.first()
             val halfExtents = Vector3f(scene.minMax.max).sub(scene.minMax.min).mul(0.5f)
             globalGrid.entity.translation(Vector3f(scene.minMax.min).add(halfExtents))
-            globalGrid.minMax.min.set(scene.minMax.min)
-            globalGrid.minMax.max.set(scene.minMax.max)
+            globalGrid.minMax.setLocalAABB(Vector3f(scene.minMax.min), Vector3f(scene.minMax.max))
         }
     }
 

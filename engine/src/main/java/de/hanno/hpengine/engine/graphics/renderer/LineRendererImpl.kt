@@ -4,10 +4,14 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.drawDebugLines
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import java.util.ArrayList
@@ -18,7 +22,7 @@ import kotlin.math.min
 class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
 
     private val programManager: ProgramManager<OpenGl> = engineContext.programManager
-    private val linePoints = ArrayList<Vector3f>()
+    private val linePoints = ArrayList<Vector3fc>()
     private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
 
 //    TODO: This has to be implemented in context
@@ -27,7 +31,7 @@ class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
         upload()
     }
 
-    override fun batchLine(from: Vector3f, to: Vector3f) {
+    override fun batchLine(from: Vector3fc, to: Vector3fc) {
         linePoints.add(from)
         linePoints.add(to)
     }
