@@ -23,15 +23,21 @@ class Instance
 
     override val children = ArrayList<Instance>()
     override var parent: Instance? = null
+        set(value) {
+            transform.parent = value?.parent?.transform
+            field = value
+        }
 
-    override fun addChild(child: Instance): Instance {
+    override fun addChild(child: Instance) {
         transform.addChild(child.transform)
-        return super.addChild(child)
+        if(!hasChildInHierarchy(child)) {
+            children.add(child)
+        }
     }
 
-    override fun removeParent() {
-        transform.removeParent()
-        super.removeParent()
+    override fun removeChild(child: Instance) {
+        transform.removeChild(child.transform)
+        children.remove(child)
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {

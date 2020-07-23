@@ -60,18 +60,24 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
             }
         }
 
-    override fun addChild(child: Entity): Entity {
+    override fun addChild(child: Entity) {
         transform.addChild(child.transform)
-        return super.addChild(child)
+        if(!hasChildInHierarchy(child)) {
+            children.add(child)
+        }
     }
 
-    override fun removeParent() {
-        transform.removeParent()
-        super.removeParent()
+    override fun removeChild(child: Entity) {
+        transform.removeChild(child.transform)
+        children.remove(child)
     }
 
     override val children: MutableList<Entity> = ArrayList()
     override var parent: Entity? = null
+        set(value) {
+            transform.parent = value?.parent?.transform
+            field = value
+        }
 
     var visible = true
     var components: MutableList<Component> = ArrayList()

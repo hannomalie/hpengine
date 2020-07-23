@@ -8,7 +8,7 @@ import org.joml.Vector4f
 import java.io.Serializable
 import java.util.ArrayList
 
-open class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
+class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
 
     init {
         identity()
@@ -34,6 +34,15 @@ open class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
 
     override val children: MutableList<Transform> = ArrayList()
 
+    override fun addChild(child: Transform) {
+        if(!hasChildInHierarchy(child)) {
+            children.add(child)
+        }
+    }
+
+    override fun removeChild(child: Transform) {
+        children.remove(child)
+    }
     val transformation: Matrix4f
         get() {
             return parent?.let { parent ->

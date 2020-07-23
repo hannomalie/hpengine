@@ -1,23 +1,18 @@
 package de.hanno.hpengine.util
 
 interface Parentable<T : Parentable<T>> {
-    val children: MutableList<T>
+    val children: List<T>
 
-    fun addChild(child: T): T {
-        if (!children.contains(child)) {
-            children.add(child)
-        }
-        return child
-    }
-
-    fun removeParent() {
-        parent?.children?.remove(this)
-        parent = null
-    }
+    fun addChild(child: T)
+    fun removeChild(child: T)
+    fun hasChildInHierarchy(child: T): Boolean = children.contains(child) || children.any { it.hasChildInHierarchy(child) }
 
     var parent: T?
     val hasParent: Boolean
         get() = parent != null
 
     fun hasChildren(): Boolean = children.isNotEmpty()
+    fun removeParent() {
+        parent = null
+    }
 }
