@@ -162,6 +162,9 @@ class EditorComponents(val engine: EngineImpl,
             for(batch in state.renderBatchesStatic) {
                 lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
             }
+            for(batch in state.renderBatchesAnimated) {
+                lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            }
             engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
             engine.gpuContext.blend = false
             lineRenderer.drawAllLines(5f, Consumer { program ->

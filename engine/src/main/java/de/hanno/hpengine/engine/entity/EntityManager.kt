@@ -16,7 +16,14 @@ import org.joml.Vector3f
 import java.util.WeakHashMap
 import java.util.logging.Logger
 
+private val movedInCycleExtensionState = ExtensionState<Entity, Long>(0L)
+var Entity.movedInCycle by movedInCycleExtensionState
+
+private val indexExtensionState = ExtensionState<Entity, Int>(0)
+var Entity.index by indexExtensionState
+
 class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, val scene: Scene) : Manager {
+
     private val entityContainer: EntityContainer = SimpleContainer()
 
     var entityMovedInCycle: Long = 0
@@ -26,12 +33,16 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
 
     private var transformCache = WeakHashMap<Entity, Matrix4f>()
 
+    val movedEntities = WeakHashMap<Entity, Entity>()
     var entityHasMoved = false
     var staticEntityHasMoved = false
 
     init {
         eventBus.register(this)
     }
+
+    // TODO: Rename when ready
+    fun Entity.hasMovedXXX() = movedEntities.containsKey(this)
 
     fun create(): Entity {
         return Entity()
@@ -63,20 +74,19 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         entityContainer.clear()
     }
 
-    private fun CoroutineScope.onUpdate(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         entityHasMoved = false
         staticEntityHasMoved = false
-
+        movedEntities.clear()
         for (i in entityContainer.entities.indices) {
             try {
                 with(entityContainer.entities[i]) {
-                    update(deltaSeconds)
+                    this@update.update(deltaSeconds)
                 }
             } catch (e: Exception) {
                 LOGGER.warning(e.message)
             }
         }
-
         val predicate: (Entity) -> Boolean = {
             it != scene.activeCamera.entity && it.hasComponent(ModelComponent::class.java)
         }
@@ -97,16 +107,10 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
                 entityHasMoved = true
                 entityMovedInCycle = scene.currentCycle
             }
+            movedEntities[entity] = entity
             scene.calculateMinMax()
             entity.movedInCycle = scene.currentCycle
             break
-        }
-    }
-
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        onUpdate(deltaSeconds)
-        for (entity in entityContainer.entities) {
-            entity.isHasMoved = false
         }
     }
 

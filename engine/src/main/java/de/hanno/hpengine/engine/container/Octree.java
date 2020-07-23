@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.container;
 
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.entity.EntityKt;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -136,7 +137,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 //		rootNode.getVisible(de.hanno.hpengine.camera, result);
 //		rootNode.getVisibleThreaded(de.hanno.hpengine.camera, result);
 
-		result = getEntities().stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
+		result = getEntities().stream().filter(e -> EntityKt.isInFrustum(e, camera)).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<>(result);
 	}

@@ -4,24 +4,21 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.AnimatedModel
-import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
 import de.hanno.hpengine.engine.model.StaticModel
-import de.hanno.hpengine.engine.model.instanceCount
+import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
-import de.hanno.hpengine.util.ressources.Reloadable
+import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
-import java.lang.IllegalStateException
 import java.util.EnumSet
-import java.util.logging.Logger
 
 
 class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
@@ -59,13 +56,13 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
             model.animationController.currentFrameIndex
         } else 0
 
-    var isHasUpdated: Boolean
+    var wasUpdated: Boolean
         get() = if (model is AnimatedModel) {
-            model.animationController.isHasUpdated
+            model.animationController.wasUpdated
         } else false
         set(value) {
             if (model is AnimatedModel) {
-                model.animationController.isHasUpdated = value
+                model.animationController.wasUpdated = value
             }
         }
 
@@ -77,6 +74,10 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 
     init {
         entity.spatial = spatial
+
+        if (model is AnimatedModel) {
+            entity.updateType = Update.DYNAMIC
+        }
     }
 
     fun getMinMax(transform: Transform<*>): AABB = model.getMinMax(transform)

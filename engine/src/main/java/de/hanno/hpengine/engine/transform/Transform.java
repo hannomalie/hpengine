@@ -16,7 +16,6 @@ import java.util.List;
 import static de.hanno.hpengine.util.UtilKt.isEqualTo;
 
 public class Transform<T extends Transform> extends Matrix4f implements Parentable<T>, Serializable {
-	private Matrix4f lastState = new Matrix4f();
 	private static final long serialVersionUID = 1L;
 
 	public static final Vector3f WORLD_RIGHT = new Vector3f(1,0,0);
@@ -34,18 +33,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		this.set(source);
 	}
 
-	public Transform initialize(Transform<T> other) {
-		set(other);
-        if(other.getParent() != null) {
-			this.setParent(other.getParent());
-		}
-        for(Parentable currentChild : other.getChildren()) {
-            this.addChild((T) currentChild);
-        }
-        return this;
-    }
-
-    public void setOrientation(Quaternionf rotation) {
+	public void setOrientation(Quaternionf rotation) {
 		Vector3f eulerAngles = new Vector3f();
 		rotation.getEulerAnglesXYZ(eulerAngles);
 		setRotationXYZ(eulerAngles.x(), eulerAngles.y(), eulerAngles.z());
@@ -61,11 +49,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 	protected boolean nodeAlreadyParentedSomewhere(T node) {
     	if(hasParent()) {
     		return getParent().nodeAlreadyParentedSomewhere(node);
-		} else if(node == this) {
-    		return true;
-		} else {
-    		return false;
-		}
+		} else return node == this;
 	}
 
 	public List<T> getChildren() {
@@ -87,14 +71,6 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		for (int i = 0; i < getChildren().size(); i++) {
 			getChildren().get(i).recalculate();
 		}
-	}
-
-	public boolean isHasMoved() {
-		if(parent != null && parent.isHasMoved()) { return true; }
-		return !isEqualTo(lastState, this);
-	}
-	public void setHasMoved(boolean hasMoved) {
-		lastState.set(this);
 	}
 
 	@Override

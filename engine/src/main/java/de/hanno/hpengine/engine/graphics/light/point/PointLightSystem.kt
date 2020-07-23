@@ -55,11 +55,11 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
 
         for (i in 0 until pointLights.size) {
             val pointLight = pointLights[i]
-            if (!pointLight.entity.hasMoved()) {
+            val pointLightHasMoved = scene.entityManager.run { pointLight.entity.hasMovedXXX() }
+            if (!pointLightHasMoved) {
                 continue
             }
             pointLightMovedInCycle = scene.currentCycle
-            pointLight.entity.isHasMoved = false
         }
 
         val pointLightsIterator = pointLights.iterator()

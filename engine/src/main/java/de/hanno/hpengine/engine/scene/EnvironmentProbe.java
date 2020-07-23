@@ -38,7 +38,7 @@ public class EnvironmentProbe implements Component {
 		sampler = new EnvironmentSampler(entity, this, center,
 				resolution, resolution, probeIndex,
 				this.environmentProbeManager, engine.getProgramManager(),
-				engine.getConfig(), engine.getTextureManager());
+				engine.getConfig(), engine.getTextureManager(), null); // TODO: Pass scene not null here...
         this.setWeight(weight);
         engine.getEventBus().register(this);
     }

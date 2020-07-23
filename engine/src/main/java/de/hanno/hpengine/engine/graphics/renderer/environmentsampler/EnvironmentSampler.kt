@@ -71,7 +71,8 @@ class EnvironmentSampler(val entity: Entity,
                          width: Int, height: Int, probeIndex: Int,
                          private val environmentProbeManager: EnvironmentProbeManager,
                          programManager: ProgramManager<OpenGl>, config: Config,
-                         textureManager: TextureManager) {
+                         textureManager: TextureManager,
+                         private val scene: Scene) {
     private val cubeMapProgram: Program
     private val cubeMapLightingProgram: Program
     private val depthPrePassProgram: Program
@@ -101,8 +102,6 @@ class EnvironmentSampler(val entity: Entity,
     private val renderTarget: RenderTarget<Texture2D>
     val camera: Camera
 
-    //	 TODO: Populate this somehow
-    private val scene: Scene? = null
     var gpuContext: GpuContext<OpenGl>
     private val config: Config
     private val textureManager: TextureManager
@@ -110,10 +109,10 @@ class EnvironmentSampler(val entity: Entity,
         drawCubeMapSides(urgent, extract)
     }
 
-    private fun drawCubeMapSides(urgent: Boolean, renderState: RenderState) {
+    private fun drawCubeMapSides(urgent: Boolean, renderState: RenderState) = scene.entityManager.run {
         val initialOrientation = entity.rotation
         val initialPosition = entity.position
-        val light = scene!!.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()
+        val light = scene.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()
         gpuContext.bindTexture(8, environmentProbeManager.environmentMapsArray)
         gpuContext.bindTexture(10, environmentProbeManager.getEnvironmentMapsArray(0))
         gpuContext.disable(GlCap.DEPTH_TEST)
@@ -134,9 +133,9 @@ class EnvironmentSampler(val entity: Entity,
             val fullReRenderRequired = urgent || !drawnOnce
             val aPointLightHasMoved = !scene.getPointLights().stream()
                     .filter { e: PointLight -> probe.box.containsOrIntersectsSphere(e.entity.position, e.radius) }
-                    .filter { e: PointLight -> e.entity.hasMoved() }.collect(Collectors.toList()).isEmpty()
-            val areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().any { it.entity.hasMoved() }
-            val reRenderLightingRequired = light!!.entity.hasMoved() || aPointLightHasMoved || areaLightHasMoved
+                    .filter { e: PointLight -> e.entity.hasMovedXXX() }.collect(Collectors.toList()).isEmpty()
+            val areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().any { it.entity.hasMovedXXX() }
+            val reRenderLightingRequired = light!!.entity.hasMovedXXX() || aPointLightHasMoved || areaLightHasMoved
             val noNeedToRedraw = !urgent && !fullReRenderRequired && !reRenderLightingRequired
             if (noNeedToRedraw) {  // early exit if only static objects visible and lights didn't change
 //				continue;

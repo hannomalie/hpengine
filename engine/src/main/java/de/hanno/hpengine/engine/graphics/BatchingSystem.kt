@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.entity.index
+import de.hanno.hpengine.engine.entity.movedInCycle
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.ModelComponentSystem

@@ -107,6 +107,7 @@ class VoxelConeTracingExtension(
     private val useIndirectDrawing = false
 
     private var litInCycle: Long = -1
+    private val entityVoxelizedInCycle = mutableMapOf<String, Long>()
 
     init {
         directionalLightShadowMapExtension?.voxelConeTracingExtension = this
@@ -121,8 +122,7 @@ class VoxelConeTracingExtension(
             val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
             val bounces = 1
 
-            val entityWasAdded = renderState.entityWasAdded()
-            val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization || entityWasAdded) {
+            val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization) {
                 renderState.renderBatchesStatic
             } else {
                 renderState.renderBatchesStatic.filter { batch ->
@@ -146,7 +146,6 @@ class VoxelConeTracingExtension(
         }
     }
 
-    private val entityVoxelizedInCycle = mutableMapOf<String, Long>()
     fun voxelizeScene(renderState: RenderState, batches: List<RenderBatch>) {
         if(batches.isEmpty()) return
 

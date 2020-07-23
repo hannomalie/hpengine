@@ -26,9 +26,8 @@ class DirectionalLightSystem(val engine: EngineContext<OpenGl>,
         with(light) {
             update(deltaSeconds)
         }
-        if (light.entity.hasMoved()) {
+        if(scene.entityManager.run { light.entity.hasMovedXXX() }) {
             this@DirectionalLightSystem.directionalLightMovedInCycle = scene.currentCycle
-            light.entity.isHasMoved = false
         }
     }
 

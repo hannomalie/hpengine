@@ -11,10 +11,10 @@ import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
-import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.StructArray
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.joml.Vector4f
 import java.io.File
 
 class AnimatedMesh(override var name: String,
@@ -36,9 +36,42 @@ class AnimatedMesh(override var name: String,
         get() = faces.size
 
 
-    override val spatial: SimpleSpatial
-        get() = model!!
+    override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
+        val minLocal = Vector3f()
+        val maxLocal = Vector3f()
+        calculateMinMax(Mesh.IDENTITY, minLocal, maxLocal, vertices, faces)
+        minMax.setLocalAABB(minLocal, maxLocal)
+    }
 
+    companion object {
+        fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f,
+                            vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>) {
+            min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
+            max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
+
+            val positions = vertices.map { it.position } // TODO: Optimization, use vertex array instead of positions
+            for (face in faces) {
+                val vertices = listOf(positions[face.a],positions[face.b],positions[face.c])
+
+                for (j in 0..2) {
+                    val positionV3 = vertices[j]
+                    val position = Vector4f(positionV3.x, positionV3.y, positionV3.z, 1f)
+                    if (modelMatrix != null) {
+                        position.mul(modelMatrix)
+                    }
+
+                    min.x = if (position.x < min.x) position.x else min.x
+                    min.y = if (position.y < min.y) position.y else min.y
+                    min.z = if (position.z < min.z) position.z else min.z
+
+                    max.x = if (position.x > max.x) position.x else max.x
+                    max.y = if (position.y > max.y) position.y else max.y
+                    max.z = if (position.z > max.z) position.z else max.z
+                }
+            }
+
+        }
+    }
 }
 
 class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
@@ -87,6 +120,9 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
         animationController.update(deltaSeconds)
     }
 
+    override fun getMinMax(transform: Matrix4f, mesh: Mesh<*>): AABB {
+        return minMax
+    }
     override val minMax: AABB = run {
         var targetMinMax = AABBData()
         for (i in meshes.indices) {

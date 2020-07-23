@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.entity
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.component.PhysicsComponent
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Update
@@ -45,20 +44,10 @@ fun <R, T> extensionState(defaultValue: T): ExtensionState<R, T> = ExtensionStat
 
 class Entity @JvmOverloads constructor(var name: String = "Entity" + System.currentTimeMillis().toString(),
                                             position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
-    var movedInCycle = 0L
-
     private val simpleSpatial = TransformSpatial(this, AABB(Vector3f(-5f), Vector3f(5f)))
-//    val spatial: TransformSpatial
-//        get() = getComponent(ModelComponent::class.java)?.spatial ?: simpleSpatial
     var spatial: TransformSpatial = simpleSpatial
 
-    var index = -1
-
-    var updateType = Update.DYNAMIC
-        get() = if (hasComponent(PhysicsComponent::class.java) && getComponent(PhysicsComponent::class.java)!!.isDynamic || hasComponent(ModelComponent::class.java) && !getComponent(ModelComponent::class.java)!!.model.isStatic) {
-            Update.DYNAMIC
-        } else field
-
+    var updateType = Update.STATIC
         set(value) {
             field = value
             if (hasChildren()) {
@@ -68,8 +57,7 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
             }
         }
 
-    var isVisible = true
-
+    var visible = true
     var components: MutableList<Component> = ArrayList()
 
     val centerWorld: Vector3f
@@ -137,13 +125,7 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
         }
     }
 
-    fun isInFrustum(camera: Camera): Boolean {
-        return Spatial.isInFrustum(camera, spatial.getCenter(this), spatial.getMinMax(this).min, spatial.getMinMax(this).max)
-    }
-
-    override fun toString(): String {
-        return name
-    }
+    override fun toString(): String = name
 
     override fun equals(other: Any?): Boolean {
         if (other !is Entity) {
@@ -155,47 +137,10 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
         return b!!.name == name
     }
 
-    override fun hashCode(): Int {
-        return name.hashCode()
-    }
+    override fun hashCode(): Int = name.hashCode()
 
-    override fun setHasMoved(value: Boolean) {
-        super.setHasMoved(value)
-        val modelComponentOption = getComponentOption(ModelComponent::class.java)
-        modelComponentOption.ifPresent { modelComponent -> modelComponent.isHasUpdated = value }
+}
 
-        val clusters = getComponent(ClustersComponent::class.java)
-        if (clusters != null) {
-            for (cluster in clusters.getClusters()) {
-                cluster.isHasMoved = value
-            }
-        }
-    }
-
-    fun hasMoved(): Boolean {
-        val modelComponentOrNull = getComponent(ModelComponent::class.java)
-        if (modelComponentOrNull != null) {
-            if (modelComponentOrNull.isHasUpdated) {
-                return true
-            }
-        }
-
-        if (isHasMoved) {
-            return true
-        }
-        if (getComponent(ClustersComponent::class.java) == null) {
-            return false
-        }
-
-        val clusters = getComponent(ClustersComponent::class.java)
-        if (clusters != null) {
-            for (element in clusters.getClusters()) {
-                if (element.isHasMoved) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
+fun Entity.isInFrustum(camera: Camera): Boolean {
+    return Spatial.isInFrustum(camera, spatial.getCenter(this), spatial.getMinMax(this).min, spatial.getMinMax(this).max)
 }

@@ -5,6 +5,7 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.model.Update;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
@@ -28,6 +29,9 @@ public class PhysicsComponent extends BaseComponent {
 
     public PhysicsComponent(Entity owner, PhysicsManager.MeshShapeInfo meshShapeInfo, PhysicsManager physicsManager) {
         super(owner);
+        if(isDynamic()) {
+            owner.setUpdateType(Update.DYNAMIC);
+        }
         this.owner = owner;
 		this.info = meshShapeInfo;
         this.physicsManager = physicsManager;
