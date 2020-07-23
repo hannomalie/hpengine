@@ -9,11 +9,7 @@ import de.hanno.hpengine.editor.input.MouseInputProcessor
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.selection.EntitySelection
-import de.hanno.hpengine.editor.selection.GiVolumeSelection
-import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
-import de.hanno.hpengine.editor.selection.SceneSelection
-import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
@@ -23,7 +19,6 @@ import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
 import de.hanno.hpengine.engine.EngineImpl
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
@@ -40,12 +35,9 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
-import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.joml.AxisAngle4f
-import org.joml.Matrix4f
-import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
@@ -117,7 +109,7 @@ class EditorComponents(val engine: EngineImpl,
         sphereHolder.render(state, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
                 if(it.renderedSphereRadius > 0f) {
-                    val transformationPointLight = SimpleTransform().scaleAround(it.renderedSphereRadius, it.entity.position.x, it.entity.position.y, it.entity.position.z).translate(it.entity.position)
+                    val transformationPointLight = Transform().scaleAround(it.renderedSphereRadius, it.entity.transform.position.x, it.entity.transform.position.y, it.entity.transform.position.z).translate(it.entity.transform.position)
                     sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
                     sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
@@ -183,7 +175,7 @@ class EditorComponents(val engine: EngineImpl,
                     environmentProbeSphereHolder.render(state) {
 
                         extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                            val transformation = SimpleTransform().translate(position)
+                            val transformation = Transform().translate(position)
                             sphereProgram.setUniform("pointLightPositionWorld", extension.probeRenderer.probePositions[probeIndex])
                             sphereProgram.setUniform("probeIndex", probeIndex)
                             sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
@@ -229,7 +221,7 @@ class EditorComponents(val engine: EngineImpl,
                         listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
                                 Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
-                            val transformation = SimpleTransform()
+                            val transformation = Transform()
                             transformation.scaleLocal(3f)
                             if(arrow.scale.x > 2f) {
                                 transformation.rotateAffine(ninetyDegrees, 0f, 0f, 1f)
@@ -240,8 +232,8 @@ class EditorComponents(val engine: EngineImpl,
                             }
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -257,13 +249,13 @@ class EditorComponents(val engine: EngineImpl,
                         listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
                                 Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
-                            val transformation = SimpleTransform()
+                            val transformation = Transform()
                             transformation.scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
-                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.position))
+                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.transform.position))
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -280,12 +272,12 @@ class EditorComponents(val engine: EngineImpl,
                                 Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
 
-                            val transformation = SimpleTransform()
-                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.position))
+                            val transformation = Transform()
+                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.transform.position))
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)

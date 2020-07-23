@@ -9,8 +9,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +48,7 @@ open class Camera @JvmOverloads constructor(
 
     var viewMatrix = Matrix4f()
         get() {
-            return entity.transformation.invert(field)
+            return entity.transform.transformation.invert(field)
         }
     var projectionMatrix = Matrix4f()
     var viewProjectionMatrix = Matrix4f()
@@ -122,11 +120,11 @@ open class Camera @JvmOverloads constructor(
     }
 
     fun init(camera: Camera) {
-        entity.set(camera.entity)
+        entity.transform.set(camera.entity.transform)
         init(camera.projectionMatrix, camera.near, camera.far,
              camera.fov, camera.ratio, camera.exposure,
              camera.focalDepth, camera.focalLength, camera.fStop)
-        if (camera.entity.hasParent()) {
+        if (camera.entity.hasParent) {
             val formerParent = camera.entity.parent
             entity.removeParent()
             entity.parent = formerParent
@@ -204,15 +202,15 @@ open class Camera @JvmOverloads constructor(
     }
 
 
-    fun getViewDirection() = entity.viewDirection
-    fun getRightDirection() = entity.rightDirection
-    fun getUpDirection() = entity.upDirection
-    fun rotation(quaternion: Quaternionf) = entity.rotation(quaternion)
-    fun rotate(axisAngle4f: AxisAngle4f) = entity.rotate(axisAngle4f)
-    fun getTranslation(dest: Vector3f) = entity.getTranslation(dest)
-    fun translateLocal(offset: Vector3f) = entity.translateLocal(offset)
-    fun setTranslation(translation: Vector3f) = entity.setTranslation(translation)
-    fun getPosition() = entity.position
+    fun getViewDirection() = entity.transform.viewDirection
+    fun getRightDirection() = entity.transform.rightDirection
+    fun getUpDirection() = entity.transform.upDirection
+    fun rotation(quaternion: Quaternionf) = entity.transform.rotation(quaternion)
+    fun rotate(axisAngle4f: AxisAngle4f) = entity.transform.rotate(axisAngle4f)
+    fun getTranslation(dest: Vector3f) = entity.transform.getTranslation(dest)
+    fun translateLocal(offset: Vector3f) = entity.transform.translateLocal(offset)
+    fun setTranslation(translation: Vector3f) = entity.transform.setTranslation(translation)
+    fun getPosition() = entity.transform.position
 
 
     fun getTranslationRotationBuffer(): FloatBuffer {

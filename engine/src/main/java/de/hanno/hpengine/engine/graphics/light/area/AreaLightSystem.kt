@@ -139,7 +139,7 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, sceneImpl: SceneImpl) :
 
         for((index, areaLight) in this@AreaLightSystem.getComponents(AreaLight::class.java).withIndex()) {
             val target = this@AreaLightSystem.gpuAreaLightArray.getAtIndex(index)
-            target.trafo.set(areaLight.entity)
+            target.trafo.set(areaLight.entity.transform)
             target.color.set(areaLight.color)
             target.dummy0 = -1
             target.widthHeightRange.x = areaLight.width

@@ -22,7 +22,7 @@ import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.io.File
@@ -57,17 +57,17 @@ class SimpleModelRenderer(val engine: EngineContext<OpenGl>,
             entityIndex = modelEntity.index, meshIndex = 0)
 
     val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
+        Transform().get(this)
     }
     override fun render(result: DrawResult, state: RenderState) {
-        render(state, modelEntity.position, Vector3f(0f, 0f, 1f), Vector3f(1f))
+        render(state, modelEntity.transform.position, Vector3f(0f, 0f, 1f), Vector3f(1f))
     }
     fun render(state: RenderState, boxPosition: Vector3f, boxScale: Vector3f,
                color: Vector3f, useDepthTest: Boolean = true,
                beforeDraw: (Program.() -> Unit)? = null) {
 
-        val scaling = (0.1f * modelEntity.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
-        val transformation = SimpleTransform().scale(scaling).translate(boxPosition)
+        val scaling = (0.1f * modelEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
+        val transformation = Transform().scale(scaling).translate(boxPosition)
         if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         program.use()
@@ -86,7 +86,7 @@ class SimpleModelRenderer(val engine: EngineContext<OpenGl>,
     fun render(state: RenderState, useDepthTest: Boolean = true,
                draw: (SimpleModelRenderer.(RenderState) -> Unit)) {
 
-        val transformation = SimpleTransform()
+        val transformation = Transform()
         if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         program.use()

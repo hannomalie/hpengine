@@ -84,14 +84,14 @@ open class SceneTree(val engine: Engine<*>,
 
         val rootEntityMappings = HashMap<Entity, DefaultMutableTreeNode>()
 
-        for (entity in rootEntities.filter { e -> !e.hasParent() }) {
+        for (entity in rootEntities.filter { e -> !e.hasParent }) {
             val current = DefaultMutableTreeNode(entity)
             entity.components.forEach { component -> addComponentNode(current, component) }
             rootEntityMappings[entity] = current
             parent.add(current)
         }
 
-        for (entity in rootEntities.filter { it.hasParent() }) {
+        for (entity in rootEntities.filter { it.hasParent }) {
             val current = DefaultMutableTreeNode(entity)
             rootEntityMappings[entity.parent]!!.add(current)
         }

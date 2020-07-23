@@ -8,7 +8,7 @@ import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
@@ -140,7 +140,7 @@ object TransformTask {
                     .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
                     .setAction {
                         when(val selection = selectionSystem.selection) {
-                            is EntitySelection -> selection.entity.set(SimpleTransform())
+                            is EntitySelection -> selection.entity.transform.set(Transform())
                         }
                     }
                     .setActionRichTooltip(RichTooltip.builder()

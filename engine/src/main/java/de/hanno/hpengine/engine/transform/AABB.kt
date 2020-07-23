@@ -184,7 +184,7 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
         return dest
     }
 
-    fun move(amount: Vector3f) = transform(SimpleTransform().apply { setTranslation(amount) })
+    fun move(amount: Vector3f) = transform(Transform().apply { setTranslation(amount) })
 
     fun calculateMinMax(entities: List<Entity>): AABBData {
         val minResult = Vector3f(absoluteMaximum)

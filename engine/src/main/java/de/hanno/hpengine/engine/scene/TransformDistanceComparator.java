@@ -18,8 +18,8 @@ public class TransformDistanceComparator<T extends Entity> implements Comparator
 			return 0;
 		}
 
-		float distanceToFirst = reference.getPosition().distanceSquared(o1.getPosition());
-		float distanceToSecond = reference.getPosition().distanceSquared(o2.getPosition());
+		float distanceToFirst = reference.getTransform().getPosition().distanceSquared(o1.getTransform().getPosition());
+		float distanceToSecond = reference.getTransform().getPosition().distanceSquared(o2.getTransform().getPosition());
 		return Float.compare(distanceToFirst, distanceToSecond);
 	}
 

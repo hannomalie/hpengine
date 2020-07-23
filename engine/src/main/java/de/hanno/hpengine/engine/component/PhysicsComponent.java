@@ -36,7 +36,7 @@ public class PhysicsComponent extends BaseComponent {
 		this.info = meshShapeInfo;
         this.physicsManager = physicsManager;
         owner.addComponent(this);
-        initialTransform = Util.toBullet(owner);
+        initialTransform = Util.toBullet(owner.getTransform());
         actuallyCreatePhysicsObject(); // This probably has to be moved to physsicsmanaqger/physicssystem
 	}
 
@@ -69,7 +69,7 @@ public class PhysicsComponent extends BaseComponent {
 		Matrix4f temp = new Matrix4f();
 		out.getMatrix(temp);
 		Transform converted = Util.fromBullet(out);
-        owner.set(converted);
+        owner.getTransform().set(converted);
     }
 
     public void reset(Engine engine) {

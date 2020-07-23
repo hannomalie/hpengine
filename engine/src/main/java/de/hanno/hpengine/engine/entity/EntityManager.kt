@@ -91,15 +91,15 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             it != scene.activeCamera.entity && it.hasComponent(ModelComponent::class.java)
         }
         for (entity in entityContainer.entities.filter(predicate)) {
-            transformCache.putIfAbsent(entity, Matrix4f(entity))
+            transformCache.putIfAbsent(entity, Matrix4f(entity.transform))
 
             val cachedTransform = transformCache[entity]!!
-            val entityMoved = !cachedTransform.isEqualTo(entity)
+            val entityMoved = !cachedTransform.isEqualTo(entity.transform)
             if (!entityMoved) {
                 continue
             }
 
-            transformCache[entity] = Matrix4f(entity)
+            transformCache[entity] = Matrix4f(entity.transform)
             if (entity.updateType == Update.STATIC) {
                 staticEntityHasMoved = true
                 staticEntityMovedInCycle = scene.currentCycle

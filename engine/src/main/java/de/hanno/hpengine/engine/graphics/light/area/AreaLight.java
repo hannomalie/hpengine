@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
@@ -88,9 +89,9 @@ public class AreaLight implements Component, Bufferable {
 		
 		for(int i = 0; i < list.size(); i++) {
 			AreaLight light = list.get(i);
-			result[i] = light.getEntity().getPosition().x;
-			result[i+1] = light.getEntity().getPosition().y;
-			result[i+2] = light.getEntity().getPosition().z;
+			result[i] = light.getEntity().getTransform().getPosition().x;
+			result[i+1] = light.getEntity().getTransform().getPosition().y;
+			result[i+2] = light.getEntity().getTransform().getPosition().z;
 			
 			result[i+3] = light.getScale().x;
 			
@@ -114,7 +115,7 @@ public class AreaLight implements Component, Bufferable {
 	}
 	
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(getEntity().getPosition().x, getEntity().getPosition().y, getEntity().getPosition().z,getRange()*2)) {
+		if (camera.getFrustum().sphereInFrustum(getEntity().getTransform().getPosition().x, getEntity().getTransform().getPosition().y, getEntity().getTransform().getPosition().z,getRange()*2)) {
 			return true;
 		}
 		return false;
@@ -146,22 +147,23 @@ public class AreaLight implements Component, Bufferable {
 
 	@Override
 	public void putToBuffer(ByteBuffer buffer) {
-		buffer.putFloat(getEntity().m00());
-		buffer.putFloat(getEntity().m01());
-		buffer.putFloat(getEntity().m02());
-		buffer.putFloat(getEntity().m03());
-		buffer.putFloat(getEntity().m10());
-		buffer.putFloat(getEntity().m11());
-		buffer.putFloat(getEntity().m12());
-		buffer.putFloat(getEntity().m13());
-		buffer.putFloat(getEntity().m20());
-		buffer.putFloat(getEntity().m21());
-		buffer.putFloat(getEntity().m22());
-		buffer.putFloat(getEntity().m23());
-		buffer.putFloat(getEntity().m30());
-		buffer.putFloat(getEntity().m31());
-		buffer.putFloat(getEntity().m32());
-		buffer.putFloat(getEntity().m33());
+		Transform transform = getEntity().getTransform();
+		buffer.putFloat(transform.m00());
+		buffer.putFloat(transform.m01());
+		buffer.putFloat(transform.m02());
+		buffer.putFloat(transform.m03());
+		buffer.putFloat(transform.m10());
+		buffer.putFloat(transform.m11());
+		buffer.putFloat(transform.m12());
+		buffer.putFloat(transform.m13());
+		buffer.putFloat(transform.m20());
+		buffer.putFloat(transform.m21());
+		buffer.putFloat(transform.m22());
+		buffer.putFloat(transform.m23());
+		buffer.putFloat(transform.m30());
+		buffer.putFloat(transform.m31());
+		buffer.putFloat(transform.m32());
+		buffer.putFloat(transform.m33());
 
 		buffer.putFloat(getColor().x);
 		buffer.putFloat(getColor().y);

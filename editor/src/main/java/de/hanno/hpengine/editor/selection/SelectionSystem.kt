@@ -3,7 +3,6 @@ package de.hanno.hpengine.editor.selection
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
@@ -35,22 +34,16 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import java.awt.Dimension
-import java.awt.FlowLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.function.Consumer
-import javax.swing.Box
 import javax.swing.JButton
-import javax.swing.JComponent
 import javax.swing.JPanel
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreePath
 
 fun JPanel.addUnselectButton(additionalOnClick: () -> Unit = {}) {
     add(JButton("Unselect").apply {
@@ -107,7 +100,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     var selection: Selection = Selection.None
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
+        Transform().get(this)
     }
 
     override fun render(result: DrawResult, state: RenderState) {

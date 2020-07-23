@@ -22,7 +22,7 @@ import java.util.EnumSet
 
 
 class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
-    val spatial: TransformSpatial = TransformSpatial(entity, getMinMax(entity))
+    val spatial: TransformSpatial = TransformSpatial(entity.transform, getMinMax(entity.transform))
     var material = initMaterial
         set(value) {
             field = value
@@ -43,7 +43,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         get() = model.triangleCount
 
     val minMax: AABB
-        get() = getMinMax(entity)
+        get() = getMinMax(entity.transform)
 
     val meshes: List<Mesh<*>>
         get() = model.meshes
@@ -80,7 +80,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         }
     }
 
-    fun getMinMax(transform: Transform<*>): AABB = model.getMinMax(transform)
+    fun getMinMax(transform: Transform): AABB = model.getMinMax(transform)
 
     fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]
 
@@ -94,7 +94,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         return model.getBoundingSphereRadius(mesh)
     }
 
-    fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
+    fun getMinMax(transform: Transform, mesh: Mesh<*>): AABB {
         return model.getMinMax(transform, mesh)
     }
 

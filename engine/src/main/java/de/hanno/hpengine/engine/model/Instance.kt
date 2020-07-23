@@ -6,33 +6,32 @@ import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
+import de.hanno.hpengine.util.Parentable
 import kotlinx.coroutines.CoroutineScope
 import java.util.ArrayList
 
 class Instance
-    @JvmOverloads constructor(val entity: Entity, transform: Transform<out Transform<*>> = Transform(),
+    @JvmOverloads constructor(val entity: Entity,
+                              val transform: Transform = Transform(),
                               var materials: List<Material> = listOf(),
                               val animationController: AnimationController? = null,
                               val spatial: TransformSpatial = TransformSpatial(transform, entity.getComponent(ModelComponent::class.java)?.spatial?.xxx ?: AABB()))
-    : Transform<Transform<*>>(), Updatable, Spatial by spatial {
+    : Parentable<Instance>, Updatable, Spatial by spatial {
 
-    private val children = ArrayList<Instance>()
+    override val children = ArrayList<Instance>()
+    override var parent: Instance? = null
 
-
-    init {
-        set(transform)
+    override fun addChild(child: Instance): Instance {
+        transform.addChild(child.transform)
+        return super.addChild(child)
     }
 
-    override fun setParent(parent: Transform<*>?) {
-        throw IllegalStateException("No parenting for instances!")
-    }
-
-    override fun getChildren(): List<Transform<*>> {
-        return children
+    override fun removeParent() {
+        transform.removeParent()
+        super.removeParent()
     }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {

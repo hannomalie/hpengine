@@ -114,7 +114,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		for(int i = 0; i < probes.size(); i++) {
 			AABB box = probes.get(i).getBox();
 			box.move(new Vector3f(box.getMin()).add(box.getHalfExtents()).negate());
-			box.move(probes.get(i).getEntity().getPosition());
+			box.move(probes.get(i).getEntity().getTransform().getPosition());
 			Vector3f min = new Vector3f(box.getMin());
 			Vector3f max = new Vector3f(box.getMax());
 			float weight = probes.get(i).getWeight();
@@ -174,7 +174,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().
 				filter(probe -> probe.update == Update.DYNAMIC).
-				sorted((o1, o2) -> Float.compare(new Vector3f(o1.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared())).
+				sorted((o1, o2) -> Float.compare(new Vector3f(o1.getEntity().getTransform().getCenter()).sub(camera.getTransform().getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getTransform().getCenter()).sub(camera.getTransform().getPosition().negate()).lengthSquared())).
 				collect(Collectors.toList());
 		
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
@@ -205,9 +205,9 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		renderer.batchLine(points.get(2), points.get(4));
 		renderer.batchLine(points.get(3), points.get(5));
 
-		renderer.batchLine(sampler.getEntity().getPosition(), new Vector3f(sampler.getEntity().getPosition()).add(new Vector3f(5, 0, 0)));
-		renderer.batchLine(sampler.getEntity().getPosition(), new Vector3f(sampler.getEntity().getPosition()).add(new Vector3f(0, 5, 0)));
-		renderer.batchLine(sampler.getEntity().getPosition(), new Vector3f(sampler.getEntity().getPosition()).add(new Vector3f(0, 0, -5)));
+		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(5, 0, 0)));
+		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(0, 5, 0)));
+		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(0, 0, -5)));
 
 		float temp = (float)probe.getIndex()/10;
 		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
@@ -246,14 +246,14 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-                renderer.batchLine(probe.getEntity().getCenter(), e.getPosition());
+                renderer.batchLine(probe.getEntity().getTransform().getCenter(), e.getTransform().getPosition());
 			});
 		});
 		buffer.delete();
 	}
 	
 	public<T extends Entity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
-		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())))).findFirst();
+		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).findFirst();
 	}
 	
 	public List<EnvironmentProbe> getProbes() {
@@ -279,7 +279,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
-		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())))).collect(Collectors.toList());
+		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).collect(Collectors.toList());
 	}
 
 	public boolean remove(EnvironmentProbe probe) {

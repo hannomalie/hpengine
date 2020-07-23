@@ -25,7 +25,7 @@ class GIVolumeComponent(override val entity: Entity,
         spatial.xxx.setLocalAABB(Vector3f(extents).mul(-0.5f), Vector3f(extents).mul(0.5f))
     }
 
-    val spatial = TransformSpatial(entity, AABB(Vector3f(-1f), Vector3f(1f)))
+    val spatial = TransformSpatial(entity.transform, AABB(Vector3f(-1f), Vector3f(1f)))
 
     val resolution: TextureDimension3D
         get() = giVolumeGrids.albedoGrid.dimension
@@ -83,7 +83,7 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
         if(giComponents.isNotEmpty()) {
             val globalGrid = giComponents.first()
             val halfExtents = Vector3f(scene.minMax.max).sub(scene.minMax.min).mul(0.5f)
-            globalGrid.entity.translation(Vector3f(scene.minMax.min).add(halfExtents))
+            globalGrid.entity.transform.translation(Vector3f(scene.minMax.min).add(halfExtents))
             globalGrid.minMax.setLocalAABB(Vector3f(scene.minMax.min), Vector3f(scene.minMax.max))
         }
     }

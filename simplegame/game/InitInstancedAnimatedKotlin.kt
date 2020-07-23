@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import java.util.ArrayList
 import java.util.Random
@@ -45,7 +45,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
                 for (x in -count until count) {
                     for (y in -count until count) {
                         for (z in -count until count) {
-                            val trafo = SimpleTransform()
+                            val trafo = Transform()
                             trafo.scale(scale.toFloat())
                             val randomFloat = random.nextFloat() - 0.5f
                             trafo.rotate(Vector3f(1f, 0f, 0f), -90)

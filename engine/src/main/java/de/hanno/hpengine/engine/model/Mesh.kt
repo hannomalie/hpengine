@@ -18,7 +18,7 @@ interface Mesh<T> {
     val spatial: SimpleSpatial
 
     companion object {
-        val IDENTITY = Transform<Transform<*>>()
+        val IDENTITY: Transform = Transform()
         val MAX_WEIGHTS = 4
     }
 }

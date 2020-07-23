@@ -28,7 +28,7 @@ class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsum
                         50f * randomRadius,
                         1f * randomRadius)
                 addComponent(light)
-                translate(
+                transform.translate(
                     Vector3f(
                         randomExtent*random.nextFloat() - randomExtentHalf,
                         randomExtent*random.nextFloat() - randomExtentHalf,

@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.GpuContext.Companion.exitOnGLError
-import de.hanno.hpengine.engine.graphics.OpenGlExecutor
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
@@ -61,7 +60,6 @@ import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.io.File
 import java.nio.FloatBuffer
-import java.util.Arrays
 import java.util.HashSet
 import java.util.stream.Collectors
 
@@ -110,8 +108,8 @@ class EnvironmentSampler(val entity: Entity,
     }
 
     private fun drawCubeMapSides(urgent: Boolean, renderState: RenderState) = scene.entityManager.run {
-        val initialOrientation = entity.rotation
-        val initialPosition = entity.position
+        val initialOrientation = entity.transform.rotation
+        val initialPosition = entity.transform.position
         val light = scene.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()
         gpuContext.bindTexture(8, environmentProbeManager.environmentMapsArray)
         gpuContext.bindTexture(10, environmentProbeManager.getEnvironmentMapsArray(0))
@@ -121,7 +119,7 @@ class EnvironmentSampler(val entity: Entity,
         val cubeMapProgram = cubeMapProgram
         bindProgramSpecificsPerCubeMap(cubeMapProgram, renderState)
         var filteringRequired = false
-        val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(entity.position)
+        val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(entity.transform.position)
         val viewMatrixBuffer = BufferUtils.createFloatBuffer(16)
         val projectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
         val viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16)
@@ -132,7 +130,7 @@ class EnvironmentSampler(val entity: Entity,
             rotateForIndex(i, entity)
             val fullReRenderRequired = urgent || !drawnOnce
             val aPointLightHasMoved = !scene.getPointLights().stream()
-                    .filter { e: PointLight -> probe.box.containsOrIntersectsSphere(e.entity.position, e.radius) }
+                    .filter { e: PointLight -> probe.box.containsOrIntersectsSphere(e.entity.transform.position, e.radius) }
                     .filter { e: PointLight -> e.entity.hasMovedXXX() }.collect(Collectors.toList()).isEmpty()
             val areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().any { it.entity.hasMovedXXX() }
             val reRenderLightingRequired = light!!.entity.hasMovedXXX() || aPointLightHasMoved || areaLightHasMoved
@@ -170,8 +168,8 @@ class EnvironmentSampler(val entity: Entity,
         if (filteringRequired) {
             generateCubeMapMipMaps()
         }
-        entity.translation(initialPosition)
-        entity.rotation(initialOrientation)
+        entity.transform.translation(initialPosition)
+        entity.transform.rotation(initialOrientation)
     }
 
     private fun registerSideAsDrawn(i: Int) {
@@ -189,7 +187,7 @@ class EnvironmentSampler(val entity: Entity,
     @Subscribe
     fun handle(e: MaterialChangedEvent?) {
         resetDrawing()
-        scene!!.environmentProbeManager.addRenderProbeCommand(probe, true)
+        scene.environmentProbeManager.addRenderProbeCommand(probe, true)
         scene.environmentProbeManager.addRenderProbeCommand(probe, true)
         scene.environmentProbeManager.addRenderProbeCommand(probe, true)
     }
@@ -197,9 +195,9 @@ class EnvironmentSampler(val entity: Entity,
     private fun bindProgramSpecificsPerCubeMap(program: Program, renderState: RenderState) {
         program.use()
         program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE)
-        program.setUniform("probePosition", probe.entity.getCenter())
+        program.setUniform("probePosition", probe.entity.transform.center)
         program.setUniform("probeSize", probe.size)
-        program.setUniform("activePointLightCount", scene!!.getPointLights().size)
+        program.setUniform("activePointLightCount", scene.getPointLights().size)
         program.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
         program.bindShaderStorageBuffer(5, renderState.lightState.pointLightBuffer)
         program.setUniform("activeAreaLightCount", scene.getAreaLights().size)
@@ -243,8 +241,8 @@ class EnvironmentSampler(val entity: Entity,
         firstPassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         firstPassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.lastViewMatrixAsBuffer)
         firstPassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
-        firstPassDefaultProgram.setUniform("eyePosition", camera.entity.position)
-        firstPassDefaultProgram.setUniform("lightDirection", scene!!.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()!!.getViewDirection())
+        firstPassDefaultProgram.setUniform("eyePosition", camera.entity.transform.position)
+        firstPassDefaultProgram.setUniform("lightDirection", scene.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()!!.getViewDirection())
         firstPassDefaultProgram.setUniform("near", camera.near)
         firstPassDefaultProgram.setUniform("far", camera.far)
         firstPassDefaultProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
@@ -260,8 +258,8 @@ class EnvironmentSampler(val entity: Entity,
 
     fun drawSecondPass(sideIndex: Int, directionalLight: DirectionalLight?, pointLights: List<PointLight>, tubeLights: List<TubeLight>, areaLights: List<AreaLight>) {
         val cubeMapArrayRenderTarget = environmentProbeManager.cubeMapArrayRenderTarget
-        val camPosition = entity.position //.negate(null);
-        camPosition.add(entity.viewDirection.mul(camera.near))
+        val camPosition = entity.transform.position //.negate(null);
+        camPosition.add(entity.transform.viewDirection.mul(camera.near))
         val camPositionV4 = Vector4f(camPosition.x, camPosition.y, camPosition.z, 0f)
         gpuContext.depthMask = true
         gpuContext.enable(GlCap.DEPTH_TEST)
@@ -274,7 +272,7 @@ class EnvironmentSampler(val entity: Entity,
         gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, cubeMapFaceViews[2][sideIndex])
         gpuContext.bindTexture(4, textureManager.cubeMap)
         secondPassDirectionalProgram.use()
-        secondPassDirectionalProgram.setUniform("eyePosition", entity.position)
+        secondPassDirectionalProgram.setUniform("eyePosition", entity.transform.position)
         secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", config.effects.ambientocclusionRadius)
         secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", config.effects.ambientocclusionTotalStrength)
         secondPassDirectionalProgram.setUniform("screenWidth", EnvironmentProbeManager.RESOLUTION.toFloat())
@@ -284,7 +282,7 @@ class EnvironmentSampler(val entity: Entity,
         val projectionMatrix = camera.projectionMatrixAsBuffer
         secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
         secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight!!.viewProjectionMatrixAsBuffer)
-        secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.entity.viewDirection)
+        secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.entity.transform.viewDirection)
         secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.color)
         secondPassDirectionalProgram.setUniform("currentProbe", probe.index)
         secondPassDirectionalProgram.setUniform("activeProbeCount", environmentProbeManager.probes.size)
@@ -336,7 +334,7 @@ class EnvironmentSampler(val entity: Entity,
 
     private fun bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer, viewProjectionMatrixAsBuffer: FloatBuffer, program: Program) {
         val light = scene!!.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()
-        program.setUniform("lightDirection", light!!.entity.viewDirection)
+        program.setUniform("lightDirection", light!!.entity.transform.viewDirection)
         program.setUniform("lightDiffuse", light.color)
         program.setUniform("lightAmbient", config.effects.ambientLight)
         program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)
@@ -458,7 +456,7 @@ class EnvironmentSampler(val entity: Entity,
                 continue
             }
             val distance = Vector3f()
-            light.entity.position.sub(camPosition, distance)
+            light.entity.transform.position.sub(camPosition, distance)
             val lightRadius = light.radius
 
             // de.hanno.hpengine.camera is inside lights
@@ -472,7 +470,7 @@ class EnvironmentSampler(val entity: Entity,
             }
 
 //			secondPassPointProgram.setUniform("currentLightIndex", i);
-            secondPassPointProgram.setUniform("lightPosition", light.entity.position)
+            secondPassPointProgram.setUniform("lightPosition", light.entity.transform.position)
             secondPassPointProgram.setUniform("lightRadius", lightRadius)
             secondPassPointProgram.setUniform("lightDiffuse", light.color.x, light.color.y, light.color.z)
             fullscreenBuffer.draw()
@@ -498,7 +496,7 @@ class EnvironmentSampler(val entity: Entity,
         secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
         secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
         for (tubeLight in tubeLights) {
-            val camInsideLightVolume = AABB(tubeLight.entity.position, Vector3f(tubeLight.length, tubeLight.radius, tubeLight.radius)).contains(camPositionV4)
+            val camInsideLightVolume = AABB(tubeLight.entity.transform.position, Vector3f(tubeLight.length, tubeLight.radius, tubeLight.radius)).contains(camPositionV4)
             if (camInsideLightVolume) {
                 GL11.glCullFace(GL11.GL_FRONT)
                 GL11.glDepthFunc(GL11.GL_GEQUAL)
@@ -506,7 +504,7 @@ class EnvironmentSampler(val entity: Entity,
                 GL11.glCullFace(GL11.GL_BACK)
                 GL11.glDepthFunc(GL11.GL_LEQUAL)
             }
-            secondPassTubeProgram.setUniform("lightPosition", tubeLight.entity.position)
+            secondPassTubeProgram.setUniform("lightPosition", tubeLight.entity.transform.position)
             secondPassTubeProgram.setUniform("lightStart", tubeLight.start)
             secondPassTubeProgram.setUniform("lightEnd", tubeLight.end)
             secondPassTubeProgram.setUniform("lightOuterLeft", tubeLight.outerLeft)
@@ -530,7 +528,7 @@ class EnvironmentSampler(val entity: Entity,
         gpuContext.disable(GlCap.CULL_FACE)
         gpuContext.disable(GlCap.DEPTH_TEST)
         for (areaLight in areaLights) {
-//			boolean camInsideLightVolume = new AABB(areaLight.getPosition(), 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
+//			boolean camInsideLightVolume = new AABB(areaLight.position, 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
 //			if (camInsideLightVolume) {
 //				GL11.glCullFace(GL11.GL_FRONT);
 //				GL11.glDepthFunc(GL11.GL_GEQUAL);
@@ -538,15 +536,15 @@ class EnvironmentSampler(val entity: Entity,
 //				GL11.glCullFace(GL11.GL_BACK);
 //				GL11.glDepthFunc(GL11.GL_LEQUAL);
 //			}
-            secondPassAreaProgram.setUniform("lightPosition", areaLight.entity.position)
-            secondPassAreaProgram.setUniform("lightRightDirection", areaLight.entity.rightDirection)
-            secondPassAreaProgram.setUniform("lightViewDirection", areaLight.entity.viewDirection)
-            secondPassAreaProgram.setUniform("lightUpDirection", areaLight.entity.upDirection)
+            secondPassAreaProgram.setUniform("lightPosition", areaLight.entity.transform.position)
+            secondPassAreaProgram.setUniform("lightRightDirection", areaLight.entity.transform.rightDirection)
+            secondPassAreaProgram.setUniform("lightViewDirection", areaLight.entity.transform.viewDirection)
+            secondPassAreaProgram.setUniform("lightUpDirection", areaLight.entity.transform.upDirection)
             secondPassAreaProgram.setUniform("lightWidth", areaLight.width)
             secondPassAreaProgram.setUniform("lightHeight", areaLight.height)
             secondPassAreaProgram.setUniform("lightRange", areaLight.range)
             secondPassAreaProgram.setUniform("lightDiffuse", areaLight.color)
-            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", scene!!.getAreaLightSystem().getShadowMatrixForAreaLight(areaLight))
+            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", scene.getAreaLightSystem().getShadowMatrixForAreaLight(areaLight))
 
             // TODO: Add textures to arealights
 //			try {
@@ -568,49 +566,49 @@ class EnvironmentSampler(val entity: Entity,
         val halfSizeX = probe.size.x / 2
         val halfSizeY = probe.size.y / 2
         val halfSizeZ = probe.size.z / 2
-        val position = camera.position //.negate(null); // TODO: AHHhhhh, kill this hack
+        val position = camera.transform.position
         val width = probe.size.x
         val height = probe.size.y
         when (i) {
             0 -> {
-                camera.rotation(Quaternionf().identity())
-                camera.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-90.0).toFloat()))
+                camera.transform.rotation(Quaternionf().identity())
+                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-90.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
                 probe.camera.far = halfSizeX * deltaFar
             }
             1 -> {
-                camera.rotation(Quaternionf().identity())
-                camera.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(90.0).toFloat()))
+                camera.transform.rotation(Quaternionf().identity())
+                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(90.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
                 probe.camera.far = halfSizeX * deltaFar
             }
             2 -> {
-                camera.rotation(Quaternionf().identity())
-                camera.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(90.0).toFloat()))
-                camera.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotation(Quaternionf().identity())
+                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(90.0).toFloat()))
+                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(180.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
                 probe.camera.far = halfSizeY * deltaFar
             }
             3 -> {
-                camera.rotation(Quaternionf().identity())
-                camera.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(-90.0).toFloat()))
+                camera.transform.rotation(Quaternionf().identity())
+                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(-90.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
                 probe.camera.far = halfSizeY * deltaFar
             }
             4 -> {
-                camera.rotation(Quaternionf().identity())
-                camera.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-180.0).toFloat()))
+                camera.transform.rotation(Quaternionf().identity())
+                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-180.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
                 probe.camera.far = halfSizeZ * deltaFar
             }
             5 -> {
-                camera.rotation(Quaternionf().identity())
-                camera.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                camera.transform.rotation(Quaternionf().identity())
+                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
                 //			de.hanno.hpengine.camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
                 probe.camera.far = halfSizeZ * deltaFar
@@ -634,7 +632,7 @@ class EnvironmentSampler(val entity: Entity,
         camera.width = width.toFloat()
         camera.width = height.toFloat()
         this.camera = camera
-        entity.translate(position)
+        entity.transform.translate(position)
         this.probe = probe
         val far = 5000f
         val near = 0.1f
@@ -645,7 +643,7 @@ class EnvironmentSampler(val entity: Entity,
         camera.ratio = 1f
         entity.parent = probe.entity
         val cubeMapCamInitialOrientation = Quaternionf().identity()
-        entity.rotate(cubeMapCamInitialOrientation)
+        entity.transform.rotate(cubeMapCamInitialOrientation)
         cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl")
         depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl")
         cubeMapLightingProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl")

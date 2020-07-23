@@ -401,7 +401,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 				for (int i = 0; i < 8; i++) {
 					Node node = children[i];
 					if (node.contains(minMaxWorld)) {
-						if(node.contains(entity.getCenter())) {
+						if(node.contains(entity.getTransform().getCenter())) {
 							if(node.insert(entity) != null) {
 								return node;
 							}

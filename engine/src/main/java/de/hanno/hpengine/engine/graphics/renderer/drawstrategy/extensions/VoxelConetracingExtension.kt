@@ -32,7 +32,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
@@ -329,7 +329,7 @@ class VoxelConeTracingExtension(
                 voxelConeTraceProgram.use()
                 val camTranslation = Vector3f()
                 voxelConeTraceProgram.setUniform("voxelGridIndex", voxelGridIndex)
-                voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
+                voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.transform.getTranslation(camTranslation))
                 voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
                 voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
                 voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.deferredRenderingBuffer.exposureBuffer)
@@ -368,7 +368,7 @@ class VoxelConeTracingExtension(
             target.normalGrid = giVolumeGrids.normalGrid.id
             target.normalGridHandle = giVolumeGrids.normalGrid.handle
             target.gridSize = source.giVolumeGrids.gridSize
-            target.position.set(source.entity.position)
+            target.position.set(source.entity.transform.position)
             target.scale = source.scale
             target.projectionMatrix.set(source.orthoCam.projectionMatrix)
         }
@@ -401,7 +401,7 @@ class VoxelConeTracingExtension(
 
 
         val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-            SimpleTransform().get(this)
+            Transform().get(this)
         }
 
         var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {

@@ -38,22 +38,22 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
         val entity = editorComponents.engine.scene.camera.entity
 
         if (wPressed) {
-            entity.translate(Vector3f(0f, 0f, -moveAmount))
+            entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
         }
         if (sPressed) {
-            entity.translate(Vector3f(0f, 0f, moveAmount))
+            entity.transform.translate(Vector3f(0f, 0f, moveAmount))
         }
         if (aPressed) {
-            entity.translate(Vector3f(-moveAmount, 0f, 0f))
+            entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
         }
         if (dPressed) {
-            entity.translate(Vector3f(moveAmount, 0f, 0f))
+            entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
         }
         if (qPressed) {
-            entity.translate(Vector3f(0f, -moveAmount, 0f))
+            entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
         }
         if (ePressed) {
-            entity.translate(Vector3f(0f, moveAmount, 0f))
+            entity.transform.translate(Vector3f(0f, moveAmount, 0f))
         }
     }
 

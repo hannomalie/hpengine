@@ -22,10 +22,10 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
     }
 
     val direction: Vector3f
-        get() = entity.viewDirection
+        get() = entity.transform.viewDirection
 
     fun translate(offset: Vector3f?) {
-        entity.translate(offset)
+        entity.transform.translate(offset)
     }
 
     class DirectionalLightController(private val engine: EngineContext<*>, entity: Entity) : InputControllerComponent(entity) {
@@ -34,28 +34,28 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
             val degreesPerSecond = 45f
             val rotateAmount = Math.toRadians(degreesPerSecond.toDouble()).toFloat() * deltaSeconds
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_UP)) {
-                entity.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
+                entity.transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_DOWN)) {
-                entity.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
+                entity.transform.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_LEFT)) {
-                entity.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
+                entity.transform.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) {
-                entity.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
+                entity.transform.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_8)) {
-                entity.translate(Vector3f(0f, -moveAmount, 0f))
+                entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
-                entity.translate(Vector3f(0f, moveAmount, 0f))
+                entity.transform.translate(Vector3f(0f, moveAmount, 0f))
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_4)) {
-                entity.translate(Vector3f(-moveAmount, 0f, 0f))
+                entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
             }
             if (engine.input.isKeyPressed(GLFW.GLFW_KEY_6)) {
-                entity.translate(Vector3f(moveAmount, 0f, 0f))
+                entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
             }
         }
 
@@ -72,7 +72,7 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
         width = 1500f
         height = 1500f
         far = (-5000).toFloat()
-        entity.rotateAround(Vector3f(1f, 0f, 0f), Math.toRadians(100.0).toFloat(), Vector3f())
-        entity.translate(Vector3f(12f, 300f, 2f))
+        entity.transform.rotateAround(Vector3f(1f, 0f, 0f), Math.toRadians(100.0).toFloat(), Vector3f())
+        entity.transform.translate(Vector3f(12f, 300f, 2f))
     }
 }

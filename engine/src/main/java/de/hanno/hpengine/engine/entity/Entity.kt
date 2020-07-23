@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
+import de.hanno.hpengine.util.Parentable
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.util.Optional
@@ -43,8 +44,10 @@ fun <R, T> extensionState(defaultValue: T): ExtensionState<R, T> = ExtensionStat
 
 
 class Entity @JvmOverloads constructor(var name: String = "Entity" + System.currentTimeMillis().toString(),
-                                            position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
-    private val simpleSpatial = TransformSpatial(this, AABB(Vector3f(-5f), Vector3f(5f)))
+                                            position: Vector3f = Vector3f(0f, 0f, 0f)): Parentable<Entity>, Updatable {
+    val transform: Transform = Transform()
+
+    private val simpleSpatial = TransformSpatial(transform, AABB(Vector3f(-5f), Vector3f(5f)))
     var spatial: TransformSpatial = simpleSpatial
 
     var updateType = Update.STATIC
@@ -57,23 +60,36 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
             }
         }
 
+    override fun addChild(child: Entity): Entity {
+        transform.addChild(child.transform)
+        return super.addChild(child)
+    }
+
+    override fun removeParent() {
+        transform.removeParent()
+        super.removeParent()
+    }
+
+    override val children: MutableList<Entity> = ArrayList()
+    override var parent: Entity? = null
+
     var visible = true
     var components: MutableList<Component> = ArrayList()
 
     val centerWorld: Vector3f
-        get() = spatial.getCenter(this)
+        get() = spatial.getCenter(transform)
 
     val minMaxWorld: AABB
-        get() = spatial.getMinMax(this)
+        get() = spatial.getMinMax(transform)
 
     val minMax: AABB
         get() = spatial.minMax
 
     val boundingSphereRadius: Float
-        get() = spatial.getBoundingSphereRadius(this)
+        get() = spatial.getBoundingSphereRadius(transform)
 
     init {
-        setTranslation(position)
+        transform.setTranslation(position)
     }
 
     fun addComponent(component: Component) {
@@ -108,18 +124,12 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
     fun hasComponents(types: List<Class<out Component>>) = types.all { type -> hasComponent(type) }
     fun getComponents(types: List<Class<out Component>>) = types.flatMap { type -> getComponents(type) }
 
-    override fun setParent(node: Entity) {
-        super.setParent(node)
-        recalculate()
-    }
-
     override fun CoroutineScope.update(deltaSeconds: Float) {
-        if (hasParent()) {
+        if (hasParent) {
             return
         }
-        recalculateIfDirty()
         for (i in 0 until children.size) {
-            with(children[i] as Entity) {
+            with(children[i]) {
                 update(deltaSeconds)
             }
         }
@@ -142,5 +152,5 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + System.curr
 }
 
 fun Entity.isInFrustum(camera: Camera): Boolean {
-    return Spatial.isInFrustum(camera, spatial.getCenter(this), spatial.getMinMax(this).min, spatial.getMinMax(this).max)
+    return Spatial.isInFrustum(camera, spatial.getCenter(transform), spatial.getMinMax(transform).min, spatial.getMinMax(transform).max)
 }

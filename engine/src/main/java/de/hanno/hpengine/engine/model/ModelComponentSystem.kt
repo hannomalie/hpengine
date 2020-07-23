@@ -117,16 +117,16 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                     target.baseJointIndex = allocation.baseJointIndex
                     target.animationFrame0 = modelComponent.animationFrame0
                     target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                    val minMax = modelComponent.getMinMax(entity, mesh)
+                    val minMax = modelComponent.getMinMax(entity.transform, mesh)
                     target.dummy3 = 1f
                     target.dummy4 = 1f
-                    target.setTrafoMinMax(entity.transformation, minMax.min, minMax.max)
+                    target.setTrafoMinMax(entity.transform.transformation, minMax.min, minMax.max)
 
                     counter++
                     target = this.gpuEntitiesArray.getAtIndex(counter)
 
                     for (instance in entity.instances) {
-                        val instanceMatrix = instance.transformation
+                        val instanceMatrix = instance.transform.transformation
                         val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
 
                         target.materialIndex = instanceMaterialIndex
@@ -146,9 +146,9 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                     }
 
                     // TODO: This has to be the outer loop i think?
-                    if (entity.hasParent()) {
+                    if (entity.hasParent) {
                         for (instance in entity.instances) {
-                            val instanceMatrix = instance.transformation
+                            val instanceMatrix = instance.transform.transformation
 
                             target.materialIndex = materialIndex
                             target.update = entity.updateType.ordinal

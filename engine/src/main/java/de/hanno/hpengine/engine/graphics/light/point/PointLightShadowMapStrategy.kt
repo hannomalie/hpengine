@@ -101,10 +101,10 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-                pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.position)
+                pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
                 pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
                 pointCubeShadowPassProgram.setUniform("lightIndex", i)
-                val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(light.entity.position)
+                val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(light.entity.transform.position)
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
                 for (floatBufferIndex in 0..5) {
@@ -200,7 +200,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
 
                 gpuContext.clearDepthAndColorBuffer()
                 val light = pointLights[i]
-                pointShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.position)
+                pointShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
                 pointShadowPassProgram.setUniform("pointLightRadius", light.radius)
                 pointShadowPassProgram.setUniform("isBack", false)
 
@@ -208,7 +208,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
 
                         val allocation = modelComponentSystem.allocations[modelComponent]!!
-                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
+                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transform.transformation.get(modelMatrixBuffer))
                         pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
                         pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
 
@@ -219,7 +219,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                             baseVertex = allocation.vertexOffset
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
-                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.position,
+                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.transform.position,
                                 isVisibleForCamera = true, update = e.updateType, entityMinWorld = Vector3f(e.minMaxWorld.min), entityMaxWorld = Vector3f(e.minMaxWorld.max), centerWorld = e.centerWorld,
                                 boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
@@ -236,7 +236,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
                         val allocation = modelComponentSystem.allocations[modelComponent]!!
 
-                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transformation.get(modelMatrixBuffer))
+                        pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.transform.transformation.get(modelMatrixBuffer))
                         pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.material.materialInfo.getHasDiffuseMap())
                         pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
 
@@ -247,7 +247,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                             baseVertex = allocation.vertexOffset
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
-                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.position, isVisibleForCamera = true,
+                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.transform.position, isVisibleForCamera = true,
                                 update = e.updateType, entityMinWorld = Vector3f(e.minMaxWorld.min), entityMaxWorld = Vector3f(e.minMaxWorld.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)

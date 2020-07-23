@@ -42,7 +42,7 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
         val pointLights = getComponents(PointLight::class.java)
         for((index, pointLight) in pointLights.withIndex()) {
             val target = gpuPointLightArray.getAtIndex(index)
-            target.position.set(pointLight.entity.position)
+            target.position.set(pointLight.entity.transform.position)
             target.radius = pointLight.radius
             target.color.set(pointLight.color)
         }

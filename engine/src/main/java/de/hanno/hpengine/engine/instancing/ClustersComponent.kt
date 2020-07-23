@@ -10,15 +10,14 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
-import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.lang.IllegalStateException
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ClustersComponent(override val entity: Entity): Component {
@@ -63,9 +62,12 @@ class ClustersComponent(override val entity: Entity): Component {
     }
 
     fun addInstances(instances: List<Instance>) {
-        if (entity.parent != null) {
+        val parent = entity.parent
+        if (parent != null) {
             for (instance in instances) {
-                instance.setParent(entity.parent)
+                // TODO: This can never succeed
+                throw IllegalStateException("Fix parenting stuff")
+                instance.parent = (parent as Instance)
             }
         }
         val firstCluster = getOrCreateFirstCluster()
@@ -101,16 +103,16 @@ class ClustersComponent(override val entity: Entity): Component {
         val clustersComponentType = ClustersComponent::class.java.simpleName
 
 
-        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform<*>, spatial: TransformSpatial) {
+        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform, spatial: TransformSpatial) {
             addInstance(entity, clustersComponent.getOrCreateFirstCluster(), transform, spatial)
         }
-        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform<*>, spatial: TransformSpatial) {
+        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform, spatial: TransformSpatial) {
             cluster.add(Instance(entity, transform, animationController = null, spatial = spatial))
 //            eventBus.post(EntityAddedEvent()) TODO: Move this to call site
         }
         @JvmStatic fun addInstance(entity: Entity,
                                    cluster: Cluster,
-                                   transform: Transform<*>,
+                                   transform: Transform,
                                    modelComponent: ModelComponent,
                                    materials: List<Material> = modelComponent.materials,
                                    animationController: AnimationController? = if (modelComponent.isStatic) null else AnimationController((modelComponent.model as AnimatedModel).animation),

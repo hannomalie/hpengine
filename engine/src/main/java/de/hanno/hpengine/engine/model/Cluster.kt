@@ -30,7 +30,7 @@ class Cluster(minMax: AABBData = AABBData(Vector3f(Spatial.MIN), Vector3f(Spatia
         // TODO: Recalculate minMax somehow here
     }
 
-    fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMax(get(i))
+    fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMax(get(i).transform)
 
     private fun recalculate() {
         val minMaxProperty = minMax
@@ -39,7 +39,7 @@ class Cluster(minMax: AABBData = AABBData(Vector3f(Spatial.MIN), Vector3f(Spatia
         val maxResult = Vector3f(absoluteMinimum)
 
         for (i in 0 until size) {
-            val currentMinMax = get(i).getMinMax(get(i))
+            val currentMinMax = get(i).getMinMax(get(i).transform)
             val currentMin = currentMinMax.min
             val currentMax = currentMinMax.max
 

@@ -11,13 +11,13 @@ open class SimpleSpatial(override val minMax: AABB = AABB(Vector3f(Spatial.MIN),
         get() = minMax.boundingSphereRadius
 }
 
-open class TransformSpatial(val transform: Transform<*>, val xxx: AABB) : SimpleSpatial(xxx) {
+open class TransformSpatial(val transform: Transform, val xxx: AABB) : SimpleSpatial(xxx) {
     inline val center: Vector3f
         get() = xxx.center
 
 }
-open class StaticTransformSpatial(transform: Transform<*>, val modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent.minMax) {
+open class StaticTransformSpatial(transform: Transform, val modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent.minMax) {
     override fun CoroutineScope.update(deltaSeconds: Float) = minMax.recalculate(transform)
 }
 // TODO: Is this still needed?
-open class AnimatedTransformSpatial(transform: Transform<*>, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent)
+open class AnimatedTransformSpatial(transform: Transform, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent)

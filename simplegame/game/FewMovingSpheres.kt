@@ -3,7 +3,7 @@ import de.hanno.hpengine.engine.component.KotlinCompiledComponentLoader
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import javax.inject.Inject
 
@@ -16,7 +16,7 @@ class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
 
                 val clustersComponent = ClustersComponent(current)
                 val instances = (0..499).map { i ->
-                    val trafo = SimpleTransform()
+                    val trafo = Transform()
                     trafo.rotate(Vector3f(1f, 0f, 0f), -90)
                     trafo.setTranslation(Vector3f((100 * i).toFloat(), 0f, 0f))
                     Instance(current, trafo)
