@@ -131,9 +131,9 @@ class EnvironmentSampler(val entity: Entity,
             val fullReRenderRequired = urgent || !drawnOnce
             val aPointLightHasMoved = !scene.getPointLights().stream()
                     .filter { e: PointLight -> probe.box.containsOrIntersectsSphere(e.entity.transform.position, e.radius) }
-                    .filter { e: PointLight -> e.entity.hasMovedXXX() }.collect(Collectors.toList()).isEmpty()
-            val areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().any { it.entity.hasMovedXXX() }
-            val reRenderLightingRequired = light!!.entity.hasMovedXXX() || aPointLightHasMoved || areaLightHasMoved
+                    .filter { e: PointLight -> e.entity.hasMoved }.collect(Collectors.toList()).isEmpty()
+            val areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().any { it.entity.hasMoved }
+            val reRenderLightingRequired = light!!.entity.hasMoved || aPointLightHasMoved || areaLightHasMoved
             val noNeedToRedraw = !urgent && !fullReRenderRequired && !reRenderLightingRequired
             if (noNeedToRedraw) {  // early exit if only static objects visible and lights didn't change
 //				continue;

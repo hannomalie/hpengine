@@ -5,9 +5,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -16,7 +14,6 @@ import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
-import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
 
@@ -55,7 +52,7 @@ class PointLightSystem(val engine: EngineContext<OpenGl>,
 
         for (i in 0 until pointLights.size) {
             val pointLight = pointLights[i]
-            val pointLightHasMoved = scene.entityManager.run { pointLight.entity.hasMovedXXX() }
+            val pointLightHasMoved = scene.entityManager.run { pointLight.entity.hasMoved }
             if (!pointLightHasMoved) {
                 continue
             }

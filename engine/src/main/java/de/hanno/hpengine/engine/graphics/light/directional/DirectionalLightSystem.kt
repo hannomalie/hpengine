@@ -4,8 +4,6 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
@@ -26,7 +24,7 @@ class DirectionalLightSystem(val engine: EngineContext<OpenGl>,
         with(light) {
             update(deltaSeconds)
         }
-        if(scene.entityManager.run { light.entity.hasMovedXXX() }) {
+        if(scene.entityManager.run { light.entity.hasMoved }) {
             this@DirectionalLightSystem.directionalLightMovedInCycle = scene.currentCycle
         }
     }

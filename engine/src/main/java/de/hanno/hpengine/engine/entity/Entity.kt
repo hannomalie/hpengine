@@ -42,8 +42,8 @@ class ExtensionState<R, T>(val defaultValue: T): ReadWriteProperty<R, T> {
 
 fun <R, T> extensionState(defaultValue: T): ExtensionState<R, T> = ExtensionState(defaultValue)
 
-
-class Entity @JvmOverloads constructor(var name: String = "Entity" + System.currentTimeMillis().toString(),
+private var entityCounter = 0
+class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCounter++,
                                             position: Vector3f = Vector3f(0f, 0f, 0f)): Parentable<Entity>, Updatable {
     val transform: Transform = Transform()
 

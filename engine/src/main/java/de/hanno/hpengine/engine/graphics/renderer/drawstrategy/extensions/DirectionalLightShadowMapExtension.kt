@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -54,13 +55,13 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
     }
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
-        val task = GPUProfiler.start("Directional shadowmap")
-        if (renderedInCycle < renderState.directionalLightHasMovedInCycle ||
-                renderedInCycle < renderState.entitiesState.entityMovedInCycle ||
-                renderedInCycle < renderState.entitiesState.entityAddedInCycle) {
-            drawShadowMap(renderState, firstPassResult)
+        profiled("Directional shadowmap") {
+            if (renderedInCycle < renderState.directionalLightHasMovedInCycle ||
+                    renderedInCycle < renderState.entitiesState.anyEntityMovedInCycle ||
+                    renderedInCycle < renderState.entitiesState.entityAddedInCycle) {
+                drawShadowMap(renderState, firstPassResult)
+            }
         }
-        task?.end()
     }
 
     private fun drawShadowMap(renderState: RenderState, firstPassResult: FirstPassResult) {

@@ -41,8 +41,8 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         eventBus.register(this)
     }
 
-    // TODO: Rename when ready
-    fun Entity.hasMovedXXX() = movedEntities.containsKey(this)
+    val Entity.hasMoved
+        get() = movedEntities.containsKey(this)
 
     fun create(): Entity {
         return Entity()
@@ -88,7 +88,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
             }
         }
         val predicate: (Entity) -> Boolean = {
-            it != scene.activeCamera.entity && it.hasComponent(ModelComponent::class.java)
+            it != scene.activeCamera.entity
         }
         for (entity in entityContainer.entities.filter(predicate)) {
             transformCache.putIfAbsent(entity, Matrix4f(entity.transform))
