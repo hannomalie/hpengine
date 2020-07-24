@@ -106,7 +106,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
             if (renderState.currentWriteState.gpuCommandSync.isSignaled) {
                 renderState.currentWriteState.cycle = updateCycle.get()
                 renderState.currentWriteState.deltaInS = renderManager.getDeltaInS().toFloat()
-                renderManager.extract(renderState.currentWriteState)
+                renderManager.extract(scene, renderState.currentWriteState)
                 scene.extract(renderState.currentWriteState)
                 renderState.update()
             }

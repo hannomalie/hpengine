@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
@@ -25,6 +24,8 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
+import de.hanno.hpengine.engine.scene.Scene
+import kotlinx.coroutines.CoroutineScope
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
@@ -57,7 +58,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val shadowMapExtension = DirectionalLightShadowMapExtension(engineContext)
     val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
-    val extensions = mutableListOf(
+    val extensions: MutableList<RenderExtension<OpenGl>> = mutableListOf(
         shadowMapExtension,
         SkyBoxRenderExtension(engineContext),
         ForwardRenderExtension(engineContext),
@@ -69,13 +70,20 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
         BvHPointLightSecondPassExtension(engineContext)
     )
 
-    override fun update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(deltaSeconds: Float) {
         val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
 
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
         currentWriteState.directionalLightState[0].shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
         currentWriteState.directionalLightState[0].shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
+        
+        extensions.forEach { it.run { update(deltaSeconds) } }
     }
+
+    override fun extract(scene: Scene, renderState: RenderState) {
+        extensions.forEach { it.extract(scene, renderState) }
+    }
+
     override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
         gpuContext.depthMask = true
         deferredRenderingBuffer.use(gpuContext, true)

@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
@@ -44,9 +45,12 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         updateCycle.getAndIncrement()
     }
 
-    override fun extract(renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState) {
         renderState.cycle = updateCycle.get()
+
+        engineContext.renderSystems.forEach { it.extract(scene, renderState) }
     }
+
     init {
         var lastTimeSwapped = true
         val runnable = Runnable {
@@ -104,7 +108,7 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         engineContext.renderSystems.forEach {
-            it.update(deltaSeconds)
+            it.run { update(deltaSeconds) }
         }
     }
 

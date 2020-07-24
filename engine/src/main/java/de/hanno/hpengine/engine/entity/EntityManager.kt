@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -114,7 +113,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
         }
     }
 
-    override fun extract(renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState) {
         renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
         renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         renderState.entitiesState.entityAddedInCycle = entityAddedInCycle

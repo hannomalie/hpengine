@@ -164,7 +164,7 @@ class SceneImpl @JvmOverloads constructor(override val name: String = "new-scene
             system.extract(currentWriteState)
         }
         for(manager in managers.managers) {
-            manager.value.extract(currentWriteState)
+            manager.value.extract(this, currentWriteState)
         }
     }
 

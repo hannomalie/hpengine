@@ -35,6 +35,7 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
@@ -269,7 +270,7 @@ class VoxelConeTracingExtension(
         GL11.glColorMask(true, true, true, true)
     }
 
-    override fun update() = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
+    override fun CoroutineScope.update(deltaSeconds: Float) = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)

@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.resize
@@ -148,7 +149,7 @@ class MaterialManager(val config: Config,
         }
     }
 
-    override fun extract(renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState) {
 //        TODO: Remove most of this
         renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()

@@ -11,7 +11,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.copyFrom
 import org.joml.Vector3f
@@ -124,8 +126,8 @@ class CustomStates {
 
 class StateRef<out T>(val index: Int)
 
-interface RenderSystem {
+interface RenderSystem: Updatable {
     @JvmDefault fun render(result: DrawResult, state: RenderState) { }
-    @JvmDefault fun update(deltaSeconds: Float) { }
     @JvmDefault fun afterFrameFinished() { }
+    @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
 }
