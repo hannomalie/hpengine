@@ -52,7 +52,7 @@ class SelectionListener(internal var tree: JTree,
         } else if (node is MeshSelection) {
             unselectOr(node) { editorComponents.selectionSystem.selectMesh(node) }
         }  else if (node is ModelComponent) {
-            unselectOr(node) { editorComponents.selectionSystem.selectModel(ModelSelection(node.entity, node.model)) }
+            unselectOr(node) { editorComponents.selectionSystem.selectModel(ModelSelection(node.entity, node.entity.getComponent(ModelComponent::class.java)!!, node.model)) }
         } else if (node is PointLight) {
             unselectOr(node) { editorComponents.selectionSystem.selectPointLight(node) }
         } else if (node is DirectionalLight) {

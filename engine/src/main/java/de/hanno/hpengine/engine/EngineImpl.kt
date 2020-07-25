@@ -92,25 +92,10 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         gpuContext.update(deltaSeconds)
         with(managerContext.managers) {
             update(deltaSeconds)
-            afterUpdate(deltaSeconds)
         }
-        updateRenderState()
+        renderManager.finishCycle(sceneManager.scene)
     } catch (e: Exception) {
         e.printStackTrace()
-    }
-
-    private fun updateRenderState() {
-        val scene = sceneManager.scene
-
-        with(renderManager) {
-            if (renderState.currentWriteState.gpuCommandSync.isSignaled) {
-                renderState.currentWriteState.cycle = updateCycle.get()
-                renderState.currentWriteState.deltaInS = renderManager.getDeltaInS().toFloat()
-                renderManager.extract(scene, renderState.currentWriteState)
-                scene.extract(renderState.currentWriteState)
-                renderState.update()
-            }
-        }
     }
 
     companion object {

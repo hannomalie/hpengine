@@ -59,7 +59,7 @@ interface Scene : Updatable, Serializable {
         calculateMinMax()
 
         // TODO: This is not too correct but the cycle counter gets updated just before this happens
-        entityManager.entityAddedInCycle = currentCycle-1
+        entityManager.entityAddedInCycle = currentCycle
     }
 
     fun onComponentAdded(component: Component) {
@@ -68,7 +68,7 @@ interface Scene : Updatable, Serializable {
         with(entitySystems) { onComponentAdded(component) }
 
         // TODO: This is not too correct but the cycle counter gets updated just before this happens
-        entityManager.componentAddedInCycle = currentCycle-1
+        entityManager.componentAddedInCycle = currentCycle
     }
 
     fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
@@ -93,13 +93,6 @@ interface Scene : Updatable, Serializable {
         }
         with(entitySystems) {
             update(deltaSeconds)
-        }
-    }
-
-    @JvmDefault
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        with(managers) {
-            afterUpdate(deltaSeconds)
         }
     }
 

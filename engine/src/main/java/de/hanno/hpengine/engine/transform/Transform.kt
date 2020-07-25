@@ -118,6 +118,7 @@ class Transform() : Matrix4f(), Parentable<Transform>, Serializable {
     }
 
     companion object {
+        val IDENTITY: Transform = Transform()
         private const val serialVersionUID = 1L
         val WORLD_RIGHT = Vector3f(1f, 0f, 0f)
         val WORLD_UP = Vector3f(0f, 1f, 0f)

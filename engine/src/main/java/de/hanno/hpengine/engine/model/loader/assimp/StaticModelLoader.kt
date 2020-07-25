@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Vertex
+import de.hanno.hpengine.engine.transform.AABBData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -24,6 +25,7 @@ import org.lwjgl.assimp.AIColor4D
 import org.lwjgl.assimp.AIMaterial
 import org.lwjgl.assimp.AIMesh
 import org.lwjgl.assimp.AIString
+import org.lwjgl.assimp.AIVector3D
 import org.lwjgl.assimp.Assimp
 import org.lwjgl.assimp.Assimp.AI_MATKEY_COLOR_DIFFUSE
 import org.lwjgl.assimp.Assimp.AI_MATKEY_COLOR_EMISSIVE
@@ -133,7 +135,7 @@ fun AIMesh.retrievePositions(): List<Vector3f> {
     val aiPositions = mVertices()
     while (aiPositions.remaining() > 0) {
         val aiPosition = aiPositions.get()
-        positions.add(Vector3f(aiPosition.x(), aiPosition.y(), aiPosition.z()))
+        positions.add(aiPosition.toVector3f())
     }
     return positions
 }
@@ -143,7 +145,7 @@ fun AIMesh.retrieveNormals(): List<Vector3f> {
     val aiNormals = mNormals()
     while (aiNormals?.remaining() ?: 0 > 0) {
         val aiNormal = aiNormals!!.get()
-        normals.add(Vector3f(aiNormal.x(), aiNormal.y(), aiNormal.z()))
+        normals.add(aiNormal.toVector3f())
     }
     return normals
 }
@@ -177,3 +179,10 @@ fun AIMesh.retrieveFaces(): List<IndexedFace> {
     }
     return faces
 }
+
+fun AIMesh.retrieveAABB(): AABBData {
+    val aiAabb = mAABB()
+    return AABBData(aiAabb.mMin().toVector3f(), aiAabb.mMax().toVector3f())
+}
+
+fun AIVector3D.toVector3f() = Vector3f(x(), y(), z())

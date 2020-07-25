@@ -37,17 +37,12 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
         }
     }
 
-    protected fun swapStaging() {
+    fun swapStaging() {
         stagingLock.lock()
         tempB = currentStagingState
         currentStagingState = currentWriteState
         currentWriteState = tempB!!
         stagingLock.unlock()
-    }
-
-    fun update(): Boolean {
-        swapStaging()
-        return true
     }
 
     private var customStateCounter = 0

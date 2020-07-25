@@ -44,12 +44,6 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
     }
 
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        with(scene) {
-            afterUpdate(deltaSeconds)
-        }
-    }
-
     override fun beforeSetScene(nextScene: Scene) {
         scene.environmentProbeManager.clearProbes()
         managerContext.physicsManager.clearWorld()

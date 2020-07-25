@@ -7,7 +7,8 @@ import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
-import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.absoluteMaximum
+import de.hanno.hpengine.engine.transform.absoluteMinimum
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
@@ -15,7 +16,6 @@ import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.joml.Vector3fc
 import org.joml.Vector4f
 import java.io.Serializable
 import java.util.UUID
@@ -32,10 +32,7 @@ class StaticMesh(override var name: String = "",
     val uuid = UUID.randomUUID()
 
     override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        val minLocal = Vector3f()
-        val maxLocal = Vector3f()
-        calculateMinMax(IDENTITY, minLocal, maxLocal, vertices, faces)
-        minMax.setLocalAABB(minLocal, maxLocal)
+        minMax.localAABB = calculateMinMax(IDENTITY, vertices, faces)
     }
 
     override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
@@ -77,15 +74,16 @@ class StaticMesh(override var name: String = "",
         return uuid.hashCode()
     }
 
+    fun calculateMinMax(modelMatrix: Matrix4f?) = calculateMinMax(modelMatrix, vertices, faces)
+
     companion object {
         private val LOGGER = getLogger()
 
         private const val serialVersionUID = 1L
 
-        fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f,
-                            vertices: Collection<Vertex>, faces: Collection<IndexedFace>) {
-            min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
-            max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
+        fun calculateMinMax(modelMatrix: Matrix4f?, vertices: Collection<Vertex>, faces: Collection<IndexedFace>): AABBData {
+            val min = Vector3f(absoluteMaximum)
+            val max = Vector3f(absoluteMinimum)
 
             val positions = vertices.map { it.position } // TODO: Optimization, use vertex array instead of positions
             for (face in faces) {
@@ -108,6 +106,7 @@ class StaticMesh(override var name: String = "",
                 }
             }
 
+            return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
         }
         fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
             min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)

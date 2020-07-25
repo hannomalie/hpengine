@@ -36,7 +36,7 @@ import java.nio.IntBuffer
 import java.util.ArrayList
 import kotlin.math.max
 
-val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_LimitBoneWeights
+val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_LimitBoneWeights + Assimp.aiProcess_GenBoundingBoxes
 
 class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
     fun load(file: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): AnimatedModel {
@@ -199,6 +199,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val normals = retrieveNormals()
         val texCoords = retrieveTexCoords()
         val indices = retrieveFaces()
+        val aabb = retrieveAABB()
         val (boneIds, weights) = retrieveBonesAndWeights(bones)
         val materialIdx = mMaterialIndex()
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
@@ -218,6 +219,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
                 mName().dataString(),
                 vertices,
                 indices,
+                aabb,
                 material
         )
     }

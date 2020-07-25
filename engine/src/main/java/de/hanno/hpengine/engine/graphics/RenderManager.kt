@@ -41,16 +41,22 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
 
     val updateCycle = AtomicLong()
 
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        updateCycle.getAndIncrement()
-    }
-
     override fun extract(scene: Scene, renderState: RenderState) {
         renderState.cycle = updateCycle.get()
 
         engineContext.renderSystems.forEach { it.extract(scene, renderState) }
     }
 
+    fun finishCycle(scene: Scene) {
+        if (renderState.currentWriteState.gpuHasFinishedUsingIt) {
+            renderState.currentWriteState.cycle = updateCycle.get()
+            renderState.currentWriteState.deltaSeconds = deltaS.toFloat()
+            extract(scene, renderState.currentWriteState)
+            scene.extract(renderState.currentWriteState)
+            renderState.swapStaging()
+        }
+        updateCycle.getAndIncrement()
+    }
     init {
         var lastTimeSwapped = true
         val runnable = Runnable {
@@ -112,9 +118,11 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         }
     }
 
-    fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
+    val deltaMs
+        get() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
 
-    fun getDeltaInS() = getDeltaInMS() / 1000.0
+    val deltaS
+        get() = deltaMs / 1000.0
 
     fun getCurrentFPS() = fpsCounter.fps
 

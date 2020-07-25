@@ -35,7 +35,7 @@ class PostProcessingExtension(val engineContext: EngineContext<OpenGl>): RenderE
             postProcessProgram.setUniform("znear", renderState.camera.near)
             postProcessProgram.setUniform("zfar", renderState.camera.far)
 
-            postProcessProgram.setUniform("seconds", renderState.deltaInS)
+            postProcessProgram.setUniform("seconds", renderState.deltaSeconds)
             postProcessProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
             //        postProcessProgram.bindShaderStorageBuffer(1, managerContext.getRenderer().getMaterialManager().getMaterialBuffer());
             gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)

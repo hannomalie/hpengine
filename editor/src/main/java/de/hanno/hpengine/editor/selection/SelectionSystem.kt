@@ -278,7 +278,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedModel
         sidePanel.verticalBox(
             unselectButton,
-            ModelGrid(pickedModel.model, engine.scene.materialManager)
+            ModelGrid(pickedModel.model, pickedModel.modelComponent, engine.scene.materialManager)
         )
     }
 
@@ -286,7 +286,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedMesh
         sidePanel.verticalBox(
             unselectButton,
-            MeshGrid(pickedMesh.mesh, engine.scene.materialManager)
+            MeshGrid(pickedMesh.mesh, pickedMesh.entity, engine.scene.materialManager)
         )
     }
 

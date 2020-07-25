@@ -356,11 +356,6 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void afterUpdate(@NotNull CoroutineScope scope, float deltaSeconds) {
-
-	}
-
-	@Override
 	public void extract(@NotNull Scene scene, @NotNull RenderState renderState) {
 		renderState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getId());
 		renderState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getId());

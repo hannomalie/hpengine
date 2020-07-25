@@ -91,7 +91,7 @@ private fun KMutableProperty0<Vector3fc>.toInput(): JComponent = JFormattedTextF
     }
 }
 
-private fun Vector3f.toInput(): JPanel {
+fun Vector3f.toInput(): JPanel {
     val xInput = JFormattedTextField(this@toInput.x).apply {
         columns = 5
         addPropertyChangeListener("value") { this@toInput.x = it.newValue as Float }

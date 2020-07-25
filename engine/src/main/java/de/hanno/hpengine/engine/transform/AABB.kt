@@ -62,7 +62,7 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
     var localMax: Vector3fc
         get() = localAABB.max
-        set(value) = setLocalAABB(value, localMin)
+        set(value) = setLocalAABB(localMin, value)
 
     inline val extents: Vector3f
         get() = worldAABB.extents

@@ -11,6 +11,8 @@ import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.absoluteMaximum
+import de.hanno.hpengine.engine.transform.absoluteMinimum
 import de.hanno.struct.StructArray
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -20,8 +22,8 @@ import java.io.File
 class AnimatedMesh(override var name: String,
                    override val vertices: List<AnimatedVertex>,
                    override val faces: List<IndexedFace>,
+                   val aabb: AABBData,
                    override var material: Material): Mesh<AnimatedVertex> {
-    internal var centerTemp = Vector3f()
     var model: AnimatedModel? = null
 
     override val indexBufferValues = StructArray(faces.size*3) { IntStruct() }.apply {
@@ -37,17 +39,15 @@ class AnimatedMesh(override var name: String,
 
 
     override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        val minLocal = Vector3f()
-        val maxLocal = Vector3f()
-        calculateMinMax(Mesh.IDENTITY, minLocal, maxLocal, vertices, faces)
-        minMax.setLocalAABB(minLocal, maxLocal)
+        minMax.localAABB = calculateMinMax(Mesh.IDENTITY, vertices, faces)
     }
 
+    fun calculateMinMax(modelMatrix: Matrix4f?) = calculateMinMax(modelMatrix, vertices, faces)
+
     companion object {
-        fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f,
-                            vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>) {
-            min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
-            max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
+        fun calculateMinMax(modelMatrix: Matrix4f?, vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>): AABBData {
+            val min = Vector3f(absoluteMaximum)
+            val max = Vector3f(absoluteMinimum)
 
             val positions = vertices.map { it.position } // TODO: Optimization, use vertex array instead of positions
             for (face in faces) {
@@ -70,6 +70,7 @@ class AnimatedMesh(override var name: String,
                 }
             }
 
+            return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
         }
     }
 }
@@ -121,7 +122,7 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
     }
 
     override fun getMinMax(transform: Matrix4f, mesh: Mesh<*>): AABB {
-        return minMax
+        return getMinMax(transform) //mesh.spatial.getMinMax(transform)
     }
     override val minMax: AABB = run {
         var targetMinMax = AABBData()

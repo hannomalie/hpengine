@@ -25,6 +25,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.engine.transform.x
@@ -166,6 +167,10 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
 
     override fun onEntityAdded(entities: List<Entity>) {
 
+    }
+
+    override fun extract(scene: Scene, renderState: RenderState) {
+        super<Manager>.extract(scene, renderState)
     }
 
     override fun render(result: DrawResult, state: RenderState) {

@@ -31,11 +31,6 @@ interface ManagerRegistry {
         }
     }
 
-    fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        managers.forEach { manager ->
-            with(manager.value) { afterUpdate(deltaSeconds) }
-        }
-    }
 }
 
 class SimpleManagerRegistry: ManagerRegistry {
