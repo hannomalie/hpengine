@@ -122,27 +122,46 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             val meshIndex = floatBuffer.get(3)
             val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
 
+//             TODO: This is too ugly, recode
             when(selection) {
                 is EntitySelection -> {
                     when(selection) {
-                        is ModelSelection -> if(selection.model.path == modelComponent!!.model.path) unselect() else selectModel(selection)
+                        is ModelSelection -> if(selection.model.path == modelComponent?.model?.path) unselect() else selectModel(selection)
                         is MeshSelection -> {
                             val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
                             when {
-                                selection.mesh.name == selectedMesh?.name -> {
+                                selection.mesh == selectedMesh -> {
                                     unselect()
+                                    editorComponents.sceneTree.unselect()
                                 }
                                 selectedMesh != null -> {
                                     val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                                    editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
                                     selectMesh(pickedMesh)
-                                    editorComponents.sceneTree.select(selectedMesh)
                                 }
                                 else -> Unit
                             }
                         }
-                        else -> if(selection.entity.name == pickedEntity.name) unselect() else {
-                            selectEntity(pickedEntity)
-                            editorComponents.sceneTree.select(pickedEntity)
+                        else -> {
+                            when(editorComponents.selectionMode) {
+                                SelectionMode.Entity -> {
+                                    if(selection.entity.name == pickedEntity.name) {
+                                        unselect()
+                                        editorComponents.sceneTree.unselect()
+                                    } else {
+                                        selectEntity(pickedEntity)
+                                        editorComponents.sceneTree.select(pickedEntity)
+                                    }
+                                }
+                                SelectionMode.Mesh -> {
+                                    val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
+                                    if(selectedMesh != null) {
+                                        val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                                        editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
+                                        selectMesh(pickedMesh)
+                                    } else Unit
+                                }
+                            }
                         }
                     }
                 }
@@ -155,8 +174,8 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
                         if(modelComponent != null) {
                             val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
                             val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                            editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
                             selectMesh(pickedMesh)
-                            editorComponents.sceneTree.select(selectedMesh)
                         } else Unit
                     }
                 }

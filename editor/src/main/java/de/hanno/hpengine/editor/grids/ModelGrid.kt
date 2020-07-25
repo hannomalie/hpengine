@@ -1,8 +1,11 @@
 package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.model.AnimatedMesh
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Model
+import de.hanno.hpengine.engine.model.StaticMesh
+import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
@@ -12,6 +15,7 @@ import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
+import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JFormattedTextField
 import javax.swing.JLabel
@@ -20,11 +24,23 @@ import kotlin.reflect.KMutableProperty0
 
 class ModelGrid(val model: Model<*>, val modelComponent: ModelComponent, val materialManager: MaterialManager): JPanel() {
     init {
+        val model = this@ModelGrid.model
         layout = MigLayout("wrap 2")
         labeled("Path", JLabel(model.path.takeLast(15)))
         labeled("Material", model::material.toComboBox())
         labeled("Unique Vertices", JLabel(model.uniqueVertices.size.toString()))
-        modelComponent.spatial.minMax.toInputs().forEach { (label, component) ->
+        labeled("", JButton("Reset AABB").apply {
+            addActionListener {
+                val entity = modelComponent.entity
+                val newAABB = when(model) {
+                    is StaticModel -> model.calculateMinMax()
+                    is AnimatedModel -> model.calculateMinMax()
+                    else -> throw IllegalStateException("Something else than the known meshes found")
+                }
+                model.minMax.localAABB = newAABB.localAABB
+            }
+        })
+        model.minMax.toInputs().forEach { (label, component) ->
             labeled(label, component)
         }
 

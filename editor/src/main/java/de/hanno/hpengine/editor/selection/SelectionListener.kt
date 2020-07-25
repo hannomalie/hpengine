@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import de.hanno.hpengine.engine.scene.Scene
 import javax.swing.JTree

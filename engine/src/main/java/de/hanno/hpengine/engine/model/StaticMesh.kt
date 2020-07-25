@@ -9,13 +9,11 @@ import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.absoluteMaximum
 import de.hanno.hpengine.engine.transform.absoluteMinimum
-import de.hanno.hpengine.engine.transform.x
-import de.hanno.hpengine.engine.transform.y
-import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
 import org.joml.Matrix4f
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
 import java.io.Serializable
 import java.util.UUID
@@ -137,14 +135,10 @@ class StaticMesh(override var name: String = "",
         }
 
         //TODO: Move this away from here
-        fun calculateMinMax(targetMin: Vector3f, targetMax: Vector3f, candidate: AABBData) {
-            targetMin.x = if (candidate.min.x < targetMin.x) candidate.min.x else targetMin.x
-            targetMin.y = if (candidate.min.y < targetMin.y) candidate.min.y else targetMin.y
-            targetMin.z = if (candidate.min.z < targetMin.z) candidate.min.z else targetMin.z
-
-            targetMax.x = if (candidate.max.x > targetMax.x) candidate.max.x else targetMax.x
-            targetMax.y = if (candidate.max.y > targetMax.y) candidate.max.y else targetMax.y
-            targetMax.z = if (candidate.max.z > targetMax.z) candidate.max.z else targetMax.z
+        fun calculateMinMax(currentMin: Vector3fc, currentMax: Vector3fc, candidate: AABBData): AABBData {
+            val newMin = Vector3f(currentMin).min(candidate.min)
+            val newMax = Vector3f(currentMax).max(candidate.max)
+            return AABBData(newMin, newMax)
         }
 
         fun calculateMin(old: Vector3f, candidate: Vector3f) {

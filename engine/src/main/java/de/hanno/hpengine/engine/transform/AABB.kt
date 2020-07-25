@@ -33,9 +33,22 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
     val boundingSphereRadius by lazy {
         halfExtents.get(halfExtents.maxComponent())
     }
+    companion object {
+        fun List<AABBData>.getMinMax(): AABBData {
+            val newMin = Vector3f(first().min)
+            val newMax = Vector3f(first().max)
+            forEach {
+                newMin.min(it.min)
+                newMax.max(it.max)
+            }
+            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+        }
+    }
 }
 
 class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc = Vector3f(absoluteMinimum)): BoundingVolume {
+    constructor(aabbData: AABBData): this(aabbData.min, aabbData.max)
+
     var localAABB = AABBData(localMin, localMax)
         set(value) {
             field = value

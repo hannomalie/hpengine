@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.Component
@@ -50,6 +51,9 @@ open class SceneTree(val engine: Engine<*>,
             this@SceneTree.selectionPath = it
             this@SceneTree.scrollPathToVisible(it)
         }
+    }
+    fun unselect() = SwingUtils.invokeLater {
+        selectionPath = null
     }
 
     fun reload() {
@@ -105,7 +109,7 @@ open class SceneTree(val engine: Engine<*>,
         current.add(componentNode)
         if (component is ModelComponent) {
             for (mesh in component.meshes) {
-                componentNode.add(DefaultMutableTreeNode(mesh))
+                componentNode.add(DefaultMutableTreeNode(MeshSelection(component.entity, mesh)))
             }
         }
     }

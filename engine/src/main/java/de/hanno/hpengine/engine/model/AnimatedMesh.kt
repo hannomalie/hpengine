@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
-import de.hanno.hpengine.engine.model.StaticMesh.Companion.calculateMinMax
 import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
@@ -10,6 +9,7 @@ import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
+import de.hanno.hpengine.engine.transform.AABBData.Companion.getMinMax
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.absoluteMaximum
 import de.hanno.hpengine.engine.transform.absoluteMinimum
@@ -124,16 +124,8 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
     override fun getMinMax(transform: Matrix4f, mesh: Mesh<*>): AABB {
         return getMinMax(transform) //mesh.spatial.getMinMax(transform)
     }
-    override val minMax: AABB = run {
-        var targetMinMax = AABBData()
-        for (i in meshes.indices) {
-            val mesh = meshes[i]
-            val meshMinMax = mesh.spatial.minMax
-            val newMin = Vector3f(meshMinMax.min)
-            val newMax = Vector3f(meshMinMax.max)
-            calculateMinMax(newMin, newMax, targetMinMax)
-            targetMinMax = AABBData(newMin, newMax)
-        }
-        AABB(targetMinMax.min, targetMinMax.max)
-    }
+    override val minMax: AABB = calculateMinMax()
+
+    fun calculateMinMax() = AABB(meshes.map { it.spatial.minMax.localAABB }.getMinMax())
 }
+
