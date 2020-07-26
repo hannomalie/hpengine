@@ -386,7 +386,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 		public Node insert(Entity entity) {
 //			LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("Inserting %s ...", entity));
 
-			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getMinMaxWorld();
+			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getBoundingVolume();
 			
 			if (isLeaf()) {
 				if(contains(minMaxWorld)) {

@@ -253,7 +253,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 	
 	public<T extends Entity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
-		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).findFirst();
+		return probes.stream().filter(probe -> probe.contains(entity.getBoundingVolume())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).findFirst();
 	}
 	
 	public List<EnvironmentProbe> getProbes() {
@@ -279,7 +279,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
-		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).collect(Collectors.toList());
+		return probes.stream().filter(probe -> probe.contains(entity.getBoundingVolume())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).collect(Collectors.toList());
 	}
 
 	public boolean remove(EnvironmentProbe probe) {

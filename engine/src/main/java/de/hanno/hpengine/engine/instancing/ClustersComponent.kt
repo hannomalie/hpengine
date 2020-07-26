@@ -26,7 +26,7 @@ class ClustersComponent(override val entity: Entity): Component {
     private val clusters = CopyOnWriteArrayList<Cluster>()
 
     fun getInstances(): List<Instance> = instances
-    fun getInstancesMinMaxWorlds(): List<AABB> = instances.map { it.minMax }
+    fun getInstancesBoundingVolumes(): List<AABB> = instances.map { it.boundingVolume }
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         for (cluster in clusters) {

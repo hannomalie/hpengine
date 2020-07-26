@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Matrix4f
 import org.joml.Vector4f
+import org.joml.Vector4fc
 
 class Vector3f : Struct() {
     var x by 0.0f
@@ -18,7 +19,7 @@ class Vector3f : Struct() {
         this.z = target.z
     }
 
-    fun set(target: Vector4f) {
+    fun set(target: Vector4fc) {
         this.x = target.x
         this.y = target.y
         this.z = target.z

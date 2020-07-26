@@ -1,10 +1,8 @@
 package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.model.AnimatedMesh
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Model
-import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -31,16 +29,15 @@ class ModelGrid(val model: Model<*>, val modelComponent: ModelComponent, val mat
         labeled("Unique Vertices", JLabel(model.uniqueVertices.size.toString()))
         labeled("", JButton("Reset AABB").apply {
             addActionListener {
-                val entity = modelComponent.entity
                 val newAABB = when(model) {
-                    is StaticModel -> model.calculateMinMax()
-                    is AnimatedModel -> model.calculateMinMax()
+                    is StaticModel -> model.calculateBoundingVolume()
+                    is AnimatedModel -> model.calculateBoundingVolume()
                     else -> throw IllegalStateException("Something else than the known meshes found")
                 }
-                model.minMax.localAABB = newAABB.localAABB
+                model.boundingVolume.localAABB = newAABB.localAABB
             }
         })
-        model.minMax.toInputs().forEach { (label, component) ->
+        model.boundingVolume.toInputs().forEach { (label, component) ->
             labeled(label, component)
         }
 

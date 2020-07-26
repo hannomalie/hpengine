@@ -9,20 +9,19 @@ import org.joml.Vector3fc
 import java.lang.Float.MAX_VALUE
 
 interface Spatial : Updatable {
-    val minMax: AABB
+    val boundingVolume: AABB
     fun getCenter(transform: Matrix4f): Vector3f {
-        minMax.recalculate(transform)
-        return minMax.center
+        boundingVolume.recalculate(transform)
+        return boundingVolume.center
     }
-    fun getMinMax(transform: Matrix4f): AABB {
-        minMax.recalculate(transform)
-        return minMax
+    fun getBoundingVolume(transform: Matrix4f): AABB {
+        boundingVolume.recalculate(transform)
+        return boundingVolume
     }
 
-    val boundingSphereRadius: Float
     fun getBoundingSphereRadius(transform: Matrix4f): Float {
-        minMax.recalculate(transform)
-        return minMax.boundingSphereRadius
+        boundingVolume.recalculate(transform)
+        return boundingVolume.boundingSphereRadius
     }
 
     companion object {

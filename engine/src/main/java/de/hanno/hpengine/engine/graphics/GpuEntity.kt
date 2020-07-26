@@ -4,6 +4,8 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.math.Vector3f
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.BoundingSphere
+import de.hanno.hpengine.engine.transform.BoundingVolume
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
@@ -13,6 +15,10 @@ import java.nio.ByteBuffer
 
 typealias HpMatrix = de.hanno.hpengine.engine.math.Matrix4f
 
+enum class BoundingVolumeType(val value: Float) {
+    AABB(0f),
+    Sphere(1f)
+}
 class EntityStruct : Struct() {
     val trafo by HpMatrix()
     var selected by false
@@ -32,19 +38,24 @@ class EntityStruct : Struct() {
     val dummy1 by 0
     val dummy2 by 0
     val min by Vector3f()
-    var dummy3 by 0.0f
+    var boundingVolumeType by BoundingVolumeType::class.java
     val max by Vector3f()
     var dummy4 by 0.0f
 
-    fun setTrafoMinMax(source: Matrix4f, min: org.joml.Vector3fc, max: org.joml.Vector3fc) {
-//        val baseByteOffset = baseByteOffset
-//        source.get((baseByteOffset + trafo.localByteOffset).toInt(), buffer)
-//        min.get((baseByteOffset + this.min.localByteOffset).toInt(), buffer)
-//        max.get((baseByteOffset + this.max.localByteOffset).toInt(), buffer)
-
+    fun setTrafoAndBoundingVolume(source: Matrix4f, boundingVolume: BoundingVolume) {
         trafo.set(source)
-        this.min.set(min)
-        this.max.set(max)
+        when(boundingVolume) {
+            is AABB -> {
+                this.boundingVolumeType = BoundingVolumeType.AABB
+                this.min.set(boundingVolume.min)
+                this.max.set(boundingVolume.max)
+            }
+            is BoundingSphere -> {
+                this.boundingVolumeType = BoundingVolumeType.Sphere
+                this.min.set(boundingVolume.positionRadius)
+                this.max.set(boundingVolume.positionRadius)
+            }
+        }.let { }
     }
 
     override fun toString(): String {

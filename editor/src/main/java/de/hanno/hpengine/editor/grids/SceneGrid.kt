@@ -9,7 +9,7 @@ class SceneGrid(val scene: Scene): JPanel() {
     init {
         layout = MigLayout("wrap 2")
         labeled("Name", JLabel(scene.name))
-        labeled("Min", JLabel(scene.minMax.min.toString()))
-        labeled("Max", JLabel(scene.minMax.max.toString()))
+        labeled("Min", JLabel(scene.aabb.min.toString()))
+        labeled("Max", JLabel(scene.aabb.max.toString()))
     }
 }

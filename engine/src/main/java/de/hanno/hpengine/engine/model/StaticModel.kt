@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.AABBData.Companion.getMinMax
+import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.struct.StructArray
 import java.io.File
 
@@ -14,9 +14,9 @@ class StaticModel(override val file: File,
                   material: Material = meshes.first().material) : AbstractModel<Vertex>(meshes, material) {
 
     override val path: String = file.absolutePath
-    override val minMax: AABB = calculateMinMax()
+    override val boundingVolume: AABB = calculateBoundingVolume()
 
-    fun calculateMinMax() = AABB(meshes.map { it.spatial.minMax.localAABB }.getMinMax())
+    override fun calculateBoundingVolume() = AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
 
     override val bytesPerVertex = VertexStruct.sizeInBytes
 

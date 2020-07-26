@@ -37,5 +37,6 @@ abstract class AbstractModel<T>(final override val meshes: List<Mesh<T>>,
             field = value
         }
 
-    override fun getMinMax(transform: Matrix4f): AABB = super<SimpleSpatial>.getMinMax(transform)
+    override fun getBoundingVolume(transform: Matrix4f): AABB = super<SimpleSpatial>.getBoundingVolume(transform)
+    abstract fun calculateBoundingVolume(): AABB
 }

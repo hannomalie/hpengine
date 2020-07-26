@@ -30,7 +30,7 @@ class StaticMesh(override var name: String = "",
     val uuid = UUID.randomUUID()
 
     override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        minMax.localAABB = calculateMinMax(IDENTITY, vertices, faces)
+        boundingVolume.localAABB = calculateAABB(IDENTITY, vertices, faces)
     }
 
     override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
@@ -72,14 +72,14 @@ class StaticMesh(override var name: String = "",
         return uuid.hashCode()
     }
 
-    fun calculateMinMax(modelMatrix: Matrix4f?) = calculateMinMax(modelMatrix, vertices, faces)
+    fun calculateAABB(modelMatrix: Matrix4f?) = calculateAABB(modelMatrix, vertices, faces)
 
     companion object {
         private val LOGGER = getLogger()
 
         private const val serialVersionUID = 1L
 
-        fun calculateMinMax(modelMatrix: Matrix4f?, vertices: Collection<Vertex>, faces: Collection<IndexedFace>): AABBData {
+        fun calculateAABB(modelMatrix: Matrix4f?, vertices: Collection<Vertex>, faces: Collection<IndexedFace>): AABBData {
             val min = Vector3f(absoluteMaximum)
             val max = Vector3f(absoluteMinimum)
 
@@ -106,7 +106,7 @@ class StaticMesh(override var name: String = "",
 
             return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
         }
-        fun calculateMinMax(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
+        fun calculateAABB(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
             min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
             max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
 
@@ -135,7 +135,7 @@ class StaticMesh(override var name: String = "",
         }
 
         //TODO: Move this away from here
-        fun calculateMinMax(currentMin: Vector3fc, currentMax: Vector3fc, candidate: AABBData): AABBData {
+        fun calculateAABB(currentMin: Vector3fc, currentMax: Vector3fc, candidate: AABBData): AABBData {
             val newMin = Vector3f(currentMin).min(candidate.min)
             val newMax = Vector3f(currentMax).max(candidate.max)
             return AABBData(newMin, newMax)
@@ -152,19 +152,6 @@ class StaticMesh(override var name: String = "",
             old.y = if (candidate.y > old.y) candidate.y else old.y
             old.z = if (candidate.z > old.z) candidate.z else old.z
         }
-
-//         TODO: This is obsolete right?
-//        fun calculateMinMax(transform: Matrix4f, min: Vector3f, max: Vector3f, current: AABB) {
-//            current.min = transform.transformPosition(current.min)
-//            current.max = transform.transformPosition(current.max)
-//            min.x = if (current.min.x < min.x) current.min.x else min.x
-//            min.y = if (current.min.y < min.y) current.min.y else min.y
-//            min.z = if (current.min.z < min.z) current.min.z else min.z
-//
-//            max.x = if (current.max.x > max.x) current.max.x else max.x
-//            max.y = if (current.max.y > max.y) current.max.y else max.y
-//            max.z = if (current.max.z > max.z) current.max.z else max.z
-//        }
 
         fun getBoundingSphereRadius(target: Vector3f, min: Vector3f, max: Vector3f): Float {
             return target.set(max).sub(min).mul(0.5f).length()

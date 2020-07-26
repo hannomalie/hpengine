@@ -1,19 +1,14 @@
 package de.hanno.hpengine.editor.grids
 
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.ExtensionState
 import de.hanno.hpengine.engine.model.AnimatedMesh
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.transform.AABBData
 import net.miginfocom.swing.MigLayout
-import org.apache.xpath.operations.Bool
-import org.joml.Vector3f
 import javax.swing.JButton
-import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -29,14 +24,14 @@ class MeshGrid(val mesh: Mesh<*>, val entity: Entity, val materialManager: Mater
         labeled("", JButton("Reset AABB").apply {
             addActionListener {
                 val newAABB = when(mesh) {
-                    is StaticMesh -> mesh.calculateMinMax(entity.transform)
-                    is AnimatedMesh -> mesh.calculateMinMax(entity.transform)
+                    is StaticMesh -> mesh.calculateAABB(entity.transform)
+                    is AnimatedMesh -> mesh.calculateAABB(entity.transform)
                     else -> throw IllegalStateException("Something else than the known meshes found")
                 }
-                mesh.spatial.minMax.localAABB = newAABB
+                mesh.spatial.boundingVolume.localAABB = newAABB
             }
         })
-        mesh.spatial.minMax.toInputs().forEach { (label, component) ->
+        mesh.spatial.boundingVolume.toInputs().forEach { (label, component) ->
             labeled(label, component)
         }
     }

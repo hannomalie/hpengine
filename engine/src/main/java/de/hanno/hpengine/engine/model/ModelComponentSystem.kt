@@ -15,13 +15,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
-import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource
-import de.hanno.hpengine.util.ressources.FileMonitor
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
@@ -117,10 +112,9 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                     target.baseJointIndex = allocation.baseJointIndex
                     target.animationFrame0 = modelComponent.animationFrame0
                     target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                    val minMax = modelComponent.getMinMax(entity.transform, mesh)
-                    target.dummy3 = 1f
+                    val boundingVolume = modelComponent.getBoundingVolume(entity.transform, mesh)
                     target.dummy4 = 1f
-                    target.setTrafoMinMax(entity.transform.transformation, minMax.min, minMax.max)
+                    target.setTrafoAndBoundingVolume(entity.transform.transformation, boundingVolume)
 
                     counter++
                     target = this.gpuEntitiesArray.getAtIndex(counter)
@@ -138,8 +132,8 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                         target.baseJointIndex = allocation.baseJointIndex
                         target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                         target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                        val minMaxWorld = instance.spatial.minMax
-                        target.setTrafoMinMax(instanceMatrix, minMaxWorld.min, minMaxWorld.max)
+                        val boundingVolume = instance.spatial.boundingVolume
+                        target.setTrafoAndBoundingVolume(instanceMatrix, boundingVolume)
 
                         counter++
                         target = this.gpuEntitiesArray.getAtIndex(counter)
@@ -159,8 +153,8 @@ class ModelComponentSystem(val engine: EngineContext<*>,
                             target.baseJointIndex = allocation.baseJointIndex
                             target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                             target.isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
-                            val minMaxWorld = instance.spatial.minMax
-                            target.setTrafoMinMax(instanceMatrix, minMaxWorld.min, minMaxWorld.max)
+                            val boundingVolume = instance.spatial.boundingVolume
+                            target.setTrafoAndBoundingVolume(instanceMatrix, boundingVolume)
 
                             counter++
                             target = this.gpuEntitiesArray.getAtIndex(counter)

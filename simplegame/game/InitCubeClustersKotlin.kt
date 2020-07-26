@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import java.util.ArrayList
@@ -41,15 +42,12 @@ class InitCubeClustersKotlin @Inject constructor(engine: Engine<*>) : Updatable 
                     for (x in -count until count) {
                         for (y in -count until count) {
                             for (z in -count until count) {
-                                val trafo: Transform<*> = Transform<Entity>()
+                                val trafo = Transform()
                                 val randomFloat = random.nextFloat() - 0.5f
                                 trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance * x, randomFloat * maxDistance * y, randomFloat * maxDistance * z)))
-                                val modelComponent = current.getComponent(ModelComponent::class.java)
-                                val materials = modelComponent?.materials ?: ArrayList()
-                                cluster.add(Instance(current, trafo, materials, null, object : SimpleSpatial() {
-                                    override val minMaxLocal: AABB
-                                        get() = current.minMax
-                                }))
+                                val modelComponent = current.getComponent(ModelComponent::class.java)!!
+                                val materials = modelComponent.materials
+                                cluster.add(Instance(current, trafo, materials, null, TransformSpatial(trafo, AABB(modelComponent.boundingVolume.localAABB))))
                             }
                         }
                     }

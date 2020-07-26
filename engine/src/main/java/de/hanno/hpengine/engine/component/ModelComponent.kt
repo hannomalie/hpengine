@@ -22,7 +22,7 @@ import java.util.EnumSet
 
 
 class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
-    val spatial: TransformSpatial = TransformSpatial(entity.transform, getMinMax(entity.transform))
+    val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {
             field = value
@@ -42,8 +42,8 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     val triangleCount: Int
         get() = model.triangleCount
 
-    val minMax: AABB
-        get() = getMinMax(entity.transform)
+    val boundingVolume: AABB
+        get() = getBoundingVolume(entity.transform)
 
     val meshes: List<Mesh<*>>
         get() = model.meshes
@@ -80,7 +80,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         }
     }
 
-    fun getMinMax(transform: Transform): AABB = model.getMinMax(transform)
+    fun getBoundingVolume(transform: Transform): AABB = model.getBoundingVolume(transform)
 
     fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]
 
@@ -94,8 +94,8 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         return model.getBoundingSphereRadius(mesh)
     }
 
-    fun getMinMax(transform: Transform, mesh: Mesh<*>): AABB {
-        return model.getMinMax(transform, mesh)
+    fun getBoundingVolume(transform: Transform, mesh: Mesh<*>): AABB {
+        return model.getBoundingVolume(transform, mesh)
     }
 
     override fun toString(): String = "ModelComponent [${model.path}]"

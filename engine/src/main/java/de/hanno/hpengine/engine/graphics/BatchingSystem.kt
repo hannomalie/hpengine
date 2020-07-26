@@ -35,7 +35,7 @@ class BatchingSystem {
                 val meshCenter = mesh.spatial.getCenter(entity.transform)
                 val boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh)
 
-                val (min1, max1) = modelComponent.model.getMinMax(entity.transform, mesh)
+                val (min1, max1) = modelComponent.model.getBoundingVolume(entity.transform, mesh)
                 val intersectAABB = camera.frustum.frustumIntersection.intersectAab(min1, max1)
                 val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 
@@ -50,8 +50,8 @@ class BatchingSystem {
                     this.cameraWorldPosition = cameraWorldPosition
                     this.isVisibleForCamera = visibleForCamera
                     update = entity.updateType
-                    entityMinWorld.set(entity.minMaxWorld.min)
-                    entityMaxWorld.set(entity.minMaxWorld.max)
+                    entityMinWorld.set(entity.boundingVolume.min)
+                    entityMaxWorld.set(entity.boundingVolume.max)
                     meshMinWorld.set(min1)
                     meshMaxWorld.set(max1)
                     centerWorld = meshCenter

@@ -22,7 +22,7 @@ class GIVolumeComponent(override val entity: Entity,
                         var giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
 
     constructor(entity: Entity, giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids, extents: Vector3f): this(entity, giVolumeGrids) {
-        spatial.xxx.setLocalAABB(Vector3f(extents).mul(-0.5f), Vector3f(extents).mul(0.5f))
+        spatial.boundingVolume.setLocalAABB(Vector3f(extents).mul(-0.5f), Vector3f(extents).mul(0.5f))
     }
 
     val spatial = TransformSpatial(entity.transform, AABB(Vector3f(-1f), Vector3f(1f)))
@@ -30,18 +30,18 @@ class GIVolumeComponent(override val entity: Entity,
     val resolution: TextureDimension3D
         get() = giVolumeGrids.albedoGrid.dimension
 
-    val minMax: AABB
-        get() = spatial.xxx
+    inline val boundingVolume: AABB
+        get() = spatial.boundingVolume
 
     val extents: Vector3f
-        get() = minMax.extents
+        get() = boundingVolume.extents
 
     val halfExtents: Vector3f
-        get() = minMax.halfExtents
+        get() = boundingVolume.halfExtents
 
     val orthoCam = Camera(this.entity, createOrthoMatrix(), gridSizeScaled.toFloat(), (-gridSizeScaled).toFloat(), 90f, 1f)
     val scale: Float
-        get() = minMax.extents[minMax.extents.maxComponent()] / giVolumeGrids.gridSize.toFloat()
+        get() = boundingVolume.extents[boundingVolume.extents.maxComponent()] / giVolumeGrids.gridSize.toFloat()
 
     val gridSizeScaled: Int
         get() = (giVolumeGrids.gridSize * scale).toInt()
@@ -82,9 +82,9 @@ class GIVolumeSystem(val engine: EngineContext<OpenGl>,
         val giComponents = components.filterIsInstance<GIVolumeComponent>()
         if(giComponents.isNotEmpty()) {
             val globalGrid = giComponents.first()
-            val halfExtents = Vector3f(scene.minMax.max).sub(scene.minMax.min).mul(0.5f)
-            globalGrid.entity.transform.translation(Vector3f(scene.minMax.min).add(halfExtents))
-            globalGrid.minMax.setLocalAABB(Vector3f(scene.minMax.min), Vector3f(scene.minMax.max))
+            val halfExtents = Vector3f(scene.aabb.max).sub(scene.aabb.min).mul(0.5f)
+            globalGrid.entity.transform.translation(Vector3f(scene.aabb.min).add(halfExtents))
+            globalGrid.boundingVolume.setLocalAABB(Vector3f(scene.aabb.min), Vector3f(scene.aabb.max))
         }
     }
 

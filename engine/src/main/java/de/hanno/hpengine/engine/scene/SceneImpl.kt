@@ -45,7 +45,7 @@ class SceneImpl @JvmOverloads constructor(override val name: String = "new-scene
     override var currentCycle: Long = 0
     @Transient
     override var isInitiallyDrawn: Boolean = false
-    override val minMax = AABB(Vector3f(), 50f).apply {
+    override val aabb = AABB(Vector3f(), 50f).apply {
         recalculate(IDENTITY)
     }
 
@@ -154,8 +154,8 @@ class SceneImpl @JvmOverloads constructor(override val name: String = "new-scene
         currentWriteState.camera.init(activeCamera)
         currentWriteState.sceneInitiallyDrawn = isInitiallyDrawn
         currentWriteState.sceneInitialized = initialized
-        currentWriteState.sceneMin.set(minMax.min)
-        currentWriteState.sceneMax.set(minMax.max)
+        currentWriteState.sceneMin.set(aabb.min)
+        currentWriteState.sceneMax.set(aabb.max)
 
         for(system in componentSystems.getSystems()) {
             system.extract(currentWriteState)

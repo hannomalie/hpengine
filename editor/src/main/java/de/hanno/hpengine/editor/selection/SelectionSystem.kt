@@ -188,7 +188,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             is SceneSelection -> {
                 engine.gpuContext.disable(GlCap.DEPTH_TEST)
                 engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-                lineRenderer.batchAABBLines(selection.scene.minMax.min, selection.scene.minMax.max)
+                lineRenderer.batchAABBLines(selection.scene.aabb.min, selection.scene.aabb.max)
                 lineRenderer.drawAllLines(5f, Consumer { program ->
                     program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
                     program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)

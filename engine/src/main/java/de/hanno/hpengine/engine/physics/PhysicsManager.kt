@@ -24,9 +24,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.UpdateLock
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
@@ -81,7 +79,7 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
     }
 
     fun addBoxPhysicsComponent(owner: Entity, mass: Float): PhysicsComponent {
-        val (min, max) = owner.minMaxWorld
+        val (min, max) = owner.boundingVolume
         val halfExtends = Vector3f(max.x - min.x, max.y - min.y, max.z - min.z)
         halfExtends.scale(0.5f)
         return addBoxPhysicsComponent(owner, halfExtends, mass)

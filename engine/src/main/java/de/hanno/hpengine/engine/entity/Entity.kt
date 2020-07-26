@@ -2,8 +2,6 @@ package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.transform.AABB
@@ -85,11 +83,8 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCount
     val centerWorld: Vector3f
         get() = spatial.getCenter(transform)
 
-    val minMaxWorld: AABB
-        get() = spatial.getMinMax(transform)
-
-    val minMax: AABB
-        get() = spatial.minMax
+    val boundingVolume: AABB
+        get() = spatial.getBoundingVolume(transform)
 
     val boundingSphereRadius: Float
         get() = spatial.getBoundingSphereRadius(transform)
@@ -158,5 +153,5 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCount
 }
 
 fun Entity.isInFrustum(camera: Camera): Boolean {
-    return Spatial.isInFrustum(camera, spatial.getCenter(transform), spatial.getMinMax(transform).min, spatial.getMinMax(transform).max)
+    return Spatial.isInFrustum(camera, spatial.getCenter(transform), spatial.getBoundingVolume(transform).min, spatial.getBoundingVolume(transform).max)
 }

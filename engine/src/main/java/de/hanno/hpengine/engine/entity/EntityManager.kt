@@ -107,7 +107,7 @@ class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, va
                 entityMovedInCycle = scene.currentCycle
             }
             movedEntities[entity] = entity
-            scene.calculateMinMax()
+            scene.calculateBoundingVolume()
             entity.movedInCycle = scene.currentCycle
             break
         }

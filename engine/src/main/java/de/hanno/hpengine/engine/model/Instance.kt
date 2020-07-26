@@ -18,7 +18,7 @@ class Instance
                               val transform: Transform = Transform(),
                               var materials: List<Material> = listOf(),
                               val animationController: AnimationController? = null,
-                              val spatial: TransformSpatial = TransformSpatial(transform, entity.getComponent(ModelComponent::class.java)?.spatial?.xxx ?: AABB()))
+                              val spatial: TransformSpatial = TransformSpatial(transform, entity.getComponent(ModelComponent::class.java)?.spatial?.boundingVolume ?: AABB()))
     : Parentable<Instance>, Updatable, Spatial by spatial {
 
     override val children = ArrayList<Instance>()

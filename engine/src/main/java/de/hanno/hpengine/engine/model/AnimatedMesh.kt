@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
-import de.hanno.hpengine.engine.transform.AABBData.Companion.getMinMax
+import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.absoluteMaximum
 import de.hanno.hpengine.engine.transform.absoluteMinimum
@@ -39,13 +39,13 @@ class AnimatedMesh(override var name: String,
 
 
     override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
-        minMax.localAABB = calculateMinMax(Mesh.IDENTITY, vertices, faces)
+        boundingVolume.localAABB = calculateBoundingAABB(Mesh.IDENTITY, vertices, faces)
     }
 
-    fun calculateMinMax(modelMatrix: Matrix4f?) = calculateMinMax(modelMatrix, vertices, faces)
+    fun calculateAABB(modelMatrix: Matrix4f?) = calculateBoundingAABB(modelMatrix, vertices, faces)
 
     companion object {
-        fun calculateMinMax(modelMatrix: Matrix4f?, vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>): AABBData {
+        fun calculateBoundingAABB(modelMatrix: Matrix4f?, vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>): AABBData {
             val min = Vector3f(absoluteMaximum)
             val max = Vector3f(absoluteMinimum)
 
@@ -121,11 +121,13 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
         animationController.update(deltaSeconds)
     }
 
-    override fun getMinMax(transform: Matrix4f, mesh: Mesh<*>): AABB {
-        return getMinMax(transform) //mesh.spatial.getMinMax(transform)
+    // Working with mesh bounding volumes doesnt make sense for animated models as they are heavily transformed
+    // and its better to use a relaxed shared volume for the whole model
+    override fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB {
+        return getBoundingVolume(transform)
     }
-    override val minMax: AABB = calculateMinMax()
+    override val boundingVolume: AABB = calculateBoundingVolume()
 
-    fun calculateMinMax() = AABB(meshes.map { it.spatial.minMax.localAABB }.getMinMax())
+    override fun calculateBoundingVolume() = AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
 }
 

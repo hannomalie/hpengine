@@ -4,8 +4,6 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
-import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
@@ -31,7 +29,7 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<
                 engine.sceneManager.scene.activeCamera = engine.sceneManager.scene.camera
             }
         })
-        addMinMaxInput()
+        addAABBInput()
         labeled("Resolution", JFormattedTextField(giVolumeComponent.giVolumeGrids.albedoGrid.dimension.width).apply {
             this@apply.addPropertyChangeListener {
                 if(it.propertyName == "value" && it.newValue != it.oldValue) {
@@ -51,9 +49,9 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<
         })
     }
 
-    private fun addMinMaxInput() {
-        labeled("Min", giVolumeComponent.minMax::localMin.toInput())
-        labeled("Max", giVolumeComponent.minMax::localMax.toInput())
+    private fun addAABBInput() {
+        labeled("Min", giVolumeComponent.boundingVolume::localMin.toInput())
+        labeled("Max", giVolumeComponent.boundingVolume::localMax.toInput())
     }
 
 }

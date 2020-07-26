@@ -220,7 +220,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
                                 isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.transform.position,
-                                isVisibleForCamera = true, update = e.updateType, entityMinWorld = Vector3f(e.minMaxWorld.min), entityMaxWorld = Vector3f(e.minMaxWorld.max), centerWorld = e.centerWorld,
+                                isVisibleForCamera = true, update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld,
                                 boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
@@ -248,7 +248,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
                                 isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.transform.position, isVisibleForCamera = true,
-                                update = e.updateType, entityMinWorld = Vector3f(e.minMaxWorld.min), entityMaxWorld = Vector3f(e.minMaxWorld.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
+                                update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
                         draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)

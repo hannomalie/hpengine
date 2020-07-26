@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.calculateAABB
 import kotlinx.coroutines.CoroutineScope
 import java.io.Serializable
 import java.util.Optional
@@ -39,7 +40,7 @@ interface Scene : Updatable, Serializable {
     val environmentProbeManager: EnvironmentProbeManager //TODO: Remove this from interface
 
     var isInitiallyDrawn: Boolean
-    val minMax: AABB
+    val aabb: AABB
 
     fun clear() {
         componentSystems.clearSystems()
@@ -56,7 +57,7 @@ interface Scene : Updatable, Serializable {
         with(componentSystems) { onEntityAdded(entities) }
         with(managers) { onEntityAdded(entities) }
 
-        calculateMinMax()
+        calculateBoundingVolume()
 
         // TODO: This is not too correct but the cycle counter gets updated just before this happens
         entityManager.entityAddedInCycle = currentCycle
@@ -101,8 +102,8 @@ interface Scene : Updatable, Serializable {
         onComponentAdded(component)
     }
 
-    fun calculateMinMax() {
-        minMax.localAABB = minMax.calculateMinMax(entityManager.getEntities())
+    fun calculateBoundingVolume() {
+        aabb.localAABB = entityManager.getEntities().calculateAABB()
     }
 
     var initialized: Boolean

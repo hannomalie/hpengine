@@ -9,9 +9,8 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
+import org.joml.Vector4fc
 import java.util.ArrayList
-
-interface BoundingVolume
 
 inline val Vector3fc.x
     get() = x()
@@ -19,6 +18,19 @@ inline val Vector3fc.y
     get() = y()
 inline val Vector3fc.z
     get() = z()
+
+inline val Vector4fc.x
+    get() = x()
+inline val Vector4fc.y
+    get() = y()
+inline val Vector4fc.z
+    get() = z()
+inline val Vector4fc.w
+    get() = w()
+
+sealed class BoundingVolume
+
+class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume()
 
 data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vector3fc = Vector3f(absoluteMinimum)) {
     val extents by lazy {
@@ -34,7 +46,7 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
         halfExtents.get(halfExtents.maxComponent())
     }
     companion object {
-        fun List<AABBData>.getMinMax(): AABBData {
+        fun List<AABBData>.getSurroundingAABB(): AABBData {
             val newMin = Vector3f(first().min)
             val newMax = Vector3f(first().max)
             forEach {
@@ -46,7 +58,7 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
     }
 }
 
-class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc = Vector3f(absoluteMinimum)): BoundingVolume {
+class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc = Vector3f(absoluteMinimum)): BoundingVolume() {
     constructor(aabbData: AABBData): this(aabbData.min, aabbData.max)
 
     var localAABB = AABBData(localMin, localMax)
@@ -199,20 +211,20 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
     fun move(amount: Vector3f) = transform(Transform().apply { setTranslation(amount) })
 
-    fun calculateMinMax(entities: List<Entity>): AABBData {
-        val minResult = Vector3f(absoluteMaximum)
-        val maxResult = Vector3f(absoluteMinimum)
-        entities.mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach {
-            minResult.min(it.minMax.min)
-            maxResult.max(it.minMax.max)
-        }
-        return AABBData(minResult, maxResult)
-    }
-
     operator fun component1() = min
     operator fun component2() = max
+
 }
 
+fun List<Entity>.calculateAABB(): AABBData {
+    val minResult = Vector3f(absoluteMaximum)
+    val maxResult = Vector3f(absoluteMinimum)
+    mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach {
+        minResult.min(it.boundingVolume.min)
+        maxResult.max(it.boundingVolume.max)
+    }
+    return AABBData(minResult, maxResult)
+}
 
 fun AABB.isInFrustum(camera: Camera): Boolean {
     val centerWorld = Vector3f()
