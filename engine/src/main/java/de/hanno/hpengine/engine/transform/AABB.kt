@@ -30,7 +30,64 @@ inline val Vector4fc.w
 
 sealed class BoundingVolume
 
-class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume()
+data class BoundingSphereTrafo(val translation: Vector3f = Vector3f(), var scale: Float = 1f) {
+    companion object {
+        val identity = BoundingSphereData()
+    }
+}
+data class BoundingSphereData(val positionRadius: Vector4fc = Vector4f(0f, 0f, 0f, absoluteMinimum.x))
+class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
+    private var lastUsedTransformationMatrix: Matrix4f? = null
+    private var lastUsedBoundingSphereTrafo: BoundingSphereTrafo? = null
+
+    var localBoundingSphere = BoundingSphereData()
+        set(value) {
+            field = value
+            actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
+            lastUsedTransformationMatrix = null
+        }
+    var boundingSphere = BoundingSphereData()
+        private set
+
+    init {
+        recalculate(IDENTITY)
+        lastUsedTransformationMatrix = null
+    }
+
+    private val scaleTemp = Vector3f()
+    fun isClean(transform: Matrix4f): Boolean {
+        if(lastUsedTransformationMatrix == null) return false
+        return transform.isEqualTo(lastUsedTransformationMatrix!!)
+    }
+
+    fun recalculate(transform: Matrix4f) {
+        recalculateIfNotClean(transform)
+    }
+    private fun actuallyRecalculate(transform: Matrix4f) {
+        lastUsedTransformationMatrix = transform
+        lastUsedBoundingSphereTrafo = BoundingSphereTrafo()
+
+        transform.getTranslation(lastUsedBoundingSphereTrafo!!.translation)
+        transform.getScale(scaleTemp)
+        lastUsedBoundingSphereTrafo!!.scale = scaleTemp[scaleTemp.maxComponent()]
+
+        val translation = Vector4f(
+            lastUsedBoundingSphereTrafo!!.translation.x,
+            lastUsedBoundingSphereTrafo!!.translation.y,
+            lastUsedBoundingSphereTrafo!!.translation.z,
+            0f
+        )
+        val positionRadius = Vector4f(localBoundingSphere.positionRadius).add(translation)
+        positionRadius.w = localBoundingSphere.positionRadius.w * lastUsedBoundingSphereTrafo!!.scale
+        boundingSphere = BoundingSphereData(positionRadius)
+    }
+
+    private fun recalculateIfNotClean(transform: Matrix4f) {
+        if (!isClean(transform)) {
+            actuallyRecalculate(Matrix4f(transform))
+        }
+    }
+}
 
 data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vector3fc = Vector3f(absoluteMinimum)) {
     val extents by lazy {
