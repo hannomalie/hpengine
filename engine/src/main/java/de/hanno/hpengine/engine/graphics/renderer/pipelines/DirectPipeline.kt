@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -61,7 +62,7 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
             beforeDrawAction(renderState, program, drawCam)
             for (batch in renderBatches) {
                 program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
+                actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, engine.config.debug.isDrawLines)
             }
         }
         drawDescriptionStatic.drawDirect(filteredRenderBatchesStatic, ::beforeDrawStatic)

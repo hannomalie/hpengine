@@ -13,6 +13,7 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.vertexbuffer.drawInstancedBaseVertex
 import de.hanno.hpengine.engine.vertexbuffer.drawLinesInstancedBaseVertex
 import org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
@@ -31,16 +32,32 @@ fun draw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, renderBatch: Rend
     return actuallyDraw(vertexBuffer, indexBuffer, renderBatch, program, drawLines)
 }
 
-private fun actuallyDraw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
+fun actuallyDraw(vertexIndexBuffer: VertexIndexBuffer,
+                 entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
+                 program: Program, drawLines: Boolean): Int {
+    return actuallyDraw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, entityBufferIndex, drawElementsIndirectCommand, program, drawLines)
+}
+
+fun actuallyDraw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer,
+                 entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
+                 program: Program, drawLines: Boolean): Int {
+
     program.setUniform("entityBaseIndex", 0)
-    program.setUniform("entityIndex", renderBatch.entityBufferIndex)
+    program.setUniform("entityIndex", entityBufferIndex)
     program.setUniform("indirect", false)
 
     return if (drawLines) {
-        vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, renderBatch.drawElementsIndirectCommand)
+        vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, drawElementsIndirectCommand)
     } else {
-        vertexBuffer.drawInstancedBaseVertex(indexBuffer, renderBatch.drawElementsIndirectCommand)
+        vertexBuffer.drawInstancedBaseVertex(indexBuffer, drawElementsIndirectCommand)
     }
+}
+
+fun actuallyDraw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
+    return actuallyDraw(vertexBuffer, indexBuffer, renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, drawLines)
+}
+fun actuallyDraw(vertexIndexBuffer: VertexIndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
+    return actuallyDraw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, drawLines)
 }
 
 fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: Int, baseHeight: Int, highZTexture: Int, highZProgram: ComputeProgram) {
