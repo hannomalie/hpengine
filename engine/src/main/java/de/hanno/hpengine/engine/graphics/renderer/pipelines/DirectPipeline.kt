@@ -20,9 +20,7 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
     private var filteredRenderBatchesStatic: List<RenderBatch> = emptyList()
     private var filteredRenderBatchesAnimated: List<RenderBatch> = emptyList()
 
-    override fun prepare(renderState: RenderState) {
-        prepare(renderState, renderState.camera)
-    }
+    override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
 
     fun prepare(renderState: RenderState, camera: Camera) {
         verticesCount = 0
@@ -36,8 +34,8 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
                       programAnimated: Program,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-          DrawDescription(renderState, this.filteredRenderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
-          DrawDescription(renderState, this.filteredRenderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
+          DrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
+          DrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
 
           firstPassResult.verticesDrawn += verticesCount
           firstPassResult.entitiesDrawn += entitiesCount
@@ -53,7 +51,7 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
 
     fun beforeDraw(renderState: RenderState, program: Program,
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
-        engine.gpuContext.enable(GlCap.CULL_FACE)
+        engine.gpuContext.cullFace = !engine.config.debug.isDrawLines
         program.use()
         program.setUniforms(renderState, renderCam, engine.config, vertexBuffer)
     }

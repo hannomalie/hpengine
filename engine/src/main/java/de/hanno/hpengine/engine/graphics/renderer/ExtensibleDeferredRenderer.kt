@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtens
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -37,8 +38,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
-    val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
-        object: DirectPipeline(engineContext) {
+    val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
+        object: SimplePipeline(engineContext) {
             override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
                 super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()

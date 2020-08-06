@@ -28,6 +28,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
@@ -136,7 +137,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
             with(drawDescription) {
                 cullPhase(renderState, commandOrganization, drawCountBuffer, targetCommandBuffer, phase, cullCam)
-                render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase)
+                render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase, drawDescription.isDrawLines)
             }
         }
     }
@@ -195,7 +196,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                        commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                        offsetBuffer: PersistentMappedStructBuffer<IntStruct>,
                        beforeRender: () -> Unit,
-                       phase: Pipeline.CullingPhase) = profiled("Actually render") {
+                       phase: Pipeline.CullingPhase,
+                       drawLines: Boolean) = profiled("Actually render") {
         program.use()
         beforeRender()
         program.setUniform("entityIndex", 0)
@@ -213,7 +215,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
         program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-        drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commandCount, drawCountBufferToUse)
+        vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBufferToUse, commandOrganization.commandCount, drawLines)
     }
 
     private fun cull(renderState: RenderState,
