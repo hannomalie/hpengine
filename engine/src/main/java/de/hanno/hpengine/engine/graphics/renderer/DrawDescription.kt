@@ -8,9 +8,11 @@ import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 
 class DrawDescription(
     val renderState: RenderState,
+    val renderBatches: List<RenderBatch>,
     val program: Program,
     val commandOrganization: CommandOrganization,
     val vertexIndexBuffer: VertexIndexBuffer,
+    val beforeDraw: (RenderState, Program, Camera) -> Unit,
     val drawCam: Camera,
     val cullCam: Camera = drawCam
 )

@@ -81,7 +81,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     private val highZProgram = engine.programManager.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
 
-    open fun renderHighZMap() {
+    private fun renderHighZMap() {
         renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
     }
 

@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.joml.FrustumIntersection
@@ -40,33 +39,25 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
         draw(renderState, programStatic, programAnimated, firstPassResult, renderState.camera)
     }
 
+    private fun DrawDescription.drawDirect() {
+        beforeDraw(this.renderState, program, this.drawCam)
+        for (batch in renderBatches) {
+            program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
+            actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, engine.config.debug.isDrawLines)
+        }
+    }
+
     fun draw(renderState: RenderState,
              programStatic: Program,
              programAnimated: Program,
              firstPassResult: FirstPassResult,
              drawCam: Camera = renderState.camera) = profiled("Actual draw entities") {
-        with(renderState) {
-            drawStaticAndAnimatedDirect(
-                DrawDescription(renderState, programStatic, commandOrganizationStatic, vertexIndexBufferStatic, drawCam),
-                DrawDescription(renderState, programAnimated, commandOrganizationAnimated, vertexIndexBufferAnimated, drawCam)
-            )
 
-            firstPassResult.verticesDrawn += verticesCount
-            firstPassResult.entitiesDrawn += entitiesCount
-        }
-    }
+        DrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, ::beforeDrawStatic, drawCam).drawDirect()
+        DrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, ::beforeDrawAnimated, drawCam).drawDirect()
 
-    private fun drawStaticAndAnimatedDirect(drawDescriptionStatic: DrawDescription,
-                                            drawDescriptionAnimated: DrawDescription) {
-        fun DrawDescription.drawDirect(renderBatches: List<RenderBatch>, beforeDrawAction: (RenderState, Program, Camera) -> Unit) {
-            beforeDrawAction(renderState, program, drawCam)
-            for (batch in renderBatches) {
-                program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, engine.config.debug.isDrawLines)
-            }
-        }
-        drawDescriptionStatic.drawDirect(filteredRenderBatchesStatic, ::beforeDrawStatic)
-        drawDescriptionAnimated.drawDirect(filteredRenderBatchesAnimated, ::beforeDrawAnimated)
+        firstPassResult.verticesDrawn += verticesCount
+        firstPassResult.entitiesDrawn += entitiesCount
     }
 
     open fun RenderBatch.shouldBeSkipped(cullCam: Camera): Boolean {

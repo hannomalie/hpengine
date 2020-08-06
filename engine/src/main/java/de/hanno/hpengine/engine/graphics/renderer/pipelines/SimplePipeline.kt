@@ -63,15 +63,13 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
              firstPassResult: FirstPassResult,
              drawCam: Camera = renderState.camera,
              cullCam: Camera = drawCam) = profiled("Actual draw entities") {
-        with(renderState) {
-            drawStaticAndAnimated(
-                DrawDescription(renderState, programStatic, commandOrganizationStatic, vertexIndexBufferStatic, drawCam),
-                DrawDescription(renderState, programAnimated, commandOrganizationAnimated, vertexIndexBufferAnimated, drawCam)
-            )
+        drawStaticAndAnimated(
+            drawDescriptionStatic = DrawDescription(renderState, renderState.renderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, drawCam, cullCam),
+            drawDescriptionAnimated = DrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, drawCam, cullCam)
+        )
 
-            firstPassResult.verticesDrawn += verticesCount
-            firstPassResult.entitiesDrawn += entitiesCount
-        }
+        firstPassResult.verticesDrawn += verticesCount
+        firstPassResult.entitiesDrawn += entitiesCount
     }
 
     protected open fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
