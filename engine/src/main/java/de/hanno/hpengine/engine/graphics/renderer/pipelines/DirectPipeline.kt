@@ -34,63 +34,47 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
     override fun draw(renderState: RenderState,
                       programStatic: Program,
                       programAnimated: Program,
-                      firstPassResult: FirstPassResult) {
+                      firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        draw(renderState, programStatic, programAnimated, firstPassResult, renderState.camera)
-    }
+          DrawDescription(renderState, this.filteredRenderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
+          DrawDescription(renderState, this.filteredRenderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
 
-    private fun DrawDescription.drawDirect() {
-        beforeDraw(this.renderState, program, this.drawCam)
-        for (batch in renderBatches) {
-            program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-            actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, engine.config.debug.isDrawLines)
-        }
-    }
+          firstPassResult.verticesDrawn += verticesCount
+          firstPassResult.entitiesDrawn += entitiesCount
+      }
 
-    fun draw(renderState: RenderState,
-             programStatic: Program,
-             programAnimated: Program,
-             firstPassResult: FirstPassResult,
-             drawCam: Camera = renderState.camera) = profiled("Actual draw entities") {
-
-        DrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, ::beforeDrawStatic, drawCam).drawDirect()
-        DrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, ::beforeDrawAnimated, drawCam).drawDirect()
-
-        firstPassResult.verticesDrawn += verticesCount
-        firstPassResult.entitiesDrawn += entitiesCount
-    }
-
-    open fun RenderBatch.shouldBeSkipped(cullCam: Camera): Boolean {
-        val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)
-        val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
-
-        val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.primCount > 1 // TODO: Better culling for instances
-
-        val culled = !visibleForCamera
-        val isForward = materialInfo.transparencyType.needsForwardRendering
-        return culled || isForward
-    }
-
-    fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
-        customBeforeDrawStatic(renderState, program, renderCam)
     }
 
-    fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
-        customBeforeDrawAnimated(renderState, program, renderCam)
     }
-
-    open fun customBeforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) { }
-    open fun customBeforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) { }
 
     fun beforeDraw(renderState: RenderState, program: Program,
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
         engine.gpuContext.enable(GlCap.CULL_FACE)
         program.use()
-        program.setUniforms(renderState, renderCam,
-                engine.config, vertexBuffer)
+        program.setUniforms(renderState, renderCam, engine.config, vertexBuffer)
     }
 
 }
 
+fun DrawDescription.drawDirect() {
+    beforeDraw(this.renderState, program, this.drawCam)
+    for (batch in renderBatches) {
+        program.setTextureUniforms(batch.materialInfo.maps)
+        actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines)
+    }
+}
+
+fun RenderBatch.shouldBeSkipped(cullCam: Camera): Boolean {
+    val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)
+    val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
+
+    val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.primCount > 1 // TODO: Better culling for instances
+
+    val culled = !visibleForCamera
+    val isForward = materialInfo.transparencyType.needsForwardRendering
+    return culled || isForward
+}

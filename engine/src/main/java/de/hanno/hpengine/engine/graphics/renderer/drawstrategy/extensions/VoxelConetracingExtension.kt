@@ -197,7 +197,7 @@ class VoxelConeTracingExtension(
                     pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
                 } else {
                     for (entity in batches) {
-                        voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
+                        voxelizer.setTextureUniforms(entity.materialInfo.maps)
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
                         entityVoxelizedInCycle[entity.entityName] = renderState.cycle
                     }

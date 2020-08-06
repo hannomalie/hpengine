@@ -36,7 +36,7 @@ class Program(
         val fragmentShaderSource: FileBasedCodeSource?,
         defines: Defines
 ) : AbstractProgram(programManager.gpuContext.createProgramId()) {
-    private val gpuContext: GpuContext<OpenGl>
+    val gpuContext: GpuContext<OpenGl>
 
     private val localDefines = HashMap<String, Any>()
 

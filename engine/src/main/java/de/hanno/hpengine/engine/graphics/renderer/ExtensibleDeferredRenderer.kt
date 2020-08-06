@@ -39,10 +39,12 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
         object: DirectPipeline(engineContext) {
-            override fun customBeforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+            override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+                super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()
             }
-            override fun customBeforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+            override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+                super.beforeDrawStatic(renderState, program, renderCam)
                 customBeforeDraw()
             }
             private fun customBeforeDraw() {
@@ -99,8 +101,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
             profiled("FirstPass") {
 
                 profiled("MainPipeline") {
-                    state[pipeline].draw(state, simpleColorProgramStatic,
-                            simpleColorProgramAnimated, result.firstPassResult, state.camera)
+                    state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
                 }
 
                 for (extension in extensions) {

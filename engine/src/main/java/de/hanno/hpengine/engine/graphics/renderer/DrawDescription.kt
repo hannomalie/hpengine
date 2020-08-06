@@ -13,6 +13,7 @@ class DrawDescription(
     val commandOrganization: CommandOrganization,
     val vertexIndexBuffer: VertexIndexBuffer,
     val beforeDraw: (RenderState, Program, Camera) -> Unit,
+    val isDrawLines: Boolean,
     val drawCam: Camera,
     val cullCam: Camera = drawCam
 )

@@ -15,8 +15,12 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.lwjgl.opengl.GL30
 
 interface Pipeline {
-    fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
     fun prepare(renderState: RenderState)
+    fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
+
+    fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {}
+    fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {}
+
 
     enum class CullingPhase(val coarsePhase: CoarseCullingPhase) {
         STATIC_ONE(ONE),

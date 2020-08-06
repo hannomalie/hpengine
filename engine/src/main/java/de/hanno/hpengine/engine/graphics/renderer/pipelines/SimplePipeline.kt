@@ -5,14 +5,12 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
@@ -33,11 +31,12 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
     private val useIndirectRendering = engine.config.performance.isIndirectRendering && engine.gpuContext.isSupported(BindlessTextures)
 
-    fun prepare(renderState: RenderState, cullCam: Camera) {
+    override fun prepare(renderState: RenderState) {
         verticesCount = 0
         entitiesCount = 0
+
         fun CommandOrganization.prepare(batches: List<RenderBatch>) {
-            filteredRenderBatches = batches.filter { !it.shouldBeSkipped(cullCam) }
+            filteredRenderBatches = batches.filter { !it.shouldBeSkipped(renderState.camera) }
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
         }
@@ -45,27 +44,15 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         renderState.commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
         renderState.commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
     }
-    override fun prepare(renderState: RenderState) {
-        prepare(renderState, renderState.camera)
-    }
 
     override fun draw(renderState: RenderState,
                       programStatic: Program,
                       programAnimated: Program,
-                      firstPassResult: FirstPassResult) {
+                      firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        draw(renderState, programStatic, programAnimated, firstPassResult, renderState.camera)
-    }
-
-    fun draw(renderState: RenderState,
-             programStatic: Program,
-             programAnimated: Program,
-             firstPassResult: FirstPassResult,
-             drawCam: Camera = renderState.camera,
-             cullCam: Camera = drawCam) = profiled("Actual draw entities") {
         drawStaticAndAnimated(
-            drawDescriptionStatic = DrawDescription(renderState, renderState.renderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, drawCam, cullCam),
-            drawDescriptionAnimated = DrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, drawCam, cullCam)
+            DrawDescription(renderState, renderState.renderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera),
+            DrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
         )
 
         firstPassResult.verticesDrawn += verticesCount
@@ -76,7 +63,8 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         if (useIndirectRendering) {
             drawStaticAndAnimatedIndirect(drawDescriptionStatic, drawDescriptionAnimated)
         } else {
-            drawStaticAndAnimatedDirect(drawDescriptionStatic, drawDescriptionAnimated)
+            drawDescriptionStatic.drawDirect()
+            drawDescriptionAnimated.drawDirect()
         }
     }
 
@@ -84,8 +72,8 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                                               drawDescriptionAnimated: DrawDescription) {
         // This can be reused ?? To be checked...
         val drawCountBuffer = drawDescriptionStatic.commandOrganization.drawCountBuffer
-        fun DrawDescription.drawIndirect(beforeDrawAction: (RenderState, Program, Camera) -> Unit) {
-            beforeDrawAction(renderState, program, drawCam)
+        fun DrawDescription.drawIndirect() {
+            beforeDraw(renderState, program, drawCam)
             with(commandOrganization) {
                 drawCountBuffer.put(0, commandCount)
                 profiled("Actually render") {
@@ -100,23 +88,8 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
             }
         }
 
-        drawDescriptionStatic.drawIndirect(::beforeDrawStatic)
-        drawDescriptionAnimated.drawIndirect(::beforeDrawAnimated)
-    }
-
-    private fun drawStaticAndAnimatedDirect(drawDescriptionStatic: DrawDescription,
-                                            drawDescriptionAnimated: DrawDescription) {
-        fun DrawDescription.drawDirect(beforeDrawAction: (RenderState, Program, Camera) -> Unit) {
-            beforeDrawAction(renderState, program, drawCam)
-            program.use()
-            var indicesCount = 0
-            for (batch in commandOrganization.filteredRenderBatches) {
-                program.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
-                indicesCount += draw(vertexIndexBuffer, batch, program, engine.config.debug.isDrawLines)
-            }
-        }
-        drawDescriptionStatic.drawDirect(::beforeDrawStatic)
-        drawDescriptionAnimated.drawDirect(::beforeDrawAnimated)
+        drawDescriptionStatic.drawIndirect()
+        drawDescriptionAnimated.drawIndirect()
     }
 
     protected fun drawIndirect(vertexIndexBuffer: VertexIndexBuffer,
@@ -147,22 +120,11 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
         }
     }
 
-    fun RenderBatch.shouldBeSkipped(cullCam: Camera): Boolean {
-        val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)
-        val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
-
-        val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.primCount > 1 // TODO: Better culling for instances
-
-        val culled = useFrustumCulling && !visibleForCamera
-        val isForward = materialInfo.transparencyType.needsForwardRendering
-        return culled || isForward
-    }
-
-    open fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    open fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
@@ -172,8 +134,7 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
             engine.gpuContext.enable(GlCap.CULL_FACE)
         }
         program.use()
-        program.setUniforms(renderState, renderCam,
-                engine.config, vertexBuffer)
+        program.setUniforms(renderState, renderCam, engine.config, vertexBuffer)
     }
 
 }
@@ -205,8 +166,7 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
     setUniform("useSteepParallax", config.quality.isUseSteepParallax)
 }
 
-fun Program.setTextureUniforms(gpuContext: GpuContext<OpenGl>,
-                               maps: Map<SimpleMaterial.MAP, Texture>) {
+fun Program.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
     for (mapEnumEntry in SimpleMaterial.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {

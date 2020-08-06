@@ -241,7 +241,7 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
 
                 profiled("Probe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(batch.materialInfo.maps)
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer,
                                 renderState.vertexIndexBufferStatic.indexBuffer,
                                 batch, pointCubeShadowPassProgram, false, false)
