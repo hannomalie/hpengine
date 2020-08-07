@@ -8,6 +8,11 @@ class DrawElementsIndirectCommand : Struct() {
     var firstIndex by 0
     var baseVertex by 0
     var baseInstance by 0
-}
 
+    companion object {
+        private val command = DrawElementsIndirectCommand()
+        val sizeInBytes: Int
+            get() = command.sizeInBytes
+    }
+}
 

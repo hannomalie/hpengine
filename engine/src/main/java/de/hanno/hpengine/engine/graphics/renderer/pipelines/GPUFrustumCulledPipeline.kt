@@ -215,7 +215,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
         program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-        vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBufferToUse, commandOrganization.commandCount, drawLines)
+        vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBufferToUse, 0, commandOrganization.commandCount, drawLines)
     }
 
     private fun cull(renderState: RenderState,

@@ -23,8 +23,11 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
     private var verticesCount = 0
     private var entitiesCount = 0
+    private var commandOrganizationStatic = CommandOrganization(engine.gpuContext)
+    private var commandOrganizationAnimated = CommandOrganization(engine.gpuContext)
 
-    private val useIndirectRendering = engine.config.performance.isIndirectRendering && engine.gpuContext.isSupported(BindlessTextures)
+    private val useBindlessTextures = engine.gpuContext.isSupported(BindlessTextures)
+    private val useIndirectRendering = engine.config.performance.isIndirectRendering
 
     override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
 
@@ -38,8 +41,8 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
             addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
         }
 
-        renderState.commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
-        renderState.commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
+        commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
+        commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
     }
 
     override fun draw(renderState: RenderState,
@@ -48,8 +51,8 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         drawStaticAndAnimated(
-                DrawDescription(renderState, renderState.renderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera),
-                DrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+                DrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera),
+                DrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
         )
 
         firstPassResult.verticesDrawn += verticesCount
@@ -57,27 +60,12 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
     }
 
     protected open fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
-        if (useIndirectRendering) {
+        if (useIndirectRendering && useBindlessTextures) {
             drawDescriptionStatic.drawIndirect()
             drawDescriptionAnimated.drawIndirect()
         } else {
             drawDescriptionStatic.drawDirect()
             drawDescriptionAnimated.drawDirect()
-        }
-    }
-
-    private fun addCommands(renderBatches: List<RenderBatch>,
-                            commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
-                            entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
-
-        entityOffsetBuffer.enlarge(renderBatches.size)
-        commandBuffer.enlarge(renderBatches.size)
-
-        for ((index, batch) in renderBatches.withIndex()) {
-            batch.drawElementsIndirectCommand.copyTo(commandBuffer[index])
-            entityOffsetBuffer[index].value = batch.entityBufferIndex
-            verticesCount += batch.vertexCount * batch.instanceCount
-            entitiesCount += batch.instanceCount
         }
     }
 
@@ -98,6 +86,19 @@ open class SimplePipeline @JvmOverloads constructor(private val engine: EngineCo
 
 }
 
+fun addCommands(renderBatches: List<RenderBatch>,
+                commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
+
+    entityOffsetBuffer.enlarge(renderBatches.size)
+    commandBuffer.enlarge(renderBatches.size)
+
+    for ((index, batch) in renderBatches.withIndex()) {
+        batch.drawElementsIndirectCommand.copyTo(commandBuffer[index])
+        entityOffsetBuffer[index].value = batch.entityBufferIndex
+    }
+}
+
 fun DrawDescription.drawIndirect() {
     beforeDraw(renderState, program, drawCam)
     with(commandOrganization) {
@@ -110,7 +111,7 @@ fun DrawDescription.drawIndirect() {
             program.bindShaderStorageBuffer(4, entityOffsetBuffer)
             program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
 
-            vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, commandCount, isDrawLines)
+            vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, 0, commandCount, isDrawLines)
         }
     }
 }

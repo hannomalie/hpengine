@@ -101,32 +101,44 @@ fun VertexBuffer.drawInstancedBaseVertex(indexBuffer: IndexBuffer?, indexCount: 
 fun VertexBuffer.multiDrawElementsIndirectCount(indexBuffer: IndexBuffer,
                                                 commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                                                 drawCountBuffer: AtomicCounterBuffer,
+                                                drawCount: Long = 0,
                                                 maxDrawCount: Int) {
     drawCountBuffer.bindAsParameterBuffer()
     bind()
     indexBuffer.bind()
     commandBuffer.bind()
-    ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, 0, maxDrawCount, 0)
+    ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
     drawCountBuffer.unbind()
     indexBuffer.unbind()
 }
 
 fun VertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                                                      drawCountBuffer: AtomicCounterBuffer,
+                                                     drawCount: Long = 0,
                                                      maxDrawCount: Int,
                                                      isDrawLines: Boolean) {
     if(isDrawLines) {
         vertexBuffer.drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, maxDrawCount)
     } else {
-        vertexBuffer.multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, maxDrawCount)
+        vertexBuffer.multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, drawCount, maxDrawCount)
     }
 }
 
-fun VertexBuffer.multiDrawElementsIndirect(indexBuffer: IndexBuffer, commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>, primitiveCount: Int) {
+fun VertexIndexBuffer.multiDrawElementsIndirect(commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                                                     drawCount: Int,
+                                                     isDrawLines: Boolean) {
+    if(isDrawLines) {
+        vertexBuffer.drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, drawCount) // This might be wrong
+    } else {
+        vertexBuffer.multiDrawElementsIndirect(indexBuffer, commandBuffer, drawCount)
+    }
+}
+
+fun VertexBuffer.multiDrawElementsIndirect(indexBuffer: IndexBuffer, commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>, drawCount: Int) {
     bind()
     indexBuffer.bind()
     commandBuffer.bind()
-    glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0)
+    glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, 0)
     indexBuffer.unbind()
 }
 

@@ -6,27 +6,36 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
+import de.hanno.struct.copyFrom
+import de.hanno.struct.copyTo
 import org.joml.FrustumIntersection
 
 open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline {
 
     private var verticesCount = 0
     private var entitiesCount = 0
-    private var filteredRenderBatchesStatic: List<RenderBatch> = emptyList()
-    private var filteredRenderBatchesAnimated: List<RenderBatch> = emptyList()
+    private var commandOrganizationStatic = CommandOrganization(engine.gpuContext)
+    private var commandOrganizationAnimated = CommandOrganization(engine.gpuContext)
 
     override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
 
     fun prepare(renderState: RenderState, camera: Camera) {
         verticesCount = 0
         entitiesCount = 0
-        filteredRenderBatchesStatic = renderState.renderBatchesStatic.filter { !it.shouldBeSkipped(camera) }
-        filteredRenderBatchesAnimated = renderState.renderBatchesAnimated.filter { !it.shouldBeSkipped(camera) }
+
+        fun CommandOrganization.prepare(batches: List<RenderBatch>) {
+            filteredRenderBatches = batches.filter { !it.shouldBeSkipped(camera) }
+            commandCount = filteredRenderBatches.size
+            addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
+        }
+
+        commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
+        commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
     }
 
     override fun draw(renderState: RenderState,
@@ -34,12 +43,15 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
                       programAnimated: Program,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-          DrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
-          DrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera).drawDirect()
+        val drawDescriptionStatic = DrawDescription(renderState, commandOrganizationStatic.filteredRenderBatches, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
+        drawDescriptionStatic.drawDirect()
 
-          firstPassResult.verticesDrawn += verticesCount
-          firstPassResult.entitiesDrawn += entitiesCount
-      }
+        val drawDescriptionAnimated = DrawDescription(renderState, commandOrganizationAnimated.filteredRenderBatches, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+        drawDescriptionAnimated.drawDirect()
+
+        firstPassResult.verticesDrawn += verticesCount
+        firstPassResult.entitiesDrawn += entitiesCount
+    }
 
     override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
