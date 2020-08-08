@@ -21,8 +21,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IndirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
@@ -37,7 +38,6 @@ import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
-import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
@@ -100,10 +100,7 @@ class VoxelConeTracingExtension(
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val pipeline = SimplePipeline(engine,
-            useFrustumCulling = false,
-            useBackFaceCulling = false,
-            useLineDrawingIfActivated = false)
+    private val pipeline = DirectPipeline(engine)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
 

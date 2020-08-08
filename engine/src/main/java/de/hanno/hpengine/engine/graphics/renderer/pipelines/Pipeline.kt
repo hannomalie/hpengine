@@ -11,7 +11,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhas
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_TWO
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.lwjgl.opengl.GL30
 
 interface Pipeline {
@@ -49,7 +48,7 @@ interface Pipeline {
             return when(T::class) {
                 is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
                 is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                else -> SimplePipeline(engine,
+                else -> IndirectPipeline(engine,
                         useFrustumCulling = useFrustumCulling,
                         useBackFaceCulling = useBackfaceCulling,
                         useLineDrawingIfActivated = useLineDrawingIfActivated)

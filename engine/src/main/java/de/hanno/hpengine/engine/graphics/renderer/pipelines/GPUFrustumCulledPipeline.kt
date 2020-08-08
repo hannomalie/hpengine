@@ -7,11 +7,12 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
-import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
+import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
@@ -41,7 +42,7 @@ import java.io.File
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
-                                                              useLineDrawing: Boolean = true) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+                                                              useLineDrawing: Boolean = true) : IndirectPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
@@ -65,7 +66,30 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         ), name = "GPUCulledPipeline")
 
 
-    override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+        super.beforeDrawStatic(renderState, program, renderCam)
+    }
+
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+        super.beforeDrawAnimated(renderState, program, renderCam)
+    }
+
+    override fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
+        profiled("Actual draw entities") {
+
+            val drawDescriptionStatic = IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
+            val drawDescriptionAnimated = IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+
+            beforeDraw(drawDescriptionStatic, drawDescriptionAnimated)
+
+            drawDescriptionStatic.draw()
+            drawDescriptionAnimated.draw()
+
+            firstPassResult.verticesDrawn += verticesCount
+            firstPassResult.entitiesDrawn += entitiesCount
+        }
+    }
+    private fun beforeDraw(drawDescriptionStatic: IndirectDrawDescription, drawDescriptionAnimated: IndirectDrawDescription) {
         ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, VoxelConeTracingExtension.ZERO_BUFFER)
         val cullAndRender = { profilerString: String,
                               phase: Pipeline.CoarseCullingPhase ->
@@ -88,7 +112,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     open var depthMap = engine.deferredRenderingBuffer.visibilityMap
 
-    private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
+    private fun debugPrintPhase1(drawDescription: IndirectDrawDescription, phase: Pipeline.CullingPhase) {
         if (engine.config.debug.isPrintPipelineDebugOutput) {
             GL11.glFinish()
             println("########### $phase ")
@@ -124,7 +148,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         }
     }
 
-    private fun cullAndRender(drawDescription: DrawDescription, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
+    private fun cullAndRender(drawDescription: IndirectDrawDescription, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
         with(drawDescription.commandOrganization) {
             val drawCountBuffer = drawCountBuffers
             drawCountBuffer.put(0, 0)
