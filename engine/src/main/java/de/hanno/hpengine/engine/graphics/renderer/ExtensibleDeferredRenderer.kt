@@ -38,8 +38,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
-    val pipeline: StateRef<SimplePipeline> = engineContext.renderStateManager.renderState.registerState {
-        object: SimplePipeline(engineContext) {
+    val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
+        object: DirectPipeline(engineContext) {
             override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
                 super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()

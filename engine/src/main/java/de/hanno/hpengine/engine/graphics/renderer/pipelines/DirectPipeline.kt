@@ -43,10 +43,10 @@ open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline 
                       programAnimated: Program,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        val drawDescriptionStatic = DrawDescription(renderState, commandOrganizationStatic.filteredRenderBatches, programStatic, renderState.commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
+        val drawDescriptionStatic = DrawDescription(renderState, commandOrganizationStatic.filteredRenderBatches, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
         drawDescriptionStatic.drawDirect()
 
-        val drawDescriptionAnimated = DrawDescription(renderState, commandOrganizationAnimated.filteredRenderBatches, programAnimated, renderState.commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+        val drawDescriptionAnimated = DrawDescription(renderState, commandOrganizationAnimated.filteredRenderBatches, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
         drawDescriptionAnimated.drawDirect()
 
         firstPassResult.verticesDrawn += verticesCount

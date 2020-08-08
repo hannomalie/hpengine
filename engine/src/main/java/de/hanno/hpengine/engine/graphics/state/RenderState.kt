@@ -33,9 +33,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     var skyBoxMaterialIndex = -1
 
-    val commandOrganizationStatic: CommandOrganization = CommandOrganization(gpuContext)
-    val commandOrganizationAnimated: CommandOrganization = CommandOrganization(gpuContext)
-
     var camera = Camera(Entity("RenderStateCameraEntity"), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
@@ -108,10 +105,8 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     fun add(state: Any) = customState.add(state)
 
-    operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
+    operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef]
 
-    fun entityHasMoved() = entitiesState.entityMovedInCycle >= cycle
-    fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
 }
 
 class CustomStates {
