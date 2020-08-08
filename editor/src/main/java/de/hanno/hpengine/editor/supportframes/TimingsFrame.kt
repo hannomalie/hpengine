@@ -32,13 +32,17 @@ class TimingsFrame(engine: Engine<*>): JFrame("Timings") {
                                 drawResult += GPUProfiler.currentAverages
                             }
                             val fpsCounter = engine.renderManager.fpsCounter
-                            textArea.text = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms\n\n" +
+                            val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
+                            val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
+                            textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n" +
                                     GPUProfiler.currentAverages + "\n\n" + GPUProfiler.currentTimings
                         }
                     } else if(engine.config.profiling.showFps) {
                         SwingUtils.invokeLater {
                             val fpsCounter = engine.renderManager.fpsCounter
-                            textArea.text = "HPEngine - ${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms\n\n"
+                            val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
+                            val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
+                            textArea.text = "HPEngine | $fpsInfo | $cpsInfo"
                         }
                     }
                 }

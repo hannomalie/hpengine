@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.util.fps.FPSCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
 import java.util.concurrent.Executors
+import kotlin.math.min
 
 interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
     val managerContext: ManagerContext<TYPE>
@@ -43,6 +45,7 @@ interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
 
     override val addResourceContext: AddResourceContext
         get() = managerContext.addResourceContext
+    val cpsCounter: FPSCounter
 }
 
 class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
@@ -50,6 +53,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                                            override val renderManager: RenderManager = RenderManager(engineContext),
                                            override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
 
+    override val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScope = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
@@ -76,9 +80,9 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
                 var frameTimeS = frameTimeNs / 1000000000.0
                 currentTimeNs = newTimeNs
                 while (frameTimeS > 0.0) {
-                    val deltaTime = Math.min(frameTimeS, dtS)
+                    val deltaTime = min(frameTimeS, dtS)
                     addResourceContext.locked {
-                        update(dtS.toFloat())
+                        update(deltaTime.toFloat())
                     }
                     frameTimeS -= deltaTime
                     yield()
@@ -93,6 +97,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
         with(managerContext.managers) {
             update(deltaSeconds)
         }
+        cpsCounter.update()
         renderManager.finishCycle(sceneManager.scene)
     } catch (e: Exception) {
         e.printStackTrace()
