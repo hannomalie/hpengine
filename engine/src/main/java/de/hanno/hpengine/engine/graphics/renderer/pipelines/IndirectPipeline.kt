@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
+import de.hanno.hpengine.engine.graphics.DrawParameters
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
@@ -28,6 +29,7 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
 
     init {
         require(engine.gpuContext.isSupported(BindlessTextures)) { "Cannot use indirect pipeline without bindless textures feature" }
+        require(engine.gpuContext.isSupported(DrawParameters)) { "Cannot use indirect pipeline without drawcount buffer" }
     }
 
     override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
@@ -79,12 +81,18 @@ fun addCommands(renderBatches: List<RenderBatch>,
                 commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                 entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
 
-    entityOffsetBuffer.enlarge(renderBatches.size)
-    commandBuffer.enlarge(renderBatches.size)
+    val resultingCommandCount = renderBatches.sumBy{ it.instanceCount }
+    entityOffsetBuffer.enlarge(resultingCommandCount)
+    commandBuffer.enlarge(resultingCommandCount)
 
-    for ((index, batch) in renderBatches.withIndex()) {
-        batch.drawElementsIndirectCommand.copyTo(commandBuffer[index])
-        entityOffsetBuffer[index].value = batch.entityBufferIndex
+    var index = 0
+    for (batch in renderBatches) {
+        for(instanceIndex in 0 until batch.instanceCount) {
+            batch.drawElementsIndirectCommand.copyTo(commandBuffer[index])
+            commandBuffer[index].primCount = 1
+            entityOffsetBuffer[index].value = batch.entityBufferIndex + instanceIndex
+            index++
+        }
     }
 }
 
