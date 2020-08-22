@@ -50,35 +50,37 @@ class OpenGlBackend(override val eventBus: EventBus,
     }
 }
 
-class EngineContext(val config: Config,
-                        val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
-                        val backend: Backend<OpenGl> = OpenGlBackend(window, config),
-                        val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
-                        val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
-                        val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },
-                        val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager, backend.addResourceContext)): Backend<OpenGl> {
-    override val eventBus
-        get() = backend.eventBus
-    override val gpuContext: GpuContext<OpenGl>
-        get() = backend.gpuContext
-    override val programManager: ProgramManager<OpenGl>
-        get() = backend.programManager
-    override val textureManager: TextureManager
-        get() = backend.textureManager
-    override val input: Input
-        get() = backend.input
-    override val addResourceContext: AddResourceContext
-        get() = backend.addResourceContext
+class EngineContext(
+    val config: Config,
+    val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
+    val backend: Backend<OpenGl> = OpenGlBackend(window, config),
+    val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
+    val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
+    val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },
+    val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager, backend.addResourceContext)) {
 }
 
-class ManagerContextImpl(
-        override val engineContext: EngineContext,
-        override val managers: ManagerRegistry = SimpleManagerRegistry(),
-        override val renderManager: RenderManager,
-        override val physicsManager: PhysicsManager = PhysicsManager(renderer = LineRendererImpl(engineContext), config = engineContext.config)
-) : ManagerContext<OpenGl> {
+inline val EngineContext.addResourceContext: AddResourceContext
+    get() = backend.addResourceContext
+inline val EngineContext.input: Input
+    get() = backend.input
+inline val EngineContext.textureManager: TextureManager
+    get() = backend.textureManager
+inline val EngineContext.programManager: ProgramManager<OpenGl>
+    get() = backend.programManager
+inline val EngineContext.gpuContext: GpuContext<OpenGl>
+    get() = backend.gpuContext
+inline val EngineContext.eventBus
+    get() = backend.eventBus
 
-    override val directories = engineContext.config.directories
+class ManagerContext(
+    val engineContext: EngineContext,
+    val managers: ManagerRegistry = SimpleManagerRegistry(),
+    val renderManager: RenderManager,
+    val physicsManager: PhysicsManager = PhysicsManager(renderer = LineRendererImpl(engineContext), config = engineContext.config)
+) {
+
+    val directories = engineContext.config.directories
 
     init {
         managers.register(directories)
@@ -87,13 +89,13 @@ class ManagerContextImpl(
         engineContext.renderSystems.add(physicsManager)
     }
 
-    override fun beforeSetScene(nextScene: Scene) {
+    fun beforeSetScene(nextScene: Scene) {
         for (manager in managers.managers) {
             manager.value.beforeSetScene(nextScene)
         }
     }
 
-    override fun afterSetScene() {
+    fun afterSetScene() {
         for (manager in managers.managers) {
             manager.value.afterSetScene()
         }

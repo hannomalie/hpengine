@@ -1,6 +1,9 @@
 package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.addResourceContext
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.event.MaterialAddedEvent

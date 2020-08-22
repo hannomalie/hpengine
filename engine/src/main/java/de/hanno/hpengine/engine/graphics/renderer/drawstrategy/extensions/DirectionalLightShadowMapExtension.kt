@@ -3,6 +3,10 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND

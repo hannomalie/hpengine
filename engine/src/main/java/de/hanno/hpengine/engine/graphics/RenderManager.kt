@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer

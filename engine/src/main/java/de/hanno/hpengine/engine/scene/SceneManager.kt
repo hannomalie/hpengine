@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager

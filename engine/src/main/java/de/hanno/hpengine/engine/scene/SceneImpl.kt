@@ -3,6 +3,9 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.addResourceContext
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem

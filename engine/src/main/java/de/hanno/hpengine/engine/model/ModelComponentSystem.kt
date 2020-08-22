@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent

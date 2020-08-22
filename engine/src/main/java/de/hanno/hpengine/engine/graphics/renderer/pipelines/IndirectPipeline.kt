@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures

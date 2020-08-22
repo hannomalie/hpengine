@@ -2,6 +2,8 @@ package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer

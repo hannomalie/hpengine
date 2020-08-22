@@ -17,38 +17,27 @@ import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 
-interface ManagerContext<TYPE: BackendType> {
-    val engineContext: EngineContext
-    val managers: ManagerRegistry
-    val directories: Directories
-    val renderManager: RenderManager
-    val physicsManager: PhysicsManager
-
-    fun beforeSetScene(nextScene: Scene)
-    fun afterSetScene()
-
-}
-inline val ManagerContext<*>.backend: Backend<*>
+inline val ManagerContext.backend: Backend<*>
     get() = engineContext.backend
-inline val ManagerContext<*>.config: Config
+inline val ManagerContext.config: Config
     get() = engineContext.config
-inline val ManagerContext<*>.renderSystems: MutableList<RenderSystem>
+inline val ManagerContext.renderSystems: MutableList<RenderSystem>
     get() = engineContext.renderSystems
-inline val ManagerContext<*>.renderStateManager: RenderStateManager
+inline val ManagerContext.renderStateManager: RenderStateManager
     get() = engineContext.renderStateManager
-inline val ManagerContext<*>.programManager: ProgramManager<*>
+inline val ManagerContext.programManager: ProgramManager<*>
     get() = engineContext.programManager
-inline val ManagerContext<*>.textureManager: TextureManager
+inline val ManagerContext.textureManager: TextureManager
     get() = engineContext.textureManager
-inline val ManagerContext<*>.deferredRenderingBuffer: DeferredRenderingBuffer
+inline val ManagerContext.deferredRenderingBuffer: DeferredRenderingBuffer
     get() = engineContext.deferredRenderingBuffer
-inline val ManagerContext<*>.materialManager: MaterialManager
+inline val ManagerContext.materialManager: MaterialManager
     get() = engineContext.materialManager
-inline val ManagerContext<*>.window: Window<*>
+inline val ManagerContext.window: Window<*>
     get() = engineContext.window
-inline val ManagerContext<*>.addResourceContext: AddResourceContext
+inline val ManagerContext.addResourceContext: AddResourceContext
     get() = engineContext.backend.addResourceContext
-inline val ManagerContext<*>.gpuContext: GpuContext<OpenGl>
+inline val ManagerContext.gpuContext: GpuContext<OpenGl>
     get() = engineContext.backend.gpuContext
-inline val ManagerContext<*>.input: Input
+inline val ManagerContext.input: Input
     get() = engineContext.backend.input

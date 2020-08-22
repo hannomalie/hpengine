@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity

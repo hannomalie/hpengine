@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.backend.OpenGlBackendKt;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
@@ -77,7 +78,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		TextureDimension3D dimension = TextureDimension.Companion.invoke(RESOLUTION, RESOLUTION, MAX_PROBES);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
 		int wrapMode = GL_REPEAT;
-		GpuContext gpuContext = engineContext.getGpuContext();
+		GpuContext gpuContext = OpenGlBackendKt.getGpuContext(engineContext);
 		this.environmentMapsArray = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA32F, wrapMode);
 		this.environmentMapsArray1 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
 		this.environmentMapsArray2 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
@@ -102,7 +103,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight, this);
 		probes.add(probe);
 		updateBuffers();
-        engine.getEventBus().post(new ProbeAddedEvent(probe));
+        OpenGlBackendKt.getEventBus(engine).post(new ProbeAddedEvent(probe));
 		return probe;
 	}
 	
@@ -184,10 +185,10 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void prepareProbeRendering() {
-        engine.getGpuContext().setDepthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().enable(CULL_FACE);
-		cubeMapArrayRenderTarget.use(engine.getGpuContext(), false);
+        OpenGlBackendKt.getGpuContext(engine).setDepthMask(true);
+        OpenGlBackendKt.getGpuContext(engine).enable(DEPTH_TEST);
+        OpenGlBackendKt.getGpuContext(engine).enable(CULL_FACE);
+		cubeMapArrayRenderTarget.use(OpenGlBackendKt.getGpuContext(engine), false);
 	}
 
 	public void drawDebug(EnvironmentProbe probe, Program program) {
@@ -239,7 +240,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 				points[24*3*i + z] = array[z];
 			}
 		};
-		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3), points);
+		VertexBuffer buffer = new VertexBuffer(OpenGlBackendKt.getGpuContext(engine), EnumSet.of(DataChannels.POSITION3), points);
 		buffer.upload();
 		program.setUniform("diffuseColor", new Vector3f(0,1,0));
 		drawDebugLines(buffer);
@@ -327,7 +328,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void clearProbes() {
-		probes.forEach( p -> { engine.getEventBus().unregister(p.getSampler()); });
+		probes.forEach( p -> { OpenGlBackendKt.getEventBus(engine).unregister(p.getSampler()); });
 		probes.clear();
 	}
 

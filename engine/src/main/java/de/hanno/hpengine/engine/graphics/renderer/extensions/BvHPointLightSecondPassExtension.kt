@@ -4,6 +4,8 @@ import com.dreizak.miniball.highdim.Miniball
 import com.dreizak.miniball.model.ArrayPointSet
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl

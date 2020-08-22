@@ -4,6 +4,7 @@ import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.addResourceContext
+import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
