@@ -21,7 +21,7 @@ import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL40.*
 import java.io.File
 
-class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
     val firstpassDefaultVertexshaderSource = FileBasedCodeSource(File(Shader.directory + "first_pass_vertex.glsl"))

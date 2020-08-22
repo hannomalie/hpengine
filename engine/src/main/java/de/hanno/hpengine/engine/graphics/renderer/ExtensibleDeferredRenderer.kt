@@ -1,11 +1,17 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
+import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
@@ -18,17 +24,29 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtens
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.IndirectPipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
+import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 
-class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): RenderSystem, EngineContext<OpenGl> by engineContext {
+class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem, Backend<OpenGl> {
+    val window: Window<OpenGl> = engineContext.window
+    val backend: Backend<OpenGl> = engineContext.backend
+    val config: Config = engineContext.config
+    val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
+    val renderSystems: MutableList<RenderSystem> = engineContext.renderSystems
+    val renderStateManager: RenderStateManager = engineContext.renderStateManager
+    val materialManager: MaterialManager = engineContext.materialManager
+
     val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
@@ -72,6 +90,18 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext<OpenGl>): Rend
 //        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
         BvHPointLightSecondPassExtension(engineContext)
     )
+    override val eventBus
+        get() = backend.eventBus
+    override val gpuContext: GpuContext<OpenGl>
+        get() = backend.gpuContext
+    override val programManager: ProgramManager<OpenGl>
+        get() = backend.programManager
+    override val textureManager: TextureManager
+        get() = backend.textureManager
+    override val input: Input
+        get() = backend.input
+    override val addResourceContext: AddResourceContext
+        get() = backend.addResourceContext
 
     override fun CoroutineScope.update(deltaSeconds: Float) {
         val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState

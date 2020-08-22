@@ -21,7 +21,7 @@ object ApplicationMenu {
                 .setExtraText("Creates an empty scene")
                 .setAction {
                     GlobalScope.launch {
-                        engine.scene = SceneImpl("Scene_${System.currentTimeMillis()}", engine as Engine)
+                        engine.scene = SceneImpl("Scene_${System.currentTimeMillis()}", engine.engineContext)
                     }
                 }
                 .build()

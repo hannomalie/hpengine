@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import java.io.File
 
-class PostProcessingExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class PostProcessingExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
     private val postProcessProgram = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "passthrough_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "postprocess_fragment.glsl")))

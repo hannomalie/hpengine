@@ -22,7 +22,7 @@ import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ModelComponentSystem(val engine: EngineContext<*>,
+class ModelComponentSystem(val engine: EngineContext,
                            val materialManager: MaterialManager) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 

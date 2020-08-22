@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 
-class DirectionalLightSystem(val engine: EngineContext<OpenGl>,
+class DirectionalLightSystem(val engine: EngineContext,
                              scene: Scene,
                              val eventBus: EventBus): SimpleEntitySystem(scene, listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0

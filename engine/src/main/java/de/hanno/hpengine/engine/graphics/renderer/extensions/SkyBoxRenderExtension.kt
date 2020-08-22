@@ -27,7 +27,7 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.io.File
 
-class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
 
     val materialManager: MaterialManager = engineContext.materialManager
     private val skyBoxProgram = engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))

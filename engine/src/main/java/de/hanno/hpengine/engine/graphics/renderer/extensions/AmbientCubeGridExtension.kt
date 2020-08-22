@@ -47,7 +47,7 @@ import org.lwjgl.opengl.GL45
 import java.io.File
 import java.nio.FloatBuffer
 
-class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : RenderExtension<OpenGl> {
+class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtension<OpenGl> {
 
     private var renderedInCycle: Long = -1
     val probeRenderer = ProbeRenderer(engineContext)
@@ -105,7 +105,7 @@ class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : Rende
     }
 }
 
-class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
+class ProbeRenderer(private val engine: EngineContext) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
     val probesPerDimension = Vector3i(20, 6, 20)

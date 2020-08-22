@@ -19,6 +19,12 @@ import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.config
+import de.hanno.hpengine.engine.backend.deferredRenderingBuffer
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.materialManager
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.renderSystems
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
@@ -79,12 +85,12 @@ class EditorComponents(val engine: Engine,
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-    private val lineRenderer = LineRendererImpl(engine)
-    val sphereHolder = SphereHolder(engine)
-    val boxRenderer = SimpleModelRenderer(engine)
-    val pyramidRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
-    val torusRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/torus.obj"), engine.materialManager, engine.config.directories.engineDir))
-    val environmentProbeSphereHolder = SphereHolder(engine, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
+    private val lineRenderer = LineRendererImpl(engine.engineContext)
+    val sphereHolder = SphereHolder(engine.engineContext)
+    val boxRenderer = SimpleModelRenderer(engine.engineContext)
+    val pyramidRenderer = SimpleModelRenderer(engine.engineContext, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
+    val torusRenderer = SimpleModelRenderer(engine.engineContext, model = StaticModelLoader().load(File("assets/models/torus.obj"), engine.materialManager, engine.config.directories.engineDir))
+    val environmentProbeSphereHolder = SphereHolder(engine.engineContext, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val sceneTree = SwingUtils.invokeAndWait {
         SceneTree(engine, this).apply {
@@ -101,7 +107,7 @@ class EditorComponents(val engine: Engine,
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
     val selectionSystem = SelectionSystem(this)
-    val textureRenderer = SimpleTextureRenderer(engine, engine.deferredRenderingBuffer.colorReflectivenessTexture)
+    val textureRenderer = SimpleTextureRenderer(engine.engineContext, engine.deferredRenderingBuffer.colorReflectivenessTexture)
 
     override fun render(result: DrawResult, state: RenderState) {
 

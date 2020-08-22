@@ -11,7 +11,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent(val engine: EngineContext<*>, override val entity: Entity) : InputControllerComponent(entity) {
+class MovableInputComponent(val engine: EngineContext, override val entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -98,7 +98,7 @@ class MovableInputComponent(val engine: EngineContext<*>, override val entity: E
     }
 }
 
-class InputComponentSystem(val engine: EngineContext<*>): ComponentSystem<InputControllerComponent> {
+class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
     override fun CoroutineScope.update(deltaSeconds: Float) {
         getComponents().forEach {

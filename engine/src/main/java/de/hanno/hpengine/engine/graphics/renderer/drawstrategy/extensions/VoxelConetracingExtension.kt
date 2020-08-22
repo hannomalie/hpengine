@@ -72,7 +72,7 @@ fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExt
 }
 
 class VoxelConeTracingExtension(
-        private val engine: EngineContext<OpenGl>,
+        private val engine: EngineContext,
         directionalLightShadowMapExtension: DirectionalLightShadowMapExtension?,
         val renderer: RenderSystem,
         val pointLightExtension: BvHPointLightSecondPassExtension) : RenderExtension<OpenGl> {

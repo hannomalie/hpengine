@@ -223,10 +223,10 @@ open class Camera @JvmOverloads constructor(
 
 }
 
-class CameraComponentSystem(val engine: EngineContext<*>): ComponentSystem<Camera>, RenderSystem {
+class CameraComponentSystem(val engine: EngineContext): ComponentSystem<Camera>, RenderSystem {
 
     // TODO: Remove this cast
-    private val lineRenderer = LineRendererImpl(engine as EngineContext<OpenGl>)
+    private val lineRenderer = LineRendererImpl(engine as EngineContext)
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(deltaSeconds: Float) {
         getComponents().forEach {

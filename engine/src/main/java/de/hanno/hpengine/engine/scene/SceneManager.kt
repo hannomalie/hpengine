@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 
 class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
 
-    var scene: Scene = SceneImpl("InitialScene", managerContext)
+    var scene: Scene = SceneImpl("InitialScene", managerContext.engineContext)
 
     fun addAll(entities: List<Entity>) {
         managerContext.engineContext.addResourceContext.locked {

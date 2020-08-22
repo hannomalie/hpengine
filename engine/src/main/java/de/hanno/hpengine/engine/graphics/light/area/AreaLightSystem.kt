@@ -45,7 +45,7 @@ import java.util.ArrayList
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
-class AreaLightSystem(val engine: EngineContext<OpenGl>, sceneImpl: SceneImpl) : SimpleEntitySystem(sceneImpl, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(val engine: EngineContext, sceneImpl: SceneImpl) : SimpleEntitySystem(sceneImpl, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }

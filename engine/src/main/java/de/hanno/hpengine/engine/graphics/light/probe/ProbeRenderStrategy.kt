@@ -3,6 +3,11 @@ package de.hanno.hpengine.engine.graphics.light.probe
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.config
+import de.hanno.hpengine.engine.backend.deferredRenderingBuffer
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.light.probe.ProbeRenderStrategy.Companion.dimension
@@ -28,9 +33,9 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
+import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
@@ -47,16 +52,16 @@ import java.io.File
 import java.nio.FloatBuffer
 
 
-class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
+class ProbeRenderStrategy(private val managerContext: ManagerContext<OpenGl>) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
     private val cubeMapRenderTarget = RenderTarget(
-            gpuContext = engine.gpuContext,
+            gpuContext = managerContext.gpuContext,
             frameBuffer = FrameBuffer(
-                    gpuContext = engine.gpuContext,
+                    gpuContext = managerContext.gpuContext,
                     depthBuffer = DepthBuffer(CubeMap(
-                            engine.gpuContext,
+                            managerContext.gpuContext,
                             TextureDimension(resolution, resolution),
                             TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
                             GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT)
@@ -67,11 +72,11 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
             textures = listOf(
                     ColorAttachmentDefinition("Diffuse", GL_RGBA16F, TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)),
                     ColorAttachmentDefinition("Radial Distance", GL_RG16F, TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR))
-            ).toCubeMaps(engine.gpuContext, resolution, resolution),
+            ).toCubeMaps(managerContext.gpuContext, resolution, resolution),
             name = "Probes"
     )
 
-    private var probeProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cube_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
+    private var probeProgram: Program = managerContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cube_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
     private val visibilityValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()
@@ -79,14 +84,14 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
     private val ambientCubeCache = HashMap<Vector3i, AmbientCube>()
 
 
-    val probeGrid = PersistentMappedBuffer(engine.gpuContext, resolution*resolution*resolution*AmbientCube.sizeInBytes)
+    val probeGrid = PersistentMappedBuffer(managerContext.gpuContext, resolution*resolution*resolution*AmbientCube.sizeInBytes)
     var x = 0
     var y = 0
 
     var z = 0
 
     fun renderProbes(renderState: RenderState) {
-        val gpuContext = engine.gpuContext
+        val gpuContext = managerContext.gpuContext
 
         profiled("PointLight shadowmaps") {
 
@@ -105,7 +110,7 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
                 gpuContext.disable(GlCap.CULL_FACE)
                 gpuContext.depthMask = true
                 gpuContext.clearColor(0f,0f,0f,0f)
-                cubeMapRenderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
+                cubeMapRenderTarget.use(managerContext.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
                 gpuContext.viewPort(0, 0, resolution, resolution)
 
                 val probePosition = Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
@@ -136,13 +141,13 @@ class ProbeRenderStrategy(private val engine: ManagerContext<OpenGl>) {
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, false, true)
                     }
                 }
-                engine.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
+                managerContext.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
 
                 val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z)) {
                     val dimension = TextureDimension(resolution, resolution)
                     val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
-                    val cubeMap = CubeMap.invoke(engine.gpuContext, dimension, filterConfig, GL11.GL_RGBA8)
-                    val distanceCubeMap = CubeMap(engine.gpuContext, dimension, filterConfig, GL_RG16F)
+                    val cubeMap = CubeMap.invoke(managerContext.gpuContext, dimension, filterConfig, GL11.GL_RGBA8)
+                    val distanceCubeMap = CubeMap(managerContext.gpuContext, dimension, filterConfig, GL_RG16F)
                     AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 

@@ -1,21 +1,19 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContextImpl
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.executeInitScript
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.retrieveConfig
-import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
-import java.awt.FlowLayout
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.JComponent
@@ -60,7 +58,7 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
             val config = retrieveConfig(args)
 
             val window = AWTEditor(config)
-            val engineContext = EngineContextImpl(config = config, window = window)
+            val engineContext = EngineContext(config = config, window = window)
             val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
             val engine = Engine(
                     engineContext = engineContext,

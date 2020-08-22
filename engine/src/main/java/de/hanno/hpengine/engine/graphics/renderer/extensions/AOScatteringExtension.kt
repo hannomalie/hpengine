@@ -13,7 +13,7 @@ import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import org.lwjgl.opengl.GL11
 
-class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class AOScatteringExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val gBuffer = engineContext.deferredRenderingBuffer
     val backend = engineContext.gpuContext.backend
     val gpuContext = engineContext.gpuContext

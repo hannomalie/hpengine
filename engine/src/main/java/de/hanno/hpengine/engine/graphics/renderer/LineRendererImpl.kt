@@ -19,7 +19,7 @@ import java.util.EnumSet
 import java.util.function.Consumer
 import kotlin.math.min
 
-class LineRendererImpl(engineContext: EngineContext<OpenGl>) : LineRenderer {
+class LineRendererImpl(engineContext: EngineContext) : LineRenderer {
 
     private val programManager: ProgramManager<OpenGl> = engineContext.programManager
     private val linePoints = ArrayList<Vector3fc>()

@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.joml.FrustumIntersection
 
-open class DirectPipeline(private val engine: EngineContext<OpenGl>) : Pipeline {
+open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
     private var verticesCount = 0
     private var entitiesCount = 0

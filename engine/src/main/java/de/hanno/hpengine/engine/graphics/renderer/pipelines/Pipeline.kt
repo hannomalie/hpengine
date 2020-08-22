@@ -46,9 +46,9 @@ interface Pipeline {
                                       useBackfaceCulling: Boolean,
                                       useLineDrawingIfActivated: Boolean): Pipeline {
             return when(T::class) {
-                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                else -> IndirectPipeline(engine,
+                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine.engineContext, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine.engineContext, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                else -> IndirectPipeline(engine.engineContext,
                         useFrustumCulling = useFrustumCulling,
                         useBackFaceCulling = useBackfaceCulling,
                         useLineDrawingIfActivated = useLineDrawingIfActivated)

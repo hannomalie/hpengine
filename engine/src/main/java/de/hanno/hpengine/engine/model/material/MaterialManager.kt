@@ -25,7 +25,7 @@ class MaterialManager(val config: Config,
                       val textureManager: TextureManager,
                       val singleThreadContext: AddResourceContext) : Manager {
 
-    constructor(engineContext: EngineContext<*>,
+    constructor(engineContext: EngineContext,
                 config: Config = engineContext.config,
                 eventBus: EventBus = engineContext.eventBus,
                 textureManager: TextureManager = engineContext.textureManager,

@@ -17,7 +17,7 @@ import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.struct.copyTo
 
-open class IndirectPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
+open class IndirectPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                       private val useFrustumCulling: Boolean = true,
                                                       private val useBackFaceCulling: Boolean = true,
                                                       private val useLineDrawingIfActivated: Boolean = true) : Pipeline {

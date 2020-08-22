@@ -15,7 +15,7 @@ import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
+class DrawLinesExtension(private val engine: EngineContext,
                          programManager: ProgramManager<*> = engine.programManager) : RenderExtension<OpenGl> {
 
     private val linesProgram: Program = programManager.getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl")

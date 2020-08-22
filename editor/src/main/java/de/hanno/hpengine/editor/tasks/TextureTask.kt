@@ -4,6 +4,7 @@ import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

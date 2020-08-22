@@ -50,7 +50,7 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
+class CubeShadowMapStrategy(private val engine: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(
             FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
@@ -133,7 +133,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext<OpenGl>, private v
     }
 }
 
-class DualParaboloidShadowMapStrategy(private val engine: EngineContext<OpenGl>,
+class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                                       private val pointLightSystem: PointLightSystem,
                                       val cameraEntity: Entity,
                                       val entityManager: EntityManager,

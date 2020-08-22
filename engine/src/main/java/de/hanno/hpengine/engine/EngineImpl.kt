@@ -1,11 +1,14 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.ManagerContextImpl
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.addResourceContext
+import de.hanno.hpengine.engine.backend.config
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.input
+import de.hanno.hpengine.engine.backend.window
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
@@ -28,7 +31,7 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.min
 
-class Engine @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
+class Engine @JvmOverloads constructor(override val engineContext: EngineContext,
                                            val renderer: RenderSystem,
                                            override val renderManager: RenderManager = RenderManager(engineContext),
                                            val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext {
@@ -51,8 +54,6 @@ class Engine @JvmOverloads constructor(override val engineContext: EngineContext
             }
             managerContext.afterSetScene()
         }
-    override val addResourceContext: AddResourceContext
-        get() = managerContext.addResourceContext
 
     init {
         engineContext.eventBus.register(this)
@@ -102,7 +103,7 @@ class Engine @JvmOverloads constructor(override val engineContext: EngineContext
 
             val config = retrieveConfig(args)
 
-            val engineContext = EngineContextImpl(config = config)
+            val engineContext = EngineContext(config = config)
             val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
             val engine = Engine(
                 engineContext = engineContext,

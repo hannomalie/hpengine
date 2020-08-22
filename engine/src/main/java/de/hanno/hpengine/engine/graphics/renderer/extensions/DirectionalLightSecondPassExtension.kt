@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL32
 import java.io.File
 
-class DirectionalLightSecondPassExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class DirectionalLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     private val secondPassDirectionalProgram = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "second_pass_directional_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "second_pass_directional_fragment.glsl")))
 
     private val gpuContext = engineContext.gpuContext

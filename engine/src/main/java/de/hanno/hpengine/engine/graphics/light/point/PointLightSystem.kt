@@ -19,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java)
 
-class PointLightSystem(val engine: EngineContext<OpenGl>,
+class PointLightSystem(val engine: EngineContext,
                        scene: Scene): SimpleEntitySystem(scene, listOf(PointLight::class.java)), RenderSystem {
 
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }

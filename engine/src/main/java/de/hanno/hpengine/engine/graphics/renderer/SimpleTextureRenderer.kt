@@ -23,7 +23,7 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
 import java.io.File
 
-open class SimpleTextureRenderer(val engineContext: EngineContext<OpenGl>,
+open class SimpleTextureRenderer(val engineContext: EngineContext,
                                  var texture: Texture,
                                  programManager: ProgramManager<OpenGl> = engineContext.programManager) : RenderSystem {
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext

@@ -26,7 +26,7 @@ import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
 import java.io.File
 
-class DirectionalLightShadowMapExtension(private val engineContext: EngineContext<OpenGl>) : RenderExtension<OpenGl> {
+class DirectionalLightShadowMapExtension(private val engineContext: EngineContext) : RenderExtension<OpenGl> {
 
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
     val renderTarget = RenderTarget(

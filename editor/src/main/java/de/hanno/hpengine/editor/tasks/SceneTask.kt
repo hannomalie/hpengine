@@ -2,6 +2,7 @@ package de.hanno.hpengine.editor.tasks
 
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.entity.Entity
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command

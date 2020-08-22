@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import java.io.File
 
-class CombinePassRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class CombinePassRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
 
     private val combineProgram = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "combine_pass_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "combine_pass_fragment.glsl")))
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer

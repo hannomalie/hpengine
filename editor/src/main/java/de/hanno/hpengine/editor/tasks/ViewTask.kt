@@ -5,6 +5,7 @@ import de.hanno.hpengine.editor.OutputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget

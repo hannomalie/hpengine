@@ -27,7 +27,7 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.io.File
 
-class SimpleModelRenderer(val engine: EngineContext<OpenGl>,
+class SimpleModelRenderer(val engine: EngineContext,
                           val model: StaticModel = StaticModelLoader().load(File("assets/models/cube.obj"), engine.materialManager, engine.config.directories.engineDir),
                           val program: Program = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
 

@@ -40,7 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
 class SceneImpl @JvmOverloads constructor(override val name: String = "new-scene-" + System.currentTimeMillis(),
-                                          val engine: EngineContext<OpenGl>) : Scene {
+                                          val engine: EngineContext) : Scene {
     @Transient
     override var currentCycle: Long = 0
     @Transient

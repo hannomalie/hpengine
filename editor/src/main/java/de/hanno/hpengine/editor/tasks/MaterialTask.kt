@@ -9,6 +9,7 @@ import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.addUnselectButton
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import kotlinx.coroutines.GlobalScope

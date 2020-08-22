@@ -15,6 +15,8 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
+import static de.hanno.hpengine.engine.backend.ManagerContextKt.getConfig;
+
 public class JavaComponent extends BaseComponent implements ScriptComponent, Reloadable {
 
     private static RuntimeJavaCompiler compiler = null;
@@ -38,7 +40,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         this.engine = engine;
         this.javaCodeSource = codeSource;
         this.gameDirectory = gameDirectory;
-        initWrappingComponent(engine.getConfig().getDirectories().getGameDir());
+        initWrappingComponent(getConfig(engine).getDirectories().getGameDir());
     }
 
     @Override

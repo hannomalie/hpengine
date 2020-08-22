@@ -21,7 +21,7 @@ var Entity.movedInCycle by movedInCycleExtensionState
 private val indexExtensionState = ExtensionState<Entity, Int>(0)
 var Entity.index by indexExtensionState
 
-class EntityManager(private val engine: EngineContext<*>, eventBus: EventBus, val scene: Scene) : Manager {
+class EntityManager(private val engine: EngineContext, eventBus: EventBus, val scene: Scene) : Manager {
 
     private val entityContainer: EntityContainer = SimpleContainer()
 

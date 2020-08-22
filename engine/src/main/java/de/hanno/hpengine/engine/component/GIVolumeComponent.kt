@@ -65,7 +65,7 @@ class GIVolumeComponent(override val entity: Entity,
 
 }
 
-class GIVolumeSystem(val engine: EngineContext<OpenGl>,
+class GIVolumeSystem(val engine: EngineContext,
                      scene: Scene) : SimpleEntitySystem(scene, listOf(GIVolumeComponent::class.java)) {
 
     val voxelConeTracingExtension: VoxelConeTracingExtension? = run {

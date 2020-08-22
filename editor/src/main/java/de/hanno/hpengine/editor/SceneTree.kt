@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor
 import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
@@ -36,7 +37,7 @@ open class SceneTree(val engine: Engine,
 
     init {
         addSceneObjects()
-        engine.eventBus.register(this)
+        engine.engineContext.eventBus.register(this)
     }
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {

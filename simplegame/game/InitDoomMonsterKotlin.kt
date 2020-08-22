@@ -1,4 +1,5 @@
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.config
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer

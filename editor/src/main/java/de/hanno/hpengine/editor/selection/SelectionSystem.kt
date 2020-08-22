@@ -17,6 +17,11 @@ import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.verticalBox
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.config
+import de.hanno.hpengine.engine.backend.deferredRenderingBuffer
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -88,7 +93,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val engine: Engine = editorComponents.engine
     val editor: RibbonEditor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
-    val lineRenderer = LineRendererImpl(engine)
+    val lineRenderer = LineRendererImpl(engine.engineContext)
 
     val simpleColorProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
     val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))

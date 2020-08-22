@@ -107,7 +107,7 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class BvHPointLightSecondPassExtension(val engine: EngineContext): RenderExtension<OpenGl> {
     private val gpuContext = engine.gpuContext
     private val deferredRenderingBuffer = engine.deferredRenderingBuffer
 

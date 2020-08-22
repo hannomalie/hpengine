@@ -39,7 +39,7 @@ import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.io.File
 
-open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
+open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
                                                               useLineDrawing: Boolean = true) : IndirectPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {

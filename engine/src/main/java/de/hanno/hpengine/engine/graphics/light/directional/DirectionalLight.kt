@@ -28,7 +28,7 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
         entity.transform.translate(offset)
     }
 
-    class DirectionalLightController(private val engine: EngineContext<*>, entity: Entity) : InputControllerComponent(entity) {
+    class DirectionalLightController(private val engine: EngineContext, entity: Entity) : InputControllerComponent(entity) {
         override fun CoroutineScope.update(deltaSeconds: Float) {
             val moveAmount = 100 * deltaSeconds
             val degreesPerSecond = 45f

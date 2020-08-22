@@ -13,7 +13,7 @@ import javax.swing.WindowConstants
 
 class ConfigFrame(engine: Engine, config: ConfigImpl, editor: RibbonEditor): JFrame("Config") {
     init {
-        val configPane = ReloadableScrollPane(ConfigGrid(config, engine.eventBus)).apply {
+        val configPane = ReloadableScrollPane(ConfigGrid(config, engine.engineContext.eventBus)).apply {
             this.preferredSize = Dimension(editor.canvas.width, editor.canvas.height)
         }
         size = Dimension(500, 500)
