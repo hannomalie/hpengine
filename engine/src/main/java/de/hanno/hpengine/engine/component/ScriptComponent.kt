@@ -15,7 +15,7 @@ interface ScriptComponent: Component, Reloadable {
 }
 
 sealed class ScriptComponentFileLoader<out T: ScriptComponent> {
-    abstract fun load(engine: Engine<*>, codeFile: File, entity: Entity): T
+    abstract fun load(engine: Engine, codeFile: File, entity: Entity): T
 
     companion object {
         fun getLoaderForFileExtension(extension: String): ScriptComponentFileLoader<ScriptComponent> {
@@ -29,17 +29,17 @@ sealed class ScriptComponentFileLoader<out T: ScriptComponent> {
 }
 
 object KotlinComponentLoader: ScriptComponentFileLoader<KotlinComponent>() {
-    override fun load(engine: Engine<*>, codeFile: File, entity: Entity): KotlinComponent {
+    override fun load(engine: Engine, codeFile: File, entity: Entity): KotlinComponent {
         return KotlinComponent(engine, FileBasedCodeSource(codeFile))
     }
 }
 object KotlinCompiledComponentLoader: ScriptComponentFileLoader<KotlinCompiledComponent>() {
-    override fun load(engine: Engine<*>, codeFile: File, entity: Entity): KotlinCompiledComponent {
+    override fun load(engine: Engine, codeFile: File, entity: Entity): KotlinCompiledComponent {
         return KotlinCompiledComponent(engine, FileBasedCodeSource(codeFile), entity)
     }
 }
 object JavaComponentLoader: ScriptComponentFileLoader<JavaComponent>() {
-    override fun load(engine: Engine<*>, codeFile: File, entity: Entity): JavaComponent {
+    override fun load(engine: Engine, codeFile: File, entity: Entity): JavaComponent {
         return JavaComponent(engine, FileBasedCodeSource(codeFile), engine.config.directories.gameDir)
     }
 }

@@ -85,7 +85,7 @@ class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
 
 class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val mouseAdapter = editorComponents.mouseAdapter
-    val engine: Engine<OpenGl> = editorComponents.engine
+    val engine: Engine = editorComponents.engine
     val editor: RibbonEditor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
     val lineRenderer = LineRendererImpl(engine)

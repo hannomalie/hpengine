@@ -24,7 +24,7 @@ import javax.swing.JFileChooser
 
 object TextureTask {
 
-    operator fun invoke(engine: Engine<*>, editor: RibbonEditor): RibbonTask {
+    operator fun invoke(engine: Engine, editor: RibbonEditor): RibbonTask {
         fun retrieveTextureCommands(): List<Command> {
             return engine.textureManager.textures.values.mapNotNull {
                 if (it is FileBasedTexture2D) {

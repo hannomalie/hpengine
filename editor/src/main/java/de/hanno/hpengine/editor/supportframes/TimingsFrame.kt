@@ -10,7 +10,7 @@ import java.awt.TextArea
 import javax.swing.JFrame
 import javax.swing.JPanel
 
-class TimingsFrame(engine: Engine<*>): JFrame("Timings") {
+class TimingsFrame(engine: Engine): JFrame("Timings") {
     init {
         size = Dimension(500, 500)
         val frame = this

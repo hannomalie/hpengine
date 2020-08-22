@@ -18,7 +18,7 @@ import de.hanno.hpengine.editor.tasks.SceneTask
 import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
-import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
@@ -72,7 +72,7 @@ sealed class OutputConfig {
     }
 }
 
-class EditorComponents(val engine: EngineImpl,
+class EditorComponents(val engine: Engine,
                        val config: ConfigImpl,
                        val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
 

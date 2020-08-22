@@ -16,7 +16,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import kotlin.reflect.KProperty0
 
-class MouseInputProcessor(val engine: Engine<*>,
+class MouseInputProcessor(val engine: Engine,
                           val selection: KProperty0<Selection>,
                           val editorComponents: EditorComponents) : MouseAdapter() {
     private var lastX: Float? = null

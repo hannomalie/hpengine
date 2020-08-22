@@ -23,7 +23,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         return compiler;
     }
 
-    private Engine<?> engine;
+    private Engine engine;
     private final FileBasedCodeSource javaCodeSource;
     private final GameDirectory gameDirectory;
 
@@ -33,7 +33,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private boolean isEngineConsumer;
     private Object instance;
 
-    public JavaComponent(Engine<?> engine, FileBasedCodeSource codeSource, GameDirectory gameDirectory) {
+    public JavaComponent(Engine engine, FileBasedCodeSource codeSource, GameDirectory gameDirectory) {
         super(new Entity());
         this.engine = engine;
         this.javaCodeSource = codeSource;

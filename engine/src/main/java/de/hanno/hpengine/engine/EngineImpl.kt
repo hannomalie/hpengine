@@ -28,10 +28,19 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.min
 
-interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
-    val managerContext: ManagerContext<TYPE>
-    val sceneManager: SceneManager
+class Engine @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
+                                           val renderer: RenderSystem,
+                                           override val renderManager: RenderManager = RenderManager(engineContext),
+                                           val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext {
 
+    val cpsCounter = FPSCounter()
+    private var updateThreadCounter = 0
+    private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
+    private val updateScope = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
+    init {
+        engineContext.renderSystems.add(0, renderer)
+    }
+    val sceneManager = managerContext.managers.register(SceneManager(managerContext))
     var scene: Scene
         get() = sceneManager.scene
         set(value) {
@@ -42,25 +51,8 @@ interface Engine<TYPE : BackendType> : ManagerContext<TYPE> {
             }
             managerContext.afterSetScene()
         }
-
     override val addResourceContext: AddResourceContext
         get() = managerContext.addResourceContext
-    val cpsCounter: FPSCounter
-}
-
-class EngineImpl @JvmOverloads constructor(override val engineContext: EngineContext<OpenGl>,
-                                           val renderer: RenderSystem,
-                                           override val renderManager: RenderManager = RenderManager(engineContext),
-                                           override val managerContext: ManagerContext<OpenGl> = ManagerContextImpl(engineContext = engineContext, renderManager = renderManager)) : ManagerContext<OpenGl> by managerContext, Engine<OpenGl> {
-
-    override val cpsCounter = FPSCounter()
-    private var updateThreadCounter = 0
-    private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
-    private val updateScope = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
-    init {
-        engineContext.renderSystems.add(0, renderer)
-    }
-    override val sceneManager = managerContext.managers.register(SceneManager(managerContext))
 
     init {
         engineContext.eventBus.register(this)
@@ -112,7 +104,7 @@ class EngineImpl @JvmOverloads constructor(override val engineContext: EngineCon
 
             val engineContext = EngineContextImpl(config = config)
             val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
-            val engine = EngineImpl(
+            val engine = Engine(
                 engineContext = engineContext,
                 renderer = renderer
             )
@@ -142,7 +134,7 @@ fun retrieveConfig(args: Array<String>): ConfigImpl {
     return config
 }
 
-fun EngineImpl.executeInitScript() {
+fun Engine.executeInitScript() {
     config.directories.gameDir.initScript?.let { initScriptFile ->
         ScriptComponentFileLoader.getLoaderForFileExtension(initScriptFile.extension).load(this, initScriptFile, Entity())
     }

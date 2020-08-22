@@ -27,7 +27,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-open class SceneTree(val engine: Engine<*>,
+open class SceneTree(val engine: Engine,
                 val editorComponents: EditorComponents,
                 val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(engine.scene)) : JTree(rootNode) {
 

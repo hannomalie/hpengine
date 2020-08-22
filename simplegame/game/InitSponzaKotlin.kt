@@ -9,7 +9,7 @@ import org.joml.Vector4f
 import javax.inject.Inject
 import kotlin.random.Random
 
-class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
+class InitSponzaKotlin @Inject constructor(val engine: Engine) : EngineConsumer {
     init {
         val modelFile = engine.config.directories.gameDir.resolve("assets/models/sponza.obj")
         val loaded = LoadModelCommand(modelFile, "sponza", engine.scene.materialManager, engine.config.directories.gameDir).execute()

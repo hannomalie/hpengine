@@ -27,7 +27,7 @@ import javax.swing.event.ListDataListener
 import kotlin.reflect.KMutableProperty0
 
 object ViewTask {
-    operator fun invoke(engine: Engine<*>,
+    operator fun invoke(engine: Engine,
                         config: ConfigImpl,
                         inputConfig: EditorInputConfig,
                         outputConfig: KMutableProperty0<OutputConfig>): RibbonTask {

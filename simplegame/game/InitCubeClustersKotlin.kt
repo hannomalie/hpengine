@@ -17,7 +17,7 @@ import java.util.ArrayList
 import java.util.Random
 import javax.inject.Inject
 
-class InitCubeClustersKotlin @Inject constructor(engine: Engine<*>) : Updatable {
+class InitCubeClustersKotlin @Inject constructor(engine: Engine) : Updatable {
     var maxDistance = 15
     var clusterDistance = 10 * maxDistance
     var clusterLocations = arrayOf(Vector3f(clusterDistance.toFloat(), 0f, clusterDistance.toFloat()),

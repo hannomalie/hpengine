@@ -13,7 +13,7 @@ import org.pushingpixels.flamingo.api.ribbon.RibbonApplicationMenu
 import org.pushingpixels.flamingo.api.ribbon.projection.RibbonApplicationMenuCommandButtonProjection
 
 object ApplicationMenu {
-    operator fun invoke(engine: Engine<*>): RibbonApplicationMenuCommandButtonProjection {
+    operator fun invoke(engine: Engine): RibbonApplicationMenuCommandButtonProjection {
 
         val appMenuNew = Command.builder()
                 .setText("New Scene")
@@ -21,7 +21,7 @@ object ApplicationMenu {
                 .setExtraText("Creates an empty scene")
                 .setAction {
                     GlobalScope.launch {
-                        engine.scene = SceneImpl("Scene_${System.currentTimeMillis()}", engine as Engine<OpenGl>)
+                        engine.scene = SceneImpl("Scene_${System.currentTimeMillis()}", engine as Engine)
                     }
                 }
                 .build()

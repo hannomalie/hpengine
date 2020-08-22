@@ -41,7 +41,7 @@ interface Pipeline {
     companion object {
         val HIGHZ_FORMAT = GL30.GL_R32F
 
-        inline fun <reified T> create(engine: Engine<OpenGl>,
+        inline fun <reified T> create(engine: Engine,
                                       useFrustumCulling: Boolean,
                                       useBackfaceCulling: Boolean,
                                       useLineDrawingIfActivated: Boolean): Pipeline {

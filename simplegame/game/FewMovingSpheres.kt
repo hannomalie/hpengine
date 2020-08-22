@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import javax.inject.Inject
 
-class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
+class FewMovingSpheres @Inject constructor(engine: Engine) {
     init {
         try {
             val loaded = LoadModelCommand(engine.directories.gameDir.resolve("assets/models/sphere.obj"), "sphere", engine.scene.materialManager, engine.directories.gameDir).execute()

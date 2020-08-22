@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContextImpl
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.executeInitScript
@@ -50,7 +50,7 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
         this@RibbonEditor.add(this, BorderLayout.LINE_END)
     }
 
-    fun setEngine(engine: EngineImpl, config: ConfigImpl) {
+    fun setEngine(engine: Engine, config: ConfigImpl) {
         EditorComponents(engine, config, this)
     }
 
@@ -62,7 +62,7 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
             val window = AWTEditor(config)
             val engineContext = EngineContextImpl(config = config, window = window)
             val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
-            val engine = EngineImpl(
+            val engine = Engine(
                     engineContext = engineContext,
                     renderer = renderer
             )

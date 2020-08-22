@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import javax.inject.Inject
 
-class FewInitInstancedAnimated @Inject constructor(engine: Engine<*>) {
+class FewInitInstancedAnimated @Inject constructor(engine: Engine) {
     init {
         try {
             val loaded = LoadModelCommand(engine.directories.gameDir.resolve("assets/models/doom3monster/monster.md5mesh"), "hellknight", engine.scene.materialManager, engine.directories.gameDir).execute()

@@ -12,7 +12,7 @@ import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 
 
 object SceneTask {
-    operator fun invoke(engine: Engine<*>): RibbonTask {
+    operator fun invoke(engine: Engine): RibbonTask {
         val entityBand = JRibbonBand("Entity", null).apply {
             val command = Command.builder()
                     .setText("Create")

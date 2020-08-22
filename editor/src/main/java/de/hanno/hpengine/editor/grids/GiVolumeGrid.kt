@@ -16,7 +16,7 @@ import javax.swing.JFormattedTextField
 import javax.swing.JPanel
 import kotlin.reflect.KMutableProperty0
 
-class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine<OpenGl>) : JPanel() {
+class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine) : JPanel() {
     init {
         layout = MigLayout("wrap 2")
         add(JButton("Use cam").apply {

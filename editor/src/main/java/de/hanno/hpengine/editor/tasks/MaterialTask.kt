@@ -30,7 +30,7 @@ import javax.swing.JFileChooser
 
 object MaterialTask {
 
-    operator fun invoke(engine: Engine<*>,
+    operator fun invoke(engine: Engine,
                         editor: RibbonEditor,
                         selectionSystem: SelectionSystem): RibbonTask {
 

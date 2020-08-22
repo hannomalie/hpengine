@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.engine.EngineImpl
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
@@ -161,7 +161,7 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
     override fun shutdown() {
     }
 
-    fun init(engine: EngineImpl, config: ConfigImpl) {
+    fun init(engine: Engine, config: ConfigImpl) {
         frame.setEngine(engine, config)
     }
 }

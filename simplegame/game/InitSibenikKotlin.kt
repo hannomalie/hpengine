@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import javax.inject.Inject
 
-class InitSibenikKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
+class InitSibenikKotlin @Inject constructor(val engine: Engine) : EngineConsumer {
 
     init {
         val modelFile = engine.config.directories.gameDir.resolve("assets/models/sibenik.obj")

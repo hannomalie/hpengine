@@ -10,7 +10,7 @@ import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import kotlinx.coroutines.CoroutineScope
 import java.util.HashMap
 
-class KotlinComponent(val engine: Engine<*>, override val codeSource: CodeSource) : BaseComponent(Entity()), ScriptComponent {
+class KotlinComponent(val engine: Engine, override val codeSource: CodeSource) : BaseComponent(Entity()), ScriptComponent {
     init {
         require(codeSource is FileBasedCodeSource) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
         initWrappingComponent()

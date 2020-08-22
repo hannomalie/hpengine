@@ -11,7 +11,7 @@ import java.util.ArrayList
 import java.util.Random
 import javax.inject.Inject
 
-class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
+class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
 
     var isInitialized: Boolean = false
         private set
@@ -30,7 +30,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
         }
     }
 
-    protected fun loadLotsOfInstances(engine: Engine<*>, assetPath: String, scale: Int, name: String) {
+    protected fun loadLotsOfInstances(engine: Engine, assetPath: String, scale: Int, name: String) {
         val loaded = LoadModelCommand(engine.directories.gameDir.resolve(assetPath), name, engine.scene.materialManager, engine.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
         for (entity in loaded.entities) {

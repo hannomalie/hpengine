@@ -78,7 +78,7 @@ dependencies {
 }
 
 application {
-    mainClassName = "de.hanno.hpengine.engine.EngineImpl"
+    mainClassName = "de.hanno.hpengine.engine.Engine"
 }
 val editorStartScript by tasks.registering(CreateStartScripts::class) {
     description = "Creates editor start script"

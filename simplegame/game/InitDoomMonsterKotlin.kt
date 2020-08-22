@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.transform.AABBData
 import org.joml.Vector3f
 import javax.inject.Inject
 
-class InitDoomMonsterKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
+class InitDoomMonsterKotlin @Inject constructor(val engine: Engine) : EngineConsumer {
 
     init {
         val modelFile = engine.config.directories.gameDir.resolve("assets/models/doom3monster/monster.md5mesh")
