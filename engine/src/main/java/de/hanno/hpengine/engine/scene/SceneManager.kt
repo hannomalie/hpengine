@@ -8,9 +8,9 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
 
-class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
+class SceneManager(val managerContext: ManagerContext): Manager {
 
-    var scene: Scene = SceneImpl("InitialScene", managerContext.engineContext)
+    var scene: Scene = Scene("InitialScene", managerContext.engineContext)
 
     fun addAll(entities: List<Entity>) {
         managerContext.engineContext.addResourceContext.locked {

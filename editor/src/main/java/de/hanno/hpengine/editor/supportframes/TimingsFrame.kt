@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor.supportframes
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.config
+import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import java.awt.BorderLayout

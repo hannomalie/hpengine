@@ -52,7 +52,7 @@ import java.io.File
 import java.nio.FloatBuffer
 
 
-class ProbeRenderStrategy(private val managerContext: ManagerContext<OpenGl>) {
+class ProbeRenderStrategy(private val managerContext: ManagerContext) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
@@ -187,7 +187,7 @@ class ProbeRenderStrategy(private val managerContext: ManagerContext<OpenGl>) {
     }
 }
 
-class EvaluateProbeRenderExtension(val engine: ManagerContext<OpenGl>): RenderExtension<OpenGl> {
+class EvaluateProbeRenderExtension(val engine: ManagerContext): RenderExtension<OpenGl> {
 
     private val probeRenderStrategy = ProbeRenderStrategy(engine)
 

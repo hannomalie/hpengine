@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.ManagerContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.gpuContext
@@ -12,11 +13,16 @@ import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.ManagerRegistry
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.util.fps.FPSCounter
@@ -141,3 +147,26 @@ fun Engine.executeInitScript() {
         ScriptComponentFileLoader.getLoaderForFileExtension(initScriptFile.extension).load(this, initScriptFile, Entity())
     }
 }
+
+inline val Engine.addResourceContext
+    get() = engineContext.backend.addResourceContext
+inline val Engine.input
+    get() = engineContext.backend.input
+inline val Engine.textureManager
+    get() = engineContext.backend.textureManager
+inline val Engine.programManager
+    get() = engineContext.backend.programManager
+inline val Engine.materialManager
+    get() = engineContext.materialManager
+inline val Engine.renderSystems
+    get() = engineContext.renderSystems
+inline val Engine.gpuContext
+    get() = engineContext.gpuContext
+inline val Engine.eventBus
+    get() = engineContext.backend.eventBus
+inline val Engine.window
+    get() = engineContext.window
+inline val Engine.deferredRenderingBuffer
+    get() = engineContext.deferredRenderingBuffer
+inline val Engine.config
+    get() = engineContext.config

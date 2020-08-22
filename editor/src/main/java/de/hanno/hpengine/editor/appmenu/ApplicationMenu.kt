@@ -3,7 +3,7 @@ package de.hanno.hpengine.editor.appmenu
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.scene.SceneImpl
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.pushingpixels.flamingo.api.common.model.Command
@@ -21,7 +21,7 @@ object ApplicationMenu {
                 .setExtraText("Creates an empty scene")
                 .setAction {
                     GlobalScope.launch {
-                        engine.scene = SceneImpl("Scene_${System.currentTimeMillis()}", engine.engineContext)
+                        engine.scene = Scene("Scene_${System.currentTimeMillis()}", engine.engineContext)
                     }
                 }
                 .build()

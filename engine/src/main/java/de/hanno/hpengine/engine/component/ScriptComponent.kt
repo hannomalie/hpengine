@@ -41,6 +41,6 @@ object KotlinCompiledComponentLoader: ScriptComponentFileLoader<KotlinCompiledCo
 }
 object JavaComponentLoader: ScriptComponentFileLoader<JavaComponent>() {
     override fun load(engine: Engine, codeFile: File, entity: Entity): JavaComponent {
-        return JavaComponent(engine, FileBasedCodeSource(codeFile), engine.config.directories.gameDir)
+        return JavaComponent(engine, FileBasedCodeSource(codeFile), engine.engineContext.config.directories.gameDir)
     }
 }

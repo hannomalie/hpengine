@@ -6,6 +6,7 @@ import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.engine.textureManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.pushingpixels.flamingo.api.common.RichTooltip

@@ -3,7 +3,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
-import de.hanno.hpengine.engine.scene.SceneImpl
+import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import org.joml.Vector4f
 import javax.inject.Inject

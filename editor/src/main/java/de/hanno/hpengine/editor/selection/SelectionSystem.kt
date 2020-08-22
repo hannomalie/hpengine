@@ -25,7 +25,10 @@ import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.config
+import de.hanno.hpengine.engine.deferredRenderingBuffer
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.gpuContext
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
@@ -38,7 +41,9 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.textureManager
 import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector2f
 import org.joml.Vector3f

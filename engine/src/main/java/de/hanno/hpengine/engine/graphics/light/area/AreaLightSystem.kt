@@ -31,7 +31,7 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
-import de.hanno.hpengine.engine.scene.SceneImpl
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.struct.StructArray
@@ -47,7 +47,7 @@ import java.util.ArrayList
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
-class AreaLightSystem(val engine: EngineContext, sceneImpl: SceneImpl) : SimpleEntitySystem(sceneImpl, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(val engine: EngineContext, sceneImpl: Scene) : SimpleEntitySystem(sceneImpl, listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }

@@ -1,6 +1,7 @@
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.config
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.transform.AABBData

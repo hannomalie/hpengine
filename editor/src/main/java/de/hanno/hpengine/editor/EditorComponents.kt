@@ -25,7 +25,10 @@ import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.materialManager
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.renderSystems
+import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.deferredRenderingBuffer
+import de.hanno.hpengine.engine.gpuContext
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -40,7 +43,10 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.materialManager
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
+import de.hanno.hpengine.engine.programManager
+import de.hanno.hpengine.engine.renderSystems
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import org.joml.AxisAngle4f

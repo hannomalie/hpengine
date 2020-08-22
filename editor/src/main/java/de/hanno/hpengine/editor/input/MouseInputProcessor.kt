@@ -6,6 +6,7 @@ import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.window
 import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
+import de.hanno.hpengine.engine.window
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf

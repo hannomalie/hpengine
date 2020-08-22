@@ -5,7 +5,9 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.config
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.GIVolumeComponent
+import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
+import de.hanno.hpengine.engine.textureManager
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z

@@ -40,7 +40,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         this.engine = engine;
         this.javaCodeSource = codeSource;
         this.gameDirectory = gameDirectory;
-        initWrappingComponent(getConfig(engine).getDirectories().getGameDir());
+        initWrappingComponent(getConfig(engine.getManagerContext()).getDirectories().getGameDir());
     }
 
     @Override
