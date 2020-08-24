@@ -110,18 +110,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         }
     }
 
-
-    val camera = cameraComponentSystem.create(cameraEntity)
-            .apply { cameraEntity.addComponent(this) }
-            .apply {
-                engineContext.addResourceContext.locked {
-                    with(this@Scene) { add(cameraEntity) }
-                }
-            }
-//    TODO: Exclude from entity movement determination
-
+    val camera = cameraComponentSystem.create(cameraEntity).apply {
+        cameraEntity.addComponent(this)
+        engineContext.addResourceContext.locked {
+            with(this@Scene) { add(cameraEntity) }
+        }
+    }
     var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
-
 
     init {
         engineContext.renderSystems.add(object : RenderSystem {
@@ -130,7 +125,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             }
         })
         engineContext.eventBus.register(this)
-
     }
 
     fun restoreWorldCamera() {
@@ -184,9 +178,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         entityManager.componentAddedInCycle = currentCycle
     }
 
-    fun getPointLights(): List<PointLight> = componentSystems.get(PointLightComponentSystem::class.java).getComponents()
-    fun getTubeLights(): List<TubeLight> = componentSystems.get(TubeLightComponentSystem::class.java).getComponents()
-    fun getAreaLights(): List<AreaLight> = componentSystems.get(AreaLightComponentSystem::class.java).getComponents()
+    val pointLights
+        get() = baseExtensions.pointLightExtension.componentSystem.getComponents()
+    val tubeLights
+        get() = baseExtensions.tubeLightExtension.componentSystem.getComponents()
+    val areaLights: List<AreaLight>
+        get() = baseExtensions.areaLightExtension.componentSystem.getComponents()
+
     fun getAreaLightSystem(): AreaLightSystem = entitySystems.get(AreaLightSystem::class.java)
     fun getPointLightSystem(): PointLightSystem = entitySystems.get(PointLightSystem::class.java)
     fun add(entity: Entity) = addAll(listOf(entity))

@@ -129,7 +129,7 @@ class EnvironmentSampler(val entity: Entity,
             Matrix4f().set(viewProjectionMatrices.right[i]).mul(viewProjectionMatrices.left[i])[viewProjectionMatrixBuffer]
             rotateForIndex(i, entity)
             val fullReRenderRequired = urgent || !drawnOnce
-            val aPointLightHasMoved = !scene.getPointLights().stream()
+            val aPointLightHasMoved = !scene.pointLights.stream()
                     .filter { e: PointLight -> probe.box.containsOrIntersectsSphere(e.entity.transform.position, e.radius) }
                     .filter { e: PointLight -> e.entity.hasMoved }.collect(Collectors.toList()).isEmpty()
             val areaLightHasMoved = !scene.getAreaLightSystem().getAreaLights().any { it.entity.hasMoved }
@@ -154,7 +154,7 @@ class EnvironmentSampler(val entity: Entity,
                 }
                 environmentProbeManager.cubeMapArrayRenderTarget.setCubeMapFace(3, 0, probe.index, i)
                 gpuContext.clearDepthAndColorBuffer()
-                drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights())
+                drawSecondPass(i, light, scene.pointLights, scene.tubeLights, scene.areaLights)
                 registerSideAsDrawn(i)
             } else {
                 gpuContext.depthMask = true
@@ -197,13 +197,13 @@ class EnvironmentSampler(val entity: Entity,
         program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE)
         program.setUniform("probePosition", probe.entity.transform.center)
         program.setUniform("probeSize", probe.size)
-        program.setUniform("activePointLightCount", scene.getPointLights().size)
+        program.setUniform("activePointLightCount", scene.pointLights.size)
         program.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
         program.bindShaderStorageBuffer(5, renderState.lightState.pointLightBuffer)
-        program.setUniform("activeAreaLightCount", scene.getAreaLights().size)
+        program.setUniform("activeAreaLightCount", scene.areaLights.size)
         program.bindShaderStorageBuffer(6, scene.getAreaLightSystem().lightBuffer)
-        for (i in 0 until Math.min(scene.getAreaLights().size, AreaLightSystem.MAX_AREALIGHT_SHADOWMAPS)) {
-            val areaLight = scene.getAreaLights()[i]
+        for (i in 0 until Math.min(scene.areaLights.size, AreaLightSystem.MAX_AREALIGHT_SHADOWMAPS)) {
+            val areaLight = scene.areaLights[i]
             gpuContext.bindTexture(9 + i, GlTextureTarget.TEXTURE_2D, scene.getAreaLightSystem().getDepthMapForAreaLight(areaLight))
             program.setUniformAsMatrix4("areaLightShadowMatrices[$i]", scene.getAreaLightSystem().getShadowMatrixForAreaLight(areaLight))
         }

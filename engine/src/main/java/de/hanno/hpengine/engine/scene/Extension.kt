@@ -43,7 +43,6 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
     private fun <T: Extension> T.add(): T = also { extensions.add(it) }
 
     val directionalLightExtension = DirectionalLightExtension(engineContext).add()
-
     val cameraExtension = CameraExtension(engineContext).add()
     val pointLightExtension = PointLightExtension(engineContext).add()
     val areaLightExtension = AreaLightExtension(engineContext).add()

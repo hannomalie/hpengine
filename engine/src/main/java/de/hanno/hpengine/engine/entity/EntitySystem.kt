@@ -102,7 +102,7 @@ abstract class SimpleEntitySystem(val componentClasses: List<Class<out Component
         }
     }
 
-    inline fun <reified T: Component> getComponents(type: Class<T>): List<T> = components.filterIsInstance<T>()
+    fun <T: Component> getComponents(type: Class<T>): List<T> = components.filterIsInstance(type)
 
     override fun clear() {
         components.clear()
