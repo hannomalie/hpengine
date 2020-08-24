@@ -7,13 +7,13 @@ import kotlinx.coroutines.CoroutineScope
 
 interface EntitySystem {
     @JvmDefault
-    fun CoroutineScope.update(deltaSeconds: Float) {}
-    fun gatherEntities()
-    fun onEntityAdded(entities: List<Entity>) {
-        gatherEntities()
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {}
+    fun gatherEntities(scene: Scene)
+    fun onEntityAdded(scene: Scene, entities: List<Entity>) {
+        gatherEntities(scene)
     }
-    fun onComponentAdded(component: Component) {
-        gatherEntities()
+    fun onComponentAdded(scene: Scene, component: Component) {
+        gatherEntities(scene)
     }
 
     fun clear()
@@ -22,16 +22,17 @@ interface EntitySystem {
 
 interface EntitySystemRegistry {
     fun getSystems(): Collection<EntitySystem>
-    fun CoroutineScope.update(deltaSeconds: Float) {
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for(system in this@EntitySystemRegistry.getSystems()){
             with(system) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }
     fun <T : EntitySystem> register(system: T): T
-    fun gatherEntities() {
-        for(system in getSystems()) { system.gatherEntities()}
+    fun gatherEntities(scene: Scene) {
+        for(system in getSystems()) { system.gatherEntities(scene)
+        }
     }
 
     fun <T: EntitySystem> get(clazz: Class<T>):T  {
@@ -47,14 +48,14 @@ interface EntitySystemRegistry {
         } else return clazz.cast(firstOrNull)
     }
 
-    fun onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(scene: Scene, entities: List<Entity>) {
         for(system in getSystems()) {
-            with(system) { onEntityAdded(entities) }
+            with(system) { onEntityAdded(scene, entities) }
         }
     }
-    fun onComponentAdded(component: Component) {
+    fun onComponentAdded(scene: Scene, component: Component) {
         for(system in getSystems()) {
-            with(system) { onComponentAdded(component) }
+            with(system) { onComponentAdded(scene, component) }
         }
     }
 
@@ -73,12 +74,12 @@ class SimpleEntitySystemRegistry: EntitySystemRegistry {
     }
 }
 
-abstract class SimpleEntitySystem(val scene: Scene, val componentClasses: List<Class<out Component>>) : EntitySystem {
+abstract class SimpleEntitySystem(val componentClasses: List<Class<out Component>>) : EntitySystem {
 
     protected val entities = mutableListOf<Entity>()
     protected val components = mutableListOf<Component>()
 
-    override fun gatherEntities() {
+    override fun gatherEntities(scene: Scene) {
         entities.clear()
         if(componentClasses.isEmpty()) {
             entities.addAll(scene.entityManager.getEntities())

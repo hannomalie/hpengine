@@ -5,8 +5,7 @@ import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -38,7 +37,7 @@ class MovableInputComponent(val engine: EngineContext, override val entity: Enti
 //    TODO: Make this adjustable through editor
     private val cameraSpeed: Float = 1.0f
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         //                             linearVel.fma(deltaSeconds, linearAcc);
         //                             // update angular velocity based on angular acceleration
         //                             angularVel.fma(deltaSeconds, angularAcc);
@@ -101,10 +100,10 @@ class MovableInputComponent(val engine: EngineContext, override val entity: Enti
 
 class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         getComponents().forEach {
             with(it) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }

@@ -113,37 +113,32 @@ class VoxelConeTracingExtension(
         directionalLightShadowMapExtension?.voxelConeTracingExtension = this
     }
 
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
-        if(!renderState.sceneInitialized) return
+    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
+        val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
+        val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
+        val bounces = 1
 
-        profiled("VCT first pass") {
-
-            val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
-            val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
-            val bounces = 1
-
-            val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization) {
-                renderState.renderBatchesStatic
-            } else {
-                renderState.renderBatchesStatic.filter { batch ->
-                    val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityName]
-                    entityVoxelizationCycle == null || (batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC)
-                }
+        val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization) {
+            renderState.renderBatchesStatic
+        } else {
+            renderState.renderBatchesStatic.filter { batch ->
+                val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityName]
+                entityVoxelizationCycle == null || (batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC)
             }
-
-            val needsRevoxelization = entitiesToVoxelize.isNotEmpty()
-            voxelizeScene(renderState, entitiesToVoxelize)
-
-
-            if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
-                lightInjectedFramesAgo = 0
-            }
-            val needsLightInjection = lightInjectedFramesAgo < bounces
-
-
-            injectLight(renderState, bounces, needsLightInjection)
-            engine.config.debug.isForceRevoxelization = false
         }
+
+        val needsRevoxelization = entitiesToVoxelize.isNotEmpty()
+        voxelizeScene(renderState, entitiesToVoxelize)
+
+
+        if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
+            lightInjectedFramesAgo = 0
+        }
+        val needsLightInjection = lightInjectedFramesAgo < bounces
+
+
+        injectLight(renderState, bounces, needsLightInjection)
+        engine.config.debug.isForceRevoxelization = false
     }
 
     fun voxelizeScene(renderState: RenderState, batches: List<RenderBatch>) {
@@ -269,7 +264,7 @@ class VoxelConeTracingExtension(
         GL11.glColorMask(true, true, true, true)
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
@@ -302,7 +297,6 @@ class VoxelConeTracingExtension(
     }
 
     override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-        if(!renderState.sceneInitialized) return
         engine.gpuContext.depthTest = false
         val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {

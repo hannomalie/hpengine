@@ -5,5 +5,5 @@ import kotlinx.coroutines.CoroutineScope
 
 interface Updatable {
     @JvmDefault
-    fun CoroutineScope.update(deltaSeconds: Float) {}
+    fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {}
 }

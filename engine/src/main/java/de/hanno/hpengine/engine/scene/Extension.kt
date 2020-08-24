@@ -1,0 +1,115 @@
+package de.hanno.hpengine.engine.scene
+
+import de.hanno.hpengine.engine.ScriptComponentSystem
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.camera.CameraComponentSystem
+import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.component.CustomComponentSystem
+import de.hanno.hpengine.engine.component.GIVolumeComponent
+import de.hanno.hpengine.engine.component.GIVolumeSystem
+import de.hanno.hpengine.engine.entity.EntitySystem
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
+import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.manager.SimpleComponentSystem
+import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.model.material.MaterialManager
+
+interface Extension {
+    val manager: Manager?
+        get() = null
+    val componentSystem: ComponentSystem<*>?
+        get() = null
+    val componentClass: Class<*>?
+        get() = null
+    val entitySystem: EntitySystem?
+        get() = null
+    val renderSystem: RenderSystem?
+        get() = null
+}
+
+
+class BaseExtensions private constructor(val engineContext: EngineContext, private val extensions: MutableList<Extension>): List<Extension> by extensions {
+    constructor(engineContext: EngineContext): this(engineContext, mutableListOf())
+
+    private fun <T: Extension> T.add(): T = also { extensions.add(it) }
+
+    val directionalLightExtension = DirectionalLightExtension(engineContext).add()
+
+    val cameraExtension = CameraExtension(engineContext).add()
+    val pointLightExtension = PointLightExtension(engineContext).add()
+    val areaLightExtension = AreaLightExtension(engineContext).add()
+    val tubeLightExtension = TubeLightExtension(engineContext).add()
+    val materialExtension = MaterialExtension(engineContext).add()
+    val customComponentExtension = CustomComponentExtension(engineContext).add()
+    val scriptComponentExtension = ScriptComponentExtension(engineContext).add()
+    val clustersComponentExtension = ClustersComponentExtension(engineContext).add()
+    val inputComponentExtension = InputComponentExtension(engineContext).add()
+    val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
+}
+class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager): Extension {
+    override val componentSystem = ModelComponentSystem(engineContext, materialManager)
+}
+class InputComponentExtension(val engineContext: EngineContext): Extension {
+    override val componentSystem = InputComponentSystem(engineContext)
+}
+
+class ClustersComponentExtension(val engineContext: EngineContext): Extension {
+    override val componentSystem = ClustersComponentSystem()
+}
+
+class ScriptComponentExtension(val engineContext: EngineContext): Extension {
+    override val componentSystem = ScriptComponentSystem()
+}
+class CustomComponentExtension(val engineContext: EngineContext): Extension {
+    override val componentSystem = CustomComponentSystem()
+}
+class MaterialExtension(val engineContext: EngineContext): Extension {
+    override val manager = MaterialManager(engineContext)
+}
+class GiVolumeExtension(val engineContext: EngineContext): Extension {
+    override val componentSystem = SimpleComponentSystem(GIVolumeComponent::class.java)
+    override val componentClass: Class<*> = GIVolumeComponent::class.java
+    override val entitySystem = GIVolumeSystem(engineContext)
+}
+
+class DirectionalLightExtension(val engineContext: EngineContext): Extension {
+    override val entitySystem = DirectionalLightSystem(engineContext)
+    override val renderSystem = entitySystem
+}
+class TubeLightExtension(val engineContext: EngineContext): Extension {
+    override val componentSystem = TubeLightComponentSystem()
+}
+
+class CameraExtension(val engineContext: EngineContext): Extension {
+    private val cameraComponentSystem = CameraComponentSystem(engineContext)
+    override val componentClass: Class<*> = Camera::class.java
+    override val componentSystem = cameraComponentSystem
+    override val renderSystem = cameraComponentSystem
+}
+
+class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
+    private val environmentProbeManager = EnvironmentProbeManager(engineContext)
+    override val manager = environmentProbeManager
+    override val renderSystem = environmentProbeManager
+}
+
+class PointLightExtension(val engineContext: EngineContext): Extension {
+    private val pointLightSystem = PointLightSystem(engineContext)
+    override val componentSystem = PointLightComponentSystem()
+    override val renderSystem = pointLightSystem
+}
+
+class AreaLightExtension(val engineContext: EngineContext): Extension {
+    private val areaLightSystem = AreaLightSystem(engineContext)
+    override val componentSystem = AreaLightComponentSystem()
+    override val renderSystem = areaLightSystem
+}

@@ -103,14 +103,14 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     override val addResourceContext: AddResourceContext
         get() = backend.addResourceContext
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
 
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
         currentWriteState.directionalLightState[0].shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
         currentWriteState.directionalLightState[0].shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
         
-        extensions.forEach { it.run { update(deltaSeconds) } }
+        extensions.forEach { it.run { update(scene, deltaSeconds) } }
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {

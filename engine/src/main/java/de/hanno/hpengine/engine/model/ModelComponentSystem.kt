@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
@@ -48,10 +49,10 @@ class ModelComponentSystem(val engine: EngineContext,
         engine.eventBus.register(this)
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for (component in getComponents()) {
             with(component) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
         cacheEntityIndices()

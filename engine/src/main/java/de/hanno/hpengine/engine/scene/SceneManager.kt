@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.backend.ManagerContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
@@ -37,11 +36,11 @@ class SceneManager(val managerContext: ManagerContext): Manager {
         }
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         val newDrawCycle = managerContext.renderManager.updateCycle.get()
         scene.currentCycle = newDrawCycle
         with(scene) {
-            update(deltaSeconds)
+            update(scene, deltaSeconds)
         }
     }
 
@@ -50,7 +49,7 @@ class SceneManager(val managerContext: ManagerContext): Manager {
         managerContext.physicsManager.clearWorld()
         managerContext.renderManager.clear()
         scene.clear()
-        nextScene.entitySystems.gatherEntities()
+        nextScene.entitySystems.gatherEntities(nextScene)
     }
 
 }

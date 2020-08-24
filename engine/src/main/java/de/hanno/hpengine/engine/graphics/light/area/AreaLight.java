@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
@@ -38,7 +39,7 @@ public class AreaLight implements Component, Bufferable {
 	}
 
 	@Override
-	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
 //		cameraEntity.update(deltaSeconds);
 	}
 	public void setColor(Vector3f color) {

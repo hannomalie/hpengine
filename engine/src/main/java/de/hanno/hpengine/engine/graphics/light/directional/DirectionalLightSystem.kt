@@ -1,28 +1,20 @@
 package de.hanno.hpengine.engine.graphics.light.directional
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 
-class DirectionalLightSystem(val engine: EngineContext,
-                             scene: Scene,
-                             val eventBus: EventBus): SimpleEntitySystem(scene, listOf(DirectionalLight::class.java)), RenderSystem {
+class DirectionalLightSystem(val engine: EngineContext): SimpleEntitySystem(listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
 
-    init {
-        eventBus.register(this)
-    }
-
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         val light = getDirectionalLight() ?: return
 
         with(light) {
-            update(deltaSeconds)
+            update(scene, deltaSeconds)
         }
         if(scene.entityManager.run { light.entity.hasMoved }) {
             this@DirectionalLightSystem.directionalLightMovedInCycle = scene.currentCycle

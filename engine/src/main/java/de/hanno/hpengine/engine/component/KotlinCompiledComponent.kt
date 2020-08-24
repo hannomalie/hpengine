@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.Updatable
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import kotlinx.coroutines.CoroutineScope
@@ -31,10 +32,10 @@ data class KotlinCompiledComponent(val engine: Engine, override val codeSource: 
     var instance: Any? = null
         private set
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         if (isUpdatable) {
             with(instance as Updatable) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }

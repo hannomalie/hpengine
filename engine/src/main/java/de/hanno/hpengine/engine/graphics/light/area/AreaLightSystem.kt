@@ -47,7 +47,7 @@ import java.util.ArrayList
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
-class AreaLightSystem(val engine: EngineContext, sceneImpl: Scene) : SimpleEntitySystem(sceneImpl, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
@@ -134,7 +134,7 @@ class AreaLightSystem(val engine: EngineContext, sceneImpl: Scene) : SimpleEntit
 
     fun getAreaLights() = getComponents(AreaLight::class.java)
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
 //        TODO: Resize with instance count
         this@AreaLightSystem.gpuAreaLightArray = this@AreaLightSystem.gpuAreaLightArray.enlarge(this@AreaLightSystem.getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
         this@AreaLightSystem.gpuAreaLightArray.buffer.rewind()

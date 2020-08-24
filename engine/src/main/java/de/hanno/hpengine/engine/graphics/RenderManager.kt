@@ -114,9 +114,9 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
         }
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         engineContext.renderSystems.forEach {
-            it.run { update(deltaSeconds) }
+            it.run { update(scene, deltaSeconds) }
         }
     }
 

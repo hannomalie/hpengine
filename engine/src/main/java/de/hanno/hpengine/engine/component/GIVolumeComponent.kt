@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.camera.Camera
@@ -53,7 +52,7 @@ class GIVolumeComponent(override val entity: Entity,
     init {
         entity.spatial = spatial
     }
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
         val gridSizeHalf = halfExtents[halfExtents.maxComponent()]
         orthoCam.init(createOrthoMatrix(), gridSizeHalf, -gridSizeHalf, 90f, 1f, orthoCam.exposure, orthoCam.focalDepth, orthoCam.focalLength, orthoCam.fStop)
     }
@@ -66,8 +65,7 @@ class GIVolumeComponent(override val entity: Entity,
 
 }
 
-class GIVolumeSystem(val engine: EngineContext,
-                     scene: Scene) : SimpleEntitySystem(scene, listOf(GIVolumeComponent::class.java)) {
+class GIVolumeSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(GIVolumeComponent::class.java)) {
 
     val voxelConeTracingExtension: VoxelConeTracingExtension? = run {
         engine.extensibleDeferredRenderer?.let { renderer ->
@@ -79,7 +77,7 @@ class GIVolumeSystem(val engine: EngineContext,
         }
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         val giComponents = components.filterIsInstance<GIVolumeComponent>()
         if(giComponents.isNotEmpty()) {
             val globalGrid = giComponents.first()

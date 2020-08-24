@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.entity.EntityKt;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import kotlinx.coroutines.CoroutineScope;
@@ -163,7 +164,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
     }
 
 	@Override
-	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
 
 	}
 

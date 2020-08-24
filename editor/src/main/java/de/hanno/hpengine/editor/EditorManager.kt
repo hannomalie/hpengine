@@ -27,7 +27,7 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
     override fun onComponentAdded(component: Component) {
         editorComponents.sceneTree.reload()
     }
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
 
 //        if (!editor.canvas?.containsMouse) return
 

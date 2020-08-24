@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
@@ -30,7 +31,7 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
     }
 
     class DirectionalLightController(private val engine: EngineContext, entity: Entity) : InputControllerComponent(entity) {
-        override fun CoroutineScope.update(deltaSeconds: Float) {
+        override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
             val moveAmount = 100 * deltaSeconds
             val degreesPerSecond = 45f
             val rotateAmount = Math.toRadians(degreesPerSecond.toDouble()).toFloat() * deltaSeconds

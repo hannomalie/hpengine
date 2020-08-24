@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource;
 import de.hanno.hpengine.util.ressources.Reloadable;
 import kotlinx.coroutines.CoroutineScope;
@@ -44,9 +45,9 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     @Override
-    public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+    public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
         if(isLifeCycle) {
-            ((Updatable) instance).update(scope, deltaSeconds);
+            ((Updatable) instance).update(scope, scene, deltaSeconds);
         }
     }
 

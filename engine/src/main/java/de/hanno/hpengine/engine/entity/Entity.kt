@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
@@ -125,13 +126,13 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCount
     fun hasComponents(types: List<Class<out Component>>) = types.all { type -> hasComponent(type) }
     fun getComponents(types: List<Class<out Component>>) = types.flatMap { type -> getComponents(type) }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         if (hasParent) {
             return
         }
         for (i in 0 until children.size) {
             with(children[i]) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }

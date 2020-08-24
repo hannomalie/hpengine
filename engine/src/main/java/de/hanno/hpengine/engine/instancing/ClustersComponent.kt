@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
@@ -28,11 +29,11 @@ class ClustersComponent(override val entity: Entity): Component {
     fun getInstances(): List<Instance> = instances
     fun getInstancesBoundingVolumes(): List<AABB> = instances.map { it.boundingVolume }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for (cluster in clusters) {
             launch {
                 with(cluster as Updatable) {
-                    update(deltaSeconds)
+                    update(scene, deltaSeconds)
                 }
             }
         }
@@ -135,10 +136,10 @@ class ClustersComponentSystem() : ComponentSystem<ClustersComponent> {
 
     override fun getComponents() = components
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         components.forEach{
             with(it) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }

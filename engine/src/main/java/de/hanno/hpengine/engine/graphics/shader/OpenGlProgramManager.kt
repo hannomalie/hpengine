@@ -53,7 +53,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     }
 
     var programsSourceCache: WeakHashMap<Shader, String> = WeakHashMap()
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
         programsCache.forEach { program ->
             program.shaders.forEach { shader ->
                 if(shader.shaderSource is StringBasedCodeSource) {

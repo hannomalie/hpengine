@@ -60,7 +60,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         get() = entitiesState.materialBuffer
 
     var deltaSeconds: Float = 0.1f
-    var sceneInitialized: Boolean = false
 
     constructor(source: RenderState) : this(source.gpuContext) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
@@ -91,7 +90,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         latestDrawResult.set(latestDrawResult)
         entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
-        sceneInitialized = source.sceneInitialized
     }
     val gpuHasFinishedUsingIt
         get() = gpuCommandSync.isSignaled

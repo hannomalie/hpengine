@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.lifecycle.Updatable
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
@@ -15,10 +16,10 @@ class Cluster(_boundingVolume: AABBData = AABBData(Vector3f(Spatial.MIN), Vector
     var boundingVolume: AABBData = _boundingVolume
         private set
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for (i in 0 until size) {
             launch {
-                with(get(i)) { update(deltaSeconds) }
+                with(get(i)) { update(scene, deltaSeconds) }
             }
         }
         recalculate()

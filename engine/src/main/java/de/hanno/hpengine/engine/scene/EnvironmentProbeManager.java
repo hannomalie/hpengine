@@ -338,8 +338,8 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
-		probes.forEach(p -> p.update(scope, deltaSeconds));
+	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
+		probes.forEach(p -> p.update(scope, scene, deltaSeconds));
 //		TODO: This has to be completely recoded with new component design and stuff, in order to get entities from components
 //		and entitymanager from scene etc.
 //		probes.stream().filter(probe -> probe.getEntity().hasMoved()).findFirst().ifPresent(first -> updateBuffers());

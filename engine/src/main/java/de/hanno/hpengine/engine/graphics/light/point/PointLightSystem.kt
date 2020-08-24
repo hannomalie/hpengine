@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
@@ -19,8 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 
 class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java)
 
-class PointLightSystem(val engine: EngineContext,
-                       scene: Scene): SimpleEntitySystem(scene, listOf(PointLight::class.java)), RenderSystem {
+class PointLightSystem(val engine: EngineContext): SimpleEntitySystem(listOf(PointLight::class.java)), RenderSystem {
 
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
 
@@ -29,7 +27,7 @@ class PointLightSystem(val engine: EngineContext,
     val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
     val shadowMapStrategy = if (engine.config.quality.isUseDpsm) {
-            DualParaboloidShadowMapStrategy(engine, this, cameraEntity, scene.entityManager, scene.modelComponentSystem)
+            DualParaboloidShadowMapStrategy(engine, this)
         } else {
             CubeShadowMapStrategy(engine, this)
         }
@@ -47,7 +45,7 @@ class PointLightSystem(val engine: EngineContext,
 
     fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         val pointLights = getComponents(PointLight::class.java)
 
         for (i in 0 until pointLights.size) {
@@ -62,7 +60,7 @@ class PointLightSystem(val engine: EngineContext,
         val pointLightsIterator = pointLights.iterator()
         while (pointLightsIterator.hasNext()) {
             with(pointLightsIterator.next()) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
 

@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
@@ -40,9 +41,9 @@ class Instance
         children.remove(child)
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         animationController?.update(deltaSeconds)
-        with(spatial) { update(deltaSeconds) }
+        with(spatial) { update(scene, deltaSeconds) }
     }
 
 }

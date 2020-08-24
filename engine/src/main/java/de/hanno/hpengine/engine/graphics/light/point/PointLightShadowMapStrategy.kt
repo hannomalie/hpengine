@@ -1,12 +1,10 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem.Companion.AREALIGHT_SHADOWMAP_RESOLUTION
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem.Companion.MAX_POINTLIGHT_SHADOWMAPS
@@ -136,10 +134,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext, private val point
 }
 
 class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
-                                      private val pointLightSystem: PointLightSystem,
-                                      val cameraEntity: Entity,
-                                      val entityManager: EntityManager,
-                                      val modelComponentSystem: ModelComponentSystem): PointLightShadowMapStrategy {
+                                      private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     private var pointShadowPassProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_fragment.glsl")))
 
     var pointLightDepthMapsArrayFront: Int = 0
@@ -183,8 +178,8 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
-        val entities = entityManager.getEntities()
-        val modelComponentSystem = modelComponentSystem
+        val entities: List<Entity> = TODO("Reimplement properly with extracted state etc.")//entityManager.getEntities()
+        val modelComponentSystem: ModelComponentSystem = TODO("Reimplement properly with extracted state etc.")//modelComponentSystem
         val gpuContext = engine.gpuContext
 
         profiled("PointLight shadowmaps") {
@@ -221,7 +216,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                             baseVertex = allocation.vertexOffset
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
-                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.transform.position,
+                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(),
                                 isVisibleForCamera = true, update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld,
                                 boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
@@ -249,7 +244,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                             baseVertex = allocation.vertexOffset
                         }
                         val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
-                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = cameraEntity.transform.position, isVisibleForCamera = true,
+                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(), isVisibleForCamera = true,
                                 update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)

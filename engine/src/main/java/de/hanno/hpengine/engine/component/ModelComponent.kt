@@ -84,7 +84,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 
     fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
         if (model is AnimatedModel) {
             model.update(deltaSeconds)
         }

@@ -73,14 +73,14 @@ class EntityManager(private val engine: EngineContext, eventBus: EventBus, val s
         entityContainer.clear()
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         entityHasMoved = false
         staticEntityHasMoved = false
         movedEntities.clear()
         for (i in entityContainer.entities.indices) {
             try {
                 with(entityContainer.entities[i]) {
-                    this@update.update(deltaSeconds)
+                    this@update.update(scene, deltaSeconds)
                 }
             } catch (e: Exception) {
                 LOGGER.warning(e.message)

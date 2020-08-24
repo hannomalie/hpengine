@@ -2,16 +2,15 @@ package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 
 interface ManagerRegistry {
     val managers: Map<Class<*>, Manager>
     fun <T : Manager> get(managerClass: Class<T>): T
-    fun CoroutineScope.update(deltaSeconds: Float) {
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         managers.forEach {
-            with(it.value) { update(deltaSeconds) }
+            with(it.value) { update(scene, deltaSeconds) }
         }
     }
     fun <T : Manager> register(manager: T): T
@@ -48,7 +47,7 @@ interface SystemsRegistry {
     fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T>
 
     fun getSystems(): List<ComponentSystem<*>>
-    fun CoroutineScope.update(deltaSeconds: Float)
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float)
     fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
     fun clearSystems() {
         getSystems().forEach { it.clear() }
@@ -71,6 +70,8 @@ interface SystemsRegistry {
             with(it) { onComponentAdded(component) }
         }
     }
+
+    fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(componentClass: Class<COMPONENT_TYPE>, system: T): T
 }
 
 class ComponentSystemRegistry : SystemsRegistry {
@@ -80,6 +81,11 @@ class ComponentSystemRegistry : SystemsRegistry {
 
     override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(system: T): T {
         systems[system.componentClass] = system
+        return system
+    }
+
+    override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(componentClass: Class<COMPONENT_TYPE>, system: T): T {
+        systems[componentClass] = system
         return system
     }
 
@@ -94,10 +100,10 @@ class ComponentSystemRegistry : SystemsRegistry {
         return systems[componentClass] as ComponentSystem<T>
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for (system in systems.values) {
             with(system) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }

@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
@@ -151,7 +152,7 @@ open class Camera @JvmOverloads constructor(
         storeMatrices()
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         saveViewMatrixAsLastViewMatrix()
         projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
         frustum.frustumIntersection.set(viewProjectionMatrix)
@@ -226,12 +227,12 @@ open class Camera @JvmOverloads constructor(
 class CameraComponentSystem(val engine: EngineContext): ComponentSystem<Camera>, RenderSystem {
 
     // TODO: Remove this cast
-    private val lineRenderer = LineRendererImpl(engine as EngineContext)
+    private val lineRenderer = LineRendererImpl(engine)
     override val componentClass: Class<Camera> = Camera::class.java
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         getComponents().forEach {
             with(it) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }
