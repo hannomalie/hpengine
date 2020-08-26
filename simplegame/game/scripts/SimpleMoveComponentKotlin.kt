@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.instances
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import javax.inject.Inject
@@ -14,8 +15,7 @@ class SimpleMoveComponentKotlin @Inject constructor(override val entity: Entity)
     val reversedRandoms = randoms.reversed()
     val lifeTimes = entity.instances.map { 0f }.toFloatArray()
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for((index, instance) in entity.instances.withIndex()) {
             with(ParticleSystem) {
                 val lifeTime = lifeTimes[index]
@@ -36,16 +36,16 @@ class SimpleMoveComponentKotlin @Inject constructor(override val entity: Entity)
             val amountY = 10f * Math.max(0.5f, randomSpeed) * random * deltaSeconds
             val amountX = 3f * randomSpeed * (random-0.5f) * deltaSeconds
             val amountZ = 2f * randomSpeed * (random-0.5f) * deltaSeconds
-            transformation.translate(amountX, amountY, amountZ)
+            transform.translate(amountX, amountY, amountZ)
             val alive = lifeTime < maxLifeTime
             if(alive) {
-                if(transformation.getScale(Vector3f()).x < 2f) {
-                    transformation.scaleAround(1.005f, 0f, 0f, 0f)
+                if(transform.getScale(Vector3f()).x < 2f) {
+                    transform.scaleAround(1.005f, 0f, 0f, 0f)
                 }
             }
             reset(alive)
         }
-        fun Instance.reset(alive: Boolean) {
+        fun Instance.reset(alive: Boolean) = transform.run {
             val maxY = 50
             val max = 10
             val min = -max

@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine.entity
 
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
-import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
@@ -21,7 +19,7 @@ var Entity.movedInCycle by movedInCycleExtensionState
 private val indexExtensionState = ExtensionState<Entity, Int>(0)
 var Entity.index by indexExtensionState
 
-class EntityManager(private val engine: EngineContext, eventBus: EventBus, val scene: Scene) : Manager {
+class EntityManager(val scene: Scene) : Manager {
 
     private val entityContainer: EntityContainer = SimpleContainer()
 
@@ -35,10 +33,6 @@ class EntityManager(private val engine: EngineContext, eventBus: EventBus, val s
     val movedEntities = WeakHashMap<Entity, Entity>()
     var entityHasMoved = false
     var staticEntityHasMoved = false
-
-    init {
-        eventBus.register(this)
-    }
 
     val Entity.hasMoved
         get() = movedEntities.containsKey(this)

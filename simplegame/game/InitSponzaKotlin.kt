@@ -1,4 +1,5 @@
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand

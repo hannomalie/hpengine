@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
@@ -108,14 +107,12 @@ class MaterialManager(val config: Config,
     fun addMaterial(material: SimpleMaterial) = singleThreadContext.launch {
         material.materialIndex = MATERIALS.size
         MATERIALS[material.materialInfo.name] = material
-        eventBus.post(MaterialAddedEvent())
     }
     fun addMaterials(materials: List<SimpleMaterial>) = singleThreadContext.launch {
         materials.forEach { material ->
             material.materialIndex = MATERIALS.size
             MATERIALS[material.materialInfo.name] = material
         }
-        eventBus.post(MaterialAddedEvent())
     }
 
     fun getMaterial(hashMap: HashMap<MAP, String>): SimpleMaterial {

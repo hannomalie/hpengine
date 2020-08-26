@@ -110,7 +110,6 @@ class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputCont
     private val components = mutableListOf<InputControllerComponent>()
     override fun getComponents(): List<InputControllerComponent> = components
 
-    fun create(entity: Entity) = MovableInputComponent(engine, entity)
     override fun addComponent(component: InputControllerComponent) {
         components.add(component)
     }

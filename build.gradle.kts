@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.0"
+    kotlin("jvm") version "1.3.72"
     application
 }
 version = "1.0.0-SNAPSHOT"

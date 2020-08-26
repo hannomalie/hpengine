@@ -3,6 +3,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
+import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
@@ -54,7 +55,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
 
                             val modelComponent = entity.getComponent(ModelComponent::class.java)
                             val materials = modelComponent!!.materials
-                            ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, AnimationController(120, 24f), AnimatedTransformSpatial(trafo, modelComponent))
+                            ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, null, AnimatedTransformSpatial(trafo, modelComponent))
                         }
                     }
                 }

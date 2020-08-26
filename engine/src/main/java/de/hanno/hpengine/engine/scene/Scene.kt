@@ -5,24 +5,16 @@ import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.camera.MovableInputComponent
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
-import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
-import de.hanno.hpengine.engine.event.EntityAddedEvent
-import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight
-import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
-import de.hanno.hpengine.engine.graphics.light.point.PointLight
-import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
-import de.hanno.hpengine.engine.graphics.light.probe.ProbeSystem
-import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
-import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -55,7 +47,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
     val entitySystems = SimpleEntitySystemRegistry()
-    val entityManager = EntityManager(engineContext, engineContext.eventBus, this).apply { managers.register(this) }
+    val entityManager = EntityManager(this).apply { managers.register(this) }
 
     private val baseExtensions = BaseExtensions(engineContext)
     val extensions = (baseExtensions + listOf(
@@ -65,58 +57,31 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     val materialManager = baseExtensions.materialExtension.manager
 
-    private val cameraComponentSystem = extensions.firstIsInstance<CameraExtension>().componentSystem
-
-    val giVolumeSystem = extensions.firstIsInstance<GiVolumeExtension>().entitySystem
-
-    private val inputComponentSystem = baseExtensions.inputComponentExtension.componentSystem
     val modelComponentSystem = baseExtensions.modelComponentExtension.componentSystem
 
     val environmentProbeManager = extensions.firstIsInstance<EnvironmentProbeExtension>().manager
 
-    //    TODO: Move this event/debug stuff outside of scene class
-    val eventSystem = entitySystems.register(object : EntitySystem {
-        override fun clear() {}
-        override fun gatherEntities(scene: Scene) {}
-        override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
-            engineContext.eventBus.post(MaterialAddedEvent())
-            engineContext.eventBus.post(EntityAddedEvent())
-        }
-    })
-
-    val directionalLight = Entity("DirectionalLight").apply {
+    val directionalLight = entity("DirectionalLight") {
         addComponent(DirectionalLight(this))
         addComponent(DirectionalLight.DirectionalLightController(engineContext, this))
-        engineContext.addResourceContext.locked {
-            with(this@Scene) { add(this@apply) }
-        }
     }
 
-    val cameraEntity = Entity("MainCamera").apply {
-        addComponent(inputComponentSystem.create(this))
+    val cameraEntity = entity("MainCamera") {
+        addComponent(MovableInputComponent(engineContext, this))
+        addComponent(baseExtensions.cameraExtension.componentSystem.create(this))
     }
 
-    val globalGiGrid = Entity("GlobalGiGrid").apply {
+    val camera = cameraEntity.getComponent(Camera::class.java)
+    var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
+
+    val globalGiGrid = entity("GlobalGiGrid") {
         addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(100f)))
-        engineContext.addResourceContext.locked {
-            with(this@Scene) { add(this@apply) }
-        }
     }
-    val secondGiGrid = Entity("SecondGiGrid").apply {
+    val secondGiGrid = entity("SecondGiGrid") {
         transform.translation(Vector3f(0f,0f,50f))
         addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(30f)))
-        engineContext.addResourceContext.locked {
-            with(this@Scene) { add(this@apply) }
-        }
     }
 
-    val camera = cameraComponentSystem.create(cameraEntity).apply {
-        cameraEntity.addComponent(this)
-        engineContext.addResourceContext.locked {
-            with(this@Scene) { add(cameraEntity) }
-        }
-    }
-    var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
 
     init {
         engineContext.renderSystems.add(object : RenderSystem {
@@ -221,5 +186,12 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     fun calculateBoundingVolume() {
         aabb.localAABB = entityManager.getEntities().calculateAABB()
+    }
+
+    fun entity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply {
+        block()
+        engineContext.addResourceContext.locked {
+            with(this@Scene) { add(this@apply) }
+        }
     }
 }

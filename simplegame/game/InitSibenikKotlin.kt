@@ -8,8 +8,8 @@ import javax.inject.Inject
 class InitSibenikKotlin @Inject constructor(val engine: Engine) : EngineConsumer {
 
     init {
-        val modelFile = engine.config.directories.gameDir.resolve("assets/models/sibenik.obj")
-        val loaded = LoadModelCommand(modelFile, "sibenik", engine.scene.materialManager, engine.config.directories.gameDir).execute()
+        val modelFile = engine.engineContext.config.directories.gameDir.resolve("assets/models/sibenik.obj")
+        val loaded = LoadModelCommand(modelFile, "sibenik", engine.scene.materialManager, engine.engineContext.config.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
         for (entity in loaded.entities) {
             val codeFile = engine.directories.gameDir.resolve("scripts").resolve("SimpleCustomComponent.kt")
