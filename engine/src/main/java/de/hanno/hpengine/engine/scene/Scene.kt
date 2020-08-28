@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.MovableInputComponent
@@ -36,8 +37,35 @@ import java.util.Optional
 
 class SkyBox(var cubeMap: CubeMap)
 
+class SceneSyntax(val scene: Scene) {
+    val baseExtensions
+        get() = scene.baseExtensions
+    val extensions: List<Extension>
+        get() = scene.extensions
+
+    fun entity(name: String, block: Entity.() -> Unit) {
+        scene.entity(name, block)
+    }
+    fun entities(block: EntitiesSyntax.() -> Unit) = EntitiesSyntax().run {
+        block()
+        scene.addAll(entities)
+    }
+}
+class EntitiesSyntax {
+    internal val entities = mutableListOf<Entity>()
+    fun entity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply(block).apply { entities.add(this) }
+}
+fun scene(name: String, engineContext: EngineContext, block: SceneSyntax.() -> Unit): Scene = SceneSyntax(Scene(name, engineContext)).run {
+    block()
+    return scene
+}
+
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(),
-                                      val engineContext: EngineContext): Updatable, Serializable {
+                                      val engineContext: EngineContext,
+                                      val nonBaseExtensions: List<Extension> = listOf(
+                                            GiVolumeExtension(engineContext),
+                                            EnvironmentProbeExtension(engineContext)
+                                      )): Updatable {
     var currentCycle: Long = 0
     var isInitiallyDrawn: Boolean = false
     val aabb = AABB(Vector3f(), 50f).apply {
@@ -47,19 +75,12 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
     val entitySystems = SimpleEntitySystemRegistry()
-    val entityManager = EntityManager(this).apply { managers.register(this) }
+    val entityManager = EntityManager(this).also { managers.register(it) }
 
-    private val baseExtensions = BaseExtensions(engineContext)
-    val extensions = (baseExtensions + listOf(
-        GiVolumeExtension(engineContext),
-        EnvironmentProbeExtension(engineContext)
-    )).apply { register() }
+    val baseExtensions = BaseExtensions(engineContext)
+    val extensions = (baseExtensions + nonBaseExtensions).also { register(it) }
 
     val materialManager = baseExtensions.materialExtension.manager
-
-    val modelComponentSystem = baseExtensions.modelComponentExtension.componentSystem
-
-    val environmentProbeManager = extensions.firstIsInstance<EnvironmentProbeExtension>().manager
 
     val directionalLight = entity("DirectionalLight") {
         addComponent(DirectionalLight(this))
@@ -71,17 +92,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         addComponent(baseExtensions.cameraExtension.componentSystem.create(this))
     }
 
-    val camera = cameraEntity.getComponent(Camera::class.java)
+    val camera = cameraEntity.getComponent(Camera::class.java)!!
     var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
-
-    val globalGiGrid = entity("GlobalGiGrid") {
-        addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(100f)))
-    }
-    val secondGiGrid = entity("SecondGiGrid") {
-        transform.translation(Vector3f(0f,0f,50f))
-        addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(30f)))
-    }
-
 
     init {
         engineContext.renderSystems.add(object : RenderSystem {
@@ -122,16 +134,18 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     fun getEntities() = entityManager.getEntities()
     fun addAll(entities: List<Entity>) {
-        with(entityManager) { add(entities) }
+        engineContext.addResourceContext.locked {
+            with(entityManager) { add(entities) }
 
-        with(entitySystems) { onEntityAdded(this@Scene, entities) }
-        with(componentSystems) { onEntityAdded(entities) }
-        with(managers) { onEntityAdded(entities) }
+            with(entitySystems) { onEntityAdded(this@Scene, entities) }
+            with(componentSystems) { onEntityAdded(entities) }
+            with(managers) { onEntityAdded(entities) }
 
-        calculateBoundingVolume()
+            calculateBoundingVolume()
 
-        // TODO: This is not too correct but the cycle counter gets updated just before this happens
-        entityManager.entityAddedInCycle = currentCycle
+            // TODO: This is not too correct but the cycle counter gets updated just before this happens
+            entityManager.entityAddedInCycle = currentCycle
+        }
     }
 
     fun onComponentAdded(component: Component) {
@@ -158,15 +172,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         return Optional.ofNullable(candidate)
     }
 
-    private fun List<Extension>.register() {
-        forEach { extension ->
-            extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
-            extension.entitySystem?.let { entitySystems.register(it) }
-            extension.renderSystem?.let { engineContext.renderSystems.add(it) }
-            extension.manager?.let { }
-        }
-    }
-
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         with(managers) {
             update(scene, deltaSeconds)
@@ -190,8 +195,23 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     fun entity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply {
         block()
-        engineContext.addResourceContext.locked {
-            with(this@Scene) { add(this@apply) }
+        add(this)
+    }
+
+}
+
+fun Scene.register(extensions: List<Extension>) {
+    extensions.forEach { extension ->
+        extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
+        extension.entitySystem?.let { entitySystems.register(it) }
+        extension.renderSystem?.let { engineContext.renderSystems.add(it) }
+        extension.manager?.let { }
+        extension.deferredRendererExtension?.let {
+            engineContext.addResourceContext.locked {
+                engineContext.backend.gpuContext {
+                    engineContext.extensibleDeferredRenderer?.extensions?.add(it)
+                }
+            }
         }
     }
 }

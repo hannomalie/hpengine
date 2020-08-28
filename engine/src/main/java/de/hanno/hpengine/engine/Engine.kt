@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
@@ -30,9 +31,11 @@ import java.util.concurrent.Executors
 import kotlin.math.min
 
 class Engine @JvmOverloads constructor(val engineContext: EngineContext,
-                                       val renderer: RenderSystem,
+                                       val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext),
                                        val renderManager: RenderManager = RenderManager(engineContext),
                                        val managerContext: ManagerContext = ManagerContext(engineContext = engineContext, renderManager = renderManager)) {
+
+    constructor(config: Config): this(EngineContext(config))
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
@@ -102,15 +105,19 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val config = retrieveConfig(args)
+            val engine = Engine(retrieveConfig(args))
 
-            val engineContext = EngineContext(config = config)
-            val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
-            val engine = Engine(
-                engineContext = engineContext,
-                renderer = renderer
-            )
-
+//            engine.scene = scene("Foo", engineContext) {
+//                entities {
+//                    entity("Bar") {
+//                        val entity = this
+//                        addComponent(object : CustomComponent {
+//                            override val entity = entity
+//                            override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) = println("XXXXXXXXXXXXXXXXXXXX")
+//                        })
+//                    }
+//                }
+//            }
             engine.executeInitScript()
         }
 

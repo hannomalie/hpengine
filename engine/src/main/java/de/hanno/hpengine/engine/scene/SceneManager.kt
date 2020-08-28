@@ -45,9 +45,6 @@ class SceneManager(val managerContext: ManagerContext): Manager {
     }
 
     override fun beforeSetScene(nextScene: Scene) {
-        scene.environmentProbeManager.clearProbes()
-        managerContext.physicsManager.clearWorld()
-        managerContext.renderManager.clear()
         scene.clear()
         nextScene.entitySystems.gatherEntities(nextScene)
     }

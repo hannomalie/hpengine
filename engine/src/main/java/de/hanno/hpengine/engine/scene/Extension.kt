@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
@@ -15,6 +17,8 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSyste
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -22,6 +26,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import org.joml.Vector3f
 
 interface Extension {
     val manager: Manager?
@@ -34,6 +39,9 @@ interface Extension {
         get() = null
     val renderSystem: RenderSystem?
         get() = null
+    val deferredRendererExtension: RenderExtension<OpenGl>?
+        get() = null
+    @JvmDefault fun Scene.onInit() { }
 }
 
 
@@ -78,6 +86,17 @@ class GiVolumeExtension(val engineContext: EngineContext): Extension {
     override val componentSystem = SimpleComponentSystem(GIVolumeComponent::class.java)
     override val componentClass: Class<*> = GIVolumeComponent::class.java
     override val entitySystem = GIVolumeSystem(engineContext)
+    override val deferredRendererExtension = entitySystem.voxelConeTracingExtension
+    override fun Scene.onInit() {
+        entity("GlobalGiGrid") {
+            addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(100f)))
+        }
+        // TODO: Global grid makes sense maybe, but this one shouldn't live here forever, but I use it for testing purposes
+        entity("SecondGiGrid") {
+            transform.translation(Vector3f(0f,0f,50f))
+            addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(30f)))
+        }
+    }
 }
 
 class DirectionalLightExtension(val engineContext: EngineContext): Extension {

@@ -69,11 +69,7 @@ class GIVolumeSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(GIVo
 
     val voxelConeTracingExtension: VoxelConeTracingExtension? = run {
         engine.extensibleDeferredRenderer?.let { renderer ->
-            val voxelConeTracingExtension = VoxelConeTracingExtension(engine, renderer.shadowMapExtension, renderer, renderer.extensions.firstIsInstance())
-            engine.addResourceContext.locked {
-                renderer.extensions.add(voxelConeTracingExtension)
-            }
-            voxelConeTracingExtension
+            VoxelConeTracingExtension(engine, renderer.shadowMapExtension, renderer, renderer.extensions.firstIsInstance())
         }
     }
 

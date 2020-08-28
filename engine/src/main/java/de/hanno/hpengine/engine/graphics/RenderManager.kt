@@ -43,6 +43,7 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
 
     val updateCycle = AtomicLong()
 
+    override fun beforeSetScene(nextScene: Scene) = clear()
     override fun extract(scene: Scene, renderState: RenderState) {
         renderState.cycle = updateCycle.get()
 

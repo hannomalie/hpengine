@@ -89,6 +89,11 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		this.renderer = new LineRendererImpl(engineContext);
 	}
 
+
+	@Override
+	public void beforeSetScene(Scene scene) {
+		clearProbes();
+	}
 	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {
 		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f);
 	}

@@ -184,14 +184,6 @@ class EnvironmentSampler(val entity: Entity,
         drawnOnce = false
     }
 
-    @Subscribe
-    fun handle(e: MaterialChangedEvent?) {
-        resetDrawing()
-        scene.environmentProbeManager.addRenderProbeCommand(probe, true)
-        scene.environmentProbeManager.addRenderProbeCommand(probe, true)
-        scene.environmentProbeManager.addRenderProbeCommand(probe, true)
-    }
-
     private fun bindProgramSpecificsPerCubeMap(program: Program, renderState: RenderState) {
         program.use()
         program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE)
