@@ -1,10 +1,10 @@
 package de.hanno.hpengine.editor.tasks
 
 import de.hanno.hpengine.editor.EditorComponents
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.addResourceContext
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.scene.SceneManager
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
@@ -14,15 +14,15 @@ import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 
 
 object SceneTask {
-    operator fun invoke(engine: Engine): RibbonTask {
+    operator fun invoke(engineContext: EngineContext, sceneManager: SceneManager): RibbonTask {
         val entityBand = JRibbonBand("Entity", null).apply {
             val command = Command.builder()
                     .setText("Create")
                     .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
                     .setAction {
-                        engine.addResourceContext.launch {
-                            with(engine.sceneManager) {
-                                add(Entity("NewEntity_${engine.scene.getEntities().count { it.name.startsWith("NewEntity") }}"))
+                        engineContext.addResourceContext.launch {
+                            with(sceneManager) {
+                                add(Entity("NewEntity_${sceneManager.scene.getEntities().count { it.name.startsWith("NewEntity") }}"))
                             }
                         }
                     }

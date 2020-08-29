@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.scene.Scene
-import kotlinx.coroutines.CoroutineScope
+import de.hanno.hpengine.engine.scene.SceneManager
 
 interface Manager: Updatable {
     @JvmDefault
@@ -21,9 +21,10 @@ interface Manager: Updatable {
     fun extract(scene: Scene, renderState: RenderState) {}
 
     @JvmDefault
-    fun beforeSetScene(nextScene: Scene) { }
+    fun beforeSetScene(currentScene: Scene, nextScene: Scene) { }
 
     @JvmDefault
-    fun afterSetScene() { }
+    fun afterSetScene(lastScene: Scene, currentScene: Scene) { }
+    @JvmDefault fun init(sceneManager: SceneManager) { }
 
 }

@@ -1,16 +1,18 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.editor.input.KeyUpDownProperty
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
+import kotlin.reflect.jvm.isAccessible
 
-class EditorManager(val editorComponents: EditorComponents) : Manager {
+class EditorManager(val engineContext: EngineContext, val editorComponents: EditorComponents) : Manager {
     private val editor = editorComponents.editor
     private var wPressed by KeyUpDownProperty(editor, KeyEvent.VK_W, withShift = true)
     private var sPressed by KeyUpDownProperty(editor, KeyEvent.VK_S, withShift = true)
@@ -20,12 +22,15 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
     private var ePressed by KeyUpDownProperty(editor, KeyEvent.VK_E, withShift = true)
     private var shiftPressed by KeyUpDownProperty(editor, KeyEvent.VK_SHIFT, withShift = true)
 
+    override fun init(sceneManager: SceneManager) {
+        editorComponents.init(sceneManager)
+    }
     override fun onEntityAdded(entities: List<Entity>) {
-        editorComponents.sceneTree.reload()
+        editorComponents.onEntityAdded(entities)
     }
 
     override fun onComponentAdded(component: Component) {
-        editorComponents.sceneTree.reload()
+        editorComponents.onComponentAdded(component)
     }
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
 
@@ -35,7 +40,7 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
 
         val moveAmount = 100f * 0.1f * deltaSeconds * turbo
 
-        val entity = editorComponents.engine.scene.camera.entity
+        val entity = scene.camera.entity
 
         if (wPressed) {
             entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
@@ -57,12 +62,8 @@ class EditorManager(val editorComponents: EditorComponents) : Manager {
         }
     }
 
-    override fun beforeSetScene(nextScene: Scene) {
-        editorComponents.sceneTree.reload()
-    }
-
-    override fun afterSetScene() {
-        editorComponents.sceneTree.reload()
+    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
+        editorComponents.sceneTree = SceneTree(engineContext, editorComponents, currentScene).apply { reload() }
     }
 
 }

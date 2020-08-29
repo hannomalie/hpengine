@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.ManagerContext
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.gpuContext
@@ -16,8 +15,6 @@ import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.manager.ManagerRegistry
-import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.util.fps.FPSCounter
@@ -28,12 +25,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
 class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                                        val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext),
-                                       val renderManager: RenderManager = RenderManager(engineContext),
-                                       val managerContext: ManagerContext = ManagerContext(engineContext = engineContext, renderManager = renderManager)) {
+                                       val renderManager: RenderManager = RenderManager(engineContext)) {
 
     constructor(config: Config): this(EngineContext(config))
 
@@ -41,23 +38,19 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScope = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
+    val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
+
     init {
+        sceneManager.scene.extensions.forEach { it.init(sceneManager) }
         engineContext.renderSystems.add(0, renderer)
     }
-    val sceneManager = managerContext.managers.register(SceneManager(managerContext))
     var scene: Scene
         get() = sceneManager.scene
-        set(value) {
-            managerContext.beforeSetScene(value)
+        set(value) { sceneManager.scene = value }
 
-            managerContext.addResourceContext.locked {
-                sceneManager.scene = value
-            }
-            managerContext.afterSetScene()
-        }
-    val managers: ManagerRegistry = managerContext.managers
     val directories: Directories = engineContext.config.directories
-    val physicsManager: PhysicsManager = managerContext.physicsManager
+
+    val updateCycle = AtomicLong()
 
     init {
         engineContext.eventBus.register(this)
@@ -79,7 +72,8 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                 while (frameTimeS > 0.0) {
                     val deltaTime = min(frameTimeS, dtS)
                     engineContext.addResourceContext.locked {
-                        update(deltaTime.toFloat())
+                        val deltaSeconds = deltaTime.toFloat()
+                        update(deltaSeconds)
                     }
                     frameTimeS -= deltaTime
                     yield()
@@ -89,16 +83,24 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     }
 
     fun CoroutineScope.update(deltaSeconds: Float) = try {
+        scene.currentCycle = updateCycle.get()
+        scene.run { update(scene, deltaSeconds) }
+        renderManager.run { update(scene, deltaSeconds) }
+
         engineContext.window.invoke { engineContext.input.update() }
-        engineContext.gpuContext.update(deltaSeconds)
-        with(managerContext.managers) {
-            update(scene, deltaSeconds)
-        }
+        engineContext.update(deltaSeconds)
         cpsCounter.update()
+        engineContext.extract(sceneManager.scene, renderManager.renderState.currentWriteState)
+
+        renderManager.renderState.currentWriteState.cycle = updateCycle.get()
+
         renderManager.finishCycle(sceneManager.scene)
+
+        updateCycle.getAndIncrement()
     } catch (e: Exception) {
         e.printStackTrace()
     }
+
 
     companion object {
 

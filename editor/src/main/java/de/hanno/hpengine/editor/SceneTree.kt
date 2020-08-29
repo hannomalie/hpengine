@@ -4,6 +4,7 @@ import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.addResourceContext
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.component.Component
@@ -11,6 +12,8 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
@@ -30,16 +33,17 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-open class SceneTree(val engine: Engine,
+open class SceneTree(val engineContext: EngineContext,
                 val editorComponents: EditorComponents,
-                val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(engine.scene)) : JTree(rootNode) {
+                val scene: Scene,
+                val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(scene)) : JTree(rootNode) {
 
     private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null
 
     init {
-        addSceneObjects()
-        engine.engineContext.eventBus.register(this)
+        reload()
+        engineContext.eventBus.register(this)
     }
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
@@ -75,8 +79,8 @@ open class SceneTree(val engine: Engine,
         val top = rootNode
         top.removeAllChildren()
 
-        spanTree(top, engine.sceneManager.scene.entityManager.getEntities())
-        LOGGER.info("Added " + engine.sceneManager.scene.getEntities().size)
+        spanTree(top, scene.entityManager.getEntities())
+        LOGGER.info("Added " + scene.getEntities().size)
 
         if (selectionListener == null) {
             selectionListener = SelectionListener(this, editorComponents)
@@ -132,16 +136,16 @@ open class SceneTree(val engine: Engine,
                         val menu = JMenu("Add").apply {
                             val modelComponentMenuItem = JMenuItem("ModelComponent").apply {
                                 addActionListener {
-                                    JFileChooser(engine.directories.gameDir).apply {
+                                    JFileChooser(engineContext.config.gameDir).apply {
                                         if (showOpenDialog(editorComponents.editor) == JFileChooser.APPROVE_OPTION) {
                                             GlobalScope.launch {
                                                 val loadedModels = LoadModelCommand(selectedFile,
                                                         "Model_${System.currentTimeMillis()}",
-                                                        engine.scene.materialManager,
-                                                        engine.directories.gameDir,
+                                                        scene.materialManager,
+                                                        engineContext.config.directories.gameDir,
                                                         selection).execute()
-                                                engine.addResourceContext.launch {
-                                                    with(engine.scene) {
+                                                engineContext.addResourceContext.launch {
+                                                    with(scene) {
                                                         addAll(loadedModels.entities)
                                                     }
                                                 }
@@ -155,7 +159,7 @@ open class SceneTree(val engine: Engine,
                                     addActionListener {
                                         GlobalScope.launch {
                                             val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
-                                            engine.sceneManager.addComponent(selection, component)
+                                            scene.addComponent(selection, component)
                                         }
                                     }
                                 })

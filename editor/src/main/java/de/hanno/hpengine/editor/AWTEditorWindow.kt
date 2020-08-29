@@ -19,7 +19,7 @@ import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.Dimension
 import javax.swing.JFrame
 
-class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
+class AWTEditorWindow(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
     val executor = OpenGlExecutorImpl()
     override var openGLThreadId: Long = -1
 
@@ -159,9 +159,5 @@ class AWTEditor(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
     }
 
     override fun shutdown() {
-    }
-
-    fun init(engine: Engine, config: ConfigImpl) {
-        frame.setEngine(engine, config)
     }
 }

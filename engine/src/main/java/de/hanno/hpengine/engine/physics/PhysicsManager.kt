@@ -66,7 +66,7 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
         }.start()
     }
 
-    override fun beforeSetScene(nextScene: Scene) = clearWorld()
+    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) = clearWorld()
     @JvmOverloads
     fun addBallPhysicsComponent(owner: Entity, radius: Float = 1f, mass: Float = 10f): PhysicsComponent {
         val sphereShape = SphereShape(radius)

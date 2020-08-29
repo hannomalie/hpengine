@@ -5,6 +5,7 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.model.Update;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -72,10 +73,11 @@ public class PhysicsComponent extends BaseComponent {
         owner.getTransform().set(converted);
     }
 
-    public void reset(Engine engine) {
-        engine.getPhysicsManager().unregisterRigidBody(rigidBody);
-        actuallyCreatePhysicsObject();
-    }
+//  TODO: Recode this in PhysicsManager
+//    public void reset(EngineContext engineContext) {
+//        engineContext.getBackend().getPhysicsManager().unregisterRigidBody(rigidBody);
+//        actuallyCreatePhysicsObject();
+//    }
 
     public RigidBody getRigidBody() {
 		return rigidBody;

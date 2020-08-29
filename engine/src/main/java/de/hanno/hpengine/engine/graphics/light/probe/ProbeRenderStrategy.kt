@@ -1,10 +1,8 @@
 package de.hanno.hpengine.engine.graphics.light.probe
 
 import de.hanno.hpengine.engine.backend.Backend
-import de.hanno.hpengine.engine.backend.ManagerContext
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.config
-import de.hanno.hpengine.engine.backend.deferredRenderingBuffer
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
@@ -52,16 +50,16 @@ import java.io.File
 import java.nio.FloatBuffer
 
 
-class ProbeRenderStrategy(private val managerContext: ManagerContext) {
+class ProbeRenderStrategy(private val engineContext: EngineContext) {
     val redBuffer = BufferUtils.createFloatBuffer(4).apply { put(0, 1f); rewind(); }
     val blackBuffer = BufferUtils.createFloatBuffer(4).apply { rewind(); }
 
     private val cubeMapRenderTarget = RenderTarget(
-            gpuContext = managerContext.gpuContext,
+            gpuContext = engineContext.gpuContext,
             frameBuffer = FrameBuffer(
-                    gpuContext = managerContext.gpuContext,
+                    gpuContext = engineContext.gpuContext,
                     depthBuffer = DepthBuffer(CubeMap(
-                            managerContext.gpuContext,
+                            engineContext.gpuContext,
                             TextureDimension(resolution, resolution),
                             TextureFilterConfig(MinFilter.NEAREST, MagFilter.NEAREST),
                             GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT)
@@ -72,11 +70,11 @@ class ProbeRenderStrategy(private val managerContext: ManagerContext) {
             textures = listOf(
                     ColorAttachmentDefinition("Diffuse", GL_RGBA16F, TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR)),
                     ColorAttachmentDefinition("Radial Distance", GL_RG16F, TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR))
-            ).toCubeMaps(managerContext.gpuContext, resolution, resolution),
+            ).toCubeMaps(engineContext.gpuContext, resolution, resolution),
             name = "Probes"
     )
 
-    private var probeProgram: Program = managerContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cube_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
+    private var probeProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cube_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
     private val visibilityValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()
@@ -84,14 +82,14 @@ class ProbeRenderStrategy(private val managerContext: ManagerContext) {
     private val ambientCubeCache = HashMap<Vector3i, AmbientCube>()
 
 
-    val probeGrid = PersistentMappedBuffer(managerContext.gpuContext, resolution*resolution*resolution*AmbientCube.sizeInBytes)
+    val probeGrid = PersistentMappedBuffer(engineContext.gpuContext, resolution*resolution*resolution*AmbientCube.sizeInBytes)
     var x = 0
     var y = 0
 
     var z = 0
 
     fun renderProbes(renderState: RenderState) {
-        val gpuContext = managerContext.gpuContext
+        val gpuContext = engineContext.gpuContext
 
         profiled("PointLight shadowmaps") {
 
@@ -110,7 +108,7 @@ class ProbeRenderStrategy(private val managerContext: ManagerContext) {
                 gpuContext.disable(GlCap.CULL_FACE)
                 gpuContext.depthMask = true
                 gpuContext.clearColor(0f,0f,0f,0f)
-                cubeMapRenderTarget.use(managerContext.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
+                cubeMapRenderTarget.use(engineContext.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
                 gpuContext.viewPort(0, 0, resolution, resolution)
 
                 val probePosition = Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
@@ -141,13 +139,13 @@ class ProbeRenderStrategy(private val managerContext: ManagerContext) {
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, false, true)
                     }
                 }
-                managerContext.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
+                engineContext.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)
 
                 val ambientCube = ambientCubeCache.computeIfAbsent(Vector3i(x,y,z)) {
                     val dimension = TextureDimension(resolution, resolution)
                     val filterConfig = TextureFilterConfig(MinFilter.LINEAR)
-                    val cubeMap = CubeMap.invoke(managerContext.gpuContext, dimension, filterConfig, GL11.GL_RGBA8)
-                    val distanceCubeMap = CubeMap(managerContext.gpuContext, dimension, filterConfig, GL_RG16F)
+                    val cubeMap = CubeMap.invoke(engineContext.gpuContext, dimension, filterConfig, GL11.GL_RGBA8)
+                    val distanceCubeMap = CubeMap(engineContext.gpuContext, dimension, filterConfig, GL_RG16F)
                     AmbientCube(Vector3f(x.toFloat(),y.toFloat(),z.toFloat()), cubeMap, distanceCubeMap, cubeMapIndex)
                 }
 
@@ -187,11 +185,11 @@ class ProbeRenderStrategy(private val managerContext: ManagerContext) {
     }
 }
 
-class EvaluateProbeRenderExtension(val engine: ManagerContext): RenderExtension<OpenGl> {
+class EvaluateProbeRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
 
-    private val probeRenderStrategy = ProbeRenderStrategy(engine)
+    private val probeRenderStrategy = ProbeRenderStrategy(engineContext)
 
-    val evaluateProbeProgram = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe_fragment.glsl", Defines())
+    val evaluateProbeProgram = engineContext.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe_fragment.glsl", Defines())
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)
@@ -200,14 +198,14 @@ class EvaluateProbeRenderExtension(val engine: ManagerContext): RenderExtension<
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
 
-        val deferredRenderingBuffer = engine.deferredRenderingBuffer
-        deferredRenderingBuffer.lightAccumulationBuffer.use(engine.gpuContext, false)
+        val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
+        deferredRenderingBuffer.lightAccumulationBuffer.use(engineContext.gpuContext, false)
 
-        engine.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
-        engine.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
-        engine.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-        engine.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
-        engine.gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+        engineContext.gpuContext.bindTexture(0, TEXTURE_2D, deferredRenderingBuffer.positionMap)
+        engineContext.gpuContext.bindTexture(1, TEXTURE_2D, deferredRenderingBuffer.normalMap)
+        engineContext.gpuContext.bindTexture(2, TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+        engineContext.gpuContext.bindTexture(3, TEXTURE_2D, deferredRenderingBuffer.motionMap)
+        engineContext.gpuContext.bindTexture(7, TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
 
         evaluateProbeProgram.use()
         val camTranslation = Vector3f()
@@ -216,11 +214,11 @@ class EvaluateProbeRenderExtension(val engine: ManagerContext): RenderExtension<
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
         evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderStrategy.probeGrid)
-        evaluateProbeProgram.setUniform("screenWidth", engine.config.width.toFloat())
-        evaluateProbeProgram.setUniform("screenHeight", engine.config.height.toFloat())
+        evaluateProbeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+        evaluateProbeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
         evaluateProbeProgram.setUniform("extent", extent)
         evaluateProbeProgram.setUniform("dimension", dimension)
         evaluateProbeProgram.setUniform("dimensionHalf", dimensionHalf)
-        engine.gpuContext.fullscreenBuffer.draw()
+        engineContext.gpuContext.fullscreenBuffer.draw()
     }
 }

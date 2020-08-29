@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource

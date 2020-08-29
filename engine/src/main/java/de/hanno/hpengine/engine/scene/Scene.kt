@@ -4,11 +4,9 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.MovableInputComponent
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
@@ -17,7 +15,6 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.lifecycle.Updatable
@@ -30,9 +27,7 @@ import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
 import kotlinx.coroutines.CoroutineScope
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.joml.Vector3f
-import java.io.Serializable
 import java.util.Optional
 
 class SkyBox(var cubeMap: CubeMap)
@@ -78,7 +73,9 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val entityManager = EntityManager(this).also { managers.register(it) }
 
     val baseExtensions = BaseExtensions(engineContext)
-    val extensions = (baseExtensions + nonBaseExtensions).also { register(it) }
+    val extensions = (baseExtensions + engineContext.additionalExtensions + nonBaseExtensions).also {
+        register(it)
+    }
 
     val materialManager = baseExtensions.materialExtension.manager
 
@@ -205,7 +202,7 @@ fun Scene.register(extensions: List<Extension>) {
         extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
         extension.entitySystem?.let { entitySystems.register(it) }
         extension.renderSystem?.let { engineContext.renderSystems.add(it) }
-        extension.manager?.let { }
+        extension.manager?.let { managers.register(it) }
         extension.deferredRendererExtension?.let {
             engineContext.addResourceContext.locked {
                 engineContext.backend.gpuContext {

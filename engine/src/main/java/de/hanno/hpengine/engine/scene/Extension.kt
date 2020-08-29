@@ -11,12 +11,14 @@ import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.entity.EntitySystem
+import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -26,6 +28,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.physics.PhysicsManager
 import org.joml.Vector3f
 
 interface Extension {
@@ -42,6 +45,11 @@ interface Extension {
     val deferredRendererExtension: RenderExtension<OpenGl>?
         get() = null
     @JvmDefault fun Scene.onInit() { }
+
+    fun init(sceneManager: SceneManager) {
+        // TODO: Include other components here
+        manager?.init(sceneManager)
+    }
 }
 
 
@@ -50,6 +58,8 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
 
     private fun <T: Extension> T.add(): T = also { extensions.add(it) }
 
+    val renderManagerExtension = RenderManager(engineContext)
+    val physicsExtension = PhysicsExtension(engineContext)
     val directionalLightExtension = DirectionalLightExtension(engineContext).add()
     val cameraExtension = CameraExtension(engineContext).add()
     val pointLightExtension = PointLightExtension(engineContext).add()
@@ -61,6 +71,13 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
     val clustersComponentExtension = ClustersComponentExtension(engineContext).add()
     val inputComponentExtension = InputComponentExtension(engineContext).add()
     val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
+}
+class RenderManagerExtension(val engineContext: EngineContext): Extension {
+    override val manager = RenderManager(engineContext)
+}
+class PhysicsExtension(val engineContext: EngineContext): Extension {
+    override val manager = PhysicsManager(renderer = LineRendererImpl(engineContext), config = engineContext.config)
+    override val renderSystem = manager
 }
 class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager): Extension {
     override val componentSystem = ModelComponentSystem(engineContext, materialManager)
@@ -108,10 +125,9 @@ class TubeLightExtension(val engineContext: EngineContext): Extension {
 }
 
 class CameraExtension(val engineContext: EngineContext): Extension {
-    private val cameraComponentSystem = CameraComponentSystem(engineContext)
     override val componentClass: Class<*> = Camera::class.java
-    override val componentSystem = cameraComponentSystem
-    override val renderSystem = cameraComponentSystem
+    override val componentSystem = CameraComponentSystem(engineContext)
+    override val renderSystem = componentSystem
 }
 
 class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
@@ -121,13 +137,11 @@ class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
 }
 
 class PointLightExtension(val engineContext: EngineContext): Extension {
-    private val pointLightSystem = PointLightSystem(engineContext)
     override val componentSystem = PointLightComponentSystem()
-    override val renderSystem = pointLightSystem
+    override val renderSystem = PointLightSystem(engineContext)
 }
 
 class AreaLightExtension(val engineContext: EngineContext): Extension {
-    private val areaLightSystem = AreaLightSystem(engineContext)
     override val componentSystem = AreaLightComponentSystem()
-    override val renderSystem = areaLightSystem
+    override val renderSystem = AreaLightSystem(engineContext)
 }

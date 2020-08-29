@@ -8,11 +8,11 @@ import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.addUnselectButton
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
-import de.hanno.hpengine.engine.textureManager
+import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.pushingpixels.flamingo.api.common.RichTooltip
@@ -25,18 +25,18 @@ import org.pushingpixels.flamingo.api.ribbon.model.RibbonGalleryContentModel
 import org.pushingpixels.flamingo.api.ribbon.model.RibbonGalleryPresentationModel
 import org.pushingpixels.flamingo.api.ribbon.projection.RibbonGalleryProjection
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
-import org.pushingpixels.neon.api.icon.ResizableIcon
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.JFileChooser
 
 object MaterialTask {
 
-    operator fun invoke(engine: Engine,
+    operator fun invoke(engineContext: EngineContext,
+                        sceneManager: SceneManager,
                         editor: RibbonEditor,
                         selectionSystem: SelectionSystem): RibbonTask {
 
-        fun retrieveMaterialCommands(): List<Command> = engine.scene.materialManager.materials.mapNotNull { material ->
+        fun retrieveMaterialCommands(): List<Command> = sceneManager.scene.materialManager.materials.mapNotNull { material ->
             val icon = if (material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
                 val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
                 if (diffuseMap != null) {
@@ -60,7 +60,7 @@ object MaterialTask {
                             } else {
                                 editor.sidePanel.doWithRefresh {
                                     addUnselectButton()
-                                    add(MaterialGrid(engine.textureManager, material))
+                                    add(MaterialGrid(engineContext.textureManager, material))
                                 }
                             }
                         } else {
@@ -81,7 +81,7 @@ object MaterialTask {
                         val returnVal = fc.showOpenDialog(editor)
                         if (returnVal == JFileChooser.APPROVE_OPTION) {
                             val file = fc.selectedFile
-                            engine.textureManager.getCubeMap(file.name, file = file)
+                            engineContext.textureManager.getCubeMap(file.name, file = file)
                         }
                     }
                     .setActionRichTooltip(RichTooltip.builder()
@@ -94,8 +94,8 @@ object MaterialTask {
                     .build()), JRibbonBand.PresentationPriority.TOP)
 
 
-            val materialCommands = retrieveMaterialCommands()
-            val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") },
+            val materialCommands = emptyList<Command>()//retrieveMaterialCommands()
+            val contentModel = RibbonGalleryContentModel({ EditorComponents.getResizableIconFromSvgResource("add-24px.svg") },
                     listOf(CommandGroup("Available materials", materialCommands))
             )
             val stylesGalleryVisibleCommandCounts = mapOf(

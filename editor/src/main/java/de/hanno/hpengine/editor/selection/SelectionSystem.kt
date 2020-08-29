@@ -1,7 +1,6 @@
 package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.editor.EditorComponents
-import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
@@ -15,20 +14,13 @@ import de.hanno.hpengine.editor.grids.SceneGrid
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.verticalBox
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.config
-import de.hanno.hpengine.engine.backend.deferredRenderingBuffer
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.config
-import de.hanno.hpengine.engine.deferredRenderingBuffer
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.gpuContext
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
@@ -41,9 +33,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.textureManager
 import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -95,13 +85,13 @@ class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
 
 class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val mouseAdapter = editorComponents.mouseAdapter
-    val engine: Engine = editorComponents.engine
-    val editor: RibbonEditor = editorComponents.editor
+    val engineContext = editorComponents.engineContext
+    val editor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
-    val lineRenderer = LineRendererImpl(engine.engineContext)
+    val lineRenderer = LineRendererImpl(editorComponents.engineContext)
 
-    val simpleColorProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
-    val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
+    val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
+    val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
     var axisDragged: AxisConstraint = AxisConstraint.None
 
@@ -118,17 +108,17 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         if(axisDragged != AxisConstraint.None) return
 
         mouseAdapter.mouseClicked?.let { event ->
-            engine.deferredRenderingBuffer.use(engine.gpuContext, false)
-            engine.gpuContext.readBuffer(4)
+            engineContext.deferredRenderingBuffer.use(engineContext.gpuContext, false)
+            engineContext.gpuContext.readBuffer(4)
             floatBuffer.rewind()
-            val ratio = Vector2f(editor.canvas.width.toFloat() / engine.config.width.toFloat(),
-                    editor.canvas.height.toFloat() / engine.config.height.toFloat())
+            val ratio = Vector2f(editor.canvas.width.toFloat() / engineContext.config.width.toFloat(),
+                    editor.canvas.height.toFloat() / engineContext.config.height.toFloat())
             val adjustedX = (event.x / ratio.x).toInt()
-            val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
+            val adjustedY = engineContext.config.height - (event.y / ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
 
             val entityIndex = floatBuffer.get()
-            val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
+            val pickedEntity = editorComponents.sceneManager.scene.getEntities()[entityIndex.toInt()]
             val meshIndex = floatBuffer.get(3)
             val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
 
@@ -196,8 +186,8 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
 
         when(selection) {
             is SceneSelection -> {
-                engine.gpuContext.disable(GlCap.DEPTH_TEST)
-                engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+                engineContext.gpuContext.disable(GlCap.DEPTH_TEST)
+                engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
                 lineRenderer.batchAABBLines(selection.scene.aabb.min, selection.scene.aabb.max)
                 lineRenderer.drawAllLines(5f, Consumer { program ->
                     program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
@@ -307,7 +297,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedModel
         sidePanel.verticalBox(
             unselectButton,
-            ModelGrid(pickedModel.model, pickedModel.modelComponent, engine.scene.materialManager)
+            ModelGrid(pickedModel.model, pickedModel.modelComponent, editorComponents.sceneManager.scene.materialManager)
         )
     }
 
@@ -315,7 +305,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedMesh
         sidePanel.verticalBox(
             unselectButton,
-            MeshGrid(pickedMesh.mesh, pickedMesh.entity, engine.scene.materialManager)
+            MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.materialManager)
         )
     }
 
@@ -323,7 +313,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = MaterialSelection(pickedMaterial)
         sidePanel.verticalBox(
             unselectButton,
-            MaterialGrid(engine.textureManager, pickedMaterial)
+            MaterialGrid(engineContext.textureManager, pickedMaterial)
         )
     }
 
@@ -331,7 +321,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = GiVolumeSelection(giVolumeComponent)
         sidePanel.verticalBox(
             unselectButton,
-            GiVolumeGrid(giVolumeComponent, engine)
+            GiVolumeGrid(giVolumeComponent, engineContext, editorComponents.sceneManager)
         )
     }
 

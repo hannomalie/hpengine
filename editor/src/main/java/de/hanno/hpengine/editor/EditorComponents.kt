@@ -18,17 +18,12 @@ import de.hanno.hpengine.editor.tasks.SceneTask
 import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.config
-import de.hanno.hpengine.engine.backend.deferredRenderingBuffer
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.materialManager
 import de.hanno.hpengine.engine.backend.programManager
-import de.hanno.hpengine.engine.backend.renderSystems
-import de.hanno.hpengine.engine.config
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.deferredRenderingBuffer
-import de.hanno.hpengine.engine.gpuContext
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -43,12 +38,16 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.materialManager
+import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.programManager
-import de.hanno.hpengine.engine.renderSystems
+import de.hanno.hpengine.engine.scene.Extension
+import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import org.joml.AxisAngle4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -83,40 +82,44 @@ sealed class OutputConfig {
         override fun toString() = renderTarget.name + cubeMapIndex.toString()
     }
 }
-
-class EditorComponents(val engine: Engine,
+class EditorExtension(val engineContext: EngineContext,
+                      val config: ConfigImpl,
+                      val editor: RibbonEditor): Extension {
+    val editorComponents = EditorComponents(engineContext, config, editor)
+    override val manager = EditorManager(engineContext, editorComponents)
+    override val renderSystem = editorComponents
+}
+class EditorComponents(val engineContext: EngineContext,
                        val config: ConfigImpl,
                        val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
 
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-    private val lineRenderer = LineRendererImpl(engine.engineContext)
-    val sphereHolder = SphereHolder(engine.engineContext)
-    val boxRenderer = SimpleModelRenderer(engine.engineContext)
-    val pyramidRenderer = SimpleModelRenderer(engine.engineContext, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
-    val torusRenderer = SimpleModelRenderer(engine.engineContext, model = StaticModelLoader().load(File("assets/models/torus.obj"), engine.materialManager, engine.config.directories.engineDir))
-    val environmentProbeSphereHolder = SphereHolder(engine.engineContext, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
-
-    val sceneTree = SwingUtils.invokeAndWait {
-        SceneTree(engine, this).apply {
-            addDefaultMouseListener()
-            SwingUtils.invokeLater {
-                ReloadableScrollPane(this).apply {
-                    preferredSize = Dimension(300, editor.sidePanel.height)
-                    border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
-                    editor.add(this, BorderLayout.LINE_START)
-                }
-            }
-        }
-    }
+    private val lineRenderer = LineRendererImpl(engineContext)
+    val sphereHolder = SphereHolder(engineContext)
+    val boxRenderer = SimpleModelRenderer(engineContext)
+    val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engineContext.materialManager, engineContext.config.directories.engineDir))
+    val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load(File("assets/models/torus.obj"), engineContext.materialManager, engineContext.config.directories.engineDir))
+    val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
+
     val selectionSystem = SelectionSystem(this)
-    val textureRenderer = SimpleTextureRenderer(engine.engineContext, engine.deferredRenderingBuffer.colorReflectivenessTexture)
+    val textureRenderer = SimpleTextureRenderer(engineContext, engineContext.deferredRenderingBuffer.colorReflectivenessTexture)
 
+    lateinit var sceneTree: SceneTree
+    lateinit var sceneManager: SceneManager
+
+    fun onEntityAdded(entities: List<Entity>) {
+        if(!this::sceneTree.isInitialized) return
+        sceneTree.reload()
+    }
+    fun onComponentAdded(component: Component) {
+        if(!this::sceneTree.isInitialized) return
+        sceneTree.reload()
+    }
     override fun render(result: DrawResult, state: RenderState) {
-
         selectionSystem.render(result, state)
         sphereHolder.render(state, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
@@ -133,16 +136,16 @@ class EditorComponents(val engine: Engine,
         })
         drawTransformationArrows(state)
 
-        engine.gpuContext.readBuffer(0)
+        engineContext.gpuContext.readBuffer(0)
         selectionSystem.floatBuffer.rewind()
         if(mouseAdapter.mousePressStarted) {
             mouseAdapter.mousePressed?.let { event ->
                 run {
-                    engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-                    val ratio = Vector2f(editor.canvas.width.toFloat() / engine.config.width.toFloat(),
-                            editor.canvas.height.toFloat() / engine.config.height.toFloat())
+                    engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+                    val ratio = Vector2f(editor.canvas.width.toFloat() / engineContext.config.width.toFloat(),
+                            editor.canvas.height.toFloat() / engineContext.config.height.toFloat())
                     val adjustedX = (event.x / ratio.x).toInt()
-                    val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
+                    val adjustedY = engineContext.config.height - (event.y / ratio.y).toInt()
                     GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, selectionSystem.floatBuffer)
 
                     val color = Vector3f(selectionSystem.floatBuffer.get(),selectionSystem.floatBuffer.get(),selectionSystem.floatBuffer.get())
@@ -159,7 +162,7 @@ class EditorComponents(val engine: Engine,
         }
 
         if(config.debug.isEditorOverlay) {
-            engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+            engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.forEach { it.renderEditor(state, result) }
             }
 
@@ -169,8 +172,8 @@ class EditorComponents(val engine: Engine,
             for(batch in state.renderBatchesAnimated) {
                 lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
             }
-            engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-            engine.gpuContext.blend = false
+            engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+            engineContext.gpuContext.blend = false
             lineRenderer.drawAllLines(5f, Consumer { program ->
                 program.setUniformAsMatrix4("modelMatrix", VoxelConeTracingExtension.identityMatrix44Buffer)
                 program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -179,11 +182,11 @@ class EditorComponents(val engine: Engine,
             })
         }
         if(config.debug.visualizeProbes) {
-            engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+            engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let { extension ->
-                    engine.gpuContext.depthMask = true
-                    engine.gpuContext.disable(GlCap.BLEND)
-//                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
+                    engineContext.gpuContext.depthMask = true
+                    engineContext.gpuContext.disable(GlCap.BLEND)
+//                    engineContext.gpuContext.enable(GlCap.DEPTH_TEST)
                     environmentProbeSphereHolder.render(state) {
 
                         extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
@@ -205,16 +208,16 @@ class EditorComponents(val engine: Engine,
         }
         when (val selection = outPutConfig) {
             OutputConfig.Default -> {
-                textureRenderer.drawToQuad(engine.deferredRenderingBuffer.finalBuffer, engine.deferredRenderingBuffer.finalMap)
+                textureRenderer.drawToQuad(engineContext.deferredRenderingBuffer.finalBuffer, engineContext.deferredRenderingBuffer.finalMap)
             }
             is OutputConfig.Texture2D -> {
-                textureRenderer.drawToQuad(engine.deferredRenderingBuffer.finalBuffer, selection.texture)
+                textureRenderer.drawToQuad(engineContext.deferredRenderingBuffer.finalBuffer, selection.texture)
             }
             is OutputConfig.TextureCubeMap -> {
-                textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.texture)
+                textureRenderer.renderCubeMapDebug(engineContext.deferredRenderingBuffer.finalBuffer, selection.texture)
             }
             is OutputConfig.RenderTargetCubeMapArray -> {
-                textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
+                textureRenderer.renderCubeMapDebug(engineContext.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
             }
         }.let { }
 
@@ -305,29 +308,40 @@ class EditorComponents(val engine: Engine,
     }
 
     init {
-        engine.renderSystems.add(this)
-        SwingUtils.invokeLater {
-            TimingsFrame(engine)
-            ribbon.setApplicationMenuCommand(ApplicationMenu(engine))
-
-            addTask(ViewTask(engine, config, this, ::outPutConfig))
-            addTask(SceneTask(engine))
-            addTask(TransformTask(this, selectionSystem))
-            addTask(TextureTask(engine, editor))
-            addTask(MaterialTask(engine, editor, selectionSystem))
-            showConfigFrame()
-        }
-
-        MouseInputProcessor(engine, selectionSystem::selection, this).apply {
+        MouseInputProcessor(engineContext, selectionSystem::selection, this).apply {
             editor.canvas.addMouseMotionListener(this)
             editor.canvas.addMouseListener(this)
         }
-
-        engine.managers.register(EditorManager(this))
-
-        engine.renderSystems.add(this)
     }
 
+    fun init(sceneManager: SceneManager) {
+
+        this.sceneManager = sceneManager
+        sceneTree = SwingUtils.invokeAndWait {
+            SceneTree(engineContext, this, sceneManager.scene).apply {
+                addDefaultMouseListener()
+                SwingUtils.invokeLater {
+                    ReloadableScrollPane(this).apply {
+                        preferredSize = Dimension(300, editor.sidePanel.height)
+                        border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
+                        editor.add(this, BorderLayout.LINE_START)
+                    }
+                }
+            }
+        }
+
+        SwingUtils.invokeLater {
+            TimingsFrame(engineContext)
+            ribbon.setApplicationMenuCommand(ApplicationMenu(engineContext, sceneManager))
+
+            addTask(ViewTask(engineContext, sceneManager, config, this, ::outPutConfig))
+            addTask(SceneTask(engineContext, sceneManager))
+            addTask(TransformTask(this, selectionSystem))
+            addTask(TextureTask(engineContext, sceneManager, editor))
+            addTask(MaterialTask(engineContext, sceneManager, editor, selectionSystem))
+            showConfigFrame()
+        }
+    }
     val keyLogger = KeyLogger().apply {
         editor.addKeyListener(this)
     }
@@ -335,7 +349,7 @@ class EditorComponents(val engine: Engine,
     fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
 
     private fun showConfigFrame() = SwingUtils.invokeLater {
-        ConfigFrame(engine, config, editor)
+        ConfigFrame(engineContext, config, editor)
     }
 
     fun addTask(task: RibbonTask) = ribbon.addTask(task)

@@ -1,11 +1,10 @@
 package de.hanno.hpengine.engine.directory
 
-import de.hanno.hpengine.engine.manager.Manager
 import java.io.File
 
 class Directories constructor(engineDir: String = WORKDIR_NAME,
                               gameDir: String = GAMEDIR_NAME,
-                              initFileName: String) : Manager {
+                              initFileName: String) {
 
     val engineDir = EngineDirectory(engineDir)
     val gameDir = GameDirectory(gameDir, File(gameDir).resolve(initFileName))

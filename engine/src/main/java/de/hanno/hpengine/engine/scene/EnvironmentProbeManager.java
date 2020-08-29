@@ -91,7 +91,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 
 
 	@Override
-	public void beforeSetScene(Scene scene) {
+	public void beforeSetScene(@NotNull Scene currentScene, @NotNull Scene scene) {
 		clearProbes();
 	}
 	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {

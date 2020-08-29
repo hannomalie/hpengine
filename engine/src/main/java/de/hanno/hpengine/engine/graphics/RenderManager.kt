@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
@@ -20,12 +19,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
     val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory,
             { currentStaging, currentRead -> currentStaging.cycle < currentRead.cycle })
 }
+
 class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,
                     val lineRenderer: LineRenderer = LineRendererImpl(engineContext),
@@ -41,24 +40,15 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
 
-    val updateCycle = AtomicLong()
-
-    override fun beforeSetScene(nextScene: Scene) = clear()
-    override fun extract(scene: Scene, renderState: RenderState) {
-        renderState.cycle = updateCycle.get()
-
-        engineContext.renderSystems.forEach { it.extract(scene, renderState) }
-    }
+    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) = clear()
 
     fun finishCycle(scene: Scene) {
         if (renderState.currentWriteState.gpuHasFinishedUsingIt) {
-            renderState.currentWriteState.cycle = updateCycle.get()
             renderState.currentWriteState.deltaSeconds = deltaS.toFloat()
             extract(scene, renderState.currentWriteState)
             scene.extract(renderState.currentWriteState)
             renderState.swapStaging()
         }
-        updateCycle.getAndIncrement()
     }
     init {
         var lastTimeSwapped = true
@@ -116,6 +106,7 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
     }
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+
         engineContext.renderSystems.forEach {
             it.run { update(scene, deltaSeconds) }
         }

@@ -3,22 +3,19 @@ package de.hanno.hpengine.editor.input
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.window
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
-import de.hanno.hpengine.engine.window
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Quaternionfc
 import org.joml.Vector3f
 import org.joml.Vector4f
-import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import kotlin.reflect.KProperty0
 
-class MouseInputProcessor(val engine: Engine,
+class MouseInputProcessor(val engineContext: EngineContext,
                           val selection: KProperty0<Selection>,
                           val editorComponents: EditorComponents) : MouseAdapter() {
     private var lastX: Float? = null
@@ -58,15 +55,15 @@ class MouseInputProcessor(val engine: Engine,
 
         val entityOrNull = getEntityOrNull()
         if(entityOrNull == null) {
-            val entity = engine.scene.camera.entity
+            val entity = editorComponents.sceneManager.scene.camera.entity
             val oldTranslation = entity.transform.getTranslation(Vector3f())
             entity.transform.rotationX(pitchAmount.toFloat())
             entity.transform.rotateLocalY((-yawAmount).toFloat())
             entity.transform.translateLocal(oldTranslation)
         } else {
-            val activeCamera = engine.scene.activeCamera
+            val activeCamera = editorComponents.sceneManager.scene.activeCamera
 
-            val viewPort = intArrayOf(0, 0, engine.window.width, engine.window.height)
+            val viewPort = intArrayOf(0, 0, engineContext.window.width, engineContext.window.height)
             val entityPositionDevice = Vector4f()
             activeCamera.viewProjectionMatrix.project(entityOrNull.transform.position, viewPort, entityPositionDevice)
             val positionDeviceNew = entityPositionDevice.xyz.add(Vector3f(deltaX, deltaY, 0f))

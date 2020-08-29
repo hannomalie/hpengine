@@ -1,13 +1,10 @@
 package de.hanno.hpengine.editor.grids
 
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.config
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.GIVolumeComponent
-import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
-import de.hanno.hpengine.engine.textureManager
+import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
@@ -20,17 +17,17 @@ import javax.swing.JFormattedTextField
 import javax.swing.JPanel
 import kotlin.reflect.KMutableProperty0
 
-class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine) : JPanel() {
+class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engineContext: EngineContext, val sceneManager: SceneManager) : JPanel() {
     init {
         layout = MigLayout("wrap 2")
         add(JButton("Use cam").apply {
             addActionListener {
-                engine.sceneManager.scene.activeCamera = giVolumeComponent.orthoCam
+                sceneManager.scene.activeCamera = giVolumeComponent.orthoCam
             }
         })
         add(JButton("Restore scene cam").apply {
             addActionListener {
-                engine.sceneManager.scene.activeCamera = engine.sceneManager.scene.camera
+                sceneManager.scene.activeCamera = sceneManager.scene.camera
             }
         })
         addAABBInput()
@@ -38,8 +35,8 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine)
             this@apply.addPropertyChangeListener {
                 if(it.propertyName == "value" && it.newValue != it.oldValue) {
                     val oldVolumeGrids = giVolumeComponent.giVolumeGrids
-                    giVolumeComponent.giVolumeGrids = engine.textureManager.createGIVolumeGrids(this.value as Int)
-                    engine.textureManager.run {
+                    giVolumeComponent.giVolumeGrids = engineContext.textureManager.createGIVolumeGrids(this.value as Int)
+                    engineContext.textureManager.run {
                         gpuContext.invoke {
                             gpuContext.finish()
                             oldVolumeGrids.albedoGrid.delete()
@@ -47,7 +44,7 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engine: Engine)
                             oldVolumeGrids.indexGrid.delete()
                         }
                     }
-                    engine.config.debug.isForceRevoxelization = true
+                    engineContext.config.debug.isForceRevoxelization = true
                 }
             }
         })

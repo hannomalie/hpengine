@@ -48,28 +48,6 @@ class RibbonEditor : JRibbonFrame("HPEngine") {
         this@RibbonEditor.add(this, BorderLayout.LINE_END)
     }
 
-    fun setEngine(engine: Engine, config: ConfigImpl) {
-        EditorComponents(engine, config, this)
-    }
-
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val config = retrieveConfig(args)
-
-            val window = AWTEditor(config)
-            val engineContext = EngineContext(config = config, window = window)
-            val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
-            val engine = Engine(
-                    engineContext = engineContext,
-                    renderer = renderer
-            )
-            window.init(engine, config)
-
-            engine.executeInitScript()
-
-        }
-    }
 }
 
 val fixedWidth = 300
@@ -92,4 +70,20 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
     return Box.createVerticalBox().apply {
         comp.forEach { add(it) }
     }
+}
+
+fun main(args: Array<String>) {
+    val config = retrieveConfig(args)
+
+    val window = AWTEditorWindow(config)
+    val engineContext = EngineContext(config = config, window = window).apply {
+        additionalExtensions = additionalExtensions + listOf(EditorExtension(this, config, window.frame))
+    }
+    val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
+    val engine = Engine(
+            engineContext = engineContext,
+            renderer = renderer
+    )
+    engine.executeInitScript()
+
 }
