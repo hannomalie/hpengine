@@ -64,7 +64,9 @@ class EngineContext(
     fun extract(scene: Scene, renderState: RenderState) {
         renderSystems.forEach { it.extract(scene, renderState) }
     }
-
+    fun add(extension: Extension) {
+        additionalExtensions = additionalExtensions + listOf(extension)
+    }
 }
 
 inline val EngineContext.addResourceContext: AddResourceContext

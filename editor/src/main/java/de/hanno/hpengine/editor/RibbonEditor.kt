@@ -2,12 +2,12 @@ package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.executeInitScript
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.retrieveConfig
+import de.hanno.hpengine.engine.scene.Extension
 import net.miginfocom.swing.MigLayout
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import java.awt.BorderLayout
@@ -77,13 +77,10 @@ fun main(args: Array<String>) {
 
     val window = AWTEditorWindow(config)
     val engineContext = EngineContext(config = config, window = window).apply {
-        additionalExtensions = additionalExtensions + listOf(EditorExtension(this, config, window.frame))
+        add(EditorExtension(this, config, window.frame))
     }
-    val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext)
-    val engine = Engine(
-            engineContext = engineContext,
-            renderer = renderer
-    )
+
+    val engine = Engine(engineContext)
     engine.executeInitScript()
 
 }
