@@ -13,7 +13,8 @@ import de.hanno.hpengine.editor.selection.MouseAdapterImpl
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
-import de.hanno.hpengine.editor.tasks.MaterialTask
+import de.hanno.hpengine.editor.tasks.EditorRibbonTask
+import de.hanno.hpengine.editor.tasks.MaterialRibbonTask
 import de.hanno.hpengine.editor.tasks.SceneTask
 import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
@@ -38,21 +39,17 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.scene.Extension
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import org.joml.AxisAngle4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
+import org.pushingpixels.flamingo.api.ribbon.JRibbon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.neon.api.icon.ResizableIcon
 import org.pushingpixels.photon.api.icon.SvgBatikResizableIcon
@@ -89,6 +86,10 @@ class EditorExtension(val engineContext: EngineContext,
     override val manager = EditorManager(engineContext, editorComponents)
     override val renderSystem = editorComponents
 }
+val JRibbon.tasks: List<RibbonTask>
+    get() = mutableListOf<RibbonTask>().apply {
+        addAll((0 until taskCount).map { getTask(it) })
+    }
 class EditorComponents(val engineContext: EngineContext,
                        val config: ConfigImpl,
                        val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
@@ -114,11 +115,17 @@ class EditorComponents(val engineContext: EngineContext,
     fun onEntityAdded(entities: List<Entity>) {
         if(!this::sceneTree.isInitialized) return
         sceneTree.reload()
+        ribbon.editorTasks.forEach { it.reloadContent() }
     }
     fun onComponentAdded(component: Component) {
         if(!this::sceneTree.isInitialized) return
         sceneTree.reload()
+        ribbon.editorTasks.forEach { it.reloadContent() }
     }
+
+    private val JRibbon.editorTasks
+        get() = tasks.toList().filterIsInstance<EditorRibbonTask>()
+
     override fun render(result: DrawResult, state: RenderState) {
         selectionSystem.render(result, state)
         sphereHolder.render(state, draw = { state: RenderState ->
@@ -338,7 +345,7 @@ class EditorComponents(val engineContext: EngineContext,
             addTask(SceneTask(engineContext, sceneManager))
             addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(engineContext, sceneManager, editor))
-            addTask(MaterialTask(engineContext, sceneManager, editor, selectionSystem))
+            addTask(MaterialRibbonTask(engineContext, sceneManager, editor, selectionSystem))
             showConfigFrame()
         }
     }

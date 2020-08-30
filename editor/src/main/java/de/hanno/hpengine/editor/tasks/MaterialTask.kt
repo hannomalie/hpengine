@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
@@ -29,12 +30,97 @@ import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.JFileChooser
 
-object MaterialTask {
+class MaterialRibbonTask(val engineContext: EngineContext,
+                         val sceneManager: SceneManager,
+                         val editor: RibbonEditor,
+                         val selectionSystem: SelectionSystem): RibbonTask("Material", MaterialRibbonBand(engineContext, sceneManager, editor, selectionSystem)), EditorRibbonTask {
 
-    operator fun invoke(engineContext: EngineContext,
-                        sceneManager: SceneManager,
-                        editor: RibbonEditor,
-                        selectionSystem: SelectionSystem): RibbonTask {
+    override fun reloadContent() {
+        bands.toList().firstIsInstance<MaterialRibbonBand>().updateMaterials()
+    }
+    class MaterialRibbonBand(val engineContext: EngineContext,
+                             val sceneManager: SceneManager,
+                             val editor: RibbonEditor,
+                             val selectionSystem: SelectionSystem): JRibbonBand("Material", null) {
+
+        val addMaterialCommand = Command.builder()
+                .setText("Create")
+                .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
+                .setAction {
+                    val fc = JFileChooser()
+                    val returnVal = fc.showOpenDialog(editor)
+                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                        val file = fc.selectedFile
+                        engineContext.textureManager.getCubeMap(file.name, file = file)
+                    }
+                }
+                .setActionRichTooltip(RichTooltip.builder()
+                        .setTitle("Material")
+                        .addDescriptionSection("Creates a texture from the selected image")
+                        .build())
+                .build().apply {
+                    addRibbonCommand(project(CommandButtonPresentationModel.builder()
+                            .setTextClickAction()
+                            .build()), PresentationPriority.TOP
+                    )
+                }
+
+
+        val materialCommands = emptyList<Command>()//retrieveMaterialCommands()
+        val contentModel = RibbonGalleryContentModel({ EditorComponents.getResizableIconFromSvgResource("add-24px.svg") },
+                listOf(CommandGroup("Available materials", materialCommands))
+        )
+        val stylesGalleryVisibleCommandCounts = mapOf(
+                PresentationPriority.LOW to 1,
+                PresentationPriority.MEDIUM to 2,
+                PresentationPriority.TOP to 6
+        )
+
+        val galleryProjection = RibbonGalleryProjection(contentModel, RibbonGalleryPresentationModel.builder()
+                .setPreferredVisibleCommandCounts(stylesGalleryVisibleCommandCounts)
+                .setPreferredPopupMaxVisibleCommandRows(3)
+                .setPreferredPopupMaxCommandColumns(3)
+                .setCommandPresentationState(BIG_FIXED_LANDSCAPE)
+                .setExpandKeyTip("M")
+                .build()).apply {
+            addRibbonGallery(this, PresentationPriority.TOP)
+        }
+
+        val refreshMaterialsCommand = Command.builder()
+                .setText("Refresh")
+                .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+                .setAction {
+                    updateMaterials()
+                }
+                .setActionRichTooltip(RichTooltip.builder()
+                        .setTitle("Refresh materials")
+                        .addDescriptionSection("Populates the gallery with the current set of available materials")
+                        .build())
+                .build().apply {
+
+                    addRibbonCommand(project(CommandButtonPresentationModel.builder()
+                            .setTextClickAction()
+                            .build()), PresentationPriority.TOP)
+                }
+
+        fun updateMaterials() {
+            GlobalScope.launch {
+                val retrievedMaterialCommands = retrieveMaterialCommands()
+
+                contentModel.getCommandGroupByTitle("Available materials").apply {
+                    SwingUtils.invokeLater {
+                        removeAllCommands()
+                        retrievedMaterialCommands.forEach {
+                            addCommand(it)
+                        }
+                    }
+                }
+            }
+        }
+
+        init {
+            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
+        }
 
         fun retrieveMaterialCommands(): List<Command> = sceneManager.scene.materialManager.materials.mapNotNull { material ->
             val icon = if (material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
@@ -48,6 +134,7 @@ object MaterialTask {
             } else {
                 EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
             }
+
 
             Command.builder()
                     .setText(material.materialInfo.name)
@@ -71,76 +158,5 @@ object MaterialTask {
                     .setToggle()
                     .build()
         }
-
-        val materialBand = JRibbonBand("Material", null).apply {
-            val addMaterialCommand = Command.builder()
-                    .setText("Create")
-                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
-                    .setAction {
-                        val fc = JFileChooser()
-                        val returnVal = fc.showOpenDialog(editor)
-                        if (returnVal == JFileChooser.APPROVE_OPTION) {
-                            val file = fc.selectedFile
-                            engineContext.textureManager.getCubeMap(file.name, file = file)
-                        }
-                    }
-                    .setActionRichTooltip(RichTooltip.builder()
-                            .setTitle("Material")
-                            .addDescriptionSection("Creates a texture from the selected image")
-                            .build())
-                    .build()
-            addRibbonCommand(addMaterialCommand.project(CommandButtonPresentationModel.builder()
-                    .setTextClickAction()
-                    .build()), JRibbonBand.PresentationPriority.TOP)
-
-
-            val materialCommands = emptyList<Command>()//retrieveMaterialCommands()
-            val contentModel = RibbonGalleryContentModel({ EditorComponents.getResizableIconFromSvgResource("add-24px.svg") },
-                    listOf(CommandGroup("Available materials", materialCommands))
-            )
-            val stylesGalleryVisibleCommandCounts = mapOf(
-                    JRibbonBand.PresentationPriority.LOW to 1,
-                    JRibbonBand.PresentationPriority.MEDIUM to 2,
-                    JRibbonBand.PresentationPriority.TOP to 3
-            )
-
-            val galleryProjection = RibbonGalleryProjection(contentModel, RibbonGalleryPresentationModel.builder()
-                    .setPreferredVisibleCommandCounts(stylesGalleryVisibleCommandCounts)
-                    .setPreferredPopupMaxVisibleCommandRows(3)
-                    .setPreferredPopupMaxCommandColumns(3)
-                    .setCommandPresentationState(JRibbonBand.BIG_FIXED_LANDSCAPE)
-                    .setExpandKeyTip("M")
-                    .build())
-            addRibbonGallery(galleryProjection, JRibbonBand.PresentationPriority.TOP)
-
-            val refreshMaterialsCommand = Command.builder()
-                    .setText("Refresh")
-                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
-                    .setAction {
-                        GlobalScope.launch {
-                            val retrievedMaterialCommands = retrieveMaterialCommands()
-
-                            contentModel.getCommandGroupByTitle("Available materials").apply {
-                                SwingUtils.invokeLater {
-                                    removeAllCommands()
-                                    retrievedMaterialCommands.forEach {
-                                        addCommand(it)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .setActionRichTooltip(RichTooltip.builder()
-                            .setTitle("Refresh materials")
-                            .addDescriptionSection("Populates the gallery with the current set of available materials")
-                            .build())
-                    .build()
-            addRibbonCommand(refreshMaterialsCommand.project(CommandButtonPresentationModel.builder()
-                    .setTextClickAction()
-                    .build()), JRibbonBand.PresentationPriority.TOP)
-            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
-        }
-
-        return RibbonTask("Material", materialBand)
     }
 }
