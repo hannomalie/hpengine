@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.backend
 
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.GlfwWindow
@@ -66,6 +67,20 @@ class EngineContext(
     }
     fun add(extension: Extension) {
         additionalExtensions = additionalExtensions + listOf(extension)
+    }
+
+    fun onEntityAdded(scene: Scene, entities: List<Entity>) {
+        additionalExtensions.forEach {
+            // TODO: Add support for other hooks
+            it.manager?.onEntityAdded(entities)
+        }
+    }
+
+    fun afterSetScene(lastScene: Scene, currentScene: Scene) {
+        additionalExtensions.forEach {
+            // TODO: Add support for other hooks
+            it.manager?.afterSetScene(lastScene, currentScene)
+        }
     }
 }
 

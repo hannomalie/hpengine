@@ -139,6 +139,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             with(managers) { onEntityAdded(entities) }
 
             calculateBoundingVolume()
+            engineContext.onEntityAdded(this, entities)
 
             // TODO: This is not too correct but the cycle counter gets updated just before this happens
             entityManager.entityAddedInCycle = currentCycle

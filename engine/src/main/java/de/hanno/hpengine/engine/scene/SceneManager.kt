@@ -44,6 +44,10 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
         }
     }
 
+    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
+        engineContext.afterSetScene(lastScene, currentScene)
+    }
+
     override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
         scene.clear()
         nextScene.entitySystems.gatherEntities(nextScene)

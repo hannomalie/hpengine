@@ -41,6 +41,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.scene.Extension
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
@@ -110,6 +111,7 @@ class EditorComponents(val engineContext: EngineContext,
     val textureRenderer = SimpleTextureRenderer(engineContext, engineContext.deferredRenderingBuffer.colorReflectivenessTexture)
 
     lateinit var sceneTree: SceneTree
+    private var sceneTreePane: ReloadableScrollPane? = null
     lateinit var sceneManager: SceneManager
 
     fun onEntityAdded(entities: List<Entity>) {
@@ -118,6 +120,12 @@ class EditorComponents(val engineContext: EngineContext,
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
     fun onComponentAdded(component: Component) {
+        if(!this::sceneTree.isInitialized) return
+        sceneTree.reload()
+        ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+
+    fun afterSetScene(scene: Scene, scene2: Scene) {
         if(!this::sceneTree.isInitialized) return
         sceneTree.reload()
         ribbon.editorTasks.forEach { it.reloadContent() }
@@ -324,21 +332,9 @@ class EditorComponents(val engineContext: EngineContext,
     fun init(sceneManager: SceneManager) {
 
         this.sceneManager = sceneManager
-        sceneTree = SwingUtils.invokeAndWait {
-            SceneTree(engineContext, this, sceneManager.scene).apply {
-                addDefaultMouseListener()
-                SwingUtils.invokeLater {
-                    ReloadableScrollPane(this).apply {
-                        preferredSize = Dimension(300, editor.sidePanel.height)
-                        border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
-                        editor.add(this, BorderLayout.LINE_START)
-                    }
-                }
-            }
-        }
+        recreateSceneTree(sceneManager.scene)
 
         SwingUtils.invokeLater {
-            TimingsFrame(engineContext)
             ribbon.setApplicationMenuCommand(ApplicationMenu(engineContext, sceneManager))
 
             addTask(ViewTask(engineContext, sceneManager, config, this, ::outPutConfig))
@@ -346,9 +342,29 @@ class EditorComponents(val engineContext: EngineContext,
             addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(engineContext, sceneManager, editor))
             addTask(MaterialRibbonTask(engineContext, sceneManager, editor, selectionSystem))
-            showConfigFrame()
+            SwingUtils.invokeLater {
+                TimingsFrame(engineContext)
+                showConfigFrame()
+            }
         }
     }
+
+    fun recreateSceneTree(scene: Scene) {
+        SwingUtils.invokeLater {
+            sceneTree = SceneTree(engineContext, this, scene).apply {
+                addDefaultMouseListener()
+                SwingUtils.invokeLater {
+                    sceneTreePane = ReloadableScrollPane(this).apply {
+                        preferredSize = Dimension(300, editor.sidePanel.height)
+                        border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
+                        sceneTreePane?.let { editor.remove(it) }
+                        editor.add(this, BorderLayout.LINE_START)
+                    }
+                }
+            }
+        }
+    }
+
     val keyLogger = KeyLogger().apply {
         editor.addKeyListener(this)
     }

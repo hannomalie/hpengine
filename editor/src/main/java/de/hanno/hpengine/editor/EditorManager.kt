@@ -63,7 +63,7 @@ class EditorManager(val engineContext: EngineContext, val editorComponents: Edit
     }
 
     override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
-        editorComponents.sceneTree = SceneTree(engineContext, editorComponents, currentScene).apply { reload() }
+        editorComponents.recreateSceneTree(currentScene)
     }
 
 }
