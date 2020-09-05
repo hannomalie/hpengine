@@ -33,6 +33,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                                        val renderManager: RenderManager = RenderManager(engineContext)) {
 
     constructor(config: Config): this(EngineContext(config))
+    constructor(args: Array<String>) : this(retrieveConfig(args))
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
@@ -107,7 +108,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val engine = Engine(retrieveConfig(args))
+            val engine = Engine(args)
 
 //            engine.scene = scene("Foo", engineContext) {
 //                entities {
@@ -140,7 +141,7 @@ fun Array<String>.extractGameDir(): String {
 fun retrieveConfig(args: Array<String>): ConfigImpl {
     val gameDir = args.extractGameDir()
 
-    val config = ConfigImpl(gameDir)
+    val config = ConfigImpl(File(gameDir))
     config.populateConfigurationWithProperties(File(gameDir))
     return config
 }

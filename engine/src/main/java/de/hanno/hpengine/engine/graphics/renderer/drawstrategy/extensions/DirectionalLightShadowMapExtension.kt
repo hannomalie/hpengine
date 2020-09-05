@@ -45,7 +45,9 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         textures = listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)
     )
 
-    private val directionalShadowPassProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "directional_shadowmap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "shadowmap_fragment.glsl")))
+    private val directionalShadowPassProgram: Program = engineContext.programManager.getProgram(
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "directional_shadowmap_vertex.glsl"))),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "shadowmap_fragment.glsl"))))
     var voxelConeTracingExtension: VoxelConeTracingExtension? = null
 
     private var renderedInCycle: Long = 0

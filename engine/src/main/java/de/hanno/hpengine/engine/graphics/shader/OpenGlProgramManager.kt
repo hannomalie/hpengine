@@ -24,15 +24,15 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     var programsCache: MutableList<AbstractProgram> = CopyOnWriteArrayList()
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
-        val vertexShaderSource = FileBasedCodeSource(File(directory + vertexShaderFilename))
-        val fragmentShaderSource = fragmentShaderFileName?.run { FileBasedCodeSource(File(directory + this)) }
+        val vertexShaderSource = FileBasedCodeSource(config.engineDir.resolve(File(directory + vertexShaderFilename)))
+        val fragmentShaderSource = fragmentShaderFileName?.run { FileBasedCodeSource(config.engineDir.resolve(File(directory + this))) }
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, defines = defines)
     }
 
     override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeProgram {
         return gpuContext.invoke {
-            val program = ComputeProgram(this, FileBasedCodeSource(File(directory + computeShaderLocation)), defines)
+            val program = ComputeProgram(this, FileBasedCodeSource(config.directories.engineDir.resolve(File(directory + computeShaderLocation))), defines)
             programsCache.add(program)
             eventBus.register(program)
             program
@@ -76,7 +76,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         var actualShaderSource = shaderSource.source
 
         try {
-            val tuple = Shader.replaceIncludes(actualShaderSource, newlineCount)
+            val tuple = Shader.replaceIncludes(config.directories.engineDir, actualShaderSource, newlineCount)
             actualShaderSource = tuple.left
             newlineCount = tuple.right
             resultingShaderSource += actualShaderSource

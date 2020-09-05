@@ -50,14 +50,14 @@ interface PointLightShadowMapStrategy {
     fun bindTextures()
 }
 
-class CubeShadowMapStrategy(private val engine: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
+class CubeShadowMapStrategy(internal val engineContext: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(
-            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
-            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cube_fragment.glsl")),
-            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
+    private var pointCubeShadowPassProgram: Program = engineContext.programManager.getProgram(
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl"))),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "pointlight_shadow_cube_fragment.glsl"))),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl"))))
     val cubeMapArray = CubeMapArray(
-            engine.gpuContext,
+            engineContext.gpuContext,
             TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
             TextureFilterConfig(MinFilter.NEAREST),
             GL30.GL_RGBA16F,
@@ -65,7 +65,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext, private val point
     )
     val pointLightDepthMapsArrayCube = cubeMapArray.id
     var cubemapArrayRenderTarget: CubeMapArrayRenderTarget = CubeMapArrayRenderTarget(
-            engine.gpuContext,
+            engineContext.gpuContext,
             cubeMapArray.dimension.width,
             cubeMapArray.dimension.height,
             "CubeMapArrayRenderTarget",
@@ -75,12 +75,12 @@ class CubeShadowMapStrategy(private val engine: EngineContext, private val point
     // TODO: Remove CubeMapArrayRenderTarget to new api
 
     override fun bindTextures() {
-        engine.gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
+        engineContext.gpuContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, pointLightDepthMapsArrayCube)
     }
 
     override fun renderPointLightShadowMaps(renderState: RenderState) {
         val pointLights = pointLightSystem.getComponents(PointLight::class.java)
-        val gpuContext = engine.gpuContext
+        val gpuContext = engineContext.gpuContext
         val needToRedraw = pointLightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointLightShadowMapsRenderedInCycle < renderState.pointLightMovedInCycle
         if (!needToRedraw) {
             return
@@ -91,7 +91,7 @@ class CubeShadowMapStrategy(private val engine: EngineContext, private val point
             gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.enable(GlCap.CULL_FACE)
-            cubemapArrayRenderTarget.use(engine.gpuContext, true)
+            cubemapArrayRenderTarget.use(engineContext.gpuContext, true)
 //            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
 

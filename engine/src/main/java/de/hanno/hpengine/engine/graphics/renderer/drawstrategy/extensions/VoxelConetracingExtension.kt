@@ -92,13 +92,16 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer: Program = this.engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "voxelize_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "voxelize_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "voxelize_geometry.glsl")))
-    private val voxelConeTraceProgram: Program = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
-    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
-    private val texture3DMipMapComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
-    private val clearDynamicVoxelsComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl")
-    private val injectLightComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
-    private val injectMultipleBounceLightComputeProgram: ComputeProgram = this.engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
+    private val voxelizer: Program = this.engine.programManager.getProgram(
+            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "voxelize_vertex.glsl"))),
+            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "voxelize_fragment.glsl"))),
+            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "voxelize_geometry.glsl"))))
+    private val voxelConeTraceProgram: Program = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
+    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
+    private val texture3DMipMapComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
+    private val clearDynamicVoxelsComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl")
+    private val injectLightComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
+    private val injectMultipleBounceLightComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
 
     private var lightInjectedFramesAgo: Int = 0
 

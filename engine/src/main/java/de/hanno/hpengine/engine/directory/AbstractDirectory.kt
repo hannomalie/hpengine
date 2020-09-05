@@ -9,24 +9,24 @@ interface Directory {
     val assets: File
     val textures: File
 }
-open class AbstractDirectory(path: String): File(path) {
+open class AbstractDirectory(val baseDir: File) {
     init {
-        if (isFile) throw IllegalStateException("$absolutePath is a file, not a directory")
-        if(!exists()) {
-            mkdirs()
-            println("Created game directory $absolutePath")
-        }
+        require(!baseDir.isFile) { "${baseDir.path} is a file, not a directory" }
+//        require(baseDir.exists()) { "Used baseDir for game doesn't exist: ${baseDir.path}" }
     }
+
+    fun resolve(path: String) = baseDir.resolve(path)
+    fun resolve(file: File) = baseDir.resolve(file)
 }
 
-class EngineDirectory(path: String): AbstractDirectory(path) {
+class EngineDirectory(baseDir: File): AbstractDirectory(baseDir) {
     val shaders = resolve("shaders")
     val assets = resolve("assets")
     val models = assets.resolve("models")
     val textures = assets.resolve("textures")
 
 }
-class GameDirectory(path: String, val initScript: File? = null): AbstractDirectory(path) {
+class GameDirectory(baseDir: File, val initScript: File? = null): AbstractDirectory(baseDir) {
     val assets = resolve("assets")
     val models = assets.resolve("models")
     val textures = assets.resolve("textures")

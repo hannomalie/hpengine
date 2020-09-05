@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
@@ -46,7 +47,7 @@ interface Shader : Reloadable {
         val LOGGER = Logger.getLogger(Shader::class.java.name)
 
         @Throws(IOException::class)
-        fun replaceIncludes(shaderFileAsText: String, currentNewLineCount: Int): TypedTuple<String, Int> {
+        fun replaceIncludes(engineDir: EngineDirectory, shaderFileAsText: String, currentNewLineCount: Int): TypedTuple<String, Int> {
             var shaderFileAsText = shaderFileAsText
             var currentNewLineCount = currentNewLineCount
 
@@ -55,7 +56,7 @@ interface Shader : Reloadable {
 
             while (includeMatcher.find()) {
                 val filename = includeMatcher.group(1)
-                val fileToInclude = FileUtils.readFileToString(File(directory + filename))
+                val fileToInclude = engineDir.resolve(File(directory + filename)).readText()
                 currentNewLineCount += Util.countNewLines(fileToInclude)
                 shaderFileAsText = shaderFileAsText.replace(String.format("//include\\(%s\\)", filename).toRegex(), fileToInclude)
             }
@@ -79,6 +80,6 @@ interface Shader : Reloadable {
             return shaderInfoLog
         }
 
-        const val directory: String = Directories.WORKDIR_NAME + "/assets/shaders/"
+        const val directory: String = "assets/shaders/"
     }
 }

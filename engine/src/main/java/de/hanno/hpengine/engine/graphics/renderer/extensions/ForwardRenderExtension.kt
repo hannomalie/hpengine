@@ -26,8 +26,8 @@ import java.io.File
 class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
-    val firstpassDefaultVertexshaderSource = FileBasedCodeSource(File(Shader.directory + "first_pass_vertex.glsl"))
-    val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(File(Shader.directory + "forward_fragment.glsl"))
+    val firstpassDefaultVertexshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "first_pass_vertex.glsl")))
+    val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "forward_fragment.glsl")))
 
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource)
 

@@ -71,7 +71,9 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
         "AreaLight Shadow"
     ))
 
-    private val areaShadowPassProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "shadowmap_fragment.glsl")))
+    private val areaShadowPassProgram: Program = engine.programManager.getProgram(
+            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "mvp_entitybuffer_vertex.glsl"))),
+            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "shadowmap_fragment.glsl"))))
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         engine.gpuContext.invoke {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {

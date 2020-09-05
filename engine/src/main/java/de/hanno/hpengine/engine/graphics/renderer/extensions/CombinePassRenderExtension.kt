@@ -19,7 +19,10 @@ import java.io.File
 
 class CombinePassRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
 
-    private val combineProgram = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "combine_pass_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "combine_pass_fragment.glsl")))
+    private val combineProgram = engineContext.programManager.getProgram(
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "combine_pass_vertex.glsl"))),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "combine_pass_fragment.glsl")))
+    )
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
     private val gpuContext = engineContext.gpuContext
 

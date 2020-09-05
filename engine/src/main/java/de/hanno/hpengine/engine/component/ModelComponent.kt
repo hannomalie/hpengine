@@ -1,7 +1,9 @@
 package de.hanno.hpengine.engine.component
 
+import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Mesh
@@ -9,6 +11,8 @@ import de.hanno.hpengine.engine.model.Model
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
@@ -18,6 +22,7 @@ import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
+import java.io.File
 import java.util.EnumSet
 
 
@@ -122,7 +127,28 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 
         val bytesPerInstance: Int
             get() = 16 * java.lang.Float.BYTES + 16 * Integer.BYTES + 8 * java.lang.Float.BYTES
+
+        fun Entity.modelComponent(model: StaticModel) {
+            addComponent(ModelComponent(this, model, model.material))
+        }
+        fun Entity.modelComponent(model: AnimatedModel) {
+            addComponent(ModelComponent(this, model, model.material))
+        }
+
+        fun Entity.modelComponent(name: String,
+                                   file: File,
+                                   materialManager: MaterialManager,
+                                   gameDirectory: GameDirectory) {
+            val loadedComponents = LoadModelCommand(file,
+                    name,
+                    materialManager,
+                    gameDirectory,
+                    this).execute().entities.first().components.filterIsInstance<ModelComponent>()
+
+            loadedComponents.forEach { addComponent(it) }
+        }
     }
+
 }
 
 fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {

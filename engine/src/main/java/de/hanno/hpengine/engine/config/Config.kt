@@ -23,7 +23,8 @@ interface Config {
 
     val initFileName: String
     val directories: Directories
-    val gameDir: String
+    val engineDir: File
+    val gameDir: File
     val width: Int
     val height: Int
 }
@@ -168,23 +169,27 @@ data class PerformanceConfig(
         override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
-class ConfigImpl(override val gameDir: String = Directories.GAMEDIR_NAME,
-                 override var width: Int = 1280,
-                 override var height: Int = 720,
-                 override val quality: QualityConfig = QualityConfig(),
-                 override val debug: DebugConfig = DebugConfig(),
-                 override val effects: EffectsConfig = EffectsConfig(),
-                 override val performance: PerformanceConfig = PerformanceConfig(),
-                 override val profiling: ProfilingConfig = ProfilingConfig())
-        : Config {
+data class ConfigImpl(override val engineDir: File = File(WORKDIR_NAME),
+                      override val gameDir: File = File(Directories.GAMEDIR_NAME),
+                     override var width: Int = 1280,
+                     override var height: Int = 720,
+                     override val quality: QualityConfig = QualityConfig(),
+                     override val debug: DebugConfig = DebugConfig(),
+                     override val effects: EffectsConfig = EffectsConfig(),
+                     override val performance: PerformanceConfig = PerformanceConfig(),
+                     override val profiling: ProfilingConfig = ProfilingConfig())
+            : Config {
 
     override var initFileName = "Init.java"
-    override var directories = Directories(WORKDIR_NAME, this.gameDir, initFileName)
+    override var directories = Directories(engineDir, gameDir, initFileName)
 
 }
 
 fun ConfigImpl.populateConfigurationWithProperties(gameDir: File) {
-    FileInputStream(gameDir.resolve("default.properties")).use {
+    val defaultProperties = gameDir.resolve("default.properties")
+    if(!defaultProperties.exists()) return
+
+    FileInputStream(defaultProperties).use {
         populateConfigurationWithProperties(it.toProperties())
     }
 
@@ -202,7 +207,7 @@ fun ConfigImpl.populateConfigurationWithProperties(properties: Properties) {
         e.printStackTrace()
     }
 
-    directories = Directories(WORKDIR_NAME, gameDir, initFileName)
+    directories = Directories(File(WORKDIR_NAME), gameDir, initFileName)
 }
 
 fun InputStream.toProperties(): Properties {
