@@ -56,7 +56,7 @@ interface Shader : Reloadable {
 
             while (includeMatcher.find()) {
                 val filename = includeMatcher.group(1)
-                val fileToInclude = engineDir.resolve(File(directory + filename)).readText()
+                val fileToInclude = engineDir.resolve(directory + filename).readText()
                 currentNewLineCount += Util.countNewLines(fileToInclude)
                 shaderFileAsText = shaderFileAsText.replace(String.format("//include\\(%s\\)", filename).toRegex(), fileToInclude)
             }

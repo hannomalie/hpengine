@@ -40,7 +40,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
     private val skyBoxEntity = Entity("Skybox")
 
     private val skyBox = run {
-        StaticModelLoader().load(File("assets/models/skybox.obj"), materialManager, engineContext.config.directories.engineDir)
+        StaticModelLoader().load("assets/models/skybox.obj", materialManager, engineContext.config.directories.engineDir)
     }
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox, materialManager.defaultMaterial).apply {
         skyBoxEntity.addComponent(this)

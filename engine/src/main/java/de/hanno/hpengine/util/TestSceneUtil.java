@@ -35,7 +35,7 @@ public class TestSceneUtil {
         GpuContext.exitOnGLError("loadTestScene");
 
         try {
-            StaticModel sphere = new StaticModelLoader().load(new File("assets/models/sphere.obj"), materialManager, engineDir);
+            StaticModel sphere = new StaticModelLoader().load("assets/models/sphere.obj", materialManager, engineDir);
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {

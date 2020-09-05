@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.log.ConsoleLogger
 import java.lang.Double.BYTES
 import java.lang.Float
@@ -72,6 +71,6 @@ class SimpleMaterial(override val materialInfo: MaterialInfo): Material {
         private val LOGGER = ConsoleLogger.getLogger()
 
         val directory: String
-            get() = Directories.WORKDIR_NAME + "/assets/materials/"
+            get() = Directories.ENGINEDIR_NAME + "/assets/materials/"
     }
 }

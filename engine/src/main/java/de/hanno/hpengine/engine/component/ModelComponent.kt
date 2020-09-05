@@ -136,7 +136,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         }
 
         fun Entity.modelComponent(name: String,
-                                   file: File,
+                                   file: String,
                                    materialManager: MaterialManager,
                                    gameDirectory: GameDirectory) {
             val loadedComponents = LoadModelCommand(file,

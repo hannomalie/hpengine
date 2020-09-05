@@ -10,6 +10,8 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.directory.EngineDirectory
+import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
@@ -138,11 +140,14 @@ fun Array<String>.extractGameDir(): String {
     return gameDir
 }
 
-fun retrieveConfig(args: Array<String>): ConfigImpl {
-    val gameDir = args.extractGameDir()
+fun retrieveConfig(args: Array<String>, engineDirectory: EngineDirectory? = null, gameDirectory: GameDirectory? = null): ConfigImpl {
+    val gameDirname = args.extractGameDir()
 
-    val config = ConfigImpl(File(gameDir))
-    config.populateConfigurationWithProperties(File(gameDir))
+    val config = ConfigImpl(directories = Directories(
+            engineDirectory ?: EngineDirectory(File(Directories.ENGINEDIR_NAME)),
+            gameDirectory ?: GameDirectory(File(gameDirname))
+    ))
+    config.populateConfigurationWithProperties(File(gameDirname))
     return config
 }
 

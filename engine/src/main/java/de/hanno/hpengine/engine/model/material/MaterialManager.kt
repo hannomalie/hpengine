@@ -145,7 +145,7 @@ class MaterialManager(val config: Config,
         var count = 0
 
         fun getDirectory(): String {
-            return Directories.WORKDIR_NAME + "/assets/materials/"
+            return Directories.ENGINEDIR_NAME + "/assets/materials/"
         }
     }
 

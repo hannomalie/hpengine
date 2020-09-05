@@ -46,8 +46,8 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
     )
 
     private val directionalShadowPassProgram: Program = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "directional_shadowmap_vertex.glsl"))),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "shadowmap_fragment.glsl"))))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(Shader.directory + "directional_shadowmap_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(Shader.directory + "shadowmap_fragment.glsl")))
     var voxelConeTracingExtension: VoxelConeTracingExtension? = null
 
     private var renderedInCycle: Long = 0

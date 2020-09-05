@@ -93,9 +93,9 @@ class VoxelConeTracingExtension(
     }
 
     private val voxelizer: Program = this.engine.programManager.getProgram(
-            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "voxelize_vertex.glsl"))),
-            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "voxelize_fragment.glsl"))),
-            FileBasedCodeSource(engine.config.engineDir.resolve(File(Shader.directory + "voxelize_geometry.glsl"))))
+            FileBasedCodeSource(engine.config.engineDir.resolve(Shader.directory + "voxelize_vertex.glsl")),
+            FileBasedCodeSource(engine.config.engineDir.resolve(Shader.directory + "voxelize_fragment.glsl")),
+            FileBasedCodeSource(engine.config.engineDir.resolve(Shader.directory + "voxelize_geometry.glsl")))
     private val voxelConeTraceProgram: Program = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
     private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
     private val texture3DMipMapComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")

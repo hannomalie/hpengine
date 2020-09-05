@@ -19,8 +19,8 @@ class PostProcessingExtension(val engineContext: EngineContext): RenderExtension
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
     private val postProcessProgram = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "passthrough_vertex.glsl"))),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve(File(Shader.directory + "postprocess_fragment.glsl"))))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(Shader.directory + "passthrough_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve(Shader.directory + "postprocess_fragment.glsl")))
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         engineContext.window.frontBuffer.use(gpuContext, true)

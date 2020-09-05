@@ -39,6 +39,7 @@ import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_SPECULAR
 import java.io.File
 import java.nio.IntBuffer
+import java.nio.file.Path
 import java.util.ArrayList
 import kotlin.math.max
 
@@ -46,13 +47,13 @@ import kotlin.math.max
 const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
-    fun load(file: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {
-        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).absolutePath, flags) ?: throw IllegalStateException("Cannot load model $file")
+    fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {
+        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).path, flags) ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            GlobalScope.async { aiMaterial.processMaterial(file.parentFile, resourcesDir, materialManager.textureManager) }
+            GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, materialManager.textureManager) }
         }
 
         val numMeshes: Int = aiScene.mNumMeshes()
@@ -65,16 +66,16 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)
         }
-        return StaticModel(file, meshes)
+        return StaticModel(resourcesDir.resolve(file), meshes)
     }
 
-    private fun AIMaterial.processMaterial(texturesDir: File, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {
+    private fun AIMaterial.processMaterial(texturesDir: String, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
-                    textureManager.getTexture(texturesDir.resolve(textPath).toString(), directory = resourcesDir)
+                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir)
                 } else null
             }
         }

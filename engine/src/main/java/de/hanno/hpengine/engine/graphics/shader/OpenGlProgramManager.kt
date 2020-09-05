@@ -24,15 +24,15 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     var programsCache: MutableList<AbstractProgram> = CopyOnWriteArrayList()
 
     override fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program {
-        val vertexShaderSource = FileBasedCodeSource(config.engineDir.resolve(File(directory + vertexShaderFilename)))
-        val fragmentShaderSource = fragmentShaderFileName?.run { FileBasedCodeSource(config.engineDir.resolve(File(directory + this))) }
+        val vertexShaderSource = FileBasedCodeSource(config.engineDir.resolve(directory + vertexShaderFilename))
+        val fragmentShaderSource = fragmentShaderFileName?.run { FileBasedCodeSource(config.engineDir.resolve(directory + this)) }
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, defines = defines)
     }
 
     override fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeProgram {
         return gpuContext.invoke {
-            val program = ComputeProgram(this, FileBasedCodeSource(config.directories.engineDir.resolve(File(directory + computeShaderLocation))), defines)
+            val program = ComputeProgram(this, FileBasedCodeSource(config.directories.engineDir.resolve(directory + computeShaderLocation)), defines)
             programsCache.add(program)
             eventBus.register(program)
             program

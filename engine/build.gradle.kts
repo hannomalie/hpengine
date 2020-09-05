@@ -86,6 +86,7 @@ dependencies {
     api("com.dreizak:miniball:1.0.3")
     api("org.apache.logging.log4j:log4j-api:2.13.0")
     api("org.apache.logging.log4j:log4j-core:2.13.0")
+    api("io.github.classgraph:classgraph:4.8.89")
 
     testImplementation("junit:junit:4.12")
 }

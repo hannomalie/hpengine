@@ -1,7 +1,10 @@
 package de.hanno.hpengine.engine.config
 
 import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.directory.Directories.Companion.WORKDIR_NAME
+import de.hanno.hpengine.engine.directory.Directories.Companion.ENGINEDIR_NAME
+import de.hanno.hpengine.engine.directory.Directories.Companion.GAMEDIR_NAME
+import de.hanno.hpengine.engine.directory.EngineDirectory
+import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.util.gui.Adjustable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.apache.commons.beanutils.BeanUtils
@@ -23,8 +26,8 @@ interface Config {
 
     val initFileName: String
     val directories: Directories
-    val engineDir: File
-    val gameDir: File
+    val engineDir: EngineDirectory
+    val gameDir: GameDirectory
     val width: Int
     val height: Int
 }
@@ -169,20 +172,20 @@ data class PerformanceConfig(
         override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
-data class ConfigImpl(override val engineDir: File = File(WORKDIR_NAME),
-                      override val gameDir: File = File(Directories.GAMEDIR_NAME),
-                     override var width: Int = 1280,
-                     override var height: Int = 720,
-                     override val quality: QualityConfig = QualityConfig(),
-                     override val debug: DebugConfig = DebugConfig(),
-                     override val effects: EffectsConfig = EffectsConfig(),
-                     override val performance: PerformanceConfig = PerformanceConfig(),
-                     override val profiling: ProfilingConfig = ProfilingConfig())
-            : Config {
+data class ConfigImpl(override var initFileName: String = "Init.java",
+                      override var directories: Directories = Directories(ENGINEDIR_NAME, GAMEDIR_NAME, initFileName),
+                      override var width: Int = 1280,
+                      override var height: Int = 720,
+                      override val quality: QualityConfig = QualityConfig(),
+                      override val debug: DebugConfig = DebugConfig(),
+                      override val effects: EffectsConfig = EffectsConfig(),
+                      override val performance: PerformanceConfig = PerformanceConfig(),
+                      override val profiling: ProfilingConfig = ProfilingConfig()) : Config {
 
-    override var initFileName = "Init.java"
-    override var directories = Directories(engineDir, gameDir, initFileName)
-
+    override val engineDir: EngineDirectory
+        get() = directories.engineDir
+    override val gameDir: GameDirectory
+        get() = directories.gameDir
 }
 
 fun ConfigImpl.populateConfigurationWithProperties(gameDir: File) {
@@ -207,7 +210,7 @@ fun ConfigImpl.populateConfigurationWithProperties(properties: Properties) {
         e.printStackTrace()
     }
 
-    directories = Directories(File(WORKDIR_NAME), gameDir, initFileName)
+    directories = Directories(ENGINEDIR_NAME, gameDir.name, initFileName)
 }
 
 fun InputStream.toProperties(): Properties {

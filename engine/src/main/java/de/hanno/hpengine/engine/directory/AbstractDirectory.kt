@@ -1,7 +1,12 @@
 package de.hanno.hpengine.engine.directory
 
+import de.hanno.hpengine.engine.resource.ClassPathResource
+import io.github.classgraph.ClassGraph
+import io.github.classgraph.Resource
+import org.jetbrains.kotlin.resolve.resolveQualifierAsReceiverInExpression
 import java.io.File
-import java.lang.IllegalStateException
+import java.nio.file.Files
+import java.nio.file.Path
 
 
 interface Directory {
@@ -10,26 +15,49 @@ interface Directory {
     val textures: File
 }
 open class AbstractDirectory(val baseDir: File) {
+    val usesFileSystem = baseDir.exists() && !javaClass.protectionDomain.codeSource.location.path.toString().endsWith("jar")
+
+    val tempDir by lazy {
+        Files.createTempDirectory(null).toFile()
+    }
     init {
-        require(!baseDir.isFile) { "${baseDir.path} is a file, not a directory" }
-//        require(baseDir.exists()) { "Used baseDir for game doesn't exist: ${baseDir.path}" }
+        if(usesFileSystem) {
+            require(!baseDir.isFile) { "${baseDir.path} is a file, not a directory" }
+            require(baseDir.exists()) { "Used baseDir for game doesn't exist: ${baseDir.path}" }
+        } else {
+            ClassGraph().acceptPaths(baseDir.name).scan().use { scanResult ->
+                scanResult.allResources.forEachByteArrayThrowingIOException { res: Resource, content: ByteArray? ->
+                    val targetTempFile = tempDir.resolve(res.path)
+                    targetTempFile.parentFile.mkdirs()
+                    require(targetTempFile.createNewFile()) { "Cannot extract resource from jar to: $targetTempFile" }
+                    targetTempFile.writeBytes(content!!)
+                }
+            }
+        }
     }
 
-    fun resolve(path: String) = baseDir.resolve(path)
-    fun resolve(file: File) = baseDir.resolve(file)
+    fun resolve(path: String): File {
+        return if(usesFileSystem) {
+            baseDir.resolve(path)
+        } else {
+            tempDir.resolve(baseDir.name + "/" + path)
+//            ClassPathResource(Path.of(baseDir.name + "/" + path)).file
+        }
+    }
 }
 
 class EngineDirectory(baseDir: File): AbstractDirectory(baseDir) {
-    val shaders = resolve("shaders")
-    val assets = resolve("assets")
-    val models = assets.resolve("models")
-    val textures = assets.resolve("textures")
+    val shaders by lazy { resolve("shaders") }
+    val assets by lazy { resolve("assets") }
+    val models by lazy { assets.resolve("models") }
+    val textures by lazy { assets.resolve("textures") }
 
 }
 class GameDirectory(baseDir: File, val initScript: File? = null): AbstractDirectory(baseDir) {
-    val assets = resolve("assets")
-    val models = assets.resolve("models")
-    val textures = assets.resolve("textures")
-    val scripts = resolve("scripts")
-    val java = resolve("java")
+    val name = baseDir.name
+    val assets by lazy { resolve("assets") }
+    val models by lazy { assets.resolve("models") }
+    val textures by lazy { assets.resolve("textures") }
+    val scripts by lazy { resolve("scripts") }
+    val java by lazy { resolve("java") }
 }
