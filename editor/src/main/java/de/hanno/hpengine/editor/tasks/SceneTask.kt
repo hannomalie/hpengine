@@ -14,7 +14,7 @@ import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 
 
 object SceneTask {
-    operator fun invoke(engineContext: EngineContext, sceneManager: SceneManager): RibbonTask {
+    operator fun invoke(engineContext: EngineContext, sceneManager: SceneManager, editorComponents: EditorComponents): RibbonTask {
         val entityBand = JRibbonBand("Entity", null).apply {
             val command = Command.builder()
                     .setText("Create")
@@ -36,7 +36,24 @@ object SceneTask {
                     .build()), JRibbonBand.PresentationPriority.TOP)
             resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
         }
+        val reloadBand = JRibbonBand("Scene", null).apply {
+            val command = Command.builder()
+                    .setText("Reload")
+                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+                    .setAction {
+                        editorComponents.onReload?.invoke()
+                    }
+                    .setActionRichTooltip(RichTooltip.builder()
+                            .setTitle("Scene")
+                            .addDescriptionSection("Reloads the whole scene")
+                            .build())
+                    .build()
+            addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
+                    .setTextClickAction()
+                    .build()), JRibbonBand.PresentationPriority.TOP)
+            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
+        }
 
-        return RibbonTask("Scene", entityBand)
+        return RibbonTask("Scene", entityBand, reloadBand)
     }
 }

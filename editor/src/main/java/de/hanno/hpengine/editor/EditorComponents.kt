@@ -58,7 +58,6 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
-import java.io.File
 import java.util.function.Consumer
 import javax.swing.BorderFactory
 
@@ -95,6 +94,8 @@ class EditorComponents(val engineContext: EngineContext,
                        val config: ConfigImpl,
                        val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
 
+    val onReload: (() -> Unit)?
+        get() = editor.onSceneReload
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
@@ -338,7 +339,7 @@ class EditorComponents(val engineContext: EngineContext,
             ribbon.setApplicationMenuCommand(ApplicationMenu(engineContext, sceneManager))
 
             addTask(ViewTask(engineContext, sceneManager, config, this, ::outPutConfig))
-            addTask(SceneTask(engineContext, sceneManager))
+            addTask(SceneTask(engineContext, sceneManager, this))
             addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(engineContext, sceneManager, editor))
             addTask(MaterialRibbonTask(engineContext, sceneManager, editor, selectionSystem))

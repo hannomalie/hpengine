@@ -21,6 +21,7 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 
 class RibbonEditor : JRibbonFrame("HPEngine") {
+    var onSceneReload: (() -> Unit)? = null
     init {
         isFocusable = true
         focusTraversalKeysEnabled = false

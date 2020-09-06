@@ -20,6 +20,7 @@ import java.awt.Dimension
 import javax.swing.JFrame
 
 class AWTEditorWindow(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
+
     val executor = OpenGlExecutorImpl()
     override var openGLThreadId: Long = -1
 
