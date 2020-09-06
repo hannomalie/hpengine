@@ -22,7 +22,6 @@ object Game {
             )
         )
         val (engine) = EngineWithEditor(config)
-        val program = engine.programManager.getProgram(FileBasedCodeSource(engine.config.gameDir.resolve("shaders/occlusion_culling1_vertex.glsl")))
 
         engine.scene = scene("HellknightScene", engine.engineContext) {
             entities {
@@ -34,13 +33,12 @@ object Game {
                         name = "Hellknight",
                         file = "doom3monster/monster.md5mesh",
                         materialManager = scene.materialManager,
-                        gameDirectory = engine.config.directories.gameDir
-                    ).first().apply {
-                        spatial.boundingVolume.localAABB = AABBData(
-                            Vector3f(-60f, -10f, -35f),
-                            Vector3f(60f, 130f, 50f)
+                        gameDirectory = engine.config.directories.gameDir,
+                        aabb = AABBData(
+                                Vector3f(-60f, -10f, -35f),
+                                Vector3f(60f, 130f, 50f)
                         )
-                    }
+                    )
                 }
             }
         }

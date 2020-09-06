@@ -16,12 +16,14 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
+import org.joml.Vector3f
 import java.io.File
 import java.util.EnumSet
 
@@ -138,14 +140,18 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         fun Entity.modelComponent(name: String,
                                    file: String,
                                    materialManager: MaterialManager,
-                                   gameDirectory: GameDirectory): List<ModelComponent> {
+                                   gameDirectory: GameDirectory,
+                                    aabb: AABBData? = null): List<ModelComponent> {
             val loadedComponents = LoadModelCommand(file,
                     name,
                     materialManager,
                     gameDirectory,
                     this).execute().entities.first().components.filterIsInstance<ModelComponent>()
 
-            loadedComponents.forEach { addComponent(it) }
+            loadedComponents.forEach { modelComponent ->
+                addComponent(modelComponent)
+                aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
+            }
             return loadedComponents
         }
     }
