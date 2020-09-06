@@ -11,9 +11,6 @@ val Engine.hellknightScene
     get() = scene("HellknightScene") {
         entities {
             entity("Hellknight") {
-                customComponent { scene, deltaSeconds ->
-                    println("YYYY")
-                }
                 modelComponent(
                         name = "Hellknight",
                         file = "doom3monster/monster.md5mesh",

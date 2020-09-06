@@ -6,12 +6,17 @@ import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.input
 import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import org.jetbrains.kotlin.types.checker.findCorrespondingSupertype
 import org.joml.Vector3f
+import org.lwjgl.glfw.GLFW.GLFW_KEY_P
 import scenes.hellknightScene
+import scenes.sponzaScene
 import java.io.File
 object Game {
 
@@ -23,9 +28,14 @@ object Game {
                 gameDir = GameDirectory<Game>(File("/home/tenter/workspace/hpengine/newsimplegame/src/main/resources/game"))
             )
         )
-        val (engine) = EngineWithEditor(config)
+        val engine = Engine(config)
 
-        engine.scene = engine.hellknightScene
+//        val hellknightScene = engine.hellknightScene
+//        engine.scene = hellknightScene
+
+        val sponzaScene = engine.sponzaScene
+        engine.scene = sponzaScene
+
     }
 }
 
