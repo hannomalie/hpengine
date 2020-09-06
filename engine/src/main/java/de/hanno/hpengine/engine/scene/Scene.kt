@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.scene
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
@@ -54,6 +55,7 @@ fun scene(name: String, engineContext: EngineContext, block: SceneSyntax.() -> U
     block()
     return scene
 }
+fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(name, engineContext, block)
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(),
                                       val engineContext: EngineContext,
