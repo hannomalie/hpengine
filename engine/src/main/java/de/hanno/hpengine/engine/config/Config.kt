@@ -24,7 +24,6 @@ interface Config {
     val performance: IPerformanceConfig
     val profiling: ProfilingConfig
 
-    val initFileName: String
     val directories: Directories
     val engineDir: EngineDirectory
     val gameDir: GameDirectory
@@ -172,8 +171,7 @@ data class PerformanceConfig(
         override var isVsync: Boolean = true
 ) : IPerformanceConfig
 
-data class ConfigImpl(override var initFileName: String = "Init.java",
-                      override var directories: Directories = Directories(ENGINEDIR_NAME, GAMEDIR_NAME, initFileName),
+data class ConfigImpl(override var directories: Directories = Directories(ENGINEDIR_NAME, GAMEDIR_NAME),
                       override var width: Int = 1280,
                       override var height: Int = 720,
                       override val quality: QualityConfig = QualityConfig(),
@@ -186,39 +184,4 @@ data class ConfigImpl(override var initFileName: String = "Init.java",
         get() = directories.engineDir
     override val gameDir: GameDirectory
         get() = directories.gameDir
-}
-
-fun ConfigImpl.populateConfigurationWithProperties(gameDir: File) {
-    val defaultProperties = gameDir.resolve("default.properties")
-    if(!defaultProperties.exists()) return
-
-    FileInputStream(defaultProperties).use {
-        populateConfigurationWithProperties(it.toProperties())
-    }
-
-}
-fun ConfigImpl.populateConfigurationWithProperties(properties: Properties) {
-    val propertiesMap = mutableMapOf<String, Any>()
-    for (key in properties.stringPropertyNames()) {
-        propertiesMap[key] = properties[key]!!
-    }
-    try {
-        BeanUtils.populate(this, propertiesMap)
-    } catch (e: IllegalAccessException) {
-        e.printStackTrace()
-    } catch (e: InvocationTargetException) {
-        e.printStackTrace()
-    }
-
-    directories = Directories(ENGINEDIR_NAME, gameDir.name, initFileName)
-}
-
-fun InputStream.toProperties(): Properties {
-    val properties = Properties()
-    try {
-        properties.load(this)
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-    return properties
 }

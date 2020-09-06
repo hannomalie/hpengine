@@ -138,7 +138,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         fun Entity.modelComponent(name: String,
                                    file: String,
                                    materialManager: MaterialManager,
-                                   gameDirectory: GameDirectory) {
+                                   gameDirectory: GameDirectory): List<ModelComponent> {
             val loadedComponents = LoadModelCommand(file,
                     name,
                     materialManager,
@@ -146,6 +146,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
                     this).execute().entities.first().components.filterIsInstance<ModelComponent>()
 
             loadedComponents.forEach { addComponent(it) }
+            return loadedComponents
         }
     }
 

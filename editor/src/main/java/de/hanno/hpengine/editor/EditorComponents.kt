@@ -101,8 +101,8 @@ class EditorComponents(val engineContext: EngineContext,
     private val lineRenderer = LineRendererImpl(engineContext)
     val sphereHolder = SphereHolder(engineContext)
     val boxRenderer = SimpleModelRenderer(engineContext)
-    val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engineContext.materialManager, engineContext.config.directories.engineDir))
-    val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load(File("assets/models/torus.obj"), engineContext.materialManager, engineContext.config.directories.engineDir))
+    val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
+    val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/torus.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
     val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)

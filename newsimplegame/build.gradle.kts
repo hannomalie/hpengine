@@ -6,9 +6,10 @@ plugins {
 group = "de.hanno.hpengine"
 
 application {
-    mainClassName = "MainKt"
+    mainClassName = "Game"
 }
 
 dependencies {
     implementation(project(":engine"))
+    implementation(project(":editor"))
 }

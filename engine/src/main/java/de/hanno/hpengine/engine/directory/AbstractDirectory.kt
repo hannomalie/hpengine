@@ -1,21 +1,12 @@
 package de.hanno.hpengine.engine.directory
 
-import de.hanno.hpengine.engine.resource.ClassPathResource
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.Resource
-import org.jetbrains.kotlin.resolve.resolveQualifierAsReceiverInExpression
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Path
 
-
-interface Directory {
-    val models: File
-    val assets: File
-    val textures: File
-}
-open class AbstractDirectory(val baseDir: File) {
-    val usesFileSystem = baseDir.exists() && !javaClass.protectionDomain.codeSource.location.path.toString().endsWith("jar")
+open class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boolean) {
+    val usesFileSystem = baseDir.exists() && !sourceLocationIsJarFile
 
     val tempDir by lazy {
         Files.createTempDirectory(null).toFile()
@@ -41,19 +32,18 @@ open class AbstractDirectory(val baseDir: File) {
             baseDir.resolve(path)
         } else {
             tempDir.resolve(baseDir.name + "/" + path)
-//            ClassPathResource(Path.of(baseDir.name + "/" + path)).file
         }
     }
 }
 
-class EngineDirectory(baseDir: File): AbstractDirectory(baseDir) {
+class EngineDirectory(baseDir: File): AbstractDirectory(baseDir, EngineDirectory::class.java.protectionDomain.codeSource.location.path.toString().endsWith("jar")) {
     val shaders by lazy { resolve("shaders") }
     val assets by lazy { resolve("assets") }
     val models by lazy { assets.resolve("models") }
     val textures by lazy { assets.resolve("textures") }
 
 }
-class GameDirectory(baseDir: File, val initScript: File? = null): AbstractDirectory(baseDir) {
+class GameDirectory(baseDir: File, gameClazz: Class<*>?): AbstractDirectory(baseDir, gameClazz?.protectionDomain?.codeSource?.location?.path?.toString()?.endsWith("jar") ?: false) {
     val name = baseDir.name
     val assets by lazy { resolve("assets") }
     val models by lazy { assets.resolve("models") }
@@ -61,3 +51,4 @@ class GameDirectory(baseDir: File, val initScript: File? = null): AbstractDirect
     val scripts by lazy { resolve("scripts") }
     val java by lazy { resolve("java") }
 }
+inline fun <reified T> GameDirectory(baseDir: File) = GameDirectory(baseDir, T::class.java)

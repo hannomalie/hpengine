@@ -5,20 +5,19 @@ import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.input
-import de.hanno.hpengine.engine.component.ScriptComponentFileLoader
+import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.config.populateConfigurationWithProperties
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
@@ -35,7 +34,11 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                                        val renderManager: RenderManager = RenderManager(engineContext)) {
 
     constructor(config: Config): this(EngineContext(config))
-    constructor(args: Array<String>) : this(retrieveConfig(args))
+    constructor() : this(
+        ConfigImpl(
+            directories = Directories(EngineDirectory(File(Directories.ENGINEDIR_NAME)), GameDirectory(File(Directories.GAMEDIR_NAME), null))
+        )
+    )
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
@@ -110,50 +113,24 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val engine = Engine(args)
+            val engine = Engine();
 
-//            engine.scene = scene("Foo", engineContext) {
-//                entities {
-//                    entity("Bar") {
-//                        val entity = this
-//                        addComponent(object : CustomComponent {
-//                            override val entity = entity
-//                            override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) = println("XXXXXXXXXXXXXXXXXXXX")
-//                        })
-//                    }
-//                }
-//            }
-            engine.executeInitScript()
+            // This can be run as a default test scene
+            {
+                engine.scene = scene("Foo", engine.engineContext) {
+                    entities {
+                        entity("Bar") {
+                            val entity = this
+                            addComponent(object : CustomComponent {
+                                override val entity = entity
+                                override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) = println("XXXXXXXXXXXXXXXXXXXX")
+                            })
+                        }
+                    }
+                }
+            }
         }
 
-    }
-}
-
-fun Array<String>.extractGameDir(): String {
-    var gameDir = Directories.GAMEDIR_NAME
-
-    for (string in this) {
-        when {
-            string.startsWith("gameDir=", true) -> gameDir = string.replace("gameDir=", "", true)
-        }
-    }
-    return gameDir
-}
-
-fun retrieveConfig(args: Array<String>, engineDirectory: EngineDirectory? = null, gameDirectory: GameDirectory? = null): ConfigImpl {
-    val gameDirname = args.extractGameDir()
-
-    val config = ConfigImpl(directories = Directories(
-            engineDirectory ?: EngineDirectory(File(Directories.ENGINEDIR_NAME)),
-            gameDirectory ?: GameDirectory(File(gameDirname))
-    ))
-    config.populateConfigurationWithProperties(File(gameDirname))
-    return config
-}
-
-fun Engine.executeInitScript() {
-    engineContext.config.directories.gameDir.initScript?.let { initScriptFile ->
-        ScriptComponentFileLoader.getLoaderForFileExtension(initScriptFile.extension).load(this, initScriptFile, Entity())
     }
 }
 

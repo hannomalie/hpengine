@@ -36,7 +36,7 @@ class SphereHolder(val engine: EngineContext,
     val sphereEntity = Entity("[Editor] Pivot")
 
     val sphere = run {
-        StaticModelLoader().load(File("assets/models/sphere.obj"), materialManager, engine.config.directories.engineDir)
+        StaticModelLoader().load("assets/models/sphere.obj", materialManager, engine.config.directories.engineDir)
     }
 
     val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {

@@ -136,10 +136,14 @@ open class SceneTree(val engineContext: EngineContext,
                         val menu = JMenu("Add").apply {
                             val modelComponentMenuItem = JMenuItem("ModelComponent").apply {
                                 addActionListener {
-                                    JFileChooser(engineContext.config.gameDir).apply {
+                                    JFileChooser(engineContext.config.gameDir.baseDir).apply {
                                         if (showOpenDialog(editorComponents.editor) == JFileChooser.APPROVE_OPTION) {
                                             GlobalScope.launch {
-                                                val loadedModels = LoadModelCommand(selectedFile,
+                                                val baseDirPath = engineContext.config.gameDir.baseDir.canonicalPath.toString()
+                                                require(selectedFile.canonicalPath.startsWith(baseDirPath)) { "Can only load from within the game directory" }
+
+                                                val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "")
+                                                val loadedModels = LoadModelCommand(resultingPath,
                                                         "Model_${System.currentTimeMillis()}",
                                                         scene.materialManager,
                                                         engineContext.config.directories.gameDir,
