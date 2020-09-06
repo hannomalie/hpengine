@@ -1,12 +1,9 @@
 import de.hanno.hpengine.editor.EngineWithEditor
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.engine.scene.scene
@@ -27,18 +24,17 @@ object Game {
         val (engine) = EngineWithEditor(config)
         val program = engine.programManager.getProgram(FileBasedCodeSource(engine.config.gameDir.resolve("shaders/occlusion_culling1_vertex.glsl")))
 
-        engine.scene = scene("Foo", engine.engineContext) {
+        engine.scene = scene("HellknightScene", engine.engineContext) {
             entities {
-                entity("Bar") {
+                entity("Hellknight") {
                     customComponent { scene, deltaSeconds ->
                         println("YYYY")
                     }
-                    val fileName = "doom3monster/monster.md5mesh"
                     modelComponent(
-                            name = "BarModel",
-                            file = fileName,
-                            materialManager = scene.materialManager,
-                            gameDirectory = engine.config.directories.gameDir
+                        name = "Hellknight",
+                        file = "doom3monster/monster.md5mesh",
+                        materialManager = scene.materialManager,
+                        gameDirectory = engine.config.directories.gameDir
                     ).first().apply {
                         spatial.boundingVolume.localAABB = AABBData(
                             Vector3f(-60f, -10f, -35f),
