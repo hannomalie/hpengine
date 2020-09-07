@@ -8,11 +8,11 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
+import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
@@ -23,8 +23,7 @@ import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
-import org.joml.Vector3f
-import java.io.File
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
 
 
@@ -138,21 +137,23 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         }
 
         fun Entity.modelComponent(name: String,
-                                   file: String,
-                                   materialManager: MaterialManager,
-                                   gameDirectory: GameDirectory,
-                                    aabb: AABBData? = null): List<ModelComponent> {
-            val loadedComponents = LoadModelCommand(file,
-                    name,
-                    materialManager,
-                    gameDirectory,
-                    this).execute().entities.first().components.filterIsInstance<ModelComponent>()
-
-            loadedComponents.forEach { modelComponent ->
-                addComponent(modelComponent)
-                aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
+                                  file: String,
+                                  materialManager: MaterialManager,
+                                  modelComponentManager: ModelComponentManager,
+                                  gameDirectory: GameDirectory,
+                                  aabb: AABBData? = null): ModelComponent {
+            val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
+                LoadModelCommand(file,
+                        name,
+                        materialManager,
+                        gameDirectory,
+                        this).execute().entities.first().components.firstIsInstance<ModelComponent>().model
             }
-            return loadedComponents
+
+            val modelComponent = ModelComponent(this, loadedModel, loadedModel.material)
+            addComponent(modelComponent)
+            aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
+            return modelComponent
         }
     }
 

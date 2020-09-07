@@ -26,6 +26,7 @@ import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
+import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
@@ -80,7 +81,8 @@ class PhysicsExtension(val engineContext: EngineContext): Extension {
     override val renderSystem = manager
 }
 class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager): Extension {
-    override val componentSystem = ModelComponentSystem(engineContext, materialManager)
+    override val manager = ModelComponentManager()
+    override val componentSystem = ModelComponentSystem(engineContext, manager, materialManager)
 }
 class InputComponentExtension(val engineContext: EngineContext): Extension {
     override val componentSystem = InputComponentSystem(engineContext)

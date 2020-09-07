@@ -28,6 +28,7 @@ import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
 import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.joml.Vector3f
 import java.util.Optional
 
@@ -55,7 +56,11 @@ fun scene(name: String, engineContext: EngineContext, block: SceneSyntax.() -> U
     block()
     return scene
 }
-fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(name, engineContext, block)
+fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(name, engineContext) {
+    baseExtensions.materialExtension.manager.addMaterials(sceneManager.scene.baseExtensions.materialExtension.manager.materials)
+    baseExtensions.modelComponentExtension.manager.modelCache.putAll(sceneManager.scene.baseExtensions.modelComponentExtension.manager.modelCache)
+    block()
+}
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(),
                                       val engineContext: EngineContext,
@@ -80,6 +85,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     val materialManager = baseExtensions.materialExtension.manager
+    val modelComponentManager = baseExtensions.modelComponentExtension.manager
 
     val directionalLight = entity("DirectionalLight") {
         addComponent(DirectionalLight(this))
