@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.GameDirectory
 import scenes.lotsOfCubesScene
 import scenes.lotsOfPlanesScene
+import scenes.sponzaScene
 import java.io.File
 object Game {
 
@@ -18,7 +19,7 @@ object Game {
         val (engine, editor) = EngineWithEditor(config)
 
         editor.frame.onSceneReload = {
-            engine.scene = engine.lotsOfCubesScene
+            engine.scene = engine.lotsOfPlanesScene
         }
         editor.frame.onSceneReload?.invoke()
 
