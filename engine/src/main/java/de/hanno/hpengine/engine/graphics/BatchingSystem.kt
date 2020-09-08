@@ -7,8 +7,10 @@ import de.hanno.hpengine.engine.entity.movedInCycle
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.model.clusters
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
+import org.jetbrains.kotlin.codegen.coroutines.continuationAsmTypes
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 
@@ -44,7 +46,8 @@ class BatchingSystem {
                 val meshBufferIndex = entityIndexOf + meshIndex * entity.instanceCount
 
                 val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, -1)) { (_, _) -> RenderBatch() }
-                with(batch){ entityBufferIndex = meshBufferIndex
+                with(batch){
+                    entityBufferIndex = meshBufferIndex
                     this.movedInCycle = entity.movedInCycle
                     this.isDrawLines = drawLines
                     this.cameraWorldPosition = cameraWorldPosition
@@ -57,7 +60,7 @@ class BatchingSystem {
                     centerWorld = meshCenter
                     this.boundingSphereRadius = boundingSphereRadius
                     with(drawElementsIndirectCommand) {
-                        this.primCount = entity.instanceCount
+                        this.primCount = 1
                         this.count = modelComponent.getIndexCount(meshIndex)
                         this.firstIndex = allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset
                         this.baseVertex = allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset
@@ -73,6 +76,45 @@ class BatchingSystem {
                     currentWriteState.addStatic(batch)
                 } else {
                     currentWriteState.addAnimated(batch)
+                }
+
+                modelComponent.entity.clusters.forEachIndexed { index, cluster ->
+                    val intersection = camera.frustum.frustumIntersection.intersectAab(cluster.boundingVolume.min, cluster.boundingVolume.max)
+                    val clusterIsInFrustum = intersection == FrustumIntersection.INTERSECT || intersection == FrustumIntersection.INSIDE
+                    if(clusterIsInFrustum) {
+                        val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, index)) { (_, _) -> RenderBatch() }
+                        with(batch){
+                            entityBufferIndex = meshBufferIndex + modelComponent.entity.clusters.subList(0, index).sumBy { it.size }
+                            this.movedInCycle = entity.movedInCycle
+                            this.isDrawLines = drawLines
+                            this.cameraWorldPosition = cameraWorldPosition
+                            this.isVisibleForCamera = visibleForCamera
+                            update = entity.updateType
+                            entityMinWorld.set(cluster.boundingVolume.min)
+                            entityMaxWorld.set(cluster.boundingVolume.max)
+                            meshMinWorld.set(cluster.boundingVolume.min)
+                            meshMaxWorld.set(cluster.boundingVolume.max)
+                            centerWorld = cluster.boundingVolume.center
+                            this.boundingSphereRadius = cluster.boundingVolume.boundingSphereRadius
+                            with(drawElementsIndirectCommand) {
+                                this.primCount = cluster.size
+                                this.count = modelComponent.getIndexCount(meshIndex)
+                                this.firstIndex = allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset
+                                this.baseVertex = allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset
+                            }
+                            this.animated = !modelComponent.model.isStatic
+                            materialInfo = mesh.material.materialInfo
+                            entityIndex = entity.index
+                            entityName = entity.name
+                            this.meshIndex = meshIndex
+                        }
+
+                        if (batch.isStatic) {
+                            currentWriteState.addStatic(batch)
+                        } else {
+                            currentWriteState.addAnimated(batch)
+                        }
+                    }
                 }
             }
         }

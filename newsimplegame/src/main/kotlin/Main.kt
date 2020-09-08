@@ -2,7 +2,8 @@ import de.hanno.hpengine.editor.EngineWithEditor
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.GameDirectory
-import scenes.sponzaScene
+import scenes.lotsOfCubesScene
+import scenes.lotsOfPlanesScene
 import java.io.File
 object Game {
 
@@ -16,12 +17,10 @@ object Game {
         )
         val (engine, editor) = EngineWithEditor(config)
 
-        editor.frame.onSceneReload = { engine.scene = engine.sponzaScene }
-//        val hellknightScene = engine.hellknightScene
-//        engine.scene = hellknightScene
-
-        val sponzaScene = engine.sponzaScene
-        engine.scene = sponzaScene
+        editor.frame.onSceneReload = {
+            engine.scene = engine.lotsOfCubesScene
+        }
+        editor.frame.onSceneReload?.invoke()
 
     }
 }

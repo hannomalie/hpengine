@@ -43,7 +43,9 @@ class Instance
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         animationController?.update(deltaSeconds)
-        with(spatial) { update(scene, deltaSeconds) }
+        with(spatial) {
+            update(scene, deltaSeconds)
+        }
     }
 
 }

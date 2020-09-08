@@ -46,7 +46,7 @@ interface MaterialInfo {
     val transparency: Float
     val parallaxScale: Float
     val parallaxBias: Float
-    val materialType: MaterialType
+    var materialType: MaterialType
     val transparencyType: TransparencyType
     val textureLess: Boolean
     val maps: Map<MAP, Texture>

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.component
 
+import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -140,7 +141,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
                                   file: String,
                                   materialManager: MaterialManager,
                                   modelComponentManager: ModelComponentManager,
-                                  gameDirectory: GameDirectory,
+                                  gameDirectory: AbstractDirectory,
                                   aabb: AABBData? = null): ModelComponent {
             val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
                 LoadModelCommand(file,

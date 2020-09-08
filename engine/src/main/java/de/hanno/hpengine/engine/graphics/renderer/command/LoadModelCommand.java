@@ -18,13 +18,13 @@ public class LoadModelCommand implements Command<EntityListResult> {
     private final String file;
     private final String name;
     private MaterialManager materialManager;
-    private final GameDirectory gameDir;
+    private final AbstractDirectory gameDir;
     private Entity entity;
 
     public LoadModelCommand(String file, String name, MaterialManager materialManager, GameDirectory gameDir) {
         this(file, name, materialManager, gameDir, null);
     }
-    public LoadModelCommand(String file, String name, MaterialManager materialManager, GameDirectory gameDir, Entity entity) {
+    public LoadModelCommand(String file, String name, MaterialManager materialManager, AbstractDirectory gameDir, Entity entity) {
         this.materialManager = materialManager;
         this.gameDir = gameDir;
         this.entity = entity;

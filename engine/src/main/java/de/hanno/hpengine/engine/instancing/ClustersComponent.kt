@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import java.lang.IllegalStateException
 import java.util.concurrent.CopyOnWriteArrayList
@@ -30,10 +31,12 @@ class ClustersComponent(override val entity: Entity): Component {
     fun getInstancesBoundingVolumes(): List<AABB> = instances.map { it.boundingVolume }
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for (cluster in clusters) {
-            launch {
-                with(cluster as Updatable) {
-                    update(scene, deltaSeconds)
+        launch {
+            clusters.map { cluster ->
+                launch {
+                    with(cluster) {
+                        update(scene, deltaSeconds)
+                    }
                 }
             }
         }

@@ -16,7 +16,7 @@ open class TransformSpatial(val transform: Transform, _boundingVolume: AABB) : S
         get() = boundingVolume.center
 
 }
-open class StaticTransformSpatial(transform: Transform, val modelComponent: ModelComponent) : TransformSpatial(transform, modelComponent.boundingVolume) {
+open class StaticTransformSpatial(transform: Transform, val modelComponent: ModelComponent) : TransformSpatial(transform, AABB(modelComponent.boundingVolume.localAABB)) {
     override fun CoroutineScope.update(scene:Scene, deltaSeconds: Float) = boundingVolume.recalculate(transform)
 }
 // TODO: Is this still needed?

@@ -103,7 +103,17 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
         halfExtents.get(halfExtents.maxComponent())
     }
     companion object {
+        @JvmName("getSurroundingAABBData")
         fun List<AABBData>.getSurroundingAABB(): AABBData {
+            val newMin = Vector3f(first().min)
+            val newMax = Vector3f(first().max)
+            forEach {
+                newMin.min(it.min)
+                newMax.max(it.max)
+            }
+            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+        }
+        fun List<AABB>.getSurroundingAABB(): AABBData {
             val newMin = Vector3f(first().min)
             val newMax = Vector3f(first().max)
             forEach {
