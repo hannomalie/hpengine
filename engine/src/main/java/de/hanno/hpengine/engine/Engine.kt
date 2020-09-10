@@ -9,7 +9,9 @@ import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.directory.EngineAsset
 import de.hanno.hpengine.engine.directory.EngineDirectory
+import de.hanno.hpengine.engine.directory.GameAsset
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
@@ -108,6 +110,9 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         e.printStackTrace()
     }
 
+
+    fun EngineAsset(relativePath: String): EngineAsset = config.EngineAsset(relativePath)
+    fun GameAsset(relativePath: String): GameAsset = config.GameAsset(relativePath)
 
     companion object {
 

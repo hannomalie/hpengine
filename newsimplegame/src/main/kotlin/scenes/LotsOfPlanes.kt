@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
+import de.hanno.hpengine.engine.directory.GameAsset
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
@@ -22,10 +23,9 @@ val Engine.lotsOfPlanesScene
         entities {
             entity("Plane") {
                 val simpleColorProgramStatic = programManager.getProgram(
-                        directories.gameDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-                        "shaders/first_pass_fragment.glsl"?.let { directories.gameDir.resolve(it).toCodeSource() },
-                        null,
-                        Defines())
+                    GameAsset("shaders/first_pass_vertex.glsl"),
+                    GameAsset("shaders/first_pass_fragment.glsl")
+                )
                 modelComponent(
                     name = "Plane",
                     file = "assets/models/planeRotated.obj",

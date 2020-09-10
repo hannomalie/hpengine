@@ -31,11 +31,11 @@ import org.lwjgl.BufferUtils
 
 class SimpleModelRenderer(val engine: EngineContext,
                           val model: StaticModel = StaticModelLoader().load("assets/models/cube.obj", engine.materialManager, engine.config.directories.engineDir),
-                          val program: Program = engine.programManager.getProgram(
-                                  engine.config.engineDir.resolve("$shaderDirectory/mvp_vertex.glsl").toCodeSource(),
-                                  "$shaderDirectory/simple_color_fragment.glsl"?.let { engine.config.engineDir.resolve(it).toCodeSource() },
+                          val program: Program = engine.run { programManager.getProgram(
+                                  EngineAsset("$shaderDirectory/mvp_vertex.glsl"),
+                                  EngineAsset("$shaderDirectory/simple_color_fragment.glsl"),
                                   null,
-                                  Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
+                                  Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))) }) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager
     val gpuContext = engine.gpuContext

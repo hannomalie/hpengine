@@ -29,11 +29,13 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class SphereHolder(val engine: EngineContext,
-                   val sphereProgram: Program = engine.programManager.getProgram(
-                           engine.config.engineDir.resolve("$shaderDirectory/mvp_vertex.glsl").toCodeSource(),
-                           "$shaderDirectory/simple_color_fragment.glsl"?.let { engine.config.engineDir.resolve(it).toCodeSource() },
+                   val sphereProgram: Program = engine.run {
+                       programManager.getProgram(
+                           EngineAsset("$shaderDirectory/mvp_vertex.glsl"),
+                           EngineAsset("$shaderDirectory/simple_color_fragment.glsl"),
                            null,
-                           Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
+                           Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+                   }) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager
     val gpuContext = engine.gpuContext

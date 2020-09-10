@@ -638,30 +638,33 @@ class EnvironmentSampler(val entity: Entity,
         val cubeMapCamInitialOrientation = Quaternionf().identity()
         entity.transform.rotate(cubeMapCamInitialOrientation)
 
-        cubeMapProgram = programManager.getProgram(
-                config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
-                config.EngineAsset("$shaderDirectory/cubemap_fragment.glsl"))
+        cubeMapProgram = config.run { programManager.getProgram(
+            EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
+            EngineAsset("$shaderDirectory/cubemap_fragment.glsl"))
+        }
 
-        depthPrePassProgram = programManager.getProgram(
-                config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
-                config.EngineAsset("$shaderDirectory/cubemap_fragment.glsl"))
+        depthPrePassProgram = config.run { programManager.getProgram(
+            EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
+            EngineAsset("$shaderDirectory/cubemap_fragment.glsl"))
+        }
 
-        cubeMapLightingProgram = programManager.getProgram(
-                config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
-                config.EngineAsset("$shaderDirectory/cubemap_lighting_fragment.glsl"))
+        cubeMapLightingProgram = config.run { programManager.getProgram(
+            EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
+            EngineAsset("$shaderDirectory/cubemap_lighting_fragment.glsl"))
+        }
 
         tiledProbeLightingProgram = programManager.getComputeProgram(config.EngineAsset("$shaderDirectory/tiled_probe_lighting_probe_rendering_compute.glsl"))
         cubemapRadianceProgram = programManager.getComputeProgram(config.EngineAsset("$shaderDirectory/cubemap_radiance_compute.glsl"))
 
-        cubemapRadianceFragmentProgram = programManager.getProgram(
+        cubemapRadianceFragmentProgram = config.run { programManager.getProgram(
                 config.EngineAsset("$shaderDirectory/passthrough_vertex.glsl"),
-                config.EngineAsset("$shaderDirectory/cubemap_radiance_fragment.glsl"))
+                config.EngineAsset("$shaderDirectory/cubemap_radiance_fragment.glsl")) }
 
-        secondPassPointProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_point_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_point_fragment.glsl"))
-        secondPassTubeProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_point_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_tube_fragment.glsl"))
-        secondPassAreaProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_area_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_area_fragment.glsl"))
-        secondPassDirectionalProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_directional_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_directional_fragment.glsl"))
-        firstPassDefaultProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"), config.EngineAsset("$shaderDirectory/frst_pass_fragment.glsl"))
+        secondPassPointProgram = config.run { programManager.getProgram(EngineAsset("$shaderDirectory/second_pass_point_vertex.glsl"), EngineAsset("$shaderDirectory/scond_pass_point_fragment.glsl")) }
+        secondPassTubeProgram = config.run { programManager.getProgram(EngineAsset("$shaderDirectory/second_pass_point_vertex.glsl"), EngineAsset("$shaderDirectory/scond_pass_tube_fragment.glsl")) }
+        secondPassAreaProgram = config.run { programManager.getProgram(EngineAsset("$shaderDirectory/second_pass_area_vertex.glsl"), EngineAsset("$shaderDirectory/scond_pass_area_fragment.glsl")) }
+        secondPassDirectionalProgram = config.run { programManager.getProgram(EngineAsset("$shaderDirectory/second_pass_directional_vertex.glsl"), EngineAsset("$shaderDirectory/scond_pass_directional_fragment.glsl")) }
+        firstPassDefaultProgram = config.run { programManager.getProgram(EngineAsset("$shaderDirectory/first_pass_vertex.glsl"), EngineAsset("$shaderDirectory/frst_pass_fragment.glsl")) }
         val cubeMapArrayRenderTarget = environmentProbeManager.cubeMapArrayRenderTarget
         cubeMapView = GL11.glGenTextures()
         cubeMapView1 = GL11.glGenTextures()
