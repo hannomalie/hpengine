@@ -37,7 +37,6 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExte
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
@@ -46,7 +45,6 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -107,8 +105,8 @@ class EditorComponents(val engineContext: EngineContext,
     val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
     val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/torus.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
     val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.run { programManager.getProgram(
-            EngineAsset("$shaderDirectory/mvp_vertex.glsl"),
-            EngineAsset("$shaderDirectory/environmentprobe_color_fragment.glsl"),
+            EngineAsset("shaders/mvp_vertex.glsl"),
+            EngineAsset("shaders/environmentprobe_color_fragment.glsl"),
             null,
             Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
     })

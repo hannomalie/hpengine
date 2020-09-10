@@ -20,7 +20,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
@@ -34,8 +33,8 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
 
     val materialManager: MaterialManager = engineContext.materialManager
     private val skyBoxProgram = engineContext.programManager.getProgram(
-            engineContext.config.engineDir.resolve("$shaderDirectory/mvp_vertex.glsl").toCodeSource(),
-            "$shaderDirectory/skybox.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            engineContext.config.engineDir.resolve("shaders/mvp_vertex.glsl").toCodeSource(),
+            "shaders/skybox.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
 

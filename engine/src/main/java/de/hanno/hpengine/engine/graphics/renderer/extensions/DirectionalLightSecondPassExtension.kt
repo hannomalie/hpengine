@@ -11,7 +11,6 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
@@ -22,8 +21,8 @@ import org.lwjgl.opengl.GL32
 
 class DirectionalLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     private val secondPassDirectionalProgram = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "second_pass_directional_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "second_pass_directional_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "second_pass_directional_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "second_pass_directional_fragment.glsl")))
 
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer

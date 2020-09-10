@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
@@ -18,8 +17,8 @@ class PostProcessingExtension(val engineContext: EngineContext): RenderExtension
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
     private val postProcessProgram = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "postprocess_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "postprocess_fragment.glsl")))
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         engineContext.window.frontBuffer.use(gpuContext, true)

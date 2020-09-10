@@ -14,18 +14,18 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class DrawLinesExtension(private val engine: EngineContext,
                          programManager: ProgramManager<*> = engine.programManager) : RenderExtension<OpenGl> {
 
-    private val linesProgram: Program = programManager.getProgram(
-            engine.config.engineDir.resolve("assets/shaders/mvp_vertex.glsl").toCodeSource(),
-            "assets/shaders/firstpass_ambient_color_fragment.glsl"?.let { engine.config.engineDir.resolve(it).toCodeSource() },
-            null,
-            Defines())
+    private val linesProgram: Program = engine.run { programManager.getProgram(
+        EngineAsset("shaders/mvp_vertex.glsl"),
+        EngineAsset("shaders/firstpass_ambient_color_fragment.glsl"),
+        null,
+        Defines())
+    }
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }

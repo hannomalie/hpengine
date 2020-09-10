@@ -26,7 +26,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -57,8 +56,8 @@ class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtensi
     private var renderedInCycle: Long = -1
     val probeRenderer = ProbeRenderer(engineContext)
     val evaluateProbeProgram = engineContext.programManager.getProgram(
-            engineContext.config.engineDir.resolve("$shaderDirectory/passthrough_vertex.glsl").toCodeSource(),
-            "$shaderDirectory/evaluate_probe.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
+            "shaders/evaluate_probe.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines())
 
@@ -165,9 +164,9 @@ class ProbeRenderer(private val engine: EngineContext) {
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(
-            FileBasedCodeSource(File("$shaderDirectory/" + "pointlight_shadow_cubemap_vertex.glsl")),
-            FileBasedCodeSource(File("$shaderDirectory/" + "environmentprobe_cube_fragment.glsl")),
-            FileBasedCodeSource(File("$shaderDirectory/" + "pointlight_shadow_cubemap_geometry.glsl")))
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
+            FileBasedCodeSource(File("shaders/" + "environmentprobe_cube_fragment.glsl")),
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")))
 
     val cubeMapRenderTarget = RenderTarget(
             gpuContext = engine.gpuContext,

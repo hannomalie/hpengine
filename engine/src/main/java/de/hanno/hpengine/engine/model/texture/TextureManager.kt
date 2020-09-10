@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.engine.model.texture.DDSConverter.getFullPathAsDDS
@@ -111,8 +110,8 @@ class TextureManager(val config: Config,
     val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)
     var cubeMap = getCubeMap("assets/textures/skybox/skybox.png", config.directories.engineDir.resolve("assets/textures/skybox/skybox.png"))
 //    var cubeMap = getCubeMap("assets/textures/skybox/skybox5.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
-    private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("$shaderDirectory/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("HORIZONTAL", true)))
-    private val blur2dProgramSeparableVertical = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("$shaderDirectory/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("VERTICAL", true)))
+    private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("HORIZONTAL", true)))
+    private val blur2dProgramSeparableVertical = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("VERTICAL", true)))
 
     private val temp = loadDefaultTexture()
     val defaultTexture = temp.first

@@ -28,7 +28,6 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
@@ -54,13 +53,13 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val postProcessingExtension = PostProcessingExtension(engineContext)
 
     val simpleColorProgramStatic = programManager.getProgram(
-            config.engineDir.resolve("$shaderDirectory/first_pass_vertex.glsl").toCodeSource(),
-            "$shaderDirectory/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+            "shaders/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines())
     val simpleColorProgramAnimated = programManager.getProgram(
-            config.engineDir.resolve("$shaderDirectory/first_pass_vertex.glsl").toCodeSource(),
-            "$shaderDirectory/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+            "shaders/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines(Define.getDefine("ANIMATED", true)))
 

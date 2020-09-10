@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.vertexbuffer.draw
@@ -23,8 +22,8 @@ class AOScatteringExtension(val engineContext: EngineContext): RenderExtension<O
     val backend = engineContext.gpuContext.backend
     val gpuContext = engineContext.gpuContext
     private val aoScatteringProgram = engineContext.programManager.getProgram(
-            engineContext.config.engineDir.resolve("$shaderDirectory/passthrough_vertex.glsl").toCodeSource(),
-            "$shaderDirectory/scattering_ao_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
+            "shaders/scattering_ao_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines())
 

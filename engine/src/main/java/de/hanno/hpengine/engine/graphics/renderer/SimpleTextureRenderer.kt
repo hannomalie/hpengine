@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -30,12 +29,12 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
 
     private val renderToQuadProgram: Program = programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "simpletexture_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "simpletexture_fragment.glsl")))
 
     private val debugFrameProgram = programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "debugframe_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "debugframe_fragment.glsl")))
 
     open var finalImage = texture.id
 

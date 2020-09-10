@@ -29,7 +29,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
@@ -75,7 +74,7 @@ class ProbeRenderStrategy(private val engineContext: EngineContext) {
             name = "Probes"
     )
 
-    private var probeProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File("$shaderDirectory/" + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File("$shaderDirectory/" + "probe_cube_fragment.glsl")), FileBasedCodeSource(File("$shaderDirectory/" + "probe_cubemap_geometry.glsl")))
+    private var probeProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File("shaders/" + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File("shaders/" + "probe_cube_fragment.glsl")), FileBasedCodeSource(File("shaders/" + "probe_cubemap_geometry.glsl")))
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
     private val visibilityValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()
@@ -191,8 +190,8 @@ class EvaluateProbeRenderExtension(val engineContext: EngineContext): RenderExte
     private val probeRenderStrategy = ProbeRenderStrategy(engineContext)
 
     val evaluateProbeProgram = engineContext.programManager.getProgram(
-            engineContext.config.engineDir.resolve("$shaderDirectory/passthrough_vertex.glsl").toCodeSource(),
-            "$shaderDirectory/evaluate_probe_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
+            "shaders/evaluate_probe_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines())
 

@@ -24,7 +24,6 @@ import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
@@ -45,11 +44,11 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.run { programManager.getProgram(EngineAsset("$shaderDirectory/occlusion_culling1_vertex.glsl")) }
-    private var occlusionCullingPhase2Vertex: Program = engine.run { programManager.getProgram(EngineAsset("$shaderDirectory/occlusion_culling2_vertex.glsl")) }
+    private var occlusionCullingPhase1Vertex: Program = engine.run { programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl")) }
+    private var occlusionCullingPhase2Vertex: Program = engine.run { programManager.getProgram(EngineAsset("shaders/occlusion_culling2_vertex.glsl")) }
 
     val appendDrawCommandsProgram = engine.run { programManager.getProgram(EngineAsset("append_drawcommands_vertex.glsl")) }
-    val appendDrawCommandsComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/append_drawcommands_compute.glsl")) }
+    val appendDrawCommandsComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/append_drawcommands_compute.glsl")) }
 
 
     private val highZBuffer = RenderTarget(
@@ -103,7 +102,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cullAndRender("Cull&Render Phase1", Pipeline.CoarseCullingPhase.ONE)
     }
 
-    private val highZProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/highZ_compute.glsl"), Defines(Define.getDefine("SOURCE_CHANNEL_R", true))) }
+    private val highZProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/highZ_compute.glsl"), Defines(Define.getDefine("SOURCE_CHANNEL_R", true))) }
 
     private fun renderHighZMap() = renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
 

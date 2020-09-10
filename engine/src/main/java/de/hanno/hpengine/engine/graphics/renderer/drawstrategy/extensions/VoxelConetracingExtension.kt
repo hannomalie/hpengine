@@ -28,7 +28,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -91,24 +90,24 @@ class VoxelConeTracingExtension(
 
     private val voxelizer: Program = engine.run {
         programManager.getProgram(
-            EngineAsset("$shaderDirectory/voxelize_vertex.glsl"),
-            EngineAsset("$shaderDirectory/voxelize_fragment.glsl"),
-            EngineAsset("$shaderDirectory/voxelize_geometry.glsl")
+            EngineAsset("shaders/voxelize_vertex.glsl"),
+            EngineAsset("shaders/voxelize_fragment.glsl"),
+            EngineAsset("shaders/voxelize_geometry.glsl")
         )
     }
 
     private val voxelConeTraceProgram: Program = engine.run {
         programManager.getProgram(
-            EngineAsset("$shaderDirectory/passthrough_vertex.glsl"),
-            EngineAsset("$shaderDirectory/voxel_cone_trace_fragment.glsl")
+            EngineAsset("shaders/passthrough_vertex.glsl"),
+            EngineAsset("shaders/voxel_cone_trace_fragment.glsl")
         )
     }
 
-    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_mipmap_alphablend_compute.glsl")) }
-    private val texture3DMipMapComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_mipmap_compute.glsl")) }
-    private val clearDynamicVoxelsComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_clear_dynamic_voxels_compute.glsl")) }
-    private val injectLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_inject_light_compute.glsl")) }
-    private val injectMultipleBounceLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_inject_bounce_light_compute.glsl")) }
+    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_mipmap_alphablend_compute.glsl")) }
+    private val texture3DMipMapComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_mipmap_compute.glsl")) }
+    private val clearDynamicVoxelsComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_clear_dynamic_voxels_compute.glsl")) }
+    private val injectLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_inject_light_compute.glsl")) }
+    private val injectMultipleBounceLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_inject_bounce_light_compute.glsl")) }
 
     private var lightInjectedFramesAgo: Int = 0
 
