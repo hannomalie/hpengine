@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.transform.AABB
@@ -23,6 +24,7 @@ import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.Struct
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -113,7 +115,7 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext): RenderExtensi
     private val gpuContext = engine.gpuContext
     private val deferredRenderingBuffer = engine.deferredRenderingBuffer
 
-    private val secondPassPointBvhComputeProgram = engine.programManager.getComputeProgram("second_pass_point_trivial_bvh_compute.glsl")
+    private val secondPassPointBvhComputeProgram = engine.programManager.getComputeProgram(engine.EngineAsset("$shaderDirectory/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)

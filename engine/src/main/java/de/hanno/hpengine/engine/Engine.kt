@@ -99,6 +99,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         engineContext.extract(sceneManager.scene, renderManager.renderState.currentWriteState)
 
         renderManager.renderState.currentWriteState.cycle = updateCycle.get()
+        renderManager.renderState.currentWriteState.time = System.currentTimeMillis()
 
         renderManager.finishCycle(sceneManager.scene)
 

@@ -136,7 +136,7 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
     setUniform("eyePosition", camera.getPosition())
     setUniform("near", camera.near)
     setUniform("far", camera.far)
-    setUniform("timeGpu", System.currentTimeMillis().toInt())
+    setUniform("time", renderState.time.toInt())
     setUniform("useParallax", config.quality.isUseParallax)
     setUniform("useSteepParallax", config.quality.isUseSteepParallax)
 }

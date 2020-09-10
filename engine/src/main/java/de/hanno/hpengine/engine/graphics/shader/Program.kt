@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.log.ConsoleLogger.getLogger
+import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
@@ -31,9 +32,9 @@ import java.util.StringJoiner
 
 class Program(
         private val programManager: OpenGlProgramManager,
-        val vertexShaderSource: FileBasedCodeSource,
-        val geometryShaderSource: FileBasedCodeSource?,
-        val fragmentShaderSource: FileBasedCodeSource?,
+        val vertexShaderSource: CodeSource,
+        val geometryShaderSource: CodeSource?,
+        val fragmentShaderSource: CodeSource?,
         defines: Defines
 ) : AbstractProgram(programManager.gpuContext.createProgramId()) {
     val gpuContext: GpuContext<OpenGl>
@@ -142,7 +143,7 @@ class Program(
 
     override fun reload() = try {
         val result = gpuContext.invoke {
-            detachShader(vertexShader!!)
+            detachShader(vertexShader)
             if (fragmentShader != null) {
                 detachShader(fragmentShader!!)
                 fragmentShader!!.reload()
@@ -151,7 +152,7 @@ class Program(
                 detachShader(geometryShader!!)
                 geometryShader!!.reload()
             }
-            vertexShader!!.reload()
+            vertexShader.reload()
             load()
             true
         }
@@ -166,8 +167,8 @@ class Program(
     }
 
     override val name: String = StringJoiner(", ")
-            .add(if (fragmentShaderSource != null) fragmentShaderSource.filename else "")
-            .add(vertexShaderSource!!.filename).toString()
+            .add(if (fragmentShaderSource != null) fragmentShaderSource.name else "")
+            .add(vertexShaderSource.name).toString()
 
     override fun equals(other: Any?): Boolean {
         if (other !is Program || other == null) {
@@ -185,9 +186,9 @@ class Program(
     override fun hashCode(): Int {
         var hash = 0
         hash += geometryShaderSource?.hashCode() ?: 0
-        hash += vertexShaderSource?.hashCode() ?: 0
+        hash += vertexShaderSource.hashCode()
         hash += fragmentShaderSource?.hashCode() ?: 0
-        hash += if (defines != null) defines.hashCode() else 0
+        hash += defines.hashCode()
         return hash
     }
 
@@ -249,6 +250,7 @@ private fun AbstractProgram.removeOldListeners() {
 
 fun Program.create() {
     val sources: List<FileBasedCodeSource> = listOfNotNull(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
+            .filterIsInstance<FileBasedCodeSource>()
     replaceOldListeners(sources, this)
 }
 

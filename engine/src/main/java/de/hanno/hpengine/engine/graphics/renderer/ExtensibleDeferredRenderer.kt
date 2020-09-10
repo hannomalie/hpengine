@@ -28,6 +28,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
@@ -36,6 +37,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.CoroutineScope
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem, Backend<OpenGl> {
@@ -51,8 +53,16 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
 
-    val simpleColorProgramStatic = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl")
-    val simpleColorProgramAnimated = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("ANIMATED", true)))
+    val simpleColorProgramStatic = programManager.getProgram(
+            config.engineDir.resolve("$shaderDirectory/first_pass_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines())
+    val simpleColorProgramAnimated = programManager.getProgram(
+            config.engineDir.resolve("$shaderDirectory/first_pass_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines(Define.getDefine("ANIMATED", true)))
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 

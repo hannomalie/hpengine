@@ -3,7 +3,9 @@ package de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.Directories.Companion.ENGINEDIR_NAME
 import de.hanno.hpengine.engine.directory.Directories.Companion.GAMEDIR_NAME
+import de.hanno.hpengine.engine.directory.EngineAsset
 import de.hanno.hpengine.engine.directory.EngineDirectory
+import de.hanno.hpengine.engine.directory.GameAsset
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.util.gui.Adjustable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
@@ -29,6 +31,9 @@ interface Config {
     val gameDir: GameDirectory
     val width: Int
     val height: Int
+
+    fun EngineAsset(relativePath: String): EngineAsset = engineDir.toAsset(relativePath)
+    fun GameAsset(relativePath: String): GameAsset = gameDir.toAsset(relativePath)
 }
 
 interface IQualityConfig {

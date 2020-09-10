@@ -10,18 +10,17 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.shader.Shader
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
-import java.io.File
 
 class CombinePassRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
 
     private val combineProgram = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve(Shader.directory + "combine_pass_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve(Shader.directory + "combine_pass_fragment.glsl"))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "combine_pass_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("$shaderDirectory/" + "combine_pass_fragment.glsl"))
     )
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
     private val gpuContext = engineContext.gpuContext

@@ -1,6 +1,10 @@
 package de.hanno.hpengine.engine.backend
 
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.EngineAsset
+import de.hanno.hpengine.engine.directory.EngineAsset.Companion.toAsset
+import de.hanno.hpengine.engine.directory.GameAsset
+import de.hanno.hpengine.engine.directory.GameAsset.Companion.toAsset
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
@@ -57,6 +61,14 @@ class EngineContext(
     val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
     val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },
     val materialManager: MaterialManager = MaterialManager(config, backend.eventBus, backend.textureManager, backend.addResourceContext)) {
+
+    inline val engineDir
+        get() = config.engineDir
+    inline val gameDir
+        get() = config.gameDir
+
+    fun EngineAsset(relativePath: String): EngineAsset = config.EngineAsset(relativePath)
+    fun GameAsset(relativePath: String): GameAsset = config.GameAsset(relativePath)
 
     fun update(deltaSeconds: Float) {
         backend.gpuContext.update(deltaSeconds)

@@ -8,7 +8,7 @@ class VertexShader private constructor(override var shaderSource: CodeSource, ov
     override val shaderType: Shader.ShaderType = Shader.ShaderType.VertexShader
 
     companion object {
-        fun load(programManager: OpenGlProgramManager, sourceCode: FileBasedCodeSource, defines: Defines = Defines()): VertexShader {
+        fun load(programManager: OpenGlProgramManager, sourceCode: CodeSource, defines: Defines = Defines()): VertexShader {
             return VertexShader(sourceCode, programManager.loadShader(Shader.ShaderType.VertexShader, sourceCode, defines))
         }
     }

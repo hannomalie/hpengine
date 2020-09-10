@@ -66,7 +66,16 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
 fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
     beforeDraw(this.renderState, program, this.drawCam)
-    for (batch in renderBatches) {
+    for (batch in renderBatches.filter { it.program == null }) {
+        if(batch.materialInfo.materialType == SimpleMaterial.MaterialType.FOLIAGE) {
+            gpuContext.cullFace = false
+        }
+        program.setTextureUniforms(batch.materialInfo.maps)
+        actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines)
+    }
+    for (batch in renderBatches.filter { it.program != null }) {
+        val program = batch.program!!
+        beforeDraw(this.renderState, program, this.drawCam)
         if(batch.materialInfo.materialType == SimpleMaterial.MaterialType.FOLIAGE) {
             gpuContext.cullFace = false
         }

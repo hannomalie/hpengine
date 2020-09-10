@@ -12,7 +12,7 @@ class FragmentShader private constructor(override var shaderSource: CodeSource, 
     override val shaderType: ShaderType = ShaderType.FragmentShader
 
     companion object {
-        fun load(programManager: OpenGlProgramManager, sourceCode: FileBasedCodeSource, defines: Defines = Defines()): FragmentShader {
+        fun load(programManager: OpenGlProgramManager, sourceCode: CodeSource, defines: Defines = Defines()): FragmentShader {
             return FragmentShader(sourceCode, programManager.loadShader(ShaderType.FragmentShader, sourceCode, defines))
         }
     }

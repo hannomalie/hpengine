@@ -9,7 +9,7 @@ class GeometryShader private constructor(override var shaderSource: CodeSource, 
     override val shaderType: ShaderType = ShaderType.GeometryShader
 
     companion object {
-        fun load(programManager: OpenGlProgramManager, sourceCode: FileBasedCodeSource, defines: Defines = Defines()): GeometryShader {
+        fun load(programManager: OpenGlProgramManager, sourceCode: CodeSource, defines: Defines = Defines()): GeometryShader {
             return GeometryShader(sourceCode, programManager.loadShader(ShaderType.GeometryShader, sourceCode, defines))
         }
     }

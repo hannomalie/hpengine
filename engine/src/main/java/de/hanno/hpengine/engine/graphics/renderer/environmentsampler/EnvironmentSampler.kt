@@ -1,11 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer.environmentsampler
 
-import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.event.MaterialChangedEvent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.GpuContext.Companion.exitOnGLError
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight
@@ -31,7 +29,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.graphics.shader.Shader
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -46,6 +45,7 @@ import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -68,7 +68,8 @@ class EnvironmentSampler(val entity: Entity,
                          position: Vector3f?,
                          width: Int, height: Int, probeIndex: Int,
                          private val environmentProbeManager: EnvironmentProbeManager,
-                         programManager: ProgramManager<OpenGl>, config: Config,
+                         programManager: ProgramManager<OpenGl>,
+                         config: Config,
                          textureManager: TextureManager,
                          private val scene: Scene) {
     private val cubeMapProgram: Program
@@ -237,7 +238,7 @@ class EnvironmentSampler(val entity: Entity,
         firstPassDefaultProgram.setUniform("lightDirection", scene.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()!!.getViewDirection())
         firstPassDefaultProgram.setUniform("near", camera.near)
         firstPassDefaultProgram.setUniform("far", camera.far)
-        firstPassDefaultProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
+        firstPassDefaultProgram.setUniform("time", extract.time.toInt())
         for (entity in extract.renderBatchesStatic) {
             draw(extract.vertexIndexBufferStatic.vertexBuffer, extract.vertexIndexBufferStatic.indexBuffer, entity, firstPassDefaultProgram, !entity.isVisibleForCamera, true)
         }
@@ -636,17 +637,31 @@ class EnvironmentSampler(val entity: Entity,
         entity.parent = probe.entity
         val cubeMapCamInitialOrientation = Quaternionf().identity()
         entity.transform.rotate(cubeMapCamInitialOrientation)
-        cubeMapProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl")
-        depthPrePassProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl")
-        cubeMapLightingProgram = programManager.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl")
-        tiledProbeLightingProgram = programManager.getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl")
-        cubemapRadianceProgram = programManager.getComputeProgram("cubemap_radiance_compute.glsl")
-        cubemapRadianceFragmentProgram = programManager.getProgramFromFileNames("passthrough_vertex.glsl", "cubemap_radiance_fragment.glsl")
-        secondPassPointProgram = programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "second_pass_point_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "second_pass_point_fragment.glsl")))
-        secondPassTubeProgram = programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "second_pass_point_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "second_pass_tube_fragment.glsl")))
-        secondPassAreaProgram = programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "second_pass_area_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "second_pass_area_fragment.glsl")))
-        secondPassDirectionalProgram = programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "second_pass_directional_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "second_pass_directional_fragment.glsl")))
-        firstPassDefaultProgram = programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "first_pass_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "first_pass_fragment.glsl")))
+
+        cubeMapProgram = programManager.getProgram(
+                config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
+                config.EngineAsset("$shaderDirectory/cubemap_fragment.glsl"))
+
+        depthPrePassProgram = programManager.getProgram(
+                config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
+                config.EngineAsset("$shaderDirectory/cubemap_fragment.glsl"))
+
+        cubeMapLightingProgram = programManager.getProgram(
+                config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"),
+                config.EngineAsset("$shaderDirectory/cubemap_lighting_fragment.glsl"))
+
+        tiledProbeLightingProgram = programManager.getComputeProgram(config.EngineAsset("$shaderDirectory/tiled_probe_lighting_probe_rendering_compute.glsl"))
+        cubemapRadianceProgram = programManager.getComputeProgram(config.EngineAsset("$shaderDirectory/cubemap_radiance_compute.glsl"))
+
+        cubemapRadianceFragmentProgram = programManager.getProgram(
+                config.EngineAsset("$shaderDirectory/passthrough_vertex.glsl"),
+                config.EngineAsset("$shaderDirectory/cubemap_radiance_fragment.glsl"))
+
+        secondPassPointProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_point_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_point_fragment.glsl"))
+        secondPassTubeProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_point_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_tube_fragment.glsl"))
+        secondPassAreaProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_area_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_area_fragment.glsl"))
+        secondPassDirectionalProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/second_pass_directional_vertex.glsl"), config.EngineAsset("$shaderDirectory/scond_pass_directional_fragment.glsl"))
+        firstPassDefaultProgram = programManager.getProgram(config.EngineAsset("$shaderDirectory/first_pass_vertex.glsl"), config.EngineAsset("$shaderDirectory/frst_pass_fragment.glsl"))
         val cubeMapArrayRenderTarget = environmentProbeManager.cubeMapArrayRenderTarget
         cubeMapView = GL11.glGenTextures()
         cubeMapView1 = GL11.glGenTextures()

@@ -1,49 +1,36 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.Asset
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 interface ProgramManager<BACKEND: BackendType> : Manager {
     val gpuContext: GpuContext<BACKEND>
 
-    fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?, defines: Defines): Program
-    @JvmDefault
-    fun getProgramFromFileNames(vertexShaderFilename: String, fragmentShaderFileName: String?)
-            = getProgramFromFileNames(vertexShaderFilename, fragmentShaderFileName, Defines())
-    @JvmDefault
-    fun getProgramFromFileNames(vertexShaderFilename: String)
-            = getProgramFromFileNames(vertexShaderFilename, null, Defines())
+    fun loadShader(shaderType: Shader.ShaderType, shaderSource: CodeSource, defines: Defines = Defines()): Int
 
-    fun getComputeProgram(computeShaderLocation: String, defines: Defines): ComputeProgram
     @JvmDefault
-    fun getComputeProgram(computeShaderLocation: String) = getComputeProgram(computeShaderLocation, Defines())
+    fun loadShader(shaderType: Shader.ShaderType, shaderSource: CodeSource) = loadShader(shaderType, shaderSource, Defines())
 
-    fun getProgram(vertexShaderSource: FileBasedCodeSource,
-                   fragmentShaderSource: FileBasedCodeSource?,
-                   geometryShaderSource: FileBasedCodeSource?,
+
+    fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines()): ComputeProgram
+    fun getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines()): ComputeProgram = getComputeProgram(codeSourceAsset.toCodeSource(), defines)
+
+    fun getProgram(vertexShaderSource: CodeSource,
+                   fragmentShaderSource: CodeSource? = null,
+                   geometryShaderSource: CodeSource? = null,
                    defines: Defines = Defines()): Program
 
-    @JvmDefault
-    fun getProgram(vertexShaderSource: FileBasedCodeSource,
-                   fragmentShaderSource: FileBasedCodeSource?,
-                   geometryShaderSource: FileBasedCodeSource?) = getProgram(vertexShaderSource, fragmentShaderSource, geometryShaderSource, Defines())
-
-    @JvmDefault
-    fun getProgram(vertexShaderSource: FileBasedCodeSource,
-                   fragmentShaderSource: FileBasedCodeSource?) = getProgram(vertexShaderSource, fragmentShaderSource, null, Defines())
-    @JvmDefault
-    fun getProgram(vertexShaderSource: FileBasedCodeSource,
-                   fragmentShaderSource: FileBasedCodeSource?, defines: Defines) = getProgram(vertexShaderSource, fragmentShaderSource, null, defines)
-    @JvmDefault
-    fun getProgram(vertexShaderSource: FileBasedCodeSource) = getProgram(vertexShaderSource, null, null, Defines())
-
-
-    fun loadShader(shaderType: Shader.ShaderType, shaderSource: FileBasedCodeSource, defines: Defines = Defines()): Int
-
-    @JvmDefault
-    fun loadShader(shaderType: Shader.ShaderType, shaderSource: FileBasedCodeSource) = loadShader(shaderType, shaderSource, Defines())
-
+    fun getProgram(vertexShaderAsset: Asset, fragmentShaderAsset: Asset? = null, geometryShaderAsset: Asset? = null, defines: Defines = Defines()): Program = getProgram(
+            vertexShaderAsset.toCodeSource(),
+            fragmentShaderAsset?.toCodeSource(),
+            geometryShaderAsset?.toCodeSource(),
+            defines
+    )
 }

@@ -1,16 +1,13 @@
 package de.hanno.hpengine.engine.graphics.shader
 
-import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.Reloadable
-import org.apache.commons.io.FileUtils
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL43
-import java.io.File
 import java.io.IOException
 import java.util.logging.Logger
 import java.util.regex.Pattern
@@ -56,7 +53,7 @@ interface Shader : Reloadable {
 
             while (includeMatcher.find()) {
                 val filename = includeMatcher.group(1)
-                val fileToInclude = engineDir.resolve(directory + filename).readText()
+                val fileToInclude = engineDir.resolve("$shaderDirectory/$filename").readText()
                 currentNewLineCount += Util.countNewLines(fileToInclude)
                 shaderFileAsText = shaderFileAsText.replace(String.format("//include\\(%s\\)", filename).toRegex(), fileToInclude)
             }
@@ -80,6 +77,6 @@ interface Shader : Reloadable {
             return shaderInfoLog
         }
 
-        const val directory: String = "assets/shaders/"
     }
 }
+const val shaderDirectory = "assets/shaders"

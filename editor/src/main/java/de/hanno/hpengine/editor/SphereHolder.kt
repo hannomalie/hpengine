@@ -1,7 +1,6 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -17,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirect
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -24,12 +24,16 @@ import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import java.io.File
 
 class SphereHolder(val engine: EngineContext,
-                   val sphereProgram: Program = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
+                   val sphereProgram: Program = engine.programManager.getProgram(
+                           engine.config.engineDir.resolve("$shaderDirectory/mvp_vertex.glsl").toCodeSource(),
+                           "$shaderDirectory/simple_color_fragment.glsl"?.let { engine.config.engineDir.resolve(it).toCodeSource() },
+                           null,
+                           Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager
     val gpuContext = engine.gpuContext

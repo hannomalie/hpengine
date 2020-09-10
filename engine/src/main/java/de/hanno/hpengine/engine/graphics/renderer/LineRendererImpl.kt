@@ -6,26 +6,31 @@ import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.drawDebugLines
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import java.util.ArrayList
 import java.util.EnumSet
 import java.util.function.Consumer
 import kotlin.math.min
 
-class LineRendererImpl(engineContext: EngineContext) : LineRenderer {
+class LineRendererImpl(val engineContext: EngineContext) : LineRenderer {
 
     private val programManager: ProgramManager<OpenGl> = engineContext.programManager
     private val linePoints = ArrayList<Vector3fc>()
-    private val linesProgram = programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl")
+    private val linesProgram = programManager.getProgram(
+            engineContext.config.engineDir.resolve("assets/shaders/mvp_vertex.glsl").toCodeSource(),
+            "assets/shaders/simple_color_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines())
 
 //    TODO: This has to be implemented in context
     private val maxLineWidth = engineContext.backend.gpuContext.window.invoke { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }

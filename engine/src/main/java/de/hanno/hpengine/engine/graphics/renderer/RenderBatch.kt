@@ -1,11 +1,11 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import org.joml.Vector3f
-import org.joml.Vector3fc
 import java.util.ArrayList
 
 class RenderBatch(
@@ -26,7 +26,8 @@ class RenderBatch(
         var animated : Boolean = false,
         var boundingSphereRadius: Float = 0.0f,
         var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
-        var entityBufferIndex: Int = 0) {
+        var entityBufferIndex: Int = 0,
+        var program: Program? = null) {
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount

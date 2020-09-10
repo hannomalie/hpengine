@@ -37,6 +37,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExte
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
@@ -45,6 +46,7 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -104,7 +106,11 @@ class EditorComponents(val engineContext: EngineContext,
     val boxRenderer = SimpleModelRenderer(engineContext)
     val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
     val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/torus.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
-    val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
+    val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.programManager.getProgram(
+            config.engineDir.resolve("$shaderDirectory/mvp_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/environmentprobe_color_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
 

@@ -28,14 +28,15 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
@@ -74,7 +75,7 @@ class ProbeRenderStrategy(private val engineContext: EngineContext) {
             name = "Probes"
     )
 
-    private var probeProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cube_fragment.glsl")), FileBasedCodeSource(File(Shader.directory + "probe_cubemap_geometry.glsl")))
+    private var probeProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File("$shaderDirectory/" + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File("$shaderDirectory/" + "probe_cube_fragment.glsl")), FileBasedCodeSource(File("$shaderDirectory/" + "probe_cubemap_geometry.glsl")))
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
     private val visibilityValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()
@@ -108,7 +109,7 @@ class ProbeRenderStrategy(private val engineContext: EngineContext) {
                 gpuContext.disable(GlCap.CULL_FACE)
                 gpuContext.depthMask = true
                 gpuContext.clearColor(0f,0f,0f,0f)
-                cubeMapRenderTarget.use(engineContext.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
+                cubeMapRenderTarget.use(engineContext.gpuContext, true)
                 gpuContext.viewPort(0, 0, resolution, resolution)
 
                 val probePosition = Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).sub(Vector3f(dimensionHalf.toFloat())).mul(extent)
@@ -189,7 +190,11 @@ class EvaluateProbeRenderExtension(val engineContext: EngineContext): RenderExte
 
     private val probeRenderStrategy = ProbeRenderStrategy(engineContext)
 
-    val evaluateProbeProgram = engineContext.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe_fragment.glsl", Defines())
+    val evaluateProbeProgram = engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("$shaderDirectory/passthrough_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/evaluate_probe_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines())
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)

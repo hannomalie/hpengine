@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.camera.Camera
@@ -23,23 +22,21 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL31
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
-import java.io.File
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                               useFrustumCulling: Boolean = true,
@@ -48,11 +45,11 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "occlusion_culling1_vertex.glsl")))
-    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(FileBasedCodeSource(File(Shader.directory + "occlusion_culling2_vertex.glsl")))
+    private var occlusionCullingPhase1Vertex: Program = engine.run { programManager.getProgram(EngineAsset("$shaderDirectory/occlusion_culling1_vertex.glsl")) }
+    private var occlusionCullingPhase2Vertex: Program = engine.run { programManager.getProgram(EngineAsset("$shaderDirectory/occlusion_culling2_vertex.glsl")) }
 
-    val appendDrawcommandsProgram = engine.programManager.getProgramFromFileNames("append_drawcommands_vertex.glsl")
-    val appendDrawCommandComputeProgram = engine.programManager.getComputeProgram("append_drawcommands_compute.glsl")
+    val appendDrawCommandsProgram = engine.run { programManager.getProgram(EngineAsset("append_drawcommands_vertex.glsl")) }
+    val appendDrawCommandsComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/append_drawcommands_compute.glsl")) }
 
 
     private val highZBuffer = RenderTarget(
@@ -106,11 +103,9 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cullAndRender("Cull&Render Phase1", Pipeline.CoarseCullingPhase.ONE)
     }
 
-    private val highZProgram = engine.programManager.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
+    private val highZProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/highZ_compute.glsl"), Defines(Define.getDefine("SOURCE_CHANNEL_R", true))) }
 
-    private fun renderHighZMap() {
-        renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
-    }
+    private fun renderHighZMap() = renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
 
     open var depthMap = engine.deferredRenderingBuffer.visibilityMap
 
@@ -176,7 +171,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase, cullCam)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
+        val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandsComputeProgram else appendDrawCommandsProgram
 
         profiled("Buffer compaction") {
 
@@ -202,7 +197,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                     setUniform("maxDrawCommands", commandCount)
                     if(engine.config.debug.isUseComputeShaderDrawCommandAppend) {
-                        appendDrawCommandComputeProgram.dispatchCompute(commandCount, 1, 1)
+                        appendDrawCommandsComputeProgram.dispatchCompute(commandCount, 1, 1)
                     } else {
                         val invocationsPerCommand : Int = 4096//commands.map { it.primCount }.max()!!//4096
                         GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commandCount)

@@ -30,11 +30,13 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
@@ -90,8 +92,16 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val sidePanel = editorComponents.editor.sidePanel
     val lineRenderer = LineRendererImpl(editorComponents.engineContext)
 
-    val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
-    val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
+    val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("$shaderDirectory/first_pass_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/first_pass_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
+    val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("$shaderDirectory/first_pass_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/first_pass_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
     var axisDragged: AxisConstraint = AxisConstraint.None
 

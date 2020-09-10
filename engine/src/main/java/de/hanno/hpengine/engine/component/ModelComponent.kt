@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
@@ -28,7 +29,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
 
 
-class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
+class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program? = null) : BaseComponent(entity) {
     val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {
@@ -142,7 +143,9 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
                                   materialManager: MaterialManager,
                                   modelComponentManager: ModelComponentManager,
                                   gameDirectory: AbstractDirectory,
-                                  aabb: AABBData? = null): ModelComponent {
+                                  aabb: AABBData? = null,
+                                  program: Program? = null): ModelComponent {
+
             val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
                 LoadModelCommand(file,
                         name,
@@ -151,7 +154,7 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
                         this).execute().entities.first().components.firstIsInstance<ModelComponent>().model
             }
 
-            val modelComponent = ModelComponent(this, loadedModel, loadedModel.material)
+            val modelComponent = ModelComponent(this, loadedModel, loadedModel.material, program)
             addComponent(modelComponent)
             aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
             return modelComponent

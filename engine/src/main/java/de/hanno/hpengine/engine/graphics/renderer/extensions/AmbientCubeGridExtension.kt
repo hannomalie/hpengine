@@ -25,7 +25,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -35,6 +36,7 @@ import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -54,7 +56,11 @@ class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtensi
 
     private var renderedInCycle: Long = -1
     val probeRenderer = ProbeRenderer(engineContext)
-    val evaluateProbeProgram = engineContext.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe.glsl")
+    val evaluateProbeProgram = engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("$shaderDirectory/passthrough_vertex.glsl").toCodeSource(),
+            "$shaderDirectory/evaluate_probe.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines())
 
     private var renderCounter = 0
     private val probesPerFrame = 12.apply {
@@ -93,7 +99,7 @@ class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtensi
         evaluateProbeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
+        evaluateProbeProgram.setUniform("time", renderState.time.toInt())
         evaluateProbeProgram.setUniform("probeDimensions", probeRenderer.probeDimensions)
         val sceneCenter = Vector3f(probeRenderer.sceneMin).add(Vector3f(probeRenderer.sceneMax).sub(probeRenderer.sceneMin).mul(0.5f))
         evaluateProbeProgram.setUniform("sceneCenter", sceneCenter)
@@ -159,9 +165,9 @@ class ProbeRenderer(private val engine: EngineContext) {
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(
-            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
-            FileBasedCodeSource(File(Shader.directory + "environmentprobe_cube_fragment.glsl")),
-            FileBasedCodeSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
+            FileBasedCodeSource(File("$shaderDirectory/" + "pointlight_shadow_cubemap_vertex.glsl")),
+            FileBasedCodeSource(File("$shaderDirectory/" + "environmentprobe_cube_fragment.glsl")),
+            FileBasedCodeSource(File("$shaderDirectory/" + "pointlight_shadow_cubemap_geometry.glsl")))
 
     val cubeMapRenderTarget = RenderTarget(
             gpuContext = engine.gpuContext,

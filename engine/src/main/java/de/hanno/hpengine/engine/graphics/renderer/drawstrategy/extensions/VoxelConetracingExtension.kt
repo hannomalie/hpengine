@@ -25,11 +25,10 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.IndirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
+import de.hanno.hpengine.engine.graphics.shader.shaderDirectory
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -37,7 +36,6 @@ import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
@@ -48,7 +46,6 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_RED_INTEGER
 import org.lwjgl.opengl.GL42
-import java.io.File
 import java.util.function.Consumer
 import kotlin.math.max
 
@@ -92,16 +89,26 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer: Program = this.engine.programManager.getProgram(
-            FileBasedCodeSource(engine.config.engineDir.resolve(Shader.directory + "voxelize_vertex.glsl")),
-            FileBasedCodeSource(engine.config.engineDir.resolve(Shader.directory + "voxelize_fragment.glsl")),
-            FileBasedCodeSource(engine.config.engineDir.resolve(Shader.directory + "voxelize_geometry.glsl")))
-    private val voxelConeTraceProgram: Program = engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
-    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
-    private val texture3DMipMapComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
-    private val clearDynamicVoxelsComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl")
-    private val injectLightComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
-    private val injectMultipleBounceLightComputeProgram: ComputeProgram = engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
+    private val voxelizer: Program = engine.run {
+        programManager.getProgram(
+            EngineAsset("$shaderDirectory/voxelize_vertex.glsl"),
+            EngineAsset("$shaderDirectory/voxelize_fragment.glsl"),
+            EngineAsset("$shaderDirectory/voxelize_geometry.glsl")
+        )
+    }
+
+    private val voxelConeTraceProgram: Program = engine.run {
+        programManager.getProgram(
+            EngineAsset("$shaderDirectory/passthrough_vertex.glsl"),
+            EngineAsset("$shaderDirectory/voxel_cone_trace_fragment.glsl")
+        )
+    }
+
+    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_mipmap_alphablend_compute.glsl")) }
+    private val texture3DMipMapComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_mipmap_compute.glsl")) }
+    private val clearDynamicVoxelsComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_clear_dynamic_voxels_compute.glsl")) }
+    private val injectLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_inject_light_compute.glsl")) }
+    private val injectMultipleBounceLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("$shaderDirectory/texture3D_inject_bounce_light_compute.glsl")) }
 
     private var lightInjectedFramesAgo: Int = 0
 

@@ -23,6 +23,8 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
 
+    var time = System.currentTimeMillis()
+
     val directionalLightState = PersistentMappedStructBuffer(1, gpuContext, { DirectionalLightState() })
 
     val lightState = LightState(gpuContext)
