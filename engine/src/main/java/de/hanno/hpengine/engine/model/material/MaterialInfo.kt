@@ -47,6 +47,7 @@ interface MaterialInfo {
     val parallaxScale: Float
     val parallaxBias: Float
     var materialType: MaterialType
+    var cullBackFaces: Boolean
     val transparencyType: TransparencyType
     val textureLess: Boolean
     val maps: Map<MAP, Texture>
@@ -71,6 +72,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override var name: Strin
                                                         override var parallaxBias: Float = 0.02f,
                                                         override var materialType: MaterialType = DEFAULT,
                                                         override var transparencyType: TransparencyType = TransparencyType.BINARY,
+                                                        override var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
                                                         override val maps: MutableMap<MAP, Texture> = hashMapOf(),
                                                         override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
 

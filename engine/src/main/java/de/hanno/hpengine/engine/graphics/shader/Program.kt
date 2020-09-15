@@ -69,18 +69,8 @@ class Program(
             clearUniforms()
 
             vertexShader = VertexShader.load(programManager, vertexShaderSource, defines)
-
-            try {
-                fragmentShader = fragmentShaderSource?.let { FragmentShader.load(programManager, it, defines) }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            try {
-                geometryShader = geometryShaderSource?.let { GeometryShader.load(programManager, it, defines) }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            fragmentShader = fragmentShaderSource?.let { FragmentShader.load(programManager, it, defines) }
+            geometryShader = geometryShaderSource?.let { GeometryShader.load(programManager, it, defines) }
 
             attachShader(vertexShader)
             fragmentShader?.let { attachShader(it) }
@@ -142,36 +132,30 @@ class Program(
     }
 
     override fun reload() = try {
-        val result = gpuContext.invoke {
+        gpuContext.invoke {
             detachShader(vertexShader)
-            if (fragmentShader != null) {
-                detachShader(fragmentShader!!)
-                fragmentShader!!.reload()
+            fragmentShader?.let { fragmentShader ->
+                detachShader(fragmentShader)
+                fragmentShader.reload()
             }
-            if (geometryShader != null) {
-                detachShader(geometryShader!!)
-                geometryShader!!.reload()
+            geometryShader?.let { geometryShader ->
+                detachShader(geometryShader)
+                geometryShader.reload()
             }
             vertexShader.reload()
-            load()
-            true
-        }
 
-        if (result == java.lang.Boolean.TRUE) {
-            LOGGER.info("Program reloaded")
-        } else {
-            LOGGER.severe("Program not reloaded")
+            load()
         }
     } catch (e: Exception) {
         e.printStackTrace()
     }
 
     override val name: String = StringJoiner(", ")
-            .add(if (fragmentShaderSource != null) fragmentShaderSource.name else "")
+            .add(fragmentShaderSource?.name ?: "")
             .add(vertexShaderSource.name).toString()
 
     override fun equals(other: Any?): Boolean {
-        if (other !is Program || other == null) {
+        if (other !is Program) {
             return false
         }
 

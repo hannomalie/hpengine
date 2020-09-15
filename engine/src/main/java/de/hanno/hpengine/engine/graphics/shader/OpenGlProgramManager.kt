@@ -10,6 +10,7 @@ import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.StringBasedCodeSource
+import de.hanno.hpengine.util.ressources.WrappedCodeSource
 import de.hanno.hpengine.util.ressources.hasChanged
 import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.opengl.GL11
@@ -39,18 +40,18 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                             defines: Defines): Program {
 
         return gpuContext.invoke {
-            val program = Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines)
-            programsCache.add(program)
-            eventBus.register(program)
-            program
+            Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines).apply {
+                programsCache.add(this)
+                eventBus.register(this)
+            }
         }
     }
 
     var programsSourceCache: WeakHashMap<Shader, String> = WeakHashMap()
-    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
+    override fun update(deltaSeconds: Float) {
         programsCache.forEach { program ->
             program.shaders.forEach { shader ->
-                if(shader.shaderSource is StringBasedCodeSource) {
+                if(shader.shaderSource is StringBasedCodeSource || shader.shaderSource is WrappedCodeSource) {
                     programsSourceCache.putIfAbsent(shader, shader.shaderSource.source)
                     if(shader.shaderSource.hasChanged(programsSourceCache[shader]!!)) program.reload()
                 }

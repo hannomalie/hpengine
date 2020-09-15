@@ -3,13 +3,17 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.GIVolumeSystem
+import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
@@ -19,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -29,7 +34,11 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.programManager
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.util.ressources.enhanced
 import org.joml.Vector3f
 
 interface Extension {
@@ -72,6 +81,7 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
     val clustersComponentExtension = ClustersComponentExtension(engineContext).add()
     val inputComponentExtension = InputComponentExtension(engineContext).add()
     val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
+    val skyboxExtension = SkyboxExtension(engineContext).add()
 }
 class RenderManagerExtension(val engineContext: EngineContext): Extension {
     override val manager = RenderManager(engineContext)
@@ -136,6 +146,47 @@ class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
     private val environmentProbeManager = EnvironmentProbeManager(engineContext)
     override val manager = environmentProbeManager
     override val renderSystem = environmentProbeManager
+}
+class SkyboxExtension(val engineContext: EngineContext): Extension {
+    private val firstpassProgramVertexSource = engineContext.config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
+    private val firstpassProgramFragmentSource = engineContext.config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
+
+    private val simpleColorProgramStatic = engineContext.programManager.getProgram(
+            firstpassProgramVertexSource,
+            firstpassProgramFragmentSource.enhanced {
+                replace(
+                        "//END",
+                        """
+                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
+                        """.trimIndent()
+                )
+            }
+    )
+    init {
+        engineContext.gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, engineContext.textureManager.cubeMap.id)
+    }
+    override fun Scene.onInit() {
+        entity("Skybox") {
+            modelComponent(
+                    name = "Plane",
+                    file = "assets/models/skybox.obj",
+                    materialManager = this@onInit.materialManager,
+                    modelComponentManager = this@onInit.modelComponentManager,
+                    gameDirectory = engineContext.config.directories.gameDir,
+                    program = simpleColorProgramStatic
+            ).apply {
+                material.materialInfo.apply {
+                    materialType = SimpleMaterial.MaterialType.UNLIT
+                    cullBackFaces = false
+                }
+            }
+            customComponent { scene, _ ->
+                val camPosition = scene.activeCamera.getPosition()
+                this@entity.transform.identity().scaleAroundLocal(1000f, camPosition.x, camPosition.y, camPosition.z)
+                this@entity.transform.translate(camPosition)
+            }
+        }
+    }
 }
 
 class PointLightExtension(val engineContext: EngineContext): Extension {

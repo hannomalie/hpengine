@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -24,8 +25,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
@@ -34,7 +38,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
     val materialManager: MaterialManager = engineContext.materialManager
     private val skyBoxProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/mvp_vertex.glsl").toCodeSource(),
-            "shaders/skybox.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            engineContext.config.engineDir.resolve("shaders/skybox.glsl").toCodeSource(),
             null,
             Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
 
@@ -76,6 +80,11 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
             meshIndex = 0
     )
 
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+        skyBoxEntity.run {
+            update(scene, deltaSeconds)
+        }
+    }
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
 
@@ -87,8 +96,9 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
         gpuContext.disable(GlCap.CULL_FACE)
         gpuContext.disable(GlCap.BLEND)
         gpuContext.depthMask = true
-        skyBoxEntity.transform.identity().scale(10f)
-        skyBoxEntity.transform.setTranslation(camera.getPosition())
+        val camPosition = camera.getPosition()
+        skyBoxEntity.transform.identity().scaleAroundLocal(1000f, camPosition.x, camPosition.y, camPosition.z)
+        skyBoxEntity.transform.translate(camPosition)
         skyBoxProgram.use()
         skyBoxProgram.setUniform("eyeVec", camera.getViewDirection())
         val translation = Vector3f()

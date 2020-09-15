@@ -38,6 +38,7 @@ import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.CoroutineScope
+import org.lwjgl.opengl.GL11
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem, Backend<OpenGl> {
     val window: Window<OpenGl> = engineContext.window
@@ -90,7 +91,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
     val extensions: MutableList<RenderExtension<OpenGl>> = mutableListOf(
         shadowMapExtension,
-        SkyBoxRenderExtension(engineContext),
+//        SkyBoxRenderExtension(engineContext),
         ForwardRenderExtension(engineContext),
         directionalLightSecondPassExtension,
 //        PointLightSecondPassExtension(engineContext),
@@ -183,5 +184,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
             println("Not able to render texture")
         }
 
+        // TODO: This should not be needed
+        GL11.glFinish()
     }
 }

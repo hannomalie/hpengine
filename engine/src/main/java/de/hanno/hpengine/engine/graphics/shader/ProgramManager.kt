@@ -13,6 +13,7 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSou
 interface ProgramManager<BACKEND: BackendType> : Manager {
     val gpuContext: GpuContext<BACKEND>
 
+    fun update(deltaSeconds: Float)
     fun loadShader(shaderType: Shader.ShaderType, shaderSource: CodeSource, defines: Defines = Defines()): Int
 
     @JvmDefault

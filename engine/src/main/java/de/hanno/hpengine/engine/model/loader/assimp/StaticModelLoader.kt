@@ -111,7 +111,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
     }
     private fun AIMesh.processMesh(materials: List<Material>): StaticMesh {
         val positions = retrievePositions()
-        val normals = retrieveNormals()
+        val normals = retrieveNormals().let { if(it.isEmpty()) (positions.indices).map { Vector3f(0f,1f,0f) } else it }
         val texCoords = retrieveTexCoords()
         val indices = retrieveFaces()
         val materialIdx = mMaterialIndex()

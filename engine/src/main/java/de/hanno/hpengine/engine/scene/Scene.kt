@@ -107,6 +107,11 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             }
         })
         engineContext.eventBus.register(this)
+        baseExtensions.forEach {
+            it.run {
+                onInit()
+            }
+        }
     }
 
     fun restoreWorldCamera() {

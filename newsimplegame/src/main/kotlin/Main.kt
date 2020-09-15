@@ -1,6 +1,7 @@
 import de.hanno.hpengine.editor.EngineWithEditor
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import scenes.lotsOfCubesScene
 import scenes.lotsOfPlanesScene
@@ -13,7 +14,8 @@ object Game {
 
         val config = ConfigImpl(
             Directories(
-                gameDir = GameDirectory<Game>(File("/home/tenter/workspace/hpengine/newsimplegame/src/main/resources/game"))
+                    gameDir = GameDirectory<Game>(File("/home/tenter/workspace/hpengine/newsimplegame/src/main/resources/game")),
+                    engineDir = EngineDirectory(File("/home/tenter/workspace/hpengine/engine/src/main/resources/hp"))
             )
         )
         val (engine, editor) = EngineWithEditor(config)

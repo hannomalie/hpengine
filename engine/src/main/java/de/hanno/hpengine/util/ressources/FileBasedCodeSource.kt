@@ -37,4 +37,17 @@ class FileBasedCodeSource(val file: File) : CodeSource {
     }
 }
 
+class WrappedCodeSource(val underlying: FileBasedCodeSource,
+                        override val name: String = underlying.name + System.currentTimeMillis().toString(),
+                        val enhancer: String.() -> String): CodeSource {
+
+    override val source: String
+        get() = underlying.source.enhancer()
+
+    override fun load() = underlying.load()
+}
+
+fun FileBasedCodeSource.enhanced(name: String = this.name + System.currentTimeMillis().toString(),
+                                 enhancer: String.() -> String) = WrappedCodeSource(this, name, enhancer)
+
 fun CodeSource.hasChanged(reference: String): Boolean = reference != source

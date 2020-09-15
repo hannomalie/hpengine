@@ -72,6 +72,7 @@ class EngineContext(
 
     fun update(deltaSeconds: Float) {
         backend.gpuContext.update(deltaSeconds)
+        backend.programManager.update(deltaSeconds)
     }
 
     fun extract(scene: Scene, renderState: RenderState) {

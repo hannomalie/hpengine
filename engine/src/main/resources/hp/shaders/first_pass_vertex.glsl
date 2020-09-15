@@ -9,6 +9,23 @@ uniform int entityIndex = 0;
 uniform vec3 eyePosition;
 uniform int time = 0;
 
+#ifdef BINDLESSTEXTURES
+#else
+layout(binding=0) uniform sampler2D diffuseMap;
+uniform bool hasDiffuseMap = false;
+layout(binding=1) uniform sampler2D normalMap;
+uniform bool hasNormalMap = false;
+layout(binding=2) uniform sampler2D specularMap;
+uniform bool hasSpecularMap = false;
+layout(binding=3) uniform sampler2D occlusionMap;
+uniform bool hasOcclusionMap = false;
+layout(binding=4) uniform sampler2D heightMap;
+uniform bool hasHeightMap = false;
+////
+layout(binding=7) uniform sampler2D roughnessMap;
+uniform bool hasRoughnessMap = false;
+
+#endif
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -46,6 +63,8 @@ in ivec4 in_JointIndices;
 
 flat out VertexShaderFlatOutput vertexShaderFlatOutput;
 out VertexShaderOutput vertexShaderOutput;
+
+//include(globals.glsl)
 
 void main(void) {
 
@@ -120,7 +139,11 @@ void main(void) {
 	positionModel = initPos;
 #endif
 
+	vec4 color = in_Color;
+	vec2 texCoord = vertex.texCoord.xy;
+
 	vec4 position_world = modelMatrix * positionModel;
+	//AFTER_POSITION
 
 	mat4 mvp = (viewProjectionMatrix * modelMatrix);
 
@@ -133,8 +156,6 @@ void main(void) {
 	position_clip_uv.xyz += 1;
 	position_clip_uv.xyz *= 0.5;
 
-	vec4 color = in_Color;
-	vec2 texCoord = vertex.texCoord.xy;
 
 
 	vec3 normalVec = vertex.normal.xyz;
@@ -167,5 +188,5 @@ void main(void) {
     vertexShaderFlatOutput.materialIndex = materialIndex;
 
     gl_Position = position_clip;
-
+	//END
 }

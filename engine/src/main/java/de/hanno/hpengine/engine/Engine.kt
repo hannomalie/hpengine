@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.util.fps.FPSCounter
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -113,6 +114,8 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
 
     fun EngineAsset(relativePath: String): EngineAsset = config.EngineAsset(relativePath)
     fun GameAsset(relativePath: String): GameAsset = config.GameAsset(relativePath)
+    val firstpassProgramVertexSource = EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
+    val firstpassProgramFragmentSource = EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 
     companion object {
 
