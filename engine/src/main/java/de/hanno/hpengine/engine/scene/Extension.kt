@@ -178,6 +178,7 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                 material.materialInfo.apply {
                     materialType = SimpleMaterial.MaterialType.UNLIT
                     cullBackFaces = false
+                    isShadowCasting = false
                 }
             }
             customComponent { scene, _ ->

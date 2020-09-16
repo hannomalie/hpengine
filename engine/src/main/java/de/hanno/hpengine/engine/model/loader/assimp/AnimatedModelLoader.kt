@@ -37,7 +37,9 @@ import java.nio.file.Path
 import java.util.ArrayList
 import kotlin.math.max
 
-val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_LimitBoneWeights + Assimp.aiProcess_GenBoundingBoxes
+val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices +
+        Assimp.aiProcess_LimitBoneWeights + Assimp.aiProcess_GenBoundingBoxes + Assimp.aiProcess_GenNormals +
+        Assimp.aiProcess_GenNormals
 
 class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
     fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): AnimatedModel {

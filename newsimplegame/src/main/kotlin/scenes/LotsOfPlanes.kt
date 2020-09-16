@@ -9,11 +9,17 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.programManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.scene
+import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.enhanced
+import kotlinx.coroutines.CoroutineScope
+import org.joml.Vector2i
 import org.joml.Vector3f
+import org.joml.Vector3i
 import kotlin.random.Random
 
 val Engine.lotsOfPlanesScene
@@ -21,15 +27,27 @@ val Engine.lotsOfPlanesScene
         entities {
             entity("Ground") {
                 modelComponent(
-                    name = "Ground",
-                    file = "assets/models/plane.obj",
-                    materialManager = scene.materialManager,
-                    modelComponentManager = scene.modelComponentManager,
-                    gameDirectory = engineContext.config.directories.gameDir
+                        name = "Ground",
+                        file = "assets/models/plane.obj",
+                        materialManager = scene.materialManager,
+                        modelComponentManager = scene.modelComponentManager,
+                        gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                 }
                 transform.scale(500f)
+            }
+            entity("Blade") {
+                modelComponent(
+                        name = "Blade",
+                        file = "assets/models/grass2/grass01.obj",
+                        materialManager = scene.materialManager,
+                        modelComponentManager = scene.modelComponentManager,
+                        gameDirectory = engineContext.config.directories.gameDir
+                ).apply {
+                    material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
+                }
+                transform.scale(2f)
             }
 
             entity("Grass") {
@@ -108,36 +126,38 @@ val Engine.lotsOfPlanesScene
                     material.materialInfo.put(SimpleMaterial.MAP.HEIGHT, engineContext.textureManager.getTexture("assets/blender_grass/Low/Grass_height.png", false))
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                 }
-                val clusterWidth = 4
-                val clusterCountPerDimension = 4
-                val clusterCountPerDimensionHalf = clusterCountPerDimension / 2
-                val instancesPerCluster = 800
-                transform.scale(10f)
 
-                addComponent(ClustersComponent(this@entity).apply {
-
-                    val clusterCenters = (-clusterCountPerDimensionHalf until clusterCountPerDimensionHalf).asSequence().flatMap { x ->
-                        (-clusterCountPerDimensionHalf until clusterCountPerDimensionHalf).asSequence().map { z ->
-                            Vector3f(x * clusterWidth.toFloat(), 0f, z * clusterWidth.toFloat())
-                        }
-                    }
-                    val clusters = clusterCenters.map { clusterCenter ->
-                        Cluster().also {
-                            val instances = (0 until instancesPerCluster).map {
-                                val instancePosition = Vector3f(Random.nextFloat() - 0.5f, 0f, Random.nextFloat() - 0.5f).mul(clusterWidth.toFloat()).add(clusterCenter)
-                                val transformation = Transform().apply {
-                                    scale(Vector3f(10f).add(Vector3f(Random.nextFloat() * 0.1f, Random.nextFloat(), Random.nextFloat() * 0.1f)))
-                                    rotateLocal(Math.toRadians(180.0 * Random.nextDouble()).toFloat(), 0f, 1f, 0f)
-                                    translate(instancePosition)
-                                }
-                                Instance(this@entity, transformation, spatial = StaticTransformSpatial(transformation, this@entity.getComponent(ModelComponent::class.java)!!))
+                val instancesPerCluster = 400
+                val center = Vector3f()
+                val size = Vector3f(100f, 10f, 100f)
+                val startCorner = Vector3f(center).sub(Vector3f(size).mul(0.5f))
+                val cellDimension = Vector3f(2f, 10f, 2f)
+                val cellCount = Vector3f(size.x / cellDimension.x, size.y / cellDimension.y, size.z / cellDimension.z)
+                val clusters = (0 until cellCount.x.toInt()).flatMap { x ->
+                    (0 until cellCount.y.toInt()).flatMap { y ->
+                        (0 until cellCount.z.toInt()).map { z ->
+                            val min = Vector3f(cellDimension).mul(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()))
+                            Cluster().apply {
+                                addAll((0 until instancesPerCluster).map {
+                                    val position = Vector3f(Random.nextFloat()*cellDimension.x, size.y*0.5f, Random.nextFloat()*cellDimension.z).add(startCorner).add(min)
+                                    val transformation = Transform().apply {
+                                        scale(Vector3f(10f).add(Vector3f(Random.nextFloat() * 0.1f, Random.nextFloat(), Random.nextFloat() * 0.1f)))
+                                        rotateAround(Vector3f(0f, 1f, 0f), Math.toRadians(180.0 * Random.nextDouble()).toFloat(), position)
+                                        translate(position)
+                                    }
+                                    val spatial1 = object: StaticTransformSpatial(transformation, this@entity.getComponent(ModelComponent::class.java)!!) {
+                                        init {
+                                            boundingVolume.recalculate(transformation)
+                                        }
+                                        override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) { }
+                                    }
+                                    Instance(this@entity, transformation, spatial = spatial1)
+                                })
                             }
-                            it.addAll(instances)
                         }
                     }
-
-                    addClusters(clusters.toList())
-                })
+                }
+                addComponent(ClustersComponent(this@entity).apply { addClusters(clusters) })
             }
         }
     }

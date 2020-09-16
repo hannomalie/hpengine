@@ -37,6 +37,7 @@ class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMA
 }
 
 interface MaterialInfo {
+    var isShadowCasting: Boolean
     var name: String
     val environmentMapType: ENVIRONMENTMAP_TYPE
     val diffuse: Vector3f
@@ -73,8 +74,9 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override var name: Strin
                                                         override var materialType: MaterialType = DEFAULT,
                                                         override var transparencyType: TransparencyType = TransparencyType.BINARY,
                                                         override var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
-                                                        override val maps: MutableMap<MAP, Texture> = hashMapOf(),
-                                                        override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED) : MaterialInfo, Serializable {
+                                                        override val maps: MutableMap<MAP, Texture> = mutableMapOf(),
+                                                        override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
+                                                        override var isShadowCasting: Boolean = true) : MaterialInfo, Serializable {
 
     override fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
     override fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)

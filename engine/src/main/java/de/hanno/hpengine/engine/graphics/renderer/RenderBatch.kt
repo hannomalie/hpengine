@@ -29,6 +29,9 @@ class RenderBatch(
         var entityBufferIndex: Int = 0,
         var program: Program? = null) {
 
+    val isShadowCasting: Boolean
+        get() = materialInfo.isShadowCasting
+
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount
 

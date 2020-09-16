@@ -57,7 +57,7 @@ class ModelComponentSystem(val engine: EngineContext,
             }
         }
         cacheEntityIndices()
-        updateGpuEntitiesArray()
+        updateGpuEntitiesArray(scene.currentCycle)
         updateGpuJointsArray()
     }
 
@@ -89,7 +89,7 @@ class ModelComponentSystem(val engine: EngineContext,
         }
     }
 
-    private fun updateGpuEntitiesArray() {
+    private fun updateGpuEntitiesArray(currentCycle: Long) {
         var counter = 0
 
         gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
@@ -123,25 +123,48 @@ class ModelComponentSystem(val engine: EngineContext,
                     counter++
                     target = this.gpuEntitiesArray.getAtIndex(counter)
 
-                    for (instance in entity.instances) {
-                        val instanceMatrix = instance.transform.transformation
-                        val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
+                    for(cluster in entity.clusters) {
+                        if(cluster.recalculatedInCycle >= currentCycle-1) {
+                            for (instance in cluster) {
+                                target = this.gpuEntitiesArray.getAtIndex(counter)
+                                val instanceMatrix = instance.transform.transformation
+                                val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
 
-                        target.materialIndex = instanceMaterialIndex
-                        target.update = entity.updateType.ordinal
-                        target.meshBufferIndex = entityBufferIndex + meshIndex
-                        target.entityIndex = entity.index
-                        target.meshIndex = meshIndex
-                        target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
-                        target.baseJointIndex = allocation.baseJointIndex
-                        target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
-                        target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                        val boundingVolume = instance.spatial.boundingVolume
-                        target.setTrafoAndBoundingVolume(instanceMatrix, boundingVolume)
+                                target.materialIndex = instanceMaterialIndex
+                                target.update = entity.updateType.ordinal
+                                target.meshBufferIndex = entityBufferIndex + meshIndex
+                                target.entityIndex = entity.index
+                                target.meshIndex = meshIndex
+                                target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
+                                target.baseJointIndex = allocation.baseJointIndex
+                                target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
+                                target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
+                                target.setTrafoAndBoundingVolume(instanceMatrix, instance.spatial.boundingVolume)
 
-                        counter++
-                        target = this.gpuEntitiesArray.getAtIndex(counter)
+                                counter++
+                            }
+                        } else {
+                            counter += cluster.size
+                        }
                     }
+//                    for (instance in entity.instances) {
+//                        target = this.gpuEntitiesArray.getAtIndex(counter)
+//                        val instanceMatrix = instance.transform.transformation
+//                        val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
+//
+//                        target.materialIndex = instanceMaterialIndex
+//                        target.update = entity.updateType.ordinal
+//                        target.meshBufferIndex = entityBufferIndex + meshIndex
+//                        target.entityIndex = entity.index
+//                        target.meshIndex = meshIndex
+//                        target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
+//                        target.baseJointIndex = allocation.baseJointIndex
+//                        target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
+//                        target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
+//                        target.setTrafoAndBoundingVolume(instanceMatrix, instance.spatial.boundingVolume)
+//
+//                        counter++
+//                    }
 
                     // TODO: This has to be the outer loop i think?
                     if (entity.hasParent) {

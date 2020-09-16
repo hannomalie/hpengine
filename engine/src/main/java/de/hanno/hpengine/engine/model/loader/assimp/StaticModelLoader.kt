@@ -44,7 +44,7 @@ import java.util.ArrayList
 import kotlin.math.max
 
 
-const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices
+const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_GenNormals + Assimp.aiProcess_GenSmoothNormals
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
     fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {

@@ -82,7 +82,9 @@ class BatchingSystem {
                 modelComponent.entity.clusters.forEachIndexed { index, cluster ->
                     val intersection = camera.frustum.frustumIntersection.intersectAab(cluster.boundingVolume.min, cluster.boundingVolume.max)
                     val clusterIsInFrustum = intersection == FrustumIntersection.INTERSECT || intersection == FrustumIntersection.INSIDE
-                    if(clusterIsInFrustum) {
+                    val distanceToClusterCenter = camera.getPosition().distance(cluster.boundingVolume.center)
+                    val clusterNearEnough = distanceToClusterCenter < 4f * cluster.boundingVolume.boundingSphereRadius
+                    if(clusterIsInFrustum && clusterNearEnough) {
                         val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, index)) { (_, _) -> RenderBatch() }
                         with(batch){
                             entityBufferIndex = meshBufferIndex + modelComponent.entity.clusters.subList(0, index).sumBy { it.size }
