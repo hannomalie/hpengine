@@ -6,9 +6,9 @@ import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.entity.movedInCycle
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.instancing.clusters
+import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.model.ModelComponentSystem
-import de.hanno.hpengine.engine.model.clusters
-import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
 import org.joml.FrustumIntersection
 import org.joml.Vector3f

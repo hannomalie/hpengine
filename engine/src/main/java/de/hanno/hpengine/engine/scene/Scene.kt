@@ -77,9 +77,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
     val entitySystems = SimpleEntitySystemRegistry()
-    val entityManager = EntityManager(this).also { managers.register(it) }
-
     val baseExtensions = BaseExtensions(engineContext)
+
+    val entityManager = EntityManager(
+        baseExtensions.modelComponentExtension.componentSystem,
+        baseExtensions.materialExtension.manager
+    ).also { managers.register(it) }
+
     val extensions = (baseExtensions + engineContext.additionalExtensions + nonBaseExtensions).also {
         register(it)
     }

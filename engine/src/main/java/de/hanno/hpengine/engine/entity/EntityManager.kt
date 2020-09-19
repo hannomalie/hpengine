@@ -1,12 +1,24 @@
 package de.hanno.hpengine.engine.entity
 
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
+import de.hanno.hpengine.engine.graphics.BatchingSystem
+import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.instancing.clusters
+import de.hanno.hpengine.engine.instancing.instanceCount
+import de.hanno.hpengine.engine.instancing.instances
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.model.baseJointIndex
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.isEqualTo
+import de.hanno.struct.StructArray
+import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -19,9 +31,17 @@ var Entity.movedInCycle by movedInCycleExtensionState
 private val indexExtensionState = ExtensionState<Entity, Int>(0)
 var Entity.index by indexExtensionState
 
-class EntityManager(val scene: Scene) : Manager {
+class EntityManager(val modelComponentSystem: ModelComponentSystem,
+                    val materialManager: MaterialManager) : Manager {
 
     private val entityContainer: EntityContainer = SimpleContainer()
+
+    var gpuEntitiesArray = StructArray(size = 1000) { EntityStruct() }
+    val entityIndices: MutableMap<ModelComponent, Int> = mutableMapOf()
+    val ModelComponent.entityIndex
+        get() = entityIndices[this]!!
+
+    private val batchingSystem = BatchingSystem()
 
     var entityMovedInCycle: Long = 0
     var staticEntityMovedInCycle: Long = 0
@@ -37,35 +57,28 @@ class EntityManager(val scene: Scene) : Manager {
     val Entity.hasMoved
         get() = movedEntities.containsKey(this)
 
-    fun create(): Entity {
-        return Entity()
-    }
+    fun create(): Entity = Entity()
 
-    fun create(name: String): Entity {
-        return create(Vector3f(), name)
-    }
+    fun create(name: String): Entity = create(Vector3f(), name)
 
-    fun create(position: Vector3f, name: String): Entity {
-
-        return Entity(name, position)
-    }
+    fun create(position: Vector3f, name: String): Entity = Entity(name, position)
 
     fun add(entity: Entity) {
         entityContainer.add(entity)
         entity.index = entityContainer.entities.indexOf(entity)
+        cacheEntityIndices()
     }
 
     fun add(entities: List<Entity>) {
         for (entity in entities) {
             add(entity)
         }
+        cacheEntityIndices()
     }
 
     fun getEntities() = entityContainer.entities
 
-    override fun clear() {
-        entityContainer.clear()
-    }
+    override fun clear() = entityContainer.clear()
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         entityHasMoved = false
@@ -105,13 +118,41 @@ class EntityManager(val scene: Scene) : Manager {
             entity.movedInCycle = scene.currentCycle
             break
         }
+        cacheEntityIndices()
+        updateGpuEntitiesArray(scene.currentCycle)
+    }
+
+    private fun cacheEntityIndices() {
+        entityIndices.clear()
+        var index = 0
+        for (current in modelComponentSystem.getComponents()) {
+            entityIndices[current] = index
+            index += current.entity.instanceCount * current.meshes.size
+        }
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {
+        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
+
+        batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
+                modelComponentSystem.getComponents(), scene.engineContext.config.debug.isDrawLines,
+                modelComponentSystem.allocations, entityIndices)
+
         renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
         renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
         renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
+    }
+
+    private fun getRequiredEntityBufferSize(): Int {
+        return modelComponentSystem.getComponents().sumBy { it.entity.instanceCount * it.meshes.size }
+    }
+
+    private fun updateGpuEntitiesArray(currentCycle: Long) {
+        gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
+        gpuEntitiesArray.buffer.rewind()
+
+        gpuEntitiesArray.buffer.rewind()
     }
 
     companion object {

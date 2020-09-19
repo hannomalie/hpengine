@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.entity
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.lifecycle.Updatable
+import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB

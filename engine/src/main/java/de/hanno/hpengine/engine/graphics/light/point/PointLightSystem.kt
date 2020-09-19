@@ -8,8 +8,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray

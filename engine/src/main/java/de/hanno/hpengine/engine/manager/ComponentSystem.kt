@@ -11,8 +11,8 @@ import org.apache.logging.log4j.Logger
 
 interface ComponentSystem<T : Component> {
     fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for(component in getComponents()) {
-            launch {
+        launch {
+            for(component in getComponents()) {
                 with(component) {
                     update(scene, deltaSeconds)
                 }
@@ -21,7 +21,7 @@ interface ComponentSystem<T : Component> {
     }
     fun getComponents(): List<T>
     fun addComponent(component: T)
-    fun clear()
+    fun clear() { }
     fun extract(renderState: RenderState) {}
     fun onSceneSet() {
         clear()

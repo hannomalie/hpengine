@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.transform
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.util.isEqualTo
 import org.joml.Matrix4f
@@ -119,6 +120,17 @@ data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vec
             forEach {
                 newMin.min(it.min)
                 newMax.max(it.max)
+            }
+            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+        }
+
+        @JvmName("getSurroundingAABBInstance")
+        fun List<Instance>.getSurroundingAABB(): AABBData {
+            val newMin = Vector3f(first().boundingVolume.min)
+            val newMax = Vector3f(first().boundingVolume.max)
+            forEach {
+                newMin.min(it.boundingVolume.min)
+                newMax.max(it.boundingVolume.max)
             }
             return AABBData(newMin.toImmutable(), newMax.toImmutable())
         }

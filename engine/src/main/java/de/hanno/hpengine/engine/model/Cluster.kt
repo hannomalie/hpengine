@@ -17,30 +17,52 @@ import java.util.ArrayList
 class Cluster(val customIsCulled: Cluster.(Camera) -> Boolean = { defaultIsCulled(it) }) : ArrayList<Instance>(), Updatable {
     var boundingVolume: AABB = AABB(AABBData(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX)))
         private set
-
-    var recalculatedInCycle = -1L
+    var allStaticInstances = true
         private set
+    var updatedInCycle = -1L
+        internal set
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        (0 until size).map { i ->
-            with(get(i)) {
+        for (i in 0 until size) {
+            get(i).run {
                 update(scene, deltaSeconds)
             }
         }
         recalculate(scene.currentCycle)
     }
 
-    private fun recalculate(currentCycle: Long) {
-        if(all { it.spatial is StaticTransformSpatial } && (boundingVolume.min != Vector3f(Spatial.MAX) || boundingVolume.max != Vector3f(Spatial.MIN))) {
-            return
+    override fun add(element: Instance): Boolean {
+        if(element.spatial !is StaticTransformSpatial) allStaticInstances = false
+        return super.add(element).apply {
+            boundingVolume.localAABB = getSurroundingAABB()
         }
-        boundingVolume.localAABB = map { it.boundingVolume }.getSurroundingAABB()
-        recalculatedInCycle = currentCycle
+    }
+    override fun addAll(elements: Collection<Instance>): Boolean {
+        if(any { it.spatial !is StaticTransformSpatial }) allStaticInstances = false
+        return super.addAll(elements).apply {
+            boundingVolume.localAABB = getSurroundingAABB()
+        }
+    }
+    override fun addAll(index: Int, elements: Collection<Instance>): Boolean {
+        if(any { it.spatial !is StaticTransformSpatial }) allStaticInstances = false
+        return super.addAll(index, elements).apply {
+            boundingVolume.localAABB = getSurroundingAABB()
+        }
+    }
+    override fun add(index: Int, element: Instance) {
+        if(element.spatial !is StaticTransformSpatial) allStaticInstances = false
+        super.add(index, element)
+        boundingVolume.localAABB = getSurroundingAABB()
     }
 
-    fun isCulled(camera: Camera): Boolean {
-        return customIsCulled(camera)
+    private fun recalculate(currentCycle: Long) {
+        if(allStaticInstances) return
+
+        boundingVolume.localAABB = getSurroundingAABB()
+        updatedInCycle = currentCycle
     }
+
+    fun isCulled(camera: Camera) = customIsCulled(camera)
 
 }
 fun Cluster.defaultIsCulled(camera: Camera, distanceMultiplierMin: Float = 0f, distanceMultiplierMax: Float = 4f): Boolean {

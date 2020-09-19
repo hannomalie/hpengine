@@ -130,29 +130,26 @@ class ClustersComponent(override val entity: Entity): Component {
 
 }
 
-class ClustersComponentSystem() : ComponentSystem<ClustersComponent> {
+class ClustersComponentSystem : ComponentSystem<ClustersComponent> {
     override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()
-    val entityInstances = mutableMapOf<Entity, MutableList<Instance>>()
 
 
     override fun getComponents() = components
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        components.forEach{
-            with(it) {
-                update(scene, deltaSeconds)
-            }
-        }
-    }
-
     override fun addComponent(component: ClustersComponent) {
         components.add(component)
         instances.addAll(component.getInstances())
-        entityInstances[component.entity] = ArrayList(component.getInstances())
-    }
-
-    override fun clear() {
     }
 }
+
+
+val Entity.instances: List<Instance>
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: emptyList()
+
+val Entity.clusters: List<Cluster>
+    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: emptyList()
+
+val Entity.instanceCount: Int
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstanceCount() ?: 1

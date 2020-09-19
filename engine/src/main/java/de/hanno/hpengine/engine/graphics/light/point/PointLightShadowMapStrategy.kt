@@ -24,8 +24,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.model.ModelComponentSystem
-import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
@@ -214,7 +214,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                             firstIndex = allocation.indexOffset
                             baseVertex = allocation.vertexOffset
                         }
-                        val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
+                        val batch = RenderBatch(entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
                                 isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(),
                                 isVisibleForCamera = true, update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld,
                                 boundingSphereRadius = e.boundingSphereRadius,
@@ -242,7 +242,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                             firstIndex = allocation.indexOffset
                             baseVertex = allocation.vertexOffset
                         }
-                        val batch = RenderBatch(entityBufferIndex = modelComponentSystem.entityIndices[modelComponent]!!,
+                        val batch = RenderBatch(entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
                                 isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(), isVisibleForCamera = true,
                                 update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
