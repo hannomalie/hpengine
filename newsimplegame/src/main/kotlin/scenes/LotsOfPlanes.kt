@@ -7,19 +7,16 @@ import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponen
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
+import de.hanno.hpengine.engine.model.defaultIsCulled
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.scene
-import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.enhanced
 import kotlinx.coroutines.CoroutineScope
-import org.joml.Vector2i
 import org.joml.Vector3f
-import org.joml.Vector3i
 import kotlin.random.Random
 
 val Engine.lotsOfPlanesScene
@@ -36,18 +33,6 @@ val Engine.lotsOfPlanesScene
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                 }
                 transform.scale(500f)
-            }
-            entity("Blade") {
-                modelComponent(
-                        name = "Blade",
-                        file = "assets/models/grass2/grass01.obj",
-                        materialManager = scene.materialManager,
-                        modelComponentManager = scene.modelComponentManager,
-                        gameDirectory = engineContext.config.directories.gameDir
-                ).apply {
-                    material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
-                }
-                transform.scale(2f)
             }
 
             entity("Grass") {
@@ -135,25 +120,34 @@ val Engine.lotsOfPlanesScene
                 val cellCount = Vector3f(size.x / cellDimension.x, size.y / cellDimension.y, size.z / cellDimension.z)
                 val clusters = (0 until cellCount.x.toInt()).flatMap { x ->
                     (0 until cellCount.y.toInt()).flatMap { y ->
-                        (0 until cellCount.z.toInt()).map { z ->
+                        (0 until cellCount.z.toInt()).flatMap { z ->
                             val min = Vector3f(cellDimension).mul(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()))
-                            Cluster().apply {
-                                addAll((0 until instancesPerCluster).map {
-                                    val position = Vector3f(Random.nextFloat()*cellDimension.x, size.y*0.5f, Random.nextFloat()*cellDimension.z).add(startCorner).add(min)
-                                    val transformation = Transform().apply {
-                                        scale(Vector3f(10f).add(Vector3f(Random.nextFloat() * 0.1f, Random.nextFloat(), Random.nextFloat() * 0.1f)))
-                                        rotateAround(Vector3f(0f, 1f, 0f), Math.toRadians(180.0 * Random.nextDouble()).toFloat(), position)
-                                        translate(position)
+                            val instances = (0 until instancesPerCluster).map {
+                                val position = Vector3f(Random.nextFloat() * cellDimension.x, size.y * 0.5f, Random.nextFloat() * cellDimension.z).add(startCorner).add(min)
+                                val transformation = Transform().apply {
+                                    scale(Vector3f(10f).add(Vector3f(Random.nextFloat() * 0.1f, Random.nextFloat(), Random.nextFloat() * 0.1f)))
+                                    rotateAround(Vector3f(0f, 1f, 0f), Math.toRadians(180.0 * Random.nextDouble()).toFloat(), position)
+                                    translate(position)
+                                }
+                                val spatial1 = object : StaticTransformSpatial(transformation, this@entity.getComponent(ModelComponent::class.java)!!) {
+                                    init {
+                                        boundingVolume.recalculate(transformation)
                                     }
-                                    val spatial1 = object: StaticTransformSpatial(transformation, this@entity.getComponent(ModelComponent::class.java)!!) {
-                                        init {
-                                            boundingVolume.recalculate(transformation)
-                                        }
-                                        override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) { }
-                                    }
-                                    Instance(this@entity, transformation, spatial = spatial1)
-                                })
+
+                                    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {}
+                                }
+                                Instance(this@entity, transformation, spatial = spatial1)
                             }
+                            val cluster1 = Cluster().apply {
+                                addAll(instances)
+                            }
+                            val cluster2 = Cluster { defaultIsCulled(it, 4f, 8f) }.apply {
+                                addAll(instances.take(cluster1.size/8))
+                            }
+                            val cluster3 = Cluster { defaultIsCulled(it, 8f, 16f) }.apply {
+                                addAll(instances.take(cluster2.size/8))
+                            }
+                            listOf(cluster1, cluster2, cluster3)
                         }
                     }
                 }

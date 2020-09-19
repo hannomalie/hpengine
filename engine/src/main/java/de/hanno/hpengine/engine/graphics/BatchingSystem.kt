@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.clusters
 import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.scene.BatchKey
-import org.jetbrains.kotlin.codegen.coroutines.continuationAsmTypes
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 
@@ -80,11 +79,8 @@ class BatchingSystem {
                 }
 
                 modelComponent.entity.clusters.forEachIndexed { index, cluster ->
-                    val intersection = camera.frustum.frustumIntersection.intersectAab(cluster.boundingVolume.min, cluster.boundingVolume.max)
-                    val clusterIsInFrustum = intersection == FrustumIntersection.INTERSECT || intersection == FrustumIntersection.INSIDE
-                    val distanceToClusterCenter = camera.getPosition().distance(cluster.boundingVolume.center)
-                    val clusterNearEnough = distanceToClusterCenter < 4f * cluster.boundingVolume.boundingSphereRadius
-                    if(clusterIsInFrustum && clusterNearEnough) {
+                    val clusterIsCulled = cluster.isCulled(camera)
+                    if(!clusterIsCulled) {
                         val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, index)) { (_, _) -> RenderBatch() }
                         with(batch){
                             entityBufferIndex = meshBufferIndex + modelComponent.entity.clusters.subList(0, index).sumBy { it.size }
