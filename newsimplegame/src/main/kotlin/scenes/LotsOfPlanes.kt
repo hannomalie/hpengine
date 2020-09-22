@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponen
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.defaultIsCulled
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.engine.scene.Scene
@@ -141,13 +140,7 @@ val Engine.lotsOfPlanesScene
                             val cluster1 = Cluster().apply {
                                 addAll(instances)
                             }
-                            val cluster2 = Cluster { defaultIsCulled(it, 4f, 8f) }.apply {
-                                addAll(instances.take(cluster1.size/8))
-                            }
-                            val cluster3 = Cluster { defaultIsCulled(it, 8f, 16f) }.apply {
-                                addAll(instances.take(cluster2.size/8))
-                            }
-                            listOf(cluster1, cluster2, cluster3)
+                            listOf(cluster1)
                         }
                     }
                 }

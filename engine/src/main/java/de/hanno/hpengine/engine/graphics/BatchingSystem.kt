@@ -79,7 +79,8 @@ class BatchingSystem {
                 }
 
                 modelComponent.entity.clusters.forEachIndexed { index, cluster ->
-                    val clusterIsCulled = cluster.isCulled(camera)
+                    val instanceCountToDraw = cluster.instanceCountToDraw(camera)
+                    val clusterIsCulled = instanceCountToDraw == 0
                     if(!clusterIsCulled) {
                         val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, index)) { (_, _) -> RenderBatch() }
                         with(batch){
@@ -96,7 +97,7 @@ class BatchingSystem {
                             centerWorld = cluster.boundingVolume.center
                             this.boundingSphereRadius = cluster.boundingVolume.boundingSphereRadius
                             with(drawElementsIndirectCommand) {
-                                this.primCount = cluster.size
+                                this.primCount = instanceCountToDraw//cluster.size
                                 this.count = modelComponent.getIndexCount(meshIndex)
                                 this.firstIndex = allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset
                                 this.baseVertex = allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset

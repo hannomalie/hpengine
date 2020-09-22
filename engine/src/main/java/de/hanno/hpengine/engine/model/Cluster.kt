@@ -12,9 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 import java.util.ArrayList
+import kotlin.math.max
+import kotlin.math.pow
 
 
-class Cluster(val customIsCulled: Cluster.(Camera) -> Boolean = { defaultIsCulled(it) }) : ArrayList<Instance>(), Updatable {
+class Cluster : ArrayList<Instance>(), Updatable {
     var boundingVolume: AABB = AABB(AABBData(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX)))
         private set
     var allStaticInstances = true
@@ -62,14 +64,18 @@ class Cluster(val customIsCulled: Cluster.(Camera) -> Boolean = { defaultIsCulle
         updatedInCycle = currentCycle
     }
 
-    fun isCulled(camera: Camera) = customIsCulled(camera)
+    fun instanceCountToDraw(camera: Camera): Int {
+        val intersection = camera.frustum.frustumIntersection.intersectAab(boundingVolume.min, boundingVolume.max)
+        val clusterIsInFrustum = intersection == FrustumIntersection.INTERSECT || intersection == FrustumIntersection.INSIDE
+        val distanceToClusterCenter = camera.getPosition().distance(boundingVolume.center)
+        val maxDistance = boundingVolume.boundingSphereRadius * 6f
+        val minDistance = boundingVolume.boundingSphereRadius
 
-}
-fun Cluster.defaultIsCulled(camera: Camera, distanceMultiplierMin: Float = 0f, distanceMultiplierMax: Float = 4f): Boolean {
-    val intersection = camera.frustum.frustumIntersection.intersectAab(boundingVolume.min, boundingVolume.max)
-    val clusterIsInFrustum = intersection == FrustumIntersection.INTERSECT || intersection == FrustumIntersection.INSIDE
-    val distanceToClusterCenter = camera.getPosition().distance(boundingVolume.center)
-    val clusterNearEnough = distanceToClusterCenter < distanceMultiplierMax * boundingVolume.boundingSphereRadius
-            && distanceToClusterCenter > distanceMultiplierMin * boundingVolume.boundingSphereRadius
-    return !(clusterIsInFrustum && clusterNearEnough)
+        if (!clusterIsInFrustum) return 0
+        if(distanceToClusterCenter < minDistance) return size
+
+        val percent = 1f- (distanceToClusterCenter / maxDistance)
+        return max(0, (percent * size.toFloat()).toInt())
+    }
+
 }
