@@ -40,5 +40,8 @@ class RenderBatch(
 
     val isStatic: Boolean
         get() = !animated
+
+    val hasOwnProgram
+        get() = program != null
 }
 class RenderBatches : ArrayList<RenderBatch>()

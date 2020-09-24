@@ -23,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
@@ -57,6 +58,11 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         engineContext.eventBus.register(this)
     }
 
+    override fun extract(scene: Scene, renderState: RenderState) {
+        renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
+        renderState.directionalLightState[0].shadowMapId = renderTarget.renderedTextures[0]
+
+    }
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         profiled("Directional shadowmap") {
             if (renderedInCycle < renderState.directionalLightHasMovedInCycle ||

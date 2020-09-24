@@ -8,6 +8,8 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
+import org.joml.AxisAngle4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 
@@ -15,13 +17,6 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
     private val castsShadows = false
     var color = Vector3f(1f, 1f, 1f)
     var scatterFactor = 1f
-
-    fun drawDebug(program: Program?) {
-        throw IllegalStateException("Currently not implemented!")
-        //		box.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-//			modelComponent.drawDebug(program, getTransform().getTransformationBuffer());
-//		});
-    }
 
     val direction: Vector3f
         get() = entity.transform.viewDirection
@@ -74,7 +69,7 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
         width = 1500f
         height = 1500f
         far = (-5000).toFloat()
-        entity.transform.rotateAround(Vector3f(1f, 0f, 0f), Math.toRadians(100.0).toFloat(), Vector3f())
         entity.transform.translate(Vector3f(12f, 300f, 2f))
+        entity.transform.rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
     }
 }

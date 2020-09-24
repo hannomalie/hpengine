@@ -6,14 +6,12 @@ import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.MovableInputComponent
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -24,15 +22,11 @@ import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
 import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
-import de.hanno.hpengine.engine.model.texture.CubeMap
+import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
 import kotlinx.coroutines.CoroutineScope
-import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.joml.Vector3f
-import java.util.Optional
-
-class SkyBox(var cubeMap: CubeMap)
 
 class SceneSyntax(val scene: Scene) {
     val baseExtensions
@@ -91,19 +85,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val materialManager = baseExtensions.materialExtension.manager
     val modelComponentManager = baseExtensions.modelComponentExtension.manager
 
-    val directionalLight = entity("DirectionalLight") {
-        addComponent(DirectionalLight(this))
-        addComponent(DirectionalLight.DirectionalLightController(engineContext, this))
-    }
-
-    val cameraEntity = entity("MainCamera") {
-        addComponent(MovableInputComponent(engineContext, this))
-        addComponent(baseExtensions.cameraExtension.componentSystem.create(this))
-    }
-
-    val camera = cameraEntity.getComponent(Camera::class.java)!!
-    var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
-
     init {
         engineContext.renderSystems.add(object : RenderSystem {
             override fun render(result: DrawResult, state: RenderState) {
@@ -111,12 +92,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             }
         })
         engineContext.eventBus.register(this)
-        baseExtensions.forEach {
-            it.run {
+        baseExtensions.forEach { extension ->
+            extension.run {
                 onInit()
             }
         }
     }
+    var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
 
     fun restoreWorldCamera() {
         activeCamera = cameraEntity.getComponent(Camera::class.java)!!
@@ -140,6 +122,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     override fun toString() = name
+
     fun clear() {
         componentSystems.clearSystems()
         entitySystems.clearSystems()
@@ -158,7 +141,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             calculateBoundingVolume()
             engineContext.onEntityAdded(this, entities)
 
-            // TODO: This is not too correct but the cycle counter gets updated just before this happens
             entityManager.entityAddedInCycle = currentCycle
         }
     }
@@ -168,7 +150,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         with(managers) { onComponentAdded(component) }
         with(entitySystems) { onComponentAdded(this@Scene, component) }
 
-        // TODO: This is not too correct but the cycle counter gets updated just before this happens
         entityManager.componentAddedInCycle = currentCycle
     }
 
@@ -182,9 +163,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     fun getAreaLightSystem(): AreaLightSystem = entitySystems.get(AreaLightSystem::class.java)
     fun getPointLightSystem(): PointLightSystem = entitySystems.get(PointLightSystem::class.java)
     fun add(entity: Entity) = addAll(listOf(entity))
-    fun getEntity(name: String): Optional<Entity> {
-        val candidate = entityManager.getEntities().find { e -> e.name == name }
-        return Optional.ofNullable(candidate)
+    fun getEntity(name: String): Entity? {
+        return entityManager.getEntities().find { e -> e.name == name }
     }
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {

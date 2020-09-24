@@ -74,7 +74,7 @@ class Cluster : ArrayList<Instance>(), Updatable {
         if (!clusterIsInFrustum) return 0
         if(distanceToClusterCenter < minDistance) return size
 
-        val percent = 1f- (distanceToClusterCenter / maxDistance)
+        val percent = 1f - (distanceToClusterCenter / maxDistance)
         return max(0, (percent * size.toFloat()).toInt())
     }
 

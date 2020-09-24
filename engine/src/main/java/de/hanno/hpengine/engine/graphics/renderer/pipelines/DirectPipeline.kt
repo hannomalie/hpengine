@@ -12,9 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import org.joml.FrustumIntersection
-import org.lwjgl.opengl.GL11
 
 open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
@@ -67,12 +65,12 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
 fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
     beforeDraw(this.renderState, program, this.drawCam)
-    for (batch in renderBatches.filter { it.program == null }) {
+    for (batch in renderBatches.filter { !it.hasOwnProgram }) {
         gpuContext.cullFace = batch.materialInfo.cullBackFaces
         program.setTextureUniforms(batch.materialInfo.maps)
         actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines)
     }
-    for (batch in renderBatches.filter { it.program != null }) {
+    for (batch in renderBatches.filter { it.hasOwnProgram }) {
         val program = batch.program!!
         beforeDraw(this.renderState, program, this.drawCam)
         gpuContext.cullFace = batch.materialInfo.cullBackFaces

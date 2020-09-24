@@ -5,6 +5,8 @@ import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
+import de.hanno.hpengine.engine.scene.CameraExtension.Companion.camera
+import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -55,7 +57,7 @@ class MouseInputProcessor(val engineContext: EngineContext,
 
         val entityOrNull = getEntityOrNull()
         if(entityOrNull == null) {
-            val entity = editorComponents.sceneManager.scene.camera.entity
+            val entity = editorComponents.sceneManager.scene.cameraEntity
             val oldTranslation = entity.transform.getTranslation(Vector3f())
             entity.transform.rotationX(pitchAmount.toFloat())
             entity.transform.rotateLocalY((-yawAmount).toFloat())

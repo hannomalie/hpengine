@@ -87,11 +87,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         }
     }
 
-    val shadowMapExtension = DirectionalLightShadowMapExtension(engineContext)
     val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
     val extensions: MutableList<RenderExtension<OpenGl>> = mutableListOf(
-        shadowMapExtension,
-//        SkyBoxRenderExtension(engineContext),
         ForwardRenderExtension(engineContext),
         directionalLightSecondPassExtension,
 //        PointLightSecondPassExtension(engineContext),
@@ -117,9 +114,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
 
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
-        currentWriteState.directionalLightState[0].shadowMapHandle = shadowMapExtension.renderTarget.renderedTextureHandles[0]
-        currentWriteState.directionalLightState[0].shadowMapId = shadowMapExtension.renderTarget.renderedTextures[0]
-        
+
         extensions.forEach { it.run { update(scene, deltaSeconds) } }
     }
 

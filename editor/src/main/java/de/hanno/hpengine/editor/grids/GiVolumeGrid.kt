@@ -27,7 +27,7 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engineContext: 
         })
         add(JButton("Restore scene cam").apply {
             addActionListener {
-                sceneManager.scene.activeCamera = sceneManager.scene.camera
+                sceneManager.scene.restoreWorldCamera()
             }
         })
         addAABBInput()

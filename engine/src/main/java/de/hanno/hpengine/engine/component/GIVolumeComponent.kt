@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.TextureDimension3D
@@ -15,6 +16,7 @@ import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
@@ -69,7 +71,9 @@ class GIVolumeSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(GIVo
 
     val voxelConeTracingExtension: VoxelConeTracingExtension? = run {
         engine.extensibleDeferredRenderer?.let { renderer ->
-            VoxelConeTracingExtension(engine, renderer.shadowMapExtension, renderer, renderer.extensions.firstIsInstance())
+            renderer.extensions.firstIsInstanceOrNull<DirectionalLightShadowMapExtension>()?.let { shadowMapExtension ->
+                VoxelConeTracingExtension(engine, shadowMapExtension, renderer, renderer.extensions.firstIsInstance())
+            }
         }
     }
 

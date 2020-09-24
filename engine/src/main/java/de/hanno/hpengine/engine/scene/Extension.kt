@@ -9,21 +9,25 @@ import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.camera.MovableInputComponent
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -35,11 +39,13 @@ import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import org.joml.Vector3f
+import java.util.Optional
 
 interface Extension {
     val manager: Manager?
@@ -129,8 +135,15 @@ class GiVolumeExtension(val engineContext: EngineContext): Extension {
 }
 
 class DirectionalLightExtension(val engineContext: EngineContext): Extension {
+    override val deferredRendererExtension = DirectionalLightShadowMapExtension(engineContext)
     override val entitySystem = DirectionalLightSystem(engineContext)
     override val renderSystem = entitySystem
+    override fun Scene.onInit() {
+        entity("DirectionalLight") {
+            addComponent(DirectionalLight(this))
+            addComponent(DirectionalLight.DirectionalLightController(engineContext, this))
+        }
+    }
 }
 class TubeLightExtension(val engineContext: EngineContext): Extension {
     override val componentSystem = TubeLightComponentSystem()
@@ -140,6 +153,21 @@ class CameraExtension(val engineContext: EngineContext): Extension {
     override val componentClass: Class<*> = Camera::class.java
     override val componentSystem = CameraComponentSystem(engineContext)
     override val renderSystem = componentSystem
+    override fun Scene.onInit() {
+        entity(cameraEntityName) {
+            addComponent(MovableInputComponent(engineContext, this))
+            addComponent(baseExtensions.cameraExtension.componentSystem.create(this))
+        }
+    }
+    companion object {
+        val cameraEntityName = "MainCamera"
+        val Scene.cameraEntity: Entity
+            get() = getEntity(cameraEntityName)!!
+
+        val Scene.camera
+            get() = cameraEntity.getComponent(Camera::class.java)!!
+
+    }
 }
 
 class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
@@ -148,6 +176,8 @@ class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
     override val renderSystem = environmentProbeManager
 }
 class SkyboxExtension(val engineContext: EngineContext): Extension {
+    class SkyBox(var cubeMap: CubeMap)
+
     private val firstpassProgramVertexSource = engineContext.config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
     private val firstpassProgramFragmentSource = engineContext.config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 

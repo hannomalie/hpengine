@@ -5,6 +5,8 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.scene.CameraExtension.Companion.camera
+import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +42,7 @@ class EditorManager(val engineContext: EngineContext, val editorComponents: Edit
 
         val moveAmount = 100f * 0.1f * deltaSeconds * turbo
 
-        val entity = scene.camera.entity
+        val entity = scene.cameraEntity
 
         if (wPressed) {
             entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
