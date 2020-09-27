@@ -118,19 +118,16 @@ void main()
 
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
     sampler2D diffuseMap;
+    bool hasDiffuseMap = false;
     if(uint64_t(material.handleDiffuse) > 0) {
         diffuseMap = sampler2D(material.handleDiffuse);
-    }
-    sampler2D roughnessMap;
-	if(uint64_t(material.handleRoughness) > 0) {
-        roughnessMap = sampler2D(material.handleRoughness);
+        hasDiffuseMap = true;
     }
 #endif
 
     if(hasDiffuseMap) {
         color = texture(diffuseMap, g_texcoord);
     }
-    roughness = texture(roughnessMap, g_texcoord).r;
 
     ivec3 positionGridSpace = worldToGridPosition(g_posWorld.xyz, grid);
 

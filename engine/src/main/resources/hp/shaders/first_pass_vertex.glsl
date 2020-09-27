@@ -78,6 +78,32 @@ void main(void) {
 
     mat4 modelMatrix = entity.modelMatrix;
 
+#ifdef BINDLESSTEXTURES
+	sampler2D diffuseMap;
+	bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
+	if(hasDiffuseMap) { diffuseMap = sampler2D(material.handleDiffuse); }
+
+	sampler2D normalMap;
+	bool hasNormalMap = uint64_t(material.handleNormal) > 0;
+	if(hasNormalMap) { normalMap = sampler2D(material.handleNormal); }
+
+	sampler2D specularMap;
+	bool hasSpecularMap = uint64_t(material.handleSpecular) > 0;
+	if(hasSpecularMap) { specularMap = sampler2D(material.handleSpecular); }
+
+	sampler2D heightMap;
+	bool hasHeightMap = uint64_t(material.handleHeight) > 0;
+	if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
+
+	sampler2D occlusionMap;
+	bool hasOcclusionMap = uint64_t(material.handleOcclusion) > 0;
+	if(hasOcclusionMap) { occlusionMap = sampler2D(material.handleOcclusion); }
+
+	sampler2D roughnessMap;
+	bool hasRoughnessMap = uint64_t(material.handleRoughness) != 0;
+	if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
+#endif
+
 #ifdef ANIMATED
 	VertexAnimatedPacked vertex;
 #else

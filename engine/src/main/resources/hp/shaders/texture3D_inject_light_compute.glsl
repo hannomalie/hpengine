@@ -50,6 +50,7 @@ void main(void) {
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
     sampler3D albedoGrid = sampler3D(voxelGrid.albedoGridHandle);
     sampler3D normalGrid = sampler3D(voxelGrid.normalGridHandle);
+    sampler3D indexGrid = sampler3D(voxelGrid.indexGridHandle);
 #endif
 
     ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
@@ -88,7 +89,7 @@ void main(void) {
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 //    float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1.0f).r;
 
-    #if BINDLESS_TEXTURES
+    #if defined(BINDLESSTEXTURES) && defined(SHADER5)
     float visibility = getVisibility(positionWorld, directionalLight);
     #else
     float visibility = getVisibility(positionWorld.xyz, directionalLight, shadowMap);

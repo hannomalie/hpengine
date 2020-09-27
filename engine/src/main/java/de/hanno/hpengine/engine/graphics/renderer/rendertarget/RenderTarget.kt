@@ -163,7 +163,8 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
         gpuContext.invoke {
             gpuContext.bindFrameBuffer(frameBuffer)
 
-            configureBorderColor()
+//            TODO: Is this needed anymore?
+//            configureBorderColor()
 
             textures.forEachIndexed { index, it ->
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
@@ -178,6 +179,8 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
 
             gpuContext.clearColor(clear.x, clear.y, clear.z, clear.w)
         }
+
+        gpuContext.getExceptionOnError("rendertarget creation failed $name")
     }
 
     override val renderedTexture: Int

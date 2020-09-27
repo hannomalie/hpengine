@@ -13,7 +13,6 @@ layout(binding=11) uniform sampler2D aoScattering;
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
 #else
 layout(binding=9) uniform sampler3D grid;
-layout(binding=10) uniform sampler3D grid2;
 layout(binding=12) uniform sampler3D albedoGrid;
 layout(binding=13) uniform sampler3D normalGrid;
 #endif
@@ -113,10 +112,8 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGrid[MAX_VOXELGRIDS] voxelG
             vec4 sampledValue = voxelFetch(voxelGrid, toSampler(voxelGrid.albedoGridHandle), currentPosition, mipLevel);
             vec4 sampledNormalValue = voxelFetch(voxelGrid, toSampler(voxelGrid.normalGridHandle), currentPosition, mipLevel);
             vec4 sampledLitValue = voxelFetch(voxelGrid, toSampler(voxelGrid.gridHandle), currentPosition, mipLevel);
-            vec4 sampledLit2Value = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), currentPosition, mipLevel);
             step_normalValue.rgb = sampledNormalValue.rgb;
             step_lit = sampledLitValue.rgb * sampledLitValue.a;
-            step_lit2 = sampledLit2Value.rgb * sampledLitValue.a;
             step_isStaticValue = vec3(normalValue.b);
             float alpha = 1 - sampledValue.a;
             step_accumAlbedo = sampledValue.rgb * alpha;
@@ -125,7 +122,6 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGrid[MAX_VOXELGRIDS] voxelG
 
 
         lit += step_lit;
-        lit2 += step_lit2;
         accumAlbedo += step_accumAlbedo;
         normalValue = step_normalValue.rgb;
         isStaticValue = step_isStaticValue;
@@ -134,7 +130,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGrid[MAX_VOXELGRIDS] voxelG
         currentPosition += step;
 	}
 	accumAlbedo *= accumAlpha;
-	return lit2.rgb;
+	return lit.rgb;
 }
 #else
 vec3 scatter(vec3 worldPos, vec3 startPosition, VoxelGrid[MAX_VOXELGRIDS] voxelGridArray) {
@@ -177,21 +173,17 @@ vec4 voxelTraceConeXXX(VoxelGrid[MAX_VOXELGRIDS] voxelGridArray, int gridIndex, 
                 grid = toSampler(voxelGrid.albedoGridHandle);
             } else if(gridIndex == NORMALGRID) {
                 grid = toSampler(voxelGrid.normalGridHandle);
-            } else if(gridIndex == GRID1) {
-                grid = toSampler(voxelGrid.gridHandle);
             } else {
-                grid = toSampler(voxelGrid.grid2Handle);
+                grid = toSampler(voxelGrid.gridHandle);
             }
-            sampler3D grid2 = toSampler(voxelGrid.grid2Handle);
             int gridSize = voxelGrid.resolution;
 
             float sampleLOD = log2(diameter * minVoxelDiameterInv);
             vec4 sampleValue = voxelFetch(voxelGrid, grid, samplePos, sampleLOD);
-            vec4 sampleValue2 = voxelFetch(voxelGrid, grid2, samplePos, sampleLOD);
 
-            accum.rgb += max(sampleValue.rgb, sampleValue2.rgb);
+            accum.rgb += sampleValue.rgb;
             float a = 1 - alpha;
-            alpha += a * max(sampleValue.a, sampleValue2.a);
+            alpha += a * sampleValue.a;
         }
 
         dist += increment;
@@ -236,7 +228,11 @@ vec4 ConeTraceGI(in vec3 P, in vec3 V, in float cone_ratio, in float max_dist, i
         dist += sample_diameter * step_mult;
 
         // Sample from 3D texture (in performance superior to Sparse Voxel Octrees, hence use these)
+        #if defined(BINDLESSTEXTURES) && defined(SHADER5)
+        vec4 sample_value = voxelFetch(voxelGrid, toSampler(voxelGrid.gridHandle), sample_pos, sample_lod);
+        #else
         vec4 sample_value = voxelFetch(voxelGrid, grid, sample_pos, sample_lod);
+        #endif
 
         float a = 1.0 - accum.a;
         accum += sample_value * a;
@@ -311,9 +307,9 @@ void main(void) {
 #if defined(BINDLESSTEXTURES) && defined(SHADER5)
         vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld);
 #else
-        vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld, grid, grid2);
+        vec4 voxelDiffuse = vec4(4.0f)*traceVoxelsDiffuse(voxelGridArray, normalWorld, positionWorld, grid);
 #endif
-        vec4 voxelSpecular = vec4(4.0f);//*voxelTraceConeXXX(voxelGridArray, GRID2, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
+        vec4 voxelSpecular = vec4(4.0f);//*voxelTraceConeXXX(voxelGridArray, GRID1, positionWorld, normalize(reflect(-V, normalWorld)), aperture, 370);
 
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + diffuseColor * voxelDiffuse.rgb);
 
@@ -346,11 +342,10 @@ void main(void) {
         if(onlySample) {
 
             #if defined(BINDLESSTEXTURES) && defined(SHADER5)
-            vct = voxelFetch(voxelGrid, toSampler(voxelGrid.grid2Handle), positionWorld.xyz, 0).rgb;
+                vct = voxelFetch(voxelGrid, toSampler(voxelGrid.albedoGridHandle), positionWorld.xyz, 0).rgb;
             #else
 //            if(voxelGridIndex == 1) {
-                vct = 0.25f*voxelFetch(voxelGrid, albedoGrid, positionWorld.xyz, 0).rgb;
-//                vct = voxelFetch(voxelGrid, grid, positionWorld.xyz, 0).rgb;
+                vct = 0.25f*voxelFetch(voxelGrid, voxelGrid.albedoGrid, positionWorld.xyz, 0).rgb;
 //            }
             #endif
         }

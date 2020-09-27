@@ -97,7 +97,7 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D s
 #ifdef BINDLESSTEXTURES
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW, DirectionalLightState light)
 {
-	if(uint64_t(directionalLight.shadowMapHandle) > 0) {
+	if(uint64_t(light.shadowMapHandle) > 0) {
         sampler2D shadowMap = sampler2D(light.shadowMapHandle);
 
         if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {

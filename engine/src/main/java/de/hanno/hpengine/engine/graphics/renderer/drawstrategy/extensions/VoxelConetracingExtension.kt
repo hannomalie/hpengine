@@ -255,13 +255,13 @@ class VoxelConeTracingExtension(
 //                    if(bounces > 1 && lightInjectedFramesAgo == 0) {//> 0) {
 //                        with(injectMultipleBounceLightComputeProgram) {
 //                            use()
-//                            GL42.glBindImageTexture(0, currentVoxelGrid.grid2, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+//                            GL42.glBindImageTexture(0, currentVoxelGrid.grid, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
 //                            setUniform("bounces", bounces)
 //                            setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo)
 //                            setUniform("voxelGridIndex", voxelGridIndex)
 //                            bindShaderStorageBuffer(5, renderState.get(voxelGridBufferRef).voxelGridBuffer)
 //                            dispatchCompute(numGroupsXyz, numGroupsXyz, numGroupsXyz)
-//                            mipmapGrid(currentVoxelGrid.grid2)
+//                            mipmapGrid(currentVoxelGrid.grid)
 //                        }
 //                    }
                 }
