@@ -2,10 +2,12 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.struct.Struct
 import de.hanno.struct.copyTo
+import org.joml.Matrix4f
 
 
 @JvmOverloads
@@ -34,4 +36,7 @@ abstract class AbstractModel<T>(final override val meshes: List<Mesh<T>>,
             meshes.forEach { it.material = value }
             field = value
         }
+
+    override fun getBoundingVolume(transform: Matrix4f): AABB = super<SimpleSpatial>.getBoundingVolume(transform)
+    abstract fun calculateBoundingVolume(): AABB
 }

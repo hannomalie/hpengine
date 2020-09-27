@@ -55,7 +55,7 @@ public class PixelBufferObject {
 	}
 	public void glTexSubImage2D(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type, int offsetX, int offsetY, int width, int height, ByteBuffer buffer) {
 		mapAndUnmap(offsetX, offsetY, width, height, buffer);
-        gpuContext.execute(() -> {
+        gpuContext.invoke(() -> {
             gpuContext.bindTexture(target, textureId);
 			GL11.glTexSubImage2D(target.glTarget, mipmapLevel, offsetX, offsetY, width, height, GL_RGBA, GL_FLOAT, 0);
 			return Unit.INSTANCE;
@@ -64,7 +64,7 @@ public class PixelBufferObject {
 	}
 
 	public void glCompressedTexImage2D(int textureId, GlTextureTarget target, int level, int internalformat, int width, int height, int border, ByteBuffer textureBuffer) {
-        gpuContext.execute(() -> {
+        gpuContext.invoke(() -> {
 			mapAndUnmap(0, 0, width, height, buffer);
             gpuContext.bindTexture(target, textureId);
 			GL13.glCompressedTexImage2D(target.glTarget, level, internalformat, width, height, border, null);

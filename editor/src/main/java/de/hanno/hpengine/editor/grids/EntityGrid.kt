@@ -16,7 +16,7 @@ class EntityGrid(val entity: Entity): JPanel() {
     init {
         layout = MigLayout("wrap 2")
         labeled("Name", entity::name.toTextField())
-        labeled("Visible", entity::isVisible.toCheckBox())
+        labeled("Visible", entity::visible.toCheckBox())
         labeled("Update", entity::updateType.toComboBox(Update.values()))
     }
 

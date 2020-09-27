@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Vertex
+import de.hanno.hpengine.engine.transform.AABBData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -24,6 +25,7 @@ import org.lwjgl.assimp.AIColor4D
 import org.lwjgl.assimp.AIMaterial
 import org.lwjgl.assimp.AIMesh
 import org.lwjgl.assimp.AIString
+import org.lwjgl.assimp.AIVector3D
 import org.lwjgl.assimp.Assimp
 import org.lwjgl.assimp.Assimp.AI_MATKEY_COLOR_DIFFUSE
 import org.lwjgl.assimp.Assimp.AI_MATKEY_COLOR_EMISSIVE
@@ -37,20 +39,21 @@ import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_SPECULAR
 import java.io.File
 import java.nio.IntBuffer
+import java.nio.file.Path
 import java.util.ArrayList
 import kotlin.math.max
 
 
-const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices
+const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_GenNormals + Assimp.aiProcess_GenSmoothNormals
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
-    fun load(file: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {
-        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).absolutePath, flags) ?: throw IllegalStateException("Cannot load model $file")
+    fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {
+        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).path, flags) ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            GlobalScope.async { aiMaterial.processMaterial(file.parentFile, resourcesDir, materialManager.textureManager) }
+            GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, materialManager.textureManager) }
         }
 
         val numMeshes: Int = aiScene.mNumMeshes()
@@ -63,16 +66,16 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)
         }
-        return StaticModel(file.absolutePath, meshes)
+        return StaticModel(resourcesDir.resolve(file), meshes)
     }
 
-    private fun AIMaterial.processMaterial(texturesDir: File, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {
+    private fun AIMaterial.processMaterial(texturesDir: String, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
-                    textureManager.getTexture(texturesDir.resolve(textPath).toString(), directory = resourcesDir)
+                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir)
                 } else null
             }
         }
@@ -108,7 +111,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
     }
     private fun AIMesh.processMesh(materials: List<Material>): StaticMesh {
         val positions = retrievePositions()
-        val normals = retrieveNormals()
+        val normals = retrieveNormals().let { if(it.isEmpty()) (positions.indices).map { Vector3f(0f,1f,0f) } else it }
         val texCoords = retrieveTexCoords()
         val indices = retrieveFaces()
         val materialIdx = mMaterialIndex()
@@ -133,7 +136,7 @@ fun AIMesh.retrievePositions(): List<Vector3f> {
     val aiPositions = mVertices()
     while (aiPositions.remaining() > 0) {
         val aiPosition = aiPositions.get()
-        positions.add(Vector3f(aiPosition.x(), aiPosition.y(), aiPosition.z()))
+        positions.add(aiPosition.toVector3f())
     }
     return positions
 }
@@ -143,7 +146,7 @@ fun AIMesh.retrieveNormals(): List<Vector3f> {
     val aiNormals = mNormals()
     while (aiNormals?.remaining() ?: 0 > 0) {
         val aiNormal = aiNormals!!.get()
-        normals.add(Vector3f(aiNormal.x(), aiNormal.y(), aiNormal.z()))
+        normals.add(aiNormal.toVector3f())
     }
     return normals
 }
@@ -177,3 +180,10 @@ fun AIMesh.retrieveFaces(): List<IndexedFace> {
     }
     return faces
 }
+
+fun AIMesh.retrieveAABB(): AABBData {
+    val aiAabb = mAABB()
+    return AABBData(aiAabb.mMin().toVector3f(), aiAabb.mMax().toVector3f())
+}
+
+fun AIVector3D.toVector3f() = Vector3f(x(), y(), z())

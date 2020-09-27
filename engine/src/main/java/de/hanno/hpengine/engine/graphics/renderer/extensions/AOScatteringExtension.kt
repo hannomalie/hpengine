@@ -2,22 +2,30 @@ package de.hanno.hpengine.engine.graphics.renderer.extensions
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.vertexbuffer.draw
-import org.lwjgl.opengl.GL11
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 
-class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class AOScatteringExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val gBuffer = engineContext.deferredRenderingBuffer
     val backend = engineContext.gpuContext.backend
     val gpuContext = engineContext.gpuContext
-    private val aoScatteringProgram = engineContext.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl")
+    private val aoScatteringProgram = engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
+            "shaders/scattering_ao_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines())
 
     override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         profiled("Scattering and AO") {
@@ -46,7 +54,7 @@ class AOScatteringExtension(val engineContext: EngineContext<OpenGl>): RenderExt
             aoScatteringProgram.setUniform("screenHeight", engineContext.config.height.toFloat() / 2f)
             aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
             aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-            aoScatteringProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
+            aoScatteringProgram.setUniform("time", renderState.time.toInt())
             //		aoScatteringProgram.setUniform("useVoxelGrid", directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null);
             //		if(directionalLightShadowMapExtension.getVoxelConeTracingExtension() != null) {
             //			aoScatteringProgram.bindShaderStorageBuffer(5, renderState.getState(directionalLightShadowMapExtension.getVoxelConeTracingExtension().getVoxelGridBufferRef()).getVoxelGridBuffer());

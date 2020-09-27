@@ -1,7 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.Arrays
+
+
+
 
 plugins {
-    kotlin("jvm") version "1.3.71"
+    kotlin("jvm") version "1.3.72"
     application
 }
 version = "1.0.0-SNAPSHOT"
@@ -78,7 +82,7 @@ dependencies {
 }
 
 application {
-    mainClassName = "de.hanno.hpengine.engine.EngineImpl"
+    mainClassName = "de.hanno.hpengine.engine.Engine"
 }
 val editorStartScript by tasks.registering(CreateStartScripts::class) {
     description = "Creates editor start script"

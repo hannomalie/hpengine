@@ -2,46 +2,55 @@ package de.hanno.hpengine.engine.entity
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.component.PhysicsComponent
-import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.lifecycle.Updatable
-import de.hanno.hpengine.engine.manager.ManagerRegistry
+import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
+import de.hanno.hpengine.util.Parentable
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
-import java.util.ArrayList
-import java.util.HashMap
 import java.util.Optional
-import java.util.function.Supplier
+import java.util.WeakHashMap
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
-open class Entity @JvmOverloads constructor(name: String = "Entity" + System.currentTimeMillis().toString(),
-                                            position: Vector3f = Vector3f(0f, 0f, 0f)) : Transform<Entity>(), Updatable {
-    var movedInCycle = 0L
-    internal var managerRegistry: ManagerRegistry? = null
+// TODO: Use this in slightly changed form to make Entity extendable with attached extension properties.
+class SimpleProperty<R, T>(var value: T): ReadWriteProperty<R, T> {
+    override fun getValue(thisRef: R, property: KProperty<*>): T = value
 
-    val spatial: SimpleSpatial = object : SimpleSpatial() {
-        override val minMax: AABB
-            get() = if (hasComponent(ModelComponent::class.java)) {
-                val modelComponent = getComponent(ModelComponent::class.java)
-                modelComponent!!.minMax
-            } else {
-                super.minMax
-            }
+    override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
+        this.value = value
+    }
+}
+
+class ExtensionState<R, T>(val defaultValue: T): ReadWriteProperty<R, T> {
+    internal val receiverToProperty = WeakHashMap<R, SimpleProperty<*, *>>()
+
+    override fun getValue(thisRef: R, property: KProperty<*>): T {
+        val readWriteProperty = receiverToProperty[thisRef] as? SimpleProperty<R, T>
+        return readWriteProperty?.getValue(thisRef, property) ?: defaultValue
     }
 
-    var index = -1
+    override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
+        receiverToProperty.putIfAbsent(thisRef, SimpleProperty<R, T>(value))
+    }
+}
 
-    var updateType = Update.DYNAMIC
-        get() {
-            return if (hasComponent(PhysicsComponent::class.java) && getComponent(PhysicsComponent::class.java)!!.isDynamic || hasComponent(ModelComponent::class.java) && !getComponent(ModelComponent::class.java)!!.model.isStatic) {
-                Update.DYNAMIC
-            } else field
-        }
+fun <R, T> extensionState(defaultValue: T): ExtensionState<R, T> = ExtensionState(defaultValue)
+
+private var entityCounter = 0
+class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCounter++,
+                                            position: Vector3f = Vector3f(0f, 0f, 0f)): Parentable<Entity>, Updatable {
+    val transform: Transform = Transform()
+
+    private val simpleSpatial = TransformSpatial(transform, AABB(Vector3f(-5f), Vector3f(5f)))
+    var spatial: TransformSpatial = simpleSpatial
+
+    var updateType = Update.STATIC
         set(value) {
             field = value
             if (hasChildren()) {
@@ -51,99 +60,85 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
             }
         }
 
-    open var name = "Entity_" + System.currentTimeMillis()
-
-    var isVisible = true
-
-    var components: MutableMap<Class<out Component>, Component> = HashMap()
-
-    val allChildrenAndSelf: List<Entity>
-        get() {
-            val allChildrenAndSelf = ArrayList<Entity>()
-            allChildrenAndSelf.add(this)
-            if (hasChildren()) {
-                for (child in children) {
-                    allChildrenAndSelf.addAll(child.allChildrenAndSelf)
-                }
-            }
-            return allChildrenAndSelf
+    override fun addChild(child: Entity) {
+        transform.addChild(child.transform)
+        if(!hasChildInHierarchy(child)) {
+            children.add(child)
         }
+    }
+
+    override fun removeChild(child: Entity) {
+        transform.removeChild(child.transform)
+        children.remove(child)
+    }
+
+    override val children: MutableList<Entity> = ArrayList()
+    override var parent: Entity? = null
+        set(value) {
+            transform.parent = value?.parent?.transform
+            field = value
+        }
+
+    var visible = true
+    var components: MutableList<Component> = ArrayList()
 
     val centerWorld: Vector3f
-        get() = spatial.getCenterWorld(this)
+        get() = spatial.getCenter(transform)
 
-    open val minMaxWorld: AABB
-        get() = spatial.getMinMaxWorld(this)
-    val minMax: AABB
-        get() = spatial.minMax
+    val boundingVolume: AABB
+        get() = spatial.getBoundingVolume(transform)
 
     val boundingSphereRadius: Float
-        get() = spatial.getBoundingSphereRadius(this)
-
-    private val emptyList = ArrayList<AABB>()
-    val instanceMinMaxWorlds: List<AABB>
-        get() {
-            val clusters = getComponent(ClustersComponent::class.java) ?: return emptyList
-            return clusters.getInstancesMinMaxWorlds()
-        }
+        get() = spatial.getBoundingSphereRadius(transform)
 
     init {
-        this.name = name
-        setTranslation(position)
+        transform.setTranslation(position)
     }
 
-    fun addComponent(component: Component): Entity {
-        var clazz = component.javaClass
-        val isAnonymous = clazz.enclosingClass != null
-        if (isAnonymous) {
-            clazz = clazz.superclass as Class<Component>
-        }
-        addComponent(component, clazz)
-        return this
-    }
+    fun addComponent(component: Component) {
+        if(components.contains(component)) { return }
 
-    fun addComponent(component: Component, clazz: Class<Component>) {
-        components[clazz] = component
+        components.add(component)
     }
 
     fun <T : Component> getComponent(type: Class<T>): T? {
-        val component = components[type]
-        return type.cast(component)
+        var i = 0
+        val size = components.size
+        while(i < size) {
+            val component = components[i]
+            if(type.isAssignableFrom(component.javaClass)) return type.cast(component)
+            i++
+        }
+        return null
+//        Worse allocation performance than the above
+//        return components
+//                .filter { type.isAssignableFrom(it.javaClass) }
+//                .map { type.cast(it) }
+//                .firstOrNull()
     }
 
-    fun <T : Component> getComponentOption(type: Class<T>): Optional<T> {
-        val component = components[type]
-        return Optional.ofNullable(type.cast(component))
-    }
+    fun <T : Component> getComponents(type: Class<T>): List<T> = components
+        .filter { type.isAssignableFrom(it.javaClass) }
+        .map { type.cast(it) }
 
-    fun hasComponent(type: Class<out Component>): Boolean {
-        return components.containsKey(type)
-    }
+    fun <T : Component> getComponentOption(type: Class<T>) = Optional.ofNullable(getComponent(type))
 
-    override fun setParent(node: Entity) {
-        super.setParent(node)
-        recalculate()
-    }
+    fun hasComponent(type: Class<out Component>): Boolean = getComponent(type) != null
+    fun hasComponents(types: List<Class<out Component>>) = types.all { type -> hasComponent(type) }
+    fun getComponents(types: List<Class<out Component>>) = types.flatMap { type -> getComponents(type) }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        if (hasParent()) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+        if (hasParent) {
             return
         }
-        recalculateIfDirty()
         for (i in 0 until children.size) {
-            with(children[i] as Entity) {
-                update(deltaSeconds)
+            with(children[i]) {
+                update(scene, deltaSeconds)
             }
         }
     }
 
-    open fun isInFrustum(camera: Camera): Boolean {
-        return Spatial.isInFrustum(camera, spatial.getCenterWorld(this), spatial.getMinMaxWorld(this).min, spatial.getMinMaxWorld(this).max)
-    }
-
-    override fun toString(): String {
-        return name
-    }
+    override fun toString(): String = name
 
     override fun equals(other: Any?): Boolean {
         if (other !is Entity) {
@@ -155,51 +150,10 @@ open class Entity @JvmOverloads constructor(name: String = "Entity" + System.cur
         return b!!.name == name
     }
 
-    override fun hashCode(): Int {
-        return name.hashCode()
-    }
+    override fun hashCode(): Int = name.hashCode()
 
-    override fun setHasMoved(value: Boolean) {
-        super.setHasMoved(value)
-        val modelComponentOption = getComponentOption(ModelComponent::class.java)
-        modelComponentOption.ifPresent { modelComponent -> modelComponent.isHasUpdated = value }
+}
 
-        val clusters = getComponent(ClustersComponent::class.java)
-        if (clusters != null) {
-            for (cluster in clusters.getClusters()) {
-                cluster.isHasMoved = value
-            }
-        }
-    }
-
-    fun hasMoved(): Boolean {
-        val modelComponentOption = getComponentOption(ModelComponent::class.java)
-        if (modelComponentOption.isPresent) {
-            if (modelComponentOption.get().isHasUpdated) {
-                return true
-            }
-        }
-
-        if (isHasMoved) {
-            return true
-        }
-        if (getComponent(ClustersComponent::class.java) == null) {
-            return false
-        }
-
-        val clusters = getComponent(ClustersComponent::class.java)
-        if (clusters != null) {
-            for (i in 0 until clusters.getClusters().size) {
-                if (clusters.getClusters()[i].isHasMoved) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
-    companion object {
-        private val serialVersionUID: Long = 1
-    }
-
+fun Entity.isInFrustum(camera: Camera): Boolean {
+    return Spatial.isInFrustum(camera, spatial.getCenter(transform), spatial.getBoundingVolume(transform).min, spatial.getBoundingVolume(transform).max)
 }

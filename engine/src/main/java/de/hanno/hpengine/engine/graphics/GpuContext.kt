@@ -17,12 +17,8 @@ import javax.vecmath.Tuple4f
 interface OpenGlExecutor {
     val openGLThreadId: Long
 
-    fun execute(runnable: () -> Unit) = execute(Runnable(runnable))
-    fun execute(runnable: Runnable)
     suspend fun <T> execute(block: () -> T): T
-
-    fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE
-    fun <RETURN_TYPE> calculate(callable: () -> RETURN_TYPE): RETURN_TYPE = calculateX(Callable(callable))
+    operator fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE
 
     fun shutdown()
 }
@@ -43,8 +39,6 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
     val evictedVRAM: Int
 
     val evictionCount: Int
-
-    val isInitialized: Boolean
 
     val maxTextureUnits: Int
 
@@ -183,4 +177,7 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
             }
         }
     }
+
+    fun createCommandSync(): OpenGlCommandSync
+    fun createCommandSync(onSignaled: () -> Unit): OpenGlCommandSync
 }

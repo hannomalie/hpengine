@@ -1,9 +1,11 @@
 package de.hanno.hpengine.engine.container;
 
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.entity.EntityKt;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
 import de.hanno.hpengine.engine.entity.Entity;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import kotlinx.coroutines.CoroutineScope;
@@ -136,7 +138,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 //		rootNode.getVisible(de.hanno.hpengine.camera, result);
 //		rootNode.getVisibleThreaded(de.hanno.hpengine.camera, result);
 
-		result = getEntities().stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
+		result = getEntities().stream().filter(e -> EntityKt.isInFrustum(e, camera)).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<>(result);
 	}
@@ -162,7 +164,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
     }
 
 	@Override
-	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
 
 	}
 
@@ -385,7 +387,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 		public Node insert(Entity entity) {
 //			LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("Inserting %s ...", entity));
 
-			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getMinMaxWorld();
+			de.hanno.hpengine.engine.transform.AABB minMaxWorld = entity.getBoundingVolume();
 			
 			if (isLeaf()) {
 				if(contains(minMaxWorld)) {
@@ -400,7 +402,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 				for (int i = 0; i < 8; i++) {
 					Node node = children[i];
 					if (node.contains(minMaxWorld)) {
-						if(node.contains(entity.getCenter())) {
+						if(node.contains(entity.getTransform().getCenter())) {
 							if(node.insert(entity) != null) {
 								return node;
 							}
@@ -499,8 +501,8 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 
 
 		private boolean contains(de.hanno.hpengine.engine.transform.AABB minMaxWorld) {
-			Vector3f min = minMaxWorld.getMin();
-			Vector3f max = minMaxWorld.getMax();
+			Vector3f min = new Vector3f(minMaxWorld.getMin());
+			Vector3f max = new Vector3f(minMaxWorld.getMax());
 			
 			if (looseAabb.contains(min) && looseAabb.contains(max)) {
 //				LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("(%.2f, %.2f, %.2f) is in %s", min.x, min.y, min.z, aabb));

@@ -3,15 +3,16 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
+import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import java.util.ArrayList
 import java.util.Random
 import javax.inject.Inject
 
-class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
+class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
 
     var isInitialized: Boolean = false
         private set
@@ -30,7 +31,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
         }
     }
 
-    protected fun loadLotsOfInstances(engine: Engine<*>, assetPath: String, scale: Int, name: String) {
+    protected fun loadLotsOfInstances(engine: Engine, assetPath: String, scale: Int, name: String) {
         val loaded = LoadModelCommand(engine.directories.gameDir.resolve(assetPath), name, engine.scene.materialManager, engine.directories.gameDir).execute()
         println("loaded entities : " + loaded.entities.size)
         for (entity in loaded.entities) {
@@ -45,7 +46,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
                 for (x in -count until count) {
                     for (y in -count until count) {
                         for (z in -count until count) {
-                            val trafo = SimpleTransform()
+                            val trafo = Transform()
                             trafo.scale(scale.toFloat())
                             val randomFloat = random.nextFloat() - 0.5f
                             trafo.rotate(Vector3f(1f, 0f, 0f), -90)
@@ -54,7 +55,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine<*>) {
 
                             val modelComponent = entity.getComponent(ModelComponent::class.java)
                             val materials = modelComponent!!.materials
-                            ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, AnimationController(120, 24f), AnimatedTransformSpatial(trafo, modelComponent))
+                            ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, null, AnimatedTransformSpatial(trafo, modelComponent))
                         }
                     }
                 }

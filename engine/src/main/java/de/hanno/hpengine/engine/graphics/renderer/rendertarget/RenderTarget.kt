@@ -160,7 +160,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
     override var mipMapCount = Util.calculateMipMapCount(max(width, height))
 
     init {
-        gpuContext.execute {
+        gpuContext.invoke {
             gpuContext.bindFrameBuffer(frameBuffer)
 
             configureBorderColor()
@@ -216,7 +216,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
 //        resizeTextures(gpuContext)
 //    }
 
-    override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) = gpuContext.execute {
+    override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) = gpuContext.invoke {
         gpuContext.bindFrameBuffer(frameBuffer)
         gpuContext.viewPort(0, 0, width, height)
         if (clear) {
@@ -346,9 +346,9 @@ class FrameBuffer(val frameBuffer: Int, val depthBuffer: DepthBuffer<*>?) {
 
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, depthBuffer: DepthBuffer<*>?): FrameBuffer {
-            return FrameBuffer(gpuContext.calculate { glGenFramebuffers() }, depthBuffer).apply {
+            return FrameBuffer(gpuContext.invoke { glGenFramebuffers() }, depthBuffer).apply {
                 if (depthBuffer != null) {
-                    gpuContext.execute() {
+                    gpuContext.invoke {
                         gpuContext.bindFrameBuffer(this)
                         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthBuffer.texture.id, 0)
                     }
@@ -381,13 +381,13 @@ class DepthBuffer<T : Texture>(val texture: T) {
 }
 
 class RenderBuffer private constructor(val renderBuffer: Int, val width: Int, val height: Int) {
-    fun bind(gpuContext: GpuContext<OpenGl>) = gpuContext.execute() {
+    fun bind(gpuContext: GpuContext<OpenGl>) = gpuContext.invoke {
         glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
     }
 
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, width: Int, height: Int): RenderBuffer {
-            val renderBuffer = gpuContext.calculate {
+            val renderBuffer = gpuContext.invoke {
                 val renderBuffer = glGenRenderbuffers()
                 glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer)
                 renderBuffer

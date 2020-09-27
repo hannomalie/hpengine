@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
@@ -10,17 +11,23 @@ import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
+class DrawLinesExtension(private val engine: EngineContext,
                          programManager: ProgramManager<*> = engine.programManager) : RenderExtension<OpenGl> {
 
-    private val linesProgram: Program = programManager.getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl")
+    private val linesProgram: Program = engine.run { programManager.getProgram(
+        EngineAsset("shaders/mvp_vertex.glsl"),
+        EngineAsset("shaders/firstpass_ambient_color_fragment.glsl"),
+        null,
+        Defines())
+    }
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
+        Transform().get(this)
     }
     private val lineRenderer = LineRendererImpl(engine)
 
@@ -54,8 +61,8 @@ class DrawLinesExtension(private val engine: EngineContext<OpenGl>,
 
 
             renderState.lightState.pointLights.forEach {
-                val max = Vector3f(it.entity.position).add(Vector3f(it.radius*0.5f))
-                val min = Vector3f(it.entity.position).sub(Vector3f(it.radius*0.5f))
+                val max = Vector3f(it.entity.transform.position).add(Vector3f(it.radius*0.5f))
+                val min = Vector3f(it.entity.transform.position).sub(Vector3f(it.radius*0.5f))
                 lineRenderer.batchLine(min, max)
             }
             linesDrawn += lineRenderer.drawLines(linesProgram)

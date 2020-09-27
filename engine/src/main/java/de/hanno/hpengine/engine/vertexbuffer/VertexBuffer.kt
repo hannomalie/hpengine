@@ -26,7 +26,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
     var triangleCount: Int = verticesCount / 3
         private set
 
-    private var vertexArrayObject: VertexArrayObject = gpuContext.calculate {
+    private var vertexArrayObject: VertexArrayObject = gpuContext.invoke {
         VertexArrayObject.getForChannels(gpuContext, channels)
     }
 
@@ -84,7 +84,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
     fun upload(): CompletableFuture<VertexBuffer> {
         buffer.rewind()
         val future = CompletableFuture<VertexBuffer>()
-        gpuContext.execute() {
+        gpuContext.invoke {
             bind()
 //             Don't remove this, will break things
             vertexArrayObject = VertexArrayObject.getForChannels(gpuContext, channels)
@@ -173,7 +173,7 @@ open class VertexBuffer(gpuContext: GpuContext<*>,
 }
 
 fun GpuContext<OpenGl>.createSixDebugBuffers(): ArrayList<VertexBuffer> {
-    return calculate {
+    return invoke {
         val sixDebugBuffers = object : ArrayList<VertexBuffer>() {
             init {
                 val height = -2f / 3f

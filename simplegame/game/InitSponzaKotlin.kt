@@ -1,14 +1,16 @@
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
+import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import org.joml.Vector4f
 import javax.inject.Inject
 import kotlin.random.Random
 
-class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsumer {
+class InitSponzaKotlin @Inject constructor(val engine: Engine) : EngineConsumer {
     init {
         val modelFile = engine.config.directories.gameDir.resolve("assets/models/sponza.obj")
         val loaded = LoadModelCommand(modelFile, "sponza", engine.scene.materialManager, engine.config.directories.gameDir).execute()
@@ -27,7 +29,7 @@ class InitSponzaKotlin @Inject constructor(val engine: Engine<*>) : EngineConsum
                         50f * randomRadius,
                         1f * randomRadius)
                 addComponent(light)
-                translate(
+                transform.translate(
                     Vector3f(
                         randomExtent*random.nextFloat() - randomExtentHalf,
                         randomExtent*random.nextFloat() - randomExtentHalf,

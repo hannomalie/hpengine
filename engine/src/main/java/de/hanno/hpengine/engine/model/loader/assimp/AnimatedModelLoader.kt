@@ -33,22 +33,24 @@ import org.lwjgl.assimp.AIString
 import org.lwjgl.assimp.Assimp
 import java.io.File
 import java.nio.IntBuffer
+import java.nio.file.Path
 import java.util.ArrayList
 import kotlin.math.max
 
-val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_LimitBoneWeights
+val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices +
+        Assimp.aiProcess_LimitBoneWeights + Assimp.aiProcess_GenBoundingBoxes + Assimp.aiProcess_GenNormals +
+        Assimp.aiProcess_GenNormals
 
 class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
-    fun load(file: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): AnimatedModel {
-        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).absolutePath, flags)
+    fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): AnimatedModel {
+        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).path, flags)
                 ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val materials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            aiMaterial.processMaterial(file.parentFile, materialManager, resourcesDir)
+            aiMaterial.processMaterial(Path.of(file).parent.toString(), materialManager, resourcesDir)
         }
-
 
         val boneList: MutableList<Bone> = ArrayList()
         val numMeshes: Int = aiScene.mNumMeshes()
@@ -62,7 +64,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val rootNode: Node = aiRootNode.processNodesHierarchy(null)
         val animations: Map<String, Animation> = aiScene.processAnimations(boneList, rootNode, rootTransfromation)
 
-        return AnimatedModel(file.absolutePath, meshes, animations)
+        return AnimatedModel(resourcesDir.resolve(file), meshes, animations)
     }
     private fun AIScene.processAnimations(boneList: List<Bone>, rootNode: Node,
                                           rootTransformation: Matrix4f): Map<String, Animation> {
@@ -152,14 +154,14 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         }
         return node
     }
-    private fun AIMaterial.processMaterial(texturesDir: File, materialManager: MaterialManager, resourcesDir: AbstractDirectory): Material {
+    private fun AIMaterial.processMaterial(texturesDir: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): Material {
         val textureManager = materialManager.textureManager
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
-                    textureManager.getTexture(texturesDir.resolve(textPath).toString(), directory = resourcesDir)
+                    textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir)
                 } else null
             }
         }
@@ -199,6 +201,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val normals = retrieveNormals()
         val texCoords = retrieveTexCoords()
         val indices = retrieveFaces()
+        val aabb = retrieveAABB()
         val (boneIds, weights) = retrieveBonesAndWeights(bones)
         val materialIdx = mMaterialIndex()
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
@@ -218,6 +221,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
                 mName().dataString(),
                 vertices,
                 indices,
+                aabb,
                 material
         )
     }

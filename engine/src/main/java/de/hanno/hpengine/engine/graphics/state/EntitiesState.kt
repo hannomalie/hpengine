@@ -11,12 +11,15 @@ import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.material.MaterialStruct
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import java.lang.Float.max
 import java.util.HashMap
 
 class EntitiesState(gpuContext: GpuContext<*>) {
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()
     var entityMovedInCycle: Long = -1
     var staticEntityMovedInCycle: Long = -1
+    val anyEntityMovedInCycle: Long
+        get() = if(entityMovedInCycle >= staticEntityMovedInCycle) entityMovedInCycle else staticEntityMovedInCycle
     var entityAddedInCycle: Long = -1
     var componentAddedInCycle: Long = -1
     var renderBatchesStatic = RenderBatches()

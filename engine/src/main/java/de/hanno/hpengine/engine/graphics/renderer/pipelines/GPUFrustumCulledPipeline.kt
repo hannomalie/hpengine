@@ -1,17 +1,19 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
-import de.hanno.hpengine.engine.graphics.renderer.DrawDescription
+import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
@@ -20,7 +22,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -28,27 +29,26 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL31
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
-import java.io.File
 
-open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext<OpenGl>,
+open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                               useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
-                                                              useLineDrawing: Boolean = true) : SimplePipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+                                                              useLineDrawing: Boolean = true) : IndirectPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling1_vertex.glsl")))
-    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.directory + "occlusion_culling2_vertex.glsl")))
+    private var occlusionCullingPhase1Vertex: Program = engine.run { programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl")) }
+    private var occlusionCullingPhase2Vertex: Program = engine.run { programManager.getProgram(EngineAsset("shaders/occlusion_culling2_vertex.glsl")) }
 
-    val appendDrawcommandsProgram = engine.programManager.getProgramFromFileNames("append_drawcommands_vertex.glsl")
-    val appendDrawCommandComputeProgram = engine.programManager.getComputeProgram("append_drawcommands_compute.glsl")
+    val appendDrawCommandsProgram = engine.run { programManager.getProgram(EngineAsset("append_drawcommands_vertex.glsl")) }
+    val appendDrawCommandsComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/append_drawcommands_compute.glsl")) }
 
 
     private val highZBuffer = RenderTarget(
@@ -64,7 +64,30 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         ), name = "GPUCulledPipeline")
 
 
-    override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+        super.beforeDrawStatic(renderState, program, renderCam)
+    }
+
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+        super.beforeDrawAnimated(renderState, program, renderCam)
+    }
+
+    override fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
+        profiled("Actual draw entities") {
+
+            val drawDescriptionStatic = IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
+            val drawDescriptionAnimated = IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+
+            beforeDraw(drawDescriptionStatic, drawDescriptionAnimated)
+
+            drawDescriptionStatic.draw()
+            drawDescriptionAnimated.draw()
+
+            firstPassResult.verticesDrawn += verticesCount
+            firstPassResult.entitiesDrawn += entitiesCount
+        }
+    }
+    private fun beforeDraw(drawDescriptionStatic: IndirectDrawDescription, drawDescriptionAnimated: IndirectDrawDescription) {
         ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, VoxelConeTracingExtension.ZERO_BUFFER)
         val cullAndRender = { profilerString: String,
                               phase: Pipeline.CoarseCullingPhase ->
@@ -79,15 +102,13 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cullAndRender("Cull&Render Phase1", Pipeline.CoarseCullingPhase.ONE)
     }
 
-    private val highZProgram = engine.programManager.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
+    private val highZProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/highZ_compute.glsl"), Defines(Define.getDefine("SOURCE_CHANNEL_R", true))) }
 
-    open fun renderHighZMap() {
-        renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
-    }
+    private fun renderHighZMap() = renderHighZMap(engine.gpuContext, depthMap, engine.config.width, engine.config.height, highZBuffer.renderedTexture, highZProgram)
 
     open var depthMap = engine.deferredRenderingBuffer.visibilityMap
 
-    private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
+    private fun debugPrintPhase1(drawDescription: IndirectDrawDescription, phase: Pipeline.CullingPhase) {
         if (engine.config.debug.isPrintPipelineDebugOutput) {
             GL11.glFinish()
             println("########### $phase ")
@@ -123,7 +144,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         }
     }
 
-    private fun cullAndRender(drawDescription: DrawDescription, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
+    private fun cullAndRender(drawDescription: IndirectDrawDescription, beforeRender: () -> Unit, phase: Pipeline.CullingPhase) {
         with(drawDescription.commandOrganization) {
             val drawCountBuffer = drawCountBuffers
             drawCountBuffer.put(0, 0)
@@ -136,7 +157,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
             with(drawDescription) {
                 cullPhase(renderState, commandOrganization, drawCountBuffer, targetCommandBuffer, phase, cullCam)
-                render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase)
+                render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase, drawDescription.isDrawLines)
             }
         }
     }
@@ -149,7 +170,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase, cullCam)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandComputeProgram else appendDrawcommandsProgram
+        val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandsComputeProgram else appendDrawCommandsProgram
 
         profiled("Buffer compaction") {
 
@@ -175,7 +196,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                     bindShaderStorageBuffer(13, currentCompactedPointers)
                     setUniform("maxDrawCommands", commandCount)
                     if(engine.config.debug.isUseComputeShaderDrawCommandAppend) {
-                        appendDrawCommandComputeProgram.dispatchCompute(commandCount, 1, 1)
+                        appendDrawCommandsComputeProgram.dispatchCompute(commandCount, 1, 1)
                     } else {
                         val invocationsPerCommand : Int = 4096//commands.map { it.primCount }.max()!!//4096
                         GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (invocationsPerCommand + 2) / 3 * 3, commandCount)
@@ -195,7 +216,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                        commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                        offsetBuffer: PersistentMappedStructBuffer<IntStruct>,
                        beforeRender: () -> Unit,
-                       phase: Pipeline.CullingPhase) = profiled("Actually render") {
+                       phase: Pipeline.CullingPhase,
+                       drawLines: Boolean) = profiled("Actually render") {
         program.use()
         beforeRender()
         program.setUniform("entityIndex", 0)
@@ -213,7 +235,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
         program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-        drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commandCount, drawCountBufferToUse)
+        vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBufferToUse, 0, commandOrganization.commandCount, drawLines)
     }
 
     private fun cull(renderState: RenderState,
@@ -241,7 +263,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
             val camera = cullCam
             setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
             setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-            setUniform("camPosition", camera.entity.position)
+            setUniform("camPosition", camera.entity.transform.position)
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             engine.gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
             engine.gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, Pipeline.HIGHZ_FORMAT)

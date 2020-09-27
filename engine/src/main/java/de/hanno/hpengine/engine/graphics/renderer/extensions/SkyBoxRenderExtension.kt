@@ -3,14 +3,18 @@ package de.hanno.hpengine.engine.graphics.renderer.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -21,15 +25,22 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.transform.TransformSpatial
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import java.io.File
 
-class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
 
     val materialManager: MaterialManager = engineContext.materialManager
-    private val skyBoxProgram = engineContext.programManager.getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+    private val skyBoxProgram = engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("shaders/mvp_vertex.glsl").toCodeSource(),
+            engineContext.config.engineDir.resolve("shaders/skybox.glsl").toCodeSource(),
+            null,
+            Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
 
@@ -37,7 +48,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
     private val skyBoxEntity = Entity("Skybox")
 
     private val skyBox = run {
-        StaticModelLoader().load(File("assets/models/skybox.obj"), materialManager, engineContext.config.directories.engineDir)
+        StaticModelLoader().load("assets/models/skybox.obj", materialManager, engineContext.config.directories.engineDir)
     }
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox, materialManager.defaultMaterial).apply {
         skyBoxEntity.addComponent(this)
@@ -69,6 +80,11 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
             meshIndex = 0
     )
 
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+        skyBoxEntity.run {
+            update(scene, deltaSeconds)
+        }
+    }
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
 
@@ -80,14 +96,15 @@ class SkyBoxRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExt
         gpuContext.disable(GlCap.CULL_FACE)
         gpuContext.disable(GlCap.BLEND)
         gpuContext.depthMask = true
-        skyBoxEntity.identity().scale(10f)
-        skyBoxEntity.setTranslation(camera.getPosition())
+        val camPosition = camera.getPosition()
+        skyBoxEntity.transform.identity().scaleAroundLocal(1000f, camPosition.x, camPosition.y, camPosition.z)
+        skyBoxEntity.transform.translate(camPosition)
         skyBoxProgram.use()
         skyBoxProgram.setUniform("eyeVec", camera.getViewDirection())
         val translation = Vector3f()
         skyBoxProgram.setUniform("eyePos_world", camera.getTranslation(translation))
         skyBoxProgram.setUniform("materialIndex", materialManager.skyboxMaterial.materialIndex)
-        skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.transformation.get(modelMatrixBuffer))
+        skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.transform.transformation.get(modelMatrixBuffer))
         skyBoxProgram.setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
         skyBoxProgram.setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
         skyBoxProgram.bindShaderStorageBuffer(7, skyboxVertexIndexBuffer.vertexStructArray)

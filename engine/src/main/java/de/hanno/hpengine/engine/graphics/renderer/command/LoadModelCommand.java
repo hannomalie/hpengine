@@ -15,16 +15,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LoadModelCommand implements Command<EntityListResult> {
-    private final File file;
+    private final String file;
     private final String name;
     private MaterialManager materialManager;
-    private final GameDirectory gameDir;
+    private final AbstractDirectory gameDir;
     private Entity entity;
 
-    public LoadModelCommand(File file, String name, MaterialManager materialManager, GameDirectory gameDir) {
+    public LoadModelCommand(String file, String name, MaterialManager materialManager, GameDirectory gameDir) {
         this(file, name, materialManager, gameDir, null);
     }
-    public LoadModelCommand(File file, String name, MaterialManager materialManager, GameDirectory gameDir, Entity entity) {
+    public LoadModelCommand(String file, String name, MaterialManager materialManager, AbstractDirectory gameDir, Entity entity) {
         this.materialManager = materialManager;
         this.gameDir = gameDir;
         this.entity = entity;
@@ -33,9 +33,6 @@ public class LoadModelCommand implements Command<EntityListResult> {
         }
         if(file == null) {
             throw new IllegalArgumentException("Passed file is null!");
-        }
-        if(!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException("Passed file is nonexistent or a directory: " + file.getPath());
         }
         this.file = file;
         this.name = name;
@@ -66,7 +63,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
 
     protected Model getModel(MaterialManager materialManager, AbstractDirectory textureDir) throws Exception {
         Model model;
-        if(file.getAbsolutePath().endsWith("md5mesh")) {
+        if(file.endsWith("md5mesh")) {
             model = new AnimatedModelLoader().load(file, materialManager, gameDir);
         } else {
             model = new StaticModelLoader().load(file, materialManager, gameDir);

@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.graphics.renderer.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -12,20 +14,18 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL40.*
-import java.io.File
 
-class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
-    val firstpassDefaultVertexshaderSource = getShaderSource(File(Shader.directory + "first_pass_vertex.glsl"))
-    val firstpassDefaultFragmentshaderSource = getShaderSource(File(Shader.directory + "forward_fragment.glsl"))
+    val firstpassDefaultVertexshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
+    val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))
 
     val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource)
 
@@ -54,7 +54,7 @@ class ForwardRenderExtension(val engineContext: EngineContext<OpenGl>): RenderEx
         for (batch in renderState.renderBatchesStatic) {
             if(!batch.materialInfo.transparencyType.needsForwardRendering) { continue }
             val isStatic = batch.update == Update.STATIC
-            programStatic.setTextureUniforms(gpuContext, batch.materialInfo.maps)
+            programStatic.setTextureUniforms(batch.materialInfo.maps)
             val currentVerticesCount = draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, batch, programStatic, false, false)
 
         }

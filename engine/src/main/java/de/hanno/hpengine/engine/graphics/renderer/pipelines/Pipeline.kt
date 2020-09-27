@@ -11,12 +11,15 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhas
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_TWO
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.lwjgl.opengl.GL30
 
 interface Pipeline {
-    fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
     fun prepare(renderState: RenderState)
+    fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
+
+    fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {}
+    fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {}
+
 
     enum class CullingPhase(val coarsePhase: CoarseCullingPhase) {
         STATIC_ONE(ONE),
@@ -38,14 +41,14 @@ interface Pipeline {
     companion object {
         val HIGHZ_FORMAT = GL30.GL_R32F
 
-        inline fun <reified T> create(engine: Engine<OpenGl>,
+        inline fun <reified T> create(engine: Engine,
                                       useFrustumCulling: Boolean,
                                       useBackfaceCulling: Boolean,
                                       useLineDrawingIfActivated: Boolean): Pipeline {
             return when(T::class) {
-                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                else -> SimplePipeline(engine,
+                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine.engineContext, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine.engineContext, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
+                else -> IndirectPipeline(engine.engineContext,
                         useFrustumCulling = useFrustumCulling,
                         useBackFaceCulling = useBackfaceCulling,
                         useLineDrawingIfActivated = useLineDrawingIfActivated)

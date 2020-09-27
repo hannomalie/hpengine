@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
@@ -9,6 +10,7 @@ import java.util.ArrayList
 
 class RenderBatch(
         var entityIndex: Int = -1,
+        var entityName: String = "Dummy",
         var meshIndex: Int = -1,
         var movedInCycle: Long = 0L,
         var isDrawLines: Boolean = false,
@@ -24,7 +26,11 @@ class RenderBatch(
         var animated : Boolean = false,
         var boundingSphereRadius: Float = 0.0f,
         var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
-        var entityBufferIndex: Int = 0) {
+        var entityBufferIndex: Int = 0,
+        var program: Program? = null) {
+
+    val isShadowCasting: Boolean
+        get() = materialInfo.isShadowCasting
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount
@@ -34,5 +40,8 @@ class RenderBatch(
 
     val isStatic: Boolean
         get() = !animated
+
+    val hasOwnProgram
+        get() = program != null
 }
 class RenderBatches : ArrayList<RenderBatch>()

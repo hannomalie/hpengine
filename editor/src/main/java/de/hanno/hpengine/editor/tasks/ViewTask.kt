@@ -4,12 +4,13 @@ import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.OutputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
-import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.engine.scene.SceneManager
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandGroup
@@ -27,7 +28,8 @@ import javax.swing.event.ListDataListener
 import kotlin.reflect.KMutableProperty0
 
 object ViewTask {
-    operator fun invoke(engine: Engine<*>,
+    operator fun invoke(engine: EngineContext,
+                        sceneManager: SceneManager,
                         config: ConfigImpl,
                         inputConfig: EditorInputConfig,
                         outputConfig: KMutableProperty0<OutputConfig>): RibbonTask {

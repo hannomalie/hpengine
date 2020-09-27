@@ -1,17 +1,17 @@
 package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponent(val engine: EngineContext<*>, override val entity: Entity) : InputControllerComponent(entity) {
+class MovableInputComponent(val engine: EngineContext, override val entity: Entity) : InputControllerComponent(entity) {
 
     protected var rotationDelta = 10f
     protected var scaleDelta = 0.1f
@@ -37,7 +37,7 @@ class MovableInputComponent(val engine: EngineContext<*>, override val entity: E
 //    TODO: Make this adjustable through editor
     private val cameraSpeed: Float = 1.0f
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         //                             linearVel.fma(deltaSeconds, linearAcc);
         //                             // update angular velocity based on angular acceleration
         //                             angularVel.fma(deltaSeconds, angularAcc);
@@ -64,31 +64,31 @@ class MovableInputComponent(val engine: EngineContext<*>, override val entity: E
             yaw += yawAmount.toFloat()
             pitch += pitchAmount.toFloat()
 
-            val oldTranslation = entity.getTranslation(Vector3f())
-            entity.setTranslation(Vector3f(0f,0f,0f))
-            entity.rotateLocalY((-yawAmount).toFloat())
-            entity.rotateX(pitchAmount.toFloat())
-            entity.translateLocal(oldTranslation)
+            val oldTranslation = entity.transform.getTranslation(Vector3f())
+            entity.transform.setTranslation(Vector3f(0f,0f,0f))
+            entity.transform.rotateLocalY((-yawAmount).toFloat())
+            entity.transform.rotateX(pitchAmount.toFloat())
+            entity.transform.translateLocal(oldTranslation)
         }
 
         val moveAmount = turbo * posDelta * deltaSeconds * cameraSpeed
         if (engine.input.isKeyPressed(GLFW_KEY_W)) {
-            entity.translate(Vector3f(0f, 0f, -moveAmount))
+            entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_S)) {
-            entity.translate(Vector3f(0f, 0f, moveAmount))
+            entity.transform.translate(Vector3f(0f, 0f, moveAmount))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_A)) {
-            entity.translate(Vector3f(-moveAmount, 0f, 0f))
+            entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_D)) {
-            entity.translate(Vector3f(moveAmount, 0f, 0f))
+            entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_Q)) {
-            entity.translate(Vector3f(0f, -moveAmount, 0f))
+            entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
         }
         if (engine.input.isKeyPressed(GLFW_KEY_E)) {
-            entity.translate(Vector3f(0f, moveAmount, 0f))
+            entity.transform.translate(Vector3f(0f, moveAmount, 0f))
         }
 
     }
@@ -98,20 +98,19 @@ class MovableInputComponent(val engine: EngineContext<*>, override val entity: E
     }
 }
 
-class InputComponentSystem(val engine: EngineContext<*>): ComponentSystem<InputControllerComponent> {
+class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         getComponents().forEach {
             with(it) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }
     private val components = mutableListOf<InputControllerComponent>()
     override fun getComponents(): List<InputControllerComponent> = components
 
-    fun create(entity: Entity) = MovableInputComponent(engine, entity)
-    override fun UpdateLock.addComponent(component: InputControllerComponent) {
+    override fun addComponent(component: InputControllerComponent) {
         components.add(component)
     }
     override fun clear() = components.clear()

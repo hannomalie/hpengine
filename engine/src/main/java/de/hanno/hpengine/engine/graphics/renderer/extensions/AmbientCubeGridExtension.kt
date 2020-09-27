@@ -3,6 +3,9 @@ package de.hanno.hpengine.engine.graphics.renderer.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
@@ -22,8 +25,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -32,6 +34,8 @@ import de.hanno.hpengine.engine.model.texture.mipmapCount
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -47,11 +51,15 @@ import org.lwjgl.opengl.GL45
 import java.io.File
 import java.nio.FloatBuffer
 
-class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : RenderExtension<OpenGl> {
+class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtension<OpenGl> {
 
     private var renderedInCycle: Long = -1
     val probeRenderer = ProbeRenderer(engineContext)
-    val evaluateProbeProgram = engineContext.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "evaluate_probe.glsl")
+    val evaluateProbeProgram = engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
+            "shaders/evaluate_probe.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines())
 
     private var renderCounter = 0
     private val probesPerFrame = 12.apply {
@@ -90,7 +98,7 @@ class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : Rende
         evaluateProbeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.setUniform("timeGpu", System.currentTimeMillis().toInt())
+        evaluateProbeProgram.setUniform("time", renderState.time.toInt())
         evaluateProbeProgram.setUniform("probeDimensions", probeRenderer.probeDimensions)
         val sceneCenter = Vector3f(probeRenderer.sceneMin).add(Vector3f(probeRenderer.sceneMax).sub(probeRenderer.sceneMin).mul(0.5f))
         evaluateProbeProgram.setUniform("sceneCenter", sceneCenter)
@@ -105,7 +113,7 @@ class AmbientCubeGridExtension(val engineContext: EngineContext<OpenGl>) : Rende
     }
 }
 
-class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
+class ProbeRenderer(private val engine: EngineContext) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
     val probesPerDimension = Vector3i(20, 6, 20)
@@ -119,18 +127,18 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
     val probeCount = probesPerDimension.x * probesPerDimension.y * probesPerDimension.z
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
-    val probePositionsStructBuffer = engine.gpuContext.window.calculate {
+    val probePositionsStructBuffer = engine.gpuContext.window.invoke {
         PersistentMappedStructBuffer(probeCount, engine.gpuContext, { HpVector4f() })
     }
-    val probeAmbientCubeValues = engine.gpuContext.window.calculate {
+    val probeAmbientCubeValues = engine.gpuContext.window.invoke {
         PersistentMappedStructBuffer(probeCount * 6, engine.gpuContext, { HpVector4f() })
     }
-    val probeAmbientCubeValuesOld = engine.gpuContext.window.calculate {
+    val probeAmbientCubeValuesOld = engine.gpuContext.window.invoke {
         PersistentMappedStructBuffer(probeCount * 6, engine.gpuContext, { HpVector4f() })
     }
 
     init {
-        engine.gpuContext.window.execute() {
+        engine.gpuContext.window.invoke {
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
         }
         initProbePositions()
@@ -156,9 +164,9 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram: Program = engine.programManager.getProgram(
-            getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_vertex.glsl")),
-            getShaderSource(File(Shader.directory + "environmentprobe_cube_fragment.glsl")),
-            getShaderSource(File(Shader.directory + "pointlight_shadow_cubemap_geometry.glsl")))
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
+            FileBasedCodeSource(File("shaders/" + "environmentprobe_cube_fragment.glsl")),
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")))
 
     val cubeMapRenderTarget = RenderTarget(
             gpuContext = engine.gpuContext,
@@ -235,13 +243,13 @@ class ProbeRenderer(private val engine: EngineContext<OpenGl>) {
 
                     viewMatrices[floatBufferIndex]!!.rewind()
                     projectionMatrices[floatBufferIndex]!!.rewind()
-                    pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex])
-                    pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex])
+                    pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrices[$floatBufferIndex]", viewMatrices[floatBufferIndex]!!)
+                    pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[$floatBufferIndex]", projectionMatrices[floatBufferIndex]!!)
                 }
 
                 profiled("Probe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(engine.gpuContext, batch.materialInfo.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(batch.materialInfo.maps)
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer,
                                 renderState.vertexIndexBufferStatic.indexBuffer,
                                 batch, pointCubeShadowPassProgram, false, false)

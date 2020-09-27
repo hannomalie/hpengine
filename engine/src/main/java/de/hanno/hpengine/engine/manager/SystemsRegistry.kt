@@ -2,16 +2,15 @@ package de.hanno.hpengine.engine.manager
 
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 
 interface ManagerRegistry {
     val managers: Map<Class<*>, Manager>
     fun <T : Manager> get(managerClass: Class<T>): T
-    fun CoroutineScope.update(deltaSeconds: Float) {
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         managers.forEach {
-            with(it.value) { update(deltaSeconds) }
+            with(it.value) { update(scene, deltaSeconds) }
         }
     }
     fun <T : Manager> register(manager: T): T
@@ -19,23 +18,18 @@ interface ManagerRegistry {
         managers.forEach { it.value.clear() }
     }
 
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
+    fun onEntityAdded(entities: List<Entity>) {
         managers.forEach {
             with(it.value) { onEntityAdded(entities) }
         }
     }
 
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         managers.forEach {
             with(it.value) { onComponentAdded(component) }
         }
     }
 
-    fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        managers.forEach { manager ->
-            with(manager.value) { afterUpdate(deltaSeconds) }
-        }
-    }
 }
 
 class SimpleManagerRegistry: ManagerRegistry {
@@ -53,28 +47,31 @@ interface SystemsRegistry {
     fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T>
 
     fun getSystems(): List<ComponentSystem<*>>
-    fun CoroutineScope.update(deltaSeconds: Float)
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float)
     fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
     fun clearSystems() {
         getSystems().forEach { it.clear() }
     }
 
-    fun UpdateLock.onEntityAdded(entities: List<Entity>) {
-        val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
-        getSystems().forEach {
-            matchedComponents += with(it) { onEntityAdded(entities) }
+    fun onEntityAdded(entities: List<Entity>) {
+        val allComponents = entities.flatMap { it.components }
+        val matchedComponents = getSystems().flatMap {
+            it.onEntityAdded(entities)
         }
-        val leftOvers = matchedComponents.keys.filter { !matchedComponents.keys.contains(it) }
+
+        val leftOvers = allComponents - matchedComponents
         if(leftOvers.isNotEmpty()) {
             throw IllegalStateException("Cannot find system for components: ${leftOvers.map { it::class.java }}")
         }
     }
 
-    fun UpdateLock.onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) {
         getSystems().forEach {
             with(it) { onComponentAdded(component) }
         }
     }
+
+    fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(componentClass: Class<COMPONENT_TYPE>, system: T): T
 }
 
 class ComponentSystemRegistry : SystemsRegistry {
@@ -84,6 +81,11 @@ class ComponentSystemRegistry : SystemsRegistry {
 
     override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(system: T): T {
         systems[system.componentClass] = system
+        return system
+    }
+
+    override fun <COMPONENT_TYPE, T : ComponentSystem<COMPONENT_TYPE>> register(componentClass: Class<COMPONENT_TYPE>, system: T): T {
+        systems[componentClass] = system
         return system
     }
 
@@ -98,10 +100,10 @@ class ComponentSystemRegistry : SystemsRegistry {
         return systems[componentClass] as ComponentSystem<T>
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         for (system in systems.values) {
             with(system) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }

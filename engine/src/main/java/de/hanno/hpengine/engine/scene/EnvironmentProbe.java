@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.backend.OpenGlBackendKt;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -9,6 +10,7 @@ import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.Environment
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import java.util.Random;
 
@@ -36,10 +38,10 @@ public class EnvironmentProbe implements Component {
 		box = new AABB(center, size);
 		sampler = new EnvironmentSampler(entity, this, center,
 				resolution, resolution, probeIndex,
-				this.environmentProbeManager, engine.getProgramManager(),
-				engine.getConfig(), engine.getTextureManager());
+				this.environmentProbeManager, OpenGlBackendKt.getProgramManager(engine),
+				engine.getConfig(), OpenGlBackendKt.getTextureManager(engine), null); // TODO: Pass scene not null here...
         this.setWeight(weight);
-        engine.getEventBus().register(this);
+        OpenGlBackendKt.getEventBus(engine).register(this);
     }
 
 	public void draw(RenderState extract) {
@@ -61,7 +63,7 @@ public class EnvironmentProbe implements Component {
 		});
 	}
 
-	public boolean contains(Vector3f min, Vector3f max) {
+	public boolean contains(Vector3fc min, Vector3fc max) {
 		return box.contains(min) && box.contains(max);
 	}
 

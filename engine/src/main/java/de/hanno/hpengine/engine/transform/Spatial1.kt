@@ -2,25 +2,33 @@ package de.hanno.hpengine.engine.transform
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.lifecycle.Updatable
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector3fc
 
 import java.lang.Float.MAX_VALUE
 
 interface Spatial : Updatable {
-    val minMax: AABB
-    val centerWorld: Vector3f
-    val boundingSphereRadius: Float
-    val minMaxWorld: AABB
-    fun getCenterWorld(transform: Transform<*>): Vector3f
-    fun getMinMaxWorld(transform: Transform<*>): AABB
-    fun getBoundingSphereRadius(transform: Transform<*>): Float
+    val boundingVolume: AABB
+    fun getCenter(transform: Matrix4f): Vector3f {
+        boundingVolume.recalculate(transform)
+        return boundingVolume.center
+    }
+    fun getBoundingVolume(transform: Matrix4f): AABB {
+        boundingVolume.recalculate(transform)
+        return boundingVolume
+    }
+
+    fun getBoundingSphereRadius(transform: Matrix4f): Float {
+        boundingVolume.recalculate(transform)
+        return boundingVolume.boundingSphereRadius
+    }
 
     companion object {
         val MIN: Vector3fc = Vector3f(MAX_VALUE, MAX_VALUE, MAX_VALUE)
         val MAX: Vector3fc = Vector3f(-MAX_VALUE, -MAX_VALUE, -MAX_VALUE)
 
-        fun isInFrustum(camera: Camera, centerWorld: Vector3f, minWorld: Vector3f, maxWorld: Vector3f): Boolean {
+        fun isInFrustum(camera: Camera, centerWorld: Vector3f, minWorld: Vector3fc, maxWorld: Vector3fc): Boolean {
             val tempDistVector = Vector3f()
             Vector3f(minWorld).sub(maxWorld, tempDistVector)
 

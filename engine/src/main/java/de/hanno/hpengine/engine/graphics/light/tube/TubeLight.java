@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.AABB;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +52,7 @@ public class TubeLight implements Component {
 	}
 
 	@Override
-	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
 	}
 
     public void draw(Program program) {
@@ -82,11 +83,11 @@ public class TubeLight implements Component {
 		
 		for(int i = 0; i < list.size(); i++) {
 			TubeLight light = list.get(i);
-			result[i] = light.getEntity().getPosition().x;
-			result[i+1] = light.getEntity().getPosition().y;
-			result[i+2] = light.getEntity().getPosition().z;
+			result[i] = light.getEntity().getTransform().getPosition().x;
+			result[i+1] = light.getEntity().getTransform().getPosition().y;
+			result[i+2] = light.getEntity().getTransform().getPosition().z;
 			
-			result[i+3] = light.getEntity().getScale().x;
+			result[i+3] = light.getEntity().getTransform().getScale().x;
 			
 			result[i+4] = light.getColor().x;
 			result[i+5] = light.getColor().y;
@@ -100,7 +101,7 @@ public class TubeLight implements Component {
 	}
 
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(getEntity().getPosition().x, getEntity().getPosition().y, getEntity().getPosition().z, getLength()/2)) {
+		if (camera.getFrustum().sphereInFrustum(getEntity().getTransform().getPosition().x, getEntity().getTransform().getPosition().y, getEntity().getTransform().getPosition().z, getLength()/2)) {
 			return true;
 		}
 		return false;
@@ -110,16 +111,16 @@ public class TubeLight implements Component {
 		return (getLength()/2) - getRadius();
 	}
 	public Vector3f getStart() {
-		return new Vector3f(getEntity().getPosition()).sub(new Vector3f(entity.getRightDirection()).mul(getOffset()));
+		return new Vector3f(getEntity().getTransform().getPosition()).sub(new Vector3f(entity.getTransform().getRightDirection()).mul(getOffset()));
 	}
 	public Vector3f getEnd() {
-		return new Vector3f(getEntity().getPosition()).add( new Vector3f(entity.getRightDirection()).mul(getOffset()));
+		return new Vector3f(getEntity().getTransform().getPosition()).add( new Vector3f(entity.getTransform().getRightDirection()).mul(getOffset()));
 	}
 	public Vector3f getOuterLeft() {
-		return new Vector3f(entity.getPosition()).sub(new Vector3f(entity.getRightDirection()).mul((getLength()/2)));
+		return new Vector3f(entity.getTransform().getPosition()).sub(new Vector3f(entity.getTransform().getRightDirection()).mul((getLength()/2)));
 	}
 	public Vector3f getOuterRight() {
-		return new Vector3f(entity.getPosition()).add(new Vector3f(entity.getRightDirection()).mul((getLength()/2)));
+		return new Vector3f(entity.getTransform().getPosition()).add(new Vector3f(entity.getTransform().getRightDirection()).mul((getLength()/2)));
 	}
 
 	public float getLength() {
@@ -131,15 +132,6 @@ public class TubeLight implements Component {
 
 	public void setRadius(float radius) {
 		this.radius = radius;
-	}
-
-//	TODO do this properly
-	AABB aabb = new AABB();
-	public AABB getMinMaxWorld() {
-		aabb.setMin(new Vector3f(-length));
-		aabb.setMax(new Vector3f(length));
-		aabb.transform(getEntity(), aabb);
-		return aabb;
 	}
 
 }

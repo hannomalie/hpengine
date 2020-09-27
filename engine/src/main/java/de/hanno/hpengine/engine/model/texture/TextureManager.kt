@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -109,8 +110,8 @@ class TextureManager(val config: Config,
     val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)
     var cubeMap = getCubeMap("assets/textures/skybox/skybox.png", config.directories.engineDir.resolve("assets/textures/skybox/skybox.png"))
 //    var cubeMap = getCubeMap("assets/textures/skybox/skybox5.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
-    private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("HORIZONTAL", true)))
-    private val blur2dProgramSeparableVertical = programManager.getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", Defines(getDefine("VERTICAL", true)))
+    private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("HORIZONTAL", true)))
+    private val blur2dProgramSeparableVertical = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("VERTICAL", true)))
 
     private val temp = loadDefaultTexture()
     val defaultTexture = temp.first
@@ -236,7 +237,7 @@ class TextureManager(val config: Config,
         return tex
     }
 
-    fun Texture.createTextureHandleAndMakeResident() = gpuContext.calculate {
+    fun Texture.createTextureHandleAndMakeResident() = gpuContext.invoke {
         handle = ARBBindlessTexture.glGetTextureHandleARB(id)
         ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
     }
@@ -297,7 +298,7 @@ class TextureManager(val config: Config,
 
     @JvmOverloads
     fun generateMipMaps(glTextureTarget: GlTextureTarget = TEXTURE_2D, textureId: Int) {
-        gpuContext.execute() {
+        gpuContext.invoke {
             gpuContext.bindTexture(glTextureTarget, textureId)
             GL30.glGenerateMipmap(glTextureTarget.glTarget)
         }
@@ -352,7 +353,7 @@ class TextureManager(val config: Config,
         gpuContext.bindTexture(target, textureId)
 
 
-        gpuContext.execute() {
+        gpuContext.invoke {
             setupTextureParameters(target)
             texStorage(target, format, width, height, depth, 1)
         }
@@ -360,14 +361,14 @@ class TextureManager(val config: Config,
         return textureId
     }
 
-    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.execute() {
+    fun texStorage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int, mipMapCount: Int) = gpuContext.invoke {
         when (target) {
             TEXTURE_CUBE_MAP_ARRAY -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, 6 * depth)
             TEXTURE_3D -> GL42.glTexStorage3D(target.glTarget, mipMapCount, internalFormat, width, height, depth)
             else -> GL42.glTexStorage2D(target.glTarget, mipMapCount, internalFormat, width, height)
         }
     }
-    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute() {
+    fun texImage(target: GlTextureTarget, mipMapLevel: Int, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.invoke {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         when {
             target == TEXTURE_CUBE_MAP_ARRAY -> throw NotImplementedError()
@@ -379,7 +380,7 @@ class TextureManager(val config: Config,
     }
 
     //    TODO: The data buffer mustn't be null
-    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute() {
+    fun texSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.invoke {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         //null as FloatBuffer?)
         when (target) {
@@ -389,7 +390,7 @@ class TextureManager(val config: Config,
         }
     }
     //    TODO: The data buffer mustn't be null
-    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.execute() {
+    fun compressedTexSubImage(target: GlTextureTarget, internalFormat: Int, width: Int, height: Int, depth: Int) = gpuContext.invoke {
         val format = GL11.GL_RGBA//if (internalFormat.hasAlpha) GL11.GL_RGBA else GL11.GL_RGB
         //null as FloatBuffer?)
         when (target) {
@@ -440,7 +441,7 @@ class TextureManager(val config: Config,
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.execute() {
+        gpuContext.invoke {
             blur2dProgramSeparableHorizontal.use()
             gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
             gpuContext.bindImageTexture(1, sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F)
@@ -470,7 +471,7 @@ class TextureManager(val config: Config,
         }
         val finalWidth = width
         val finalHeight = height
-        gpuContext.execute() {
+        gpuContext.invoke {
             blur2dProgramSeparableHorizontal.use()
             gpuContext.bindTexture(0, TEXTURE_2D, sourceTexture)
             gpuContext.bindImageTexture(1, sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F)
@@ -482,6 +483,10 @@ class TextureManager(val config: Config,
             val num_groups_y = Math.max(1, finalHeight / 8)
             blur2dProgramSeparableHorizontal.dispatchCompute(num_groups_x, num_groups_y, 1)
         }
+    }
+
+    fun Texture.delete() = gpuContext.run {
+        delete()
     }
 
     companion object {

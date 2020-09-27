@@ -1,7 +1,8 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -11,19 +12,20 @@ import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicLong
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
     val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory,
             { currentStaging, currentRead -> currentStaging.cycle < currentRead.cycle })
 }
-class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make generic
+
+class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,
                     val lineRenderer: LineRenderer = LineRendererImpl(engineContext),
                     val materialManager: MaterialManager = engineContext.materialManager) : Manager {
@@ -38,14 +40,15 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
 
-    val updateCycle = AtomicLong()
+    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) = clear()
 
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        updateCycle.getAndIncrement()
-    }
-
-    override fun extract(renderState: RenderState) {
-        renderState.cycle = updateCycle.get()
+    fun finishCycle(scene: Scene) {
+        if (renderState.currentWriteState.gpuHasFinishedUsingIt) {
+            renderState.currentWriteState.deltaSeconds = deltaS.toFloat()
+            extract(scene, renderState.currentWriteState)
+            scene.extract(renderState.currentWriteState)
+            renderState.swapStaging()
+        }
     }
     init {
         var lastTimeSwapped = true
@@ -90,7 +93,7 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         }
         GlobalScope.launch {
             while(true) {
-                engineContext.gpuContext.execute(block = {
+                engineContext.gpuContext.invoke(block = {
                     runnable.run()
                 })
                 // https://bugs.openjdk.java.net/browse/JDK-4852178
@@ -102,15 +105,18 @@ class RenderManager(val engineContext: EngineContext<OpenGl>, // TODO: Make gene
         }
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+
         engineContext.renderSystems.forEach {
-            it.update(deltaSeconds)
+            it.run { update(scene, deltaSeconds) }
         }
     }
 
-    fun getDeltaInMS() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
+    val deltaMs
+        get() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
 
-    fun getDeltaInS() = getDeltaInMS() / 1000.0
+    val deltaS
+        get() = deltaMs / 1000.0
 
     fun getCurrentFPS() = fpsCounter.fps
 

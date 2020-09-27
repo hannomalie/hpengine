@@ -3,7 +3,12 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -17,15 +22,13 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
-import java.io.File
 
-class DirectionalLightShadowMapExtension(private val engineContext: EngineContext<OpenGl>) : RenderExtension<OpenGl> {
+class DirectionalLightShadowMapExtension(private val engineContext: EngineContext) : RenderExtension<OpenGl> {
 
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
     val renderTarget = RenderTarget(
@@ -40,7 +43,9 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         textures = listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)
     )
 
-    private val directionalShadowPassProgram: Program = engineContext.programManager.getProgram(getShaderSource(File(Shader.directory + "directional_shadowmap_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
+    private val directionalShadowPassProgram: Program = engineContext.programManager.getProgram(
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "directional_shadowmap_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "shadowmap_fragment.glsl")))
     var voxelConeTracingExtension: VoxelConeTracingExtension? = null
 
     private var renderedInCycle: Long = 0
@@ -53,14 +58,19 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         engineContext.eventBus.register(this)
     }
 
+    override fun extract(scene: Scene, renderState: RenderState) {
+        renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
+        renderState.directionalLightState[0].shadowMapId = renderTarget.renderedTextures[0]
+
+    }
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
-        val task = GPUProfiler.start("Directional shadowmap")
-        if (renderedInCycle < renderState.directionalLightHasMovedInCycle ||
-                renderedInCycle < renderState.entitiesState.entityMovedInCycle ||
-                renderedInCycle < renderState.entitiesState.entityAddedInCycle) {
-            drawShadowMap(renderState, firstPassResult)
+        profiled("Directional shadowmap") {
+            if (renderedInCycle < renderState.directionalLightHasMovedInCycle ||
+                    renderedInCycle < renderState.entitiesState.anyEntityMovedInCycle ||
+                    renderedInCycle < renderState.entitiesState.entityAddedInCycle) {
+                drawShadowMap(renderState, firstPassResult)
+            }
         }
-        task?.end()
     }
 
     private fun drawShadowMap(renderState: RenderState, firstPassResult: FirstPassResult) {
@@ -80,9 +90,10 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         directionalShadowPassProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
         directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
 
-        for (i in visibles.indices) {
-            val e = visibles[i]
-            draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, directionalShadowPassProgram, false, false)
+        for (batch in visibles) {
+            if(batch.isShadowCasting) {
+                draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, batch, directionalShadowPassProgram, false, false)
+            }
         }
         engineContext.textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)
         firstPassResult.directionalLightShadowMapWasRendered = true

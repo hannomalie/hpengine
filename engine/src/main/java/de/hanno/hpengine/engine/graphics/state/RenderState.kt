@@ -11,7 +11,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.copyFrom
 import org.joml.Vector3f
@@ -20,6 +22,8 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val customState = CustomStates()
 
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
+
+    var time = System.currentTimeMillis()
 
     val directionalLightState = PersistentMappedStructBuffer(1, gpuContext, { DirectionalLightState() })
 
@@ -30,9 +34,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val environmentProbesState = EnvironmentProbeState(gpuContext)
 
     var skyBoxMaterialIndex = -1
-
-    val commandOrganizationStatic: CommandOrganization = CommandOrganization(gpuContext)
-    val commandOrganizationAnimated: CommandOrganization = CommandOrganization(gpuContext)
 
     var camera = Camera(Entity("RenderStateCameraEntity"), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
@@ -60,8 +61,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val materialBuffer: PersistentMappedStructBuffer<MaterialStruct>
         get() = entitiesState.materialBuffer
 
-    var deltaInS: Float = 0.1f
-    var sceneInitialized: Boolean = false
+    var deltaSeconds: Float = 0.1f
 
     constructor(source: RenderState) : this(source.gpuContext) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
@@ -92,9 +92,9 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         latestDrawResult.set(latestDrawResult)
         entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
-        sceneInitialized = source.sceneInitialized
     }
-
+    val gpuHasFinishedUsingIt
+        get() = gpuCommandSync.isSignaled
     fun addStatic(batch: RenderBatch) {
         entitiesState.renderBatchesStatic.add(batch)
     }
@@ -105,10 +105,8 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     fun add(state: Any) = customState.add(state)
 
-    operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef] as T
+    operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef]
 
-    fun entityHasMoved() = entitiesState.entityMovedInCycle >= cycle
-    fun entityWasAdded() = entitiesState.entityAddedInCycle >= cycle
 }
 
 class CustomStates {
@@ -124,8 +122,8 @@ class CustomStates {
 
 class StateRef<out T>(val index: Int)
 
-interface RenderSystem {
+interface RenderSystem: Updatable {
     @JvmDefault fun render(result: DrawResult, state: RenderState) { }
-    @JvmDefault fun update(deltaSeconds: Float) { }
     @JvmDefault fun afterFrameFinished() { }
+    @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
 }

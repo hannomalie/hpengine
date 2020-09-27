@@ -10,14 +10,16 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
-import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import java.lang.IllegalStateException
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ClustersComponent(override val entity: Entity): Component {
@@ -26,13 +28,15 @@ class ClustersComponent(override val entity: Entity): Component {
     private val clusters = CopyOnWriteArrayList<Cluster>()
 
     fun getInstances(): List<Instance> = instances
-    fun getInstancesMinMaxWorlds(): List<AABB> = instances.map{ it.minMaxWorld }
+    fun getInstancesBoundingVolumes(): List<AABB> = instances.map { it.boundingVolume }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        for (cluster in clusters) {
-            launch {
-                with(cluster as Updatable) {
-                    update(deltaSeconds)
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+        launch {
+            clusters.map { cluster ->
+                launch {
+                    with(cluster) {
+                        update(scene, deltaSeconds)
+                    }
                 }
             }
         }
@@ -62,9 +66,12 @@ class ClustersComponent(override val entity: Entity): Component {
     }
 
     fun addInstances(instances: List<Instance>) {
-        if (entity.parent != null) {
+        val parent = entity.parent
+        if (parent != null) {
             for (instance in instances) {
-                instance.setParent(entity.parent)
+                // TODO: This can never succeed
+                throw IllegalStateException("Fix parenting stuff")
+                instance.parent = (parent as Instance)
             }
         }
         val firstCluster = getOrCreateFirstCluster()
@@ -100,20 +107,20 @@ class ClustersComponent(override val entity: Entity): Component {
         val clustersComponentType = ClustersComponent::class.java.simpleName
 
 
-        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform<*>, spatial: Spatial) {
+        @JvmStatic fun addInstance(entity: Entity, clustersComponent: ClustersComponent, transform: Transform, spatial: TransformSpatial) {
             addInstance(entity, clustersComponent.getOrCreateFirstCluster(), transform, spatial)
         }
-        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform<*>, spatial: Spatial) {
+        @JvmStatic fun addInstance(entity: Entity, cluster: Cluster, transform: Transform, spatial: TransformSpatial) {
             cluster.add(Instance(entity, transform, animationController = null, spatial = spatial))
 //            eventBus.post(EntityAddedEvent()) TODO: Move this to call site
         }
         @JvmStatic fun addInstance(entity: Entity,
                                    cluster: Cluster,
-                                   transform: Transform<*>,
+                                   transform: Transform,
                                    modelComponent: ModelComponent,
                                    materials: List<Material> = modelComponent.materials,
                                    animationController: AnimationController? = if (modelComponent.isStatic) null else AnimationController((modelComponent.model as AnimatedModel).animation),
-                                   spatial: Spatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
+                                   spatial: TransformSpatial = if (modelComponent.isStatic) AnimatedTransformSpatial(transform, modelComponent) else StaticTransformSpatial(transform, modelComponent)) {
 
             val instance = Instance(entity, transform, materials, animationController, spatial)
             cluster.add(instance)
@@ -123,29 +130,26 @@ class ClustersComponent(override val entity: Entity): Component {
 
 }
 
-class ClustersComponentSystem() : ComponentSystem<ClustersComponent> {
+class ClustersComponentSystem : ComponentSystem<ClustersComponent> {
     override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
     private val components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()
-    val entityInstances = mutableMapOf<Entity, MutableList<Instance>>()
 
 
     override fun getComponents() = components
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        components.forEach{
-            with(it) {
-                update(deltaSeconds)
-            }
-        }
-    }
-
-    override fun UpdateLock.addComponent(component: ClustersComponent) {
+    override fun addComponent(component: ClustersComponent) {
         components.add(component)
         instances.addAll(component.getInstances())
-        entityInstances[component.entity] = ArrayList(component.getInstances())
-    }
-
-    override fun clear() {
     }
 }
+
+
+val Entity.instances: List<Instance>
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: emptyList()
+
+val Entity.clusters: List<Cluster>
+    get() = this.getComponent(ClustersComponent::class.java)?.getClusters() ?: emptyList()
+
+val Entity.instanceCount: Int
+    get() = this.getComponent(ClustersComponent::class.java)?.getInstanceCount() ?: 1

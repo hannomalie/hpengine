@@ -9,7 +9,7 @@ data class AnimationController(val animation : Animation) {
         animation.update(seconds)
     }
 
-    var isHasUpdated by animation::hasUpdated
+    var wasUpdated by animation::hasUpdated
     var fps by animation::fps
 
     val currentFrameIndex: Int

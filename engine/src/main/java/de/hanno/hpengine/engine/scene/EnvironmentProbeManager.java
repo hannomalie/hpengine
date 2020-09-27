@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.backend.OpenGlBackendKt;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
@@ -31,6 +32,7 @@ import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
@@ -76,7 +78,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		TextureDimension3D dimension = TextureDimension.Companion.invoke(RESOLUTION, RESOLUTION, MAX_PROBES);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
 		int wrapMode = GL_REPEAT;
-		GpuContext gpuContext = engineContext.getGpuContext();
+		GpuContext gpuContext = OpenGlBackendKt.getGpuContext(engineContext);
 		this.environmentMapsArray = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA32F, wrapMode);
 		this.environmentMapsArray1 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
 		this.environmentMapsArray2 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
@@ -87,6 +89,11 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		this.renderer = new LineRendererImpl(engineContext);
 	}
 
+
+	@Override
+	public void beforeSetScene(@NotNull Scene currentScene, @NotNull Scene scene) {
+		clearProbes();
+	}
 	public EnvironmentProbe getProbe(Entity entity, Vector3f center, float size) throws Exception {
 		return getProbe(entity, center, size, DEFAULT_PROBE_UPDATE, 1.0f);
 	}
@@ -101,7 +108,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight, this);
 		probes.add(probe);
 		updateBuffers();
-        engine.getEventBus().post(new ProbeAddedEvent(probe));
+        OpenGlBackendKt.getEventBus(engine).post(new ProbeAddedEvent(probe));
 		return probe;
 	}
 	
@@ -113,9 +120,9 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		for(int i = 0; i < probes.size(); i++) {
 			AABB box = probes.get(i).getBox();
 			box.move(new Vector3f(box.getMin()).add(box.getHalfExtents()).negate());
-			box.move(probes.get(i).getEntity().getPosition());
-			Vector3f min = box.getMin();
-			Vector3f max = box.getMax();
+			box.move(probes.get(i).getEntity().getTransform().getPosition());
+			Vector3f min = new Vector3f(box.getMin());
+			Vector3f max = new Vector3f(box.getMax());
 			float weight = probes.get(i).getWeight();
 			
 			srcMinPositions[3*i] = min.x;
@@ -173,7 +180,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().
 				filter(probe -> probe.update == Update.DYNAMIC).
-				sorted((o1, o2) -> Float.compare(new Vector3f(o1.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getCenter()).sub(camera.getPosition().negate()).lengthSquared())).
+				sorted((o1, o2) -> Float.compare(new Vector3f(o1.getEntity().getTransform().getCenter()).sub(camera.getTransform().getPosition().negate()).lengthSquared(), new Vector3f(o2.getEntity().getTransform().getCenter()).sub(camera.getTransform().getPosition().negate()).lengthSquared())).
 				collect(Collectors.toList());
 		
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
@@ -183,14 +190,14 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void prepareProbeRendering() {
-        engine.getGpuContext().setDepthMask(true);
-        engine.getGpuContext().enable(DEPTH_TEST);
-        engine.getGpuContext().enable(CULL_FACE);
-		cubeMapArrayRenderTarget.use(engine.getGpuContext(), false);
+        OpenGlBackendKt.getGpuContext(engine).setDepthMask(true);
+        OpenGlBackendKt.getGpuContext(engine).enable(DEPTH_TEST);
+        OpenGlBackendKt.getGpuContext(engine).enable(CULL_FACE);
+		cubeMapArrayRenderTarget.use(OpenGlBackendKt.getGpuContext(engine), false);
 	}
 
 	public void drawDebug(EnvironmentProbe probe, Program program) {
-		List<Vector3f> points = probe.getBox().getPoints();
+		List<Vector3fc> points = probe.getBox().getPoints();
 		EnvironmentSampler sampler = probe.getSampler();
 		for (int i = 0; i < points.size() - 1; i++) {
 			renderer.batchLine(points.get(i), points.get(i + 1));
@@ -204,9 +211,9 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		renderer.batchLine(points.get(2), points.get(4));
 		renderer.batchLine(points.get(3), points.get(5));
 
-		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(5, 0, 0)));
-		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(0, 5, 0)));
-		renderer.batchLine(sampler.getPosition(), new Vector3f(sampler.getPosition()).add(new Vector3f(0, 0, -5)));
+		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(5, 0, 0)));
+		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(0, 5, 0)));
+		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(0, 0, -5)));
 
 		float temp = (float)probe.getIndex()/10;
 		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
@@ -238,21 +245,21 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 				points[24*3*i + z] = array[z];
 			}
 		};
-		VertexBuffer buffer = new VertexBuffer(engine.getGpuContext(), EnumSet.of(DataChannels.POSITION3), points);
+		VertexBuffer buffer = new VertexBuffer(OpenGlBackendKt.getGpuContext(engine), EnumSet.of(DataChannels.POSITION3), points);
 		buffer.upload();
 		program.setUniform("diffuseColor", new Vector3f(0,1,0));
 		drawDebugLines(buffer);
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-                renderer.batchLine(probe.getEntity().getCenter(), e.getPosition());
+                renderer.batchLine(probe.getEntity().getTransform().getCenter(), e.getTransform().getPosition());
 			});
 		});
 		buffer.delete();
 	}
 	
 	public<T extends Entity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
-		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())))).findFirst();
+		return probes.stream().filter(probe -> probe.contains(entity.getBoundingVolume())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).findFirst();
 	}
 	
 	public List<EnvironmentProbe> getProbes() {
@@ -278,7 +285,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
-		return probes.stream().filter(probe -> probe.contains(entity.getMinMaxWorld())).sorted((o1, o2) -> (Float.compare(entity.getCenter().distance(o1.getEntity().getCenter()), entity.getCenter().distance(o2.getEntity().getCenter())))).collect(Collectors.toList());
+		return probes.stream().filter(probe -> probe.contains(entity.getBoundingVolume())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).collect(Collectors.toList());
 	}
 
 	public boolean remove(EnvironmentProbe probe) {
@@ -326,7 +333,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void clearProbes() {
-		probes.forEach( p -> { engine.getEventBus().unregister(p.getSampler()); });
+		probes.forEach( p -> { OpenGlBackendKt.getEventBus(engine).unregister(p.getSampler()); });
 		probes.clear();
 	}
 
@@ -336,13 +343,15 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
-		probes.forEach(p -> p.update(scope, deltaSeconds));
-		probes.stream().filter(probe -> probe.getEntity().hasMoved()).findFirst().ifPresent(first -> updateBuffers());
+	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
+		probes.forEach(p -> p.update(scope, scene, deltaSeconds));
+//		TODO: This has to be completely recoded with new component design and stuff, in order to get entities from components
+//		and entitymanager from scene etc.
+//		probes.stream().filter(probe -> probe.getEntity().hasMoved()).findFirst().ifPresent(first -> updateBuffers());
 	}
 
 	@Override
-	public void onEntityAdded(UpdateLock scope, @NotNull List<? extends Entity> entities) {
+	public void onEntityAdded(@NotNull List<Entity> entities) {
 
 	}
 
@@ -353,12 +362,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void afterUpdate(@NotNull CoroutineScope scope, float deltaSeconds) {
-
-	}
-
-	@Override
-	public void extract(@NotNull RenderState renderState) {
+	public void extract(@NotNull Scene scene, @NotNull RenderState renderState) {
 		renderState.getEnvironmentProbesState().setEnvironmapsArray0Id(getEnvironmentMapsArray(0).getId());
 		renderState.getEnvironmentProbesState().setEnvironmapsArray3Id(getEnvironmentMapsArray(3).getId());
 		renderState.getEnvironmentProbesState().setActiveProbeCount(getProbes().size());

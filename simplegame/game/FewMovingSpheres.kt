@@ -1,17 +1,13 @@
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.KotlinCompiledComponentLoader
-import de.hanno.hpengine.engine.component.ScriptComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import javax.inject.Inject
 
-class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
+class FewMovingSpheres @Inject constructor(engine: Engine) {
     init {
         try {
             val loaded = LoadModelCommand(engine.directories.gameDir.resolve("assets/models/sphere.obj"), "sphere", engine.scene.materialManager, engine.directories.gameDir).execute()
@@ -20,7 +16,7 @@ class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
 
                 val clustersComponent = ClustersComponent(current)
                 val instances = (0..499).map { i ->
-                    val trafo = SimpleTransform()
+                    val trafo = Transform()
                     trafo.rotate(Vector3f(1f, 0f, 0f), -90)
                     trafo.setTranslation(Vector3f((100 * i).toFloat(), 0f, 0f))
                     Instance(current, trafo)
@@ -30,7 +26,7 @@ class FewMovingSpheres @Inject constructor(engine: Engine<*>) {
                 current.addComponent(clustersComponent)
                 val codeFile = engine.directories.gameDir.resolve("scripts").resolve("SimpleMoveComponentKotlin.kt")
                 val moveComponent = KotlinCompiledComponentLoader.load(engine, codeFile, current)
-                current.addComponent(moveComponent, ScriptComponent::class.java as Class<Component>)
+                current.addComponent(moveComponent)
             }
 
             engine.sceneManager.addAll(loaded.entities)

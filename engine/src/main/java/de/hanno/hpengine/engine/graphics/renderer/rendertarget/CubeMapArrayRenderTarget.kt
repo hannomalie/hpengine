@@ -45,7 +45,7 @@ class CubeMapArrayRenderTarget @JvmOverloads constructor(gpuContext: GpuContext<
     init {
         for (cubeMapArrayIndex in textures.indices) {
             val cma = textures[cubeMapArrayIndex]
-            gpuContext.execute {
+            gpuContext.invoke {
                 gpuContext.bindTexture(cma)
                 for (cubeMapIndex in 0 until cma.dimension.depth) {
                     val cubeMapView = cma.createView(gpuContext, cubeMapIndex)

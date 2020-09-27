@@ -4,11 +4,11 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import javax.inject.Inject
 
-class FewInitInstancedAnimated @Inject constructor(engine: Engine<*>) {
+class FewInitInstancedAnimated @Inject constructor(engine: Engine) {
     init {
         try {
             val loaded = LoadModelCommand(engine.directories.gameDir.resolve("assets/models/doom3monster/monster.md5mesh"), "hellknight", engine.scene.materialManager, engine.directories.gameDir).execute()
@@ -17,7 +17,7 @@ class FewInitInstancedAnimated @Inject constructor(engine: Engine<*>) {
 
                 val clustersComponent = ClustersComponent(current)
                 val instances = (0..299).map { i ->
-                    val trafo = SimpleTransform()
+                    val trafo = Transform()
                     trafo.rotate(Vector3f(1f, 0f, 0f), -90)
                     trafo.setTranslation(Vector3f((100 * i).toFloat(), 0f, 0f))
                     Instance(current, trafo)

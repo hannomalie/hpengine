@@ -3,51 +3,236 @@ package de.hanno.hpengine.engine.transform
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.model.Instance
+import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
+import de.hanno.hpengine.util.isEqualTo
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
+import org.joml.Vector4fc
 import java.util.ArrayList
 
-data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) {
-    val extents: Vector3f
-            get() = Vector3f(max).sub(min)
-    val halfExtents: Vector3f
-            get() = Vector3f(extents).mul(0.5f)
+inline val Vector3fc.x
+    get() = x()
+inline val Vector3fc.y
+    get() = y()
+inline val Vector3fc.z
+    get() = z()
 
+inline val Vector4fc.x
+    get() = x()
+inline val Vector4fc.y
+    get() = y()
+inline val Vector4fc.z
+    get() = z()
+inline val Vector4fc.w
+    get() = w()
+
+sealed class BoundingVolume
+
+data class BoundingSphereTrafo(val translation: Vector3f = Vector3f(), var scale: Float = 1f) {
+    companion object {
+        val identity = BoundingSphereData()
+    }
+}
+data class BoundingSphereData(val positionRadius: Vector4fc = Vector4f(0f, 0f, 0f, absoluteMinimum.x))
+class BoundingSphere(val positionRadius: Vector4fc): BoundingVolume() {
+    private var lastUsedTransformationMatrix: Matrix4f? = null
+    private var lastUsedBoundingSphereTrafo: BoundingSphereTrafo? = null
+
+    var localBoundingSphere = BoundingSphereData()
+        set(value) {
+            field = value
+            actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
+            lastUsedTransformationMatrix = null
+        }
+    var boundingSphere = BoundingSphereData()
+        private set
+
+    init {
+        recalculate(IDENTITY)
+        lastUsedTransformationMatrix = null
+    }
+
+    private val scaleTemp = Vector3f()
+    fun isClean(transform: Matrix4f): Boolean {
+        if(lastUsedTransformationMatrix == null) return false
+        return transform.isEqualTo(lastUsedTransformationMatrix!!)
+    }
+
+    fun recalculate(transform: Matrix4f) {
+        recalculateIfNotClean(transform)
+    }
+    private fun actuallyRecalculate(transform: Matrix4f) {
+        lastUsedTransformationMatrix = transform
+        lastUsedBoundingSphereTrafo = BoundingSphereTrafo()
+
+        transform.getTranslation(lastUsedBoundingSphereTrafo!!.translation)
+        transform.getScale(scaleTemp)
+        lastUsedBoundingSphereTrafo!!.scale = scaleTemp[scaleTemp.maxComponent()]
+
+        val translation = Vector4f(
+            lastUsedBoundingSphereTrafo!!.translation.x,
+            lastUsedBoundingSphereTrafo!!.translation.y,
+            lastUsedBoundingSphereTrafo!!.translation.z,
+            0f
+        )
+        val positionRadius = Vector4f(localBoundingSphere.positionRadius).add(translation)
+        positionRadius.w = localBoundingSphere.positionRadius.w * lastUsedBoundingSphereTrafo!!.scale
+        boundingSphere = BoundingSphereData(positionRadius)
+    }
+
+    private fun recalculateIfNotClean(transform: Matrix4f) {
+        if (!isClean(transform)) {
+            actuallyRecalculate(Matrix4f(transform))
+        }
+    }
+}
+
+data class AABBData(val min: Vector3fc = Vector3f(absoluteMaximum), val max: Vector3fc = Vector3f(absoluteMinimum)) {
+    val extents by lazy {
+        Vector3f(max).sub(min)
+    }
+    val halfExtents by lazy {
+        Vector3f(extents).mul(0.5f)
+    }
+    val center by lazy {
+        Vector3f(min).add(halfExtents)
+    }
+    val boundingSphereRadius by lazy {
+        halfExtents.get(halfExtents.maxComponent())
+    }
+    companion object {
+        @JvmName("getSurroundingAABBData")
+        fun List<AABBData>.getSurroundingAABB(): AABBData {
+            val newMin = Vector3f(first().min)
+            val newMax = Vector3f(first().max)
+            forEach {
+                newMin.min(it.min)
+                newMax.max(it.max)
+            }
+            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+        }
+        fun List<AABB>.getSurroundingAABB(): AABBData {
+            val newMin = Vector3f(first().min)
+            val newMax = Vector3f(first().max)
+            forEach {
+                newMin.min(it.min)
+                newMax.max(it.max)
+            }
+            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+        }
+
+        @JvmName("getSurroundingAABBInstance")
+        fun List<Instance>.getSurroundingAABB(): AABBData {
+            val newMin = Vector3f(first().boundingVolume.min)
+            val newMax = Vector3f(first().boundingVolume.max)
+            forEach {
+                newMin.min(it.boundingVolume.min)
+                newMax.max(it.boundingVolume.max)
+            }
+            return AABBData(newMin.toImmutable(), newMax.toImmutable())
+        }
+    }
+}
+
+class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc = Vector3f(absoluteMinimum)): BoundingVolume() {
+    constructor(aabbData: AABBData): this(aabbData.min, aabbData.max)
+
+    var localAABB = AABBData(localMin, localMax)
+        set(value) {
+            field = value
+            actuallyRecalculate(lastUsedTransformationMatrix ?: IDENTITY)
+            lastUsedTransformationMatrix = null
+        }
+
+    fun setLocalAABB(min: Vector3fc, max: Vector3fc) {
+        localAABB = AABBData(min, max)
+    }
+
+    var worldAABB = AABBData()
+        private set
+
+    inline val min: Vector3fc
+        get() = worldAABB.min
+
+    inline val max: Vector3fc
+        get() = worldAABB.max
+
+    var localMin: Vector3fc
+        get() = localAABB.min
+        set(value) = setLocalAABB(value, localMax)
+
+    var localMax: Vector3fc
+        get() = localAABB.max
+        set(value) = setLocalAABB(localMin, value)
+
+    inline val extents: Vector3f
+        get() = worldAABB.extents
+    inline val halfExtents: Vector3f
+        get() = worldAABB.halfExtents
+
+    inline val boundingSphereRadius: Float
+        get() = worldAABB.boundingSphereRadius
+
+    inline val center: Vector3f
+        get() = worldAABB.center
+
+    private var lastUsedTransformationMatrix: Matrix4f? = null
+
+    val corners = Array(8) { Vector3f() }
+
+    init {
+        recalculate(IDENTITY)
+        lastUsedTransformationMatrix = null
+    }
+
+    fun isClean(transform: Matrix4f): Boolean {
+        if(lastUsedTransformationMatrix == null) return false
+        return transform.isEqualTo(lastUsedTransformationMatrix!!)
+    }
+
+    fun recalculate(transform: Matrix4f) {
+        recalculateIfNotClean(transform)
+    }
+    private fun actuallyRecalculate(transform: Matrix4f) {
+        transform(transform)
+        lastUsedTransformationMatrix = transform
+    }
+
+    private fun recalculateIfNotClean(transform: Matrix4f) {
+        if (!isClean(transform)) {
+            actuallyRecalculate(Matrix4f(transform))
+        }
+    }
     constructor(center: Vector3f, halfExtents: Float):
             this(Vector3f(center).sub(Vector3f(halfExtents)), Vector3f(center).add(Vector3f(halfExtents)))
 
-    private val  corners = Array(8) { Vector3f() }
+    private fun transform(transform: Matrix4f) {
+        val localMin = Vector3f(localAABB.min)
+        val localMax = Vector3f(localAABB.max)
 
-    fun transform(transform: Transform<*>, minMaxWorldProperty: AABB) {
-        transform.transformPosition(min, corners[0])
-        transform.transformPosition(corners[1].set(min.x, min.y, max.z), corners[1])
-        transform.transformPosition(corners[2].set(max.x, min.y, min.z), corners[2])
-        transform.transformPosition(corners[3].set(max.x, min.y, max.z), corners[3])
+        transform.transformPosition(localMin, corners[0])
+        transform.transformPosition(corners[1].set(localMin.x, localMin.y, localMax.z), corners[1])
+        transform.transformPosition(corners[2].set(localMax.x, localMin.y, localMin.z), corners[2])
+        transform.transformPosition(corners[3].set(localMax.x, localMin.y, localMax.z), corners[3])
 
-        transform.transformPosition(max, corners[4])
-        transform.transformPosition(corners[5].set(min.x, max.y, max.z), corners[5])
-        transform.transformPosition(corners[6].set(max.x, max.y, min.z), corners[6])
-        transform.transformPosition(corners[7].set(min.x, max.y, min.z), corners[7])
+        transform.transformPosition(localMax, corners[4])
+        transform.transformPosition(corners[5].set(localMin.x, localMax.y, localMax.z), corners[5])
+        transform.transformPosition(corners[6].set(localMax.x, localMax.y, localMin.z), corners[6])
+        transform.transformPosition(corners[7].set(localMin.x, localMax.y, localMin.z), corners[7])
 
-        minMaxWorldProperty.resetToAbsoluteMinMax()
+        val minResult = Vector3f(absoluteMaximum)
+        val maxResult = Vector3f(absoluteMinimum)
         corners.forEach { corner ->
-            minMaxWorldProperty.min.min(corner)
-            minMaxWorldProperty.max.max(corner)
+            minResult.min(corner)
+            maxResult.max(corner)
         }
+        worldAABB = AABBData(minResult, maxResult)
     }
 
-    private fun resetToAbsoluteMinMax() {
-        min.set(Spatial.MIN)
-        max.set(Spatial.MAX)
-    }
-
-    private fun clear() {
-        min.set(0f,0f,0f)
-        max.set(0f,0f,0f)
-    }
-
-    fun contains(position: Vector3f): Boolean = contains(Vector4f(position.x, position.y, position.z, 1.0f))
+    fun contains(position: Vector3fc): Boolean = contains(Vector4f(position.x, position.y, position.z, 1.0f))
     fun contains(position: Vector4f): Boolean {
         return min.x < position.x && max.x > position.x &&
                 min.y < position.y && max.y > position.y &&
@@ -55,8 +240,8 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
     }
 
 
-    fun getPoints(): List<Vector3f> {
-        val result: MutableList<Vector3f> = ArrayList()
+    fun getPoints(): List<Vector3fc> {
+        val result: MutableList<Vector3fc> = ArrayList()
         result.add(min)
         result.add(Vector3f(min.x + extents.x, min.y, min.z))
         result.add(Vector3f(min.x + extents.x, min.y, min.z + extents.z))
@@ -68,8 +253,8 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
         return result
     }
     fun getPointsAsArray(): FloatArray? {
-        val points: List<Vector3f> = getPoints()
-        val pointsForLineDrawing: MutableList<Vector3f> = ArrayList()
+        val points: List<Vector3fc> = getPoints()
+        val pointsForLineDrawing: MutableList<Vector3fc> = ArrayList()
         pointsForLineDrawing.add(points[0])
         pointsForLineDrawing.add(points[1])
         pointsForLineDrawing.add(points[1])
@@ -103,12 +288,22 @@ data class AABB(var min: Vector3f = Vector3f(), var max: Vector3f = Vector3f()) 
         return dest
     }
 
-    fun move(amount: Vector3f) {
-        min.add(amount)
-        max.add(amount)
-    }
+    fun move(amount: Vector3f) = transform(Transform().apply { setTranslation(amount) })
+
+    operator fun component1() = min
+    operator fun component2() = max
+
 }
 
+fun List<Entity>.calculateAABB(): AABBData {
+    val minResult = Vector3f(absoluteMaximum)
+    val maxResult = Vector3f(absoluteMinimum)
+    mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach {
+        minResult.min(it.boundingVolume.min)
+        maxResult.max(it.boundingVolume.max)
+    }
+    return AABBData(minResult, maxResult)
+}
 
 fun AABB.isInFrustum(camera: Camera): Boolean {
     val centerWorld = Vector3f()
@@ -123,7 +318,7 @@ fun AABB.containsOrIntersectsSphere(position: Vector3f, radius: Float): Boolean 
         result = true
         return result
     }
-    val points: List<Vector3f> = getPoints()
+    val points: List<Vector3fc> = getPoints()
     val smallestDistance: Float = smallestDistance(points, position)
     val largestDistance: Float = largestDistance(points, position)
     if (largestDistance <= radius) {
@@ -132,7 +327,7 @@ fun AABB.containsOrIntersectsSphere(position: Vector3f, radius: Float): Boolean 
     return result
 }
 
-private fun smallestDistance(points: List<Vector3f>, pivot: Vector3f): Float {
+private fun smallestDistance(points: List<Vector3fc>, pivot: Vector3f): Float {
     var length = Float.MAX_VALUE
     for (point in points) {
         val tempLength = Vector3f(point).sub(pivot).length()
@@ -141,7 +336,7 @@ private fun smallestDistance(points: List<Vector3f>, pivot: Vector3f): Float {
     return length
 }
 
-private fun largestDistance(points: List<Vector3f>, pivot: Vector3f): Float {
+private fun largestDistance(points: List<Vector3fc>, pivot: Vector3f): Float {
     var length = Float.MAX_VALUE
     for (point in points) {
         val tempLength = Vector3f(point).sub(pivot).length()
@@ -150,29 +345,5 @@ private fun largestDistance(points: List<Vector3f>, pivot: Vector3f): Float {
     return length
 }
 
-private val absoluteMaximum = Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE)
-private val absoluteMinimum = Vector3f(-Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE)
-
-fun AABB.calculateMinMax(entities: List<Entity>) {
-    if (entities.isEmpty()) {
-        min.set(-1f, -1f, -1f)
-        max.set(1f, 1f, 1f)
-        return
-    }
-    min.set(absoluteMaximum)
-    max.set(absoluteMinimum)
-    for (entity in entities) {
-        if (!entity.hasComponent(ModelComponent::class.java)) {
-            continue
-        }
-        val minMaxWorld = entity.minMaxWorld
-        val currentMin = minMaxWorld.min
-        val currentMax = minMaxWorld.max
-        min.x = currentMin.x.coerceAtMost(min.x)
-        min.y = currentMin.y.coerceAtMost(min.y)
-        min.z = currentMin.z.coerceAtMost(min.z)
-        max.x = currentMax.x.coerceAtLeast(max.x)
-        max.y = currentMax.y.coerceAtLeast(max.y)
-        max.z = currentMax.z.coerceAtLeast(max.z)
-    }
-}
+val absoluteMaximum = Vector3f(Float.MAX_VALUE).toImmutable()
+val absoluteMinimum = Vector3f(-Float.MAX_VALUE).toImmutable()

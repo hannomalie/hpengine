@@ -1,34 +1,42 @@
 package de.hanno.hpengine.engine.component
 
+import de.hanno.hpengine.engine.directory.AbstractDirectory
+import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.AnimatedModel
-import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
+import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.StaticModel
-import de.hanno.hpengine.engine.model.instanceCount
+import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.TransformSpatial
+import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import kotlinx.coroutines.CoroutineScope
-import java.lang.IllegalStateException
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
-import java.util.logging.Logger
 
 
-class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
+class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program? = null) : BaseComponent(entity) {
+    val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {
             field = value
             model.material = value
             for (child in entity.children) {
-                child.getComponentOption(ModelComponent::class.java).ifPresent { c -> c.material = value }
+                child.getComponent(ModelComponent::class.java)?.let { c -> c.material = value }
             }
         }
     var instanced = false
@@ -42,8 +50,8 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     val triangleCount: Int
         get() = model.triangleCount
 
-    val minMax: AABB
-        get() = getMinMax(entity)
+    val boundingVolume: AABB
+        get() = getBoundingVolume(entity.transform)
 
     val meshes: List<Mesh<*>>
         get() = model.meshes
@@ -56,13 +64,13 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
             model.animationController.currentFrameIndex
         } else 0
 
-    var isHasUpdated: Boolean
+    var wasUpdated: Boolean
         get() = if (model is AnimatedModel) {
-            model.animationController.isHasUpdated
+            model.animationController.wasUpdated
         } else false
         set(value) {
             if (model is AnimatedModel) {
-                model.animationController.isHasUpdated = value
+                model.animationController.wasUpdated = value
             }
         }
 
@@ -72,11 +80,19 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
     val materials: List<Material>
         get() = meshes.map { it.material }
 
-    fun getMinMax(transform: Transform<*>): AABB = model.getMinMax(transform)
+    init {
+        entity.spatial = spatial
+
+        if (model is AnimatedModel) {
+            entity.updateType = Update.DYNAMIC
+        }
+    }
+
+    fun getBoundingVolume(transform: Transform): AABB = model.getBoundingVolume(transform)
 
     fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
         if (model is AnimatedModel) {
             model.update(deltaSeconds)
         }
@@ -86,23 +102,13 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
         return model.getBoundingSphereRadius(mesh)
     }
 
-    fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
-        return model.getMinMax(transform, mesh)
+    fun getBoundingVolume(transform: Transform, mesh: Mesh<*>): AABB {
+        return model.getBoundingVolume(transform, mesh)
     }
 
-    override fun toString(): String {
-        return "ModelComponent (" + model.toString() + ")"
-    }
-
-    fun getBytesPerObject(): Int {
-        return bytesPerInstance * meshes.size * entity.instanceCount
-    }
+    override fun toString(): String = "ModelComponent [${model.path}]"
 
     companion object {
-        val COMPONENT_KEY = ModelComponent::class.java.simpleName
-        private val LOGGER = Logger.getLogger(ModelComponent::class.java.name)
-        private const val serialVersionUID = 1L
-
         var DEFAULTCHANNELS = EnumSet.of(
                 DataChannels.POSITION3,
                 DataChannels.TEXCOORD,
@@ -124,7 +130,37 @@ class ModelComponent(entity: Entity, val model: Model<*>, initMaterial: Material
 
         val bytesPerInstance: Int
             get() = 16 * java.lang.Float.BYTES + 16 * Integer.BYTES + 8 * java.lang.Float.BYTES
+
+        fun Entity.modelComponent(model: StaticModel) {
+            addComponent(ModelComponent(this, model, model.material))
+        }
+        fun Entity.modelComponent(model: AnimatedModel) {
+            addComponent(ModelComponent(this, model, model.material))
+        }
+
+        fun Entity.modelComponent(name: String,
+                                  file: String,
+                                  materialManager: MaterialManager,
+                                  modelComponentManager: ModelComponentManager,
+                                  gameDirectory: AbstractDirectory,
+                                  aabb: AABBData? = null,
+                                  program: Program? = null): ModelComponent {
+
+            val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
+                LoadModelCommand(file,
+                        name,
+                        materialManager,
+                        gameDirectory,
+                        this).execute().entities.first().components.firstIsInstance<ModelComponent>().model
+            }
+
+            val modelComponent = ModelComponent(this, loadedModel, loadedModel.material, program)
+            addComponent(modelComponent)
+            aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
+            return modelComponent
+        }
     }
+
 }
 
 fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {

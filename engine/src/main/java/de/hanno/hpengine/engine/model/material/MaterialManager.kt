@@ -1,9 +1,11 @@
 package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.addResourceContext
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.event.MaterialAddedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
@@ -11,6 +13,7 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.resize
@@ -24,7 +27,7 @@ class MaterialManager(val config: Config,
                       val textureManager: TextureManager,
                       val singleThreadContext: AddResourceContext) : Manager {
 
-    constructor(engineContext: EngineContext<*>,
+    constructor(engineContext: EngineContext,
                 config: Config = engineContext.config,
                 eventBus: EventBus = engineContext.eventBus,
                 textureManager: TextureManager = engineContext.textureManager,
@@ -104,14 +107,12 @@ class MaterialManager(val config: Config,
     fun addMaterial(material: SimpleMaterial) = singleThreadContext.launch {
         material.materialIndex = MATERIALS.size
         MATERIALS[material.materialInfo.name] = material
-        eventBus.post(MaterialAddedEvent())
     }
     fun addMaterials(materials: List<SimpleMaterial>) = singleThreadContext.launch {
         materials.forEach { material ->
             material.materialIndex = MATERIALS.size
             MATERIALS[material.materialInfo.name] = material
         }
-        eventBus.post(MaterialAddedEvent())
     }
 
     fun getMaterial(hashMap: HashMap<MAP, String>): SimpleMaterial {
@@ -144,11 +145,11 @@ class MaterialManager(val config: Config,
         var count = 0
 
         fun getDirectory(): String {
-            return Directories.WORKDIR_NAME + "/assets/materials/"
+            return Directories.ENGINEDIR_NAME + "/assets/materials/"
         }
     }
 
-    override fun extract(renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState) {
 //        TODO: Remove most of this
         renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()

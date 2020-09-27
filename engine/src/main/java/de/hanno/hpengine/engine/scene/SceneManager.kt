@@ -1,28 +1,31 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.backend.ManagerContext
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import kotlinx.coroutines.CoroutineScope
 
-class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
-
-    var scene: Scene = SimpleScene("InitialScene", managerContext)
+class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manager {
+    val addResourceContext: AddResourceContext = engineContext.backend.addResourceContext
+    var scene: Scene = initialScene
+        set(value) {
+            beforeSetScene(field, value)
+            addResourceContext.locked {
+                field = value
+            }
+            afterSetScene(field, value)
+        }
 
     fun addAll(entities: List<Entity>) {
-        managerContext.engineContext.addResourceContext.locked {
+        addResourceContext.locked {
             with(scene) { addAll(entities) }
-            managerContext.managers.managers.values.forEach {
-                with(it) { onEntityAdded(entities) }
-            }
         }
     }
     fun add(entity: Entity) = addAll(listOf(entity))
 
     fun addComponent(selection: Entity, component: Component) {
-        managerContext.engineContext.addResourceContext.locked {
+        addResourceContext.locked {
             with(scene) {
                 addComponent(selection, component)
             }
@@ -30,32 +33,24 @@ class SceneManager(val managerContext: ManagerContext<OpenGl>): Manager {
         }
     }
 
-    override fun UpdateLock.onComponentAdded(component: Component) {
-        managerContext.managers.managers.values.filter { it !is SceneManager }.forEach {
-            with(it) { onComponentAdded(component) }
-        }
+    override fun onComponentAdded(component: Component) {
+        scene.addComponent(component.entity, component)
     }
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
-        val newDrawCycle = managerContext.renderManager.updateCycle.get()
-        scene.currentCycle = newDrawCycle
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+
         with(scene) {
-            update(deltaSeconds)
+            update(scene, deltaSeconds)
         }
     }
 
-    override fun CoroutineScope.afterUpdate(deltaSeconds: Float) {
-        with(scene) {
-            afterUpdate(deltaSeconds)
-        }
+    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
+        engineContext.afterSetScene(lastScene, currentScene)
     }
 
-    override fun beforeSetScene(nextScene: Scene) {
-        scene.environmentProbeManager.clearProbes()
-        managerContext.physicsManager.clearWorld()
-        managerContext.renderManager.clear()
+    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
         scene.clear()
-        nextScene.entitySystems.gatherEntities()
+        nextScene.entitySystems.gatherEntities(nextScene)
     }
 
 }

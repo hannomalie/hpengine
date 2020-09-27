@@ -1,9 +1,7 @@
 package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.editor.EditorComponents
-import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
@@ -15,9 +13,10 @@ import de.hanno.hpengine.editor.grids.PointLightGrid
 import de.hanno.hpengine.editor.grids.SceneGrid
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.SelectionMode
-import de.hanno.hpengine.editor.input.TransformSpace
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.editor.verticalBox
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -27,18 +26,16 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
-import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
@@ -89,13 +86,21 @@ class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
 
 class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val mouseAdapter = editorComponents.mouseAdapter
-    val engine: Engine<OpenGl> = editorComponents.engine
-    val editor: RibbonEditor = editorComponents.editor
-    val sidePanel: JPanel = editorComponents.editor.sidePanel
-    val lineRenderer = LineRendererImpl(engine)
+    val engineContext = editorComponents.engineContext
+    val editor = editorComponents.editor
+    val sidePanel = editorComponents.editor.sidePanel
+    val lineRenderer = LineRendererImpl(editorComponents.engineContext)
 
-    val simpleColorProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
-    val simpleColorProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "first_pass_fragment.glsl", Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
+    val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+            "shaders/first_pass_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
+    val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgram(
+            engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+            "shaders/first_pass_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            null,
+            Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 
     var axisDragged: AxisConstraint = AxisConstraint.None
 
@@ -104,7 +109,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     var selection: Selection = Selection.None
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
+        Transform().get(this)
     }
 
     override fun render(result: DrawResult, state: RenderState) {
@@ -112,43 +117,74 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         if(axisDragged != AxisConstraint.None) return
 
         mouseAdapter.mouseClicked?.let { event ->
-            engine.deferredRenderingBuffer.use(engine.gpuContext, false)
-            engine.gpuContext.readBuffer(4)
+            engineContext.deferredRenderingBuffer.use(engineContext.gpuContext, false)
+            engineContext.gpuContext.readBuffer(4)
             floatBuffer.rewind()
-            val ratio = Vector2f(editor.canvas.width.toFloat() / engine.config.width.toFloat(),
-                    editor.canvas.height.toFloat() / engine.config.height.toFloat())
+            val ratio = Vector2f(editor.canvas.width.toFloat() / engineContext.config.width.toFloat(),
+                    editor.canvas.height.toFloat() / engineContext.config.height.toFloat())
             val adjustedX = (event.x / ratio.x).toInt()
-            val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
+            val adjustedY = engineContext.config.height - (event.y / ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
 
             val entityIndex = floatBuffer.get()
-            val pickedEntity = engine.scene.getEntities()[entityIndex.toInt()]
+            val pickedEntity = editorComponents.sceneManager.scene.getEntities()[entityIndex.toInt()]
             val meshIndex = floatBuffer.get(3)
             val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
 
+//             TODO: This is too ugly, recode
             when(selection) {
                 is EntitySelection -> {
                     when(selection) {
-                        is ModelSelection -> if(selection.model.path == modelComponent!!.model.path) unselect() else selectModel(selection)
+                        is ModelSelection -> if(selection.model.path == modelComponent?.model?.path) unselect() else selectModel(selection)
                         is MeshSelection -> {
                             val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
                             when {
-                                selection.mesh.name == selectedMesh?.name -> {
+                                selection.mesh == selectedMesh -> {
                                     unselect()
+                                    editorComponents.sceneTree.unselect()
                                 }
-                                selectedMesh != null -> selectMesh(MeshSelection(pickedEntity, selectedMesh))
+                                selectedMesh != null -> {
+                                    val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                                    editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
+                                    selectMesh(pickedMesh)
+                                }
                                 else -> Unit
                             }
                         }
-                        else -> if(selection.entity.name == pickedEntity.name) unselect() else selectEntity(pickedEntity)
+                        else -> {
+                            when(editorComponents.selectionMode) {
+                                SelectionMode.Entity -> {
+                                    if(selection.entity.name == pickedEntity.name) {
+                                        unselect()
+                                        editorComponents.sceneTree.unselect()
+                                    } else {
+                                        selectEntity(pickedEntity)
+                                        editorComponents.sceneTree.select(pickedEntity)
+                                    }
+                                }
+                                SelectionMode.Mesh -> {
+                                    val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
+                                    if(selectedMesh != null) {
+                                        val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                                        editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
+                                        selectMesh(pickedMesh)
+                                    } else Unit
+                                }
+                            }
+                        }
                     }
                 }
                 Selection.None -> when(editorComponents.selectionMode) {
-                    SelectionMode.Entity -> selectEntity(pickedEntity)
+                    SelectionMode.Entity -> {
+                        selectEntity(pickedEntity)
+                        editorComponents.sceneTree.select(pickedEntity)
+                    }
                     SelectionMode.Mesh -> {
                         if(modelComponent != null) {
                             val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
-                            selectMesh(MeshSelection(pickedEntity, selectedMesh))
+                            val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                            editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
+                            selectMesh(pickedMesh)
                         } else Unit
                     }
                 }
@@ -159,9 +195,9 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
 
         when(selection) {
             is SceneSelection -> {
-                engine.gpuContext.disable(GlCap.DEPTH_TEST)
-                engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-                lineRenderer.batchAABBLines(selection.scene.minMax.min, selection.scene.minMax.max)
+                engineContext.gpuContext.disable(GlCap.DEPTH_TEST)
+                engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+                lineRenderer.batchAABBLines(selection.scene.aabb.min, selection.scene.aabb.max)
                 lineRenderer.drawAllLines(5f, Consumer { program ->
                     program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
                     program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -243,90 +279,93 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         }
     }
 
-    fun selectPointLight(pickedPointLight: PointLight) = SwingUtils.invokeLater {
-        selection = PointLightSelection(pickedPointLight)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(PointLightGrid(pickedPointLight))
-        }
-    }
-    fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeLater {
-        selection = EntitySelection(pickedEntity)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(EntityGrid(pickedEntity))
-        }
-    }
-
-    private fun JPanel.addUnselectButton() {
-        add(JButton("Unselect").apply {
+    val unselectButton = SwingUtils.invokeAndWait {
+        JButton("Unselect").apply {
             addActionListener {
                 unselect()
             }
-        })
+        }
+    }
+    fun selectPointLight(pickedPointLight: PointLight) = SwingUtils.invokeLater {
+        selection = PointLightSelection(pickedPointLight)
+        sidePanel.verticalBox(
+            unselectButton,
+            PointLightGrid(pickedPointLight)
+        )
+    }
+
+    fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeLater {
+        selection = EntitySelection(pickedEntity)
+        sidePanel.verticalBox(
+            unselectButton,
+            EntityGrid(pickedEntity)
+        )
     }
 
     fun selectModel(pickedModel: ModelSelection) = SwingUtils.invokeLater {
         selection = pickedModel
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(ModelGrid(pickedModel.model, engine.scene.materialManager))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            ModelGrid(pickedModel.model, pickedModel.modelComponent, editorComponents.sceneManager.scene.materialManager)
+        )
     }
 
     fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeLater {
         selection = pickedMesh
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(MeshGrid(pickedMesh.mesh, engine.scene.materialManager))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.materialManager)
+        )
     }
 
     fun selectMaterial(pickedMaterial: Material) = SwingUtils.invokeLater {
         selection = MaterialSelection(pickedMaterial)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(MaterialGrid(engine.textureManager, pickedMaterial))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            MaterialGrid(engineContext.textureManager, pickedMaterial)
+        )
     }
 
     fun selectGiVolume(giVolumeComponent: GIVolumeComponent) = SwingUtils.invokeLater {
         selection = GiVolumeSelection(giVolumeComponent)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(GiVolumeGrid(giVolumeComponent, engine))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            GiVolumeGrid(giVolumeComponent, engineContext, editorComponents.sceneManager)
+        )
     }
 
-    fun unselect() = SwingUtils.invokeLater {
-        selection = Selection.None
-        sidePanel.removeAll()
-        sidePanel.revalidate()
-        sidePanel.repaint()
+    fun unselect() {
+        SwingUtils.invokeLater {
+            selection = Selection.None
+            sidePanel.removeAll()
+            sidePanel.revalidate()
+            sidePanel.add(editor.emptySidePanel)
+            sidePanel.repaint()
+        }
     }
 
     fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight) = SwingUtils.invokeLater {
         selection = DirectionalLightSelection(pickedDirectionalLight)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(DirectionalLightGrid(pickedDirectionalLight))
-            add(CameraGrid(pickedDirectionalLight))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            DirectionalLightGrid(pickedDirectionalLight),
+            CameraGrid(pickedDirectionalLight)
+        )
     }
 
     fun selectCamera(pickedCamera: Camera) = SwingUtils.invokeLater {
         selection = CameraSelection(pickedCamera)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(CameraGrid(pickedCamera))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            CameraGrid(pickedCamera)
+        )
     }
 
     fun selectScene(pickedScene: Scene) = SwingUtils.invokeLater {
         selection = SceneSelection(pickedScene)
-        sidePanel.doWithRefresh {
-            addUnselectButton()
-            add(SceneGrid(pickedScene))
-        }
+        sidePanel.verticalBox(
+            unselectButton,
+            SceneGrid(pickedScene)
+        )
     }
 }

@@ -1,11 +1,13 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -20,20 +22,25 @@ import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
-import java.io.File
 
-class SphereHolder(val engine: EngineContext<OpenGl>,
-                   val sphereProgram: Program = engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))) : RenderSystem {
+class SphereHolder(val engine: EngineContext,
+                   val sphereProgram: Program = engine.run {
+                       programManager.getProgram(
+                           EngineAsset("shaders/mvp_vertex.glsl"),
+                           EngineAsset("shaders/simple_color_fragment.glsl"),
+                           null,
+                           Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+                   }) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager
     val gpuContext = engine.gpuContext
     val sphereEntity = Entity("[Editor] Pivot")
 
     val sphere = run {
-        StaticModelLoader().load(File("assets/models/sphere.obj"), materialManager, engine.config.directories.engineDir)
+        StaticModelLoader().load("assets/models/sphere.obj", materialManager, engine.config.directories.engineDir)
     }
 
     val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {
@@ -58,17 +65,17 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
             entityIndex = sphereEntity.index, meshIndex = 0)
 
     val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
+        Transform().get(this)
     }
     override fun render(result: DrawResult, state: RenderState) {
-        render(state, sphereEntity.position, Vector3f(0f, 0f, 1f))
+        render(state, sphereEntity.transform.position, Vector3f(0f, 0f, 1f))
     }
     fun render(state: RenderState, spherePosition: Vector3f,
                color: Vector3f, useDepthTest: Boolean = true,
                beforeDraw: (Program.() -> Unit)? = null) {
 
-        val scaling = (0.1f * sphereEntity.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
-        val transformation = SimpleTransform().scale(scaling).translate(spherePosition)
+        val scaling = (0.1f * sphereEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
+        val transformation = Transform().scale(scaling).translate(spherePosition)
         if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
@@ -87,7 +94,7 @@ class SphereHolder(val engine: EngineContext<OpenGl>,
     fun render(state: RenderState, useDepthTest: Boolean = true,
                draw: (SphereHolder.(RenderState) -> Unit)) {
 
-        val transformation = SimpleTransform()
+        val transformation = Transform()
         if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.gpuContext.cullFace = false
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)

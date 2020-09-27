@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
@@ -21,22 +23,20 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram
+import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
-import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBClearTexture
 import org.lwjgl.opengl.GL11
@@ -45,7 +45,6 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_RED_INTEGER
 import org.lwjgl.opengl.GL42
-import java.io.File
 import java.util.function.Consumer
 import kotlin.math.max
 
@@ -71,7 +70,7 @@ fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExt
 }
 
 class VoxelConeTracingExtension(
-        private val engine: EngineContext<OpenGl>,
+        private val engine: EngineContext,
         directionalLightShadowMapExtension: DirectionalLightShadowMapExtension?,
         val renderer: RenderSystem,
         val pointLightExtension: BvHPointLightSecondPassExtension) : RenderExtension<OpenGl> {
@@ -89,64 +88,68 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer: Program = this.engine.programManager.getProgram(getShaderSource(File(Shader.directory + "voxelize_vertex.glsl")), getShaderSource(File(Shader.directory + "voxelize_fragment.glsl")), getShaderSource(File(Shader.directory + "voxelize_geometry.glsl")))
-    private val voxelConeTraceProgram: Program = this.engine.programManager.getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl")
-    private val texture3DMipMapAlphaBlendComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_alphablend_compute.glsl")
-    private val texture3DMipMapComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_mipmap_compute.glsl")
-    private val clearDynamicVoxelsComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl")
-    private val injectLightComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_inject_light_compute.glsl")
-    private val injectMultipleBounceLightComputeProgram: ComputeShaderProgram = this.engine.programManager.getComputeProgram("texture3D_inject_bounce_light_compute.glsl")
+    private val voxelizer: Program = engine.run {
+        programManager.getProgram(
+            EngineAsset("shaders/voxelize_vertex.glsl"),
+            EngineAsset("shaders/voxelize_fragment.glsl"),
+            EngineAsset("shaders/voxelize_geometry.glsl")
+        )
+    }
+
+    private val voxelConeTraceProgram: Program = engine.run {
+        programManager.getProgram(
+            EngineAsset("shaders/passthrough_vertex.glsl"),
+            EngineAsset("shaders/voxel_cone_trace_fragment.glsl")
+        )
+    }
+
+    private val texture3DMipMapAlphaBlendComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_mipmap_alphablend_compute.glsl")) }
+    private val texture3DMipMapComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_mipmap_compute.glsl")) }
+    private val clearDynamicVoxelsComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_clear_dynamic_voxels_compute.glsl")) }
+    private val injectLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_inject_light_compute.glsl")) }
+    private val injectMultipleBounceLightComputeProgram: ComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/texture3D_inject_bounce_light_compute.glsl")) }
 
     private var lightInjectedFramesAgo: Int = 0
 
-    private val pipeline = SimplePipeline(engine,
-            useFrustumCulling = false,
-            useBackFaceCulling = false,
-            useLineDrawingIfActivated = false)
+    private val pipeline = DirectPipeline(engine)
     private val firstPassResult = FirstPassResult()
     private val useIndirectDrawing = false
-    private var voxelizedInCycle: Long = -1
 
     private var litInCycle: Long = -1
+    private val entityVoxelizedInCycle = mutableMapOf<String, Long>()
 
     init {
         directionalLightShadowMapExtension?.voxelConeTracingExtension = this
     }
 
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
-        if(!renderState.sceneInitialized) return
+    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
+        val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
+        val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
+        val bounces = 1
 
-        profiled("VCT first pass") {
-
-            val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
-            val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
-            val bounces = 1
-
-            val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization) {
-                renderState.renderBatchesStatic
-            } else {
-                renderState.renderBatchesStatic.filter { batch ->
-                    val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityIndex] ?: 0L
-                    batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC
-                }
+        val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || engine.config.debug.isForceRevoxelization) {
+            renderState.renderBatchesStatic
+        } else {
+            renderState.renderBatchesStatic.filter { batch ->
+                val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityName]
+                entityVoxelizationCycle == null || (batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC)
             }
-
-            val needsRevoxelization = entitiesToVoxelize.isNotEmpty()
-            voxelizeScene(renderState, entitiesToVoxelize)
-
-
-            if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
-                lightInjectedFramesAgo = 0
-            }
-            val needsLightInjection = lightInjectedFramesAgo < bounces
-
-
-            injectLight(renderState, bounces, needsLightInjection)
-            engine.config.debug.isForceRevoxelization = false
         }
+
+        val needsRevoxelization = entitiesToVoxelize.isNotEmpty()
+        voxelizeScene(renderState, entitiesToVoxelize)
+
+
+        if ((engine.config.performance.updateGiOnSceneChange || engine.config.debug.isForceRevoxelization) && (needsRevoxelization || directionalLightMoved || pointlightMoved)) {
+            lightInjectedFramesAgo = 0
+        }
+        val needsLightInjection = lightInjectedFramesAgo < bounces
+
+
+        injectLight(renderState, bounces, needsLightInjection)
+        engine.config.debug.isForceRevoxelization = false
     }
 
-    private val entityVoxelizedInCycle = mutableMapOf<Int, Long>()
     fun voxelizeScene(renderState: RenderState, batches: List<RenderBatch>) {
         if(batches.isEmpty()) return
 
@@ -154,26 +157,25 @@ class VoxelConeTracingExtension(
         val maxGridCount = voxelGrids.size
         for(voxelGridIndex in 0 until maxGridCount) {
             val currentVoxelGrid = voxelGrids[voxelGridIndex]
-                profiled("Clear voxels") {
-                    if (engine.config.debug.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.indexGrid, 0, indexGridTextureFormat, GL11.GL_INT, ZERO_BUFFER_INT)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
-                        ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
-                    } else {
-                        clearDynamicVoxelsComputeProgram.use()
-                        val num_groups_xyz = Math.max(currentVoxelGrid.gridSize / 8, 1)
-                        GL42.glBindImageTexture(0, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                        GL42.glBindImageTexture(1, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
-                        GL42.glBindImageTexture(3, currentVoxelGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
-                        clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, voxelGrids)
-                        clearDynamicVoxelsComputeProgram.setUniform("voxelGridIndex", voxelGridIndex)
-                        clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
-                    }
+            profiled("Clear voxels") {
+                if (engine.config.debug.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
+                    ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                    ARBClearTexture.glClearTexImage(currentVoxelGrid.indexGrid, 0, indexGridTextureFormat, GL11.GL_INT, ZERO_BUFFER_INT)
+                    ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                    ARBClearTexture.glClearTexImage(currentVoxelGrid.albedoGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
+                } else {
+                    clearDynamicVoxelsComputeProgram.use()
+                    val num_groups_xyz = Math.max(currentVoxelGrid.gridSize / 8, 1)
+                    GL42.glBindImageTexture(0, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                    GL42.glBindImageTexture(1, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized)
+                    GL42.glBindImageTexture(3, currentVoxelGrid.currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
+                    clearDynamicVoxelsComputeProgram.bindShaderStorageBuffer(5, voxelGrids)
+                    clearDynamicVoxelsComputeProgram.setUniform("voxelGridIndex", voxelGridIndex)
+                    clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz)
                 }
+            }
 
-                voxelizedInCycle = renderState.cycle
-                profiled("Voxelization") {
+            profiled("Voxelization") {
                 engine.gpuContext.viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
                 voxelizer.use()
                 GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
@@ -198,9 +200,9 @@ class VoxelConeTracingExtension(
                     pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
                 } else {
                     for (entity in batches) {
-                        voxelizer.setTextureUniforms(engine.gpuContext, entity.materialInfo.maps)
+                        voxelizer.setTextureUniforms(entity.materialInfo.maps)
                         draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, entity, voxelizer, false, false)
-                        entityVoxelizedInCycle[entity.entityIndex] = renderState.cycle
+                        entityVoxelizedInCycle[entity.entityName] = renderState.cycle
                     }
                 }
 
@@ -271,7 +273,7 @@ class VoxelConeTracingExtension(
         GL11.glColorMask(true, true, true, true)
     }
 
-    override fun update() = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
+    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) = pipeline.prepare(engine.renderStateManager.renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
@@ -279,7 +281,7 @@ class VoxelConeTracingExtension(
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
     }
 
-    private fun mipmapGrid(texture3D: Int, shader: ComputeShaderProgram, renderState: RenderState) {
+    private fun mipmapGrid(texture3D: Int, shader: ComputeProgram, renderState: RenderState) {
         shader.use()
         val voxelGrids = renderState[this.voxelGrids]
         val globalGrid = voxelGrids[0]
@@ -304,7 +306,6 @@ class VoxelConeTracingExtension(
     }
 
     override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-        if(!renderState.sceneInitialized) return
         engine.gpuContext.depthTest = false
         val voxelGrids = renderState[this.voxelGrids]
         profiled("VCT second pass") {
@@ -331,7 +332,7 @@ class VoxelConeTracingExtension(
                 voxelConeTraceProgram.use()
                 val camTranslation = Vector3f()
                 voxelConeTraceProgram.setUniform("voxelGridIndex", voxelGridIndex)
-                voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.getTranslation(camTranslation))
+                voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.transform.getTranslation(camTranslation))
                 voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
                 voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
                 voxelConeTraceProgram.bindShaderStorageBuffer(0, engine.deferredRenderingBuffer.exposureBuffer)
@@ -354,17 +355,6 @@ class VoxelConeTracingExtension(
         engine.gpuContext.depthTest = true
     }
 
-    private var maxExtents = Vector4f()
-    fun getSceneScale(renderState: RenderState, gridSizeHalf: Int): Float {
-        maxExtents.x = Math.max(Math.abs(renderState.sceneMin.x), Math.abs(renderState.sceneMax.x))
-        maxExtents.y = Math.max(Math.abs(renderState.sceneMin.y), Math.abs(renderState.sceneMax.y))
-        maxExtents.z = Math.max(Math.abs(renderState.sceneMin.z), Math.abs(renderState.sceneMax.z))
-        val max = Math.max(Math.max(maxExtents.x, maxExtents.y), maxExtents.z)
-        var sceneScale = max / gridSizeHalf.toFloat()
-        sceneScale = Math.max(sceneScale, 1.0f)
-        return sceneScale
-    }
-
     fun extract(renderState: RenderState, list: List<GIVolumeComponent>) {
         val targetSize = list.size
         renderState[voxelGrids].resize(targetSize)
@@ -381,7 +371,7 @@ class VoxelConeTracingExtension(
             target.normalGrid = giVolumeGrids.normalGrid.id
             target.normalGridHandle = giVolumeGrids.normalGrid.handle
             target.gridSize = source.giVolumeGrids.gridSize
-            target.position.set(source.entity.position)
+            target.position.set(source.entity.transform.position)
             target.scale = source.scale
             target.projectionMatrix.set(source.orthoCam.projectionMatrix)
         }
@@ -413,8 +403,8 @@ class VoxelConeTracingExtension(
         val indexGridTextureFormatSized = GL30.GL_R16I//GL30.GL_R32UI;
 
 
-        private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-            SimpleTransform().get(this)
+        val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
+            Transform().get(this)
         }
 
         var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {

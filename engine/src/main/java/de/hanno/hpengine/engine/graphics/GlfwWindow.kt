@@ -12,7 +12,6 @@ import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
-import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
 //     Don't make this a local field, we need a strong reference
@@ -85,48 +84,28 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         frontBuffer = createFrontBufferRenderTarget()
     }
 
-    override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
-        execute() {
-            glfwSwapInterval(if(vSync) 1 else 0)
-            this.vSync = vSync
-        }
+    override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) = invoke {
+        glfwSwapInterval(if(vSync) 1 else 0)
+        this.vSync = vSync
     }
 
-    override fun showWindow() {
-        glfwShowWindow(handle)
-    }
-    override fun hideWindow() {
-        glfwHideWindow(handle)
-    }
+    override fun showWindow() = glfwShowWindow(handle)
+    override fun hideWindow() = glfwHideWindow(handle)
 
     private fun setCallbacks(framebufferSizeCallback: GLFWFramebufferSizeCallback, closeCallback: GLFWWindowCloseCallbackI) {
         glfwMakeContextCurrent(handle)
         glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
         glfwSetWindowCloseCallback(handle, closeCallback)
     }
-    override fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray) {
-        glfwGetCursorPos(handle, mouseX, mouseY)
-    }
-    override fun getFrameBufferSize(width: IntArray, height: IntArray) {
-        glfwGetFramebufferSize(handle, width, height)
-    }
-    override fun getKey(keyCode: Int): Int {
-        return glfwGetKey(handle, keyCode)
-    }
-    override fun getMouseButton(buttonCode: Int): Int {
-        return glfwGetMouseButton(handle, buttonCode)
-    }
-
-    override fun swapBuffers() {
-        glfwSwapBuffers(handle)
-    }
-
-    fun makeContextCurrent() {
-        glfwMakeContextCurrent(handle)
-    }
+    override fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray) = glfwGetCursorPos(handle, mouseX, mouseY)
+    override fun getFrameBufferSize(width: IntArray, height: IntArray) = glfwGetFramebufferSize(handle, width, height)
+    override fun getKey(keyCode: Int): Int = glfwGetKey(handle, keyCode)
+    override fun getMouseButton(buttonCode: Int): Int = glfwGetMouseButton(handle, buttonCode)
+    override fun swapBuffers() = glfwSwapBuffers(handle)
+    fun makeContextCurrent() = glfwMakeContextCurrent(handle)
 
     val executor = OpenGlExecutorImpl().apply {
-        execute {
+        invoke {
             makeContextCurrent()
             GL.createCapabilities()
         }
@@ -134,15 +113,8 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override val openGLThreadId: Long
         get() = executor.openGLThreadId
 
-    override suspend fun <T> execute(block: () -> T): T {
-        return executor.execute(block)
-    }
-    override fun execute(runnable: Runnable) = executor.execute(runnable)
-
-    override fun <RETURN_TYPE> calculateX(callable: Callable<RETURN_TYPE>): RETURN_TYPE {
-        return executor.calculateX(callable)
-    }
-
+    override suspend fun <T> execute(block: () -> T): T = executor.execute(block)
+    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE = executor.invoke(block)
     override fun shutdown() = executor.shutdown()
 
 }

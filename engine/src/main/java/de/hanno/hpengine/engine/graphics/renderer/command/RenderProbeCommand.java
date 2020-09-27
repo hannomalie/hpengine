@@ -28,7 +28,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 
 	@Override
 	public Transform getTransform() {
-        return probe.getEntity();
+        return probe.getEntity().getTransform();
     }
 
 	@Override

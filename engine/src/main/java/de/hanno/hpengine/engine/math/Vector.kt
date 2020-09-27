@@ -1,21 +1,25 @@
 package de.hanno.hpengine.engine.math
 
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Matrix4f
 import org.joml.Vector4f
+import org.joml.Vector4fc
 
 class Vector3f : Struct() {
     var x by 0.0f
     var y by 0.0f
     var z by 0.0f
 
-    fun set(target: org.joml.Vector3f) {
+    fun set(target: org.joml.Vector3fc) {
         this.x = target.x
         this.y = target.y
         this.z = target.z
     }
 
-    fun set(target: Vector4f) {
+    fun set(target: Vector4fc) {
         this.x = target.x
         this.y = target.y
         this.z = target.z

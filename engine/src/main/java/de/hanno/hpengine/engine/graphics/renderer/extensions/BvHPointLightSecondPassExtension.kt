@@ -4,37 +4,25 @@ import com.dreizak.miniball.highdim.Miniball
 import com.dreizak.miniball.model.ArrayPointSet
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.component.allocateForComponent
-import de.hanno.hpengine.engine.component.putToBuffer
-import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.define.Define
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.scene.HpVector3f
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -42,7 +30,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
-import java.io.File
 import java.util.function.Consumer
 
 class BvhNodeGpu: Struct() {
@@ -122,14 +109,14 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): RenderExtension<OpenGl> {
+class BvHPointLightSecondPassExtension(val engine: EngineContext): RenderExtension<OpenGl> {
     private val gpuContext = engine.gpuContext
     private val deferredRenderingBuffer = engine.deferredRenderingBuffer
 
-    private val secondPassPointBvhComputeProgram = engine.programManager.getComputeProgram("second_pass_point_trivial_bvh_compute.glsl")
+    private val secondPassPointBvhComputeProgram = engine.programManager.getComputeProgram(engine.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-        SimpleTransform().get(this)
+        Transform().get(this)
     }
     private val lineRenderer = LineRendererImpl(engine)
     val bvh = PersistentMappedStructBuffer(0, engine.gpuContext, { BvhNodeGpu() })
@@ -179,7 +166,7 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext<OpenGl>): Rende
             bvhReconstructedInCycle = renderState.cycle
             val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->
                 BvhNode.Leaf(Vector4f().apply {
-                    set(light.entity.position)
+                    set(light.entity.transform.position)
                     w = light.radius
                 }, index)
             }.toMutableList()

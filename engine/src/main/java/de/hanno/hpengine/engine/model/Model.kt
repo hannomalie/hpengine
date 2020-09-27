@@ -3,11 +3,14 @@ package de.hanno.hpengine.engine.model
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.boundingSphereRadius
 import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
+import org.joml.Matrix4f
+import java.io.File
 
 interface Model<T> {
+    val file: File
 
     val path: String
 
@@ -18,10 +21,11 @@ interface Model<T> {
     val meshes: List<Mesh<T>>
 
     val boundingSphereRadius: Float
+        get() = boundingVolume.boundingSphereRadius
 
     val triangleCount: Int
 
-    val minMax: AABB
+    val boundingVolume: AABB
 
     val indices: StructArray<IntStruct>
 
@@ -35,19 +39,16 @@ interface Model<T> {
 
     val bytesPerVertex: Int
 
-    fun getMinMax(transform: Transform<*>): AABB
-
-    fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
-        return mesh.boundingSphereRadius
+    fun getBoundingVolume(transform: Matrix4f): AABB {
+        boundingVolume.recalculate(transform)
+        return boundingVolume
     }
 
-    fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
-        return mesh.getMinMax(transform)
-    }
+    fun getBoundingSphereRadius(mesh: Mesh<*>): Float = mesh.spatial.boundingSphereRadius
 
-    fun getMinMax(mesh: Mesh<*>): AABB {
-        return mesh.minMax
-    }
+    fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB = mesh.spatial.getBoundingVolume(transform)
+
+    fun getBoundingVolume(mesh: Mesh<*>): AABB = mesh.spatial.boundingVolume
     var material: Material
     val meshIndexCounts: List<Int>
 }

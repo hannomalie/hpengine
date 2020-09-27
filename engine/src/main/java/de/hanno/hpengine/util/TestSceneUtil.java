@@ -35,7 +35,7 @@ public class TestSceneUtil {
         GpuContext.exitOnGLError("loadTestScene");
 
         try {
-            StaticModel sphere = new StaticModelLoader().load(new File("assets/models/sphere.obj"), materialManager, engineDir);
+            StaticModel sphere = new StaticModelLoader().load("assets/models/sphere.obj", materialManager, engineDir);
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {
@@ -54,7 +54,7 @@ public class TestSceneUtil {
                             Entity entity = entityManager.create(position, "Entity_" + System.currentTimeMillis());
                             entity.addComponent(new ModelComponent(entity, sphere, materialManager.getDefaultMaterial()));
                             Entity pointLightEntity = new Entity();
-                            pointLightEntity.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
+                            pointLightEntity.getTransform().setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             pointLightEntity.addComponent(new PointLight(pointLightEntity, new Vector4f(1,1,1,1), 10));
                             throw new IllegalStateException("Doesnt work anymore, remove me");
 //                            scene.add(pointLightEntity);

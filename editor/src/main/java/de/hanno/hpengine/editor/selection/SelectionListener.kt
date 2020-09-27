@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import de.hanno.hpengine.engine.scene.Scene
 import javax.swing.JTree
@@ -30,6 +31,8 @@ class SelectionListener(internal var tree: JTree,
     override fun valueChanged(e: TreeSelectionEvent) {
         val treeNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return
 
+        if(e.oldLeadSelectionPath ==e.newLeadSelectionPath) return
+
         val paths = tree.selectionPaths
         val currentPath = e.path
 
@@ -50,7 +53,7 @@ class SelectionListener(internal var tree: JTree,
         } else if (node is MeshSelection) {
             unselectOr(node) { editorComponents.selectionSystem.selectMesh(node) }
         }  else if (node is ModelComponent) {
-            unselectOr(node) { editorComponents.selectionSystem.selectModel(ModelSelection(node.entity, node.model)) }
+            unselectOr(node) { editorComponents.selectionSystem.selectModel(ModelSelection(node.entity, node.entity.getComponent(ModelComponent::class.java)!!, node.model)) }
         } else if (node is PointLight) {
             unselectOr(node) { editorComponents.selectionSystem.selectPointLight(node) }
         } else if (node is DirectionalLight) {

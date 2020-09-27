@@ -1,15 +1,13 @@
 package de.hanno.hpengine.engine.graphics.shader
 
-import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.Reloadable
-import org.apache.commons.io.FileUtils
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL43
-import java.io.File
 import java.io.IOException
 import java.util.logging.Logger
 import java.util.regex.Pattern
@@ -18,9 +16,9 @@ interface Shader : Reloadable {
     var shaderSource: CodeSource
     var id: Int
 
-    val shaderType: OpenGLShader
+    val shaderType: ShaderType
 
-    enum class OpenGLShader constructor(val glShaderType: Int) {
+    enum class ShaderType constructor(val glShaderType: Int) {
         VertexShader(GL20.GL_VERTEX_SHADER),
         FragmentShader(GL20.GL_FRAGMENT_SHADER),
         GeometryShader(GL32.GL_GEOMETRY_SHADER),
@@ -36,12 +34,17 @@ interface Shader : Reloadable {
 
     }
 
+    override fun load() = shaderSource.load()
+    override fun unload() = shaderSource.unload()
+    override val name: String
+        get() = shaderSource.name
+
     companion object {
 
         val LOGGER = Logger.getLogger(Shader::class.java.name)
 
         @Throws(IOException::class)
-        fun replaceIncludes(shaderFileAsText: String, currentNewLineCount: Int): TypedTuple<String, Int> {
+        fun replaceIncludes(engineDir: EngineDirectory, shaderFileAsText: String, currentNewLineCount: Int): TypedTuple<String, Int> {
             var shaderFileAsText = shaderFileAsText
             var currentNewLineCount = currentNewLineCount
 
@@ -50,7 +53,7 @@ interface Shader : Reloadable {
 
             while (includeMatcher.find()) {
                 val filename = includeMatcher.group(1)
-                val fileToInclude = FileUtils.readFileToString(File(directory + filename))
+                val fileToInclude = engineDir.resolve("shaders/$filename").readText()
                 currentNewLineCount += Util.countNewLines(fileToInclude)
                 shaderFileAsText = shaderFileAsText.replace(String.format("//include\\(%s\\)", filename).toRegex(), fileToInclude)
             }
@@ -74,18 +77,5 @@ interface Shader : Reloadable {
             return shaderInfoLog
         }
 
-        const val directory: String = Directories.WORKDIR_NAME + "/assets/shaders/"
     }
-}
-
-fun getShaderSource(file: File): CodeSource = if (file.exists()) {
-        CodeSource(file)
-    } else {
-        throw IllegalStateException("File ${file.absolutePath} doesn't exist")
-    }
-
-fun getShaderSource(shaderSource: String): CodeSource? {
-    return if ("" == shaderSource) {
-        null
-    } else CodeSource(shaderSource)
 }

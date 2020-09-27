@@ -6,7 +6,8 @@ import de.hanno.hpengine.engine.directory.GameDirectory;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer;
 import de.hanno.hpengine.engine.lifecycle.Updatable;
-import de.hanno.hpengine.util.ressources.CodeSource;
+import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource;
 import de.hanno.hpengine.util.ressources.Reloadable;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +24,8 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
         return compiler;
     }
 
-    private Engine<?> engine;
-    private final CodeSource javaCodeSource;
+    private Engine engine;
+    private final FileBasedCodeSource javaCodeSource;
     private final GameDirectory gameDirectory;
 
     private Map map = new HashMap<>();
@@ -33,18 +34,18 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     private boolean isEngineConsumer;
     private Object instance;
 
-    public JavaComponent(Engine<?> engine, CodeSource codeSource, GameDirectory gameDirectory) {
+    public JavaComponent(Engine engine, FileBasedCodeSource codeSource, GameDirectory gameDirectory) {
         super(new Entity());
         this.engine = engine;
         this.javaCodeSource = codeSource;
         this.gameDirectory = gameDirectory;
-        initWrappingComponent(engine.getConfig().getDirectories().getGameDir());
+        initWrappingComponent(engine.getEngineContext().getConfig().getDirectories().getGameDir());
     }
 
     @Override
-    public void update(@NotNull CoroutineScope scope, float deltaSeconds) {
+    public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
         if(isLifeCycle) {
-            ((Updatable) instance).update(scope, deltaSeconds);
+            ((Updatable) instance).update(scope, scene, deltaSeconds);
         }
     }
 
@@ -110,7 +111,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
 
     @NotNull
     @Override
-    public CodeSource getCodeSource() {
+    public FileBasedCodeSource getCodeSource() {
         return javaCodeSource;
     }
 }

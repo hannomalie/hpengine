@@ -4,7 +4,9 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
 import de.hanno.hpengine.engine.lifecycle.Updatable
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
@@ -16,9 +18,9 @@ import java.net.URLClassLoader
 import java.util.HashMap
 import javax.inject.Inject
 
-data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSource: CodeSource, override val entity: Entity) : BaseComponent(entity), ScriptComponent {
+data class KotlinCompiledComponent(val engine: Engine, override val codeSource: CodeSource, override val entity: Entity) : BaseComponent(entity), ScriptComponent {
     init {
-        require(codeSource.isFileBased) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
+        require(codeSource is FileBasedCodeSource) { throw IllegalArgumentException("Kotlin code sources have to be file based currently!") }
         initWrappingComponent()
     }
 
@@ -30,25 +32,15 @@ data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSourc
     var instance: Any? = null
         private set
 
-    val sourceCode: String
-        get() = codeSource.source
-
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         if (isUpdatable) {
             with(instance as Updatable) {
-                update(deltaSeconds)
+                update(scene, deltaSeconds)
             }
         }
     }
 
-    override fun reload() {
-        unload()
-        load()
-    }
-
-    override fun getName(): String {
-        return this.toString()
-    }
+    override val name: String = this.toString()
 
     override fun get(key: Any): Any {
         return map[key] ?: throw IllegalArgumentException("No entry for key $key")
@@ -60,6 +52,7 @@ data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSourc
 
     private fun initWrappingComponent() {
         try {
+            codeSource as FileBasedCodeSource
             val output = codeSource.file.parentFile
 
             kotlinCompiler.run {
@@ -114,7 +107,7 @@ data class KotlinCompiledComponent(val engine: Engine<*>, override val codeSourc
                 }
             }
 
-//            TODO: Find out where this is used and replace with construtor injection
+//            TODO: Find out where this is used and replace with constructor injection
 //            try {
 //                val entityField = instance!!.javaClass.getDeclaredField("entity")
 //                entityField.set(instance, getEntity())

@@ -9,27 +9,30 @@ import de.hanno.hpengine.editor.input.MouseInputProcessor
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.selection.EntitySelection
-import de.hanno.hpengine.editor.selection.GiVolumeSelection
-import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
-import de.hanno.hpengine.editor.selection.SceneSelection
-import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
-import de.hanno.hpengine.editor.tasks.MaterialTask
+import de.hanno.hpengine.editor.tasks.EditorRibbonTask
+import de.hanno.hpengine.editor.tasks.MaterialRibbonTask
 import de.hanno.hpengine.editor.tasks.SceneTask
 import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
-import de.hanno.hpengine.engine.EngineImpl
-import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
+import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.shader.define.Define
@@ -37,16 +40,17 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.transform.SimpleTransform
+import de.hanno.hpengine.engine.scene.Extension
+import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
-import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.joml.AxisAngle4f
-import org.joml.Matrix4f
-import org.joml.Quaternionf
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
+import org.pushingpixels.flamingo.api.ribbon.JRibbon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.neon.api.icon.ResizableIcon
 import org.pushingpixels.photon.api.icon.SvgBatikResizableIcon
@@ -54,7 +58,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
-import java.io.File
+import java.util.function.Consumer
 import javax.swing.BorderFactory
 
 sealed class OutputConfig {
@@ -75,44 +79,73 @@ sealed class OutputConfig {
         override fun toString() = renderTarget.name + cubeMapIndex.toString()
     }
 }
-
-class EditorComponents(val engine: EngineImpl,
+class EditorExtension(val engineContext: EngineContext,
+                      val config: ConfigImpl,
+                      val editor: RibbonEditor): Extension {
+    val editorComponents = EditorComponents(engineContext, config, editor)
+    override val manager = EditorManager(engineContext, editorComponents)
+    override val renderSystem = editorComponents
+}
+val JRibbon.tasks: List<RibbonTask>
+    get() = mutableListOf<RibbonTask>().apply {
+        addAll((0 until taskCount).map { getTask(it) })
+    }
+class EditorComponents(val engineContext: EngineContext,
                        val config: ConfigImpl,
                        val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
 
+    val onReload: (() -> Unit)?
+        get() = editor.onSceneReload
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-    val sphereHolder = SphereHolder(engine)
-    val boxRenderer = SimpleModelRenderer(engine)
-    val pyramidRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/pyramid.obj"), engine.materialManager, engine.config.directories.engineDir))
-    val torusRenderer = SimpleModelRenderer(engine, model = StaticModelLoader().load(File("assets/models/torus.obj"), engine.materialManager, engine.config.directories.engineDir))
-    val environmentProbeSphereHolder = SphereHolder(engine, engine.programManager.getProgramFromFileNames("mvp_vertex.glsl", "environmentprobe_color_fragment.glsl", Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))))
-
-    val sceneTree = SwingUtils.invokeAndWait {
-        SceneTree(engine, this).apply {
-            addDefaultMouseListener()
-            SwingUtils.invokeLater {
-                ReloadableScrollPane(this).apply {
-                    preferredSize = Dimension(300, editor.sidePanel.height)
-                    border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
-                    editor.add(this, BorderLayout.LINE_START)
-                }
-            }
-        }
-    }
+    private val lineRenderer = LineRendererImpl(engineContext)
+    val sphereHolder = SphereHolder(engineContext)
+    val boxRenderer = SimpleModelRenderer(engineContext)
+    val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
+    val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/torus.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
+    val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.run { programManager.getProgram(
+            EngineAsset("shaders/mvp_vertex.glsl"),
+            EngineAsset("shaders/environmentprobe_color_fragment.glsl"),
+            null,
+            Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+    })
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
+
     val selectionSystem = SelectionSystem(this)
-    val textureRenderer = SimpleTextureRenderer(engine, engine.deferredRenderingBuffer.colorReflectivenessTexture)
+    val textureRenderer = SimpleTextureRenderer(engineContext, engineContext.deferredRenderingBuffer.colorReflectivenessTexture)
+
+    lateinit var sceneTree: SceneTree
+    private var sceneTreePane: ReloadableScrollPane? = null
+    lateinit var sceneManager: SceneManager
+
+    fun onEntityAdded(entities: List<Entity>) {
+        if(!this::sceneTree.isInitialized) return
+        sceneTree.reload()
+        ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+    fun onComponentAdded(component: Component) {
+        if(!this::sceneTree.isInitialized) return
+        sceneTree.reload()
+        ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+
+    fun afterSetScene(scene: Scene, scene2: Scene) {
+        if(!this::sceneTree.isInitialized) return
+        sceneTree.reload()
+        ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+
+    private val JRibbon.editorTasks
+        get() = tasks.toList().filterIsInstance<EditorRibbonTask>()
 
     override fun render(result: DrawResult, state: RenderState) {
-
         selectionSystem.render(result, state)
         sphereHolder.render(state, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
                 if(it.renderedSphereRadius > 0f) {
-                    val transformationPointLight = SimpleTransform().scaleAround(it.renderedSphereRadius, it.entity.position.x, it.entity.position.y, it.entity.position.z).translate(it.entity.position)
+                    val transformationPointLight = Transform().scaleAround(it.renderedSphereRadius, it.entity.transform.position.x, it.entity.transform.position.y, it.entity.transform.position.z).translate(it.entity.transform.position)
                     sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
                     sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
@@ -124,16 +157,16 @@ class EditorComponents(val engine: EngineImpl,
         })
         drawTransformationArrows(state)
 
-        engine.gpuContext.readBuffer(0)
+        engineContext.gpuContext.readBuffer(0)
         selectionSystem.floatBuffer.rewind()
         if(mouseAdapter.mousePressStarted) {
             mouseAdapter.mousePressed?.let { event ->
                 run {
-                    engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-                    val ratio = Vector2f(editor.canvas.width.toFloat() / engine.config.width.toFloat(),
-                            editor.canvas.height.toFloat() / engine.config.height.toFloat())
+                    engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+                    val ratio = Vector2f(editor.canvas.width.toFloat() / engineContext.config.width.toFloat(),
+                            editor.canvas.height.toFloat() / engineContext.config.height.toFloat())
                     val adjustedX = (event.x / ratio.x).toInt()
-                    val adjustedY = engine.config.height - (event.y / ratio.y).toInt()
+                    val adjustedY = engineContext.config.height - (event.y / ratio.y).toInt()
                     GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, selectionSystem.floatBuffer)
 
                     val color = Vector3f(selectionSystem.floatBuffer.get(),selectionSystem.floatBuffer.get(),selectionSystem.floatBuffer.get())
@@ -150,20 +183,35 @@ class EditorComponents(val engine: EngineImpl,
         }
 
         if(config.debug.isEditorOverlay) {
-            engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+            engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.forEach { it.renderEditor(state, result) }
             }
+
+            for(batch in state.renderBatchesStatic) {
+                lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            }
+            for(batch in state.renderBatchesAnimated) {
+                lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            }
+            engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+            engineContext.gpuContext.blend = false
+            lineRenderer.drawAllLines(5f, Consumer { program ->
+                program.setUniformAsMatrix4("modelMatrix", VoxelConeTracingExtension.identityMatrix44Buffer)
+                program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
+                program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
+                program.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
+            })
         }
         if(config.debug.visualizeProbes) {
-            engine.managerContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
+            engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
                 it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let { extension ->
-                    engine.gpuContext.depthMask = true
-                    engine.gpuContext.disable(GlCap.BLEND)
-//                    engine.gpuContext.enable(GlCap.DEPTH_TEST)
+                    engineContext.gpuContext.depthMask = true
+                    engineContext.gpuContext.disable(GlCap.BLEND)
+//                    engineContext.gpuContext.enable(GlCap.DEPTH_TEST)
                     environmentProbeSphereHolder.render(state) {
 
                         extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                            val transformation = SimpleTransform().translate(position)
+                            val transformation = Transform().translate(position)
                             sphereProgram.setUniform("pointLightPositionWorld", extension.probeRenderer.probePositions[probeIndex])
                             sphereProgram.setUniform("probeIndex", probeIndex)
                             sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
@@ -181,16 +229,16 @@ class EditorComponents(val engine: EngineImpl,
         }
         when (val selection = outPutConfig) {
             OutputConfig.Default -> {
-                textureRenderer.drawToQuad(engine.deferredRenderingBuffer.finalBuffer, engine.deferredRenderingBuffer.finalMap)
+                textureRenderer.drawToQuad(engineContext.deferredRenderingBuffer.finalBuffer, engineContext.deferredRenderingBuffer.finalMap)
             }
             is OutputConfig.Texture2D -> {
-                textureRenderer.drawToQuad(engine.deferredRenderingBuffer.finalBuffer, selection.texture)
+                textureRenderer.drawToQuad(engineContext.deferredRenderingBuffer.finalBuffer, selection.texture)
             }
             is OutputConfig.TextureCubeMap -> {
-                textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.texture)
+                textureRenderer.renderCubeMapDebug(engineContext.deferredRenderingBuffer.finalBuffer, selection.texture)
             }
             is OutputConfig.RenderTargetCubeMapArray -> {
-                textureRenderer.renderCubeMapDebug(engine.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
+                textureRenderer.renderCubeMapDebug(engineContext.deferredRenderingBuffer.finalBuffer, selection.renderTarget, selection.cubeMapIndex)
             }
         }.let { }
 
@@ -209,7 +257,7 @@ class EditorComponents(val engine: EngineImpl,
                         listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
                                 Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
-                            val transformation = SimpleTransform()
+                            val transformation = Transform()
                             transformation.scaleLocal(3f)
                             if(arrow.scale.x > 2f) {
                                 transformation.rotateAffine(ninetyDegrees, 0f, 0f, 1f)
@@ -220,8 +268,8 @@ class EditorComponents(val engine: EngineImpl,
                             }
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -237,13 +285,13 @@ class EditorComponents(val engine: EngineImpl,
                         listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
                                 Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
-                            val transformation = SimpleTransform()
+                            val transformation = Transform()
                             transformation.scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
-                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.position))
+                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.transform.position))
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -260,12 +308,12 @@ class EditorComponents(val engine: EngineImpl,
                                 Arrow(Vector3f(0.1f, 5f, 0.1f), Vector3f(0f, 0f, 1f)),
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
 
-                            val transformation = SimpleTransform()
-                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.position))
+                            val transformation = Transform()
+                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.transform.position))
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.rotation, entity.position.x, entity.position.y, entity.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.rotation, entity.position.x, entity.position.y, entity.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -281,27 +329,46 @@ class EditorComponents(val engine: EngineImpl,
     }
 
     init {
-        engine.renderSystems.add(this)
-        SwingUtils.invokeLater {
-            TimingsFrame(engine)
-            ribbon.setApplicationMenuCommand(ApplicationMenu(engine))
-
-            addTask(ViewTask(engine, config, this, ::outPutConfig))
-            addTask(SceneTask(engine))
-            addTask(TransformTask(this, selectionSystem))
-            addTask(TextureTask(engine, editor))
-            addTask(MaterialTask(engine, editor, selectionSystem))
-            showConfigFrame()
-        }
-
-        MouseInputProcessor(engine, selectionSystem::selection, this).apply {
+        MouseInputProcessor(engineContext, selectionSystem::selection, this).apply {
             editor.canvas.addMouseMotionListener(this)
             editor.canvas.addMouseListener(this)
         }
+    }
 
-        engine.managers.register(EditorManager(this))
+    fun init(sceneManager: SceneManager) {
 
-        engine.renderSystems.add(this)
+        this.sceneManager = sceneManager
+        recreateSceneTree(sceneManager.scene)
+
+        SwingUtils.invokeLater {
+            ribbon.setApplicationMenuCommand(ApplicationMenu(engineContext, sceneManager))
+
+            addTask(ViewTask(engineContext, sceneManager, config, this, ::outPutConfig))
+            addTask(SceneTask(engineContext, sceneManager, this))
+            addTask(TransformTask(this, selectionSystem))
+            addTask(TextureTask(engineContext, sceneManager, editor))
+            addTask(MaterialRibbonTask(engineContext, sceneManager, editor, selectionSystem))
+            SwingUtils.invokeLater {
+                TimingsFrame(engineContext)
+                showConfigFrame()
+            }
+        }
+    }
+
+    fun recreateSceneTree(scene: Scene) {
+        SwingUtils.invokeLater {
+            sceneTree = SceneTree(engineContext, this, scene).apply {
+                addDefaultMouseListener()
+                SwingUtils.invokeLater {
+                    sceneTreePane = ReloadableScrollPane(this).apply {
+                        preferredSize = Dimension(300, editor.sidePanel.height)
+                        border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
+                        sceneTreePane?.let { editor.remove(it) }
+                        editor.add(this, BorderLayout.LINE_START)
+                    }
+                }
+            }
+        }
     }
 
     val keyLogger = KeyLogger().apply {
@@ -311,7 +378,7 @@ class EditorComponents(val engine: EngineImpl,
     fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
 
     private fun showConfigFrame() = SwingUtils.invokeLater {
-        ConfigFrame(engine, config, editor)
+        ConfigFrame(engineContext, config, editor)
     }
 
     fun addTask(task: RibbonTask) = ribbon.addTask(task)

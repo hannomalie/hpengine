@@ -3,8 +3,10 @@ package de.hanno.hpengine.editor.tasks
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.pushingpixels.flamingo.api.common.RichTooltip
@@ -24,7 +26,7 @@ import javax.swing.JFileChooser
 
 object TextureTask {
 
-    operator fun invoke(engine: Engine<*>, editor: RibbonEditor): RibbonTask {
+    operator fun invoke(engine: EngineContext, sceneManager: SceneManager, editor: RibbonEditor): RibbonTask {
         fun retrieveTextureCommands(): List<Command> {
             return engine.textureManager.textures.values.mapNotNull {
                 if (it is FileBasedTexture2D) {

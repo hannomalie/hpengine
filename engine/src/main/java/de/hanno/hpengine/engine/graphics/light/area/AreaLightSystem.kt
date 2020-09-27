@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics.light.area
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
@@ -22,15 +24,13 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Shader
-import de.hanno.hpengine.engine.graphics.shader.getShaderSource
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.model.instanceCount
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
-import de.hanno.hpengine.engine.scene.SimpleScene
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
@@ -39,19 +39,17 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
-import java.io.File
 import java.nio.FloatBuffer
 import java.util.ArrayList
-import java.util.concurrent.Callable
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
-class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScene) : SimpleEntitySystem(simpleScene, listOf(AreaLight::class.java)), RenderSystem {
+class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
 
-    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.calculateX(Callable{ PersistentMappedBuffer(engine.gpuContext, 1000) })
+    val lightBuffer: PersistentMappedBuffer = engine.gpuContext.window.invoke { PersistentMappedBuffer(engine.gpuContext, 1000) }
 
     private val mapRenderTarget = CubeMapRenderTarget(engine.gpuContext, RenderTarget(
         engine.gpuContext,
@@ -70,9 +68,11 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
         "AreaLight Shadow"
     ))
 
-    private val areaShadowPassProgram: Program = engine.programManager.getProgram(getShaderSource(File(Shader.directory + "mvp_entitybuffer_vertex.glsl")), getShaderSource(File(Shader.directory + "shadowmap_fragment.glsl")))
+    private val areaShadowPassProgram: Program = engine.run {
+        programManager.getProgram(EngineAsset("shaders/mvp_entitybuffer_vertex.glsl"), EngineAsset("shaders/shadowmap_fragment.glsl"))
+    }
     private val areaLightDepthMaps = ArrayList<Int>().apply {
-        engine.gpuContext.execute() {
+        engine.gpuContext.invoke {
             for (i in 0 until MAX_AREALIGHT_SHADOWMAPS) {
                 val renderedTextureTemp = engine.gpuContext.genTextures()
                 engine.gpuContext.bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp)
@@ -133,14 +133,14 @@ class AreaLightSystem(val engine: EngineContext<OpenGl>, simpleScene: SimpleScen
 
     fun getAreaLights() = getComponents(AreaLight::class.java)
 
-    override fun CoroutineScope.update(deltaSeconds: Float) {
+    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
 //        TODO: Resize with instance count
         this@AreaLightSystem.gpuAreaLightArray = this@AreaLightSystem.gpuAreaLightArray.enlarge(this@AreaLightSystem.getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
         this@AreaLightSystem.gpuAreaLightArray.buffer.rewind()
 
         for((index, areaLight) in this@AreaLightSystem.getComponents(AreaLight::class.java).withIndex()) {
             val target = this@AreaLightSystem.gpuAreaLightArray.getAtIndex(index)
-            target.trafo.set(areaLight.entity)
+            target.trafo.set(areaLight.entity.transform)
             target.color.set(areaLight.color)
             target.dummy0 = -1
             target.widthHeightRange.x = areaLight.width

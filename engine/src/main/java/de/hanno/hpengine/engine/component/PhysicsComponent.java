@@ -5,6 +5,8 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.backend.EngineContext;
+import de.hanno.hpengine.engine.model.Update;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
@@ -28,11 +30,14 @@ public class PhysicsComponent extends BaseComponent {
 
     public PhysicsComponent(Entity owner, PhysicsManager.MeshShapeInfo meshShapeInfo, PhysicsManager physicsManager) {
         super(owner);
+        if(isDynamic()) {
+            owner.setUpdateType(Update.DYNAMIC);
+        }
         this.owner = owner;
 		this.info = meshShapeInfo;
         this.physicsManager = physicsManager;
         owner.addComponent(this);
-        initialTransform = Util.toBullet(owner);
+        initialTransform = Util.toBullet(owner.getTransform());
         actuallyCreatePhysicsObject(); // This probably has to be moved to physsicsmanaqger/physicssystem
 	}
 
@@ -65,13 +70,14 @@ public class PhysicsComponent extends BaseComponent {
 		Matrix4f temp = new Matrix4f();
 		out.getMatrix(temp);
 		Transform converted = Util.fromBullet(out);
-        owner.set(converted);
+        owner.getTransform().set(converted);
     }
 
-    public void reset(Engine engine) {
-        engine.getPhysicsManager().unregisterRigidBody(rigidBody);
-        actuallyCreatePhysicsObject();
-    }
+//  TODO: Recode this in PhysicsManager
+//    public void reset(EngineContext engineContext) {
+//        engineContext.getBackend().getPhysicsManager().unregisterRigidBody(rigidBody);
+//        actuallyCreatePhysicsObject();
+//    }
 
     public RigidBody getRigidBody() {
 		return rigidBody;

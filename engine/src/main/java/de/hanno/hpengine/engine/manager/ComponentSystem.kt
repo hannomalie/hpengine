@@ -3,58 +3,49 @@ package de.hanno.hpengine.engine.manager
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.UpdateLock
+import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 
 interface ComponentSystem<T : Component> {
-    fun CoroutineScope.update(deltaSeconds: Float) {
-        for(component in getComponents()) {
-            launch {
+    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+        launch {
+            for(component in getComponents()) {
                 with(component) {
-                    update(deltaSeconds)
+                    update(scene, deltaSeconds)
                 }
             }
         }
     }
     fun getComponents(): List<T>
-    fun UpdateLock.addComponent(component: T)
-    fun clear()
+    fun addComponent(component: T)
+    fun clear() { }
     fun extract(renderState: RenderState) {}
     fun onSceneSet() {
         clear()
     }
-    fun UpdateLock.onEntityAdded(entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
-        return onEntityAddedImpl(context, entities)
-    }
 
-//     Workaround for https://youtrack.jetbrains.com/issue/KT-11488?_ga=2.92346137.567661805.1573652933-1826229974.1518078622
-    fun onEntityAddedImpl(context: AddResourceContext, entities: List<Entity>): MutableMap<Class<out Component>, MutableList<Component>> {
-        val matchedComponents = mutableMapOf<Class<out Component>, MutableList<Component>>()
+    fun onEntityAdded(entities: List<Entity>): MutableList<Component> {
+        val matchedComponents = mutableSetOf<Component>()
         for (entity in entities) {
-            val matched = context.locked { addCorrespondingComponents(entity.components) }
-            matched.forEach {
-                matchedComponents.putIfAbsent(it.key, mutableListOf())
-                matchedComponents[it.key]!!.add(it.value)
-            }
+            matchedComponents.addAll(addCorrespondingComponents(entity.components.toList()))
         }
-        logger.debug("${matchedComponents.entries.flatMap { it.value }.size} components matched")
-        return matchedComponents
+        logger.debug("${matchedComponents.size} components matched")
+        return matchedComponents.toMutableList()
     }
 
 
-    fun UpdateLock.onComponentAdded(component: Component) {
-        addCorrespondingComponents(mapOf(component::class.java to component))
+    fun onComponentAdded(component: Component) {
+        addCorrespondingComponents(listOf(component))
     }
 
-    fun UpdateLock.addCorrespondingComponents(components: Map<Class<out Component>, Component>): Map<Class<out Component>, Component> {
-        val correspondingComponents = components.filter { it.key == componentClass || componentClass.isAssignableFrom(it.key)}
+    fun addCorrespondingComponents(components: List<Component>): List<Component> {
+        val correspondingComponents = components.filter { componentClass.isAssignableFrom(it.javaClass) }
 
         logger.debug("${correspondingComponents.size} components corresponding")
-        correspondingComponents.forEach { addComponent(componentClass.cast(it.value)) }
+        correspondingComponents.forEach { component -> addComponent(componentClass.cast(component)) }
         return correspondingComponents
     }
 
@@ -73,12 +64,7 @@ open class SimpleComponentSystem<T: Component>(override val componentClass: Clas
 
     override fun getComponents(): List<T> = components
 
-    override fun UpdateLock.addComponent(component: T) {
-        addComponentImpl(component)
-    }
-
-    // Workaroung for https://youtrack.jetbrains.com/issue/KT-11488?_ga=2.92346137.567661805.1573652933-1826229974.1518078622
-    protected fun addComponentImpl(component: T) {
+    override fun addComponent(component: T) {
         components.add(component)
         logger.debug("Added component $component")
     }

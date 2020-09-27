@@ -50,7 +50,7 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(private 
 
         val needsResize = buffer.capacity() < capacityInBytes
         if (needsResize) {
-            val newBufferDefinition = gpuContext.window.calculate {
+            val newBufferDefinition = gpuContext.window.invoke {
                 createBuffer(capacityInBytes)
             }
             bufferDefinition = newBufferDefinition
@@ -58,7 +58,7 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(private 
     }
 
     private fun BufferDefinition.copyTo(newBuffer: BufferDefinition) {
-        gpuContext.window.execute() {
+        gpuContext.window.invoke {
             glCopyNamedBufferSubData(this.id, newBuffer.id, 0, 0, this.buffer.capacity().toLong())
         }
     }
@@ -68,11 +68,11 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(private 
             require(id > 0) { "Buffer id is invalid: $id" }
         }
 
-        fun deleteBuffer() = gpuContext.window.execute() {
+        fun deleteBuffer() = gpuContext.window.invoke {
             glDeleteBuffers(id)
         }
     }
-    private fun createBuffer(capacityInBytes: Int): BufferDefinition = gpuContext.window.calculate {
+    private fun createBuffer(capacityInBytes: Int): BufferDefinition = gpuContext.window.invoke {
         val id = glGenBuffers()
         glBindBuffer(target, id)
         GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)
@@ -85,10 +85,10 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(private 
     }
 
     override fun bind() {
-        gpuContext.window.execute(bindBufferRunnable)
+        gpuContext.window.invoke(bindBufferRunnable)
     }
 
     override fun unbind() {
-        gpuContext.window.execute() { glBindBuffer(target, 0) }
+        gpuContext.window.invoke() { glBindBuffer(target, 0) }
     }
 }

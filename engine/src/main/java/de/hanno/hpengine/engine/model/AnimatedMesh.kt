@@ -1,7 +1,5 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
@@ -10,15 +8,22 @@ import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
-import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.engine.transform.AABBData
+import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
+import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.absoluteMaximum
+import de.hanno.hpengine.engine.transform.absoluteMinimum
 import de.hanno.struct.StructArray
+import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.joml.Vector4f
+import java.io.File
 
 class AnimatedMesh(override var name: String,
                    override val vertices: List<AnimatedVertex>,
                    override val faces: List<IndexedFace>,
+                   val aabb: AABBData,
                    override var material: Material): Mesh<AnimatedVertex> {
-    internal var centerTemp = Vector3f()
     var model: AnimatedModel? = null
 
     override val indexBufferValues = StructArray(faces.size*3) { IntStruct() }.apply {
@@ -33,23 +38,48 @@ class AnimatedMesh(override var name: String,
         get() = faces.size
 
 
-    override val boundingSphereRadius: Float
-        get() = model!!.boundingSphereRadius
-
-    override fun getMinMax(transform: Transform<*>): AABB {
-        return model!!.getMinMax(transform)
+    override val spatial: SimpleSpatial = SimpleSpatial(AABB(Vector3f(), Vector3f())).apply {
+        boundingVolume.localAABB = calculateBoundingAABB(Mesh.IDENTITY, vertices, faces)
     }
 
-    override fun getCenter(entity: Entity): Vector3f {
-        val component = entity.getComponent(ModelComponent::class.java)
-        val animatedModel = component!!.model as AnimatedModel
-        return entity.transformPosition(centerTemp)
+    fun calculateAABB(modelMatrix: Matrix4f?) = calculateBoundingAABB(modelMatrix, vertices, faces)
+
+    companion object {
+        fun calculateBoundingAABB(modelMatrix: Matrix4f?, vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>): AABBData {
+            val min = Vector3f(absoluteMaximum)
+            val max = Vector3f(absoluteMinimum)
+
+            val positions = vertices.map { it.position } // TODO: Optimization, use vertex array instead of positions
+            for (face in faces) {
+                val vertices = listOf(positions[face.a],positions[face.b],positions[face.c])
+
+                for (j in 0..2) {
+                    val positionV3 = vertices[j]
+                    val position = Vector4f(positionV3.x, positionV3.y, positionV3.z, 1f)
+                    if (modelMatrix != null) {
+                        position.mul(modelMatrix)
+                    }
+
+                    min.x = if (position.x < min.x) position.x else min.x
+                    min.y = if (position.y < min.y) position.y else min.y
+                    min.z = if (position.z < min.z) position.z else min.z
+
+                    max.x = if (position.x > max.x) position.x else max.x
+                    max.y = if (position.y > max.y) position.y else max.y
+                    max.z = if (position.z > max.z) position.z else max.z
+                }
+            }
+
+            return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
+        }
     }
 }
 
-class AnimatedModel(override val path: String, meshes: List<AnimatedMesh>,
+class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
                     val animations: Map<String, Animation>, material: Material = meshes.first().material): AbstractModel<AnimatedVertex>(meshes, material) {
     override val bytesPerVertex = AnimatedVertexStruct.sizeInBytes
+    override val path = file.absolutePath
+
     init {
         for (mesh in meshes) {
             mesh.model = this
@@ -87,33 +117,17 @@ class AnimatedModel(override val path: String, meshes: List<AnimatedMesh>,
     }
     override val isStatic = false
 
-//    override fun getBoundingSphereRadius(mesh: Mesh<*>): Float {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).boundingSphereRadius
-//    }
-//
-//    override fun getMinMax(transform: Transform<*>, mesh: Mesh<*>): AABB {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).getMinMaxWorld(transform)
-//    }
-//
-//    override fun getMinMax(transform: Transform<*>): AABB {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).minMax
-//    }
-//
-//    override fun getMinMax(mesh: Mesh<*>): AABB {
-//        return getCurrentBoundInfo(animationController.currentFrameIndex).minMax
-//    }
-//
-//    fun getCurrentBoundInfo(frame: Int): MD5BoundInfo.MD5Bound {
-//        return animation.frames[frame].bounds[frame]
-//    }
-
     fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
     }
 
-    // TODO: Implement this properly
-    val aabb = AABB(Vector3f(-1000f), Vector3f(1000f))
-    override fun getMinMax(transform: Transform<*>): AABB {
-        return aabb
+    // Working with mesh bounding volumes doesnt make sense for animated models as they are heavily transformed
+    // and its better to use a relaxed shared volume for the whole model
+    override fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB {
+        return getBoundingVolume(transform)
     }
+    override val boundingVolume: AABB = calculateBoundingVolume()
+
+    override fun calculateBoundingVolume() = AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
 }
+

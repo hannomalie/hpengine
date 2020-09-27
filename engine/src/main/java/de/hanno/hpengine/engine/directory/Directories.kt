@@ -1,23 +1,15 @@
 package de.hanno.hpengine.engine.directory
 
-import de.hanno.hpengine.engine.manager.Manager
 import java.io.File
 
-class Directories constructor(engineDir: String = WORKDIR_NAME,
-                              gameDir: String = GAMEDIR_NAME,
-                              initFileName: String) : Manager {
+class Directories(val engineDir: EngineDirectory = EngineDirectory(File(ENGINEDIR_NAME)),
+                  val gameDir: GameDirectory) {
 
-    val engineDir = EngineDirectory(engineDir)
-    val gameDir = GameDirectory(gameDir, File(gameDir).resolve(initFileName))
-
-    private fun createIfAbsent(folder: File): Boolean {
-        return if (!folder.exists()) {
-            folder.mkdir()
-        } else true
-    }
+    constructor(engineDir: File, gameDir: File): this(EngineDirectory(engineDir), GameDirectory(gameDir, null))
+    constructor(engineDir: String, gameDir: String): this(File(engineDir), File(gameDir))
 
     companion object {
-        const val WORKDIR_NAME = "hp"
+        const val ENGINEDIR_NAME = "hp"
         const val GAMEDIR_NAME = "game"
     }
 }

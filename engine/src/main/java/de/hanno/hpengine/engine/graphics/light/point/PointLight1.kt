@@ -44,12 +44,12 @@ class PointLight @JvmOverloads constructor(override val entity: Entity,
 //	}
 
     fun isInFrustum(camera: Camera): Boolean {
-        val position = entity.position
+        val position = entity.transform.position
         return camera.frustum.sphereInFrustum(position.x, position.y, position.z, radius)
     }
 
     override fun putToBuffer(buffer: ByteBuffer) {
-        val worldPosition = entity.position
+        val worldPosition = entity.transform.position
         buffer.putDouble(worldPosition.x.toDouble())
         buffer.putDouble(worldPosition.y.toDouble())
         buffer.putDouble(worldPosition.z.toDouble())
