@@ -41,7 +41,7 @@ class AWTEditorWindow(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
 
         val glData = GLData().apply {
             majorVersion = 4
-            minorVersion = 6
+            minorVersion = 5
             forwardCompatible = true
 //            samples = 4
             swapInterval = if (config.performance.isVsync) 1 else 0

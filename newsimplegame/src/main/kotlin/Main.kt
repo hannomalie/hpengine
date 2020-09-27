@@ -7,6 +7,7 @@ import scenes.lotsOfCubesScene
 import scenes.lotsOfPlanesScene
 import scenes.sponzaScene
 import java.io.File
+
 object Game {
 
     @JvmStatic

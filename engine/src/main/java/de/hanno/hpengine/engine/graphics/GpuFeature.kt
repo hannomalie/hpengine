@@ -12,3 +12,4 @@ object BindlessTextures: AbstractGpuFeature(BindlessTextures::class.java.simpleN
 object DrawParameters: AbstractGpuFeature(DrawParameters::class.java.simpleName)
 object NvShader5: AbstractGpuFeature("SHADER5")
 object ArbShader5: AbstractGpuFeature("ARBSHADER5")
+object ArbShaderInt64: AbstractGpuFeature("ARBSHADERINT64")
