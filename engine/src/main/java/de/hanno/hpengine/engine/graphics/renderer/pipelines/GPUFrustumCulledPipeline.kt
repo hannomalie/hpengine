@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
@@ -74,9 +75,10 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     override fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
         profiled("Actual draw entities") {
+            val mode = if(engine.config.debug.isDrawLines) PrimitiveMode.Lines else PrimitiveMode.Triangles
 
-            val drawDescriptionStatic = IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
-            val drawDescriptionAnimated = IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+            val drawDescriptionStatic = IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera)
+            val drawDescriptionAnimated = IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera)
 
             beforeDraw(drawDescriptionStatic, drawDescriptionAnimated)
 
@@ -157,7 +159,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
             with(drawDescription) {
                 cullPhase(renderState, commandOrganization, drawCountBuffer, targetCommandBuffer, phase, cullCam)
-                render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase, drawDescription.isDrawLines)
+                render(renderState, program, commandOrganization, vertexIndexBuffer, drawCountBuffer, targetCommandBuffer, entityOffsetBuffersCulled, beforeRender, phase, drawDescription.mode)
             }
         }
     }
@@ -217,7 +219,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                        offsetBuffer: PersistentMappedStructBuffer<IntStruct>,
                        beforeRender: () -> Unit,
                        phase: Pipeline.CullingPhase,
-                       drawLines: Boolean) = profiled("Actually render") {
+                       mode: PrimitiveMode) = profiled("Actually render") {
         program.use()
         beforeRender()
         program.setUniform("entityIndex", 0)
@@ -235,7 +237,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted)
         program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled)
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-        vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBufferToUse, 0, commandOrganization.commandCount, drawLines)
+        vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBufferToUse, 0, commandOrganization.commandCount, mode)
     }
 
     private fun cull(renderState: RenderState,

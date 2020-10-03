@@ -201,7 +201,7 @@ class VoxelConeTracingExtension(
                 } else {
                     for (entity in batches) {
                         voxelizer.setTextureUniforms(entity.materialInfo.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizer, false, false, true)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizer)
                         entityVoxelizedInCycle[entity.entityName] = renderState.cycle
                     }
                 }

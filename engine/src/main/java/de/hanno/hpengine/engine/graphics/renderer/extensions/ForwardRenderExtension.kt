@@ -55,7 +55,7 @@ class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<
             if(!batch.materialInfo.transparencyType.needsForwardRendering) { continue }
             val isStatic = batch.update == Update.STATIC
             programStatic.setTextureUniforms(batch.materialInfo.maps)
-            val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic, false, false, true)
+            val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic)
 
         }
         engineContext.gpuContext.disable(GlCap.BLEND)

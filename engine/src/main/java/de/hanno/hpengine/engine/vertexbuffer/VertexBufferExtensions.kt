@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.vertexbuffer
 
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
@@ -114,11 +115,10 @@ fun VertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer: PersistentMa
                                                      drawCountBuffer: AtomicCounterBuffer,
                                                      drawCount: Long = 0,
                                                      maxDrawCount: Int,
-                                                     isDrawLines: Boolean) {
-    if(isDrawLines) {
-        drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, maxDrawCount)
-    } else {
-        multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, drawCount, maxDrawCount)
+                                                     mode: PrimitiveMode) {
+    return when(mode) {
+        PrimitiveMode.Lines -> drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, maxDrawCount)
+        PrimitiveMode.Triangles -> multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, drawCount, maxDrawCount)
     }
 }
 

@@ -9,6 +9,9 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -36,10 +39,12 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
                       programAnimated: Program,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        val drawDescriptionStatic = DirectDrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera)
+        val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
+
+        val drawDescriptionStatic = DirectDrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera)
         drawDescriptionStatic.draw(engine.gpuContext)
 
-        val drawDescriptionAnimated = DirectDrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera)
+        val drawDescriptionAnimated = DirectDrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera)
         drawDescriptionAnimated.draw(engine.gpuContext)
 
         firstPassResult.verticesDrawn += verticesCount
@@ -70,7 +75,7 @@ fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
     for (batch in renderBatches.filter { !it.hasOwnProgram }) {
         gpuContext.cullFace = batch.materialInfo.cullBackFaces
         program.setTextureUniforms(batch.materialInfo.maps)
-        vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines, false)
+        vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
     }
     for (groupedBatches in renderBatches.filter { it.hasOwnProgram }.groupBy { it.program }) {
         val firstBatch = groupedBatches.value.first()
@@ -82,7 +87,7 @@ fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
         program.setTextureUniforms(firstBatch.materialInfo.maps)
 
         for(batch in groupedBatches.value) {
-            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines, false)
+            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
         }
     }
 }

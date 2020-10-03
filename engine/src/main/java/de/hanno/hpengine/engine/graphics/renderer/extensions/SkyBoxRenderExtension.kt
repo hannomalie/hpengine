@@ -108,7 +108,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
             backend.textureManager.cubeMap.id
         }
         gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, textureId)
-        skyboxVertexIndexBuffer.indexBuffer.draw(skyBoxRenderBatch, skyBoxProgram, false, false, true)
+        skyboxVertexIndexBuffer.indexBuffer.draw(skyBoxRenderBatch, skyBoxProgram)
 
     }
 }

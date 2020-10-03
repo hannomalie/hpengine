@@ -82,9 +82,7 @@ class SphereHolder(val engine: EngineContext,
         sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
         if (beforeDraw != null) { sphereProgram.beforeDraw() }
 
-        sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch,
-                sphereProgram,
-                false, false)
+        sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch, sphereProgram)
 
     }
     fun render(state: RenderState, useDepthTest: Boolean = true,

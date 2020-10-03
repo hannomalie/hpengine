@@ -18,35 +18,34 @@ import org.jetbrains.kotlin.util.profile
 import org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
 import org.lwjgl.opengl.GL42.glMemoryBarrier
 
-@JvmName("DrawUtils")
-
-fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program, drawLines: Boolean, bindIndexBuffer: Boolean): Int {
-    return indexBuffer.draw(renderBatch, program, !renderBatch.isVisibleForCamera, drawLines, bindIndexBuffer)
+enum class PrimitiveMode {
+    Lines,
+    Triangles
 }
 
-fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program, invisible: Boolean = false, drawLines: Boolean = false, bindIndexBuffer: Boolean = true): Int {
-    if (invisible) {
-        return 0
-    }
-    return actuallyDraw(this, renderBatch, program, drawLines, bindIndexBuffer)
+fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
+    return indexBuffer.draw(renderBatch, program, bindIndexBuffer, mode)
 }
 
-fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand, program: Program,
-                             drawLines: Boolean, bindIndexBuffer: Boolean = true): Int {
+fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
+    return this.actuallyDraw(renderBatch, program, bindIndexBuffer, mode)
+}
+
+fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
+                             program: Program, bindIndexBuffer: Boolean = true, mode: PrimitiveMode): Int {
 
     program.setUniform("entityBaseIndex", 0)
     program.setUniform("entityIndex", entityBufferIndex)
     program.setUniform("indirect", false)
 
-    return if (drawLines) {
-        drawLinesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer)
-    } else {
-        drawInstancedBaseVertex(this, drawElementsIndirectCommand)
+    return when(mode) {
+        PrimitiveMode.Lines -> drawLinesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer)
+        PrimitiveMode.Triangles -> drawInstancedBaseVertex(this, drawElementsIndirectCommand)
     }
 }
 
-fun actuallyDraw(indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean, bindIndexBuffer: Boolean): Int {
-    return indexBuffer.actuallyDraw(renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, drawLines, bindIndexBuffer)
+fun IndexBuffer.actuallyDraw(renderBatch: RenderBatch, program: Program, bindIndexBuffer: Boolean, mode: PrimitiveMode): Int {
+    return actuallyDraw(renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, bindIndexBuffer, mode)
 }
 
 fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: Int, baseHeight: Int, highZTexture: Int, highZProgram: ComputeProgram) {

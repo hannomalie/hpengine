@@ -12,6 +12,9 @@ import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
@@ -55,8 +58,9 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
                       programAnimated: Program,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, engine.config.debug.isDrawLines, renderState.camera).draw()
-        IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, engine.config.debug.isDrawLines, renderState.camera).draw()
+        val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
+        IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera).draw()
+        IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera).draw()
 
         firstPassResult.verticesDrawn += verticesCount
         firstPassResult.entitiesDrawn += entitiesCount
@@ -110,7 +114,7 @@ fun IndirectDrawDescription.draw() {
             program.bindShaderStorageBuffer(4, entityOffsetBuffer)
             program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
 
-            vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, 0, commandCount, isDrawLines)
+            vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, 0, commandCount, mode)
         }
     }
 }

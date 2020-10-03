@@ -146,9 +146,7 @@ class EditorComponents(val engineContext: EngineContext,
                     sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
                     sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
-                    sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch,
-                            sphereProgram,
-                            false, false, true)
+                    sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch, sphereProgram, bindIndexBuffer = false)
                 }
             }
         })
@@ -216,9 +214,7 @@ class EditorComponents(val engineContext: EngineContext,
                             sphereProgram.bindShaderStorageBuffer(4, extension.probeRenderer.probePositionsStructBuffer)
                             sphereProgram.bindShaderStorageBuffer(5, extension.probeRenderer.probeAmbientCubeValues)
 
-                            sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch,
-                                    sphereProgram,
-                                    false, false, true)
+                            sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch, sphereProgram, bindIndexBuffer = false)
                         }
                     }
                 }
@@ -271,9 +267,7 @@ class EditorComponents(val engineContext: EngineContext,
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
 
-                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
-                                    program,
-                                    false, false)
+                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch, program, bindIndexBuffer = false)
                         }
                     })
                 } else {
@@ -293,9 +287,7 @@ class EditorComponents(val engineContext: EngineContext,
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
 
-                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
-                                    program,
-                                    false, false)
+                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch, program, false)
                         }
                     })
                     val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
@@ -315,9 +307,7 @@ class EditorComponents(val engineContext: EngineContext,
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
 
-                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
-                                    program,
-                                    false, false)
+                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch, program, false)
                         }
                     })
                 }

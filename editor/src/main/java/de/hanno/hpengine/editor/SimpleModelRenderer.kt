@@ -78,9 +78,7 @@ class SimpleModelRenderer(val engine: EngineContext,
         program.bindShaderStorageBuffer(7, modelVertexIndexBuffer.vertexStructArray)
         if (beforeDraw != null) { program.beforeDraw() }
 
-        modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
-                program,
-                false, false)
+        modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch, program)
 
     }
     fun render(state: RenderState, useDepthTest: Boolean = true,

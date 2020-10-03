@@ -108,8 +108,7 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
                 areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
 
                 for (e in renderState.renderBatchesStatic) {
-                    val drawLines = false
-                    renderState.vertexIndexBufferStatic.indexBuffer.draw(e, areaShadowPassProgram, false, drawLines, true)
+                    renderState.vertexIndexBufferStatic.indexBuffer.draw(e, areaShadowPassProgram)
                 }
             }
         }
