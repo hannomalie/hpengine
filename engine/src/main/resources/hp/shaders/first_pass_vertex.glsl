@@ -110,21 +110,9 @@ void main(void) {
 	VertexPacked vertex;
 #endif
 
-	const bool programmableVertexPulling = true;
-	if(programmableVertexPulling) {
-		int vertexIndex = gl_VertexID;
-		vertex = vertices[vertexIndex];
-		vertex.position.w = 1;
-	} else {
-		vertex.position = vec4(in_Position.xyz,1);
-		vertex.texCoord = vec4(in_TextureCoord, 0, 0);
-		vertex.normal = vec4(in_Normal, 0);
-#ifdef ANIMATED
-		vertex.jointIndices = in_JointIndices;
-		vertex.weights = in_Weights;
-#endif
-
-	}
+	int vertexIndex = gl_VertexID;
+	vertex = vertices[vertexIndex];
+	vertex.position.w = 1;
 
 	if(entity.invertTexcoordY == 1) {
 		vertex.texCoord.y = 1 - vertex.texCoord.y;
@@ -134,13 +122,8 @@ void main(void) {
 #ifdef ANIMATED
 	vec4 weightsIn;
 	ivec4 jointIndices;
-	if(programmableVertexPulling) {
-		weightsIn = vertex.weights;
-		jointIndices = vertex.jointIndices;
-	} else {
-		weightsIn = in_Weights;
-		jointIndices = in_JointIndices;
-	}
+	weightsIn = vertex.weights;
+	jointIndices = vertex.jointIndices;
 
 	vec4 initPos = vec4(0, 0, 0, 0);
 	int count = 0;

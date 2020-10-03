@@ -19,6 +19,7 @@ import de.hanno.hpengine.editor.tasks.SceneTask
 import de.hanno.hpengine.editor.tasks.TextureTask
 import de.hanno.hpengine.editor.tasks.TransformTask
 import de.hanno.hpengine.editor.tasks.ViewTask
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
@@ -35,8 +36,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
-import de.hanno.hpengine.engine.graphics.shader.define.Define
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
@@ -106,9 +105,7 @@ class EditorComponents(val engineContext: EngineContext,
     val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/torus.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
     val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.run { programManager.getProgram(
             EngineAsset("shaders/mvp_vertex.glsl"),
-            EngineAsset("shaders/environmentprobe_color_fragment.glsl"),
-            null,
-            Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+            EngineAsset("shaders/environmentprobe_color_fragment.glsl"))
     })
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
@@ -149,9 +146,9 @@ class EditorComponents(val engineContext: EngineContext,
                     sphereProgram.setUniformAsMatrix4("modelMatrix", transformationPointLight.get(transformBuffer))
                     sphereProgram.setUniform("diffuseColor", Vector3f(it.color.x, it.color.y, it.color.z))
 
-                    draw(sphereVertexIndexBuffer.vertexBuffer,
-                            sphereVertexIndexBuffer.indexBuffer,
-                            sphereRenderBatch, sphereProgram, false, false)
+                    sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch,
+                            sphereProgram,
+                            false, false, true)
                 }
             }
         })
@@ -219,9 +216,9 @@ class EditorComponents(val engineContext: EngineContext,
                             sphereProgram.bindShaderStorageBuffer(4, extension.probeRenderer.probePositionsStructBuffer)
                             sphereProgram.bindShaderStorageBuffer(5, extension.probeRenderer.probeAmbientCubeValues)
 
-                            draw(sphereVertexIndexBuffer.vertexBuffer,
-                                    sphereVertexIndexBuffer.indexBuffer,
-                                    sphereRenderBatch, sphereProgram, false, false)
+                            sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch,
+                                    sphereProgram,
+                                    false, false, true)
                         }
                     }
                 }
@@ -274,9 +271,9 @@ class EditorComponents(val engineContext: EngineContext,
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
 
-                            draw(modelVertexIndexBuffer.vertexBuffer,
-                                    modelVertexIndexBuffer.indexBuffer,
-                                    modelRenderBatch, program, false, false)
+                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
+                                    program,
+                                    false, false)
                         }
                     })
                 } else {
@@ -296,9 +293,9 @@ class EditorComponents(val engineContext: EngineContext,
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
 
-                            draw(modelVertexIndexBuffer.vertexBuffer,
-                                    modelVertexIndexBuffer.indexBuffer,
-                                    modelRenderBatch, program, false, false)
+                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
+                                    program,
+                                    false, false)
                         }
                     })
                     val rotations = listOf(AxisAngle4f(ninetyDegrees, 1f, 0f, 0f), AxisAngle4f(ninetyDegrees, 0f, 1f, 0f), AxisAngle4f(ninetyDegrees, 0f, 0f, -1f))
@@ -318,9 +315,9 @@ class EditorComponents(val engineContext: EngineContext,
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
 
-                            draw(modelVertexIndexBuffer.vertexBuffer,
-                                    modelVertexIndexBuffer.indexBuffer,
-                                    modelRenderBatch, program, false, false)
+                            modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
+                                    program,
+                                    false, false)
                         }
                     })
                 }
@@ -348,10 +345,12 @@ class EditorComponents(val engineContext: EngineContext,
             addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(engineContext, sceneManager, editor))
             addTask(MaterialRibbonTask(engineContext, sceneManager, editor, selectionSystem))
-            SwingUtils.invokeLater {
-                TimingsFrame(engineContext)
-                showConfigFrame()
-            }
+        }
+    }
+    fun init(engine: Engine) {
+        SwingUtils.invokeLater {
+            TimingsFrame(engine)
+            ConfigFrame(engineContext, config, editor)
         }
     }
 
@@ -376,10 +375,6 @@ class EditorComponents(val engineContext: EngineContext,
     }
 
     fun isKeyPressed(key: Int) = keyLogger.pressedKeys.contains(key)
-
-    private fun showConfigFrame() = SwingUtils.invokeLater {
-        ConfigFrame(engineContext, config, editor)
-    }
 
     fun addTask(task: RibbonTask) = ribbon.addTask(task)
 

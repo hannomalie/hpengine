@@ -116,7 +116,7 @@ fun IndirectDrawDescription.draw() {
 }
 
 fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
-                        config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) = profiled("setUniforms") {
+                        config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
     val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer

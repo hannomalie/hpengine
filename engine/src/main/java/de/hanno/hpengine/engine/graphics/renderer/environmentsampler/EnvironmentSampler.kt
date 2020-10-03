@@ -206,7 +206,7 @@ class EnvironmentSampler(val entity: Entity,
             if (!isInFrustum(camera, e.centerWorld, e.entityMinWorld, e.entityMaxWorld)) {
 //				continue;
             }
-            draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, program, false, true)
+            renderState.vertexIndexBufferStatic.indexBuffer.draw(e, program, false, true, true)
         }
     }
 
@@ -235,11 +235,11 @@ class EnvironmentSampler(val entity: Entity,
         firstPassDefaultProgram.setUniform("far", camera.far)
         firstPassDefaultProgram.setUniform("time", extract.time.toInt())
         for (entity in extract.renderBatchesStatic) {
-            draw(extract.vertexIndexBufferStatic.vertexBuffer, extract.vertexIndexBufferStatic.indexBuffer, entity, firstPassDefaultProgram, !entity.isVisibleForCamera, true)
+            extract.vertexIndexBufferStatic.indexBuffer.draw(entity, firstPassDefaultProgram, !entity.isVisibleForCamera, true, true)
         }
         for (entity in extract.renderBatchesAnimated) {
 //			TODO: program usage is wrong for animated things..
-            draw(extract.vertexIndexBufferStatic.vertexBuffer, extract.vertexIndexBufferStatic.indexBuffer, entity, firstPassDefaultProgram, !entity.isVisibleForCamera, true)
+            extract.vertexIndexBufferStatic.indexBuffer.draw(entity, firstPassDefaultProgram, !entity.isVisibleForCamera, true, true)
         }
         gpuContext.enable(GlCap.CULL_FACE)
     }

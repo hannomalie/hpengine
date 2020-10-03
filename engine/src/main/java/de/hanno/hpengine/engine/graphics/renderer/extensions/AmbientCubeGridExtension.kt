@@ -250,9 +250,9 @@ class ProbeRenderer(private val engine: EngineContext) {
                 profiled("Probe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
                         pointCubeShadowPassProgram.setTextureUniforms(batch.materialInfo.maps)
-                        draw(renderState.vertexIndexBufferStatic.vertexBuffer,
-                                renderState.vertexIndexBufferStatic.indexBuffer,
-                                batch, pointCubeShadowPassProgram, false, false)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(batch,
+                                pointCubeShadowPassProgram,
+                                false, false, true)
                     }
                 }
                 val cubeMap = cubeMapRenderTarget.textures.first() as CubeMap

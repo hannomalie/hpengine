@@ -6,10 +6,8 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
-import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
@@ -22,43 +20,33 @@ import org.lwjgl.opengl.GL42.glMemoryBarrier
 
 @JvmName("DrawUtils")
 
-fun draw(vertexIndexBuffer: VertexIndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
-    return draw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, renderBatch, program, !renderBatch.isVisibleForCamera, drawLines)
+fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program, drawLines: Boolean, bindIndexBuffer: Boolean): Int {
+    return indexBuffer.draw(renderBatch, program, !renderBatch.isVisibleForCamera, drawLines, bindIndexBuffer)
 }
 
-fun draw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, invisible: Boolean, drawLines: Boolean): Int {
+fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program, invisible: Boolean = false, drawLines: Boolean = false, bindIndexBuffer: Boolean = true): Int {
     if (invisible) {
         return 0
     }
-    return actuallyDraw(vertexBuffer, indexBuffer, renderBatch, program, drawLines)
+    return actuallyDraw(this, renderBatch, program, drawLines, bindIndexBuffer)
 }
 
-fun actuallyDraw(vertexIndexBuffer: VertexIndexBuffer,
-                 entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
-                 program: Program, drawLines: Boolean): Int {
-    return actuallyDraw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, entityBufferIndex, drawElementsIndirectCommand, program, drawLines)
-}
-
-fun actuallyDraw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer,
-                 entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
-                 program: Program, drawLines: Boolean): Int {
+fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand, program: Program,
+                             drawLines: Boolean, bindIndexBuffer: Boolean = true): Int {
 
     program.setUniform("entityBaseIndex", 0)
     program.setUniform("entityIndex", entityBufferIndex)
     program.setUniform("indirect", false)
 
     return if (drawLines) {
-        vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, drawElementsIndirectCommand)
+        drawLinesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer)
     } else {
-        vertexBuffer.drawInstancedBaseVertex(indexBuffer, drawElementsIndirectCommand)
+        drawInstancedBaseVertex(this, drawElementsIndirectCommand)
     }
 }
 
-fun actuallyDraw(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
-    return actuallyDraw(vertexBuffer, indexBuffer, renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, drawLines)
-}
-fun actuallyDraw(vertexIndexBuffer: VertexIndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean): Int {
-    return actuallyDraw(vertexIndexBuffer.vertexBuffer, vertexIndexBuffer.indexBuffer, renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, drawLines)
+fun actuallyDraw(indexBuffer: IndexBuffer, renderBatch: RenderBatch, program: Program, drawLines: Boolean, bindIndexBuffer: Boolean): Int {
+    return indexBuffer.actuallyDraw(renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, drawLines, bindIndexBuffer)
 }
 
 fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: Int, baseHeight: Int, highZTexture: Int, highZProgram: ComputeProgram) {

@@ -14,8 +14,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.define.Define
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -30,9 +28,7 @@ class SphereHolder(val engine: EngineContext,
                    val sphereProgram: Program = engine.run {
                        programManager.getProgram(
                            EngineAsset("shaders/mvp_vertex.glsl"),
-                           EngineAsset("shaders/simple_color_fragment.glsl"),
-                           null,
-                           Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+                           EngineAsset("shaders/simple_color_fragment.glsl"))
                    }) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager
@@ -46,7 +42,7 @@ class SphereHolder(val engine: EngineContext,
     val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {
         sphereEntity.addComponent(this)
     }
-    val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
         sphereModelComponent.putToBuffer(engine.gpuContext, sphereVertexIndexBuffer, this)
@@ -86,9 +82,9 @@ class SphereHolder(val engine: EngineContext,
         sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
         if (beforeDraw != null) { sphereProgram.beforeDraw() }
 
-        draw(sphereVertexIndexBuffer.vertexBuffer,
-                sphereVertexIndexBuffer.indexBuffer,
-                sphereRenderBatch, sphereProgram, false, false)
+        sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch,
+                sphereProgram,
+                false, false)
 
     }
     fun render(state: RenderState, useDepthTest: Boolean = true,

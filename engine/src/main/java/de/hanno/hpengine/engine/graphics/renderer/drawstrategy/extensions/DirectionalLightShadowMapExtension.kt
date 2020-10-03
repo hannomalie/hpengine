@@ -92,7 +92,7 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
 
         for (batch in visibles) {
             if(batch.isShadowCasting) {
-                draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, batch, directionalShadowPassProgram, false, false)
+                renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, directionalShadowPassProgram, false, false, true)
             }
         }
         engineContext.textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)

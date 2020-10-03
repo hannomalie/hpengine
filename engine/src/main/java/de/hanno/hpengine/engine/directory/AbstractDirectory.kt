@@ -28,10 +28,11 @@ abstract class AbstractDirectory(val baseDir: File, sourceLocationIsJarFile: Boo
     }
 
     fun resolve(path: String): File {
+        val path = if(path.startsWith("/")) path.replaceFirst("/", "") else path
         return if(usesFileSystem) {
             baseDir.resolve(path)
         } else {
-            tempDir.resolve(baseDir.name + "/" + path)
+            tempDir.resolve("${baseDir.name}/$path")
         }
     }
 

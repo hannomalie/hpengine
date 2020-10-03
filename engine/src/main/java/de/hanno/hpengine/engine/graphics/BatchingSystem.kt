@@ -97,7 +97,7 @@ class BatchingSystem {
                             centerWorld = cluster.boundingVolume.center
                             this.boundingSphereRadius = cluster.boundingVolume.boundingSphereRadius
                             with(drawElementsIndirectCommand) {
-                                this.primCount = instanceCountToDraw//cluster.size
+                                this.primCount = instanceCountToDraw
                                 this.count = modelComponent.getIndexCount(meshIndex)
                                 this.firstIndex = allocations[modelComponent]!!.forMeshes[meshIndex].indexOffset
                                 this.baseVertex = allocations[modelComponent]!!.forMeshes[meshIndex].vertexOffset

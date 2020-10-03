@@ -1,13 +1,11 @@
 package de.hanno.hpengine.engine.graphics.light.area
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -88,12 +86,13 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
 
     fun renderAreaLightShadowMaps(renderState: RenderState) {
         val areaLights = getComponents(AreaLight::class.java)
+        if(areaLights.isEmpty()) return
 
         profiled("Arealight shadowmaps") {
             engine.gpuContext.depthMask = true
             engine.gpuContext.enable(GlCap.DEPTH_TEST)
             engine.gpuContext.disable(GlCap.CULL_FACE)
-            mapRenderTarget.use(engine.gpuContext as GpuContext<OpenGl>, true) // TODO: Remove cast
+            mapRenderTarget.use(engine.gpuContext, true)
 
             for (i in 0 until Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size)) {
 
@@ -110,10 +109,7 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
 
                 for (e in renderState.renderBatchesStatic) {
                     val drawLines = false
-                    draw(renderState.vertexIndexBufferStatic.vertexBuffer,
-                            renderState.vertexIndexBufferStatic.indexBuffer,
-                            e,
-                            areaShadowPassProgram, false, drawLines)
+                    renderState.vertexIndexBufferStatic.indexBuffer.draw(e, areaShadowPassProgram, false, drawLines, true)
                 }
             }
         }

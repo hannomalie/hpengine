@@ -55,27 +55,35 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
     }
 
     fun beforeDraw(renderState: RenderState, program: Program,
-                   vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
+                   vertexStructArray: PersistentMappedStructBuffer<*>,
+                   renderCam: Camera) {
         engine.gpuContext.cullFace = !engine.config.debug.isDrawLines
         program.use()
-        program.setUniforms(renderState, renderCam, engine.config, vertexBuffer)
+        program.setUniforms(renderState, renderCam, engine.config, vertexStructArray)
     }
 
 }
 
 fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
-    beforeDraw(this.renderState, program, this.drawCam)
+    beforeDraw(renderState, program, drawCam)
+    vertexIndexBuffer.indexBuffer.bind()
     for (batch in renderBatches.filter { !it.hasOwnProgram }) {
         gpuContext.cullFace = batch.materialInfo.cullBackFaces
         program.setTextureUniforms(batch.materialInfo.maps)
-        actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines)
+        vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines, false)
     }
-    for (batch in renderBatches.filter { it.hasOwnProgram }) {
-        val program = batch.program!!
-        beforeDraw(this.renderState, program, this.drawCam)
-        gpuContext.cullFace = batch.materialInfo.cullBackFaces
-        program.setTextureUniforms(batch.materialInfo.maps)
-        actuallyDraw(vertexIndexBuffer, batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines)
+    for (groupedBatches in renderBatches.filter { it.hasOwnProgram }.groupBy { it.program }) {
+        val firstBatch = groupedBatches.value.first()
+        val program = firstBatch.program!!
+        vertexIndexBuffer.indexBuffer.bind()
+
+        beforeDraw(renderState, program, drawCam)
+        gpuContext.cullFace = firstBatch.materialInfo.cullBackFaces
+        program.setTextureUniforms(firstBatch.materialInfo.maps)
+
+        for(batch in groupedBatches.value) {
+            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, isDrawLines, false)
+        }
     }
 }
 

@@ -132,7 +132,7 @@ val Engine.lotsOfPlanesScene
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                 }
 
-                val instancesPerCluster = 400
+                val instancesPerCluster = 100
                 val center = Vector3f()
                 val size = Vector3f(100f, 10f, 100f)
                 val startCorner = Vector3f(center).sub(Vector3f(size).mul(0.5f))

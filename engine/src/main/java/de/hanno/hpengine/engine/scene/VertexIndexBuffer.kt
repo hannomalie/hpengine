@@ -2,18 +2,12 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
-import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import org.lwjgl.BufferUtils
-import java.util.EnumSet
 
 class VertexIndexBuffer(gpuContext: GpuContext<*>,
-                        vertexBufferSizeInFloatsCount: Int,
-                        indexBufferSizeInIntsCount: Int,
-                        channels: EnumSet<DataChannels>) {
+                        indexBufferSizeInIntsCount: Int) {
 
-    var vertexBuffer = VertexBuffer(gpuContext, BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), channels)
     var indexBuffer = IndexBuffer(gpuContext, BufferUtils.createIntBuffer(indexBufferSizeInIntsCount))
     private var currentBaseVertex = 0
     private var currentIndexOffset = 0
@@ -32,6 +26,7 @@ class VertexIndexBuffer(gpuContext: GpuContext<*>,
 
     val vertexArray = mutableListOf<Vertex>()
     val animatedVertexArray = mutableListOf<AnimatedVertex>()
+
     var vertexStructArray = PersistentMappedStructBuffer(vertexArray.size, gpuContext, { VertexStructPacked() })
     var animatedVertexStructArray = PersistentMappedStructBuffer(animatedVertexArray.size, gpuContext, { AnimatedVertexStructPacked() })
 

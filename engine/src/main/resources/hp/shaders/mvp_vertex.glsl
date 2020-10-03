@@ -3,13 +3,13 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
+uniform int entityBaseIndex = 0;
+
 //include(globals_structs.glsl)
 
-#ifdef PROGRAMMABLE_VERTEX_PULLING
 layout(std430, binding=7) buffer _vertices {
 	VertexPacked vertices[];
 };
-#endif
 
 in vec3 in_Position;
 in vec4 in_Color;
@@ -27,15 +27,9 @@ void main()
 
 	VertexPacked vertex;
 
-#ifdef PROGRAMMABLE_VERTEX_PULLING
-	int vertexIndex = gl_VertexID;
+	int vertexIndex = entityBaseIndex + gl_VertexID;
 	vertex = vertices[vertexIndex];
 	vertex.position.w = 1;
-#else
-	vertex.position = vec4(in_Position.xyz,1);
-	vertex.normal = vec4(in_Normal, 0);
-	vertex.texCoord = vec4(in_TextureCoord, 0, 0);
-#endif
 
 	pass_WorldPosition = modelMatrix * vertex.position;
 	pass_Position = projectionMatrix * viewMatrix * pass_WorldPosition;

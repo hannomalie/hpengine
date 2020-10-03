@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
@@ -12,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -51,14 +53,20 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
     private val debugProc = window.invoke { if (debug) GLUtil.setupDebugMessageCallback() else null }
+    private lateinit var dummyVertexIndexBuffer: VertexIndexBuffer
 
     init {
+        val dummyVertexBuffer = VertexBuffer(this, ModelComponent.DEFAULTCHANNELS, floatArrayOf(0f,0f,0f,0f))
         window.invoke {
             enable(GlCap.DEPTH_TEST)
             enable(GlCap.CULL_FACE)
 
             // Map the internal OpenGL coordinate system to the entire screen
             viewPort(0, 0, window.width, window.height)
+            dummyVertexIndexBuffer = VertexIndexBuffer(this, 10).apply {
+                dummyVertexBuffer.bind()
+                indexBuffer.bind()
+            }
         }
     }
 

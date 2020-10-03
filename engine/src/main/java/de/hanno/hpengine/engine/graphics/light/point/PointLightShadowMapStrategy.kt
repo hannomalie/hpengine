@@ -121,9 +121,7 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
 
                 profiled("PointLight shadowmap entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        draw(renderState.vertexIndexBufferStatic.vertexBuffer,
-                                renderState.vertexIndexBufferStatic.indexBuffer,
-                                batch, pointCubeShadowPassProgram, false, false)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, pointCubeShadowPassProgram, false, false, true)
                     }
                 }
             }
@@ -221,7 +219,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
 
-                        draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
+                        renderState.vertexIndexBufferStatic.draw(batch, pointShadowPassProgram, true, true)
                     }
                 }
 
@@ -247,7 +245,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                                 update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)
-                        draw(renderState.vertexIndexBufferStatic, batch, pointShadowPassProgram, true)
+                        renderState.vertexIndexBufferStatic.draw(batch, pointShadowPassProgram, true, true)
                     }
                 }
             }

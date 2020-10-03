@@ -136,7 +136,7 @@ class ProbeRenderStrategy(private val engineContext: EngineContext) {
 
                 profiled("Probe entity rendering") {
                     for (e in renderState.renderBatchesStatic) {
-                        draw(renderState.vertexIndexBufferStatic.vertexBuffer, renderState.vertexIndexBufferStatic.indexBuffer, e, probeProgram, false, true)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(e, probeProgram, false, true, true)
                     }
                 }
                 engineContext.textureManager.generateMipMaps(TEXTURE_CUBE_MAP, cubeMapRenderTarget.renderedTexture)

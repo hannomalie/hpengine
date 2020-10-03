@@ -43,7 +43,10 @@ val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinI
 
 class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
     fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): AnimatedModel {
-        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).path, flags)
+        val path = resourcesDir.resolve(file).path.apply {
+            require(File(this).exists()) { "File doesn't exist: $this" }
+        }
+        val aiScene = Assimp.aiImportFile(path, flags)
                 ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()

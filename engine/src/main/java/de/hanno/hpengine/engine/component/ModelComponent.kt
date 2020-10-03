@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.directory.AbstractDirectory
-import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
@@ -167,10 +166,10 @@ fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): Vert
     return allocate(modelComponent.model.uniqueVertices.size, modelComponent.indices.size)
 }
 fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
-                               vertexIndexBuffer: VertexIndexBuffer,
+                               indexBuffer: VertexIndexBuffer,
                                vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
 
-    synchronized(vertexIndexBuffer) {
+    synchronized(indexBuffer) {
         val compiledVertices = model.uniqueVertices
 
         val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
@@ -179,19 +178,15 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
         val bytesPerObject = model.bytesPerVertex
 
         if(model is StaticModel) {
-            vertexIndexBuffer.vertexStructArray.addAll(model.verticesStructArrayPacked)
+            indexBuffer.vertexStructArray.addAll(model.verticesStructArrayPacked)
         } else if(model is AnimatedModel) {
-            vertexIndexBuffer.animatedVertexStructArray.addAll(model.verticesStructArrayPacked)
+            indexBuffer.animatedVertexStructArray.addAll(model.verticesStructArrayPacked)
         } else throw IllegalStateException("Unsupported mode") // TODO: sealed classes!!
+
 
 //        TODO: Does this have to be on gpu thread?
 //        gpuContext.execute("ModelComponent.putToBuffer") {
-            val neededSizeInBytes = bytesPerObject * compiledVertices.size
-            val vertexOffsetInBytes = vertexIndexOffsets.vertexOffset * bytesPerObject
-            vertexIndexBuffer.vertexBuffer.ensureCapacityInBytes(vertexOffsetInBytes + neededSizeInBytes)
-            result.buffer.copyTo(vertexIndexBuffer.vertexBuffer.buffer, true, vertexOffsetInBytes)
-            vertexIndexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, indices)
-            vertexIndexBuffer.vertexBuffer.upload()
+            indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, indices)
 //        }
 
         return vertexIndexOffsetsForMeshes

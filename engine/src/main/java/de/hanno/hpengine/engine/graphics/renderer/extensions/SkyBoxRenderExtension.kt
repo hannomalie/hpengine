@@ -14,20 +14,16 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.engine.graphics.shader.define.Define
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
@@ -38,9 +34,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
     val materialManager: MaterialManager = engineContext.materialManager
     private val skyBoxProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/mvp_vertex.glsl").toCodeSource(),
-            engineContext.config.engineDir.resolve("shaders/skybox.glsl").toCodeSource(),
-            null,
-            Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true)))
+            engineContext.config.engineDir.resolve("shaders/skybox.glsl").toCodeSource())
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
 
@@ -53,7 +47,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
     private val skyBoxModelComponent = ModelComponent(skyBoxEntity, skyBox, materialManager.defaultMaterial).apply {
         skyBoxEntity.addComponent(this)
     }
-    private val skyboxVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    private val skyboxVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     private val vertexIndexOffsets = skyboxVertexIndexBuffer.allocateForComponent(skyBoxModelComponent).apply {
         skyBoxModelComponent.putToBuffer(engineContext.gpuContext, skyboxVertexIndexBuffer, this)
@@ -114,7 +108,7 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
             backend.textureManager.cubeMap.id
         }
         gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, textureId)
-        draw(skyboxVertexIndexBuffer.vertexBuffer, skyboxVertexIndexBuffer.indexBuffer, skyBoxRenderBatch, skyBoxProgram, false, false)
+        skyboxVertexIndexBuffer.indexBuffer.draw(skyBoxRenderBatch, skyBoxProgram, false, false, true)
 
     }
 }

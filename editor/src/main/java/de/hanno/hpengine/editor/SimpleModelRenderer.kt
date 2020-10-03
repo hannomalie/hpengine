@@ -14,8 +14,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.define.Define
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.StaticModel
@@ -31,9 +29,7 @@ class SimpleModelRenderer(val engine: EngineContext,
                           val model: StaticModel = StaticModelLoader().load("assets/models/cube.obj", engine.materialManager, engine.config.directories.engineDir),
                           val program: Program = engine.run { programManager.getProgram(
                                   EngineAsset("shaders/mvp_vertex.glsl"),
-                                  EngineAsset("shaders/simple_color_fragment.glsl"),
-                                  null,
-                                  Defines(Define.getDefine("PROGRAMMABLE_VERTEX_PULLING", true))) }) : RenderSystem {
+                                  EngineAsset("shaders/simple_color_fragment.glsl")) }) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager
     val gpuContext = engine.gpuContext
@@ -42,7 +38,7 @@ class SimpleModelRenderer(val engine: EngineContext,
     val modelComponent = ModelComponent(modelEntity, model, materialManager.defaultMaterial).apply {
         modelEntity.addComponent(this)
     }
-    val modelVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
+    val modelVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     val vertexIndexOffsets = modelVertexIndexBuffer.allocateForComponent(modelComponent).apply {
         modelComponent.putToBuffer(engine.gpuContext, modelVertexIndexBuffer, this)
@@ -82,9 +78,9 @@ class SimpleModelRenderer(val engine: EngineContext,
         program.bindShaderStorageBuffer(7, modelVertexIndexBuffer.vertexStructArray)
         if (beforeDraw != null) { program.beforeDraw() }
 
-        draw(modelVertexIndexBuffer.vertexBuffer,
-                modelVertexIndexBuffer.indexBuffer,
-                modelRenderBatch, program, false, false)
+        modelVertexIndexBuffer.indexBuffer.draw(modelRenderBatch,
+                program,
+                false, false)
 
     }
     fun render(state: RenderState, useDepthTest: Boolean = true,

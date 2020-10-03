@@ -76,11 +76,12 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
 
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorWindow> {
     val window = AWTEditorWindow(config)
-    val engineContext = EngineContext(config = config, window = window).apply {
-        add(EditorExtension(this, config, window.frame))
-    }
+    val engineContext = EngineContext(config = config, window = window)
+    val extension = EditorExtension(engineContext, config, window.frame)
+    engineContext.add(extension)
 
     val engine = Engine(engineContext)
+    extension.editorComponents.init(engine)
     return Pair(engine, window)
 }
 

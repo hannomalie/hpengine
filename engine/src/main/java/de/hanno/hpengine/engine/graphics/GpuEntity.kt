@@ -40,7 +40,7 @@ class EntityStruct : Struct() {
     val min by Vector3f()
     var boundingVolumeType by BoundingVolumeType::class.java
     val max by Vector3f()
-    var dummy4 by 0.0f
+    var dummy4 by 0
 
     fun setTrafoAndBoundingVolume(source: Matrix4f, boundingVolume: BoundingVolume) {
         trafo.set(source)

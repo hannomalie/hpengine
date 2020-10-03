@@ -28,8 +28,8 @@ class ModelComponentSystem(val engine: EngineContext,
                            val materialManager: MaterialManager) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTCHANNELS)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(engine.gpuContext, 10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
+    val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(engine.gpuContext, 10)
 
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
@@ -76,7 +76,7 @@ class ModelComponentSystem(val engine: EngineContext,
                     target.animationFrame0 = modelComponent.animationFrame0
                     target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
                     val boundingVolume = modelComponent.getBoundingVolume(entity.transform, mesh)
-                    target.dummy4 = 1f
+                    target.dummy4 = allocation.indexOffset
                     target.setTrafoAndBoundingVolume(entity.transform.transformation, boundingVolume)
 
                     counter++
@@ -99,6 +99,7 @@ class ModelComponentSystem(val engine: EngineContext,
                                 target.baseJointIndex = allocation.baseJointIndex
                                 target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
                                 target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
+                                target.dummy4 = allocation.indexOffset
                                 target.setTrafoAndBoundingVolume(instanceMatrix, instance.spatial.boundingVolume)
 
                                 counter++
