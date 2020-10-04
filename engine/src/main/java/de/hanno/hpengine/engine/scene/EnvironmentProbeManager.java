@@ -28,6 +28,7 @@ import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
 import de.hanno.hpengine.engine.model.texture.TextureDimension3D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
+import de.hanno.hpengine.engine.vertexbuffer.VertexBufferExtensionsKt;
 import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
-import static de.hanno.hpengine.engine.vertexbuffer.VertexBufferExtensionsKt.drawDebugLines;
+import static de.hanno.hpengine.engine.vertexbuffer.VertexBufferExtensionsKt.drawLines;
 import static org.lwjgl.opengl.GL11.GL_REPEAT;
 import static org.lwjgl.opengl.GL11.GL_RGBA8;
 import static org.lwjgl.opengl.GL30.GL_RGBA32F;
@@ -248,7 +249,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		VertexBuffer buffer = new VertexBuffer(OpenGlBackendKt.getGpuContext(engine), EnumSet.of(DataChannels.POSITION3), points);
 		buffer.upload();
 		program.setUniform("diffuseColor", new Vector3f(0,1,0));
-		drawDebugLines(buffer);
+		VertexBufferExtensionsKt.drawLines(buffer);
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {

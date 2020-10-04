@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
-import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
@@ -210,7 +210,7 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext): RenderExtensi
                 val innerNodes = nodes.filterIsInstance<BvhNode.Inner>()
                 innerNodes.forEach {
                     val centerSelf = it.boundingSphere.xyz
-                    lineRenderer.batchAABBLines(
+                    getAABBLines(
                             it.boundingSphere.xyz.sub(Vector3f(it.boundingSphere.w)),
                             it.boundingSphere.xyz.add(Vector3f(it.boundingSphere.w))
                     )

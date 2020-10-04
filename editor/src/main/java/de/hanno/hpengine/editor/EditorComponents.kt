@@ -29,13 +29,14 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
@@ -182,15 +183,14 @@ class EditorComponents(val engineContext: EngineContext,
                 it.extensions.forEach { it.renderEditor(state, result) }
             }
 
-            for(batch in state.renderBatchesStatic) {
-                lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
-            }
-            for(batch in state.renderBatchesAnimated) {
-                lineRenderer.batchAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            val linePoints = state.renderBatchesStatic.flatMap { batch ->
+                getAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            } + state.renderBatchesAnimated.flatMap { batch ->
+                getAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
             }
             engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
             engineContext.gpuContext.blend = false
-            lineRenderer.drawAllLines(5f, Consumer { program ->
+            lineRenderer.drawLines(linePoints, 5f, Consumer { program ->
                 program.setUniformAsMatrix4("modelMatrix", VoxelConeTracingExtension.identityMatrix44Buffer)
                 program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
                 program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)

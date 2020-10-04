@@ -13,10 +13,19 @@ import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect
 
 @JvmOverloads
-fun VertexBuffer.drawDebugLines(lineWidth: Float = 2f): Int {
+fun VertexBuffer.drawLines(lineWidth: Float = 2f): Int {
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
     GL11.glLineWidth(lineWidth)
     bind()
+    GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount)
+    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
+    return verticesCount
+}
+
+fun drawLines(lineWidth: Float = 2f, verticesCount: Int): Int {
+    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+    GL11.glEnable(GL11.GL_LINE_SMOOTH)
+    GL11.glLineWidth(lineWidth)
     GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount)
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
     return verticesCount

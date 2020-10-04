@@ -20,7 +20,8 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
                                               val gpuContext: GpuContext<*>,
                                               val factory: () -> T,
                                               val target: Int = GL43.GL_SHADER_STORAGE_BUFFER): Array<T> {
-    val slidingWindow = createSlidingWindow()
+    var slidingWindow = createSlidingWindow()
+        private set
 
     fun createSlidingWindow(): SlidingWindow<T> {
         return SlidingWindow(factory()).apply {
@@ -88,6 +89,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
                     val oldId = this.id
                     GL15.glDeleteBuffers(oldId)
                     this.buffer = newBuffer
+                    this.slidingWindow = createSlidingWindow()
                     this.id = newId
                 }
             }
@@ -95,6 +97,7 @@ class PersistentMappedStructBuffer<T: Struct>(initialSize: Int,
             val (id, newBuffer) = createBuffer(capacityInBytes)
             copyOldBufferTo(newBuffer)
             this.buffer = newBuffer
+            this.slidingWindow = createSlidingWindow()
             this.id = id
         }
     }

@@ -25,7 +25,7 @@ import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
-import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.shader.define.Define
@@ -197,7 +197,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             is SceneSelection -> {
                 engineContext.gpuContext.disable(GlCap.DEPTH_TEST)
                 engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
-                lineRenderer.batchAABBLines(selection.scene.aabb.min, selection.scene.aabb.max)
+                getAABBLines(selection.scene.aabb.min, selection.scene.aabb.max)
                 lineRenderer.drawAllLines(5f, Consumer { program ->
                     program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
                     program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)

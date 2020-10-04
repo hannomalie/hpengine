@@ -22,7 +22,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static de.hanno.hpengine.engine.graphics.renderer.RendererKt.batchAABBLines;
+import static de.hanno.hpengine.engine.graphics.renderer.RendererKt.getAABBLines;
 import static de.hanno.hpengine.engine.transform.AABBKt.isInFrustum;
 
 public class Octree implements Updatable, Serializable, EntityContainer {
@@ -159,7 +159,7 @@ public class Octree implements Updatable, Serializable, EntityContainer {
                 batchLines(renderer, child);
             }
         } else if(node.hasEntities()){
-            batchAABBLines(renderer, node.looseAabb.getMin(), node.looseAabb.getMax());
+            getAABBLines(node.looseAabb.getMin(), node.looseAabb.getMax());
         }
     }
 

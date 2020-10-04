@@ -1,23 +1,18 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.BackendType
-import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import java.util.function.Consumer
 
 interface LineRenderer {
+    val linePoints: MutableList<Vector3fc> // TODO: Remove completely
     fun batchPointForLine(point: Vector3f)
     fun batchLine(from: Vector3fc, to: Vector3fc)
 
     @JvmDefault
-    fun drawLines(program: Program) = drawLines(program, 2f)
-    fun drawLines(program: Program, lineWidth: Float): Int
+    fun drawLines(program: Program) = drawLines(linePoints, program, 2f)
+    fun drawLines(linePoints: List<Vector3fc>, program: Program, lineWidth: Float): Int
     @JvmDefault
     fun drawAllLines(action: Consumer<Program>) {
         drawAllLines(2f, action)
@@ -273,7 +268,14 @@ interface LineRenderer {
     }
 }
 
-fun LineRenderer.batchAABBLines(minWorld: Vector3fc, maxWorld: Vector3fc) {
+fun getAABBLines(minWorld: Vector3fc, maxWorld: Vector3fc): MutableList<Vector3fc> {
+    val linePoints = mutableListOf<Vector3fc>()
+
+    fun batchLine(from: Vector3fc, to: Vector3fc) {
+        linePoints.add(from)
+        linePoints.add(to)
+    }
+
     run {
         val min = Vector3f(minWorld.x(), minWorld.y(), minWorld.z())
         val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
@@ -336,4 +338,5 @@ fun LineRenderer.batchAABBLines(minWorld: Vector3fc, maxWorld: Vector3fc) {
         val max = Vector3f(minWorld.x(), minWorld.y(), maxWorld.z())
         batchLine(min, max)
     }
+    return linePoints
 }

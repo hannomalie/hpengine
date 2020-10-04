@@ -10,7 +10,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.engine.graphics.renderer.batchAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
@@ -381,9 +381,9 @@ class VoxelConeTracingExtension(
         val grids = renderState[voxelGrids]
         for(gridIndex in grids.indices) {
             val grid = grids[gridIndex]
-            lineRenderer.batchAABBLines(
-                grid.position.toJoml().sub(Vector3f(grid.gridSizeHalfScaled.toFloat())),
-                grid.position.toJoml().add(Vector3f(grid.gridSizeHalfScaled.toFloat()))
+            getAABBLines(
+                    grid.position.toJoml().sub(Vector3f(grid.gridSizeHalfScaled.toFloat())),
+                    grid.position.toJoml().add(Vector3f(grid.gridSizeHalfScaled.toFloat()))
             )
         }
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
