@@ -4,8 +4,8 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +28,6 @@ class RenderStateManager(renderStateFactory: () -> RenderState) {
 
 class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,
-                    val lineRenderer: LineRenderer = LineRendererImpl(engineContext),
                     val materialManager: MaterialManager = engineContext.materialManager) : Manager {
 
     val deferredRenderingBuffer = engineContext.deferredRenderingBuffer

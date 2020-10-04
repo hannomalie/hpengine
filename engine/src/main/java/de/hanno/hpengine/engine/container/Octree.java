@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static de.hanno.hpengine.engine.graphics.renderer.RendererKt.getAABBLines;
+import static de.hanno.hpengine.engine.graphics.renderer.RendererKt.addAABBLines;
 import static de.hanno.hpengine.engine.transform.AABBKt.isInFrustum;
 
 public class Octree implements Updatable, Serializable, EntityContainer {
@@ -153,13 +154,13 @@ public class Octree implements Updatable, Serializable, EntityContainer {
 		}
 	}
 
-	private void batchLines(LineRenderer renderer, Node node) {
+	private void batchLines(List<Vector3fc> linePoints, Node node) {
         if(node.hasChildren()) {
             for(Node child : node.children) {
-                batchLines(renderer, child);
+                batchLines(linePoints, child);
             }
         } else if(node.hasEntities()){
-            getAABBLines(node.looseAabb.getMin(), node.looseAabb.getMax());
+            addAABBLines(linePoints, node.looseAabb.getMin(), node.looseAabb.getMax());
         }
     }
 

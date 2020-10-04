@@ -8,9 +8,10 @@ import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
-import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.addLine
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -18,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.x
@@ -25,6 +27,7 @@ import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
@@ -109,17 +112,17 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-class BvHPointLightSecondPassExtension(val engine: EngineContext): RenderExtension<OpenGl> {
-    private val gpuContext = engine.gpuContext
-    private val deferredRenderingBuffer = engine.deferredRenderingBuffer
+class BvHPointLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
+    private val gpuContext = engineContext.gpuContext
+    private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
 
-    private val secondPassPointBvhComputeProgram = engine.programManager.getComputeProgram(engine.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
+    private val secondPassPointBvhComputeProgram = engineContext.programManager.getComputeProgram(engineContext.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    private val lineRenderer = LineRendererImpl(engine)
-    val bvh = PersistentMappedStructBuffer(0, engine.gpuContext, { BvhNodeGpu() })
+    val bvh = PersistentMappedStructBuffer(0, engineContext.gpuContext, { BvhNodeGpu() })
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -192,42 +195,40 @@ class BvHPointLightSecondPassExtension(val engine: EngineContext): RenderExtensi
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)
             secondPassPointBvhComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
-            secondPassPointBvhComputeProgram.setUniform("screenWidth", engine.config.width.toFloat())
-            secondPassPointBvhComputeProgram.setUniform("screenHeight", engine.config.height.toFloat())
+            secondPassPointBvhComputeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+            secondPassPointBvhComputeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             secondPassPointBvhComputeProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
-            secondPassPointBvhComputeProgram.dispatchCompute(engine.config.width / 16, engine.config.height / 16, 1)
+            secondPassPointBvhComputeProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
         }
     }
 
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
-        if(engine.config.debug.drawBvhInnerNodes) {
-            tree?.run {
-                val innerNodes = nodes.filterIsInstance<BvhNode.Inner>()
-                innerNodes.forEach {
-                    val centerSelf = it.boundingSphere.xyz
-                    getAABBLines(
+        if(engineContext.config.debug.drawBvhInnerNodes) {
+
+            val linePoints = mutableListOf<Vector3fc>().apply {
+                tree?.run {
+                    val innerNodes = nodes.filterIsInstance<BvhNode.Inner>()
+                    innerNodes.forEach {
+                        val centerSelf = it.boundingSphere.xyz
+                        addAABBLines(
                             it.boundingSphere.xyz.sub(Vector3f(it.boundingSphere.w)),
                             it.boundingSphere.xyz.add(Vector3f(it.boundingSphere.w))
-                    )
-                    it.children.forEach {
-                        lineRenderer.batchLine(centerSelf, it.boundingSphere.xyz)
+                        )
+                        it.children.forEach { child ->
+                            addLine(centerSelf, child.boundingSphere.xyz)
+                        }
                     }
                 }
-                engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
-//            engine.deferredRenderingBuffer.use(engine.gpuContext, false)
-                engine.gpuContext.blend = false
-                lineRenderer.drawAllLines(5f, Consumer { program ->
-                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
-                    program.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-                    program.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-                    program.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
-                })
             }
+            engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+            engineContext.gpuContext.blend = false
+            engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
+
     }
 }

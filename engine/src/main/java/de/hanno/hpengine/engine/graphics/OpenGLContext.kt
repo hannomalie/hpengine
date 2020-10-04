@@ -31,6 +31,7 @@ import org.lwjgl.opengl.GL11.GL_COLOR_CLEAR_VALUE
 import org.lwjgl.opengl.GL11.GL_CULL_FACE_MODE
 import org.lwjgl.opengl.GL11.GL_DEPTH_FUNC
 import org.lwjgl.opengl.GL11.glDepthFunc
+import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL20
@@ -71,6 +72,8 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     }
 
     private fun getCapabilities() = window { GL.getCapabilities() }
+
+    override val maxLineWidth = window.invoke { GL12.glGetFloat(GL12.GL_ALIASED_LINE_WIDTH_RANGE) }
 
     override val backend = object: OpenGl {
         override val gpuContext = this@OpenGLContext

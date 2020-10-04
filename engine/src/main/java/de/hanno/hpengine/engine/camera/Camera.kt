@@ -1,15 +1,18 @@
 package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
+import de.hanno.hpengine.engine.graphics.renderer.addLine
+import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +20,7 @@ import org.joml.AxisAngle4f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
@@ -224,10 +228,9 @@ open class Camera @JvmOverloads constructor(
 
 }
 
-class CameraComponentSystem(val engine: EngineContext): ComponentSystem<Camera>, RenderSystem {
+class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<Camera>, RenderSystem {
 
-    // TODO: Remove this cast
-    private val lineRenderer = LineRendererImpl(engine)
+    private val lineVertices = PersistentMappedStructBuffer(24, engineContext.gpuContext, { VertexStructPacked() })
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         getComponents().forEach {
@@ -239,7 +242,7 @@ class CameraComponentSystem(val engine: EngineContext): ComponentSystem<Camera>,
     private val components = mutableListOf<Camera>()
     override fun getComponents(): List<Camera> = components
 
-    fun create(entity: Entity) = Camera(entity, engine.config.width.toFloat() / engine.config.height.toFloat())
+    fun create(entity: Entity) = Camera(entity, engineContext.config.width.toFloat() / engineContext.config.height.toFloat())
     fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean) = Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { components.add(it); }
 
     override fun addComponent(component: Camera) {
@@ -248,26 +251,29 @@ class CameraComponentSystem(val engine: EngineContext): ComponentSystem<Camera>,
     override fun clear() = components.clear()
 
     override fun render(result: DrawResult, state: RenderState) {
-        if (engine.config.debug.isDrawCameras) {
-            //            TODO: Use renderstate somehow?
-            for (i in components.indices) {
-                val camera = components[i]
-                val corners = camera.frustumCorners
-                lineRenderer.batchLine(corners[0], corners[1])
-                lineRenderer.batchLine(corners[1], corners[2])
-                lineRenderer.batchLine(corners[2], corners[3])
-                lineRenderer.batchLine(corners[3], corners[0])
+        if (engineContext.config.debug.isDrawCameras) {
 
-                lineRenderer.batchLine(corners[4], corners[5])
-                lineRenderer.batchLine(corners[5], corners[6])
-                lineRenderer.batchLine(corners[6], corners[7])
-                lineRenderer.batchLine(corners[7], corners[4])
+            val linePoints = mutableListOf<Vector3fc>().apply {
+                components.indices.forEach { i ->
+                    val corners = components[i].frustumCorners
 
-                lineRenderer.batchLine(corners[0], corners[6])
-                lineRenderer.batchLine(corners[1], corners[7])
-                lineRenderer.batchLine(corners[2], corners[4])
-                lineRenderer.batchLine(corners[3], corners[5])
+                    addLine(corners[0], corners[1])
+                    addLine(corners[1], corners[2])
+                    addLine(corners[2], corners[3])
+                    addLine(corners[3], corners[0])
+
+                    addLine(corners[4], corners[5])
+                    addLine(corners[5], corners[6])
+                    addLine(corners[6], corners[7])
+                    addLine(corners[7], corners[4])
+
+                    addLine(corners[0], corners[6])
+                    addLine(corners[1], corners[7])
+                    addLine(corners[2], corners[4])
+                    addLine(corners[3], corners[5])
+                }
             }
+            engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
     }
 }

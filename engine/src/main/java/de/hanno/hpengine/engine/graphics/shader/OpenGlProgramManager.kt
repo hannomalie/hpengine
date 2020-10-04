@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -24,6 +25,11 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                            val config: Config) : ProgramManager<OpenGl> {
 
     var programsCache: MutableList<AbstractProgram> = CopyOnWriteArrayList()
+
+    override val linesProgram = getProgram(
+        config.EngineAsset("shaders/mvp_vertex.glsl"),
+        config.EngineAsset("shaders/simple_color_fragment.glsl")
+    )
 
     override fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines): ComputeProgram {
         return gpuContext.invoke {

@@ -180,4 +180,5 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun createCommandSync(): OpenGlCommandSync
     fun createCommandSync(onSignaled: () -> Unit): OpenGlCommandSync
+    val maxLineWidth: Float
 }

@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
@@ -68,7 +67,6 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	private CubeMapArray environmentMapsArray2;
 	private CubeMapArray environmentMapsArray3;
     private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
-	private final LineRenderer renderer;
 
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(100*3);
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(100*3);
@@ -87,7 +85,6 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
         this.cubeMapArrayRenderTarget = CubeMapArrayRenderTarget.Companion.invoke(gpuContext, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, "CubeMapArrayRenderTarget", new Vector4f(0, 0, 0, 0), environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
-		this.renderer = new LineRendererImpl(engineContext);
 	}
 
 
@@ -197,68 +194,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		cubeMapArrayRenderTarget.use(OpenGlBackendKt.getGpuContext(engine), false);
 	}
 
-	public void drawDebug(EnvironmentProbe probe, Program program) {
-		List<Vector3fc> points = probe.getBox().getPoints();
-		EnvironmentSampler sampler = probe.getSampler();
-		for (int i = 0; i < points.size() - 1; i++) {
-			renderer.batchLine(points.get(i), points.get(i + 1));
-		}
 
-		renderer.batchLine(points.get(3), points.get(0));
-		renderer.batchLine(points.get(7), points.get(4));
-
-		renderer.batchLine(points.get(0), points.get(6));
-		renderer.batchLine(points.get(1), points.get(7));
-		renderer.batchLine(points.get(2), points.get(4));
-		renderer.batchLine(points.get(3), points.get(5));
-
-		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(5, 0, 0)));
-		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(0, 5, 0)));
-		renderer.batchLine(sampler.getEntity().getTransform().getPosition(), new Vector3f(sampler.getEntity().getTransform().getPosition()).add(new Vector3f(0, 0, -5)));
-
-		float temp = (float)probe.getIndex()/10;
-		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
-	    renderer.drawLines(program);
-
-//		renderer.batchLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
-	}
-
-	public void drawDebug(Program program, Octree octree) {
-		List<float[]> arrays = new ArrayList<>();
-
-		for (EnvironmentProbe probe : getProbes()) {
-			drawDebug(probe, program);
-//			arrays.add(probe.getBox().getPointsAsArray());
-
-//			Vector3f clipStart = new Vector3f(probe.getCenter(), (Vector3f) probe.getRightDirection().mul(probe.getCamera().getNear()), null);
-//			Vector3f clipEnd = new Vector3f(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
-//			renderer.batchLine(clipStart, clipEnd);
-
-			program.setUniform("diffuseColor", new Vector3f(0,1,1));
-            renderer.drawLines(program);
-		}
-		
-		// 72 floats per array
-		float[] points = new float[arrays.size() * 72];
-		for (int i = 0; i < arrays.size(); i++) {
-			float[] array = arrays.get(i);
-			for (int z = 0; z < 72; z++) {
-				points[24*3*i + z] = array[z];
-			}
-		};
-		VertexBuffer buffer = new VertexBuffer(OpenGlBackendKt.getGpuContext(engine), EnumSet.of(DataChannels.POSITION3), points);
-		buffer.upload();
-		program.setUniform("diffuseColor", new Vector3f(0,1,0));
-		VertexBufferExtensionsKt.drawLines(buffer);
-		octree.getEntities().stream().forEach(e -> {
-			Optional<EnvironmentProbe> option = getProbeForEntity(e);
-			option.ifPresent(probe -> {
-                renderer.batchLine(probe.getEntity().getTransform().getCenter(), e.getTransform().getPosition());
-			});
-		});
-		buffer.delete();
-	}
-	
 	public<T extends Entity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
 		return probes.stream().filter(probe -> probe.contains(entity.getBoundingVolume())).sorted((o1, o2) -> (Float.compare(entity.getTransform().getCenter().distance(o1.getEntity().getTransform().getCenter()), entity.getTransform().getCenter().distance(o2.getEntity().getTransform().getCenter())))).findFirst();
 	}

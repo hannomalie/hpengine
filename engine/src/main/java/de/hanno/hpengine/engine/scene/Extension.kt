@@ -25,7 +25,6 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSyste
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -41,11 +40,9 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.physics.PhysicsManager
-import de.hanno.hpengine.engine.programManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import org.joml.Vector3f
-import java.util.Optional
 
 interface Extension {
     val manager: Manager?
@@ -93,7 +90,7 @@ class RenderManagerExtension(val engineContext: EngineContext): Extension {
     override val manager = RenderManager(engineContext)
 }
 class PhysicsExtension(val engineContext: EngineContext): Extension {
-    override val manager = PhysicsManager(renderer = LineRendererImpl(engineContext), config = engineContext.config)
+    override val manager = PhysicsManager(engineContext, config = engineContext.config)
     override val renderSystem = manager
 }
 class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager): Extension {

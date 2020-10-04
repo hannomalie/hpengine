@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
@@ -22,7 +21,6 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderEx
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.SkyBoxRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
@@ -49,7 +47,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val renderStateManager: RenderStateManager = engineContext.renderStateManager
     val materialManager: MaterialManager = engineContext.materialManager
 
-    val drawlinesExtension = DrawLinesExtension(engineContext, programManager)
+    val drawlinesExtension = DrawLinesExtension(engineContext)
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
 

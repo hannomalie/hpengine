@@ -3,9 +3,13 @@ package de.hanno.hpengine.engine.graphics.shader
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.transform.x
+import de.hanno.hpengine.engine.transform.y
+import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
 import de.hanno.hpengine.util.ressources.Reloadable
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -90,6 +94,10 @@ abstract class AbstractProgram(val id: Int): Reloadable {
     }
 
     fun setUniform(name: String, vec: Vector3f) {
+        putInMapIfAbsent(name)
+        uniforms[name]!![vec.x, vec.y] = vec.z
+    }
+    fun setUniform(name: String, vec: Vector3fc) {
         putInMapIfAbsent(name)
         uniforms[name]!![vec.x, vec.y] = vec.z
     }

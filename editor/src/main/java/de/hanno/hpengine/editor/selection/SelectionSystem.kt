@@ -24,20 +24,23 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
-import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.awt.event.MouseAdapter
@@ -89,7 +92,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val engineContext = editorComponents.engineContext
     val editor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
-    val lineRenderer = LineRendererImpl(editorComponents.engineContext)
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
 
     val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -197,13 +200,8 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             is SceneSelection -> {
                 engineContext.gpuContext.disable(GlCap.DEPTH_TEST)
                 engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
-                getAABBLines(selection.scene.aabb.min, selection.scene.aabb.max)
-                lineRenderer.drawAllLines(5f, Consumer { program ->
-                    program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer)
-                    program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                    program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                    program.setUniform("diffuseColor", Vector3f(1f, 0f, 1f))
-                })
+                val linePoints = mutableListOf<Vector3fc>().apply { addAABBLines(selection.scene.aabb.min, selection.scene.aabb.max) }
+                engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 1f))
             }
             is EntitySelection -> {
 //                val entity = selection.entity

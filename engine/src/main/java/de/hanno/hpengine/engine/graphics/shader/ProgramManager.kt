@@ -34,4 +34,6 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
             geometryShaderAsset?.toCodeSource(),
             defines
     )
+
+    val linesProgram: Program
 }

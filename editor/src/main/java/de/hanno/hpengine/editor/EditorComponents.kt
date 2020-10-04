@@ -27,27 +27,29 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
-import de.hanno.hpengine.engine.graphics.renderer.LineRendererImpl
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.engine.graphics.renderer.getAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
-import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.scene.Extension
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import org.joml.AxisAngle4f
 import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.JRibbon
@@ -58,7 +60,6 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Image
-import java.util.function.Consumer
 import javax.swing.BorderFactory
 
 sealed class OutputConfig {
@@ -99,7 +100,7 @@ class EditorComponents(val engineContext: EngineContext,
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-    private val lineRenderer = LineRendererImpl(engineContext)
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
     val sphereHolder = SphereHolder(engineContext)
     val boxRenderer = SimpleModelRenderer(engineContext)
     val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
@@ -183,19 +184,18 @@ class EditorComponents(val engineContext: EngineContext,
                 it.extensions.forEach { it.renderEditor(state, result) }
             }
 
-            val linePoints = state.renderBatchesStatic.flatMap { batch ->
-                getAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
-            } + state.renderBatchesAnimated.flatMap { batch ->
-                getAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+            val linePoints = mutableListOf<Vector3fc>().apply {
+                state.renderBatchesStatic.forEach { batch ->
+                    addAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+                }
+                state.renderBatchesAnimated.forEach { batch ->
+                    addAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
+                }
             }
             engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
             engineContext.gpuContext.blend = false
-            lineRenderer.drawLines(linePoints, 5f, Consumer { program ->
-                program.setUniformAsMatrix4("modelMatrix", VoxelConeTracingExtension.identityMatrix44Buffer)
-                program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-                program.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-                program.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
-            })
+
+            engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
         if(config.debug.visualizeProbes) {
             engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {

@@ -16,21 +16,28 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.component.PhysicsComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
+import de.hanno.hpengine.engine.graphics.renderer.addLine
+import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
+import org.joml.Vector3fc
 import java.util.ArrayList
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
@@ -40,9 +47,12 @@ import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
-class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
-                     val renderer: LineRenderer,
+class PhysicsManager(private val engineContext: EngineContext,
+                     gravity: Vector3f = Vector3f(0f, -20f, 0f),
                      private val config: Config) : Manager, RenderSystem {
+
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
+    val linePoints = mutableListOf<Vector3fc>()
 
     private var dynamicsWorld: DynamicsWorld? = null
     var ground: RigidBody? = null
@@ -51,7 +61,7 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
     internal var rigidBodyCache: MutableList<RigidBody> = ArrayList()
 
     init {
-        setupBullet(renderer, gravity)
+        setupBullet(gravity)
         object : TimeStepThread("Physics", 0.001f) {
             override fun update(seconds: Float) {
                 try {
@@ -174,21 +184,19 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
 
     override fun render(result: DrawResult, state: RenderState) {
         if (config.debug.isDrawLines) {
-            renderer.drawAllLines(Consumer{ program ->
-                program.setUniform("diffuseColor", org.joml.Vector3f(1f, 1f, 0f))
-                debugDrawWorld()
-            })
+            debugDrawWorld()
+            engineContext.drawLines(lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))
         }
     }
 
-    inner class MeshShapeInfo(var shapeSupplier: Supplier<CollisionShape>, var owner: Entity, var mass: Float, var inertia: Vector3f)
+    class MeshShapeInfo(var shapeSupplier: Supplier<CollisionShape>, var owner: Entity, var mass: Float, var inertia: Vector3f)
 
     fun addPhysicsComponent(info: MeshShapeInfo): PhysicsComponent {
         return PhysicsComponent(info.owner, info, this)
     }
 
 
-    private fun setupBullet(renderer: LineRenderer, gravity: Vector3f) {
+    private fun setupBullet(gravity: Vector3f) {
         val broadphase = DbvtBroadphase()
         val collisionConfiguration = DefaultCollisionConfiguration()
         val dispatcher = CollisionDispatcher(collisionConfiguration)
@@ -222,13 +230,13 @@ class PhysicsManager(gravity: Vector3f = Vector3f(0f, -20f, 0f),
             }
 
             override fun drawLine(start: Vector3f, end: Vector3f, color: Vector3f) {
-                renderer.batchLine(
-                        org.joml.Vector3f(start.x, start.y, start.z),
-                        org.joml.Vector3f(end.x, end.y, end.z))
+                linePoints.addLine(
+                    org.joml.Vector3f(start.x, start.y, start.z),
+                    org.joml.Vector3f(end.x, end.y, end.z)
+                )
             }
 
             override fun drawAabb(from: Vector3f, to: Vector3f, color: Vector3f) {
-
                 drawLine(from, Vector3f(to.x, from.y, from.z), color)
                 drawLine(from, Vector3f(from.x, to.y, from.z), color)
                 drawLine(from, Vector3f(to.x, to.y, from.z), color)
