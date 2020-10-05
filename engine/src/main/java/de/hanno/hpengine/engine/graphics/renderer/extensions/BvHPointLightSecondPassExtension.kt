@@ -115,7 +115,7 @@ val Vector4f.xyz: Vector3f
 class BvHPointLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
 
     private val secondPassPointBvhComputeProgram = engineContext.programManager.getComputeProgram(engineContext.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 

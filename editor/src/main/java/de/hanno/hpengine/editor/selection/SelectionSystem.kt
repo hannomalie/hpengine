@@ -34,6 +34,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.Transform
@@ -92,16 +93,16 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val engineContext = editorComponents.engineContext
     val editor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
 
     val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            "shaders/first_pass_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            "shaders/first_pass_fragment.glsl".let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
     val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            "shaders/first_pass_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            "shaders/first_pass_fragment.glsl".let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
             Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
 

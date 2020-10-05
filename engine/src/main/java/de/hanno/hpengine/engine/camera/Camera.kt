@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.log.ConsoleLogger
@@ -230,7 +231,7 @@ open class Camera @JvmOverloads constructor(
 
 class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<Camera>, RenderSystem {
 
-    private val lineVertices = PersistentMappedStructBuffer(24, engineContext.gpuContext, { VertexStructPacked() })
+    private val lineVertices = PersistentMappedStructBuffer(24, engineContext.gpuContext, { HpVector4f() })
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
         getComponents().forEach {

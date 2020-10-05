@@ -27,8 +27,42 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     var programsCache: MutableList<AbstractProgram> = CopyOnWriteArrayList()
 
     override val linesProgram = getProgram(
-        config.EngineAsset("shaders/mvp_vertex.glsl"),
-        config.EngineAsset("shaders/simple_color_fragment.glsl")
+            StringBasedCodeSource("mvp_vertex_vec4", """
+                uniform mat4 modelMatrix;
+                uniform mat4 viewMatrix;
+                uniform mat4 projectionMatrix;
+
+                //include(globals_structs.glsl)
+
+                layout(std430, binding=7) buffer _vertices {
+                	vec4 vertices[];
+                };
+
+                in vec4 in_Position;
+
+                out vec4 pass_Position;
+                out vec4 pass_WorldPosition;
+
+                void main()
+                {
+                	vec4 vertex = vertices[gl_VertexID];
+                	vertex.w = 1;
+
+                	pass_WorldPosition = modelMatrix * vertex;
+                	pass_Position = projectionMatrix * viewMatrix * pass_WorldPosition;
+                    gl_Position = pass_Position;
+                }
+            """.trimIndent()),
+        StringBasedCodeSource("simple_color_vec3", """
+            uniform vec3 color = vec3(1,1,0);
+
+            layout(location=0)out vec4 out_color;
+
+            void main()
+            {
+                out_color = vec4(color,1);
+            }
+        """.trimIndent()), null, Defines()
     )
 
     override fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines): ComputeProgram {

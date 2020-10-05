@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.threads.TimeStepThread
@@ -51,7 +52,7 @@ class PhysicsManager(private val engineContext: EngineContext,
                      gravity: Vector3f = Vector3f(0f, -20f, 0f),
                      private val config: Config) : Manager, RenderSystem {
 
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
     val linePoints = mutableListOf<Vector3fc>()
 
     private var dynamicsWorld: DynamicsWorld? = null

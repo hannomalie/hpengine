@@ -33,6 +33,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
@@ -76,7 +77,7 @@ class VoxelConeTracingExtension(
         val renderer: RenderSystem,
         val pointLightExtension: BvHPointLightSecondPassExtension) : RenderExtension<OpenGl> {
 
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { VertexStructPacked() })
+    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
     val voxelGrids = engineContext.renderStateManager.renderState.registerState {
         PersistentMappedStructBuffer(0, engineContext.gpuContext, { VoxelGrid() })
     }
