@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
 import org.joml.Matrix4f
 import org.joml.Vector4f
@@ -16,7 +17,7 @@ class PointLight @JvmOverloads constructor(override val entity: Entity,
                  var radius: Float = 10f,
                  var renderedSphereRadius: Float = 0f) : Component, Serializable, Bufferable {
 
-    fun draw(program: Program?) {
+    fun draw(program: Program<Uniforms>?) {
         throw IllegalStateException("Currently not implemented!")
         //		if(!isInitialized()) { return; }
 //		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
@@ -25,7 +26,7 @@ class PointLight @JvmOverloads constructor(override val entity: Entity,
 //		});
     }
 
-    fun drawAgain(indexBuffer: IndexBuffer?, program: Program?) {
+    fun drawAgain(indexBuffer: IndexBuffer?, program: Program<Uniforms>?) {
         throw IllegalStateException("Currently not implemented!")
         //		if(!isInitialized()) { return; }
 //		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {

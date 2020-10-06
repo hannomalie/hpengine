@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.StaticModel
@@ -27,7 +28,7 @@ import org.lwjgl.BufferUtils
 
 class SimpleModelRenderer(val engine: EngineContext,
                           val model: StaticModel = StaticModelLoader().load("assets/models/cube.obj", engine.materialManager, engine.config.directories.engineDir),
-                          val program: Program = engine.run { programManager.getProgram(
+                          val program: Program<Uniforms> = engine.run { programManager.getProgram(
                                   EngineAsset("shaders/mvp_vertex.glsl"),
                                   EngineAsset("shaders/simple_color_fragment.glsl")) }) : RenderSystem {
 
@@ -64,7 +65,7 @@ class SimpleModelRenderer(val engine: EngineContext,
     }
     fun render(state: RenderState, boxPosition: Vector3f, boxScale: Vector3f,
                color: Vector3f, useDepthTest: Boolean = true,
-               beforeDraw: (Program.() -> Unit)? = null) {
+               beforeDraw: (Program<Uniforms>.() -> Unit)? = null) {
 
         val scaling = (0.1f * modelEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = Transform().scale(scaling).translate(boxPosition)

@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
@@ -28,7 +29,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
 
 
-class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program? = null) : BaseComponent(entity) {
+class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program<Uniforms>? = null) : BaseComponent(entity) {
     val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {
@@ -143,7 +144,7 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
                                   modelComponentManager: ModelComponentManager,
                                   gameDirectory: AbstractDirectory,
                                   aabb: AABBData? = null,
-                                  program: Program? = null): ModelComponent {
+                                  program: Program<Uniforms>? = null): ModelComponent {
 
             val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
                 LoadModelCommand(file,

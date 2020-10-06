@@ -28,6 +28,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -74,7 +75,13 @@ class ProbeRenderStrategy(private val engineContext: EngineContext) {
             name = "Probes"
     )
 
-    private var probeProgram: Program = engineContext.programManager.getProgram(FileBasedCodeSource(File("shaders/" + "probe_cubemap_vertex.glsl")), FileBasedCodeSource(File("shaders/" + "probe_cube_fragment.glsl")), FileBasedCodeSource(File("shaders/" + "probe_cubemap_geometry.glsl")))
+    private var probeProgram: Program<Uniforms> = engineContext.programManager.getProgram(
+            FileBasedCodeSource(File("shaders/" + "probe_cubemap_vertex.glsl")),
+            FileBasedCodeSource(File("shaders/" + "probe_cube_fragment.glsl")),
+            FileBasedCodeSource(File("shaders/" + "probe_cubemap_geometry.glsl")),
+            Defines(),
+            null
+    )
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
     private val visibilityValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(resolution * resolution * 4 * 6) }.toTypedArray()
@@ -191,9 +198,10 @@ class EvaluateProbeRenderExtension(val engineContext: EngineContext): RenderExte
 
     val evaluateProbeProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-            "shaders/evaluate_probe_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
+            engineContext.config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource(),
             null,
-            Defines())
+            Defines(),
+            null)
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)

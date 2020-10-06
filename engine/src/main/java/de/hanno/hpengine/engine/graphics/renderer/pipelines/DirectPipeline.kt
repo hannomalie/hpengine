@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lin
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.joml.FrustumIntersection
 
@@ -35,8 +36,8 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
     }
 
     override fun draw(renderState: RenderState,
-                      programStatic: Program,
-                      programAnimated: Program,
+                      programStatic: Program<Uniforms>,
+                      programAnimated: Program<Uniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
@@ -51,15 +52,15 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
         firstPassResult.entitiesDrawn += entitiesCount
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program,
+    fun beforeDraw(renderState: RenderState, program: Program<Uniforms>,
                    vertexStructArray: PersistentMappedStructBuffer<*>,
                    renderCam: Camera) {
         engine.gpuContext.cullFace = !engine.config.debug.isDrawLines

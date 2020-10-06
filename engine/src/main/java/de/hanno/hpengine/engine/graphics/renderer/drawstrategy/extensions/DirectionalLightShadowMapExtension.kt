@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
@@ -43,7 +44,7 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         textures = listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)
     )
 
-    private val directionalShadowPassProgram: Program = engineContext.programManager.getProgram(
+    private val directionalShadowPassProgram: Program<Uniforms> = engineContext.programManager.getProgram(
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "directional_shadowmap_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "shadowmap_fragment.glsl")))
     var voxelConeTracingExtension: VoxelConeTracingExtension? = null

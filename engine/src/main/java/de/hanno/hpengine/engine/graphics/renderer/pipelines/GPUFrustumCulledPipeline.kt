@@ -23,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -45,11 +46,19 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.run { programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl")) }
-    private var occlusionCullingPhase2Vertex: Program = engine.run { programManager.getProgram(EngineAsset("shaders/occlusion_culling2_vertex.glsl")) }
+    private var occlusionCullingPhase1Vertex: Program<Uniforms> = engine.run {
+        programManager.getProgram(EngineAsset("shaders/occlusion_culling1_vertex.glsl"), null)
+    }
+    private var occlusionCullingPhase2Vertex: Program<Uniforms> = engine.run {
+        programManager.getProgram(EngineAsset("shaders/occlusion_culling2_vertex.glsl"), null)
+    }
 
-    val appendDrawCommandsProgram = engine.run { programManager.getProgram(EngineAsset("append_drawcommands_vertex.glsl")) }
-    val appendDrawCommandsComputeProgram = engine.run { programManager.getComputeProgram(EngineAsset("shaders/append_drawcommands_compute.glsl")) }
+    val appendDrawCommandsProgram = engine.run {
+        programManager.getProgram(EngineAsset("append_drawcommands_vertex.glsl"), null)
+    }
+    val appendDrawCommandsComputeProgram = engine.run {
+        programManager.getComputeProgram(EngineAsset("shaders/append_drawcommands_compute.glsl"))
+    }
 
 
     private val highZBuffer = RenderTarget(
@@ -65,15 +74,15 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         ), name = "GPUCulledPipeline")
 
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
         super.beforeDrawStatic(renderState, program, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
         super.beforeDrawAnimated(renderState, program, renderCam)
     }
 
-    override fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult) {
+    override fun draw(renderState: RenderState, programStatic: Program<Uniforms>, programAnimated: Program<Uniforms>, firstPassResult: FirstPassResult) {
         profiled("Actual draw entities") {
             val mode = if(engine.config.debug.isDrawLines) PrimitiveMode.Lines else PrimitiveMode.Triangles
 
@@ -211,7 +220,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     }
 
     private fun render(renderState: RenderState,
-                       program: Program,
+                       program: Program<Uniforms>,
                        commandOrganization: CommandOrganization,
                        vertexIndexBuffer: VertexIndexBuffer,
                        drawCountBuffer: AtomicCounterBuffer,

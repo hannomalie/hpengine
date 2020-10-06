@@ -23,6 +23,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.model.ModelComponentSystem
@@ -51,10 +53,14 @@ interface PointLightShadowMapStrategy {
 
 class CubeShadowMapStrategy(internal val engineContext: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    private var pointCubeShadowPassProgram: Program = engineContext.programManager.getProgram(
+    private var pointCubeShadowPassProgram: Program<Uniforms> = engineContext.programManager.getProgram(
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cube_fragment.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")),
+            Defines(),
+            null
+    )
+
     val cubeMapArray = CubeMapArray(
             engineContext.gpuContext,
             TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS),
@@ -132,7 +138,10 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
 
 class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                                       private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
-    private var pointShadowPassProgram: Program = engine.programManager.getProgram(FileBasedCodeSource(File("shaders/" + "pointlight_shadow_vertex.glsl")), FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl")))
+    private var pointShadowPassProgram: Program<Uniforms> = engine.programManager.getProgram(
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_vertex.glsl")),
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl")),
+            null, Defines(), null)
 
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0

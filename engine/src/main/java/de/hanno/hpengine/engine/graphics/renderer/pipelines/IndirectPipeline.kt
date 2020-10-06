@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
@@ -54,8 +55,8 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
     }
 
     override fun draw(renderState: RenderState,
-                      programStatic: Program,
-                      programAnimated: Program,
+                      programStatic: Program<Uniforms>,
+                      programAnimated: Program<Uniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
@@ -66,15 +67,15 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
         firstPassResult.entitiesDrawn += entitiesCount
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program,
+    fun beforeDraw(renderState: RenderState, program: Program<Uniforms>,
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
         engine.gpuContext.cullFace = useBackFaceCulling
         program.use()
@@ -119,8 +120,8 @@ fun IndirectDrawDescription.draw() {
     }
 }
 
-fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
-                        config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) {
+fun Program<Uniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
+                                  config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
     val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
@@ -146,7 +147,7 @@ fun Program.setUniforms(renderState: RenderState, camera: Camera = renderState.c
     setUniform("useSteepParallax", config.quality.isUseSteepParallax)
 }
 
-fun Program.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
+fun Program<Uniforms>.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
     for (mapEnumEntry in SimpleMaterial.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {

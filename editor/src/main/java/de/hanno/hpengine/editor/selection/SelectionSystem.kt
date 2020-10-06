@@ -99,12 +99,12 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
             engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
             "shaders/first_pass_fragment.glsl".let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
-            Defines(Define.getDefine("COLOR_OUTPUT_0", true)))
+            Defines(Define.getDefine("COLOR_OUTPUT_0", true)), null)
     val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
             "shaders/first_pass_fragment.glsl".let { engineContext.config.engineDir.resolve(it).toCodeSource() },
             null,
-            Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)))
+            Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)), null)
 
     var axisDragged: AxisConstraint = AxisConstraint.None
 

@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.vertexbuffer.drawInstancedBaseVertex
 import de.hanno.hpengine.engine.vertexbuffer.drawLinesInstancedBaseVertex
 import org.jetbrains.kotlin.util.profile
@@ -23,16 +24,16 @@ enum class PrimitiveMode {
     Triangles
 }
 
-fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
+fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program<Uniforms>, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
     return indexBuffer.draw(renderBatch, program, bindIndexBuffer, mode)
 }
 
-fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
+fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program<Uniforms>, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
     return this.actuallyDraw(renderBatch, program, bindIndexBuffer, mode)
 }
 
 fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
-                             program: Program, bindIndexBuffer: Boolean = true, mode: PrimitiveMode): Int {
+                             program: Program<Uniforms>, bindIndexBuffer: Boolean = true, mode: PrimitiveMode): Int {
 
     program.setUniform("entityBaseIndex", 0)
     program.setUniform("entityIndex", entityBufferIndex)
@@ -44,7 +45,7 @@ fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand
     }
 }
 
-fun IndexBuffer.actuallyDraw(renderBatch: RenderBatch, program: Program, bindIndexBuffer: Boolean, mode: PrimitiveMode): Int {
+fun IndexBuffer.actuallyDraw(renderBatch: RenderBatch, program: Program<Uniforms>, bindIndexBuffer: Boolean, mode: PrimitiveMode): Int {
     return actuallyDraw(renderBatch.entityBufferIndex, renderBatch.drawElementsIndirectCommand, program, bindIndexBuffer, mode)
 }
 

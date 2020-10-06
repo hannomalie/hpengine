@@ -10,15 +10,16 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhas
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_ONE
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_TWO
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.lwjgl.opengl.GL30
 
 interface Pipeline {
     fun prepare(renderState: RenderState)
-    fun draw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
+    fun draw(renderState: RenderState, programStatic: Program<Uniforms>, programAnimated: Program<Uniforms>, firstPassResult: FirstPassResult)
 
-    fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {}
-    fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {}
+    fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {}
+    fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {}
 
 
     enum class CullingPhase(val coarsePhase: CoarseCullingPhase) {

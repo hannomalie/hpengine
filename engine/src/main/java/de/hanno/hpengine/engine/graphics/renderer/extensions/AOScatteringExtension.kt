@@ -23,9 +23,8 @@ class AOScatteringExtension(val engineContext: EngineContext): RenderExtension<O
     val gpuContext = engineContext.gpuContext
     private val aoScatteringProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-            "shaders/scattering_ao_fragment.glsl"?.let { engineContext.config.engineDir.resolve(it).toCodeSource() },
-            null,
-            Defines())
+            engineContext.config.engineDir.resolve("shaders/scattering_ao_fragment.glsl").toCodeSource()
+    )
 
     override fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         profiled("Scattering and AO") {

@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -67,12 +68,12 @@ class EnvironmentSampler(val entity: Entity,
                          config: Config,
                          textureManager: TextureManager,
                          private val scene: Scene) {
-    private val cubeMapProgram: Program
-    private val cubeMapLightingProgram: Program
-    private val depthPrePassProgram: Program
+    private val cubeMapProgram: Program<Uniforms>
+    private val cubeMapLightingProgram: Program<Uniforms>
+    private val depthPrePassProgram: Program<Uniforms>
     private val tiledProbeLightingProgram: ComputeProgram
     private val cubemapRadianceProgram: ComputeProgram
-    private val cubemapRadianceFragmentProgram: Program
+    private val cubemapRadianceFragmentProgram: Program<Uniforms>
     private val entityBuffer = BufferUtils.createFloatBuffer(16)
 
     @Transient
@@ -88,11 +89,11 @@ class EnvironmentSampler(val entity: Entity,
     val cubeMapView1: Int
     val cubeMapView2: Int
     val cubeMapFaceViews = Array(4) { IntArray(6) }
-    private val secondPassPointProgram: Program
-    private val secondPassTubeProgram: Program
-    private val secondPassAreaProgram: Program
-    private val secondPassDirectionalProgram: Program
-    private val firstPassDefaultProgram: Program
+    private val secondPassPointProgram: Program<Uniforms>
+    private val secondPassTubeProgram: Program<Uniforms>
+    private val secondPassAreaProgram: Program<Uniforms>
+    private val secondPassDirectionalProgram: Program<Uniforms>
+    private val firstPassDefaultProgram: Program<Uniforms>
     private val renderTarget: RenderTarget<Texture2D>
     val camera: Camera
 
@@ -180,7 +181,7 @@ class EnvironmentSampler(val entity: Entity,
         drawnOnce = false
     }
 
-    private fun bindProgramSpecificsPerCubeMap(program: Program, renderState: RenderState) {
+    private fun bindProgramSpecificsPerCubeMap(program: Program<Uniforms>, renderState: RenderState) {
         program.use()
         program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE)
         program.setUniform("probePosition", probe.entity.transform.center)
@@ -199,7 +200,7 @@ class EnvironmentSampler(val entity: Entity,
         environmentProbeManager.bindEnvironmentProbePositions(cubeMapProgram)
     }
 
-    private fun drawEntities(renderState: RenderState, program: Program, viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer, viewProjectionMatrixAsBuffer: FloatBuffer) {
+    private fun drawEntities(renderState: RenderState, program: Program<Uniforms>, viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer, viewProjectionMatrixAsBuffer: FloatBuffer) {
         program.use()
         bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer, viewProjectionMatrixAsBuffer, program)
         for (e in renderState.renderBatchesStatic) {
@@ -320,7 +321,7 @@ class EnvironmentSampler(val entity: Entity,
         //		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
     }
 
-    private fun bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer, viewProjectionMatrixAsBuffer: FloatBuffer, program: Program) {
+    private fun bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer: FloatBuffer, projectionMatrixAsBuffer: FloatBuffer, viewProjectionMatrixAsBuffer: FloatBuffer, program: Program<Uniforms>) {
         val light = scene!!.entitySystems.get(DirectionalLightSystem::class.java).getDirectionalLight()
         program.setUniform("lightDirection", light!!.entity.transform.viewDirection)
         program.setUniform("lightDiffuse", light.color)

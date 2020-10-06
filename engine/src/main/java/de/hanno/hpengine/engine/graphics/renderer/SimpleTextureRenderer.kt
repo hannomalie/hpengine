@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.CubeMap
@@ -28,7 +29,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
                                  programManager: ProgramManager<OpenGl> = engineContext.programManager) : RenderSystem {
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
 
-    private val renderToQuadProgram: Program = programManager.getProgram(
+    private val renderToQuadProgram: Program<Uniforms> = programManager.getProgram(
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "simpletexture_fragment.glsl")))
 
@@ -45,14 +46,14 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
     fun drawToQuad(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
                    texture: Int = finalImage,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-                   program: Program = renderToQuadProgram) {
+                   program: Program<Uniforms> = renderToQuadProgram) {
         draw(renderTarget, texture, buffer, program, false)
     }
 
     fun drawToQuad(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
                    texture: Texture2D,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-                   program: Program = renderToQuadProgram) {
+                   program: Program<Uniforms> = renderToQuadProgram) {
         drawToQuad(renderTarget, texture.id, buffer, program)
     }
 
@@ -82,7 +83,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
             GL11.glDeleteTextures(textureView.id)
         }
     }
-    private fun draw(renderTarget: FrontBufferTarget, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program, clear: Boolean) {
+    private fun draw(renderTarget: FrontBufferTarget, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program<Uniforms>, clear: Boolean) {
 
         gpuContext.disable(GlCap.BLEND)
 

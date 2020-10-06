@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
@@ -27,7 +28,7 @@ class RenderBatch(
         var boundingSphereRadius: Float = 0.0f,
         var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
         var entityBufferIndex: Int = 0,
-        var program: Program? = null) {
+        var program: Program<Uniforms>? = null) {
 
     val isShadowCasting: Boolean
         get() = materialInfo.isShadowCasting

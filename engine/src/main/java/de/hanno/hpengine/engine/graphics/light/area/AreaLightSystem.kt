@@ -22,6 +22,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.instanceCount
@@ -66,8 +68,12 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
         "AreaLight Shadow"
     ))
 
-    private val areaShadowPassProgram: Program = engine.run {
-        programManager.getProgram(EngineAsset("shaders/mvp_entitybuffer_vertex.glsl"), EngineAsset("shaders/shadowmap_fragment.glsl"))
+    private val areaShadowPassProgram: Program<Uniforms> = engine.run {
+        programManager.getProgram(
+                EngineAsset("shaders/mvp_entitybuffer_vertex.glsl"),
+                EngineAsset("shaders/shadowmap_fragment.glsl"),
+                null, Defines(), null
+        )
     }
     private val areaLightDepthMaps = ArrayList<Int>().apply {
         engine.gpuContext.invoke {

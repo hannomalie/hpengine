@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExten
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -51,26 +52,30 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
 
-    val simpleColorProgramStatic = programManager.getProgram(
+    val simpleColorProgramStatic = programManager.getProgram<Uniforms>(
             config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            "shaders/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
             null,
-            Defines())
-    val simpleColorProgramAnimated = programManager.getProgram(
+            Defines(),
+            null
+    )
+    val simpleColorProgramAnimated = programManager.getProgram<Uniforms>(
             config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            "shaders/first_pass_fragment.glsl"?.let { config.engineDir.resolve(it).toCodeSource() },
+            config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
             null,
-            Defines(Define.getDefine("ANIMATED", true)))
+            Defines(Define.getDefine("ANIMATED", true)),
+            null
+    )
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
     val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
         object: DirectPipeline(engineContext) {
-            override fun beforeDrawAnimated(renderState: RenderState, program: Program, renderCam: Camera) {
+            override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
                 super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()
             }
-            override fun beforeDrawStatic(renderState: RenderState, program: Program, renderCam: Camera) {
+            override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
                 super.beforeDrawStatic(renderState, program, renderCam)
                 customBeforeDraw()
             }

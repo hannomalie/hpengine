@@ -30,12 +30,13 @@ import java.util.EnumSet
 import java.util.HashMap
 import java.util.StringJoiner
 
-class Program(
+class Program<T : Uniforms>(
         private val programManager: OpenGlProgramManager,
         val vertexShaderSource: CodeSource,
         val geometryShaderSource: CodeSource?,
         val fragmentShaderSource: CodeSource?,
-        defines: Defines
+        defines: Defines,
+        val uniformsXXX: T?
 ) : AbstractProgram(programManager.gpuContext.createProgramId()) {
     val gpuContext: GpuContext<OpenGl>
 
@@ -82,7 +83,7 @@ class Program(
 
             gpuContext.backend.gpuContext.exceptionOnError()
 
-            this.create()
+            create()
 
             shaders = listOfNotNull(vertexShader, fragmentShader, geometryShader)
         }
@@ -155,11 +156,11 @@ class Program(
             .add(vertexShaderSource.name).toString()
 
     override fun equals(other: Any?): Boolean {
-        if (other !is Program) {
+        if (other !is Program<*>) {
             return false
         }
 
-        val otherProgram = other as Program?
+        val otherProgram = other as Program<T>?
 
         return (this.geometryShaderSource == null && otherProgram!!.geometryShaderSource == null || this.geometryShaderSource == otherProgram!!.geometryShaderSource) &&
                 this.vertexShaderSource == otherProgram.vertexShaderSource &&
@@ -232,7 +233,7 @@ private fun AbstractProgram.removeOldListeners() {
     fileListeners.clear()
 }
 
-fun Program.create() {
+fun Program<*>.create() {
     val sources: List<FileBasedCodeSource> = listOfNotNull(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
             .filterIsInstance<FileBasedCodeSource>()
     replaceOldListeners(sources, this)

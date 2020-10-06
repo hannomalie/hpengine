@@ -28,6 +28,8 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -90,15 +92,17 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer: Program = engineContext.run {
+    private val voxelizer: Program<Uniforms> = engineContext.run {
         programManager.getProgram(
             EngineAsset("shaders/voxelize_vertex.glsl"),
             EngineAsset("shaders/voxelize_fragment.glsl"),
-            EngineAsset("shaders/voxelize_geometry.glsl")
+            EngineAsset("shaders/voxelize_geometry.glsl"),
+            Defines(),
+            null
         )
     }
 
-    private val voxelConeTraceProgram: Program = engineContext.run {
+    private val voxelConeTraceProgram: Program<Uniforms> = engineContext.run {
         programManager.getProgram(
             EngineAsset("shaders/passthrough_vertex.glsl"),
             EngineAsset("shaders/voxel_cone_trace_fragment.glsl")

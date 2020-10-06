@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
@@ -25,7 +26,7 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class SphereHolder(val engine: EngineContext,
-                   val sphereProgram: Program = engine.run {
+                   val sphereProgram: Program<Uniforms> = engine.run {
                        programManager.getProgram(
                            EngineAsset("shaders/mvp_vertex.glsl"),
                            EngineAsset("shaders/simple_color_fragment.glsl"))
@@ -68,7 +69,7 @@ class SphereHolder(val engine: EngineContext,
     }
     fun render(state: RenderState, spherePosition: Vector3f,
                color: Vector3f, useDepthTest: Boolean = true,
-               beforeDraw: (Program.() -> Unit)? = null) {
+               beforeDraw: (Program<Uniforms>.() -> Unit)? = null) {
 
         val scaling = (0.1f * sphereEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = Transform().scale(scaling).translate(spherePosition)

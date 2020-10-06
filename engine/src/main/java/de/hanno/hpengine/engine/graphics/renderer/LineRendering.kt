@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.math.identityMatrix4fBuffer
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.VertexStructPacked
@@ -47,11 +48,23 @@ fun EngineContext.drawLines(
 
     val linesProgram = programManager.linesProgram
     linesProgram.use()
-    linesProgram.setUniformAsMatrix4("modelMatrix", modelMatrix)
-    linesProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
-    linesProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
+    programManager.run {
+        linesProgram.uniformsXXX!!.let { uniforms ->
+            uniforms.modelMatrix.safePut(modelMatrix)
+            uniforms.projectionMatrix.safePut(projectionMatrix)
+            uniforms.viewMatrix.safePut(viewMatrix)
+            uniforms.color.set(color)
+            linesProgram.bind(uniforms)
+        }
+    }
     linesProgram.setUniform("color", color)
     linesProgram.bindShaderStorageBuffer(7, vertices)
 
     drawLines(min(lineWidth, gpuContext.maxLineWidth), verticesCount)
 }
+
+private fun FloatBuffer.safePut(matrix: FloatBuffer) {
+    rewind()
+    put(matrix)
+}
+
