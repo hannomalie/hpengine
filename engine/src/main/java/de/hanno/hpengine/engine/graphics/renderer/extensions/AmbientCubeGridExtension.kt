@@ -163,12 +163,12 @@ class ProbeRenderer(private val engine: EngineContext) {
 
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    private var pointCubeShadowPassProgram: Program<Uniforms> = engine.programManager.getProgram(
+    private var pointCubeShadowPassProgram = engine.programManager.getProgram(
             FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
             FileBasedCodeSource(File("shaders/" + "environmentprobe_cube_fragment.glsl")),
             FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")),
             Defines(),
-            null
+            Uniforms.Empty
     )
 
     val cubeMapRenderTarget = RenderTarget(

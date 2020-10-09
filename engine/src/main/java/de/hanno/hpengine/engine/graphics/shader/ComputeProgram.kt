@@ -13,14 +13,13 @@ import java.util.logging.Logger
 
 class ComputeProgram @JvmOverloads constructor(
         private val programManager: OpenGlProgramManager,
-        val computeShaderSource: FileBasedCodeSource, defines: Defines = Defines()) : AbstractProgram(programManager.gpuContext.createProgramId()) {
+        val computeShaderSource: FileBasedCodeSource,
+        defines: Defines = Defines()) : AbstractProgram<Uniforms>(programManager.gpuContext.createProgramId(), defines, Uniforms.Empty) {
     private var computeShader: ComputeShader? = null
 
     override var shaders: List<Shader> = emptyList()
 
     init {
-        this.defines = defines
-
         load()
         create()
     }

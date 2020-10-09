@@ -21,16 +21,22 @@ import java.nio.LongBuffer
 import java.util.ArrayList
 import java.util.HashMap
 
-abstract class AbstractProgram(val id: Int): Reloadable {
+abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = Defines(), val uniformsXXX: T): Reloadable {
     abstract var shaders: List<Shader>
         protected set
     val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
     protected var uniforms = HashMap<String, Uniform?>()
-    protected var defines = Defines()
-    fun use() {
-        GL20.glUseProgram(id)
+
+    fun registerUniforms() {
+        uniformsXXX.registeredUniforms.forEach {
+            putInMapIfAbsent(it.name)
+            it.onRegister(this)
+        }
     }
 
+    open fun use() {
+        GL20.glUseProgram(id)
+    }
     protected fun clearUniforms() {
         uniforms.clear()
     }
@@ -122,7 +128,7 @@ abstract class AbstractProgram(val id: Int): Reloadable {
         }
     }
 
-    private fun putInMapIfAbsent(name: String) {
+    protected fun putInMapIfAbsent(name: String) {
         if (!uniforms.containsKey(name)) {
             uniforms[name] = Uniform(this, name)
         }
@@ -134,7 +140,7 @@ abstract class AbstractProgram(val id: Int): Reloadable {
         }
     }
 
-    fun getUniformLocation(name: String?): Int {
+    fun getUniformLocation(name: String): Int {
         return GL20.glGetUniformLocation(id, name)
     }
 
@@ -150,11 +156,11 @@ abstract class AbstractProgram(val id: Int): Reloadable {
         GL30.glBindBufferBase(GL42.GL_ATOMIC_COUNTER_BUFFER, index, block.id)
     }
 
-    fun getShaderStorageBlockIndex(name: String?): Int {
+    fun getShaderStorageBlockIndex(name: String): Int {
         return GL43.glGetProgramResourceIndex(id, GL43.GL_SHADER_STORAGE_BLOCK, name)
     }
 
-    fun getShaderStorageBlockBinding(name: String?, bindingIndex: Int) {
+    fun getShaderStorageBlockBinding(name: String, bindingIndex: Int) {
         GL43.glShaderStorageBlockBinding(id, getShaderStorageBlockIndex(name), bindingIndex)
     }
 
@@ -165,4 +171,28 @@ abstract class AbstractProgram(val id: Int): Reloadable {
     fun addEmptyUniform(uniform: Uniform) {
         uniforms[uniform.name] = uniform
     }
+
+    fun UniformDelegate<*>.bind() = when (this) {
+        is Mat4 -> GL20.glUniformMatrix4fv(location, false, _value)
+        is Vec3 -> GL20.glUniform3f(location, _value.x, _value.y, _value.z)
+        is SSBO<*> -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, bindingIndex, _value.id)
+        is IntType -> GL20.glUniform1i(location, _value)
+        is BooleanType -> GL20.glUniform1i(location, if(_value) 1 else 0)
+    }
+
+    fun bind() = uniformsXXX.registeredUniforms.forEach {
+        it.bind()
+    }
+}
+
+inline fun <T: Uniforms> AbstractProgram<T>.useAndBind(block: (T) -> Unit) {
+    use()
+    block(uniformsXXX)
+    bind()
+}
+fun FloatBuffer.safePut(matrix: FloatBuffer) {
+    rewind()
+    put(matrix)
+    rewind()
+    matrix.rewind()
 }

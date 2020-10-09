@@ -55,8 +55,8 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
     }
 
     override fun draw(renderState: RenderState,
-                      programStatic: Program<Uniforms>,
-                      programAnimated: Program<Uniforms>,
+                      programStatic: Program<*>,
+                      programAnimated: Program<*>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
@@ -67,15 +67,15 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
         firstPassResult.entitiesDrawn += entitiesCount
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program<Uniforms>,
+    fun beforeDraw(renderState: RenderState, program: Program<*>,
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
         engine.gpuContext.cullFace = useBackFaceCulling
         program.use()
@@ -120,7 +120,7 @@ fun IndirectDrawDescription.draw() {
     }
 }
 
-fun Program<Uniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
+fun Program<*>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
                                   config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
@@ -147,7 +147,7 @@ fun Program<Uniforms>.setUniforms(renderState: RenderState, camera: Camera = ren
     setUniform("useSteepParallax", config.quality.isUseSteepParallax)
 }
 
-fun Program<Uniforms>.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
+fun Program<*>.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
     for (mapEnumEntry in SimpleMaterial.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {

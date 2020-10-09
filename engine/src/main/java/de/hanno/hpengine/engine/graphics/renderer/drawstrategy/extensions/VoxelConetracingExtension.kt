@@ -26,13 +26,18 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecond
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
+import de.hanno.hpengine.engine.graphics.shader.BooleanType
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
+import de.hanno.hpengine.engine.graphics.shader.IntType
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.model.material.MaterialStruct
 import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
@@ -92,13 +97,13 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer: Program<Uniforms> = engineContext.run {
+    private val voxelizer = engineContext.run {
         programManager.getProgram(
             EngineAsset("shaders/voxelize_vertex.glsl"),
             EngineAsset("shaders/voxelize_fragment.glsl"),
             EngineAsset("shaders/voxelize_geometry.glsl"),
             Defines(),
-            null
+            VoxelizerUniforms(engineContext.gpuContext)
         )
     }
 
@@ -187,6 +192,7 @@ class VoxelConeTracingExtension(
                 GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(6, currentVoxelGrid.indexGrid, 0, true, 0, GL15.GL_WRITE_ONLY, indexGridTextureFormatSized)
+
                 voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
                 voxelizer.setUniform("voxelGridCount", voxelGrids.size)
                 voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
@@ -434,4 +440,14 @@ class VoxelConeTracingExtension(
             rewind()
         }
     }
+}
+
+class VoxelizerUniforms(val gpuContext: GpuContext<OpenGl>) : Uniforms() {
+    val voxelGridIndex by IntType("voxelGridIndex", 0)
+    val voxelGridCount by IntType("voxelGridCount", 0)
+    val vertices by SSBO("vertices", "VertexPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { VertexStructPacked() }))
+    val materials by SSBO("materials", "Material", 1, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
+    val entities by SSBO("entities", "Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
+    val voxelGrids by SSBO("voxelGrids", "VoxelGrid", 5, PersistentMappedStructBuffer(1, gpuContext, { VoxelGrid() }))
+    val writeVoxels by BooleanType("writeVoxels", true)
 }

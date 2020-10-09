@@ -53,12 +53,12 @@ interface PointLightShadowMapStrategy {
 
 class CubeShadowMapStrategy(internal val engineContext: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    private var pointCubeShadowPassProgram: Program<Uniforms> = engineContext.programManager.getProgram(
+    private var pointCubeShadowPassProgram = engineContext.programManager.getProgram(
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cube_fragment.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")),
             Defines(),
-            null
+            Uniforms.Empty
     )
 
     val cubeMapArray = CubeMapArray(
@@ -138,10 +138,10 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
 
 class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                                       private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
-    private var pointShadowPassProgram: Program<Uniforms> = engine.programManager.getProgram(
+    private var pointShadowPassProgram = engine.programManager.getProgram(
             FileBasedCodeSource(File("shaders/" + "pointlight_shadow_vertex.glsl")),
-            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl")),
-            null, Defines(), null)
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl"))
+    )
 
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0

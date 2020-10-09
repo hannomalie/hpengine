@@ -75,12 +75,12 @@ class ProbeRenderStrategy(private val engineContext: EngineContext) {
             name = "Probes"
     )
 
-    private var probeProgram: Program<Uniforms> = engineContext.programManager.getProgram(
+    private var probeProgram = engineContext.programManager.getProgram(
             FileBasedCodeSource(File("shaders/" + "probe_cubemap_vertex.glsl")),
             FileBasedCodeSource(File("shaders/" + "probe_cube_fragment.glsl")),
             FileBasedCodeSource(File("shaders/" + "probe_cubemap_geometry.glsl")),
             Defines(),
-            null
+            Uniforms.Empty
     )
 
     private val colorValueBuffers: Array<out FloatBuffer> = (0..5).map { BufferUtils.createFloatBuffer(4 * 6) }.toTypedArray()
@@ -198,10 +198,8 @@ class EvaluateProbeRenderExtension(val engineContext: EngineContext): RenderExte
 
     val evaluateProbeProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-            engineContext.config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource(),
-            null,
-            Defines(),
-            null)
+            engineContext.config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource()
+    )
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         probeRenderStrategy.renderProbes(renderState)

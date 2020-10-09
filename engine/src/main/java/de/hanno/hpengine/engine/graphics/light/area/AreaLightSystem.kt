@@ -6,6 +6,9 @@ import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
+import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -15,15 +18,20 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
+import de.hanno.hpengine.engine.graphics.shader.Mat4
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.graphics.shader.safePut
+import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.instanceCount
@@ -31,10 +39,12 @@ import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
+import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL14
@@ -68,11 +78,11 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
         "AreaLight Shadow"
     ))
 
-    private val areaShadowPassProgram: Program<Uniforms> = engine.run {
+    private val areaShadowPassProgram = engine.run {
         programManager.getProgram(
                 EngineAsset("shaders/mvp_entitybuffer_vertex.glsl"),
                 EngineAsset("shaders/shadowmap_fragment.glsl"),
-                null, Defines(), null
+                null, Defines(), AreaShadowPassUniforms(gpuContext)
         )
     }
     private val areaLightDepthMaps = ArrayList<Int>().apply {
@@ -108,10 +118,11 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
 
                 val light = areaLights[i]
 
-                areaShadowPassProgram.use()
-                areaShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-                areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", light.camera.viewMatrixAsBuffer)
-                areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", light.camera.projectionMatrixAsBuffer)
+                areaShadowPassProgram.useAndBind { uniforms ->
+                    uniforms.entitiesBuffer = renderState.entitiesBuffer
+                    uniforms.viewMatrix.safePut(light.camera.viewMatrixAsBuffer)
+                    uniforms.projectionMatrix.safePut(light.camera.projectionMatrixAsBuffer)
+                }
 
                 for (e in renderState.renderBatchesStatic) {
                     renderState.vertexIndexBufferStatic.indexBuffer.draw(e, areaShadowPassProgram)
@@ -180,4 +191,10 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
             } else depthMaps[index]
         }
     }
+}
+
+class AreaShadowPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
+    var entitiesBuffer by SSBO("entities", "Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { EntityStruct() }))
+    val viewMatrix by Mat4("viewMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val projectionMatrix by Mat4("projectionMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }

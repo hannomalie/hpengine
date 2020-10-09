@@ -1,11 +1,12 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.backend.BackendType
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Asset
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
@@ -30,25 +31,25 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
                    fragmentShaderSource: CodeSource?,
                    geometryShaderSource: CodeSource?,
                    defines: Defines,
-                   uniforms: T?): Program<T>
+                   uniforms: T): Program<T>
 
     fun getProgram(vertexShaderSource: CodeSource,
                    fragmentShaderSource: CodeSource?): Program<Uniforms> {
 
-        return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), null)
+        return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), Uniforms.Empty)
     }
 
     fun getProgram(vertexShaderAsset: Asset,
                    fragmentShaderAsset: Asset?): Program<Uniforms> {
 
-        return getProgram(vertexShaderAsset, fragmentShaderAsset, null, Defines(), null)
+        return getProgram(vertexShaderAsset, fragmentShaderAsset, null, Defines(), Uniforms.Empty)
    }
 
-    fun getProgram(vertexShaderAsset: Asset,
+    fun <T: Uniforms> getProgram(vertexShaderAsset: Asset,
                    fragmentShaderAsset: Asset? = null,
                    geometryShaderAsset: Asset? = null,
                    defines: Defines = Defines(),
-                   uniforms: Uniforms?): Program<Uniforms> = getProgram(
+                   uniforms: T): Program<T> = getProgram(
 
             vertexShaderAsset.toCodeSource(),
             fragmentShaderAsset?.toCodeSource(),
@@ -58,13 +59,12 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     )
 
     val linesProgram: Program<LinesProgramUniforms>
-    fun UniformDelegate<*>.dataTypeAndName(): String
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
     val Uniforms.shaderDeclarations: String
-    fun Program<*>.bind(uniforms: Uniforms)
 }
 
-class LinesProgramUniforms: Uniforms() {
+class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {
+    val vertices by SSBO("vertices", "vec4", 7, PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() }))
     val modelMatrix by Mat4("modelMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val viewMatrix by Mat4("viewMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4("projectionMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })

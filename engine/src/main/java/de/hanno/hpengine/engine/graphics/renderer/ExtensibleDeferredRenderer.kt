@@ -52,30 +52,30 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
 
-    val simpleColorProgramStatic = programManager.getProgram<Uniforms>(
+    val simpleColorProgramStatic = programManager.getProgram(
             config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
             config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
             null,
             Defines(),
-            null
+            Uniforms.Empty
     )
-    val simpleColorProgramAnimated = programManager.getProgram<Uniforms>(
+    val simpleColorProgramAnimated = programManager.getProgram(
             config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
             config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
             null,
             Defines(Define.getDefine("ANIMATED", true)),
-            null
+            Uniforms.Empty
     )
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
     val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
         object: DirectPipeline(engineContext) {
-            override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+            override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
                 super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()
             }
-            override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+            override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
                 super.beforeDrawStatic(renderState, program, renderCam)
                 customBeforeDraw()
             }

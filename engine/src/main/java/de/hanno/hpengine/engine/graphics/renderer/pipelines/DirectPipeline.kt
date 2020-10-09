@@ -36,8 +36,8 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
     }
 
     override fun draw(renderState: RenderState,
-                      programStatic: Program<Uniforms>,
-                      programAnimated: Program<Uniforms>,
+                      programStatic: Program<*>,
+                      programAnimated: Program<*>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
@@ -52,15 +52,15 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
         firstPassResult.entitiesDrawn += entitiesCount
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program<Uniforms>,
+    fun beforeDraw(renderState: RenderState, program: Program<*>,
                    vertexStructArray: PersistentMappedStructBuffer<*>,
                    renderCam: Camera) {
         engine.gpuContext.cullFace = !engine.config.debug.isDrawLines

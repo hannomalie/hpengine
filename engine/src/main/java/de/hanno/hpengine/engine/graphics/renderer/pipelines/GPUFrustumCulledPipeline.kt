@@ -74,15 +74,15 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         ), name = "GPUCulledPipeline")
 
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
         super.beforeDrawStatic(renderState, program, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
         super.beforeDrawAnimated(renderState, program, renderCam)
     }
 
-    override fun draw(renderState: RenderState, programStatic: Program<Uniforms>, programAnimated: Program<Uniforms>, firstPassResult: FirstPassResult) {
+    override fun draw(renderState: RenderState, programStatic: Program<*>, programAnimated: Program<*>, firstPassResult: FirstPassResult) {
         profiled("Actual draw entities") {
             val mode = if(engine.config.debug.isDrawLines) PrimitiveMode.Lines else PrimitiveMode.Triangles
 
@@ -181,7 +181,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase, cullCam)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram: AbstractProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandsComputeProgram else appendDrawCommandsProgram
+        val appendProgram = if(engine.config.debug.isUseComputeShaderDrawCommandAppend) appendDrawCommandsComputeProgram else appendDrawCommandsProgram
 
         profiled("Buffer compaction") {
 
@@ -220,7 +220,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
     }
 
     private fun render(renderState: RenderState,
-                       program: Program<Uniforms>,
+                       program: Program<*>,
                        commandOrganization: CommandOrganization,
                        vertexIndexBuffer: VertexIndexBuffer,
                        drawCountBuffer: AtomicCounterBuffer,

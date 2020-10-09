@@ -16,10 +16,10 @@ import org.lwjgl.opengl.GL30
 
 interface Pipeline {
     fun prepare(renderState: RenderState)
-    fun draw(renderState: RenderState, programStatic: Program<Uniforms>, programAnimated: Program<Uniforms>, firstPassResult: FirstPassResult)
+    fun draw(renderState: RenderState, programStatic: Program<*>, programAnimated: Program<*>, firstPassResult: FirstPassResult)
 
-    fun beforeDrawStatic(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {}
-    fun beforeDrawAnimated(renderState: RenderState, program: Program<Uniforms>, renderCam: Camera) {}
+    fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {}
+    fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {}
 
 
     enum class CullingPhase(val coarsePhase: CoarseCullingPhase) {

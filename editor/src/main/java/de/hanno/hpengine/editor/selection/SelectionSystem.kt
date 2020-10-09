@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -95,26 +96,11 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     val sidePanel = editorComponents.editor.sidePanel
     private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
 
-    val simpleColorProgramStatic = editorComponents.engineContext.programManager.getProgram(
-            engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            "shaders/first_pass_fragment.glsl".let { engineContext.config.engineDir.resolve(it).toCodeSource() },
-            null,
-            Defines(Define.getDefine("COLOR_OUTPUT_0", true)), null)
-    val simpleColorProgramAnimated = editorComponents.engineContext.programManager.getProgram(
-            engineContext.config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            "shaders/first_pass_fragment.glsl".let { engineContext.config.engineDir.resolve(it).toCodeSource() },
-            null,
-            Defines(Define.getDefine("COLOR_OUTPUT_0", true), Define.getDefine("ANIMATED", true)), null)
-
     var axisDragged: AxisConstraint = AxisConstraint.None
 
     val floatBuffer = BufferUtils.createFloatBuffer(4)
 
     var selection: Selection = Selection.None
-
-    private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-        Transform().get(this)
-    }
 
     override fun render(result: DrawResult, state: RenderState) {
         val selection = selection

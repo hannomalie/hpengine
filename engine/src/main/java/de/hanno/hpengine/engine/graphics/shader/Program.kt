@@ -30,15 +30,15 @@ import java.util.EnumSet
 import java.util.HashMap
 import java.util.StringJoiner
 
-class Program<T : Uniforms>(
+class Program<T : Uniforms> constructor(
         private val programManager: OpenGlProgramManager,
         val vertexShaderSource: CodeSource,
         val geometryShaderSource: CodeSource?,
         val fragmentShaderSource: CodeSource?,
         defines: Defines,
-        val uniformsXXX: T?
-) : AbstractProgram(programManager.gpuContext.createProgramId()) {
-    val gpuContext: GpuContext<OpenGl>
+        uniformsXXX: T
+) : AbstractProgram<T>(programManager.gpuContext.createProgramId(), defines, uniformsXXX) {
+    val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
     private val localDefines = HashMap<String, Any>()
 
@@ -59,12 +59,9 @@ class Program<T : Uniforms>(
         }
 
     init {
-        this.gpuContext = programManager.gpuContext
-        this.defines = defines
-
         load()
+        registerUniforms()
     }
-
     override fun load() {
         gpuContext.invoke {
             clearUniforms()
@@ -219,12 +216,12 @@ class Program<T : Uniforms>(
 
 }
 
-private fun AbstractProgram.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
+private fun AbstractProgram<*>.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
     removeOldListeners()
     fileListeners.addAll(sources.toFileChangeListeners(reloadable))
 }
 
-private fun AbstractProgram.removeOldListeners() {
+private fun AbstractProgram<*>.removeOldListeners() {
     FileMonitor.monitor.observers.forEach { observer ->
         fileListeners.forEach { listener ->
             observer.removeListener(listener)

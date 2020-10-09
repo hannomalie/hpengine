@@ -1,20 +1,16 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
+import de.hanno.hpengine.engine.graphics.shader.safePut
+import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.math.identityMatrix4fBuffer
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.vertexbuffer.drawLines
-import org.joml.Vector3f
 import org.joml.Vector3fc
 import java.nio.FloatBuffer
-import java.util.ArrayList
-import java.util.function.Consumer
 import kotlin.math.min
 
 fun EngineContext.drawLines(
@@ -46,25 +42,13 @@ fun EngineContext.drawLines(
 
     if (verticesCount <= 0) return
 
-    val linesProgram = programManager.linesProgram
-    linesProgram.use()
-    programManager.run {
-        linesProgram.uniformsXXX!!.let { uniforms ->
-            uniforms.modelMatrix.safePut(modelMatrix)
-            uniforms.projectionMatrix.safePut(projectionMatrix)
-            uniforms.viewMatrix.safePut(viewMatrix)
-            uniforms.color.set(color)
-            linesProgram.bind(uniforms)
-        }
+    programManager.linesProgram.useAndBind { uniforms ->
+        uniforms.modelMatrix.safePut(modelMatrix)
+        uniforms.projectionMatrix.safePut(projectionMatrix)
+        uniforms.viewMatrix.safePut(viewMatrix)
+        uniforms.color.set(color)
+        vertices.safeCopyTo(uniforms.vertices)
     }
-    linesProgram.setUniform("color", color)
-    linesProgram.bindShaderStorageBuffer(7, vertices)
-
-    drawLines(min(lineWidth, gpuContext.maxLineWidth), verticesCount)
-}
-
-private fun FloatBuffer.safePut(matrix: FloatBuffer) {
-    rewind()
-    put(matrix)
+    drawLines(min(lineWidth, programManager.gpuContext.maxLineWidth), verticesCount)
 }
 
