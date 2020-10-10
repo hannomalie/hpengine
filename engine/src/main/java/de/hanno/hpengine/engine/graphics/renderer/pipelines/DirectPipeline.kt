@@ -4,19 +4,36 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
+import de.hanno.hpengine.engine.graphics.shader.BooleanType
+import de.hanno.hpengine.engine.graphics.shader.FloatType
+import de.hanno.hpengine.engine.graphics.shader.IntType
+import de.hanno.hpengine.engine.graphics.shader.Mat4
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.shader.Vec3
+import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.math.Matrix4f
+import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
+import de.hanno.hpengine.engine.scene.VertexStructPacked
+import de.hanno.hpengine.engine.transform.Transform
 import org.joml.FrustumIntersection
+import org.joml.Vector3f
+import org.lwjgl.BufferUtils
 
 open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
@@ -65,7 +82,7 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
                    renderCam: Camera) {
         engine.gpuContext.cullFace = !engine.config.debug.isDrawLines
         program.use()
-        program.setUniforms(renderState, renderCam, engine.config, vertexStructArray)
+        program.setUniforms(renderState, renderCam, engine.config)
     }
 
 }

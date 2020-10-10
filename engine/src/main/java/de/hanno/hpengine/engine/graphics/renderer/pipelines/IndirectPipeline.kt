@@ -1,20 +1,17 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.DrawParameters
+import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.HpMatrix
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
 import de.hanno.hpengine.engine.graphics.shader.BooleanType
@@ -25,6 +22,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.Vec3
+import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.material.MaterialStruct
@@ -94,7 +92,7 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
         engine.gpuContext.cullFace = useBackFaceCulling
         program.use()
-        program.setUniforms(renderState, renderCam, engine.config, vertexBuffer)
+        program.setUniforms(renderState, renderCam, engine.config)
     }
 
 }
@@ -123,80 +121,18 @@ fun <T: FirstPassUniforms> IndirectDrawDescription<T>.draw() {
     with(commandOrganization) {
         drawCountBuffer.put(0, commandCount)
         profiled("Actually render") {
-            program.setUniform("entityIndex", 0)
-            program.setUniform("entityBaseIndex", 0)
-            program.setUniform("indirect", true)
-            program.bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
-            program.bindShaderStorageBuffer(4, entityOffsetBuffer)
-            program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
+            val uniforms: FirstPassUniforms = program.uniformsXXX
+            uniforms.entityIndex = 0
+            uniforms.entityBaseIndex = 0
+            uniforms.indirect = true
+            uniforms.entities = renderState.entitiesState.entitiesBuffer
+            uniforms.entityOffsets = entityOffsetBuffer
+            when(uniforms) {
+                is StaticFirstPassUniforms -> Unit
+                is AnimatedFirstPassUniforms -> uniforms.joints = renderState.entitiesState.jointsBuffer
+            }!!
 
             vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, 0, commandCount, mode)
         }
     }
 }
-abstract class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
-    val materials by SSBO("Material", 1, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
-    val entities by SSBO("Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
-    val joints by SSBO("mat4", 6, PersistentMappedStructBuffer(1, gpuContext, { Matrix4f() }))
-    val useRainEffect by BooleanType(false)
-    val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val lastViewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val viewProjectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-
-    val eyePosition by Vec3(Vector3f())
-    val near by FloatType()
-    val far by FloatType()
-    val time by IntType()
-    val useParallax by BooleanType(false)
-    val useSteepParallax by BooleanType(false)
-}
-open class StaticFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
-    val vertices by SSBO("VertexPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { VertexStructPacked() }))
-}
-open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
-    val vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { AnimatedVertexStructPacked() }))
-}
-
-fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
-                                  config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) {
-
-    val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
-    val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
-    val viewProjectionMatrixAsBuffer = camera.viewProjectionMatrixAsBuffer
-
-    use()
-    bindShaderStorageBuffer(1, renderState.materialBuffer)
-    bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-    bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-    bindShaderStorageBuffer(7, vertexBuffer)
-    setUniform("useRainEffect", config.effects.rainEffect != 0.0f)
-    setUniform("rainEffect", config.effects.rainEffect)
-    setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)
-    setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer)
-    setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer)
-    setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer)
-
-    setUniform("eyePosition", camera.getPosition())
-    setUniform("near", camera.near)
-    setUniform("far", camera.far)
-    setUniform("time", renderState.time.toInt())
-    setUniform("useParallax", config.quality.isUseParallax)
-    setUniform("useSteepParallax", config.quality.isUseSteepParallax)
-}
-
-fun Program<*>.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
-    for (mapEnumEntry in SimpleMaterial.MAP.values()) {
-
-        if (maps.contains(mapEnumEntry)) {
-            val map = maps[mapEnumEntry]!!
-            if (map.id > 0) {
-                gpuContext.bindTexture(mapEnumEntry.textureSlot, map)
-                setUniform(mapEnumEntry.uniformKey, true)
-            }
-        } else {
-            setUniform(mapEnumEntry.uniformKey, false)
-        }
-    }
-}
-
