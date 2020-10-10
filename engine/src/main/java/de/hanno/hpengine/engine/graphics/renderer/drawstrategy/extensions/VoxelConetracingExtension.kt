@@ -23,8 +23,10 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.BooleanType
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
@@ -33,17 +35,15 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.model.material.MaterialStruct
 import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -97,20 +97,33 @@ class VoxelConeTracingExtension(
 
     }
 
-    private val voxelizer = engineContext.run {
+    private val voxelizerStatic = engineContext.run {
         programManager.getProgram(
-            EngineAsset("shaders/voxelize_vertex.glsl"),
-            EngineAsset("shaders/voxelize_fragment.glsl"),
-            EngineAsset("shaders/voxelize_geometry.glsl"),
-            Defines(),
-            VoxelizerUniforms(engineContext.gpuContext)
+                EngineAsset("shaders/voxelize_vertex.glsl").toCodeSource(),
+                EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
+                EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
+                Defines(),
+                VoxelizerUniformsStatic(engineContext.gpuContext)
+        )
+    }
+
+    private val voxelizerAnimated = engineContext.run {
+        programManager.getProgram(
+                EngineAsset("shaders/voxelize_vertex.glsl").toCodeSource(),
+                EngineAsset("shaders/voxelize_fragment.glsl").toCodeSource(),
+                EngineAsset("shaders/voxelize_geometry.glsl").toCodeSource(),
+                Defines(),
+                VoxelizerUniformsStatic(engineContext.gpuContext)
         )
     }
 
     private val voxelConeTraceProgram: Program<Uniforms> = engineContext.run {
         programManager.getProgram(
-            EngineAsset("shaders/passthrough_vertex.glsl"),
-            EngineAsset("shaders/voxel_cone_trace_fragment.glsl")
+                EngineAsset("shaders/passthrough_vertex.glsl").toCodeSource(),
+                EngineAsset("shaders/voxel_cone_trace_fragment.glsl").toCodeSource(),
+                null,
+                Defines(),
+                Uniforms.Empty
         )
     }
 
@@ -188,19 +201,19 @@ class VoxelConeTracingExtension(
 
             profiled("Voxelization") {
                 engineContext.gpuContext.viewPort(0, 0, currentVoxelGrid.gridSize, currentVoxelGrid.gridSize)
-                voxelizer.use()
+                voxelizerStatic.use()
                 GL42.glBindImageTexture(3, currentVoxelGrid.normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(5, currentVoxelGrid.albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized)
                 GL42.glBindImageTexture(6, currentVoxelGrid.indexGrid, 0, true, 0, GL15.GL_WRITE_ONLY, indexGridTextureFormatSized)
 
-                voxelizer.setUniform("voxelGridIndex", voxelGridIndex)
-                voxelizer.setUniform("voxelGridCount", voxelGrids.size)
-                voxelizer.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                voxelizer.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-                voxelizer.bindShaderStorageBuffer(5, voxelGrids)
-                voxelizer.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
+                voxelizerStatic.setUniform("voxelGridIndex", voxelGridIndex)
+                voxelizerStatic.setUniform("voxelGridCount", voxelGrids.size)
+                voxelizerStatic.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
+                voxelizerStatic.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                voxelizerStatic.bindShaderStorageBuffer(5, voxelGrids)
+                voxelizerStatic.bindShaderStorageBuffer(7, renderState.vertexIndexBufferStatic.vertexStructArray)
 
-                voxelizer.setUniform("writeVoxels", true)
+                voxelizerStatic.setUniform("writeVoxels", true)
                 engineContext.gpuContext.depthMask = false
                 engineContext.gpuContext.disable(DEPTH_TEST)
                 engineContext.gpuContext.disable(BLEND)
@@ -209,11 +222,11 @@ class VoxelConeTracingExtension(
 
                 if (useIndirectDrawing && engineContext.config.performance.isIndirectRendering) {
                     firstPassResult.reset()
-                    pipeline.draw(renderState, voxelizer, voxelizer, firstPassResult)
+                    pipeline.draw(renderState, voxelizerStatic as Program<StaticFirstPassUniforms>, voxelizerAnimated as Program<AnimatedFirstPassUniforms>, firstPassResult)
                 } else {
                     for (entity in batches) {
-                        voxelizer.setTextureUniforms(entity.materialInfo.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizer)
+                        voxelizerStatic.setTextureUniforms(entity.materialInfo.maps)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizerStatic)
                         entityVoxelizedInCycle[entity.entityName] = renderState.cycle
                     }
                 }
@@ -442,12 +455,15 @@ class VoxelConeTracingExtension(
     }
 }
 
-class VoxelizerUniforms(val gpuContext: GpuContext<OpenGl>) : Uniforms() {
-    val voxelGridIndex by IntType("voxelGridIndex", 0)
-    val voxelGridCount by IntType("voxelGridCount", 0)
-    val vertices by SSBO("vertices", "VertexPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { VertexStructPacked() }))
-    val materials by SSBO("materials", "Material", 1, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
-    val entities by SSBO("entities", "Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
-    val voxelGrids by SSBO("voxelGrids", "VoxelGrid", 5, PersistentMappedStructBuffer(1, gpuContext, { VoxelGrid() }))
-    val writeVoxels by BooleanType("writeVoxels", true)
+class VoxelizerUniformsStatic(val gpuContext: GpuContext<OpenGl>) : StaticFirstPassUniforms(gpuContext) {
+    val voxelGridIndex by IntType()
+    val voxelGridCount by IntType()
+    val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedStructBuffer(1, gpuContext, { VoxelGrid() }))
+    val writeVoxels by BooleanType(true)
+}
+class VoxelizerUniformsAnimated(val gpuContext: GpuContext<OpenGl>) : AnimatedFirstPassUniforms(gpuContext) {
+    val voxelGridIndex by IntType()
+    val voxelGridCount by IntType()
+    val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedStructBuffer(1, gpuContext, { VoxelGrid() }))
+    val writeVoxels by BooleanType(true)
 }

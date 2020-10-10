@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
@@ -58,7 +59,8 @@ class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtensi
     val probeRenderer = ProbeRenderer(engineContext)
     val evaluateProbeProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-            engineContext.config.engineDir.resolve("shaders/evaluate_probe.glsl").toCodeSource()
+            engineContext.config.engineDir.resolve("shaders/evaluate_probe.glsl").toCodeSource(),
+            Uniforms.Empty
     )
 
     private var renderCounter = 0

@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
@@ -198,7 +199,8 @@ class EvaluateProbeRenderExtension(val engineContext: EngineContext): RenderExte
 
     val evaluateProbeProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-            engineContext.config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource()
+            engineContext.config.engineDir.resolve("shaders/evaluate_probe_fragment.glsl").toCodeSource(),
+            Uniforms.Empty
     )
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {

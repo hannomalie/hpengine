@@ -33,30 +33,18 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
                    defines: Defines,
                    uniforms: T): Program<T>
 
+    fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
+                                 fragmentShaderSource: CodeSource?,
+                                 uniforms: T): Program<T> {
+
+        return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), uniforms)
+    }
+
     fun getProgram(vertexShaderSource: CodeSource,
-                   fragmentShaderSource: CodeSource?): Program<Uniforms> {
+                 fragmentShaderSource: CodeSource?): Program<Uniforms> {
 
         return getProgram(vertexShaderSource, fragmentShaderSource, null, Defines(), Uniforms.Empty)
     }
-
-    fun getProgram(vertexShaderAsset: Asset,
-                   fragmentShaderAsset: Asset?): Program<Uniforms> {
-
-        return getProgram(vertexShaderAsset, fragmentShaderAsset, null, Defines(), Uniforms.Empty)
-   }
-
-    fun <T: Uniforms> getProgram(vertexShaderAsset: Asset,
-                   fragmentShaderAsset: Asset? = null,
-                   geometryShaderAsset: Asset? = null,
-                   defines: Defines = Defines(),
-                   uniforms: T): Program<T> = getProgram(
-
-            vertexShaderAsset.toCodeSource(),
-            fragmentShaderAsset?.toCodeSource(),
-            geometryShaderAsset?.toCodeSource(),
-            defines,
-            uniforms
-    )
 
     val linesProgram: Program<LinesProgramUniforms>
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
@@ -64,9 +52,9 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
 }
 
 class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {
-    val vertices by SSBO("vertices", "vec4", 7, PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() }))
-    val modelMatrix by Mat4("modelMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val viewMatrix by Mat4("viewMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val projectionMatrix by Mat4("projectionMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val color by Vec3("color", org.joml.Vector3f(1f,0f,0f))
+    val vertices by SSBO("vec4", 7, PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() }))
+    val modelMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val color by Vec3(org.joml.Vector3f(1f,0f,0f))
 }

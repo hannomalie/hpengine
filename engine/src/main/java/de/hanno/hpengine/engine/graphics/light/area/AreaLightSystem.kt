@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.GpuEntity
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -26,7 +25,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.engine.graphics.shader.Mat4
-import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -41,6 +39,7 @@ import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import kotlinx.coroutines.CoroutineScope
@@ -80,9 +79,12 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
 
     private val areaShadowPassProgram = engine.run {
         programManager.getProgram(
-                EngineAsset("shaders/mvp_entitybuffer_vertex.glsl"),
-                EngineAsset("shaders/shadowmap_fragment.glsl"),
-                null, Defines(), AreaShadowPassUniforms(gpuContext)
+
+                EngineAsset("shaders/mvp_entitybuffer_vertex.glsl").toCodeSource(),
+                EngineAsset("shaders/shadowmap_fragment.glsl").toCodeSource(),
+                null,
+                Defines(),
+                AreaShadowPassUniforms(gpuContext)
         )
     }
     private val areaLightDepthMaps = ArrayList<Int>().apply {
@@ -194,7 +196,7 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
 }
 
 class AreaShadowPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
-    var entitiesBuffer by SSBO("entities", "Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { EntityStruct() }))
-    val viewMatrix by Mat4("viewMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    val projectionMatrix by Mat4("projectionMatrix", BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    var entitiesBuffer by SSBO("Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { EntityStruct() }))
+    val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }

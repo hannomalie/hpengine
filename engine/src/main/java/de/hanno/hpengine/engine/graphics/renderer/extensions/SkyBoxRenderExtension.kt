@@ -18,6 +18,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
@@ -34,7 +36,8 @@ class SkyBoxRenderExtension(val engineContext: EngineContext): RenderExtension<O
     val materialManager: MaterialManager = engineContext.materialManager
     private val skyBoxProgram = engineContext.programManager.getProgram(
             engineContext.config.engineDir.resolve("shaders/mvp_vertex.glsl").toCodeSource(),
-            engineContext.config.engineDir.resolve("shaders/skybox.glsl").toCodeSource())
+            engineContext.config.engineDir.resolve("shaders/skybox.glsl").toCodeSource(),
+            Uniforms.Empty)
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
 

@@ -30,12 +30,12 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
     private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
 
     private val renderToQuadProgram: Program<Uniforms> = programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "simpletexture_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/simpletexture_fragment.glsl")), Uniforms.Empty)
 
     private val debugFrameProgram = programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "debugframe_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/debugframe_fragment.glsl")), Uniforms.Empty)
 
     open var finalImage = texture.id
 

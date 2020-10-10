@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
@@ -29,7 +30,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
 
 
-class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program<Uniforms>? = null) : BaseComponent(entity) {
+class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program<FirstPassUniforms>? = null) : BaseComponent(entity) {
     val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {
@@ -144,7 +145,7 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
                                   modelComponentManager: ModelComponentManager,
                                   gameDirectory: AbstractDirectory,
                                   aabb: AABBData? = null,
-                                  program: Program<Uniforms>? = null): ModelComponent {
+                                  program: Program<FirstPassUniforms>? = null): ModelComponent {
 
             val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
                 LoadModelCommand(file,

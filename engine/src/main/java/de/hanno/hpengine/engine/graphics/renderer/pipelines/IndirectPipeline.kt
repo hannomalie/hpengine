@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.DrawParameters
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.HpMatrix
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
@@ -15,13 +17,26 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
+import de.hanno.hpengine.engine.graphics.shader.BooleanType
+import de.hanno.hpengine.engine.graphics.shader.FloatType
+import de.hanno.hpengine.engine.graphics.shader.IntType
+import de.hanno.hpengine.engine.graphics.shader.Mat4
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.SSBO
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.shader.Vec3
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.math.Matrix4f
+import de.hanno.hpengine.engine.model.material.MaterialStruct
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
+import de.hanno.hpengine.engine.scene.VertexStructPacked
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.struct.copyTo
+import org.joml.Vector3f
+import org.lwjgl.BufferUtils
 
 open class IndirectPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                       private val useFrustumCulling: Boolean = true,
@@ -55,8 +70,8 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
     }
 
     override fun draw(renderState: RenderState,
-                      programStatic: Program<*>,
-                      programAnimated: Program<*>,
+                      programStatic: Program<StaticFirstPassUniforms>,
+                      programAnimated: Program<AnimatedFirstPassUniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
@@ -67,15 +82,15 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
         firstPassResult.entitiesDrawn += entitiesCount
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<AnimatedFirstPassUniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program<*>,
+    fun beforeDraw(renderState: RenderState, program: Program<out FirstPassUniforms>,
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
         engine.gpuContext.cullFace = useBackFaceCulling
         program.use()
@@ -103,7 +118,7 @@ fun addCommands(renderBatches: List<RenderBatch>,
     }
 }
 
-fun IndirectDrawDescription.draw() {
+fun <T: FirstPassUniforms> IndirectDrawDescription<T>.draw() {
     beforeDraw(renderState, program, drawCam)
     with(commandOrganization) {
         drawCountBuffer.put(0, commandCount)
@@ -119,8 +134,31 @@ fun IndirectDrawDescription.draw() {
         }
     }
 }
+abstract class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
+    val materials by SSBO("Material", 1, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
+    val entities by SSBO("Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
+    val joints by SSBO("mat4", 6, PersistentMappedStructBuffer(1, gpuContext, { Matrix4f() }))
+    val useRainEffect by BooleanType(false)
+    val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val lastViewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    val viewProjectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 
-fun Program<*>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
+    val eyePosition by Vec3(Vector3f())
+    val near by FloatType()
+    val far by FloatType()
+    val time by IntType()
+    val useParallax by BooleanType(false)
+    val useSteepParallax by BooleanType(false)
+}
+open class StaticFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
+    val vertices by SSBO("VertexPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { VertexStructPacked() }))
+}
+open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
+    val vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { AnimatedVertexStructPacked() }))
+}
+
+fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera,
                                   config: Config, vertexBuffer: PersistentMappedStructBuffer<*>) {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer

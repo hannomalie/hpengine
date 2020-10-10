@@ -1,9 +1,13 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
@@ -117,8 +121,8 @@ val Engine.lotsOfPlanesScene
                                 discard;
                             }
                         """.trimIndent())
-                    }
-                )
+                    }, StaticFirstPassUniforms(engineContext.gpuContext)
+                ) as Program<FirstPassUniforms>
 
                 modelComponent(
                     name = "Plane",

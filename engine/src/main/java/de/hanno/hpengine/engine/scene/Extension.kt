@@ -29,6 +29,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -187,7 +189,7 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                             out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
                         """.trimIndent()
                 )
-            }
+            }, StaticFirstPassUniforms(engineContext.gpuContext) as FirstPassUniforms
     )
     init {
         engineContext.gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, engineContext.textureManager.cubeMap.id)

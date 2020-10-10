@@ -178,6 +178,7 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
         is SSBO<*> -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, bindingIndex, _value.id)
         is IntType -> GL20.glUniform1i(location, _value)
         is BooleanType -> GL20.glUniform1i(location, if(_value) 1 else 0)
+        is FloatType -> GL20.glUniform1f(location, _value)
     }
 
     fun bind() = uniformsXXX.registeredUniforms.forEach {

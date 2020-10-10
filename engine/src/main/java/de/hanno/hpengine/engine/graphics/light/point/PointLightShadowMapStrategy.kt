@@ -18,11 +18,11 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -136,22 +136,23 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
     }
 }
 
-class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
+class DualParaboloidShadowMapStrategy(private val engineContext: EngineContext,
                                       private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
-    private var pointShadowPassProgram = engine.programManager.getProgram(
+    private var pointShadowPassProgram = engineContext.programManager.getProgram(
             FileBasedCodeSource(File("shaders/" + "pointlight_shadow_vertex.glsl")),
-            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl"))
+            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_fragment.glsl")),
+            Uniforms.Empty
     )
 
     var pointLightDepthMapsArrayFront: Int = 0
     var pointLightDepthMapsArrayBack: Int = 0
 
-    private val renderTarget = RenderTarget(engine.gpuContext,
-            frameBuffer = FrameBuffer(engine.gpuContext, DepthBuffer(engine.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)),
+    private val renderTarget = RenderTarget(engineContext.gpuContext,
+            frameBuffer = FrameBuffer(engineContext.gpuContext, DepthBuffer(engineContext.gpuContext, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)),
             width = AREALIGHT_SHADOWMAP_RESOLUTION,
             height = AREALIGHT_SHADOWMAP_RESOLUTION,
             textures = listOf(Texture2D.invoke(
-                gpuContext = engine.gpuContext,
+                gpuContext = engineContext.gpuContext,
                 info = Texture2DUploadInfo(TextureDimension(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)),
                 textureFilterConfig = TextureFilterConfig(MinFilter.NEAREST_MIPMAP_LINEAR, MagFilter.LINEAR),
                 internalFormat = GL30.GL_RGBA32F
@@ -161,7 +162,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
 
     init {
         pointLightDepthMapsArrayFront = GL11.glGenTextures()
-        engine.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
+        engineContext.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
         GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
@@ -169,7 +170,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
 
         pointLightDepthMapsArrayBack = GL11.glGenTextures()
-        engine.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
+        engineContext.gpuContext.bindTexture(TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
         GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
@@ -178,22 +179,22 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
     }
 
     override fun bindTextures() {
-        engine.gpuContext.bindTexture(6, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
-        engine.gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
+        engineContext.gpuContext.bindTexture(6, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront)
+        engineContext.gpuContext.bindTexture(7, TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack)
     }
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
         val entities: List<Entity> = TODO("Reimplement properly with extracted state etc.")//entityManager.getEntities()
         val modelComponentSystem: ModelComponentSystem = TODO("Reimplement properly with extracted state etc.")//modelComponentSystem
-        val gpuContext = engine.gpuContext
+        val gpuContext = engineContext.gpuContext
 
         profiled("PointLight shadowmaps") {
 
             gpuContext.depthMask = true
             gpuContext.enable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.CULL_FACE)
-            renderTarget.use(engine.gpuContext, false)
+            renderTarget.use(engineContext.gpuContext, false)
 
             val pointLights = pointLightSystem.getPointLights()
 
@@ -222,7 +223,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                             baseVertex = allocation.vertexOffset
                         }
                         val batch = RenderBatch(entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
-                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(),
+                                isDrawLines = engineContext.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(),
                                 isVisibleForCamera = true, update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld,
                                 boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
@@ -250,7 +251,7 @@ class DualParaboloidShadowMapStrategy(private val engine: EngineContext,
                             baseVertex = allocation.vertexOffset
                         }
                         val batch = RenderBatch(entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
-                                isDrawLines = engine.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(), isVisibleForCamera = true,
+                                isDrawLines = engineContext.config.debug.isDrawLines, cameraWorldPosition = renderState.camera.getPosition(), isVisibleForCamera = true,
                                 update = e.updateType, entityMinWorld = Vector3f(e.boundingVolume.min), entityMaxWorld = Vector3f(e.boundingVolume.max), centerWorld = e.centerWorld, boundingSphereRadius = e.boundingSphereRadius,
                                 animated = false, materialInfo = modelComponent.material.materialInfo,
                                 entityIndex = e.index, meshIndex = 0, drawElementsIndirectCommand = command)

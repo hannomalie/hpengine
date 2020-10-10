@@ -36,8 +36,8 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
     }
 
     override fun draw(renderState: RenderState,
-                      programStatic: Program<*>,
-                      programAnimated: Program<*>,
+                      programStatic: Program<StaticFirstPassUniforms>,
+                      programAnimated: Program<AnimatedFirstPassUniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
@@ -52,15 +52,15 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
         firstPassResult.entitiesDrawn += entitiesCount
     }
 
-    override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
+    override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
     }
 
-    override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program<AnimatedFirstPassUniforms>, renderCam: Camera) {
         beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program<*>,
+    fun beforeDraw(renderState: RenderState, program: Program<out FirstPassUniforms>,
                    vertexStructArray: PersistentMappedStructBuffer<*>,
                    renderCam: Camera) {
         engine.gpuContext.cullFace = !engine.config.debug.isDrawLines
@@ -70,7 +70,7 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
 }
 
-fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
+fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<OpenGl>) {
     beforeDraw(renderState, program, drawCam)
     vertexIndexBuffer.indexBuffer.bind()
     for (batch in renderBatches.filter { !it.hasOwnProgram }) {
@@ -83,7 +83,7 @@ fun DirectDrawDescription.draw(gpuContext: GpuContext<OpenGl>) {
         val program = firstBatch.program!!
         vertexIndexBuffer.indexBuffer.bind()
 
-        beforeDraw(renderState, program, drawCam)
+        beforeDraw(renderState, program as Program<T>, drawCam)
         gpuContext.cullFace = firstBatch.materialInfo.cullBackFaces
         program.setTextureUniforms(firstBatch.materialInfo.maps)
 

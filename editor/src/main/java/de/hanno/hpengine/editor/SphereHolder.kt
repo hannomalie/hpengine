@@ -22,14 +22,15 @@ import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.Transform
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class SphereHolder(val engine: EngineContext,
                    val sphereProgram: Program<Uniforms> = engine.run {
                        programManager.getProgram(
-                           EngineAsset("shaders/mvp_vertex.glsl"),
-                           EngineAsset("shaders/simple_color_fragment.glsl"))
+                           EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
+                           EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource())
                    }) : RenderSystem {
 
     val materialManager: MaterialManager = engine.materialManager

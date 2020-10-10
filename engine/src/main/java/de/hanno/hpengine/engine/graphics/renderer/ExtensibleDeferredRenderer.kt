@@ -21,7 +21,10 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderEx
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
@@ -57,25 +60,25 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
             config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
             null,
             Defines(),
-            Uniforms.Empty
+            StaticFirstPassUniforms(gpuContext)
     )
     val simpleColorProgramAnimated = programManager.getProgram(
             config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
             config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
             null,
             Defines(Define.getDefine("ANIMATED", true)),
-            Uniforms.Empty
+            AnimatedFirstPassUniforms(gpuContext)
     )
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
     val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
         object: DirectPipeline(engineContext) {
-            override fun beforeDrawAnimated(renderState: RenderState, program: Program<*>, renderCam: Camera) {
+            override fun beforeDrawAnimated(renderState: RenderState, program: Program<AnimatedFirstPassUniforms>, renderCam: Camera) {
                 super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()
             }
-            override fun beforeDrawStatic(renderState: RenderState, program: Program<*>, renderCam: Camera) {
+            override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {
                 super.beforeDrawStatic(renderState, program, renderCam)
                 customBeforeDraw()
             }

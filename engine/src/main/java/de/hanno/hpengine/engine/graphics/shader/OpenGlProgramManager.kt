@@ -6,16 +6,17 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.StringBasedCodeSource
 import de.hanno.hpengine.util.ressources.WrappedCodeSource
 import de.hanno.hpengine.util.ressources.hasChanged
 import de.hanno.struct.Struct
+import org.joml.Vector3f
+import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL43
 import java.io.IOException
 import java.nio.FloatBuffer
 import java.util.WeakHashMap
@@ -23,7 +24,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-sealed class UniformDelegate<T>(val name: String, var _value: T) : ReadWriteProperty<Uniforms, T> {
+sealed class UniformDelegate<T>(var _value: T) : ReadWriteProperty<Uniforms, T> {
+    lateinit var name: String
+        internal set
     var location = -1
         private set
     override fun getValue(thisRef: Uniforms, property: KProperty<*>): T = _value
@@ -36,17 +39,19 @@ sealed class UniformDelegate<T>(val name: String, var _value: T) : ReadWriteProp
     }
 }
 
-class IntType(name: String, initial: Int): UniformDelegate<Int>(name, initial)
-class BooleanType(name: String, initial: Boolean): UniformDelegate<Boolean>(name, initial)
-class Mat4(name: String, initial: FloatBuffer) : UniformDelegate<FloatBuffer>(name, initial)
-class Vec3(name: String, initial: org.joml.Vector3f) : UniformDelegate<org.joml.Vector3f>(name, initial)
-class SSBO<T: Struct>(name: String, val dataType: String, val bindingIndex: Int, initial: PersistentMappedStructBuffer<T>) : UniformDelegate<PersistentMappedStructBuffer<T>>(name, initial)
+class IntType(initial: Int = 0): UniformDelegate<Int>(initial)
+class FloatType(initial: Float = 0f): UniformDelegate<Float>(initial)
+class BooleanType(initial: Boolean): UniformDelegate<Boolean>(initial)
+class Mat4(initial: FloatBuffer = BufferUtils.createFloatBuffer(16).apply { Transform().get(this) }) : UniformDelegate<FloatBuffer>(initial)
+class Vec3(initial: Vector3f) : UniformDelegate<Vector3f>(initial)
+class SSBO<T: Struct>(val dataType: String, val bindingIndex: Int, initial: PersistentMappedStructBuffer<T>) : UniformDelegate<PersistentMappedStructBuffer<T>>(initial)
 
 open class Uniforms {
     val registeredUniforms = mutableListOf<UniformDelegate<*>>()
 
     operator fun <T> UniformDelegate<T>.provideDelegate(thisRef: Uniforms, prop: KProperty<*>): ReadWriteProperty<Uniforms, T> {
         return this.apply {
+            this.name = prop.name
             thisRef.registeredUniforms.add(this)
         }
     }
@@ -70,6 +75,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
             }
             is IntType -> "uniform int ${it.name};"
             is BooleanType -> "uniform bool ${it.name};"
+            is FloatType -> "uniform float ${it.name};"
         }
     }
     override val Uniforms.shaderDeclarations
