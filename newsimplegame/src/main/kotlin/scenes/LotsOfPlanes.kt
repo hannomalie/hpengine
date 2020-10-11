@@ -129,11 +129,11 @@ val Engine.lotsOfPlanesScene
                     file = "assets/blender_grass/Low/Low Grass.obj",
                     materialManager = scene.materialManager,
                     modelComponentManager = scene.modelComponentManager,
-                    gameDirectory = engineContext.config.directories.gameDir,
-                    program = simpleColorProgramStatic
+                    gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.put(SimpleMaterial.MAP.HEIGHT, engineContext.textureManager.getTexture("assets/blender_grass/Low/Grass_height.png", false))
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
+                    material.materialInfo.program = simpleColorProgramStatic
                 }
 
                 val instancesPerCluster = 100

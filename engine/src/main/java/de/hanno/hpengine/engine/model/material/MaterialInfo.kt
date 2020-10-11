@@ -1,5 +1,8 @@
 package de.hanno.hpengine.engine.model.material
 
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.ENVIRONMENTMAP_TYPE
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
@@ -52,6 +55,7 @@ interface MaterialInfo {
     val transparencyType: TransparencyType
     val textureLess: Boolean
     val maps: Map<MAP, Texture>
+    var program: Program<FirstPassUniforms>?
 
     fun getHasSpecularMap(): Boolean
     fun getHasNormalMap(): Boolean
@@ -76,7 +80,8 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override var name: Strin
                                                         override var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
                                                         override val maps: MutableMap<MAP, Texture> = mutableMapOf(),
                                                         override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
-                                                        override var isShadowCasting: Boolean = true) : MaterialInfo, Serializable {
+                                                        override var isShadowCasting: Boolean = true,
+                                                        override var program: Program<FirstPassUniforms>? = null) : MaterialInfo, Serializable {
 
     override fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
     override fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)

@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
 
 
-class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material, val program: Program<FirstPassUniforms>? = null) : BaseComponent(entity) {
+class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
     val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {
@@ -144,8 +144,7 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
                                   materialManager: MaterialManager,
                                   modelComponentManager: ModelComponentManager,
                                   gameDirectory: AbstractDirectory,
-                                  aabb: AABBData? = null,
-                                  program: Program<FirstPassUniforms>? = null): ModelComponent {
+                                  aabb: AABBData? = null): ModelComponent {
 
             val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
                 LoadModelCommand(file,
@@ -155,7 +154,7 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
                         this).execute().entities.first().components.firstIsInstance<ModelComponent>().model
             }
 
-            val modelComponent = ModelComponent(this, loadedModel, loadedModel.material, program)
+            val modelComponent = ModelComponent(this, loadedModel, loadedModel.material)
             addComponent(modelComponent)
             aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
             return modelComponent

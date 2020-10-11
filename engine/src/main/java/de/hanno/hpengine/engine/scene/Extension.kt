@@ -201,13 +201,13 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                     file = "assets/models/skybox.obj",
                     materialManager = this@onInit.materialManager,
                     modelComponentManager = this@onInit.modelComponentManager,
-                    gameDirectory = engineContext.config.directories.gameDir,
-                    program = simpleColorProgramStatic
+                    gameDirectory = engineContext.config.directories.gameDir
             ).apply {
                 material.materialInfo.apply {
                     materialType = SimpleMaterial.MaterialType.UNLIT
                     cullBackFaces = false
                     isShadowCasting = false
+                    program = simpleColorProgramStatic
                 }
             }
             customComponent { scene, _ ->

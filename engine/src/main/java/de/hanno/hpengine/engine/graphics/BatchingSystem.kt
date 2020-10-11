@@ -69,7 +69,7 @@ class BatchingSystem {
                     entityIndex = entity.index
                     entityName = entity.name
                     this.meshIndex = meshIndex
-                    this.program = modelComponent.program
+                    this.program = modelComponent.material.materialInfo.program
                 }
 
                 if (batch.isStatic) {
@@ -107,7 +107,7 @@ class BatchingSystem {
                             entityIndex = entity.index
                             entityName = entity.name
                             this.meshIndex = meshIndex
-                            this.program = modelComponent.program
+                            this.program = modelComponent.material.materialInfo.program
                         }
 
                         if (batch.isStatic) {
