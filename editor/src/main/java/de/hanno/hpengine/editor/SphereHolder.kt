@@ -65,8 +65,8 @@ class SphereHolder(val engine: EngineContext,
     val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    override fun render(result: DrawResult, state: RenderState) {
-        render(state, sphereEntity.transform.position, Vector3f(0f, 0f, 1f))
+    override fun render(result: DrawResult, renderState: RenderState) {
+        render(renderState, sphereEntity.transform.position, Vector3f(0f, 0f, 1f))
     }
     fun render(state: RenderState, spherePosition: Vector3f,
                color: Vector3f, useDepthTest: Boolean = true,

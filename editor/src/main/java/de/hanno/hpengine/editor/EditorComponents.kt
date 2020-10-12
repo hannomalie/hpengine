@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
@@ -38,6 +39,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.instancing.clusters
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.scene.Extension
 import de.hanno.hpengine.engine.scene.HpVector4f
@@ -118,6 +120,7 @@ class EditorComponents(val engineContext: EngineContext,
     lateinit var sceneTree: SceneTree
     private var sceneTreePane: ReloadableScrollPane? = null
     lateinit var sceneManager: SceneManager
+    val aabbLines = engineContext.renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
 
     fun onEntityAdded(entities: List<Entity>) {
         if(!this::sceneTree.isInitialized) return
@@ -139,9 +142,25 @@ class EditorComponents(val engineContext: EngineContext,
     private val JRibbon.editorTasks
         get() = tasks.toList().filterIsInstance<EditorRibbonTask>()
 
-    override fun render(result: DrawResult, state: RenderState) {
-        selectionSystem.render(result, state)
-        sphereHolder.render(state, draw = { state: RenderState ->
+    override fun extract(scene: Scene, renderState: RenderState) {
+        renderState[aabbLines].apply {
+            clear()
+            scene.getEntities().mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach { modelComponent ->
+                modelComponent.meshes.forEach {
+                    val boundingVolume = modelComponent.getBoundingVolume(modelComponent.entity.transform, it)
+                    addAABBLines(boundingVolume.min, boundingVolume.max)
+                }
+                modelComponent.entity.clusters.forEach { cluster ->
+                    val clusterVolume = cluster.boundingVolume
+                    addAABBLines(clusterVolume.min, clusterVolume.max)
+                }
+            }
+        }
+    }
+
+    override fun render(result: DrawResult, renderState: RenderState) {
+        selectionSystem.render(result, renderState)
+        sphereHolder.render(renderState, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
                 if(it.renderedSphereRadius > 0f) {
                     val transformationPointLight = Transform().scaleAround(it.renderedSphereRadius, it.entity.transform.position.x, it.entity.transform.position.y, it.entity.transform.position.z).translate(it.entity.transform.position)
@@ -152,7 +171,7 @@ class EditorComponents(val engineContext: EngineContext,
                 }
             }
         })
-        drawTransformationArrows(state)
+        drawTransformationArrows(renderState)
 
         engineContext.gpuContext.readBuffer(0)
         selectionSystem.floatBuffer.rewind()
@@ -181,21 +200,13 @@ class EditorComponents(val engineContext: EngineContext,
 
         if(config.debug.isEditorOverlay) {
             engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
-                it.extensions.forEach { it.renderEditor(state, result) }
+                it.extensions.forEach { it.renderEditor(renderState, result) }
             }
 
-            val linePoints = mutableListOf<Vector3fc>().apply {
-                state.renderBatchesStatic.forEach { batch ->
-                    addAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
-                }
-                state.renderBatchesAnimated.forEach { batch ->
-                    addAABBLines(batch.meshMinWorld, batch.meshMaxWorld)
-                }
-            }
             engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
             engineContext.gpuContext.blend = false
 
-            engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+            engineContext.drawLines(lineVertices, renderState[aabbLines], color = Vector3f(1f, 0f, 0f))
         }
         if(config.debug.visualizeProbes) {
             engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {
@@ -203,7 +214,7 @@ class EditorComponents(val engineContext: EngineContext,
                     engineContext.gpuContext.depthMask = true
                     engineContext.gpuContext.disable(GlCap.BLEND)
 //                    engineContext.gpuContext.enable(GlCap.DEPTH_TEST)
-                    environmentProbeSphereHolder.render(state) {
+                    environmentProbeSphereHolder.render(renderState) {
 
                         extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
                             val transformation = Transform().translate(position)

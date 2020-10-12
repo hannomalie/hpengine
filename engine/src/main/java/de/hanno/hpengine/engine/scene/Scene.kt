@@ -87,7 +87,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     init {
         engineContext.renderSystems.add(object : RenderSystem {
-            override fun render(result: DrawResult, state: RenderState) {
+            override fun render(result: DrawResult, renderState: RenderState) {
                 isInitiallyDrawn = true
             }
         })

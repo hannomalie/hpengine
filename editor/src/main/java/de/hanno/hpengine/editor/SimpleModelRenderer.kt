@@ -61,8 +61,8 @@ class SimpleModelRenderer(val engine: EngineContext,
     val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    override fun render(result: DrawResult, state: RenderState) {
-        render(state, modelEntity.transform.position, Vector3f(0f, 0f, 1f), Vector3f(1f))
+    override fun render(result: DrawResult, renderState: RenderState) {
+        render(renderState, modelEntity.transform.position, Vector3f(0f, 0f, 1f), Vector3f(1f))
     }
     fun render(state: RenderState, boxPosition: Vector3f, boxScale: Vector3f,
                color: Vector3f, useDepthTest: Boolean = true,

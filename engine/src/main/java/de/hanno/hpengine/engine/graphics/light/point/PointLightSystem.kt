@@ -71,14 +71,14 @@ class PointLightSystem(val engine: EngineContext): SimpleEntitySystem(listOf(Poi
 
     private var shadowMapsRenderedInCycle: Long = -1
 
-    override fun render(result: DrawResult, state: RenderState) {
-        val needsRerender = state.pointLightMovedInCycle > shadowMapsRenderedInCycle ||
-                state.entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
-                state.entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
-                state.entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
+    override fun render(result: DrawResult, renderState: RenderState) {
+        val needsRerender = renderState.pointLightMovedInCycle > shadowMapsRenderedInCycle ||
+                renderState.entitiesState.entityMovedInCycle > shadowMapsRenderedInCycle ||
+                renderState.entitiesState.entityAddedInCycle > shadowMapsRenderedInCycle ||
+                renderState.entitiesState.componentAddedInCycle > shadowMapsRenderedInCycle
         if(needsRerender) {
-            shadowMapStrategy.renderPointLightShadowMaps(state)
-            shadowMapsRenderedInCycle = state.cycle
+            shadowMapStrategy.renderPointLightShadowMaps(renderState)
+            shadowMapsRenderedInCycle = renderState.cycle
         }
     }
 

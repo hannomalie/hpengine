@@ -2,43 +2,34 @@ package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.backend.OpenGlBackendKt;
-import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
-import de.hanno.hpengine.engine.graphics.renderer.LineRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter;
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.EnvironmentProbeState;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
 import de.hanno.hpengine.engine.manager.Manager;
 import de.hanno.hpengine.engine.transform.AABB;
-import de.hanno.hpengine.engine.vertexbuffer.DataChannels;
-import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.TextureDimension;
 import de.hanno.hpengine.engine.model.texture.TextureDimension3D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
-import de.hanno.hpengine.engine.vertexbuffer.VertexBufferExtensionsKt;
 import de.hanno.hpengine.util.Util;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -293,9 +284,9 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	@Override
-	public void render(@NotNull DrawResult result, @NotNull RenderState state) {
-		executeRenderProbeCommands(state);
-		drawAlternating(state.getCamera().getEntity());
+	public void render(@NotNull DrawResult result, @NotNull RenderState renderState) {
+		executeRenderProbeCommands(renderState);
+		drawAlternating(renderState.getCamera().getEntity());
 	}
 
 	@Override

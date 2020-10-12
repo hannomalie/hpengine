@@ -39,7 +39,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
 
     open var finalImage = texture.id
 
-    final override fun render(result: DrawResult, state: RenderState) {
+    final override fun render(result: DrawResult, renderState: RenderState) {
         drawToQuad(texture = finalImage)
     }
 

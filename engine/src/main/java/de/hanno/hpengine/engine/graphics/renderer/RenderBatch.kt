@@ -22,14 +22,14 @@ class RenderBatch(
         var meshMaxWorld: Vector3f = Vector3f(),
         var cameraWorldPosition: Vector3f = Vector3f(),
         var isVisibleForCamera: Boolean = false,
+        var isVisible: Boolean = false,
         var update: Update = Update.STATIC,
         val drawElementsIndirectCommand: DrawElementsIndirectCommand = DrawElementsIndirectCommand(),
         var centerWorld: Vector3f = Vector3f(),
         var animated : Boolean = false,
         var boundingSphereRadius: Float = 0.0f,
         var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
-        var entityBufferIndex: Int = 0,
-        var program: Program<FirstPassUniforms>? = null) {
+        var entityBufferIndex: Int = 0) {
 
     val isShadowCasting: Boolean
         get() = materialInfo.isShadowCasting
@@ -44,6 +44,6 @@ class RenderBatch(
         get() = !animated
 
     val hasOwnProgram
-        get() = program != null
+        get() = materialInfo.program != null
 }
 class RenderBatches : ArrayList<RenderBatch>()

@@ -50,6 +50,7 @@ class BatchingSystem {
                     this.movedInCycle = entity.movedInCycle
                     this.isDrawLines = drawLines
                     this.cameraWorldPosition = cameraWorldPosition
+                    this.isVisible = entity.visible
                     this.isVisibleForCamera = visibleForCamera
                     update = entity.updateType
                     entityMinWorld.set(entity.boundingVolume.min)
@@ -69,7 +70,6 @@ class BatchingSystem {
                     entityIndex = entity.index
                     entityName = entity.name
                     this.meshIndex = meshIndex
-                    this.program = modelComponent.material.materialInfo.program
                 }
 
                 if (batch.isStatic) {
@@ -88,6 +88,7 @@ class BatchingSystem {
                             this.movedInCycle = entity.movedInCycle
                             this.isDrawLines = drawLines
                             this.cameraWorldPosition = cameraWorldPosition
+                            this.isVisible = entity.visible
                             this.isVisibleForCamera = visibleForCamera
                             update = entity.updateType
                             entityMinWorld.set(cluster.boundingVolume.min)
@@ -107,7 +108,6 @@ class BatchingSystem {
                             entityIndex = entity.index
                             entityName = entity.name
                             this.meshIndex = meshIndex
-                            this.program = modelComponent.material.materialInfo.program
                         }
 
                         if (batch.isStatic) {

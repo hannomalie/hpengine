@@ -136,7 +136,7 @@ data class DebugConfig(
     override var isDrawLines: Boolean = false,
     override var isDrawBoundingVolumes: Boolean = false,
     override var isDrawPointLightShadowMaps: Boolean = false,
-    override var isDrawCameras: Boolean = true,
+    override var isDrawCameras: Boolean = false,
     override var isDrawScene: Boolean = true,
     override var isDebugframeEnabled: Boolean = false,
     override var isDrawlightsEnabled: Boolean = false,

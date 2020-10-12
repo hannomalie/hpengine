@@ -123,7 +123,7 @@ class CustomStates {
 class StateRef<out T>(val index: Int)
 
 interface RenderSystem: Updatable {
-    @JvmDefault fun render(result: DrawResult, state: RenderState) { }
+    @JvmDefault fun render(result: DrawResult, renderState: RenderState) { }
     @JvmDefault fun afterFrameFinished() { }
     @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
 }

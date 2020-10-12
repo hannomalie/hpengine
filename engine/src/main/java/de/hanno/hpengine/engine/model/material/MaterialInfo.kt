@@ -52,6 +52,7 @@ interface MaterialInfo {
     val parallaxBias: Float
     var materialType: MaterialType
     var cullBackFaces: Boolean
+    var depthTest: Boolean
     val transparencyType: TransparencyType
     val textureLess: Boolean
     val maps: Map<MAP, Texture>
@@ -65,6 +66,7 @@ interface MaterialInfo {
     fun getHasRoughnessMap(): Boolean
     fun put(map: MAP, texture: Texture)
     fun remove(map: MAP)
+    fun doCopy(name: String): MaterialInfo
 }
 
 data class SimpleMaterialInfo @JvmOverloads constructor(override var name: String,
@@ -78,6 +80,7 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override var name: Strin
                                                         override var materialType: MaterialType = DEFAULT,
                                                         override var transparencyType: TransparencyType = TransparencyType.BINARY,
                                                         override var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
+                                                        override var depthTest: Boolean = true,
                                                         override val maps: MutableMap<MAP, Texture> = mutableMapOf(),
                                                         override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
                                                         override var isShadowCasting: Boolean = true,
@@ -98,6 +101,8 @@ data class SimpleMaterialInfo @JvmOverloads constructor(override var name: Strin
     override fun remove(map: MAP) {
         maps.remove(map)
     }
+
+    override fun doCopy(name: String) = copy(name = name)
 
     companion object {
         private const val serialVersionUID = 3564429930446909410L

@@ -23,7 +23,7 @@ import org.joml.Vector3f
 import kotlin.random.Random
 
 val Engine.lotsOfPlanesScene
-    get() = scene("LotsOfCubes") {
+    get() = scene("LotsOfPlanes") {
         entities {
             entity("Ground") {
                 modelComponent(

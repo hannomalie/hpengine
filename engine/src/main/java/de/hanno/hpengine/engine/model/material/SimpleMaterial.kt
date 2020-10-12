@@ -18,7 +18,7 @@ interface Material {
     }
 }
 
-class SimpleMaterial(override val materialInfo: MaterialInfo): Material {
+class SimpleMaterial(override var materialInfo: MaterialInfo): Material {
 
     override var materialIndex = -1
 

@@ -102,7 +102,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
 
     var selection: Selection = Selection.None
 
-    override fun render(result: DrawResult, state: RenderState) {
+    override fun render(result: DrawResult, renderState: RenderState) {
         val selection = selection
         if(axisDragged != AxisConstraint.None) return
 

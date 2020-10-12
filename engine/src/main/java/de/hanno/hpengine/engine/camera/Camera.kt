@@ -8,12 +8,12 @@ import de.hanno.hpengine.engine.graphics.renderer.addLine
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.shader.safePut
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
 import kotlinx.coroutines.CoroutineScope
@@ -130,6 +130,7 @@ open class Camera @JvmOverloads constructor(
         init(camera.projectionMatrix, camera.near, camera.far,
              camera.fov, camera.ratio, camera.exposure,
              camera.focalDepth, camera.focalLength, camera.fStop)
+
         if (camera.entity.hasParent) {
             val formerParent = camera.entity.parent
             entity.removeParent()
@@ -151,7 +152,6 @@ open class Camera @JvmOverloads constructor(
         this.ratio = ratio
         this.projectionMatrix.set(projectionMatrix)
 
-        frustum.calculate(this)
         saveViewMatrixAsLastViewMatrix()
         transform()
         storeMatrices()
@@ -188,11 +188,7 @@ open class Camera @JvmOverloads constructor(
         frustum.calculate(this)
     }
 
-    fun saveViewMatrixAsLastViewMatrix() {
-        lastViewMatrixAsBuffer.rewind()
-        lastViewMatrixAsBuffer.put(viewMatrixAsBuffer)
-        lastViewMatrixAsBuffer.rewind()
-    }
+    fun saveViewMatrixAsLastViewMatrix() = lastViewMatrixAsBuffer.safePut(viewMatrixAsBuffer)
 
     private fun updateProjectionMatrixAndFrustum() {
         calculateProjectionMatrix()
@@ -230,12 +226,12 @@ open class Camera @JvmOverloads constructor(
 }
 
 class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<Camera>, RenderSystem {
-
+    private val frustumLines = engineContext.renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
     private val lineVertices = PersistentMappedStructBuffer(24, engineContext.gpuContext, { HpVector4f() })
     override val componentClass: Class<Camera> = Camera::class.java
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        getComponents().forEach {
-            with(it) {
+        for (component in getComponents()) {
+            with(component) {
                 update(scene, deltaSeconds)
             }
         }
@@ -251,10 +247,10 @@ class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<C
     }
     override fun clear() = components.clear()
 
-    override fun render(result: DrawResult, state: RenderState) {
+    override fun extract(renderState: RenderState) {
         if (engineContext.config.debug.isDrawCameras) {
-
-            val linePoints = mutableListOf<Vector3fc>().apply {
+            renderState[frustumLines].apply {
+                clear()
                 components.indices.forEach { i ->
                     val corners = components[i].frustumCorners
 
@@ -274,7 +270,12 @@ class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<C
                     addLine(corners[3], corners[5])
                 }
             }
-            engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+        }
+
+    }
+    override fun render(result: DrawResult, renderState: RenderState) {
+        if (engineContext.config.debug.isDrawCameras) {
+            engineContext.drawLines(lineVertices, renderState[frustumLines], color = Vector3f(1f, 0f, 0f))
         }
     }
 }

@@ -183,7 +183,7 @@ class PhysicsManager(private val engineContext: EngineContext,
         super<Manager>.extract(scene, renderState)
     }
 
-    override fun render(result: DrawResult, state: RenderState) {
+    override fun render(result: DrawResult, renderState: RenderState) {
         if (config.debug.isDrawLines) {
             debugDrawWorld()
             engineContext.drawLines(lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))

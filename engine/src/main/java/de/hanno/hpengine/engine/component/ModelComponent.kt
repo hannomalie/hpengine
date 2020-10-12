@@ -155,7 +155,6 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
             }
 
             val modelComponent = ModelComponent(this, loadedModel, loadedModel.material)
-            addComponent(modelComponent)
             aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }
             return modelComponent
         }

@@ -203,17 +203,18 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                     modelComponentManager = this@onInit.modelComponentManager,
                     gameDirectory = engineContext.config.directories.gameDir
             ).apply {
-                material.materialInfo.apply {
+                material = SimpleMaterial(material.materialInfo.doCopy("skybox").apply {
                     materialType = SimpleMaterial.MaterialType.UNLIT
                     cullBackFaces = false
                     isShadowCasting = false
                     program = simpleColorProgramStatic
-                }
+                    put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
+                })
             }
             customComponent { scene, _ ->
                 val camPosition = scene.activeCamera.getPosition()
-                this@entity.transform.identity().scaleAroundLocal(1000f, camPosition.x, camPosition.y, camPosition.z)
-                this@entity.transform.translate(camPosition)
+                this@entity.transform.identity().translate(camPosition)
+                this@entity.transform.scale(1000f)
             }
         }
     }

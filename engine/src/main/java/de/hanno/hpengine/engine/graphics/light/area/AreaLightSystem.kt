@@ -168,8 +168,8 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
             getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount }
 
 
-    override fun render(result: DrawResult, state: RenderState) {
-        renderAreaLightShadowMaps(state)
+    override fun render(result: DrawResult, renderState: RenderState) {
+        renderAreaLightShadowMaps(renderState)
     }
 
     override fun extract(renderState: RenderState) {

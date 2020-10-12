@@ -128,27 +128,27 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         extensions.forEach { it.extract(scene, renderState) }
     }
 
-    override fun render(result: DrawResult, state: RenderState): Unit = profiled("DeferredRendering") {
+    override fun render(result: DrawResult, renderState: RenderState): Unit = profiled("DeferredRendering") {
         gpuContext.depthMask = true
         deferredRenderingBuffer.use(gpuContext, true)
 
         if(engineContext.config.debug.isDrawBoundingVolumes) {
 
-            drawlinesExtension.renderFirstPass(engineContext.backend, gpuContext, result.firstPassResult, state)
+            drawlinesExtension.renderFirstPass(engineContext.backend, gpuContext, result.firstPassResult, renderState)
         } else if(engineContext.config.debug.isDrawPointLightShadowMaps) {
 
-            val cubeMapArrayRenderTarget = (state.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy)?.cubemapArrayRenderTarget
+            val cubeMapArrayRenderTarget = (renderState.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy)?.cubemapArrayRenderTarget
             textureRenderer.renderCubeMapDebug(deferredRenderingBuffer.gBuffer, cubeMapArrayRenderTarget, cubeMapIndex = 0)
         } else {
             profiled("FirstPass") {
 
                 profiled("MainPipeline") {
-                    state[pipeline].draw(state, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
+                    renderState[pipeline].draw(renderState, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
                 }
 
                 for (extension in extensions) {
                     profiled(extension.javaClass.simpleName) {
-                        extension.renderFirstPass(backend, gpuContext, result.firstPassResult, state)
+                        extension.renderFirstPass(backend, gpuContext, result.firstPassResult, renderState)
                     }
                 }
             }
@@ -156,18 +156,18 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
                 profiled("HalfResolution") {
                     deferredRenderingBuffer.halfScreenBuffer.use(gpuContext, true)
                     for (extension in extensions) {
-                        extension.renderSecondPassHalfScreen(state, result.secondPassResult)
+                        extension.renderSecondPassHalfScreen(renderState, result.secondPassResult)
                     }
                 }
                 deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
                 for (extension in extensions) {
                     profiled(extension.javaClass.simpleName) {
-                        extension.renderSecondPassFullScreen(state, result.secondPassResult)
+                        extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
                     }
                 }
             }
             deferredRenderingBuffer.lightAccumulationBuffer.unUse()
-            combinePassExtension.renderCombinePass(state)
+            combinePassExtension.renderCombinePass(renderState)
         }
 
         runCatching {
@@ -176,7 +176,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
                 // it is written to the final texture somehow
                 profiled("PostProcessing") {
                     throw IllegalStateException("Render me to final map")
-                    postProcessingExtension.renderSecondPassFullScreen(state, result.secondPassResult)
+                    postProcessingExtension.renderSecondPassFullScreen(renderState, result.secondPassResult)
                 }
             } else {
 //                textureRenderer.drawToQuad(deferredRenderingBuffer.finalBuffer, deferredRenderingBuffer.lightAccumulationMapOneId)

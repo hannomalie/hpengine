@@ -92,25 +92,28 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
     vertexIndexBuffer.indexBuffer.bind()
     for (batch in renderBatches.filter { !it.hasOwnProgram }) {
         gpuContext.cullFace = batch.materialInfo.cullBackFaces
+        gpuContext.depthTest = batch.materialInfo.depthTest
         program.setTextureUniforms(batch.materialInfo.maps)
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
     }
-    for (groupedBatches in renderBatches.filter { it.hasOwnProgram }.groupBy { it.program }) {
-        val firstBatch = groupedBatches.value.first()
-        val program = firstBatch.program!!
+    val batchesWithOwnProgram = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
+    for (groupedBatches in batchesWithOwnProgram) {
         vertexIndexBuffer.indexBuffer.bind()
 
-        beforeDraw(renderState, program as Program<T>, drawCam)
-        gpuContext.cullFace = firstBatch.materialInfo.cullBackFaces
-        program.setTextureUniforms(firstBatch.materialInfo.maps)
-
+        val program = groupedBatches.key.program!!
+        program.use()
         for(batch in groupedBatches.value) {
+            beforeDraw(renderState, program as Program<T>, drawCam)
+            gpuContext.cullFace = batch.materialInfo.cullBackFaces
+            gpuContext.depthTest = batch.materialInfo.depthTest
+            program.setTextureUniforms(batch.materialInfo.maps)
             vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
         }
     }
 }
 
 fun RenderBatch.shouldBeSkipped(cullCam: Camera): Boolean {
+    if(!isVisible) return true
     val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)
     val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 
