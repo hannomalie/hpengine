@@ -157,15 +157,15 @@ open class Camera @JvmOverloads constructor(
         storeMatrices()
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        saveViewMatrixAsLastViewMatrix()
-        projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
-        frustum.frustumIntersection.set(viewProjectionMatrix)
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        this@Camera.saveViewMatrixAsLastViewMatrix()
+        this@Camera.projectionMatrix.mul(this@Camera.viewMatrix, this@Camera.viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
+        this@Camera.frustum.frustumIntersection.set(this@Camera.viewProjectionMatrix)
 //        TODO: Fix this, doesn't work
 //        if (entity.hasMoved())
         this@Camera.run {
-            transform()
-            storeMatrices()
+            this.transform()
+            this.storeMatrices()
         }
     }
 
@@ -229,8 +229,8 @@ class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<C
     private val frustumLines = engineContext.renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
     private val lineVertices = PersistentMappedStructBuffer(24, engineContext.gpuContext, { HpVector4f() })
     override val componentClass: Class<Camera> = Camera::class.java
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for (component in getComponents()) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        for (component in this@CameraComponentSystem.getComponents()) {
             with(component) {
                 update(scene, deltaSeconds)
             }

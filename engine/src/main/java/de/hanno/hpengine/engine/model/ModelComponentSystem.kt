@@ -20,7 +20,6 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
-import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ModelComponentSystem(val engine: EngineContext,
@@ -44,7 +43,7 @@ class ModelComponentSystem(val engine: EngineContext,
         engine.eventBus.register(this)
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
         for (component in getComponents()) {
             with(component) {
                 update(scene, deltaSeconds)
@@ -54,82 +53,84 @@ class ModelComponentSystem(val engine: EngineContext,
 
         var counter = 0
         val materials = materialManager.materials
+        val gpuEntitiesArray = scene.entityManager.gpuEntitiesArray
+
         for(modelComponent in getComponents()) {
+            if(counter >= gpuEntitiesArray.size) { throw IllegalStateException("More model components then size of gpu entities array") }
+
             val allocation = allocations[modelComponent]!!
-            val gpuEntitiesArray = scene.entityManager.gpuEntitiesArray
-            if(counter < gpuEntitiesArray.size) {
-                val meshes = modelComponent.meshes
-                val entity = modelComponent.entity
 
-                var target = gpuEntitiesArray.getAtIndex(counter)
-                val entityBufferIndex = scene.entityManager.run { modelComponent.entityIndex }
+            val meshes = modelComponent.meshes
+            val entity = modelComponent.entity
 
-                for ((meshIndex, mesh) in meshes.withIndex()) {
-                    val materialIndex = materials.indexOf(mesh.material)
-                    target.materialIndex = materialIndex
-                    target.update = entity.updateType.asDouble.toInt()
-                    target.meshBufferIndex = entityBufferIndex + meshIndex
-                    target.entityIndex = entity.index
-                    target.meshIndex = meshIndex
-                    target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
-                    target.baseJointIndex = allocation.baseJointIndex
-                    target.animationFrame0 = modelComponent.animationFrame0
-                    target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                    val boundingVolume = modelComponent.getBoundingVolume(entity.transform, mesh)
-                    target.dummy4 = allocation.indexOffset
-                    target.setTrafoAndBoundingVolume(entity.transform.transformation, boundingVolume)
+            var target = gpuEntitiesArray.getAtIndex(counter)
+            val entityBufferIndex = scene.entityManager.run { modelComponent.entityIndex }
 
-                    counter++
-                    target = gpuEntitiesArray.getAtIndex(counter)
+            for ((meshIndex, mesh) in meshes.withIndex()) {
+                val materialIndex = materials.indexOf(mesh.material)
+                target.materialIndex = materialIndex
+                target.update = entity.updateType.asDouble.toInt()
+                target.meshBufferIndex = entityBufferIndex + meshIndex
+                target.entityIndex = entity.index
+                target.meshIndex = meshIndex
+                target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
+                target.baseJointIndex = allocation.baseJointIndex
+                target.animationFrame0 = modelComponent.animationFrame0
+                target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
+                val boundingVolume = modelComponent.getBoundingVolume(entity.transform, mesh)
+                target.dummy4 = allocation.indexOffset
+                target.setTrafoAndBoundingVolume(entity.transform.transformation, boundingVolume)
 
-                    for(cluster in entity.clusters) {
-                        // TODO: This is so lame, but for some reason extraction has to be done twive. investigate here!
-                        if(cluster.updatedInCycle == -1L || cluster.updatedInCycle == 0L || cluster.updatedInCycle >= scene.currentCycle) {
-                            for (instance in cluster) {
-                                target = gpuEntitiesArray.getAtIndex(counter)
-                                val instanceMatrix = instance.transform.transformation
-                                val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
+                counter++
+                target = gpuEntitiesArray.getAtIndex(counter)
 
-                                target.materialIndex = instanceMaterialIndex
-                                target.update = entity.updateType.ordinal
-                                target.meshBufferIndex = entityBufferIndex + meshIndex
-                                target.entityIndex = entity.index
-                                target.meshIndex = meshIndex
-                                target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
-                                target.baseJointIndex = allocation.baseJointIndex
-                                target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
-                                target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
-                                target.dummy4 = allocation.indexOffset
-                                target.setTrafoAndBoundingVolume(instanceMatrix, instance.spatial.boundingVolume)
-
-                                counter++
-                            }
-                            cluster.updatedInCycle++
-                        } else {
-                            counter += cluster.size
-                        }
-                    }
-
-                    // TODO: This has to be the outer loop i think?
-                    if (entity.hasParent) {
-                        for (instance in entity.instances) {
+                for(cluster in entity.clusters) {
+                    // TODO: This is so lame, but for some reason extraction has to be done twive. investigate here!
+                    if(cluster.updatedInCycle == -1L || cluster.updatedInCycle == 0L || cluster.updatedInCycle >= scene.currentCycle) {
+                        for (instance in cluster) {
+                            target = gpuEntitiesArray.getAtIndex(counter)
                             val instanceMatrix = instance.transform.transformation
+                            val instanceMaterialIndex = if(instance.materials.isEmpty()) materialIndex else materials.indexOf(instance.materials[meshIndex])
 
-                            target.materialIndex = materialIndex
+                            target.materialIndex = instanceMaterialIndex
                             target.update = entity.updateType.ordinal
                             target.meshBufferIndex = entityBufferIndex + meshIndex
                             target.entityIndex = entity.index
                             target.meshIndex = meshIndex
-                            target.baseVertex = allocation.forMeshes.first().vertexOffset
+                            target.baseVertex = allocation.forMeshes[meshIndex].vertexOffset
                             target.baseJointIndex = allocation.baseJointIndex
                             target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
-                            target.isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
-                            val boundingVolume = instance.spatial.boundingVolume
-                            target.setTrafoAndBoundingVolume(instanceMatrix, boundingVolume)
+                            target.isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
+                            target.dummy4 = allocation.indexOffset
+                            target.setTrafoAndBoundingVolume(instanceMatrix, instance.spatial.boundingVolume)
 
                             counter++
-                            target = gpuEntitiesArray.getAtIndex(counter)
                         }
+                        cluster.updatedInCycle++
+                    } else {
+                        counter += cluster.size
+                    }
+                }
+
+                // TODO: This has to be the outer loop i think?
+                if (entity.hasParent) {
+                    for (instance in entity.instances) {
+                        val instanceMatrix = instance.transform.transformation
+
+                        target.materialIndex = materialIndex
+                        target.update = entity.updateType.ordinal
+                        target.meshBufferIndex = entityBufferIndex + meshIndex
+                        target.entityIndex = entity.index
+                        target.meshIndex = meshIndex
+                        target.baseVertex = allocation.forMeshes.first().vertexOffset
+                        target.baseJointIndex = allocation.baseJointIndex
+                        target.animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
+                        target.isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
+                        val boundingVolume = instance.spatial.boundingVolume
+                        target.setTrafoAndBoundingVolume(instanceMatrix, boundingVolume)
+
+                        counter++
+                        target = gpuEntitiesArray.getAtIndex(counter)
                     }
                 }
             }

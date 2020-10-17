@@ -25,9 +25,9 @@ class KotlinComponent(val engine: Engine, override val codeSource: CodeSource) :
     var instance: Any? = null
         private set
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        if (isLifeCycle) {
-            with(instance as Updatable) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        if (this@KotlinComponent.isLifeCycle) {
+            with(this@KotlinComponent.instance as Updatable) {
                 update(scene, deltaSeconds)
             }
         }

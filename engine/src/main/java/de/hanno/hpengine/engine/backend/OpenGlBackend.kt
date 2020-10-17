@@ -76,6 +76,7 @@ class EngineContext(
     }
 
     fun extract(scene: Scene, renderState: RenderState) {
+        scene.extract(renderState)
         renderSystems.forEach { it.extract(scene, renderState) }
     }
     fun add(extension: Extension) {

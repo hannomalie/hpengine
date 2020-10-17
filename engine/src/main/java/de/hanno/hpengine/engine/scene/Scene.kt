@@ -131,7 +131,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     fun getEntities() = entityManager.getEntities()
     fun addAll(entities: List<Entity>) {
-        engineContext.addResourceContext.locked {
+//        engineContext.addResourceContext.locked {
             with(entityManager) { add(entities) }
 
             with(entitySystems) { onEntityAdded(this@Scene, entities) }
@@ -142,7 +142,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             engineContext.onEntityAdded(this, entities)
 
             entityManager.entityAddedInCycle = currentCycle
-        }
+//        }
     }
 
     fun onComponentAdded(component: Component) {
@@ -167,14 +167,14 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         return entityManager.getEntities().find { e -> e.name == name }
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        with(managers) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        with(this@Scene.managers) {
             update(scene, deltaSeconds)
         }
-        with(componentSystems) {
+        with(this@Scene.componentSystems) {
             update(scene, deltaSeconds)
         }
-        with(entitySystems) {
+        with(this@Scene.entitySystems) {
             update(scene, deltaSeconds)
         }
     }
@@ -202,11 +202,12 @@ fun Scene.register(extensions: List<Extension>) {
         extension.renderSystem?.let { engineContext.renderSystems.add(it) }
         extension.manager?.let { managers.register(it) }
         extension.deferredRendererExtension?.let {
-            engineContext.addResourceContext.locked {
+            engineContext.addResourceContext.launch {
                 engineContext.backend.gpuContext {
                     engineContext.extensibleDeferredRenderer?.extensions?.add(it)
                 }
             }
         }
+        Unit
     }
 }

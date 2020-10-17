@@ -32,9 +32,9 @@ data class KotlinCompiledComponent(val engine: Engine, override val codeSource: 
     var instance: Any? = null
         private set
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        if (isUpdatable) {
-            with(instance as Updatable) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        if (this@KotlinCompiledComponent.isUpdatable) {
+            with(this@KotlinCompiledComponent.instance as Updatable) {
                 update(scene, deltaSeconds)
             }
         }

@@ -10,12 +10,11 @@ import kotlinx.coroutines.CoroutineScope
 class DirectionalLightSystem(val engine: EngineContext): SimpleEntitySystem(listOf(DirectionalLight::class.java)), RenderSystem {
     var directionalLightMovedInCycle: Long = 0
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        val light = getDirectionalLight() ?: return
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        val light = this@DirectionalLightSystem.getDirectionalLight() ?: return
 
-        with(light) {
-            update(scene, deltaSeconds)
-        }
+        light.update(scene, deltaSeconds)
+
         if(scene.entityManager.run { light.entity.hasMoved }) {
             this@DirectionalLightSystem.directionalLightMovedInCycle = scene.currentCycle
         }

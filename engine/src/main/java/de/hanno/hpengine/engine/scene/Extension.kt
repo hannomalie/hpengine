@@ -44,6 +44,7 @@ import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
+import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
 interface Extension {
@@ -211,11 +212,11 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                     put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
                 })
             }
-            customComponent { scene, _ ->
+            customComponent({ scene, _ ->
                 val camPosition = scene.activeCamera.getPosition()
                 this@entity.transform.identity().translate(camPosition)
                 this@entity.transform.scale(1000f)
-            }
+            })
         }
     }
 }

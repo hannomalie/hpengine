@@ -25,7 +25,11 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSou
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.receiveOrNull
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import java.io.File
 import java.util.concurrent.Executors
@@ -46,7 +50,8 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
-    private val updateScope = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
+    private val updateThreadPool = Executors.newFixedThreadPool(8, updateThreadNamer)
+    private val updateScopeDispatcher = updateThreadPool.asCoroutineDispatcher()
     val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
 
     init {
@@ -68,8 +73,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     }
 
     fun startSimulation() {
-        GlobalScope.launch(updateScope) {
-
+        GlobalScope.launch {
             var currentTimeNs = System.nanoTime()
             val dtS = 1 / 60.0
 
@@ -80,33 +84,45 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                 currentTimeNs = newTimeNs
                 while (frameTimeS > 0.0) {
                     val deltaTime = min(frameTimeS, dtS)
-                    engineContext.addResourceContext.locked {
-                        val deltaSeconds = deltaTime.toFloat()
+                    val deltaSeconds = deltaTime.toFloat()
+                    executeCommands()
+                    withContext(updateScopeDispatcher) {
                         update(deltaSeconds)
                     }
+                    extract(deltaSeconds)
+
                     frameTimeS -= deltaTime
                     yield()
                 }
             }
+
         }
     }
 
-    fun CoroutineScope.update(deltaSeconds: Float) = try {
+    private suspend fun executeCommands() {
+        while (!engineContext.addResourceContext.channel.isEmpty) {
+            val command = engineContext.addResourceContext.channel.receiveOrNull() ?: break
+            command.invoke()
+        }
+    }
+
+    private fun extract(deltaSeconds: Float): Long {
+        renderManager.renderState.currentWriteState.cycle = updateCycle.get()
+        renderManager.renderState.currentWriteState.time = System.currentTimeMillis()
+
+        renderManager.finishCycle(sceneManager.scene, deltaSeconds)
+        return updateCycle.getAndIncrement()
+    }
+
+    suspend fun update(deltaSeconds: Float) = try {
         scene.currentCycle = updateCycle.get()
-        scene.run { update(scene, deltaSeconds) }
-        renderManager.run { update(scene, deltaSeconds) }
+        scene.update(scene, deltaSeconds)
+        renderManager.update(scene, deltaSeconds)
 
         engineContext.window.invoke { engineContext.input.update() }
         engineContext.update(deltaSeconds)
         cpsCounter.update()
-        engineContext.extract(sceneManager.scene, renderManager.renderState.currentWriteState)
 
-        renderManager.renderState.currentWriteState.cycle = updateCycle.get()
-        renderManager.renderState.currentWriteState.time = System.currentTimeMillis()
-
-        renderManager.finishCycle(sceneManager.scene)
-
-        updateCycle.getAndIncrement()
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -132,7 +148,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                             val entity = this
                             addComponent(object : CustomComponent {
                                 override val entity = entity
-                                override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) = println("XXXXXXXXXXXXXXXXXXXX")
+                                override suspend fun update(scene: Scene, deltaSeconds: Float) = println("XXXXXXXXXXXXXXXXXXXX")
                             })
                         }
                     }

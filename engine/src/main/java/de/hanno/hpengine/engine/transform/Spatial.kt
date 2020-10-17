@@ -17,7 +17,7 @@ open class TransformSpatial(val transform: Transform, _boundingVolume: AABB) : S
 
 }
 open class StaticTransformSpatial(transform: Transform, val modelComponent: ModelComponent) : TransformSpatial(transform, AABB(modelComponent.boundingVolume.localAABB)) {
-    override fun CoroutineScope.update(scene:Scene, deltaSeconds: Float) = boundingVolume.recalculate(transform)
+    override suspend fun update(scene:Scene, deltaSeconds: Float) = this@StaticTransformSpatial.boundingVolume.recalculate(this@StaticTransformSpatial.transform)
 }
 // TODO: Is this still needed?
 open class AnimatedTransformSpatial(transform: Transform, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent)

@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine.lifecycle
 
-import kotlinx.coroutines.CoroutineScope
-
+import de.hanno.hpengine.engine.scene.Scene
 
 interface Updatable {
     @JvmDefault
-    fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {}
+    suspend fun update(scene: Scene, deltaSeconds: Float) {}
 }

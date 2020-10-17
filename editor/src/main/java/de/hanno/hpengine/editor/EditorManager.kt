@@ -34,32 +34,32 @@ class EditorManager(val engineContext: EngineContext, val editorComponents: Edit
     override fun onComponentAdded(component: Component) {
         editorComponents.onComponentAdded(component)
     }
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
 
 //        if (!editor.canvas?.containsMouse) return
 
-        val turbo = if (shiftPressed) 3f else 1f
+        val turbo = if (this@EditorManager.shiftPressed) 3f else 1f
 
         val moveAmount = 100f * 0.1f * deltaSeconds * turbo
 
         val entity = scene.cameraEntity
 
-        if (wPressed) {
+        if (this@EditorManager.wPressed) {
             entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
         }
-        if (sPressed) {
+        if (this@EditorManager.sPressed) {
             entity.transform.translate(Vector3f(0f, 0f, moveAmount))
         }
-        if (aPressed) {
+        if (this@EditorManager.aPressed) {
             entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
         }
-        if (dPressed) {
+        if (this@EditorManager.dPressed) {
             entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
         }
-        if (qPressed) {
+        if (this@EditorManager.qPressed) {
             entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
         }
-        if (ePressed) {
+        if (this@EditorManager.ePressed) {
             entity.transform.translate(Vector3f(0f, moveAmount, 0f))
         }
     }

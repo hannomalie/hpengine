@@ -8,9 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 interface ManagerRegistry {
     val managers: Map<Class<*>, Manager>
     fun <T : Manager> get(managerClass: Class<T>): T
-    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    suspend fun update(scene: Scene, deltaSeconds: Float) {
         managers.forEach {
-            with(it.value) { update(scene, deltaSeconds) }
+            it.value.update(scene, deltaSeconds)
         }
     }
     fun <T : Manager> register(manager: T): T
@@ -47,7 +47,7 @@ interface SystemsRegistry {
     fun <T : Component> getForComponent(componentClass: Class<T>): ComponentSystem<T>
 
     fun getSystems(): List<ComponentSystem<*>>
-    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float)
+    suspend fun update(scene: Scene, deltaSeconds: Float)
     fun <COMPONENT_TYPE, SYSTEM_TYPE : ComponentSystem<COMPONENT_TYPE>> register(system: SYSTEM_TYPE): SYSTEM_TYPE
     fun clearSystems() {
         getSystems().forEach { it.clear() }
@@ -100,11 +100,9 @@ class ComponentSystemRegistry : SystemsRegistry {
         return systems[componentClass] as ComponentSystem<T>
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
         for (system in systems.values) {
-            with(system) {
-                update(scene, deltaSeconds)
-            }
+            system.update(scene, deltaSeconds)
         }
     }
 

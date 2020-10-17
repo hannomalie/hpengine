@@ -20,11 +20,7 @@ object SceneTask {
                     .setText("Create")
                     .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
                     .setAction {
-                        engineContext.addResourceContext.launch {
-                            with(sceneManager) {
-                                add(Entity("NewEntity_${sceneManager.scene.getEntities().count { it.name.startsWith("NewEntity") }}"))
-                            }
-                        }
+                        sceneManager.add(Entity("NewEntity_${sceneManager.scene.getEntities().count { it.name.startsWith("NewEntity") }}"))
                     }
                     .setActionRichTooltip(RichTooltip.builder()
                             .setTitle("Entity")

@@ -4,19 +4,13 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 
 interface ComponentSystem<T : Component> {
-    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        launch {
-            for(component in getComponents()) {
-                with(component) {
-                    update(scene, deltaSeconds)
-                }
-            }
+    suspend fun update(scene: Scene, deltaSeconds: Float) {
+        for(component in getComponents()) {
+            component.update(scene, deltaSeconds)
         }
     }
     fun getComponents(): List<T>

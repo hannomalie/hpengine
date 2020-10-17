@@ -3,9 +3,7 @@ package de.hanno.hpengine.engine.graphics
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.input
-import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
@@ -13,7 +11,6 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.CoroutineScope
@@ -42,13 +39,10 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
 
     override fun beforeSetScene(currentScene: Scene, nextScene: Scene) = clear()
 
-    fun finishCycle(scene: Scene) {
-        if (renderState.currentWriteState.gpuHasFinishedUsingIt) {
-            renderState.currentWriteState.deltaSeconds = deltaS.toFloat()
-            extract(scene, renderState.currentWriteState)
-            scene.extract(renderState.currentWriteState)
-            renderState.swapStaging()
-        }
+    fun finishCycle(scene: Scene, deltaSeconds: Float) {
+        renderState.currentWriteState.deltaSeconds = deltaSeconds
+        engineContext.extract(scene, renderState.currentWriteState)
+        renderState.swapStaging()
     }
     init {
         var lastTimeSwapped = true
@@ -105,9 +99,9 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
         }
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
 
-        engineContext.renderSystems.forEach {
+        this@RenderManager.engineContext.renderSystems.forEach {
             it.run { update(scene, deltaSeconds) }
         }
     }

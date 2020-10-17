@@ -37,11 +37,8 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
         scene.addComponent(component.entity, component)
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-
-        with(scene) {
-            update(scene, deltaSeconds)
-        }
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        scene.update(scene, deltaSeconds)
     }
 
     override fun afterSetScene(lastScene: Scene, currentScene: Scene) {

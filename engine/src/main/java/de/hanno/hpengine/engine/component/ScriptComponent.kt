@@ -20,7 +20,6 @@ sealed class ScriptComponentFileLoader<out T: ScriptComponent> {
     companion object {
         fun getLoaderForFileExtension(extension: String): ScriptComponentFileLoader<ScriptComponent> {
             return when(extension) {
-                "java" -> JavaComponentLoader
                 "kt", "kts" -> KotlinCompiledComponentLoader
                 else -> throw IllegalArgumentException("Unregistered file extension: $extension")
             }
@@ -36,10 +35,5 @@ object KotlinComponentLoader: ScriptComponentFileLoader<KotlinComponent>() {
 object KotlinCompiledComponentLoader: ScriptComponentFileLoader<KotlinCompiledComponent>() {
     override fun load(engine: Engine, codeFile: File, entity: Entity): KotlinCompiledComponent {
         return KotlinCompiledComponent(engine, FileBasedCodeSource(codeFile), entity)
-    }
-}
-object JavaComponentLoader: ScriptComponentFileLoader<JavaComponent>() {
-    override fun load(engine: Engine, codeFile: File, entity: Entity): JavaComponent {
-        return JavaComponent(engine, FileBasedCodeSource(codeFile), engine.engineContext.config.directories.gameDir)
     }
 }

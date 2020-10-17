@@ -158,7 +158,7 @@ val Engine.lotsOfPlanesScene
                                         boundingVolume.recalculate(transformation)
                                     }
 
-                                    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {}
+                                    override suspend fun update(scene: Scene, deltaSeconds: Float) {}
                                 }
                                 Instance(this@entity, transformation, spatial = spatial1)
                             }

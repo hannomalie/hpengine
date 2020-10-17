@@ -54,9 +54,9 @@ class GIVolumeComponent(override val entity: Entity,
     init {
         entity.spatial = spatial
     }
-    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
-        val gridSizeHalf = halfExtents[halfExtents.maxComponent()]
-        orthoCam.init(createOrthoMatrix(), gridSizeHalf, -gridSizeHalf, 90f, 1f, orthoCam.exposure, orthoCam.focalDepth, orthoCam.focalLength, orthoCam.fStop)
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        val gridSizeHalf = this@GIVolumeComponent.halfExtents[this@GIVolumeComponent.halfExtents.maxComponent()]
+        this@GIVolumeComponent.orthoCam.init(this@GIVolumeComponent.createOrthoMatrix(), gridSizeHalf, -gridSizeHalf, 90f, 1f, this@GIVolumeComponent.orthoCam.exposure, this@GIVolumeComponent.orthoCam.focalDepth, this@GIVolumeComponent.orthoCam.focalLength, this@GIVolumeComponent.orthoCam.fStop)
     }
     private fun createOrthoMatrix(): Matrix4f {
         val gridSizeHalf = halfExtents[halfExtents.maxComponent()]
@@ -77,7 +77,7 @@ class GIVolumeSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(GIVo
         }
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
         val giComponents = components.filterIsInstance<GIVolumeComponent>()
         if(giComponents.isNotEmpty()) {
             val globalGrid = giComponents.first()

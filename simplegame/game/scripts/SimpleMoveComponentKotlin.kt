@@ -16,13 +16,13 @@ class SimpleMoveComponentKotlin @Inject constructor(override val entity: Entity)
     val lifeTimes = entity.instances.map { 0f }.toFloatArray()
 
     override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for((index, instance) in entity.instances.withIndex()) {
+        for((index, instance) in this@SimpleMoveComponentKotlin.entity.instances.withIndex()) {
             with(ParticleSystem) {
-                val lifeTime = lifeTimes[index]
-                instance.update(randoms[index], reversedRandoms[index], lifeTime, deltaSeconds)
-                lifeTimes[index] += deltaSeconds
-                if(getMaxLifeTime(randoms[index]) > maxLifeTime) {
-                    lifeTimes[index] = 0f
+                val lifeTime = this@SimpleMoveComponentKotlin.lifeTimes[index]
+                instance.update(this@SimpleMoveComponentKotlin.randoms[index], this@SimpleMoveComponentKotlin.reversedRandoms[index], lifeTime, deltaSeconds)
+                this@SimpleMoveComponentKotlin.lifeTimes[index] += deltaSeconds
+                if(this.getMaxLifeTime(this@SimpleMoveComponentKotlin.randoms[index]) > this.maxLifeTime) {
+                    this@SimpleMoveComponentKotlin.lifeTimes[index] = 0f
                 }
             }
         }

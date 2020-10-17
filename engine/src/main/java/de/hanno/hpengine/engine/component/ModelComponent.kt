@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
 import de.hanno.hpengine.engine.transform.AABB
@@ -93,9 +94,9 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
 
     fun getIndexCount(i: Int): Int = model.meshIndexCounts[i]
 
-    override fun CoroutineScope.update(scene: de.hanno.hpengine.engine.scene.Scene, deltaSeconds: kotlin.Float) {
-        if (model is AnimatedModel) {
-            model.update(deltaSeconds)
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        if (this@ModelComponent.model is AnimatedModel) {
+            this@ModelComponent.model.update(deltaSeconds)
         }
     }
 

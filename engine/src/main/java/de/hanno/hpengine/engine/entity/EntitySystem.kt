@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 
 interface EntitySystem {
     @JvmDefault
-    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {}
+    suspend fun update(scene: Scene, deltaSeconds: Float) {}
     fun gatherEntities(scene: Scene)
     fun onEntityAdded(scene: Scene, entities: List<Entity>) {
         gatherEntities(scene)
@@ -22,11 +22,9 @@ interface EntitySystem {
 
 interface EntitySystemRegistry {
     fun getSystems(): Collection<EntitySystem>
-    fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for(system in this@EntitySystemRegistry.getSystems()){
-            with(system) {
-                update(scene, deltaSeconds)
-            }
+    suspend fun update(scene: Scene, deltaSeconds: Float) {
+        for(system in this@EntitySystemRegistry.getSystems()) {
+            system.update(scene, deltaSeconds)
         }
     }
     fun <T : EntitySystem> register(system: T): T

@@ -127,12 +127,12 @@ class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCount
     fun hasComponents(types: List<Class<out Component>>) = types.all { type -> hasComponent(type) }
     fun getComponents(types: List<Class<out Component>>) = types.flatMap { type -> getComponents(type) }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        if (hasParent) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        if (this@Entity.hasParent) {
             return
         }
-        for (i in 0 until children.size) {
-            with(children[i]) {
+        for (i in 0 until this@Entity.children.size) {
+            with(this@Entity.children[i]) {
                 update(scene, deltaSeconds)
             }
         }

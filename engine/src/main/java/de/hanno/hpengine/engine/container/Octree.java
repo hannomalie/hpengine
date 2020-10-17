@@ -164,11 +164,6 @@ public class Octree implements Updatable, Serializable, EntityContainer {
         }
     }
 
-	@Override
-	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
-
-	}
-
 	/**
 	 * children: index is clockwise 0-3 for top: left front, left back, right back, right front and 4-7 bottom: right back, right front, left front, left back 
 	 * 

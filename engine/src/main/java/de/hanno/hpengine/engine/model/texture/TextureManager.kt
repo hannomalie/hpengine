@@ -174,7 +174,9 @@ class TextureManager(val config: Config,
     private inline fun <T> MutableMap<String,T>.ifAbsentPutInSingleThreadContext(resourceName: String, block: () -> T): T {
         return if(!containsKey(resourceName)) {
             block().apply {
-                singleThreadContext.locked { put(resourceName, this@apply) }
+//                singleThreadContext.locked {
+                    put(resourceName, this@apply)
+//                }
             }
         } else this[resourceName]!!
     }

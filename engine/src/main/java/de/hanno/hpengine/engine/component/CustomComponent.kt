@@ -10,11 +10,11 @@ interface CustomComponent: Component {
     companion object {
         val identifier = CustomComponent::class.java.simpleName
 
-        fun Entity.customComponent(update: CoroutineScope.(Scene, Float) -> Unit) {
+        fun Entity.customComponent(update: suspend (Scene, Float) -> Unit) {
             addComponent(object: CustomComponent {
                 override val entity = this@customComponent
-                override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-                    update(scene, deltaSeconds)
+                override suspend fun update(scene: Scene, deltaSeconds: Float) {
+                    update.invoke(scene, deltaSeconds)
                 }
             })
         }

@@ -147,7 +147,7 @@ class AreaLightSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(Are
 
     fun getAreaLights() = getComponents(AreaLight::class.java)
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
 //        TODO: Resize with instance count
         this@AreaLightSystem.gpuAreaLightArray = this@AreaLightSystem.gpuAreaLightArray.enlarge(this@AreaLightSystem.getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
         this@AreaLightSystem.gpuAreaLightArray.buffer.rewind()

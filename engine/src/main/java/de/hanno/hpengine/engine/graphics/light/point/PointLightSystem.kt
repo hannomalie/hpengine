@@ -45,8 +45,8 @@ class PointLightSystem(val engine: EngineContext): SimpleEntitySystem(listOf(Poi
 
     fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        val pointLights = getComponents(PointLight::class.java)
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        val pointLights = this@PointLightSystem.getComponents(PointLight::class.java)
 
         for (i in 0 until pointLights.size) {
             val pointLight = pointLights[i]
@@ -54,7 +54,7 @@ class PointLightSystem(val engine: EngineContext): SimpleEntitySystem(listOf(Poi
             if (!pointLightHasMoved) {
                 continue
             }
-            pointLightMovedInCycle = scene.currentCycle
+            this@PointLightSystem.pointLightMovedInCycle = scene.currentCycle
         }
 
         val pointLightsIterator = pointLights.iterator()

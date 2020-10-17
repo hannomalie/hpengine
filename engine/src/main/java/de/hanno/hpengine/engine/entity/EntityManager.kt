@@ -80,46 +80,46 @@ class EntityManager(val modelComponentSystem: ModelComponentSystem,
 
     override fun clear() = entityContainer.clear()
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        entityHasMoved = false
-        staticEntityHasMoved = false
-        movedEntities.clear()
-        for (i in entityContainer.entities.indices) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        this@EntityManager.entityHasMoved = false
+        this@EntityManager.staticEntityHasMoved = false
+        this@EntityManager.movedEntities.clear()
+        for (i in this@EntityManager.entityContainer.entities.indices) {
             try {
-                with(entityContainer.entities[i]) {
-                    this@update.update(scene, deltaSeconds)
+                with(this@EntityManager.entityContainer.entities[i]) {
+                    update(scene, deltaSeconds)
                 }
             } catch (e: Exception) {
-                LOGGER.warning(e.message)
+                de.hanno.hpengine.engine.entity.EntityManager.Companion.LOGGER.warning(e.message)
             }
         }
         val predicate: (Entity) -> Boolean = {
             it != scene.activeCamera.entity
         }
-        for (entity in entityContainer.entities.filter(predicate)) {
-            transformCache.putIfAbsent(entity, Matrix4f(entity.transform))
+        for (entity in this@EntityManager.entityContainer.entities.filter(predicate)) {
+            this@EntityManager.transformCache.putIfAbsent(entity, Matrix4f(entity.transform))
 
-            val cachedTransform = transformCache[entity]!!
+            val cachedTransform = this@EntityManager.transformCache[entity]!!
             val entityMoved = !cachedTransform.isEqualTo(entity.transform)
             if (!entityMoved) {
                 continue
             }
 
-            transformCache[entity] = Matrix4f(entity.transform)
+            this@EntityManager.transformCache[entity] = Matrix4f(entity.transform)
             if (entity.updateType == Update.STATIC) {
-                staticEntityHasMoved = true
-                staticEntityMovedInCycle = scene.currentCycle
+                this@EntityManager.staticEntityHasMoved = true
+                this@EntityManager.staticEntityMovedInCycle = scene.currentCycle
             } else {
-                entityHasMoved = true
-                entityMovedInCycle = scene.currentCycle
+                this@EntityManager.entityHasMoved = true
+                this@EntityManager.entityMovedInCycle = scene.currentCycle
             }
-            movedEntities[entity] = entity
+            this@EntityManager.movedEntities[entity] = entity
             scene.calculateBoundingVolume()
             entity.movedInCycle = scene.currentCycle
             break
         }
-        cacheEntityIndices()
-        updateGpuEntitiesArray(scene.currentCycle)
+        this@EntityManager.cacheEntityIndices()
+        this@EntityManager.updateGpuEntitiesArray(scene.currentCycle)
     }
 
     private fun cacheEntityIndices() {
@@ -150,8 +150,6 @@ class EntityManager(val modelComponentSystem: ModelComponentSystem,
 
     private fun updateGpuEntitiesArray(currentCycle: Long) {
         gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
-        gpuEntitiesArray.buffer.rewind()
-
         gpuEntitiesArray.buffer.rewind()
     }
 

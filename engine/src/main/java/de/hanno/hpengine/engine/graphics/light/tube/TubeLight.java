@@ -51,10 +51,6 @@ public class TubeLight implements Component {
 		return entity;
 	}
 
-	@Override
-	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
-	}
-
     public void draw(Program program) {
         throw new IllegalStateException("Currently not implemented");
 //		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {

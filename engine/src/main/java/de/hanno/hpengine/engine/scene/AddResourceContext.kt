@@ -1,27 +1,29 @@
 package de.hanno.hpengine.engine.scene
 
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
-
-sealed class UpdateLock(val context: AddResourceContext)
-
-private class PrivateUpdateLock(context: AddResourceContext): UpdateLock(context)
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.CompletableFuture
 
 class AddResourceContext {
-    private val updateLock: UpdateLock = PrivateUpdateLock(this)
-    private val lock = ReentrantLock()
+    val channel = Channel<() -> Any>(Channel.Factory.UNLIMITED)
 
     fun launch(block: () -> Unit) {
         GlobalScope.launch {
-            lock.withLock {
-                block()
-            }
+            channel.send(block)
         }
     }
 
-    fun <T> locked(block: () -> T): T = lock.withLock {
-        block()
+    fun locked(block: () -> Unit) {
+        runBlocking {
+            channel.send(block)
+            CompletableFuture<Unit>().apply {
+                channel.send {
+                    this.complete(Unit)
+                }
+            }.await()
+        }
     }
 }

@@ -38,10 +38,6 @@ public class AreaLight implements Component, Bufferable {
 		entity.addComponent(camera);
 	}
 
-	@Override
-	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
-//		cameraEntity.update(deltaSeconds);
-	}
 	public void setColor(Vector3f color) {
 		this.color = color;
 	}

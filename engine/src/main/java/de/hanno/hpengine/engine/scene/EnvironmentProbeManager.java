@@ -22,8 +22,11 @@ import de.hanno.hpengine.engine.model.texture.TextureDimension;
 import de.hanno.hpengine.engine.model.texture.TextureDimension3D;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
 import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
@@ -270,12 +273,14 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		clearProbes();
 	}
 
+	@Nullable
 	@Override
-	public void update(@NotNull CoroutineScope scope, Scene scene, float deltaSeconds) {
-		probes.forEach(p -> p.update(scope, scene, deltaSeconds));
+	public Object update(@NotNull Scene scene, float deltaSeconds, @NotNull Continuation<? super Unit> $completion) {
+		probes.forEach(p -> p.update(scene, deltaSeconds, $completion));
 //		TODO: This has to be completely recoded with new component design and stuff, in order to get entities from components
 //		and entitymanager from scene etc.
 //		probes.stream().filter(probe -> probe.getEntity().hasMoved()).findFirst().ifPresent(first -> updateBuffers());
+		return $completion;
 	}
 
 	@Override

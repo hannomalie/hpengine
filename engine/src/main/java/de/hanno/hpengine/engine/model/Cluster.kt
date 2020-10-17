@@ -24,13 +24,13 @@ class Cluster : ArrayList<Instance>(), Updatable {
     var updatedInCycle = -1L
         internal set
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for (i in 0 until size) {
-            get(i).run {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        for (i in 0 until this@Cluster.size) {
+            this@Cluster.get(i).run {
                 update(scene, deltaSeconds)
             }
         }
-        recalculate(scene.currentCycle)
+        this@Cluster.recalculate(scene.currentCycle)
     }
 
     override fun add(element: Instance): Boolean {

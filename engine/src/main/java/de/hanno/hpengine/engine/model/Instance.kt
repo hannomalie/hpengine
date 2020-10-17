@@ -41,9 +41,9 @@ class Instance
         children.remove(child)
     }
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        animationController?.update(deltaSeconds)
-        with(spatial) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        this@Instance.animationController?.update(deltaSeconds)
+        with(this@Instance.spatial) {
             update(scene, deltaSeconds)
         }
     }

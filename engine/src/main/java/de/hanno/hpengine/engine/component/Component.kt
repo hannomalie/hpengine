@@ -12,7 +12,7 @@ interface Component : Updatable, Serializable {
     val entity: Entity
 
     @JvmDefault
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {}
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {}
 
     @JvmDefault
     fun destroy() {}

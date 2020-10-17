@@ -116,12 +116,12 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     override val addResourceContext: AddResourceContext
         get() = backend.addResourceContext
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        val currentWriteState = this@ExtensibleDeferredRenderer.engineContext.renderStateManager.renderState.currentWriteState
 
-        currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
+        currentWriteState.customState[this@ExtensibleDeferredRenderer.pipeline].prepare(currentWriteState, currentWriteState.camera)
 
-        extensions.forEach { it.run { update(scene, deltaSeconds) } }
+        this@ExtensibleDeferredRenderer.extensions.forEach { it.run { update(scene, deltaSeconds) } }
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {
