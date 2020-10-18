@@ -39,8 +39,7 @@ class OpenGlBackend(override val eventBus: EventBus,
                     override val addResourceContext: AddResourceContext) : Backend<OpenGl> {
 
     companion object {
-        operator fun invoke(window: Window<OpenGl>, config: Config): OpenGlBackend {
-            val singleThreadContext = AddResourceContext()
+        operator fun invoke(window: Window<OpenGl>, config: Config, singleThreadContext: AddResourceContext): OpenGlBackend {
             val eventBus = MBassadorEventBus()
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
@@ -54,9 +53,10 @@ class OpenGlBackend(override val eventBus: EventBus,
 
 class EngineContext(
     val config: Config,
+    val addResourceContext: AddResourceContext = AddResourceContext(),
     var additionalExtensions: List<Extension> = emptyList(), // TODO: Make this not var...but editor needs context, cyclic reference
     val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
-    val backend: Backend<OpenGl> = OpenGlBackend(window, config),
+    val backend: Backend<OpenGl> = OpenGlBackend(window, config, addResourceContext),
     val deferredRenderingBuffer: DeferredRenderingBuffer = DeferredRenderingBuffer(backend.gpuContext, config.width, config.height),
     val renderSystems: MutableList<RenderSystem> = CopyOnWriteArrayList(),
     val renderStateManager: RenderStateManager = RenderStateManager { RenderState(backend.gpuContext) },

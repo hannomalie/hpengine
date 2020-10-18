@@ -10,6 +10,7 @@ import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
+import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
@@ -121,6 +122,7 @@ class EditorComponents(val engineContext: EngineContext,
     private var sceneTreePane: ReloadableScrollPane? = null
     lateinit var sceneManager: SceneManager
     val aabbLines = engineContext.renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
+    val selectionTransform = engineContext.renderStateManager.renderState.registerState { Transform().apply { identity() } }
 
     fun onEntityAdded(entities: List<Entity>) {
         if(!this::sceneTree.isInitialized) return
@@ -155,6 +157,9 @@ class EditorComponents(val engineContext: EngineContext,
                     addAABBLines(clusterVolume.min, clusterVolume.max)
                 }
             }
+        }
+        when(val selection = selectionSystem.selection) {
+            is EntitySelection -> renderState[selectionTransform].set(selection.entity.transform)
         }
     }
 
@@ -205,6 +210,7 @@ class EditorComponents(val engineContext: EngineContext,
 
             engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
             engineContext.gpuContext.blend = false
+            engineContext.gpuContext.depthTest = true
 
             engineContext.drawLines(lineVertices, renderState[aabbLines], color = Vector3f(1f, 0f, 0f))
         }
@@ -213,7 +219,6 @@ class EditorComponents(val engineContext: EngineContext,
                 it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let { extension ->
                     engineContext.gpuContext.depthMask = true
                     engineContext.gpuContext.disable(GlCap.BLEND)
-//                    engineContext.gpuContext.enable(GlCap.DEPTH_TEST)
                     environmentProbeSphereHolder.render(renderState) {
 
                         extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
@@ -253,9 +258,10 @@ class EditorComponents(val engineContext: EngineContext,
         data class Arrow(val scale: Vector3f, val color: Vector3f)
         val ninetyDegrees = Math.toRadians(90.0).toFloat()
 
-        when(val selection = selectionSystem.selection) {
+        when(selectionSystem.selection) {
             is EntitySelection -> {
-                val entity = selection.entity
+                val transform = state[selectionTransform]
+
                 if(transformMode == TransformMode.Rotate) {
                     torusRenderer.render(state, draw = { state: RenderState ->
                         listOf(Arrow(Vector3f(0.1f, 0.1f, 5f), Vector3f(0f, 1f, 0f)),
@@ -272,8 +278,8 @@ class EditorComponents(val engineContext: EngineContext,
                             }
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(transform.rotation, transform.position.x, transform.position.y, transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, transform.position.x, transform.position.y, transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -289,11 +295,11 @@ class EditorComponents(val engineContext: EngineContext,
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
                             val transformation = Transform()
                             transformation.scaleLocal(arrow.scale.x, arrow.scale.y, arrow.scale.z)
-                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(entity.transform.position))
+                            transformation.translateLocal(Vector3f(arrow.scale).mul(0.5f).add(transform.position))
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(transform.rotation, transform.position.x, transform.position.y, transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, transform.position.x, transform.position.y, transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)
@@ -309,11 +315,11 @@ class EditorComponents(val engineContext: EngineContext,
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEachIndexed { index, arrow ->
 
                             val transformation = Transform()
-                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(entity.transform.position))
+                            transformation.rotate(rotations[index]).translateLocal(Vector3f(arrow.scale).add(transform.position))
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
-                                TransformSpace.Local -> transformation.rotateAroundLocal(entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
-                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, entity.transform.position.x, entity.transform.position.y, entity.transform.position.z)
+                                TransformSpace.Local -> transformation.rotateAroundLocal(transform.rotation, transform.position.x, transform.position.y, transform.position.z)
+                                TransformSpace.View -> transformation.rotateAroundLocal(state.camera.entity.transform.rotation, transform.position.x, transform.position.y, transform.position.z)
                             }
                             program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
                             program.setUniform("diffuseColor", arrow.color)

@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.transform.AABBData
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
@@ -75,8 +76,9 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
 }
 
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorWindow> {
-    val window = AWTEditorWindow(config)
-    val engineContext = EngineContext(config = config, window = window)
+    val addResourceContext = AddResourceContext()
+    val window = AWTEditorWindow(config, addResourceContext)
+    val engineContext = EngineContext(config = config, window = window, addResourceContext = addResourceContext)
     val extension = EditorExtension(engineContext, config, window.frame)
     engineContext.add(extension)
 

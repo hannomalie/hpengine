@@ -4,6 +4,7 @@ import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.camera
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
@@ -42,7 +43,7 @@ class MouseInputProcessor(val engineContext: EngineContext,
         entityOrNull?.transform?.transformation?.get(oldTransform)
     }
 
-    override fun mouseDragged(e: MouseEvent) {
+    override fun mouseDragged(e: MouseEvent) = engineContext.addResourceContext.launch { // TODO: This is not too nice but I don't know how else it could be done
         val rotationDelta = 10f
         val rotationAmount = 2.0f * 0.05 * rotationDelta
 

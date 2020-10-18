@@ -5,24 +5,21 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.CameraExtension.Companion.camera
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
-import kotlin.reflect.jvm.isAccessible
 
 class EditorManager(val engineContext: EngineContext, val editorComponents: EditorComponents) : Manager {
     private val editor = editorComponents.editor
-    private var wPressed by KeyUpDownProperty(editor, KeyEvent.VK_W, withShift = true)
-    private var sPressed by KeyUpDownProperty(editor, KeyEvent.VK_S, withShift = true)
-    private var aPressed by KeyUpDownProperty(editor, KeyEvent.VK_A, withShift = true)
-    private var dPressed by KeyUpDownProperty(editor, KeyEvent.VK_D, withShift = true)
-    private var qPressed by KeyUpDownProperty(editor, KeyEvent.VK_Q, withShift = true)
-    private var ePressed by KeyUpDownProperty(editor, KeyEvent.VK_E, withShift = true)
-    private var shiftPressed by KeyUpDownProperty(editor, KeyEvent.VK_SHIFT, withShift = true)
+    private var wPressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_W, withShift = true)
+    private var sPressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_S, withShift = true)
+    private var aPressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_A, withShift = true)
+    private var dPressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_D, withShift = true)
+    private var qPressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_Q, withShift = true)
+    private var ePressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_E, withShift = true)
+    private var shiftPressed by KeyUpDownProperty(editor, engineContext, KeyEvent.VK_SHIFT, withShift = true)
 
     override fun init(sceneManager: SceneManager) {
         editorComponents.init(sceneManager)

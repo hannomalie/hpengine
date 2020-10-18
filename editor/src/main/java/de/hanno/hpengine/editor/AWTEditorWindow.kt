@@ -1,6 +1,5 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
@@ -8,6 +7,7 @@ import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGlExecutor
 import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.lwjgl.opengl.GL
@@ -19,7 +19,7 @@ import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.Dimension
 import javax.swing.JFrame
 
-class AWTEditorWindow(val config: ConfigImpl) : Window<OpenGl>, OpenGlExecutor {
+class AWTEditorWindow(val config: ConfigImpl, val addResourceContext: AddResourceContext) : Window<OpenGl>, OpenGlExecutor {
 
     val executor = OpenGlExecutorImpl()
     override var openGLThreadId: Long = -1
