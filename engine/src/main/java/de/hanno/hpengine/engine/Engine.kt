@@ -22,12 +22,9 @@ import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.receiveOrNull
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -50,8 +47,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
-    private val updateThreadPool = Executors.newFixedThreadPool(8, updateThreadNamer)
-    private val updateScopeDispatcher = updateThreadPool.asCoroutineDispatcher()
+    private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
     val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
 
     init {
@@ -99,7 +95,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         }
     }
 
-    private suspend fun executeCommands() {
+    private suspend fun executeCommands() = withContext(engineContext.addResourceContext.singleThreadDispatcher) {
         while (!engineContext.addResourceContext.channel.isEmpty) {
             val command = engineContext.addResourceContext.channel.receiveOrNull() ?: break
             command.invoke()
