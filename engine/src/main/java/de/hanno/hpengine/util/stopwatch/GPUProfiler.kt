@@ -11,9 +11,9 @@ import org.lwjgl.opengl.GL33.glQueryCounter
 import kotlin.math.max
 
 object GPUProfiler {
-    var DUMP_AVERAGES = false
-    var PROFILING_ENABLED = false
-    var PRINTING_ENABLED = false
+    var dumpAveragesRequested = false
+    var porfiling = false
+    var printing = false
 
     private var queryObjects: ArrayList<Int> = ArrayList()
 
@@ -25,7 +25,7 @@ object GPUProfiler {
 
     val query: Int
         get() {
-            val query: Int = if (!queryObjects.isEmpty()) {
+            val query: Int = if (queryObjects.isNotEmpty()) {
                 queryObjects.removeAt(queryObjects.size - 1)
             } else {
                 glGenQueries()
@@ -38,14 +38,11 @@ object GPUProfiler {
     var currentTimings = ""
     var currentAverages = ""
 
-    fun start(name: String): ProfilingTask? {
-        if (PROFILING_ENABLED) {
-            val newTask = ProfilingTask(name, currentTask)
-            currentTask = newTask
-            return newTask
-        }
-        return null
-    }
+    fun start(name: String): ProfilingTask? = if (porfiling) {
+        val newTask = ProfilingTask(name, currentTask)
+        currentTask = newTask
+        newTask
+    } else null
 
     @JvmOverloads
     fun dumpAverages(sampleCount: Int = Integer.MAX_VALUE): String {
@@ -149,7 +146,7 @@ object GPUProfiler {
     }
 
     private fun ProfilingTask.dump(indentation: Int, builder: StringBuilder): StringBuilder {
-        if (PRINTING_ENABLED) {
+        if (printing) {
 
             var indentationString = ""
             for (i in (0 until indentation)) {

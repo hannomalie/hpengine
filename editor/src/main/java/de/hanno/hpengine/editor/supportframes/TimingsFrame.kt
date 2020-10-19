@@ -2,6 +2,7 @@ package de.hanno.hpengine.editor.supportframes
 
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.addResourceContext
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.renderSystems
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
@@ -27,24 +28,26 @@ class TimingsFrame(engine: Engine): JFrame("Timings") {
 //            TODO: Reimplement properly
             engine.renderSystems.add(object : RenderSystem {
                 override fun afterFrameFinished() {
-                    if (GPUProfiler.PROFILING_ENABLED) {
-                        SwingUtils.invokeLater {
-                            var drawResult = engine.engineContext.renderStateManager.renderState.currentReadState.latestDrawResult.toString()
-                            if (GPUProfiler.DUMP_AVERAGES) {
-                                drawResult += GPUProfiler.currentAverages
+                    engine.addResourceContext.launch {
+                        if (GPUProfiler.porfiling) {
+                            SwingUtils.invokeLater {
+                                var drawResult = engine.engineContext.renderStateManager.renderState.currentReadState.latestDrawResult.toString()
+                                if (GPUProfiler.dumpAveragesRequested) {
+                                    drawResult += GPUProfiler.currentAverages
+                                }
+                                val fpsCounter = engine.renderManager.fpsCounter
+                                val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
+                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
+                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n" +
+                                        GPUProfiler.currentAverages + "\n\n" + GPUProfiler.currentTimings
                             }
-                            val fpsCounter = engine.renderManager.fpsCounter
-                            val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
-                            val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
-                            textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n" +
-                                    GPUProfiler.currentAverages + "\n\n" + GPUProfiler.currentTimings
-                        }
-                    } else if(engine.engineContext.config.profiling.showFps) {
-                        SwingUtils.invokeLater {
-                            val fpsCounter = engine.renderManager.fpsCounter
-                            val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
-                            val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
-                            textArea.text = "HPEngine | $fpsInfo | $cpsInfo"
+                        } else if(engine.engineContext.config.profiling.showFps) {
+                            SwingUtils.invokeLater {
+                                val fpsCounter = engine.renderManager.fpsCounter
+                                val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
+                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
+                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo"
+                            }
                         }
                     }
                 }

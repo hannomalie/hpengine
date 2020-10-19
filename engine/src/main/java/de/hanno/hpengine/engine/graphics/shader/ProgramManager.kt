@@ -52,7 +52,7 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
 }
 
 class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {
-    val vertices by SSBO("vec4", 7, PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() }))
+    var vertices by SSBO("vec4", 7, PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() }))
     val modelMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })

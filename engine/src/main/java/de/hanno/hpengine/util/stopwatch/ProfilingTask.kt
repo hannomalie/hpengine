@@ -1,6 +1,5 @@
 package de.hanno.hpengine.util.stopwatch
 
-import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.stopwatch.GPUProfiler.currentTask
 import de.hanno.hpengine.util.stopwatch.GPUProfiler.dump
 
@@ -11,7 +10,6 @@ import org.lwjgl.opengl.GL15.glGetQueryObjectui
 import org.lwjgl.opengl.GL33.glGetQueryObjectui64
 
 import java.util.ArrayList
-import java.util.HashMap
 
 class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
 
@@ -52,7 +50,7 @@ class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
         return glGetQueryObjectui(endQuery, GL_QUERY_RESULT_AVAILABLE) == GL_TRUE
     }
     fun dumpTimings(): String {
-        if (GPUProfiler.PROFILING_ENABLED) {
+        if (GPUProfiler.porfiling) {
             val builder = StringBuilder()
             this.dump(builder)
             return builder.toString()

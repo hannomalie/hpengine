@@ -36,7 +36,9 @@ import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.putLinesPoints
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -103,7 +105,6 @@ class EditorComponents(val engineContext: EngineContext,
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
     val sphereHolder = SphereHolder(engineContext)
     val boxRenderer = SimpleModelRenderer(engineContext)
     val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
@@ -121,7 +122,9 @@ class EditorComponents(val engineContext: EngineContext,
     lateinit var sceneTree: SceneTree
     private var sceneTreePane: ReloadableScrollPane? = null
     lateinit var sceneManager: SceneManager
-    val aabbLines = engineContext.renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
+    val aabbLines = mutableListOf<Vector3fc>()
+    val lineVertices = engineContext.renderStateManager.renderState.registerState { PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() }) }
+    val lineVerticesCount = engineContext.renderStateManager.renderState.registerState { IntStruct() }
     val selectionTransform = engineContext.renderStateManager.renderState.registerState { Transform().apply { identity() } }
 
     fun onEntityAdded(entities: List<Entity>) {
@@ -145,7 +148,7 @@ class EditorComponents(val engineContext: EngineContext,
         get() = tasks.toList().filterIsInstance<EditorRibbonTask>()
 
     override fun extract(scene: Scene, renderState: RenderState) {
-        renderState[aabbLines].apply {
+        aabbLines.apply {
             clear()
             scene.getEntities().mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach { modelComponent ->
                 modelComponent.meshes.forEach {
@@ -158,6 +161,8 @@ class EditorComponents(val engineContext: EngineContext,
                 }
             }
         }
+        renderState[lineVertices].putLinesPoints(aabbLines)
+        renderState[lineVerticesCount].value = aabbLines.size
         when(val selection = selectionSystem.selection) {
             is EntitySelection -> renderState[selectionTransform].set(selection.entity.transform)
         }
@@ -212,7 +217,7 @@ class EditorComponents(val engineContext: EngineContext,
             engineContext.gpuContext.blend = false
             engineContext.gpuContext.depthTest = true
 
-            engineContext.drawLines(lineVertices, renderState[aabbLines], color = Vector3f(1f, 0f, 0f))
+            engineContext.drawLines(vertices = renderState[lineVertices], verticesCount = renderState[lineVerticesCount].value, color = Vector3f(1f, 0f, 0f))
         }
         if(config.debug.visualizeProbes) {
             engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {

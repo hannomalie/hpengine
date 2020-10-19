@@ -184,8 +184,5 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         }.onFailure {
             println("Not able to render texture")
         }
-
-        // TODO: This should not be needed
-        GL11.glFinish()
     }
 }

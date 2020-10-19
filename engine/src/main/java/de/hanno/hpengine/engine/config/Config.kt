@@ -9,13 +9,7 @@ import de.hanno.hpengine.engine.directory.GameAsset
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.util.gui.Adjustable
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import org.apache.commons.beanutils.BeanUtils
 import org.joml.Vector3f
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStream
-import java.lang.reflect.InvocationTargetException
-import java.util.Properties
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
 
@@ -94,9 +88,9 @@ interface IEffectsConfig {
 
 class ProfilingConfig {
     var showFps = false
-    var dumpAverages by GPUProfiler::DUMP_AVERAGES
-    var profiling by GPUProfiler::PROFILING_ENABLED
-    var printing by GPUProfiler::PRINTING_ENABLED
+    var dumpAverages by GPUProfiler::dumpAveragesRequested
+    var profiling by GPUProfiler::porfiling
+    var printing by GPUProfiler::printing
 }
 
 operator fun <T> KMutableProperty0<T>.setValue(receiver: Any?, property: KProperty<*>, any: T) = set(any)

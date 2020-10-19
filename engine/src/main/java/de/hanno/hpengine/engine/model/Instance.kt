@@ -42,10 +42,8 @@ class Instance
     }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        this@Instance.animationController?.update(deltaSeconds)
-        with(this@Instance.spatial) {
-            update(scene, deltaSeconds)
-        }
+        animationController?.update(deltaSeconds)
+        spatial.update(scene, deltaSeconds)
     }
 
 }

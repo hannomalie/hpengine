@@ -294,7 +294,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     override val evictionCount: Int
         get() = window.invoke{ GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX) }
 
-    fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
+    inline fun getExceptionOnError(errorMessage: () -> String = { "" }): RuntimeException? {
         if (GpuContext.CHECKERRORS) {
             val errorValue = getError()
 
@@ -303,7 +303,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
                 System.err.println("ERROR: $errorString")
                 System.err.println(errorMessage())
 
-                return RuntimeException("$errorString\n$errorMessage")
+                return RuntimeException("$errorString\n${errorMessage()}")
             }
         }
         return null
@@ -365,25 +365,11 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
 
     override fun getExceptionOnError(errorMessage: String): RuntimeException? {
-        return this.getExceptionOnError { errorMessage }
+        return getExceptionOnError { errorMessage }
     }
 
     override fun bindFrameBuffer(frameBuffer: FrameBuffer) {
         bindFrameBuffer(frameBuffer.frameBuffer)
-    }
-    fun checkGLError(errorMessage: () -> String) = window.invoke() {
-        if (GpuContext.CHECKERRORS) {
-
-            val errorValue = GL11.glGetError()
-
-            if (errorValue != GL11.GL_NO_ERROR) {
-                val errorString = GLU.gluErrorString(errorValue)
-                System.err.println("ERROR: $errorString")
-                System.err.println(errorMessage())
-
-                RuntimeException("").printStackTrace()
-            }
-        }
     }
 
     companion object {

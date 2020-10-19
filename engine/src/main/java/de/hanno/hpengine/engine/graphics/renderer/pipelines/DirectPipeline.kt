@@ -97,8 +97,8 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
     }
     val batchesWithOwnProgram = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
+    vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
-        vertexIndexBuffer.indexBuffer.bind()
 
         val program = groupedBatches.key.program!!
         program.use()

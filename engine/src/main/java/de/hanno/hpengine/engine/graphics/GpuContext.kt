@@ -156,7 +156,7 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
     }
 
     companion object {
-        val CHECKERRORS = true
+        val CHECKERRORS = false
 
         val LOGGER = Logger.getLogger(GpuContext::class.java.name)
 

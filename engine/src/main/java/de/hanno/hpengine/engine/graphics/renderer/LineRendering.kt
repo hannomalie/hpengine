@@ -23,14 +23,20 @@ fun EngineContext.drawLines(
         color: Vector3fc) {
 
     if (linePoints.isEmpty()) return
-    vertices.ensureCapacityInBytes(linePoints.size * vertices.slidingWindow.sizeInBytes)
 
-    for (i in linePoints.indices) {
-        vertices[i].set(linePoints[i])
-    }
+    vertices.putLinesPoints(linePoints)
 
     drawLines(vertices, lineWidth, linePoints.size, modelMatrix, viewMatrix, projectionMatrix, color)
 }
+
+fun PersistentMappedStructBuffer<HpVector4f>.putLinesPoints(linePoints: List<Vector3fc>) {
+    ensureCapacityInBytes(linePoints.size * slidingWindow.sizeInBytes)
+
+    for (i in linePoints.indices) {
+        this[i].set(linePoints[i])
+    }
+}
+
 fun EngineContext.drawLines(
         vertices: PersistentMappedStructBuffer<HpVector4f>,
         lineWidth: Float = 5f,
@@ -47,7 +53,7 @@ fun EngineContext.drawLines(
         uniforms.projectionMatrix.safePut(projectionMatrix)
         uniforms.viewMatrix.safePut(viewMatrix)
         uniforms.color.set(color)
-        vertices.safeCopyTo(uniforms.vertices)
+        uniforms.vertices = vertices
     }
     drawLines(min(lineWidth, programManager.gpuContext.maxLineWidth), verticesCount)
 }

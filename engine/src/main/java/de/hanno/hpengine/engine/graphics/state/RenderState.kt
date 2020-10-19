@@ -108,6 +108,11 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef]
 
 }
+interface RenderSystem: Updatable {
+    @JvmDefault fun render(result: DrawResult, renderState: RenderState) { }
+    @JvmDefault fun afterFrameFinished() { }
+    @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
+}
 
 class CustomStates {
     private val states = mutableListOf<Any>()
@@ -121,9 +126,3 @@ class CustomStates {
 }
 
 class StateRef<out T>(val index: Int)
-
-interface RenderSystem: Updatable {
-    @JvmDefault fun render(result: DrawResult, renderState: RenderState) { }
-    @JvmDefault fun afterFrameFinished() { }
-    @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
-}
