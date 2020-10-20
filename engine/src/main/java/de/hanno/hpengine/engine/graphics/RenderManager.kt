@@ -13,10 +13,10 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
     val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory,
@@ -32,7 +32,6 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
 
     inline val renderState: TripleBuffer<RenderState>
         get() = renderStateManager.renderState
-    private var lastFrameTime = 0L
     val fpsCounter = FPSCounter()
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
@@ -51,32 +50,33 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                 renderState.startRead()
 
                 if (lastTimeSwapped) {
-                    recorder.add(renderState.currentReadState)
-                    val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                    profiled("Frame") {
+                        recorder.add(renderState.currentReadState)
+                        val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                    profiled("renderSystems") {
-                        engineContext.renderSystems.forEach {
-                            it.render(drawResult, renderState.currentReadState)
+                        profiled("renderSystems") {
+                            engineContext.renderSystems.forEach {
+                                it.render(drawResult, renderState.currentReadState)
+                            }
                         }
-                    }
 
-                    profiled("finishFrame") {
-                        engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                        engineContext.renderSystems.forEach {
-                            it.afterFrameFinished()
+                        profiled("finishFrame") {
+                            engineContext.gpuContext.finishFrame(renderState.currentReadState)
+                            engineContext.renderSystems.forEach {
+                                it.afterFrameFinished()
+                            }
                         }
+
+                        textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
+
+                        profiled("checkCommandSyncs") {
+                            engineContext.gpuContext.checkCommandSyncs()
+                        }
+
+                        fpsCounter.update()
+
                     }
-
-                    textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
-
-                    profiled("checkCommandSyncs") {
-                        engineContext.gpuContext.checkCommandSyncs()
-                    }
-
                     GPUProfiler.dump()
-
-                    lastFrameTime = System.currentTimeMillis()
-                    fpsCounter.update()
 
                 }
                 lastTimeSwapped = renderState.stopRead()
@@ -105,12 +105,6 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
             it.run { update(scene, deltaSeconds) }
         }
     }
-
-    val deltaMs
-        get() = System.currentTimeMillis().toDouble() - lastFrameTime.toDouble()
-
-    val deltaS
-        get() = deltaMs / 1000.0
 
     fun getCurrentFPS() = fpsCounter.fps
 

@@ -74,7 +74,6 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
 
     private fun <T: Extension> T.add(): T = also { extensions.add(it) }
 
-    val renderManagerExtension = RenderManager(engineContext)
     val physicsExtension = PhysicsExtension(engineContext)
     val directionalLightExtension = DirectionalLightExtension(engineContext).add()
     val cameraExtension = CameraExtension(engineContext).add()
@@ -88,9 +87,6 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
     val inputComponentExtension = InputComponentExtension(engineContext).add()
     val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
     val skyboxExtension = SkyboxExtension(engineContext).add()
-}
-class RenderManagerExtension(val engineContext: EngineContext): Extension {
-    override val manager = RenderManager(engineContext)
 }
 class PhysicsExtension(val engineContext: EngineContext): Extension {
     override val manager = PhysicsManager(engineContext, config = engineContext.config)

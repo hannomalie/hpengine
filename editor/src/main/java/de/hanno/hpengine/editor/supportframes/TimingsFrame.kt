@@ -29,24 +29,25 @@ class TimingsFrame(engine: Engine): JFrame("Timings") {
             engine.renderSystems.add(object : RenderSystem {
                 override fun afterFrameFinished() {
                     engine.addResourceContext.launch {
-                        if (GPUProfiler.porfiling) {
-                            SwingUtils.invokeLater {
+                        SwingUtils.invokeLater {
+                            if(engine.engineContext.config.profiling.showFps) {
+                                val fpsCounter = engine.renderManager.fpsCounter
+                                val fpsInfo = "${fpsCounter.fps.toInt()} fps @ ${fpsCounter.msPerFrame} ms"
+                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps @ ${engine.cpsCounter.msPerFrame} ms"
+                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n"
+                            } else {
+                                textArea.text = ""
+                            }
+
+                            if(GPUProfiler.dumpAveragesRequested) {
                                 var drawResult = engine.engineContext.renderStateManager.renderState.currentReadState.latestDrawResult.toString()
                                 if (GPUProfiler.dumpAveragesRequested) {
                                     drawResult += GPUProfiler.currentAverages
                                 }
-                                val fpsCounter = engine.renderManager.fpsCounter
-                                val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
-                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
-                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n" +
-                                        GPUProfiler.currentAverages + "\n\n" + GPUProfiler.currentTimings
+                                textArea.text += GPUProfiler.currentAverages + "\n\n"
                             }
-                        } else if(engine.engineContext.config.profiling.showFps) {
-                            SwingUtils.invokeLater {
-                                val fpsCounter = engine.renderManager.fpsCounter
-                                val fpsInfo = "${fpsCounter.fps.toInt()} fps - ${fpsCounter.msPerFrame} ms"
-                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps - ${engine.cpsCounter.msPerFrame} ms"
-                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo"
+                            if (GPUProfiler.porfiling) {
+                                textArea.text += GPUProfiler.currentTimings
                             }
                         }
                     }
