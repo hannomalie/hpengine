@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
@@ -14,7 +13,6 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.Util
-import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.Matrix4f
@@ -67,35 +65,15 @@ class GIVolumeComponent(override val entity: Entity,
 
 }
 
-class GIVolumeSystem(val engine: EngineContext) : SimpleEntitySystem(listOf(GIVolumeComponent::class.java)) {
-
-    val voxelConeTracingExtension: VoxelConeTracingExtension? = run {
-        engine.extensibleDeferredRenderer?.let { renderer ->
-            renderer.extensions.firstIsInstanceOrNull<DirectionalLightShadowMapExtension>()?.let { shadowMapExtension ->
-                VoxelConeTracingExtension(engine, shadowMapExtension, renderer, renderer.extensions.firstIsInstance())
-            }
-        }
-    }
-
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        val giComponents = components.filterIsInstance<GIVolumeComponent>()
-        if(giComponents.isNotEmpty()) {
-            val globalGrid = giComponents.first()
-            val halfExtents = Vector3f(scene.aabb.max).sub(scene.aabb.min).mul(0.5f)
-            globalGrid.entity.transform.translation(Vector3f(scene.aabb.min).add(halfExtents))
-            globalGrid.boundingVolume.setLocalAABB(Vector3f(scene.aabb.min), Vector3f(scene.aabb.max))
-        }
-    }
+class GIVolumeSystem(val engine: EngineContext, val voxelConeTracingExtension: VoxelConeTracingExtension) : SimpleEntitySystem(listOf(GIVolumeComponent::class.java)) {
 
     override fun extract(renderState: RenderState) {
         updateGiVolumes(renderState)
     }
     private fun updateGiVolumes(renderState: RenderState) {
-        voxelConeTracingExtension?.let { voxelConeTracingExtension ->
-            val componentList = components.filterIsInstance<GIVolumeComponent>()
-            if (componentList.isNotEmpty()) {
-                voxelConeTracingExtension.extract(renderState, componentList)
-            }
+        val componentList = components.filterIsInstance<GIVolumeComponent>()
+        if (componentList.isNotEmpty()) {
+            voxelConeTracingExtension.extract(renderState, componentList)
         }
     }
 }

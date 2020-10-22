@@ -13,15 +13,33 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
+import de.hanno.hpengine.engine.graphics.shader.safePut
+import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL40.*
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL15.glGetQueryObjectui
+import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL32
+import org.lwjgl.opengl.GL40.GL_ONE
+import org.lwjgl.opengl.GL40.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL40.GL_QUERY_RESULT
+import org.lwjgl.opengl.GL40.GL_QUERY_RESULT_AVAILABLE
+import org.lwjgl.opengl.GL40.GL_SAMPLES_PASSED
+import org.lwjgl.opengl.GL40.GL_TRUE
+import org.lwjgl.opengl.GL40.GL_ZERO
+import org.lwjgl.opengl.GL40.glBeginQuery
+import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
+import org.lwjgl.opengl.GL40.glBlendFunci
+import org.lwjgl.opengl.GL40.glEndQuery
+import org.lwjgl.opengl.GL40.glGenQueries
+import org.lwjgl.opengl.GL40.glGetQueryObjectui64
 
 class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
@@ -29,13 +47,13 @@ class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<
     val firstpassDefaultVertexshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
     val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))
 
-    val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, Uniforms.Empty)
+    val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, StaticFirstPassUniforms(engineContext.gpuContext))
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
 
-        GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f,0f,0f,0f))
-        GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f,1f,1f,1f))
+        GL30.glClearBufferfv(GL11.GL_COLOR, 0, floatArrayOf(0f, 0f, 0f, 0f))
+        GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f, 1f, 1f, 1f))
 //        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
         engineContext.gpuContext.depthMask = false
@@ -45,20 +63,20 @@ class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<
         glBlendFunci(0, GL_ONE, GL_ONE)
         glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
 
-        programStatic.use()
-        programStatic.bindShaderStorageBuffer(1, renderState.materialBuffer)
-        programStatic.bindShaderStorageBuffer(2, renderState.directionalLightState)
-        programStatic.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-        programStatic.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-        programStatic.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        programStatic.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.viewProjectionMatrixAsBuffer)
+        programStatic.useAndBind { uniforms ->
+            uniforms.vertices = renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray
+            uniforms.materials = renderState.materialBuffer
+            uniforms.entities = renderState.entitiesBuffer
+            programStatic.bindShaderStorageBuffer(2, renderState.directionalLightState)
+            uniforms.viewMatrix.safePut(renderState.camera.viewMatrixAsBuffer)
+            uniforms.projectionMatrix.safePut(renderState.camera.projectionMatrixAsBuffer)
+            uniforms.viewProjectionMatrix.safePut(renderState.camera.viewProjectionMatrixAsBuffer)
+        }
 
-        for (batch in renderState.renderBatchesStatic) {
-            if(!batch.materialInfo.transparencyType.needsForwardRendering) { continue }
-            val isStatic = batch.update == Update.STATIC
+        renderState.vertexIndexBufferStatic.indexBuffer.bind()
+        for (batch in renderState.renderBatchesStatic.filter { it.materialInfo.transparencyType.needsForwardRendering }) {
             programStatic.setTextureUniforms(batch.materialInfo.maps)
-            val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic)
-
+            val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic, bindIndexBuffer = false)
         }
         engineContext.gpuContext.disable(GlCap.BLEND)
         deferredRenderingBuffer.forwardBuffer.unUse()

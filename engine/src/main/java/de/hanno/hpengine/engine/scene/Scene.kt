@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.camera.Camera
@@ -25,7 +24,6 @@ import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
-import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 
 class SceneSyntax(val scene: Scene) {
@@ -58,8 +56,9 @@ fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(nam
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(),
                                       val engineContext: EngineContext,
+                                      val baseExtensions: BaseExtensions = BaseExtensions(engineContext),
                                       val nonBaseExtensions: List<Extension> = listOf(
-                                            GiVolumeExtension(engineContext),
+                                            GiVolumeExtension(engineContext, baseExtensions.pointLightExtension.deferredRendererExtension),
                                             EnvironmentProbeExtension(engineContext)
                                       )): Updatable {
     var currentCycle: Long = 0
@@ -71,33 +70,47 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
     val managers: ManagerRegistry = SimpleManagerRegistry()
     val entitySystems = SimpleEntitySystemRegistry()
-    val baseExtensions = BaseExtensions(engineContext)
 
     val entityManager = EntityManager(
         baseExtensions.modelComponentExtension.componentSystem,
         baseExtensions.materialExtension.manager
     ).also { managers.register(it) }
 
-    val extensions = (baseExtensions + engineContext.additionalExtensions + nonBaseExtensions).also {
-        register(it)
-    }
+    val extensions = (baseExtensions + engineContext.additionalExtensions + nonBaseExtensions)
 
     val materialManager = baseExtensions.materialExtension.manager
     val modelComponentManager = baseExtensions.modelComponentExtension.manager
 
+    private val initiallyDrawnRenderSystem = object : RenderSystem {
+        override fun render(result: DrawResult, renderState: RenderState) {
+            isInitiallyDrawn = true
+        }
+    }
     init {
-        engineContext.renderSystems.add(object : RenderSystem {
-            override fun render(result: DrawResult, renderState: RenderState) {
-                isInitiallyDrawn = true
-            }
-        })
-        engineContext.eventBus.register(this)
-        baseExtensions.forEach { extension ->
+        extensions.forEach { extension ->
+            extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
+            extension.entitySystem?.let { entitySystems.register(it) }
+            extension.manager?.let { managers.register(it) }
+        }
+
+        extensions.forEach { extension ->
             extension.run {
                 onInit()
             }
         }
     }
+
+    fun afterSetScene() {
+        register(extensions)
+        engineContext.renderSystems.add(initiallyDrawnRenderSystem)
+        engineContext.eventBus.register(this)
+    }
+    fun afterUnsetScene() {
+        deregister(extensions)
+        engineContext.renderSystems.remove(initiallyDrawnRenderSystem)
+        engineContext.eventBus.unregister(this)
+    }
+
     var activeCamera: Camera = cameraEntity.getComponent(Camera::class.java)!!
 
     fun restoreWorldCamera() {
@@ -197,14 +210,23 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
 fun Scene.register(extensions: List<Extension>) {
     extensions.forEach { extension ->
-        extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
-        extension.entitySystem?.let { entitySystems.register(it) }
         extension.renderSystem?.let { engineContext.renderSystems.add(it) }
-        extension.manager?.let { managers.register(it) }
         extension.deferredRendererExtension?.let {
             engineContext.addResourceContext.launch {
                 engineContext.backend.gpuContext {
                     engineContext.extensibleDeferredRenderer?.extensions?.add(it)
+                }
+            }
+        }
+        Unit
+    }
+}
+fun Scene.deregister(extensions: List<Extension>) {
+    extensions.forEach { extension ->
+        extension.deferredRendererExtension?.let {
+            engineContext.addResourceContext.launch {
+                engineContext.backend.gpuContext {
+                    engineContext.extensibleDeferredRenderer?.extensions?.remove(it)
                 }
             }
         }

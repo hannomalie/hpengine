@@ -12,7 +12,6 @@ import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.vertexbuffer.drawInstancedBaseVertex
 import de.hanno.hpengine.engine.vertexbuffer.drawLinesInstancedBaseVertex
 import org.jetbrains.kotlin.util.profile
@@ -29,7 +28,7 @@ fun VertexIndexBuffer.draw(renderBatch: RenderBatch, program: Program<*>, bindIn
 }
 
 fun IndexBuffer.draw(renderBatch: RenderBatch, program: Program<*>, bindIndexBuffer: Boolean = true, mode: PrimitiveMode = PrimitiveMode.Triangles): Int {
-    return this.actuallyDraw(renderBatch, program, bindIndexBuffer, mode)
+    return actuallyDraw(renderBatch, program, bindIndexBuffer, mode)
 }
 
 fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand: DrawElementsIndirectCommand,
@@ -41,7 +40,7 @@ fun IndexBuffer.actuallyDraw(entityBufferIndex: Int, drawElementsIndirectCommand
 
     return when(mode) {
         PrimitiveMode.Lines -> drawLinesInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer)
-        PrimitiveMode.Triangles -> drawInstancedBaseVertex(this, drawElementsIndirectCommand)
+        PrimitiveMode.Triangles -> drawInstancedBaseVertex(drawElementsIndirectCommand, bindIndexBuffer)
     }
 }
 

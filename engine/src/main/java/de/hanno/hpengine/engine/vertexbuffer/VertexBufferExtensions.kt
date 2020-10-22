@@ -61,8 +61,11 @@ fun drawLinesInstancedBaseVertex(indexCount: Int, instanceCount: Int): Int {
     return indexCount / 3
 }
 
-fun drawInstancedBaseVertex(indexBuffer: IndexBuffer?, command: DrawElementsIndirectCommand): Int {
-    return drawInstancedBaseVertex(indexBuffer, command.count, command.primCount, command.firstIndex, command.baseVertex)
+fun IndexBuffer.drawInstancedBaseVertex(command: DrawElementsIndirectCommand, bindIndexBuffer: Boolean): Int {
+    return drawInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex, bindIndexBuffer)
+}
+fun drawInstancedBaseVertex(command: DrawElementsIndirectCommand): Int {
+    return drawInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex)
 }
 
 @JvmOverloads
@@ -96,15 +99,17 @@ fun VertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
  * @param baseVertexIndex the integer index, not the byte offset
  * @return
  */
-fun drawInstancedBaseVertex(indexBuffer: IndexBuffer?, indexCount: Int, instanceCount: Int, indexOffset: Int, baseVertexIndex: Int): Int {
-    if (indexBuffer != null) {
-        indexBuffer.bind()
-        GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
-    } else {
-        GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, indexCount/3, instanceCount)
+fun IndexBuffer.drawInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int, baseVertexIndex: Int, bindIndexBuffer: Boolean): Int {
+    if (bindIndexBuffer) {
+        bind()
     }
+    GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
 
-    return indexCount
+    return indexCount/3
+}
+fun drawInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int, baseVertexIndex: Int): Int {
+    GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
+    return instanceCount * (indexCount/3)
 }
 
 fun multiDrawElementsIndirectCount(indexBuffer: IndexBuffer,

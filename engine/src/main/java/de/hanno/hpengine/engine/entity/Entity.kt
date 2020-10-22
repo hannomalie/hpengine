@@ -37,6 +37,7 @@ class ExtensionState<R, T>(val defaultValue: T): ReadWriteProperty<R, T> {
 
     override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
         receiverToProperty.putIfAbsent(thisRef, SimpleProperty<R, T>(value))
+        (receiverToProperty[thisRef] as SimpleProperty<R, T>).setValue(thisRef, property, value)
     }
 }
 

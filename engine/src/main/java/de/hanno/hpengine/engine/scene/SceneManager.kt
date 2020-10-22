@@ -14,6 +14,8 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
             addResourceContext.locked {
                 field = value
             }
+            field.afterUnsetScene()
+            value.afterSetScene()
             afterSetScene(field, value)
         }
 

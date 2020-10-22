@@ -48,7 +48,7 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
-    val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
+    val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext, nonBaseExtensions = emptyList()))
 
     init {
         sceneManager.scene.extensions.forEach { it.init(sceneManager) }

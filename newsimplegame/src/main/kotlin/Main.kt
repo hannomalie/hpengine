@@ -22,7 +22,7 @@ object Game {
         val (engine, editor) = EngineWithEditor(config)
 
         editor.frame.onSceneReload = {
-            engine.scene = engine.lotsOfPlanesScene
+            engine.scene = engine.sponzaScene
         }
         editor.frame.onSceneReload?.invoke()
 

@@ -130,15 +130,16 @@ void main()
 	    resultingColor.rgb = max(vec3(.005) * color.rgb, resultingColor.rgb);
 		resultingColor.rgb += color.rgb * directionalLight.color * clamp(dot(-directionalLight.direction, -PN_world), 0, 1);
 	} else {
-	    resultingColor.rgb = color.rgb * opaqueness;
+	    resultingColor.rgb = color.rgb;
 	}
+    resultingColor.rgb *= opaqueness;
 
 //Color based weighting, dunno yet if this makes sense for me
 //https://github.com/lukexi/wboit/blob/master/test/renderPass.frag
     float weight = max(min(1.0, max(max(resultingColor.r, resultingColor.g), resultingColor.b) * color.a), color.a)
                  * clamp(0.03 / (1e-5 + pow(vertexShaderOutput.position_clip.z / 200, 4.0)), 1e-2, 3e3);
 
-    const bool depthBasedWeight = true;
+    const bool depthBasedWeight = false;
     if(depthBasedWeight) {
 //        https://github.com/gnayuy/wboit/blob/master/fshader.glsl
         weight = pow(color.a + 0.01f, 4.0f) + max(0.01f, min(3000.0f, 0.3f / (0.00001f + pow(abs(gl_FragCoord.z) / 200.0f, 4.0f))));

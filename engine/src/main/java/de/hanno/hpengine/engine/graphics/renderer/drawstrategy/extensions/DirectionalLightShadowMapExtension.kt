@@ -49,7 +49,6 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "directional_shadowmap_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "shadowmap_fragment.glsl")),
             Uniforms.Empty)
-    var voxelConeTracingExtension: VoxelConeTracingExtension? = null
 
     private var renderedInCycle: Long = 0
 
@@ -93,9 +92,10 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         directionalShadowPassProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
         directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
 
+        renderState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in visibles) {
             if(batch.isShadowCasting) {
-                renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, directionalShadowPassProgram)
+                renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, directionalShadowPassProgram, bindIndexBuffer = false)
             }
         }
         engineContext.textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)

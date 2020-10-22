@@ -45,7 +45,6 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -81,8 +80,6 @@ fun TextureManager.createGIVolumeGrids(gridSize: Int = 256): VoxelConeTracingExt
 
 class VoxelConeTracingExtension(
         private val engineContext: EngineContext,
-        directionalLightShadowMapExtension: DirectionalLightShadowMapExtension?,
-        val renderer: RenderSystem,
         val pointLightExtension: BvHPointLightSecondPassExtension) : RenderExtension<OpenGl> {
 
     private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
@@ -143,10 +140,6 @@ class VoxelConeTracingExtension(
     private var litInCycle: Long = -1
     private val entityVoxelizedInCycle = mutableMapOf<String, Long>()
 
-    init {
-        directionalLightShadowMapExtension?.voxelConeTracingExtension = this
-    }
-
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
@@ -177,8 +170,9 @@ class VoxelConeTracingExtension(
 
     fun voxelizeScene(renderState: RenderState, batches: List<RenderBatch>) {
         if(batches.isEmpty()) return
+        println("Voxelizing....")
 
-        val voxelGrids = renderState[this.voxelGrids]
+        val voxelGrids = renderState[voxelGrids]
         val maxGridCount = voxelGrids.size
         for(voxelGridIndex in 0 until maxGridCount) {
             val currentVoxelGrid = voxelGrids[voxelGridIndex]
@@ -225,9 +219,10 @@ class VoxelConeTracingExtension(
                     firstPassResult.reset()
                     pipeline.draw(renderState, voxelizerStatic as Program<StaticFirstPassUniforms>, voxelizerAnimated as Program<AnimatedFirstPassUniforms>, firstPassResult)
                 } else {
+                    renderState.vertexIndexBufferStatic.indexBuffer.bind()
                     for (entity in batches) {
                         voxelizerStatic.setTextureUniforms(entity.materialInfo.maps)
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizerStatic)
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizerStatic, bindIndexBuffer = false)
                         entityVoxelizedInCycle[entity.entityName] = renderState.cycle
                     }
                 }

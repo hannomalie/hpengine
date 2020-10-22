@@ -404,7 +404,7 @@ void main(void) {
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
 	vec3 environmentLight = 4*environmentLightAO.rgb;
-	environmentLight += vec3(.1) * color.rgb;
+	environmentLight += vec3(0.25f) * color.rgb;
 	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 
@@ -435,7 +435,7 @@ void main(void) {
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
 
-//    out_color.rgb = vec3(1,0,0);
+//    out_color.rgb = vec3(ambientTerm.rgb);
 //    out_color.rgb = 0.2*vec3(additiveness);
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;
 //	out_color.b = 0;

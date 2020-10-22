@@ -98,10 +98,10 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         ForwardRenderExtension(engineContext),
         directionalLightSecondPassExtension,
 //        PointLightSecondPassExtension(engineContext),
-        AOScatteringExtension(engineContext),
+        AOScatteringExtension(engineContext)
 //        AmbientCubeGridExtension(engineContext),
 //        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
-        BvHPointLightSecondPassExtension(engineContext)
+//        BvHPointLightSecondPassExtension(engineContext)
     )
     override val eventBus
         get() = backend.eventBus

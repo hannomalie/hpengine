@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
@@ -28,7 +29,9 @@ import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
+import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -45,6 +48,8 @@ import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.Vector3f
 
 interface Extension {
@@ -113,14 +118,19 @@ class CustomComponentExtension(val engineContext: EngineContext): Extension {
 class MaterialExtension(val engineContext: EngineContext): Extension {
     override val manager = MaterialManager(engineContext)
 }
-class GiVolumeExtension(val engineContext: EngineContext): Extension {
+class GiVolumeExtension(val engineContext: EngineContext,
+                        val pointLightExtension: BvHPointLightSecondPassExtension): Extension {
     override val componentSystem = SimpleComponentSystem(GIVolumeComponent::class.java)
     override val componentClass: Class<*> = GIVolumeComponent::class.java
-    override val entitySystem = GIVolumeSystem(engineContext)
-    override val deferredRendererExtension = entitySystem.voxelConeTracingExtension
+    override val deferredRendererExtension = VoxelConeTracingExtension(engineContext, pointLightExtension)
+
+    override val entitySystem = GIVolumeSystem(engineContext, deferredRendererExtension)
     override fun Scene.onInit() {
         entity("GlobalGiGrid") {
             addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(100f)))
+            customComponent { scene, _ ->
+                boundingVolume.setLocalAABB(scene.aabb.min, scene.aabb.max)
+            }
         }
         // TODO: Global grid makes sense maybe, but this one shouldn't live here forever, but I use it for testing purposes
         entity("SecondGiGrid") {
@@ -220,6 +230,7 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
 class PointLightExtension(val engineContext: EngineContext): Extension {
     override val componentSystem = PointLightComponentSystem()
     override val renderSystem = PointLightSystem(engineContext)
+    override val deferredRendererExtension = BvHPointLightSecondPassExtension(engineContext)
 }
 
 class AreaLightExtension(val engineContext: EngineContext): Extension {
