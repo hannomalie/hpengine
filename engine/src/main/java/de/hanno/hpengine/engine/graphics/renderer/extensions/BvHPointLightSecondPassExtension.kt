@@ -103,7 +103,7 @@ fun MutableList<out BvhNode>.clustersOfN(n: Int = 4): MutableList<BvhNode.Inner>
 
 fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
     var candidates: MutableList<out BvhNode> = toMutableList()
-    while(candidates.size > 1) {
+    while(candidates.any { it is BvhNode.Leaf } || candidates.size > 1) {
         candidates = candidates.clustersOfN()
     }
     return candidates.first() as BvhNode.Inner

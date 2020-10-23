@@ -23,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
@@ -244,7 +245,9 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
 
 class PointLightExtension(val engineContext: EngineContext): Extension {
     override val componentSystem = PointLightComponentSystem()
-    override val renderSystem = PointLightSystem(engineContext)
+    val pointLightSystem = PointLightSystem(engineContext)
+    override val renderSystem = pointLightSystem
+    override val entitySystem = renderSystem
     override val deferredRendererExtension = BvHPointLightSecondPassExtension(engineContext)
 }
 
