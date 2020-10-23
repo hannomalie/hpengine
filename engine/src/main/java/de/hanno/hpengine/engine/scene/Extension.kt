@@ -27,11 +27,15 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -92,6 +96,14 @@ class BaseExtensions private constructor(val engineContext: EngineContext, priva
     val inputComponentExtension = InputComponentExtension(engineContext).add()
     val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
     val skyboxExtension = SkyboxExtension(engineContext).add()
+    val forwardExtension = ForwardExtension(engineContext).add()
+}
+class ForwardExtension(val engineContext: EngineContext): Extension {
+    override val deferredRendererExtension = ForwardRenderExtension(engineContext)
+}
+
+class AmbientOcclusionExtension(val engineContext: EngineContext): Extension {
+    override val deferredRendererExtension = AOScatteringExtension(engineContext)
 }
 class PhysicsExtension(val engineContext: EngineContext): Extension {
     override val manager = PhysicsManager(engineContext, config = engineContext.config)
@@ -141,7 +153,10 @@ class GiVolumeExtension(val engineContext: EngineContext,
 }
 
 class DirectionalLightExtension(val engineContext: EngineContext): Extension {
-    override val deferredRendererExtension = DirectionalLightShadowMapExtension(engineContext)
+    override val deferredRendererExtension = CompoundExtension(
+        DirectionalLightShadowMapExtension(engineContext),
+        DirectionalLightSecondPassExtension(engineContext)
+    )
     override val entitySystem = DirectionalLightSystem(engineContext)
     override val renderSystem = entitySystem
     override fun Scene.onInit() {

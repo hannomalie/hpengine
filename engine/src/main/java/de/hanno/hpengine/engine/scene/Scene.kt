@@ -58,6 +58,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
                                       val engineContext: EngineContext,
                                       val baseExtensions: BaseExtensions = BaseExtensions(engineContext),
                                       val nonBaseExtensions: List<Extension> = listOf(
+                                            AmbientOcclusionExtension(engineContext),
                                             GiVolumeExtension(engineContext, baseExtensions.pointLightExtension.deferredRendererExtension),
                                             EnvironmentProbeExtension(engineContext)
                                       )): Updatable {
