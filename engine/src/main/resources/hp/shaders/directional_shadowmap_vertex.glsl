@@ -2,6 +2,10 @@ in vec3 in_Position;
 in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
+#ifdef ANIMATED
+in vec4 in_Weights;
+in ivec4 in_JointIndices;
+#endif
 
 uniform int indirect = 1;
 uniform int entityIndex;
@@ -31,6 +35,20 @@ layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
 
+#ifdef ANIMATED
+layout(std430, binding=6) buffer _joints {
+	mat4 joints[2000];
+};
+
+layout(std430, binding=7) buffer _vertices {
+	VertexAnimatedPacked vertices[];
+};
+#else
+layout(std430, binding=7) buffer _vertices {
+	VertexPacked vertices[];
+};
+#endif
+
 void main()
 {
 	int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
@@ -44,15 +62,27 @@ void main()
 
     mat4 modelMatrix = mat4(entity.modelMatrix);
 
-	pass_WorldPosition = modelMatrix * vec4(in_Position.xyz,1);
+	#ifdef ANIMATED
+	VertexAnimatedPacked vertex;
+	#else
+	VertexPacked vertex;
+	#endif
+
+	int vertexIndex = gl_VertexID;
+	vertex = vertices[vertexIndex];
+	vec4 positionModel = vertex.position;
+	vec3 normal = vertex.normal.xyz;
+	vec2 texCoord = vertex.texCoord.xy;
+
+	pass_WorldPosition = modelMatrix * vec4(positionModel.xyz,1);
 	pass_Position = projectionMatrix * viewMatrix * pass_WorldPosition;
     gl_Position = pass_Position;
-	normal_world.x = dot(modelMatrix[0].xyz, in_Normal);
-    normal_world.y = dot(modelMatrix[1].xyz, in_Normal);
-    normal_world.z = dot(modelMatrix[2].xyz, in_Normal);
-	normal_world = (inverse(transpose(modelMatrix)) * vec4(in_Normal,0)).xyz;
+	normal_world.x = dot(modelMatrix[0].xyz, normal);
+    normal_world.y = dot(modelMatrix[1].xyz, normal);
+    normal_world.z = dot(modelMatrix[2].xyz, normal);
+	normal_world = (inverse(transpose(modelMatrix)) * vec4(normal,0)).xyz;
 	//normal_world = modelMatrix * vec4(in_Normal,0)).xyz;
 	
-	texCoord = in_TextureCoord;
-	texCoord.y = 1 - in_TextureCoord.y;
+	texCoord = texCoord;
+	texCoord.y = 1 - texCoord.y;
 }

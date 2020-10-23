@@ -91,6 +91,8 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
         directionalShadowPassProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
         directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+        directionalShadowPassProgram.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
+        directionalShadowPassProgram.bindShaderStorageBuffer(7, renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray)
 
         renderState.vertexIndexBufferStatic.indexBuffer.bind()
         for (batch in visibles) {
