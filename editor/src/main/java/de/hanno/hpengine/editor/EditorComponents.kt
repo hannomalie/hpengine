@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl

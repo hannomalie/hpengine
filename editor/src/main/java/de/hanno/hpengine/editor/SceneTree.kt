@@ -162,7 +162,7 @@ open class SceneTree(val engineContext: EngineContext,
                                 add(JMenuItem("PointLight").apply {
                                     addActionListener {
                                         GlobalScope.launch {
-                                            val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f), 10f)
+                                            val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f))
                                             scene.addComponent(selection, component)
                                         }
                                     }

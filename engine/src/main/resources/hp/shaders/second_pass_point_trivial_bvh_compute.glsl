@@ -52,7 +52,7 @@ float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight 
 	//    closestDepth *= 250.0;
 	float currentDepth = length(fragToLight);
 	float bias = 0.2;
-	float shadow = currentDepth - bias < closestDepth ? 1.0 : 0.0;
+	float shadow = (currentDepth - bias) < closestDepth ? 1.0 : 0.0;
 
 	//	const float SHADOW_EPSILON = 0.001;
 	//	float E_x2 = moments.y;
@@ -108,7 +108,7 @@ void main(void) {
 		if(isInsideSphere(positionWorld.xyz, node.positionRadius)) {
 			if(isLeaf) {
 				PointLight light = pointLights[node.lightIndex];
-				float attenuation = calculateAttenuation(distance(positionWorld, node.positionRadius.xyz), node.positionRadius.w);
+				float attenuation = calculateAttenuation(distance(positionWorld, light.position), light.radius);
 
 				int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 				Material material = materials[materialIndex];

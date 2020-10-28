@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 
 class PointLight @JvmOverloads constructor(override val entity: Entity,
                  val color: Vector4f,
-                 var radius: Float = 10f,
+                 var radius: Float = 50f,
                  var renderedSphereRadius: Float = 0f) : Component, Serializable, Bufferable {
 
     fun draw(program: Program<Uniforms>?) {

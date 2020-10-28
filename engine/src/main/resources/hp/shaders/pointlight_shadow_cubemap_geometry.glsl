@@ -4,8 +4,6 @@ layout(triangle_strip, max_vertices = 18) out; // 6 faces * 3 vertices per cubem
 //include(globals_structs.glsl)
 
 in vec4 vs_pass_WorldPosition[3];
-in vec4 vs_pass_ProjectedPosition[3];
-in float vs_clip[3];
 in vec2 vs_pass_texCoord[3];
 flat in Entity vs_pass_Entity[3];
 flat in Material vs_pass_Material[3];
@@ -16,9 +14,6 @@ uniform mat4[6] projectionMatrices;
 
 uniform int lightIndex = 0;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 viewProjectionMatrix;
 uniform vec3 pointLightPositionWorld;
 
 out vec4 pass_WorldPosition;

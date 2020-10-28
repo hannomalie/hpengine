@@ -135,10 +135,6 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         if(engineContext.config.debug.isDrawBoundingVolumes) {
 
             drawlinesExtension.renderFirstPass(engineContext.backend, gpuContext, result.firstPassResult, renderState)
-        } else if(engineContext.config.debug.isDrawPointLightShadowMaps) {
-
-            val cubeMapArrayRenderTarget = (renderState.lightState.pointLightShadowMapStrategy as? CubeShadowMapStrategy)?.cubemapArrayRenderTarget
-            textureRenderer.renderCubeMapDebug(deferredRenderingBuffer.gBuffer, cubeMapArrayRenderTarget, cubeMapIndex = 0)
         } else {
             profiled("FirstPass") {
 

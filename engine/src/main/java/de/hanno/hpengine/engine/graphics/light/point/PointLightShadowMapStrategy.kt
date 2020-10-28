@@ -54,9 +54,9 @@ interface PointLightShadowMapStrategy {
 class CubeShadowMapStrategy(internal val engineContext: EngineContext, private val pointLightSystem: PointLightSystem): PointLightShadowMapStrategy {
     var pointLightShadowMapsRenderedInCycle: Long = 0
     private var pointCubeShadowPassProgram = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cube_fragment.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/pointlight_shadow_cubemap_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/pointlight_shadow_cube_fragment.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/pointlight_shadow_cubemap_geometry.glsl")),
             Defines(),
             Uniforms.Empty
     )
@@ -73,7 +73,7 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
             engineContext.gpuContext,
             cubeMapArray.dimension.width,
             cubeMapArray.dimension.height,
-            "CubeMapArrayRenderTarget",
+            "PointlightCubeMapArrayRenderTarget",
             Vector4f(0f, 0f, 0f, 0f),
             cubeMapArray
     )
@@ -106,6 +106,7 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+                pointCubeShadowPassProgram.bindShaderStorageBuffer(7, renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray)
                 pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
                 pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
                 pointCubeShadowPassProgram.setUniform("lightIndex", i)
@@ -126,8 +127,9 @@ class CubeShadowMapStrategy(internal val engineContext: EngineContext, private v
                 }
 
                 profiled("PointLight shadowmap entity rendering") {
-                    for (batch in renderState.renderBatchesStatic) {
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, pointCubeShadowPassProgram)
+                    renderState.vertexIndexBufferStatic.indexBuffer.bind()
+                    for (batch in renderState.renderBatchesStatic.filter { it.materialInfo.isShadowCasting }) { // TODO: Better filtering which entity is in light radius
+                        renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, pointCubeShadowPassProgram, bindIndexBuffer = false)
                     }
                 }
             }

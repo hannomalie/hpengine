@@ -75,11 +75,11 @@ object ViewTask {
                         override fun intervalAdded(e: ListDataEvent?) {}
 
                         override fun contentsChanged(e: ListDataEvent) {
-                            val newConfig = selectedItem as OutputConfig
-                            when(newConfig) {
-                                OutputConfig.Default, is OutputConfig.Texture2D, is OutputConfig.TextureCubeMap -> newConfig
-                                is OutputConfig.RenderTargetCubeMapArray -> newConfig.copy(cubeMapIndex = directTextureOutputArrayIndexComboBoxModel.selectedItem as Int)
-                            }.let {  }
+                            val newConfig = when(val selectedItem = selectedItem) {
+                                OutputConfig.Default, is OutputConfig.Texture2D, is OutputConfig.TextureCubeMap -> selectedItem as OutputConfig
+                                is OutputConfig.RenderTargetCubeMapArray -> selectedItem.copy(cubeMapIndex = directTextureOutputArrayIndexComboBoxModel.selectedItem as Int)
+                                else -> throw IllegalStateException("This should never happen")
+                            }
                             outputConfig.set(newConfig)
                         }
                     })

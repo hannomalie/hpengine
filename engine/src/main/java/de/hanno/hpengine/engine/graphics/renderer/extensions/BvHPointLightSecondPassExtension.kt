@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
@@ -76,21 +77,27 @@ fun MutableList<out BvhNode>.clustersOfN(n: Int = 4): MutableList<BvhNode.Inner>
         val nearestAndSelf = nearest + first
         val pointsPerSphere = 8
         val dimensions = 3
-        val arrayPointSet = ArrayPointSet(dimensions, pointsPerSphere * nearestAndSelf.size).apply {
-            nearestAndSelf.forEachIndexed { sphereIndex, bvhNode ->
-                val min = bvhNode.boundingSphere.xyz.sub(Vector3f(bvhNode.boundingSphere.w))
-                val max = bvhNode.boundingSphere.xyz.add(Vector3f(bvhNode.boundingSphere.w))
-                val points = AABB(min, max).getPoints()
-                points.forEachIndexed { pointIndex, point ->
-                    this.set(sphereIndex* pointsPerSphere + pointIndex, 0, point.x.toDouble())
-                    this.set(sphereIndex* pointsPerSphere + pointIndex, 1, point.y.toDouble())
-                    this.set(sphereIndex* pointsPerSphere + pointIndex, 2, point.z.toDouble())
-                }
-            }
-        }
-        val enclosingSphere = Miniball(arrayPointSet).run {
-            Vector4f(center()[0].toFloat(), center()[1].toFloat(), center()[2].toFloat(), radius().toFloat())
-        }
+//        val arrayPointSet = ArrayPointSet(dimensions, pointsPerSphere * nearestAndSelf.size).apply {
+//            nearestAndSelf.forEachIndexed { sphereIndex, bvhNode ->
+//                val min = bvhNode.boundingSphere.xyz.sub(Vector3f(bvhNode.boundingSphere.w))
+//                val max = bvhNode.boundingSphere.xyz.add(Vector3f(bvhNode.boundingSphere.w))
+//                val points = AABB(min, max).getPoints()
+//                points.forEachIndexed { pointIndex, point ->
+//                    this.set(sphereIndex* pointsPerSphere + pointIndex, 0, point.x.toDouble())
+//                    this.set(sphereIndex* pointsPerSphere + pointIndex, 1, point.y.toDouble())
+//                    this.set(sphereIndex* pointsPerSphere + pointIndex, 2, point.z.toDouble())
+//                }
+//            }
+//        }
+//        val enclosingSphere = Miniball(arrayPointSet).run {
+//            Vector4f(center()[0].toFloat(), center()[1].toFloat(), center()[2].toFloat(), radius().toFloat())
+//        }
+        val enclosingSphere = nearestAndSelf.map { bvhNode ->
+            val min = bvhNode.boundingSphere.xyz.sub(Vector3f(bvhNode.boundingSphere.w))
+            val max = bvhNode.boundingSphere.xyz.add(Vector3f(bvhNode.boundingSphere.w))
+            AABB(min, max)
+        }.getSurroundingAABB().let { Vector4f(it.center.x, it.center.y, it.center.z, it.halfExtents.get(it.halfExtents.maxComponent())) }
+
         val innerNode = BvhNode.Inner(enclosingSphere).apply {
             nearestAndSelf.forEach {
                 this@apply.add(it)

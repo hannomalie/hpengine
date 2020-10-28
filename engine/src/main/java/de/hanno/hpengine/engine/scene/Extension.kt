@@ -79,7 +79,8 @@ interface Extension {
 }
 
 
-class BaseExtensions private constructor(val engineContext: EngineContext, private val extensions: MutableList<Extension>): List<Extension> by extensions {
+class BaseExtensions private constructor(val engineContext: EngineContext,
+                                         private val extensions: MutableList<Extension>): List<Extension> by extensions {
     constructor(engineContext: EngineContext): this(engineContext, mutableListOf())
 
     private fun <T: Extension> T.add(): T = also { extensions.add(it) }

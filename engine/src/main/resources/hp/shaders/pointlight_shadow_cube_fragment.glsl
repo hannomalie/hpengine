@@ -34,7 +34,6 @@ void main()
 //	} else if(gl_Layer == 1) {
 //	    out_Color.g = 1;
 //	}
-//	out_Color = vec4(0,1,0,0);
 //	out_Color = vec4(gl_FragCoord.xy/vec2(512,512),0,0);
 
 //	float dx = dFdx(depth);
@@ -43,7 +42,7 @@ void main()
     //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
     
 //    out_Color = vec4(moment1,moment2,0,0);//encode(normal_world));
-    //out_Color.rgba = vec4(1,0,0,1);
+//    out_Color.rgba = vec4(100,0,0,0);
 //	out_Color = vec4(pass_texCoord, 0, 1);
     /*vec3 diffuse = color;
     out_Diffuse = vec4(diffuse,1);
