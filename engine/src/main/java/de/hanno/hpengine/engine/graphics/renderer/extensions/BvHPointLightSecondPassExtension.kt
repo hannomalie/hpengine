@@ -19,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
@@ -172,6 +173,7 @@ class BvHPointLightSecondPassExtension(val engineContext: EngineContext): Render
         if (renderState.lightState.pointLights.isEmpty()) {
             return
         }
+        // TODO: Move this to update
         if(bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
             bvhReconstructedInCycle = renderState.cycle
             val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->

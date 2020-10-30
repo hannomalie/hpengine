@@ -214,11 +214,14 @@ class EditorComponents(val engineContext: EngineContext,
                 it.extensions.forEach { it.renderEditor(renderState, result) }
             }
 
-            engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
-            engineContext.gpuContext.blend = false
-            engineContext.gpuContext.depthTest = true
+            if(engineContext.config.debug.isDrawBoundingVolumes) {
+                engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+                engineContext.gpuContext.blend = false
+                engineContext.gpuContext.depthTest = true
 
-            engineContext.drawLines(vertices = renderState[lineVertices], verticesCount = renderState[lineVerticesCount].value, color = Vector3f(1f, 0f, 0f))
+                engineContext.drawLines(vertices = renderState[lineVertices], verticesCount = renderState[lineVerticesCount].value, color = Vector3f(1f, 0f, 0f))
+            }
+
         }
         if(config.debug.visualizeProbes) {
             engineContext.renderSystems.filterIsInstance<ExtensibleDeferredRenderer>().firstOrNull()?.let {

@@ -8,26 +8,20 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.light.point.CubeShadowMapStrategy
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLinesExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -39,8 +33,6 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import kotlinx.coroutines.CoroutineScope
-import org.lwjgl.opengl.GL11
 
 class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem, Backend<OpenGl> {
     val window: Window<OpenGl> = engineContext.window
@@ -51,7 +43,6 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     val renderStateManager: RenderStateManager = engineContext.renderStateManager
     val materialManager: MaterialManager = engineContext.materialManager
 
-    val drawlinesExtension = DrawLinesExtension(engineContext)
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
 
@@ -132,39 +123,34 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         gpuContext.depthMask = true
         deferredRenderingBuffer.use(gpuContext, true)
 
-        if(engineContext.config.debug.isDrawBoundingVolumes) {
+        profiled("FirstPass") {
 
-            drawlinesExtension.renderFirstPass(engineContext.backend, gpuContext, result.firstPassResult, renderState)
-        } else {
-            profiled("FirstPass") {
+            profiled("MainPipeline") {
+                renderState[pipeline].draw(renderState, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
+            }
 
-                profiled("MainPipeline") {
-                    renderState[pipeline].draw(renderState, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
-                }
-
-                for (extension in extensions) {
-                    profiled(extension.javaClass.simpleName) {
-                        extension.renderFirstPass(backend, gpuContext, result.firstPassResult, renderState)
-                    }
+            for (extension in extensions) {
+                profiled(extension.javaClass.simpleName) {
+                    extension.renderFirstPass(backend, gpuContext, result.firstPassResult, renderState)
                 }
             }
-            profiled("SecondPass") {
-                profiled("HalfResolution") {
-                    deferredRenderingBuffer.halfScreenBuffer.use(gpuContext, true)
-                    for (extension in extensions) {
-                        extension.renderSecondPassHalfScreen(renderState, result.secondPassResult)
-                    }
-                }
-                deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
-                for (extension in extensions) {
-                    profiled(extension.javaClass.simpleName) {
-                        extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
-                    }
-                }
-            }
-            deferredRenderingBuffer.lightAccumulationBuffer.unUse()
-            combinePassExtension.renderCombinePass(renderState)
         }
+        profiled("SecondPass") {
+            profiled("HalfResolution") {
+                deferredRenderingBuffer.halfScreenBuffer.use(gpuContext, true)
+                for (extension in extensions) {
+                    extension.renderSecondPassHalfScreen(renderState, result.secondPassResult)
+                }
+            }
+            deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
+            for (extension in extensions) {
+                profiled(extension.javaClass.simpleName) {
+                    extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
+                }
+            }
+        }
+        deferredRenderingBuffer.lightAccumulationBuffer.unUse()
+        combinePassExtension.renderCombinePass(renderState)
 
         runCatching {
             if(config.effects.isEnablePostprocessing) {
