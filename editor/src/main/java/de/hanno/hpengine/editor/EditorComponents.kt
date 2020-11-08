@@ -359,7 +359,7 @@ class EditorComponents(val engineContext: EngineContext,
             addTask(ViewTask(engineContext, sceneManager, config, this, ::outPutConfig))
             addTask(SceneTask(engineContext, sceneManager, this))
             addTask(TransformTask(this, selectionSystem))
-            addTask(TextureTask(engineContext, sceneManager, editor))
+            addTask(TextureTask(engineContext, sceneManager, editor, selectionSystem))
             addTask(MaterialRibbonTask(engineContext, sceneManager, editor, selectionSystem))
         }
     }

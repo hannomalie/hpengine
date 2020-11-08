@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
-import de.hanno.hpengine.engine.backend.OpenGlBackendKt;
+import de.hanno.hpengine.engine.backend.EngineContextKt;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.entity.Entity;
@@ -38,10 +38,10 @@ public class EnvironmentProbe implements Component {
 		box = new AABB(center, size);
 		sampler = new EnvironmentSampler(entity, this, center,
 				resolution, resolution, probeIndex,
-				this.environmentProbeManager, OpenGlBackendKt.getProgramManager(engine),
-				engine.getConfig(), OpenGlBackendKt.getTextureManager(engine), null); // TODO: Pass scene not null here...
+				this.environmentProbeManager, EngineContextKt.getProgramManager(engine),
+				engine.getConfig(), EngineContextKt.getTextureManager(engine), null); // TODO: Pass scene not null here...
         this.setWeight(weight);
-        OpenGlBackendKt.getEventBus(engine).register(this);
+        EngineContextKt.getEventBus(engine).register(this);
     }
 
 	public void draw(RenderState extract) {

@@ -1,12 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.MaterialInfo
-import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import org.joml.Vector3f
 import java.util.ArrayList
 
@@ -28,7 +24,7 @@ class RenderBatch(
         var centerWorld: Vector3f = Vector3f(),
         var animated : Boolean = false,
         var boundingSphereRadius: Float = 0.0f,
-        var materialInfo: MaterialInfo = SimpleMaterialInfo("Dummy"),
+        var materialInfo: MaterialInfo = MaterialInfo(),
         var entityBufferIndex: Int = 0) {
 
     val isShadowCasting: Boolean

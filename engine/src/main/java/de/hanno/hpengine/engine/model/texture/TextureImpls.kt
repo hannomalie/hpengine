@@ -8,15 +8,26 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.*
+import de.hanno.hpengine.engine.model.texture.TextureManager.Companion.convertCubeMapData
 import de.hanno.hpengine.engine.model.texture.TextureManager.Companion.glAlphaColorModel
 import de.hanno.hpengine.engine.model.texture.TextureManager.Companion.glColorModel
 import jogl.DDSImage
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL12.GL_BGR
+import org.lwjgl.opengl.GL12.GL_BGRA
 import org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R
 import org.lwjgl.opengl.GL13.glCompressedTexSubImage2D
 import java.awt.image.BufferedImage
+import java.awt.image.BufferedImage.TYPE_3BYTE_BGR
+import java.awt.image.BufferedImage.TYPE_4BYTE_ABGR
+import java.awt.image.BufferedImage.TYPE_4BYTE_ABGR_PRE
+import java.awt.image.BufferedImage.TYPE_INT_BGR
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -47,7 +58,7 @@ data class CubeMap(override val dimension: TextureDimension2D,
                    override var handle: Long,
                    override val textureFilterConfig: TextureFilterConfig,
                    override val wrapMode: Int,
-                   override var uploadState: UploadState) : Texture {
+                   override var uploadState: UploadState) : ICubeMap {
     companion object {
         operator fun invoke(gpuContext: GpuContext<OpenGl>, dimension: TextureDimension2D, filterConfig: TextureFilterConfig, internalFormat: Int, wrapMode: Int = GL_REPEAT): CubeMap {
             val (textureId, internalFormat, handle) = allocateTexture(gpuContext, Texture2DUploadInfo(dimension), GlTextureTarget.TEXTURE_CUBE_MAP, filterConfig, internalFormat, wrapMode)
@@ -56,69 +67,128 @@ data class CubeMap(override val dimension: TextureDimension2D,
     }
 }
 
-data class FileBasedCubeMap(val path: String, val backingTexture: CubeMap): Texture by backingTexture {
-    companion object {
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, directory: AbstractDirectory, srgba: Boolean = false): FileBasedCubeMap {
-            return invoke(gpuContext, path, directory.resolve(path), srgba)
-        }
+enum class BackingFileMode {
+    Single,
+    Six
+}
+data class FileBasedCubeMap(val path: String, val backingTexture: ICubeMap, val files: List<File>, val isBgrFormat: Boolean = false): ICubeMap by backingTexture {
+    init {
+        require(files.isNotEmpty()) { "Cannot create CubeMap without any files!" }
+        require(files.size == 1 || files.size == 6) { "Pass either 1 or 6 images to create a CubeMap!" }
+    }
+    val backingFileMode = if(files.size == 1) BackingFileMode.Single else BackingFileMode.Six
+    val file = files.first()
+    val bufferedImage: BufferedImage = ImageIO.read(file)
+    val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) {
+        if (isBgrFormat) GL_BGRA else GL_RGBA
+    } else {
+        if(isBgrFormat) GL_BGR else GL_RGB
+    }
+    val width = bufferedImage.width
+    val height = bufferedImage.height
+    val tileDimension = if(backingFileMode == BackingFileMode.Six) { TextureDimension(width, height) } else TextureDimension(width / 4, height / 3)
 
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, file: File, srgba: Boolean = false): FileBasedCubeMap {
+    constructor(path: String, backingTexture: ICubeMap, vararg file: File): this(path, backingTexture, file.toList())
+
+    fun load(gpuContext: GpuContext<*>) = CompletableFuture.supplyAsync {
+        if(backingFileMode == BackingFileMode.Six) {
+            GlobalScope.launch {
+                files.map {
+                    GlobalScope.async {
+                        ImageIO.read(it)
+                    }
+                }.awaitAll().let { upload(gpuContext, it.getCubeMapUploadInfo()) }
+            }
+        } else {
             val bufferedImage: BufferedImage = ImageIO.read(file)
-            val srcPixelFormat = if (bufferedImage.colorModel.hasAlpha()) {
-                GL_RGBA
-            } else {
-                GL_RGB
-            }
-            val width = bufferedImage.width
-            val height = bufferedImage.height
+            upload(gpuContext, bufferedImage.getCubeMapUploadInfo())
+        }
+    }
 
-            val data = TextureManager.convertCubeMapData(bufferedImage, width, height, glAlphaColorModel, glColorModel)
+    fun upload(gpuContext: GpuContext<*>, cubeMapFaceTarget: Int, buffer: ByteBuffer) = gpuContext.invoke {
+        GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
+        glTexSubImage2D(cubeMapFaceTarget,
+                0,
+                0,
+                0,
+                tileDimension.width,
+                tileDimension.height,
+                srcPixelFormat,
+                GL_UNSIGNED_BYTE,
+                buffer)
+    }
 
-            val buffers = data.map { byteArray ->
-                ByteBuffer.allocateDirect(byteArray.size).apply {
-                    buffer(this, byteArray)
-                }
-            }
-            val dimension = TextureDimension(width / 4, height / 3)
-            val uploadInfo = CubeMapUploadInfo(dimension, buffers)
+    fun upload(gpuContext: GpuContext<*>, info: CubeMapUploadInfo) = gpuContext.invoke {
+        gpuContext.bindTexture(this)
 
+        upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[0])
+        upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, info.buffers[1])
+        upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, info.buffers[2])
+        upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, info.buffers[3])
+        upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, info.buffers[4])
+        upload(gpuContext, GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, info.buffers[5])
+
+        gpuContext.invoke {
+            GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_CUBE_MAP.glTarget)
+        }
+    }
+
+    companion object {
+
+        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, files: List<File>, srgba: Boolean = false): FileBasedCubeMap {
             val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 
-            val fileBasedCubeMap = FileBasedCubeMap(path, CubeMap(gpuContext, dimension, TextureFilterConfig(), internalFormat, GL_REPEAT))
+            val bufferedImage: BufferedImage = ImageIO.read(files.first())
+            val width = bufferedImage.width
+            val height = bufferedImage.height
+            val tileDimension = TextureDimension(width, height)
 
-            fun load(cubeMapFaceTarget: Int, buffer: ByteBuffer) = gpuContext.invoke {
-                GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0)
-                glTexSubImage2D(cubeMapFaceTarget,
-                        0,
-                        0,
-                        0,
-                        dimension.width,
-                        dimension.height,
-                        srcPixelFormat,
-                        GL_UNSIGNED_BYTE,
-                        buffer)
-            }
-            fun FileBasedCubeMap.upload(info: CubeMapUploadInfo) = gpuContext.invoke {
-                gpuContext.bindTexture(fileBasedCubeMap)
+            val isBgrFormat = bufferedImage.isBgrFormat
 
-                load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, info.buffers[1]) //1
-                load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, info.buffers[0]) //0
-                load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, info.buffers[2])
-                load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, info.buffers[3])
-                load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, info.buffers[4])
-                load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, info.buffers[5])
+            val fileBasedCubeMap = FileBasedCubeMap(path, CubeMap(gpuContext, tileDimension, TextureFilterConfig(), internalFormat, GL_REPEAT), files, isBgrFormat)
 
-                gpuContext.invoke {
-                    GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_CUBE_MAP.glTarget)
-                }
-            }
             return fileBasedCubeMap.apply {
-                CompletableFuture.supplyAsync {
-                    upload(uploadInfo)
-                }
+                load(gpuContext)
+            }
+        }
+
+        private val BufferedImage.isBgrFormat: Boolean
+            get() = type == TYPE_INT_BGR || type == TYPE_3BYTE_BGR || type == TYPE_4BYTE_ABGR || type == TYPE_4BYTE_ABGR_PRE
+
+        operator fun invoke(gpuContext: GpuContext<OpenGl>, path: String, file: File, srgba: Boolean = false): FileBasedCubeMap {
+            val internalFormat: Int = if (srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+
+            val bufferedImage: BufferedImage = ImageIO.read(file)
+            val width = bufferedImage.width
+            val height = bufferedImage.height
+            val tileDimension = TextureDimension(width / 4, height / 3)
+
+            val fileBasedCubeMap = FileBasedCubeMap(path, CubeMap(gpuContext, tileDimension, TextureFilterConfig(), internalFormat, GL_REPEAT), file)
+
+            return fileBasedCubeMap.apply {
+                load(gpuContext)
             }
         }
     }
+}
+private fun List<BufferedImage>.getCubeMapUploadInfo(): CubeMapUploadInfo {
+    return CubeMapUploadInfo(TextureDimension(first().width, first().height), convertCubeMapData(this).map<ByteArray, ByteBuffer> { byteArray ->
+        ByteBuffer.allocateDirect(byteArray.size).apply {
+            buffer(byteArray)
+        }
+    })
+}
+private fun BufferedImage.getCubeMapUploadInfo(): CubeMapUploadInfo {
+    val width = width
+    val height = height
+    val tileDimension = TextureDimension(width / 4, height / 3)
+    val data = convertCubeMapData(this, width, height, glAlphaColorModel, glColorModel)
+
+    return CubeMapUploadInfo(tileDimension, data.map<ByteArray, ByteBuffer> { byteArray ->
+        ByteBuffer.allocateDirect(byteArray.size).apply {
+            buffer(byteArray)
+        }
+    })
 }
 
 fun allocateTexture(gpuContext: GpuContext<OpenGl>, info: Texture2D.TextureUploadInfo, textureTarget: GlTextureTarget, filterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int, wrapMode: Int = GL12.GL_REPEAT): Triple<Int, Int, Long> {
@@ -426,9 +496,8 @@ data class FileBasedTexture2D(val path: String, val file: File, val backingTextu
     }
 }
 
-fun buffer(buffer: ByteBuffer, values: ByteArray): ByteBuffer {
-    buffer.order(ByteOrder.nativeOrder())
-    buffer.put(values, 0, values.size)
-    buffer.flip()
-    return buffer
+fun ByteBuffer.buffer(values: ByteArray) {
+    order(ByteOrder.nativeOrder())
+    put(values, 0, values.size)
+    flip()
 }

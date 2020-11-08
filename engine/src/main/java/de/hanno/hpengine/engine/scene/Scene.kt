@@ -49,7 +49,7 @@ fun scene(name: String, engineContext: EngineContext, block: SceneSyntax.() -> U
     return scene
 }
 fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(name, engineContext) {
-    baseExtensions.materialExtension.manager.addMaterials(sceneManager.scene.baseExtensions.materialExtension.manager.materials)
+//    baseExtensions.materialExtension.manager.registerMaterials(sceneManager.scene.baseExtensions.materialExtension.manager.materials)
     baseExtensions.modelComponentExtension.manager.modelCache.putAll(sceneManager.scene.baseExtensions.modelComponentExtension.manager.modelCache)
     block()
 }

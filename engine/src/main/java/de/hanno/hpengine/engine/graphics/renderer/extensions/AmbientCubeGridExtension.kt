@@ -214,8 +214,7 @@ class ProbeRenderer(private val engine: EngineContext) {
             for (probeIndex in probeStartIndex until (probeStartIndex + probesPerFrame)) {
                 gpuContext.clearDepthBuffer()
 
-                val skyBox = engine.materialManager.skyboxMaterial.materialInfo.maps[SimpleMaterial.MAP.ENVIRONMENT]
-                        ?: engine.textureManager.cubeMap
+                val skyBox = engine.textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)

@@ -27,7 +27,7 @@ import jogl.DDSImage
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.filefilter.TrueFileFilter
-import org.joml.Vector2f
+import org.joml.Vector2i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBBindlessTexture
 import org.lwjgl.opengl.EXTTextureCompressionS3TC
@@ -109,7 +109,7 @@ class TextureManager(val config: Config,
 
     val lensFlareTexture = engineDir.getTexture("assets/textures/lens_flare_tex.jpg", true)
     var cubeMap = getCubeMap("assets/textures/skybox/skybox.png", config.directories.engineDir.resolve("assets/textures/skybox/skybox.png"))
-//    var cubeMap = getCubeMap("assets/textures/skybox/skybox5.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
+//    var cubeMap = getCubeMap("assets/textures/skybox/skybox1.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("HORIZONTAL", true)))
     private val blur2dProgramSeparableVertical = programManager.getComputeProgram(programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}").toCodeSource(), Defines(getDefine("VERTICAL", true)))
 
@@ -216,24 +216,19 @@ class TextureManager(val config: Config,
         }
     }
 
-    private fun textureLoaded(resourceName: String): Boolean {
-        return textures.containsKey(resourceName)
-    }
+    @Throws(IOException::class)
+    fun getCubeMap(resourceName: String, file: File, srgba: Boolean = true): ICubeMap {
+        val tex: ICubeMap = textures[resourceName + "_cube"] as ICubeMap?
+                ?: FileBasedCubeMap(gpuContext, resourceName, file, srgba)
 
-    private fun cubeMapPreCompiled(resourceName: String): Boolean {
-        val fileName = FilenameUtils.getBaseName(resourceName)
-        val f = config.directories.gameDir.resolve("$fileName.hpcubemap")
-        return f.exists()
+        textures[resourceName + "_cube"] = tex
+        return tex
     }
 
     @Throws(IOException::class)
-    fun getCubeMap(resourceName: String, file: File): CubeMap {
-        val tex: CubeMap = textures[resourceName + "_cube"] as CubeMap?
-                ?: FileBasedCubeMap(gpuContext, resourceName, file).backingTexture
-//        getCubeMap(resourceName,
-//                GL11.GL_RGBA,
-//                MinFilter.LINEAR_MIPMAP_LINEAR,
-//                MagFilter.LINEAR)
+    fun getCubeMap(resourceName: String, files: List<File>, srgba: Boolean = true): ICubeMap {
+        val tex: ICubeMap = textures[resourceName + "_cube"] as ICubeMap?
+                ?: FileBasedCubeMap(gpuContext, resourceName, files, srgba)
 
         textures[resourceName + "_cube"] = tex
         return tex
@@ -499,94 +494,69 @@ class TextureManager(val config: Config,
         var TEXTURE_UNLOAD_THRESHOLD_IN_MS: Long = 10000
         private val USE_TEXTURE_STREAMING = false
 
+        fun convertCubeMapData(bufferedImages: List<BufferedImage>): List<ByteArray> {
+            return bufferedImages.map { image ->
+                (image.raster.dataBuffer as DataBufferByte).data
+            }
+        }
+
         fun convertCubeMapData(bufferedImage: BufferedImage, width: Int, height: Int, glAlphaColorModel: ColorModel, glColorModel: ColorModel): MutableList<ByteArray> {
             //        ByteBuffer imageBuffers[] = new ByteBuffer[6];
             val byteArrays = ArrayList<ByteArray>()
-
-            var raster: WritableRaster
-            var texImage: BufferedImage
-
 
             val tileWidth = width / 4
             val tileHeight = height / 3
 
             for (i in 0..5) {
 
-                val topLeftBottomRight = getRectForFaceIndex(i, bufferedImage.width, bufferedImage.height)
+                val topLeftBottomRight = getRectForFaceIndex(i, tileWidth, tileHeight)
 
-                if (bufferedImage.colorModel.hasAlpha()) {
-                    raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 4, null)
-                    texImage = BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
+                val texImage = if (bufferedImage.colorModel.hasAlpha()) {
+                    val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 4, null)
+                    BufferedImage(glAlphaColorModel, raster, false, Hashtable<Any, Any>())
                 } else {
-                    raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 3, null)
-                    texImage = BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
+                    val raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, tileWidth, tileHeight, 3, null)
+                    BufferedImage(glColorModel, raster, false, Hashtable<Any, Any>())
                 }
 
-                val g = texImage.graphics
-                g.color = Color(0f, 0f, 0f, 0f)
-                g.fillRect(0, 0, tileWidth, tileHeight)
+                val graphics = texImage.graphics
+                graphics.color = Color(0f, 0f, 0f, 0f)
+                graphics.fillRect(0, 0, tileWidth, tileHeight)
 
-                g.drawImage(bufferedImage, 0, 0, tileWidth, tileHeight, topLeftBottomRight[0].x.toInt(), topLeftBottomRight[0].y.toInt(),
-                        topLeftBottomRight[1].x.toInt(), topLeftBottomRight[1].y.toInt(), null)
+                graphics.drawImage(bufferedImage, 0, 0, tileWidth, tileHeight,
+                        topLeftBottomRight[0].x, topLeftBottomRight[0].y,
+                        topLeftBottomRight[1].x, topLeftBottomRight[1].y, null)
 
-                //            try {
-                //                File outputfile = new File(i + ".png");
-                //                ImageIO.write(texImage, "png", outputfile);
-                //            } catch (IOException e) {
-                //            	LOGGER.info("xoxoxoxo");
-                //            }
+//            try {
+//                File outputfile = new File(i + ".png");
+//                ImageIO.write(texImage, "png", outputfile);
+//            } catch (IOException e) {
+//            	LOGGER.info("xoxoxoxo");
+//            }
 
 
                 val data = (texImage.raster.dataBuffer as DataBufferByte).data
                 byteArrays.add(data)
 
-                //    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
-                //    		tempBuffer.order(ByteOrder.nativeOrder());
-                //    		tempBuffer.put(data, 0, data.length);
-                //    		tempBuffer.flip();
-                //          imageBuffers[i] = tempBuffer;
+//    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
+//    		tempBuffer.order(ByteOrder.nativeOrder());
+//    		tempBuffer.put(data, 0, data.length);
+//    		tempBuffer.flip();
+//          imageBuffers[i] = tempBuffer;
 
             }
             return byteArrays
         }
 
-        private fun getRectForFaceIndex(index: Int, imageWidth: Int, imageHeight: Int): Array<Vector2f> {
-            val tileHeight = imageHeight.toFloat() / 3f
-            val tileWidth = imageWidth.toFloat() / 4f
-            return when (GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
-
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X -> {
-                    arrayOf(Vector2f(2 * tileWidth, tileHeight),
-                            Vector2f(3 * tileWidth, 2 * tileHeight))
-                }
-
-                GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> {
-                    arrayOf(Vector2f(0f, tileHeight),
-                            Vector2f(tileWidth, 2 * tileHeight))
-                }
-
-                GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> {
-                    arrayOf(Vector2f(2* tileWidth, tileHeight),
-                            Vector2f(tileWidth, 0f))
-                }
-
-                GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> {
-                    arrayOf(Vector2f(2 * tileWidth, 3f*tileHeight),
-                            Vector2f(tileWidth, 2 * tileHeight))
-                }
-
-                GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> {
-                    arrayOf(Vector2f(3 * tileWidth, tileHeight),
-                            Vector2f(4*tileWidth, 2 * tileHeight))
-                }
-
-                GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> {
-                    arrayOf(Vector2f(tileWidth, tileHeight),
-                            Vector2f(2*tileWidth, 2 * tileHeight))
-                }
-
-                else -> throw IllegalStateException("")
-            }
+        // Why do i have to do +1 and -1 here?
+        private fun getRectForFaceIndex(index: Int, tileWidth: Int, tileHeight: Int) = when (GL_TEXTURE_CUBE_MAP_POSITIVE_X + index) {
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X -> arrayOf(Vector2i(0, tileHeight), Vector2i(tileWidth, 2 * tileHeight))
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_X -> arrayOf(Vector2i(2 * tileWidth, tileHeight), Vector2i(3 * tileWidth, 2 * tileHeight))
+            GL_TEXTURE_CUBE_MAP_POSITIVE_Y -> arrayOf(Vector2i(2 * tileWidth-1, tileHeight), Vector2i(tileWidth, 0))
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_Y -> arrayOf(Vector2i(2 * tileWidth, 3 * tileHeight), Vector2i(tileWidth, 2 * tileHeight))
+            GL_TEXTURE_CUBE_MAP_POSITIVE_Z -> arrayOf(Vector2i(3 * tileWidth, tileHeight), Vector2i(4 * tileWidth, 2 * tileHeight))
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_Z -> arrayOf(Vector2i(tileWidth, tileHeight), Vector2i(2 * tileWidth, 2 * tileHeight))
+            else -> throw IllegalStateException("")
         }
 
         fun deleteTexture(id: Int) {

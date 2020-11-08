@@ -1,11 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderSystem;
-import org.jetbrains.annotations.NotNull;
-
-import java.nio.FloatBuffer;
 
 public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 

@@ -137,7 +137,7 @@ class MaterialRibbonTask(val engineContext: EngineContext,
 
 
             Command.builder()
-                    .setText(material.materialInfo.name)
+                    .setText(material.name)
                     .setAction { event ->
                         // unselect and select material here
                         if (event.command.isToggleSelected) {

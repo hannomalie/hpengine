@@ -4,7 +4,7 @@ import com.bric.colorpicker.ColorPicker
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
-import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
@@ -22,11 +22,11 @@ import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty0
 
 class MaterialGrid(val textureManager: TextureManager, val material: Material) : JPanel() {
-    private val info = material.materialInfo as SimpleMaterialInfo
+    private val info = material.materialInfo as MaterialInfo
 
     init {
         layout = MigLayout("wrap 2")
-        labeled("Name", JLabel(info.name))
+        labeled("Name", JLabel(material.name))
         labeled("MaterialType", info::materialType.toComboBox(MaterialType.values()))
         labeled("TransparancyType", info::transparencyType.toComboBox(SimpleMaterial.TransparencyType.values()))
         labeled("Ambient", info::ambient.toSliderInput(0, 100))
@@ -52,21 +52,22 @@ sealed class TextureSelection(val key: String) {
     object None: TextureSelection("None")
 }
 
-fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JComponent = with(textureManager) {
+fun MaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JComponent = with(textureManager) {
     val comboBoxes = SimpleMaterial.MAP.values().map { mapType ->
         when (mapType) {
             SimpleMaterial.MAP.ENVIRONMENT -> {
                 mapType to JComboBox((retrieveCubeTextureItems() + TextureSelection.None).toTypedArray()).apply {
                     addActionListener {
                         val typedSelectedItem = selectedItem as TextureSelection
-                        val selected = retrieveCubeTextureItems().find { it.key == typedSelectedItem.key } ?: TextureSelection.None
-                        when(selected) {
+                        val selected = retrieveCubeTextureItems().find { it.key == typedSelectedItem.key }
+                                ?: TextureSelection.None
+                        when (selected) {
                             is TextureSelection.SelectionCube -> maps[mapType] = selected.texture
                             TextureSelection.None -> maps.remove(mapType)
                         }
                     }
                     selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
-                        if(foundTexture == null) {
+                        if (foundTexture == null) {
                             TextureSelection.None
                         } else {
                             TextureSelection.SelectionCube(foundTexture.key, value)
@@ -103,9 +104,9 @@ fun SimpleMaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JCom
     }
 }
 
-private fun SimpleMaterialInfo.retrieveInitialSelection(mapType: SimpleMaterial.MAP,
-                                                        textureManager: TextureManager,
-                                                        createSelection: (MutableMap.MutableEntry<String, Texture>?, Texture) -> TextureSelection): TextureSelection {
+private fun MaterialInfo.retrieveInitialSelection(mapType: SimpleMaterial.MAP,
+                                                  textureManager: TextureManager,
+                                                  createSelection: (MutableMap.MutableEntry<String, Texture>?, Texture) -> TextureSelection): TextureSelection {
     return if (maps.containsKey(mapType)) {
         val value = maps[mapType]!!
         val foundTexture = textureManager.textures.entries.firstOrNull { it.value == value }

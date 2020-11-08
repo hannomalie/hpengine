@@ -1,16 +1,13 @@
 package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
-import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
@@ -18,9 +15,6 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
 import de.hanno.struct.resize
 import org.joml.Vector3f
-import java.util.HashMap
-import java.util.LinkedHashMap
-import java.util.logging.Logger
 
 class MaterialManager(val config: Config,
                       private val eventBus: EventBus,
@@ -33,119 +27,80 @@ class MaterialManager(val config: Config,
                 textureManager: TextureManager = engineContext.textureManager,
                 singleThreadContext: AddResourceContext = engineContext.addResourceContext): this(config, eventBus, textureManager, singleThreadContext)
 
-    val skyboxMaterial: SimpleMaterial
-
-    var MATERIALS: MutableMap<String, SimpleMaterial> = LinkedHashMap()
+    var materials: MutableList<SimpleMaterial> = mutableListOf()
 
     val defaultMaterial: SimpleMaterial
 
     val engineDir = config.directories.engineDir
 
-    val materials: List<SimpleMaterial>
-        get() = ArrayList(MATERIALS.values)
-
     var materialsAsStructs = StructArray(1000) { MaterialStruct() }
 
     init {
-        defaultMaterial = getMaterial(SimpleMaterialInfo(name = "default", diffuse = Vector3f(1f, 0f, 0f)).apply {
+        val defaultMaterialInfo = MaterialInfo(diffuse = Vector3f(1f, 0f, 0f)).apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, engineDir))
-        })
-        skyboxMaterial = getMaterial(SimpleMaterialInfo("skybox", materialType = SimpleMaterial.MaterialType.UNLIT))
+        }
+        defaultMaterial = registerMaterial("default", defaultMaterialInfo)
 
         eventBus.register(this)
     }
 
     fun initDefaultMaterials() {
 
-        getMaterial(SimpleMaterialInfo("stone").apply {
+        registerMaterial("stone", MaterialInfo().apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
             put(MAP.HEIGHT, textureManager.getTexture("assets/textures/stone_height.png", directory = engineDir))
         })
 
-        getMaterial(SimpleMaterialInfo("stone2").apply {
+        registerMaterial("stone2", MaterialInfo().apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
         })
 
-        getMaterial(SimpleMaterialInfo("brick").apply {
+        registerMaterial("brick", MaterialInfo().apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
             put(MAP.HEIGHT, textureManager.getTexture("assets/textures/brick_height.png", directory = engineDir))
         })
 
-        getMaterial(SimpleMaterialInfo("wood").apply {
+        registerMaterial("wood", MaterialInfo().apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/wood_diffuse.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/wood_normal.png", directory = engineDir))
         })
 
-        getMaterial(SimpleMaterialInfo("stoneWet").apply {
+        registerMaterial("stoneWet", MaterialInfo().apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
             put(MAP.REFLECTION, textureManager.getTexture("assets/textures/stone_reflection.png", directory = engineDir))
         })
-        getMaterial(SimpleMaterialInfo(name = "mirror", diffuse = Vector3f(1f, 1f, 1f), metallic = 1f))
+        registerMaterial("mirror", MaterialInfo(diffuse = Vector3f(1f, 1f, 1f), metallic = 1f))
 
-        getMaterial(SimpleMaterialInfo("stoneWet").apply {
+        registerMaterial("stoneWet", MaterialInfo().apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/bricks_parallax.dds", true, engineDir))
             put(MAP.HEIGHT, textureManager.getTexture("assets/textures/bricks_parallax_height.dds", directory = engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/bricks_parallax_normal.dds", directory = engineDir))
         })
     }
 
-    fun getMaterial(materialInfo: MaterialInfo): SimpleMaterial {
-        if ("" == materialInfo.name) {
-//            throw IllegalArgumentException("Don't pass a material with null or empty name")
-            materialInfo.name = System.currentTimeMillis().toString()
-        }
+    fun getMaterial(name: String): SimpleMaterial? = materials.firstOrNull { it.name == name }
 
-        return SimpleMaterial(materialInfo).apply {
-            addMaterial(this)
-        }
+    fun registerMaterial(name: String, materialInfo: MaterialInfo): SimpleMaterial = SimpleMaterial(name, materialInfo).apply {
+        registerMaterial(this)
     }
 
-    fun addMaterial(material: SimpleMaterial) = singleThreadContext.launch {
-        material.materialIndex = MATERIALS.size
-        MATERIALS[material.materialInfo.name] = material
+    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
+        clear()
     }
-    fun addMaterials(materials: List<SimpleMaterial>) = singleThreadContext.launch {
+    fun registerMaterial(material: SimpleMaterial) = singleThreadContext.launch {
+//        This happens often, I have to reconsider that somehow
+//        require(materials.none { material.name == it.name }) { "Material with name ${material.name} already registerd!" }
+
+        material.materialIndex = materials.size
+        materials.add(material)
+    }
+    fun registerMaterials(materials: List<SimpleMaterial>) = singleThreadContext.launch {
         materials.forEach { material ->
-            material.materialIndex = MATERIALS.size
-            MATERIALS[material.materialInfo.name] = material
-        }
-    }
-
-    fun getMaterial(hashMap: HashMap<MAP, String>): SimpleMaterial {
-        return getMaterial("Material_" + MATERIALS.size, hashMap)
-    }
-
-    fun getMaterial(name: String, hashMap: HashMap<MAP, String>): SimpleMaterial {
-        val textures = mutableMapOf<MAP, Texture>()
-
-        hashMap.forEach { map, value ->
-            textures[map] = textureManager.getTexture(value, map == MAP.DIFFUSE, engineDir)
-        }
-        val info = SimpleMaterialInfo(name = name, maps = textures)
-        return getMaterial(info)
-    }
-
-    fun getMaterial(materialName: String): SimpleMaterial {
-        return MATERIALS[materialName] ?: return defaultMaterial
-    }
-
-    fun putAll(materialLib: Map<String, MaterialInfo>) {
-        for (key in materialLib.keys) {
-            getMaterial(materialLib[key]!!)
-        }
-    }
-
-    companion object {
-        private val LOGGER = Logger.getLogger(MaterialManager::class.java.name)
-        val TEXTUREASSETSPATH = "assets/textures/"
-        var count = 0
-
-        fun getDirectory(): String {
-            return Directories.ENGINEDIR_NAME + "/assets/materials/"
+            registerMaterial(material)
         }
     }
 
@@ -174,7 +129,6 @@ class MaterialManager(val config: Config,
         }
         renderState.entitiesState.materialBuffer.resize(materialsAsStructs.size)
         materialsAsStructs.copyTo(renderState.entitiesState.materialBuffer, true)
-        renderState.skyBoxMaterialIndex = skyboxMaterial.materialIndex
     }
 
 }

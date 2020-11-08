@@ -45,9 +45,7 @@ class ModelComponentSystem(val engine: EngineContext,
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         for (component in getComponents()) {
-            with(component) {
-                update(scene, deltaSeconds)
-            }
+            component.update(scene, deltaSeconds)
         }
         updateGpuJointsArray()
 

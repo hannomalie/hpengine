@@ -3,8 +3,14 @@ package de.hanno.hpengine.editor.tasks
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
+import de.hanno.hpengine.editor.doWithRefresh
+import de.hanno.hpengine.editor.grids.TextureGrid
+import de.hanno.hpengine.editor.selection.SelectionSystem
+import de.hanno.hpengine.editor.selection.addUnselectButton
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.textureManager
+import de.hanno.hpengine.engine.model.texture.FileBasedCubeMap
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
@@ -26,14 +32,40 @@ import javax.swing.JFileChooser
 
 object TextureTask {
 
-    operator fun invoke(engine: EngineContext, sceneManager: SceneManager, editor: RibbonEditor): RibbonTask {
+    operator fun invoke(engine: EngineContext, sceneManager: SceneManager, editor: RibbonEditor, selectionSystem: SelectionSystem): RibbonTask {
         fun retrieveTextureCommands(): List<Command> {
             return engine.textureManager.textures.values.mapNotNull {
                 if (it is FileBasedTexture2D) {
                     val image = ImageIO.read(File(it.file.absolutePath))
                     Command.builder()
+                        .setText(it.file.name)
+                        .setIconFactory { EditorComponents.Companion.getResizableIconFromImageSource(image) }
+                        .setAction { event ->
+                            if (event.command.isToggleSelected) {
+                                editor.sidePanel.doWithRefresh {
+                                    addUnselectButton()
+                                    add(TextureGrid(engine.gpuContext, it))
+                                }
+                            } else {
+                                selectionSystem.unselect()
+                            }
+                        }
+                        .setToggle()
+                        .build()
+                } else if (it is FileBasedCubeMap) {
+                    Command.builder()
                             .setText(it.file.name)
-                            .setIconFactory { EditorComponents.Companion.getResizableIconFromImageSource(image) }
+                            .setIconFactory { EditorComponents.Companion.getResizableIconFromImageSource(it.bufferedImage) }
+                            .setAction { event ->
+                                if (event.command.isToggleSelected) {
+                                    editor.sidePanel.doWithRefresh {
+                                        addUnselectButton()
+                                        add(TextureGrid(engine.gpuContext, it))
+                                    }
+                                } else {
+                                    selectionSystem.unselect()
+                                }
+                            }
                             .setToggle()
                             .build()
                 } else null
@@ -66,12 +98,19 @@ object TextureTask {
                     .setText("Add CubeMap")
                     .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
                     .setAction {
-                        val fc = JFileChooser()
+                        val fc = JFileChooser().apply {
+                            isMultiSelectionEnabled = true
+                        }
                         val returnVal = fc.showOpenDialog(editor)
                         if (returnVal == JFileChooser.APPROVE_OPTION) {
-                            val file = fc.selectedFile
+                            val files = fc.selectedFiles.toList()
                             GlobalScope.launch {
-                                engine.textureManager.getCubeMap(file.name, file = file)
+                                if(files.size > 1) {
+                                    engine.textureManager.getCubeMap(files.map { it.name }.min()!!, files)
+                                } else {
+                                    val file = files.first()
+                                    engine.textureManager.getCubeMap(file.name, file)
+                                }
                             }
                         }
                     }
@@ -110,7 +149,6 @@ object TextureTask {
                     .setAction {
                         contentModel.getCommandGroupByTitle("Available textures").apply {
                             SwingUtils.invokeLater {
-                                removeAllCommands()
                                 retrieveTextureCommands().forEach {
                                     addCommand(it)
                                 }

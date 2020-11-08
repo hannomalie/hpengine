@@ -26,6 +26,7 @@ interface Texture {
         }
     }
 }
+interface ICubeMap: Texture
 
 
 ////TODO: Remove this and all usages, convert to property above

@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.component.CustomComponent.Companion.customCompon
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.GIVolumeSystem
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntitySystem
@@ -39,6 +40,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSec
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -218,6 +220,12 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
     init {
         engineContext.gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, engineContext.textureManager.cubeMap.id)
     }
+
+    override val renderSystem = object: RenderSystem {
+        override fun extract(scene: Scene, renderState: RenderState) {
+            renderState.skyBoxMaterialIndex = scene.getEntity("Skybox")!!.getComponent(ModelComponent::class.java)!!.material.materialIndex
+        }
+    }
     override fun Scene.onInit() {
         entity("Skybox") {
             modelComponent(
@@ -227,19 +235,20 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                     modelComponentManager = this@onInit.modelComponentManager,
                     gameDirectory = engineContext.config.directories.gameDir
             ).apply {
-                material = SimpleMaterial(material.materialInfo.doCopy("skybox").apply {
-                    materialType = SimpleMaterial.MaterialType.UNLIT
-                    cullBackFaces = false
-                    isShadowCasting = false
-                    program = simpleColorProgramStatic
+                val materialInfo = material.materialInfo.copy(
+                    materialType = SimpleMaterial.MaterialType.UNLIT,
+                    cullBackFaces = false,
+                    isShadowCasting = false,
+                    program = simpleColorProgramStatic).apply {
                     put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
-                })
+                }
+                material = materialManager.registerMaterial("skybox", materialInfo) // TODO Investigate why this doesnt update in UI
             }
-            customComponent({ scene, _ ->
+            customComponent { scene, _ ->
                 val camPosition = scene.activeCamera.getPosition()
                 this@entity.transform.identity().translate(camPosition)
                 this@entity.transform.scale(1000f)
-            })
+            }
         }
     }
 }

@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Vertex
@@ -37,7 +36,6 @@ import org.lwjgl.assimp.Assimp.aiTextureType_HEIGHT
 import org.lwjgl.assimp.Assimp.aiTextureType_NONE
 import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
 import org.lwjgl.assimp.Assimp.aiTextureType_SPECULAR
-import java.io.File
 import java.nio.IntBuffer
 import java.nio.file.Path
 import java.util.ArrayList
@@ -61,7 +59,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val materials = runBlocking {
             deferredMaterials.awaitAll()
         }
-        materialManager.addMaterials(materials)
+        materialManager.registerMaterials(materials)
         val meshes: List<StaticMesh> = (0 until numMeshes).map { i ->
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)
@@ -94,8 +92,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         if (result == 0) {
             diffuse = Vector4f(colour.r(), colour.g(), colour.b(), colour.a())
         }
-        val materialInfo = SimpleMaterialInfo(
-            name = name.dataString(),
+        val materialInfo = MaterialInfo(
             ambient = max(max(ambient.x, ambient.y), ambient.z),
             diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
@@ -104,7 +101,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
         materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
 
-        return SimpleMaterial(materialInfo)
+        return SimpleMaterial(name.dataString(), materialInfo)
     }
     private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)
@@ -118,7 +115,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
         } else {
-            SimpleMaterial(SimpleMaterialInfo(mName().dataString() + "_material"))
+            SimpleMaterial(mName().dataString() + "_material", MaterialInfo())
         }
         val vertices = positions.indices.map {
             Vertex(positions[it], texCoords[it], normals[it])

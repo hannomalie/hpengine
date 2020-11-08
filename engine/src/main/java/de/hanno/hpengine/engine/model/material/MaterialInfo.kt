@@ -39,72 +39,36 @@ class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMA
 
 }
 
-interface MaterialInfo {
-    var isShadowCasting: Boolean
-    var name: String
-    val environmentMapType: ENVIRONMENTMAP_TYPE
-    val diffuse: Vector3f
-    val roughness: Float
-    val metallic: Float
-    val ambient: Float
-    val transparency: Float
-    val parallaxScale: Float
-    val parallaxBias: Float
-    var materialType: MaterialType
-    var cullBackFaces: Boolean
-    var depthTest: Boolean
-    val transparencyType: TransparencyType
-    val textureLess: Boolean
-    val maps: Map<MAP, Texture>
-    var program: Program<FirstPassUniforms>?
+data class MaterialInfo @JvmOverloads constructor(val diffuse: Vector3f = Vector3f(1f, 1f, 1f),
+                                                  var roughness: Float = 0.95f,
+                                                  var metallic: Float = 0f,
+                                                  var ambient: Float = 0f,
+                                                  var transparency: Float = 0f,
+                                                  var parallaxScale: Float = 0.04f,
+                                                  var parallaxBias: Float = 0.02f,
+                                                  var materialType: MaterialType = DEFAULT,
+                                                  var transparencyType: TransparencyType = TransparencyType.BINARY,
+                                                  var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
+                                                  var depthTest: Boolean = true,
+                                                  val maps: MutableMap<MAP, Texture> = mutableMapOf(),
+                                                  var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
+                                                  var isShadowCasting: Boolean = true,
+                                                  var program: Program<FirstPassUniforms>? = null) {
 
-    fun getHasSpecularMap(): Boolean
-    fun getHasNormalMap(): Boolean
-    fun getHasDiffuseMap(): Boolean
-    fun getHasHeightMap(): Boolean
-    fun getHasOcclusionMap(): Boolean
-    fun getHasRoughnessMap(): Boolean
-    fun put(map: MAP, texture: Texture)
-    fun remove(map: MAP)
-    fun doCopy(name: String): MaterialInfo
-}
+    // TODO rename, remove "get"
+    fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
+    fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)
+    fun getHasDiffuseMap() = maps.containsKey(MAP.DIFFUSE)
+    fun getHasHeightMap() = maps.containsKey(MAP.HEIGHT)
+    fun getHasOcclusionMap() = maps.containsKey(MAP.OCCLUSION)
+    fun getHasRoughnessMap() = maps.containsKey(MAP.ROUGHNESS)
 
-data class SimpleMaterialInfo @JvmOverloads constructor(override var name: String,
-                                                        override var diffuse: Vector3f = Vector3f(1f, 1f, 1f),
-                                                        override var roughness: Float = 0.95f,
-                                                        override var metallic: Float = 0f,
-                                                        override var ambient: Float = 0f,
-                                                        override var transparency: Float = 0f,
-                                                        override var parallaxScale: Float = 0.04f,
-                                                        override var parallaxBias: Float = 0.02f,
-                                                        override var materialType: MaterialType = DEFAULT,
-                                                        override var transparencyType: TransparencyType = TransparencyType.BINARY,
-                                                        override var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
-                                                        override var depthTest: Boolean = true,
-                                                        override val maps: MutableMap<MAP, Texture> = mutableMapOf(),
-                                                        override val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
-                                                        override var isShadowCasting: Boolean = true,
-                                                        override var program: Program<FirstPassUniforms>? = null) : MaterialInfo, Serializable {
+    val textureLess = maps.isEmpty()
 
-    override fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
-    override fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)
-    override fun getHasDiffuseMap() = maps.containsKey(MAP.DIFFUSE)
-    override fun getHasHeightMap() = maps.containsKey(MAP.HEIGHT)
-    override fun getHasOcclusionMap() = maps.containsKey(MAP.OCCLUSION)
-    override fun getHasRoughnessMap() = maps.containsKey(MAP.ROUGHNESS)
-
-    override val textureLess = maps.isEmpty()
-
-    override fun put(map: MAP, texture: Texture) {
+    fun put(map: MAP, texture: Texture) {
         maps[map] = texture
     }
-    override fun remove(map: MAP) {
+    fun remove(map: MAP) {
         maps.remove(map)
-    }
-
-    override fun doCopy(name: String) = copy(name = name)
-
-    companion object {
-        private const val serialVersionUID = 3564429930446909410L
     }
 }

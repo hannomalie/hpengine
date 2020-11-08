@@ -144,11 +144,13 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
 
     var programsSourceCache: WeakHashMap<Shader, String> = WeakHashMap()
     override fun update(deltaSeconds: Float) {
-        programsCache.forEach { program ->
-            program.shaders.forEach { shader ->
-                if (shader.shaderSource is StringBasedCodeSource || shader.shaderSource is WrappedCodeSource) {
-                    programsSourceCache.putIfAbsent(shader, shader.shaderSource.source)
-                    if (shader.shaderSource.hasChanged(programsSourceCache[shader]!!)) program.reload()
+        if(config.debug.isUseFileReloading) {
+            programsCache.forEach { program ->
+                program.shaders.forEach { shader ->
+                    if (shader.shaderSource is StringBasedCodeSource || shader.shaderSource is WrappedCodeSource) {
+                        programsSourceCache.putIfAbsent(shader, shader.shaderSource.source)
+                        if (shader.shaderSource.hasChanged(programsSourceCache[shader]!!)) program.reload()
+                    }
                 }
             }
         }

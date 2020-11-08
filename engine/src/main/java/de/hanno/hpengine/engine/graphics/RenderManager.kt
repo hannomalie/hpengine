@@ -40,6 +40,7 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
 
     fun finishCycle(scene: Scene, deltaSeconds: Float) {
         renderState.currentWriteState.deltaSeconds = deltaSeconds
+        scene.extract(renderState.currentWriteState)
         engineContext.extract(scene, renderState.currentWriteState)
         renderState.swapStaging()
     }

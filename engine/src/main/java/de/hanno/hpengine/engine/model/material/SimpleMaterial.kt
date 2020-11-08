@@ -7,6 +7,7 @@ import java.lang.Double.BYTES
 import java.lang.Float
 
 interface Material {
+    val name: String
     var materialIndex: Int
     val materialInfo: MaterialInfo
 
@@ -18,7 +19,8 @@ interface Material {
     }
 }
 
-class SimpleMaterial(override var materialInfo: MaterialInfo): Material {
+class SimpleMaterial(override val name: String,
+                     override var materialInfo: MaterialInfo): Material {
 
     override var materialIndex = -1
 
@@ -50,17 +52,17 @@ class SimpleMaterial(override var materialInfo: MaterialInfo): Material {
         GENERATED
     }
 
-    override fun toString(): String = materialInfo.name
+    override fun toString(): String = name
 
     override fun equals(other: Any?): Boolean {
         if (other == null || other !is SimpleMaterial) {
             return false
         }
 
-        return materialInfo.name == other.materialInfo.name
+        return name == other.name
     }
 
-    override fun hashCode(): Int = materialInfo.name.hashCode()
+    override fun hashCode(): Int = name.hashCode()
 
     companion object {
 

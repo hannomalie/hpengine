@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
-import de.hanno.hpengine.engine.backend.EngineContext;
 import de.hanno.hpengine.engine.backend.OpenGl;
 import de.hanno.hpengine.engine.event.MeshSelectedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.backend.EngineContext;
-import de.hanno.hpengine.engine.backend.OpenGlBackendKt;
+import de.hanno.hpengine.engine.backend.EngineContextKt;
 import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
@@ -24,7 +24,6 @@ import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.util.Util;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
-import kotlinx.coroutines.CoroutineScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -71,7 +70,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		TextureDimension3D dimension = TextureDimension.Companion.invoke(RESOLUTION, RESOLUTION, MAX_PROBES);
 		TextureFilterConfig filterConfig = new TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR);
 		int wrapMode = GL_REPEAT;
-		GpuContext gpuContext = OpenGlBackendKt.getGpuContext(engineContext);
+		GpuContext gpuContext = EngineContextKt.getGpuContext(engineContext);
 		this.environmentMapsArray = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA32F, wrapMode);
 		this.environmentMapsArray1 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
 		this.environmentMapsArray2 = CubeMapArray.Companion.invoke(gpuContext, dimension, filterConfig, GL_RGBA8, wrapMode);
@@ -100,7 +99,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 		EnvironmentProbe probe = new EnvironmentProbe(engine, entity, center, size, RESOLUTION, update, getProbes().size(), weight, this);
 		probes.add(probe);
 		updateBuffers();
-        OpenGlBackendKt.getEventBus(engine).post(new ProbeAddedEvent(probe));
+		EngineContextKt.getEventBus(engine).post(new ProbeAddedEvent(probe));
 		return probe;
 	}
 	
@@ -182,10 +181,10 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void prepareProbeRendering() {
-        OpenGlBackendKt.getGpuContext(engine).setDepthMask(true);
-        OpenGlBackendKt.getGpuContext(engine).enable(DEPTH_TEST);
-        OpenGlBackendKt.getGpuContext(engine).enable(CULL_FACE);
-		cubeMapArrayRenderTarget.use(OpenGlBackendKt.getGpuContext(engine), false);
+        EngineContextKt.getGpuContext(engine).setDepthMask(true);
+        EngineContextKt.getGpuContext(engine).enable(DEPTH_TEST);
+        EngineContextKt.getGpuContext(engine).enable(CULL_FACE);
+		cubeMapArrayRenderTarget.use(EngineContextKt.getGpuContext(engine), false);
 	}
 
 
@@ -264,7 +263,7 @@ public class EnvironmentProbeManager implements Manager, RenderSystem {
 	}
 
 	public void clearProbes() {
-		probes.forEach( p -> { OpenGlBackendKt.getEventBus(engine).unregister(p.getSampler()); });
+		probes.forEach( p -> EngineContextKt.getEventBus(engine).unregister(p.getSampler()));
 		probes.clear();
 	}
 

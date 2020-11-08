@@ -11,7 +11,6 @@ import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import org.joml.Matrix4f
@@ -183,8 +182,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         if (result == 0) {
             diffuse = Vector4f(colour.r(), colour.g(), colour.b(), colour.a())
         }
-        val materialInfo = SimpleMaterialInfo(
-                name = name.dataString(),
+        val materialInfo = MaterialInfo(
                 ambient = max(max(ambient.x, ambient.y), ambient.z),
                 diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
@@ -193,7 +191,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
         materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
 
-        return materialManager.getMaterial(materialInfo)
+        return materialManager.registerMaterial(name.dataString(), materialInfo)
     }
     private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)
@@ -210,7 +208,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
         } else {
-            SimpleMaterial(SimpleMaterialInfo(mName().dataString() + "_material"))
+            SimpleMaterial(mName().dataString() + "_material", MaterialInfo())
         }
         val vertices = positions.indices.map {
             AnimatedVertex(positions[it],

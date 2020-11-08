@@ -51,7 +51,7 @@ class ModelGrid(val model: Model<*>, val modelComponent: ModelComponent, val mat
     }
 
     fun KMutableProperty0<Material>.toComboBox(): JComboBox<SimpleMaterial> {
-        return JComboBox(materialManager.MATERIALS.values.toTypedArray()).apply {
+        return JComboBox(materialManager.materials.toTypedArray()).apply {
             addActionListener {
                 this@toComboBox.set(this.selectedItem as SimpleMaterial)
             }

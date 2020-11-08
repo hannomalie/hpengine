@@ -12,13 +12,12 @@ import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.model.material.SimpleMaterial;
-import de.hanno.hpengine.engine.model.material.SimpleMaterialInfo;
+import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.engine.scene.Scene;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,13 +40,11 @@ public class TestSceneUtil {
                 for (int j = 0; j < entityCount; j++) {
                     for (int k = 0; k < entityCount; k++) {
 
-                        SimpleMaterialInfo materialInfo = new SimpleMaterialInfo("Default" + i + "_" + j + "_" + k,
+                        SimpleMaterial mat = materialManager.registerMaterial("Default" + i + "_" + j + "_" + k, new MaterialInfo(
                                 new Vector3f((float)i/entityCount, 0,0),
                                 (float) k / entityCount,
                                 (float) j / entityCount,
-                                1);
-
-                        SimpleMaterial mat = materialManager.getMaterial(materialInfo);
+                                1));
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
