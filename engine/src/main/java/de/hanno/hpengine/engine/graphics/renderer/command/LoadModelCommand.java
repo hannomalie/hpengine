@@ -46,7 +46,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
 
             List<Entity> entities = new ArrayList<>();
             Model model = getModel(materialManager, gameDir);
-            ModelComponent modelComponent = new ModelComponent(entity, model, materialManager.getDefaultMaterial());
+            ModelComponent modelComponent = new ModelComponent(entity, model, model.getMaterial());
             entity.addComponent(modelComponent);
 
             entities.add(entity);

@@ -1,7 +1,7 @@
 
 layout(binding=0) uniform sampler2D diffuseMap; // diffuse, metallic 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
-layout(binding=2) uniform sampler2D scatteringMap; // ao, reflectedColor
+layout(binding=2) uniform sampler2D reflection; // ao, reflectedColor
 layout(binding=3) uniform sampler2D motionMap; // motionVec, probeIndices
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
@@ -387,6 +387,8 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
 	lightDiffuseSpecular += textureLod(indirectHalfScreen, 	st, 0);
+	vec4 reflection = textureLod(reflection, st, 0);
+	lightDiffuseSpecular.rgb += reflection.rgb * reflection.a;
 
 	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
 	float additiveness = textureLod(forwardRenderedRevealageMap, st, 0).a;

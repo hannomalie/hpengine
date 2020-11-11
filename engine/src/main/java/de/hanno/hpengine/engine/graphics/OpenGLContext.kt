@@ -37,6 +37,7 @@ import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.glGenFramebuffers
+import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
 import org.lwjgl.opengl.GLUtil
@@ -61,6 +62,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         window.invoke {
             enable(GlCap.DEPTH_TEST)
             enable(GlCap.CULL_FACE)
+            enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS)
 
             // Map the internal OpenGL coordinate system to the entire screen
             viewPort(0, 0, window.width, window.height)

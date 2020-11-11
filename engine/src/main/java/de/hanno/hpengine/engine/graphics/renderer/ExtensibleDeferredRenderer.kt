@@ -85,15 +85,8 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
     }
 
     val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
-    val extensions: MutableList<RenderExtension<OpenGl>> = mutableListOf(
-        ForwardRenderExtension(engineContext)
-//        directionalLightSecondPassExtension,
-//        PointLightSecondPassExtension(engineContext),
-//        AOScatteringExtension(engineContext)
-//        AmbientCubeGridExtension(engineContext),
-//        VoxelConeTracingExtension(engineContext, shadowMapExtension, this),
-//        BvHPointLightSecondPassExtension(engineContext)
-    )
+    val extensions: MutableList<RenderExtension<OpenGl>> = mutableListOf()
+
     override val eventBus
         get() = backend.eventBus
     override val gpuContext: GpuContext<OpenGl>
@@ -108,11 +101,11 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         get() = backend.addResourceContext
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        val currentWriteState = this@ExtensibleDeferredRenderer.engineContext.renderStateManager.renderState.currentWriteState
+        val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
 
-        currentWriteState.customState[this@ExtensibleDeferredRenderer.pipeline].prepare(currentWriteState, currentWriteState.camera)
+        currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
 
-        this@ExtensibleDeferredRenderer.extensions.forEach { it.run { update(scene, deltaSeconds) } }
+        extensions.forEach { it.update(scene, deltaSeconds) }
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {

@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
@@ -39,6 +40,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecond
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -58,6 +60,9 @@ import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.Vector3f
+import org.lwjgl.opengl.GL15
+import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL42
 
 interface Extension {
     val manager: Manager?
@@ -226,6 +231,46 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
             renderState.skyBoxMaterialIndex = scene.getEntity("Skybox")!!.getComponent(ModelComponent::class.java)!!.material.materialIndex
         }
     }
+    override val deferredRendererExtension = object: RenderExtension<OpenGl> {
+        private val gpuContext = engineContext.gpuContext
+        private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
+
+        private val secondPassReflectionProgram = engineContext.programManager.getComputeProgram(
+                engineContext.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
+        )
+        val skyBoxTexture = engineContext.renderStateManager.renderState.registerState { IntStruct().apply { value = engineContext.textureManager.cubeMap.id } }
+        override fun extract(scene: Scene, renderState: RenderState) {
+            scene.skyBox?.let {
+                it.getComponent(ModelComponent::class.java)!!.model.material.materialInfo.maps[SimpleMaterial.MAP.ENVIRONMENT]?.let {
+                    renderState[skyBoxTexture].value = it.id
+                }
+            }
+        }
+
+        override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
+
+            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
+            gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
+            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
+            gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
+            gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
+            gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
+            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
+            // TODO: Add glbindimagetexture to openglcontext class
+            GL42.glBindImageTexture(4, deferredRenderingBuffer.laBuffer.renderedTextures[1], 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            secondPassReflectionProgram.use()
+            secondPassReflectionProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
+            secondPassReflectionProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
+            secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
+            secondPassReflectionProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+            secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
+            secondPassReflectionProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
+        }
+    }
+
+    val Scene.skyBox: Entity?
+        get() = getEntity("Skybox")
+
     override fun Scene.onInit() {
         entity("Skybox") {
             modelComponent(
