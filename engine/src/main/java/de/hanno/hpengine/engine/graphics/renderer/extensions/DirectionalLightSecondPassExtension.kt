@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.draw
-import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL30
@@ -21,8 +20,8 @@ import org.lwjgl.opengl.GL32
 
 class DirectionalLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     private val secondPassDirectionalProgram = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "second_pass_directional_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "second_pass_directional_fragment.glsl")))
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/second_pass_directional_fragment.glsl")))
 
     private val gpuContext = engineContext.gpuContext
     private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
@@ -71,7 +70,6 @@ class DirectionalLightSecondPassExtension(val engineContext: EngineContext): Ren
             secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             secondPassDirectionalProgram.bindShaderStorageBuffer(2, renderState.directionalLightState)
-            EnvironmentProbeManager.bindEnvironmentProbePositions(secondPassDirectionalProgram, renderState.environmentProbesState)
             profiled("Draw fullscreen buffer") {
                 gpuContext.fullscreenBuffer.draw()
             }

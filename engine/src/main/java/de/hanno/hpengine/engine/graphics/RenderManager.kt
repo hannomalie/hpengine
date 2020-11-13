@@ -8,15 +8,13 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
+import de.hanno.hpengine.engine.launchEndlessLoop
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicInteger
 
 class RenderStateManager(renderStateFactory: () -> RenderState) {
     val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory,
@@ -46,58 +44,65 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
     }
     init {
         var lastTimeSwapped = true
-        val runnable = Runnable {
-            try {
-                renderState.startRead()
+        launchEndlessLoop { deltaSeconds ->
+            engineContext.gpuContext.invoke(block = {
+                try {
+                    renderState.startRead()
 
-                if (lastTimeSwapped) {
-                    profiled("Frame") {
-                        recorder.add(renderState.currentReadState)
-                        val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
+                    if (lastTimeSwapped) {
+                        profiled("Frame") {
+                            recorder.add(renderState.currentReadState)
+                            val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
-                        profiled("renderSystems") {
-                            engineContext.renderSystems.forEach {
-                                it.render(drawResult, renderState.currentReadState)
+                            profiled("renderSystems") {
+                                engineContext.renderSystems.forEach {
+                                    it.render(drawResult, renderState.currentReadState)
+                                }
                             }
-                        }
 
-                        profiled("finishFrame") {
-                            engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                            engineContext.renderSystems.forEach {
-                                it.afterFrameFinished()
+                            profiled("finishFrame") {
+                                engineContext.gpuContext.finishFrame(renderState.currentReadState)
+                                engineContext.renderSystems.forEach {
+                                    it.afterFrameFinished()
+                                }
                             }
+
+                            textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
+
+                            profiled("checkCommandSyncs") {
+                                engineContext.gpuContext.checkCommandSyncs()
+                            }
+
+                            fpsCounter.update()
+
                         }
-
-                        textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
-
-                        profiled("checkCommandSyncs") {
-                            engineContext.gpuContext.checkCommandSyncs()
-                        }
-
-                        fpsCounter.update()
+                        GPUProfiler.dump()
 
                     }
-                    GPUProfiler.dump()
+                    lastTimeSwapped = renderState.stopRead()
 
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-                lastTimeSwapped = renderState.stopRead()
-
-            } catch (e: Exception) {
-                e.printStackTrace()
+            })
+            // https://bugs.openjdk.java.net/browse/JDK-4852178
+            // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
+            if(isUnix) {
+                delay(5)
             }
         }
-        GlobalScope.launch {
-            while(true) {
-                engineContext.gpuContext.invoke(block = {
-                    runnable.run()
-                })
-                // https://bugs.openjdk.java.net/browse/JDK-4852178
-                // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
-                if(isUnix) {
-                    delay(5)
-                }
-            }
-        }
+//        GlobalScope.launch {
+//            while(true) {
+//                engineContext.gpuContext.invoke(block = {
+//                    runnable()
+//                })
+//                // https://bugs.openjdk.java.net/browse/JDK-4852178
+//                // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
+//                if(isUnix) {
+//                    delay(5)
+//                }
+//            }
+//        }
     }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {

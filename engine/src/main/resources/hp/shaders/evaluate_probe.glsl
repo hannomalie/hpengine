@@ -119,7 +119,7 @@ void main(void) {
 
 	vec4 normalAmbient = textureLod(normalMap, st, 0);
 	vec3 normalView = normalAmbient.xyz;
-	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView, 0.0f)).xyz;
+	vec3 normalWorld = (inverse(viewMatrix) * vec4(normalView, 0.0f)).xyz;
 
 	int probeIndex = retrieveProbeIndex(positionWorld, sceneMin, probeDimensions);
 	vec3 probe = sampleProbe(probeIndex, normalWorld).rgb;
@@ -166,6 +166,11 @@ void main(void) {
 	vec3 c = (1 - d.z) * c0 + d.z * c1;
 
 	result = vec3(c);
+
+	vec3 positionToProbe = positionWorld - probePosition;
+	float NdotL = clamp(dot(positionToProbe, normalWorld), 0, 1);
+
+	result *= NdotL;
 
 	out_indirectDiffuse.rgb = result;
 }

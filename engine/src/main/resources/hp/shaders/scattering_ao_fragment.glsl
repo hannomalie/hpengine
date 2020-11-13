@@ -26,10 +26,6 @@ uniform vec3 eyePosition = vec3(0);
 
 uniform bool useAmbientOcclusion = true;
 
-uniform int activeProbeCount;
-uniform vec3 environmentMapMin[100];
-uniform vec3 environmentMapMax[100];
-
 uniform int useVoxelGrid = 0;
 
 uniform int maxPointLightShadowmaps;

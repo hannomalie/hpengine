@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.input
@@ -23,6 +22,7 @@ import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.launch
@@ -64,36 +64,16 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
 
     init {
         engineContext.eventBus.register(this)
-        startSimulation()
+        launchEndlessLoop { deltaSeconds ->
+            executeCommands()
+            withContext(updateScopeDispatcher) {
+                update(deltaSeconds)
+            }
+            extract(deltaSeconds)
+        }
         engineContext.eventBus.post(EngineInitializedEvent())
     }
 
-    fun startSimulation() {
-        GlobalScope.launch {
-            var currentTimeNs = System.nanoTime()
-            val dtS = 1 / 60.0
-
-            while (true) {
-                val newTimeNs = System.nanoTime()
-                val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
-                var frameTimeS = frameTimeNs / 1000000000.0
-                currentTimeNs = newTimeNs
-                while (frameTimeS > 0.0) {
-                    val deltaTime = min(frameTimeS, dtS)
-                    val deltaSeconds = deltaTime.toFloat()
-                    executeCommands()
-                    withContext(updateScopeDispatcher) {
-                        update(deltaSeconds)
-                    }
-                    extract(deltaSeconds)
-
-                    frameTimeS -= deltaTime
-                    yield()
-                }
-            }
-
-        }
-    }
 
     private suspend fun executeCommands() = withContext(engineContext.addResourceContext.singleThreadDispatcher) {
         while (!engineContext.addResourceContext.channel.isEmpty) {
@@ -153,6 +133,29 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
         }
 
     }
+}
+
+
+fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
+    var currentTimeNs = System.nanoTime()
+    val dtS = 1 / 60.0
+
+    while (true) {
+        val newTimeNs = System.nanoTime()
+        val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
+        var frameTimeS = frameTimeNs / 1000000000.0
+        currentTimeNs = newTimeNs
+        while (frameTimeS > 0.0) {
+            val deltaTime = min(frameTimeS, dtS)
+            val deltaSeconds = deltaTime.toFloat()
+
+            actualUpdateStep(deltaSeconds)
+
+            frameTimeS -= deltaTime
+            yield()
+        }
+    }
+
 }
 
 inline val Engine.addResourceContext

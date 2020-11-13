@@ -26,7 +26,7 @@ class CubeMapArrayRenderTarget @JvmOverloads constructor(gpuContext: GpuContext<
     }
 
     override fun setCubeMapFace(cubeMapArrayListIndex: Int, attachmentIndex: Int, cubeMapIndex: Int, faceIndex: Int) {
-        GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + attachmentIndex, textures[cubeMapArrayListIndex]!!.id, 0, 6 * cubeMapIndex + faceIndex)
+        GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + attachmentIndex, textures[cubeMapArrayListIndex].id, 0, 6 * cubeMapIndex + faceIndex)
     }
 
     fun resetAttachments() {

@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLight
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.lifecycle.Updatable
@@ -59,8 +60,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
                                       val baseExtensions: BaseExtensions = BaseExtensions(engineContext),
                                       val nonBaseExtensions: List<Extension> = listOf(
                                             AmbientOcclusionExtension(engineContext),
-                                            GiVolumeExtension(engineContext, baseExtensions.pointLightExtension.deferredRendererExtension),
-                                            EnvironmentProbeExtension(engineContext)
+                                            GiVolumeExtension(engineContext, baseExtensions.pointLightExtension.deferredRendererExtension)
                                       )): Updatable {
     var currentCycle: Long = 0
     var isInitiallyDrawn: Boolean = false

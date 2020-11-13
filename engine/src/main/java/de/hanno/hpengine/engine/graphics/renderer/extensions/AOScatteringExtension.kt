@@ -12,9 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
-import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 
@@ -65,7 +63,6 @@ class AOScatteringExtension(val engineContext: EngineContext): RenderExtension<O
             aoScatteringProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
             aoScatteringProgram.bindShaderStorageBuffer(3, renderState.directionalLightState)
 
-            EnvironmentProbeManager.bindEnvironmentProbePositions(aoScatteringProgram, renderState.environmentProbesState)
             gpuContext.fullscreenBuffer.draw()
             profiled("generate mipmaps") {
                 gpuContext.enable(GlCap.DEPTH_TEST)

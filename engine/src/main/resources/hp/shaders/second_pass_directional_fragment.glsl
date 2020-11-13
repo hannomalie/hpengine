@@ -32,10 +32,6 @@ uniform mat4 modelMatrix;
 
 uniform vec3 eyePosition;
 
-uniform int activeProbeCount;
-uniform vec3 environmentMapMin[100];
-uniform vec3 environmentMapMax[100];
-
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_DiffuseSpecular;
 

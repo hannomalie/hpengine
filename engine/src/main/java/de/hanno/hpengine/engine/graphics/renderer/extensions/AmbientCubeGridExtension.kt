@@ -18,25 +18,21 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
-import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.model.texture.mipmapCount
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
@@ -50,7 +46,6 @@ import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GL45
-import java.io.File
 import java.nio.FloatBuffer
 
 class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtension<OpenGl> {
@@ -115,10 +110,10 @@ class AmbientCubeGridExtension(val engineContext: EngineContext) : RenderExtensi
     }
 }
 
-class ProbeRenderer(private val engine: EngineContext) {
+class ProbeRenderer(private val engineContext: EngineContext) {
     val sceneMin = Vector3f(-100f, -100f, -100f)
     val sceneMax = Vector3f(100f, 100f, 100f)
-    val probesPerDimension = Vector3i(20, 6, 20)
+    val probesPerDimension = Vector3i(10, 6, 10)
     val probesPerDimensionFloat = Vector3f(probesPerDimension.x.toFloat(), probesPerDimension.y.toFloat(), probesPerDimension.z.toFloat())
     val probesPerDimensionHalfFloat = Vector3f(probesPerDimensionFloat).div(2f)
     val probesPerDimensionHalf = Vector3i(probesPerDimensionHalfFloat.x.toInt(), probesPerDimensionHalfFloat.y.toInt(), probesPerDimensionHalfFloat.z.toInt())
@@ -129,18 +124,18 @@ class ProbeRenderer(private val engine: EngineContext) {
     val probeCount = probesPerDimension.x * probesPerDimension.y * probesPerDimension.z
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
-    val probePositionsStructBuffer = engine.gpuContext.window.invoke {
-        PersistentMappedStructBuffer(probeCount, engine.gpuContext, { HpVector4f() })
+    val probePositionsStructBuffer = engineContext.gpuContext.window.invoke {
+        PersistentMappedStructBuffer(probeCount, engineContext.gpuContext, { HpVector4f() })
     }
-    val probeAmbientCubeValues = engine.gpuContext.window.invoke {
-        PersistentMappedStructBuffer(probeCount * 6, engine.gpuContext, { HpVector4f() })
+    val probeAmbientCubeValues = engineContext.gpuContext.window.invoke {
+        PersistentMappedStructBuffer(probeCount * 6, engineContext.gpuContext, { HpVector4f() })
     }
-    val probeAmbientCubeValuesOld = engine.gpuContext.window.invoke {
-        PersistentMappedStructBuffer(probeCount * 6, engine.gpuContext, { HpVector4f() })
+    val probeAmbientCubeValuesOld = engineContext.gpuContext.window.invoke {
+        PersistentMappedStructBuffer(probeCount * 6, engineContext.gpuContext, { HpVector4f() })
     }
 
     init {
-        engine.gpuContext.window.invoke {
+        engineContext.gpuContext.window.invoke {
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
         }
         initProbePositions()
@@ -165,20 +160,20 @@ class ProbeRenderer(private val engine: EngineContext) {
 
 
     var pointLightShadowMapsRenderedInCycle: Long = 0
-    private var pointCubeShadowPassProgram = engine.programManager.getProgram(
-            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_vertex.glsl")),
-            FileBasedCodeSource(File("shaders/" + "environmentprobe_cube_fragment.glsl")),
-            FileBasedCodeSource(File("shaders/" + "pointlight_shadow_cubemap_geometry.glsl")),
+    private var pointCubeShadowPassProgram = engineContext.programManager.getProgram(
+            engineContext.config.EngineAsset("shaders/pointlight_shadow_cubemap_vertex.glsl").toCodeSource(),
+            engineContext.config.EngineAsset("shaders/environmentprobe_cube_fragment.glsl").toCodeSource(),
+            engineContext.config.EngineAsset("shaders/pointlight_shadow_cubemap_geometry.glsl").toCodeSource(),
             Defines(),
             Uniforms.Empty
     )
 
     val cubeMapRenderTarget = RenderTarget(
-            gpuContext = engine.gpuContext,
+            gpuContext = engineContext.gpuContext,
             frameBuffer = FrameBuffer(
-                    gpuContext = engine.gpuContext,
+                    gpuContext = engineContext.gpuContext,
                     depthBuffer = DepthBuffer(CubeMap(
-                            engine.gpuContext,
+                            engineContext.gpuContext,
                             TextureDimension(probeResolution, probeResolution),
                             TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR),
                             GL14.GL_DEPTH_COMPONENT24, GL11.GL_REPEAT)
@@ -188,7 +183,7 @@ class ProbeRenderer(private val engine: EngineContext) {
             height = probeResolution,
             textures = listOf(
                     ColorAttachmentDefinition("Probes", GL30.GL_RGBA16F, TextureFilterConfig(MinFilter.LINEAR_MIPMAP_LINEAR))
-            ).toCubeMaps(engine.gpuContext, probeResolution, probeResolution),
+            ).toCubeMaps(engineContext.gpuContext, probeResolution, probeResolution),
             name = "Probes"
     )
 
@@ -200,21 +195,21 @@ class ProbeRenderer(private val engine: EngineContext) {
         }
         probeAmbientCubeValues.copyTo(probeAmbientCubeValuesOld)
 
-        val gpuContext = engine.gpuContext
+        val gpuContext = engineContext.gpuContext
 
         profiled("Probes") {
 
             gpuContext.depthMask = true
             gpuContext.disable(GlCap.DEPTH_TEST)
             gpuContext.disable(GlCap.CULL_FACE)
-            cubeMapRenderTarget.use(engine.gpuContext, true)
+            cubeMapRenderTarget.use(engineContext.gpuContext, true)
 //            gpuContext.clearDepthAndColorBuffer()
             gpuContext.viewPort(0, 0, probeResolution, probeResolution)
 
             for (probeIndex in probeStartIndex until (probeStartIndex + probesPerFrame)) {
                 gpuContext.clearDepthBuffer()
 
-                val skyBox = engine.textureManager.cubeMap
+                val skyBox = engineContext.textureManager.cubeMap
 
                 pointCubeShadowPassProgram.use()
                 pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
@@ -234,7 +229,7 @@ class ProbeRenderer(private val engine: EngineContext) {
                 if(!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(8, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
                 }
-                engine.gpuContext.bindTexture(8, skyBox)
+                engineContext.gpuContext.bindTexture(8, skyBox)
                 val viewProjectionMatrices = Util.getCubeViewProjectionMatricesForPosition(probePositions[probeIndex])
                 val viewMatrices = arrayOfNulls<FloatBuffer>(6)
                 val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
@@ -259,7 +254,7 @@ class ProbeRenderer(private val engine: EngineContext) {
                     }
                 }
                 val cubeMap = cubeMapRenderTarget.textures.first() as CubeMap
-                engine.textureManager.generateMipMaps(GlTextureTarget.TEXTURE_CUBE_MAP, cubeMap.id)
+                engineContext.textureManager.generateMipMaps(GlTextureTarget.TEXTURE_CUBE_MAP, cubeMap.id)
                 val floatArrayOf = (0 until 6*4).map { 0f }.toFloatArray()
                 GL45.glGetTextureSubImage(cubeMap.id, cubeMap.mipmapCount-1,
                         0, 0, 0, 1, 1, 6, GL_RGBA, GL_FLOAT, floatArrayOf)

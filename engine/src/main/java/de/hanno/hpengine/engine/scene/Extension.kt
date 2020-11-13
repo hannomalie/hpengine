@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.extensibleDeferredRenderer
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
@@ -19,12 +18,10 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntitySystem
-import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
-import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
@@ -36,6 +33,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Render
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
@@ -52,13 +50,9 @@ import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
-import kotlinx.coroutines.CoroutineScope
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
@@ -201,13 +195,10 @@ class CameraExtension(val engineContext: EngineContext): Extension {
 }
 
 class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
-    private val environmentProbeManager = EnvironmentProbeManager(engineContext)
-    override val manager = environmentProbeManager
-    override val renderSystem = environmentProbeManager
+    override val componentSystem = EnvironmentProbeSystem(engineContext)
+    override val renderSystem = componentSystem
 }
 class SkyboxExtension(val engineContext: EngineContext): Extension {
-    class SkyBox(var cubeMap: CubeMap)
-
     private val firstpassProgramVertexSource = engineContext.config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
     private val firstpassProgramFragmentSource = engineContext.config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 
@@ -309,4 +300,8 @@ class PointLightExtension(val engineContext: EngineContext): Extension {
 class AreaLightExtension(val engineContext: EngineContext): Extension {
     override val componentSystem = AreaLightComponentSystem()
     override val renderSystem = AreaLightSystem(engineContext)
+}
+
+class AmbientCubesExtension(val engineContext: EngineContext): Extension {
+    override val deferredRendererExtension = AmbientCubeGridExtension(engineContext)
 }
