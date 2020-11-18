@@ -25,6 +25,7 @@ import org.lwjgl.opengl.GL11.GL_TEXTURE_2D
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24
 import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.opengl.GL32.GL_COLOR_ATTACHMENT0
 import org.lwjgl.opengl.GL32.GL_DEPTH_ATTACHMENT
@@ -166,11 +167,17 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
 //            TODO: Is this needed anymore?
 //            configureBorderColor()
 
-            textures.forEachIndexed { index, it ->
-                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
-                drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index
-                renderedTextureHandles[index] = it.handle
-                renderedTextures[index] = it.id // TODO: Remove me and the line above me
+            if(textures.first() is CubeMapArray) {
+                textures.forEachIndexed { index, it ->
+                    GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, 0, 0, 0)
+                }
+            } else {
+                textures.forEachIndexed { index, it ->
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, it.id, 0)
+                    drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index
+                    renderedTextureHandles[index] = it.handle
+                    renderedTextures[index] = it.id // TODO: Remove me and the line above me
+                }
             }
 
             GL20.glDrawBuffers(drawBuffers)
@@ -341,6 +348,16 @@ fun List<ColorAttachmentDefinition>.toCubeMaps(gpuContext: GpuContext<OpenGl>, w
             filterConfig = it.textureFilter,
             internalFormat = it.internalFormat,
             dimension = TextureDimension(width, height),
+            wrapMode = GL11.GL_REPEAT
+    )
+}
+
+fun List<ColorAttachmentDefinition>.toCubeMapArrays(gpuContext: GpuContext<OpenGl>, width: Int, height: Int, depth: Int): List<CubeMapArray> = map {
+    CubeMapArray(
+            gpuContext = gpuContext,
+            filterConfig = it.textureFilter,
+            internalFormat = it.internalFormat,
+            dimension = TextureDimension(width, height, depth),
             wrapMode = GL11.GL_REPEAT
     )
 }

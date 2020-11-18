@@ -824,3 +824,28 @@ bool isInsideSphere(vec3 position, vec4 positionRadius) {
 bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
     return distance(positionSphere, positionToTest) < radius;
 }
+
+
+vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+    vec3 nrdir = normalize(texCoords3d);
+
+    vec3 rbmax = (environmentMapMax - position_world.xyz)/nrdir;
+    vec3 rbmin = (environmentMapMin - position_world.xyz)/nrdir;
+    //vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+    vec3 rbminmax;
+    rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+    rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+    rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
+    float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+    vec3 posonbox = position_world.xyz + nrdir*fa;
+
+    return posonbox;
+}
+
+vec3 boxProject(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+    vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
+
+    vec3 environmentMapWorldPosition = environmentMapMin + (environmentMapMax - environmentMapMin)/2.0;
+
+    return normalize(posonbox - environmentMapWorldPosition.xyz);
+}

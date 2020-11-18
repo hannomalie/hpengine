@@ -334,7 +334,12 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     }
 
     override fun register(target: RenderTarget<*>) {
+        if(registeredRenderTargets.any { it.name == target.name } || registeredRenderTargets.contains(target)) return
         registeredRenderTargets.add(target)
+    }
+
+    override fun clearRenderTargets() {
+        registeredRenderTargets.clear()
     }
 
     override fun finishFrame(renderState: RenderState) {

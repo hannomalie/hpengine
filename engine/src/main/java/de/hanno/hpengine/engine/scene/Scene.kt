@@ -13,7 +13,8 @@ import de.hanno.hpengine.engine.graphics.light.area.AreaLight
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeRenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.lifecycle.Updatable
@@ -36,19 +37,23 @@ class SceneSyntax(val scene: Scene) {
     fun entity(name: String, block: Entity.() -> Unit) {
         scene.entity(name, block)
     }
+
     fun entities(block: EntitiesSyntax.() -> Unit) = EntitiesSyntax().run {
         block()
         scene.addAll(entities)
     }
 }
+
 class EntitiesSyntax {
     internal val entities = mutableListOf<Entity>()
     fun entity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply(block).apply { entities.add(this) }
 }
+
 fun scene(name: String, engineContext: EngineContext, block: SceneSyntax.() -> Unit): Scene = SceneSyntax(Scene(name, engineContext)).run {
     block()
     return scene
 }
+
 fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(name, engineContext) {
 //    baseExtensions.materialExtension.manager.registerMaterials(sceneManager.scene.baseExtensions.materialExtension.manager.materials)
     baseExtensions.modelComponentExtension.manager.modelCache.putAll(sceneManager.scene.baseExtensions.modelComponentExtension.manager.modelCache)
@@ -59,9 +64,10 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
                                       val engineContext: EngineContext,
                                       val baseExtensions: BaseExtensions = BaseExtensions(engineContext),
                                       val nonBaseExtensions: List<Extension> = listOf(
-                                            AmbientOcclusionExtension(engineContext),
-                                            GiVolumeExtension(engineContext, baseExtensions.pointLightExtension.deferredRendererExtension)
-                                      )): Updatable {
+                                              AmbientOcclusionExtension(engineContext),
+                                              ReflectionProbeExtension(engineContext)
+//                                              GiVolumeExtension(engineContext, baseExtensions.pointLightExtension.deferredRendererExtension)
+                                      )) : Updatable {
     var currentCycle: Long = 0
     var isInitiallyDrawn: Boolean = false
     val aabb = AABB(Vector3f(), 50f).apply {
@@ -73,8 +79,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val entitySystems = SimpleEntitySystemRegistry()
 
     val entityManager = EntityManager(
-        baseExtensions.modelComponentExtension.componentSystem,
-        baseExtensions.materialExtension.manager
+            baseExtensions.modelComponentExtension.componentSystem,
+            baseExtensions.materialExtension.manager
     ).also { managers.register(it) }
 
     val extensions = (baseExtensions + engineContext.additionalExtensions + nonBaseExtensions)
@@ -87,6 +93,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
             isInitiallyDrawn = true
         }
     }
+
     init {
         extensions.forEach { extension ->
             extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
@@ -106,6 +113,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         engineContext.renderSystems.add(initiallyDrawnRenderSystem)
         engineContext.eventBus.register(this)
     }
+
     fun afterUnsetScene() {
         deregister(extensions)
         engineContext.renderSystems.remove(initiallyDrawnRenderSystem)
@@ -124,13 +132,13 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         currentWriteState.sceneMin.set(aabb.min)
         currentWriteState.sceneMax.set(aabb.max)
 
-        for(system in componentSystems.getSystems()) {
+        for (system in componentSystems.getSystems()) {
             system.extract(currentWriteState)
         }
-        for(system in entitySystems.systems) {
+        for (system in entitySystems.systems) {
             system.extract(currentWriteState)
         }
-        for(manager in managers.managers) {
+        for (manager in managers.managers) {
             manager.value.extract(this, currentWriteState)
         }
     }
@@ -146,16 +154,16 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     fun getEntities() = entityManager.getEntities()
     fun addAll(entities: List<Entity>) {
 //        engineContext.addResourceContext.locked {
-            with(entityManager) { add(entities) }
+        with(entityManager) { add(entities) }
 
-            with(entitySystems) { onEntityAdded(this@Scene, entities) }
-            with(componentSystems) { onEntityAdded(entities) }
-            with(managers) { onEntityAdded(entities) }
+        with(entitySystems) { onEntityAdded(this@Scene, entities) }
+        with(componentSystems) { onEntityAdded(entities) }
+        with(managers) { onEntityAdded(entities) }
 
-            calculateBoundingVolume()
-            engineContext.onEntityAdded(this, entities)
+        calculateBoundingVolume()
+        engineContext.onEntityAdded(this, entities)
 
-            entityManager.entityAddedInCycle = currentCycle
+        entityManager.entityAddedInCycle = currentCycle
 //        }
     }
 
@@ -222,6 +230,7 @@ fun Scene.register(extensions: List<Extension>) {
         Unit
     }
 }
+
 fun Scene.deregister(extensions: List<Extension>) {
     extensions.forEach { extension ->
         extension.deferredRendererExtension?.let {

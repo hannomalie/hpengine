@@ -2,6 +2,7 @@ package de.hanno.hpengine.editor.tasks
 
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.OutputConfig
+import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.engine.backend.EngineContext
@@ -12,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarg
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.scene.SceneManager
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
+import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandGroup
 import org.pushingpixels.flamingo.api.common.model.CommandStripPresentationModel
@@ -52,23 +54,9 @@ object ViewTask {
                         }
                     })
                 }
-        val outputFlowBand = JFlowRibbonBand("Output", null).apply {
-            val renderTargetTextures = mutableListOf<OutputConfig>(OutputConfig.Default)
-            for (target in engine.gpuContext.registeredRenderTargets) {
-                for (i in target.textures.indices) {
-                    val name = target.name + " - " + i // TODO: Revive names here
-                    if(target is CubeMapArrayRenderTarget) {
-                        renderTargetTextures.add(OutputConfig.RenderTargetCubeMapArray(target, i.coerceIn(0, target.textures[i].dimension.depth)))
-                    } else if(target is CubeMapRenderTarget){
-                        renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i]))
-                    } else {
-                        renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D))
-                    }
-                }
-            }
 
-            val outputFlowBandModel = RibbonDefaultComboBoxContentModel.builder<OutputConfig>()
-                .setItems(renderTargetTextures.toTypedArray())
+        val outputFlowBandModel = RibbonDefaultComboBoxContentModel.builder<OutputConfig>()
+                .setItems(engine.retrieveRenderTargetTextures().toTypedArray())
                 .build().apply {
                     addListDataListener(object : ListDataListener {
                         override fun intervalRemoved(e: ListDataEvent?) {}
@@ -85,6 +73,9 @@ object ViewTask {
                     })
                     this.selectedItem = OutputConfig.Default
                 }
+
+        val outputFlowBand = JFlowRibbonBand("Output", null).apply {
+
             addFlowComponent(RibbonComboBoxProjection(outputFlowBandModel, ComponentPresentationModel.builder().build()))
         }
 
@@ -113,13 +104,47 @@ object ViewTask {
                         }
                         .build()
             }
-            val selectionModeCommandGroupProjection = CommandStripProjection(CommandGroup(commands),
+
+            val refreshRenderTargetsCommand = Command.builder()
+                    .setText("Refresh")
+                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+                    .setAction {
+                        SwingUtils.invokeLater {
+                            outputFlowBandModel.removeAllElements()
+                            outputFlowBandModel.addAll(engine.retrieveRenderTargetTextures())
+                        }
+                    }
+                    .setActionRichTooltip(RichTooltip.builder()
+                            .setTitle("Refresh rendertargets")
+                            .addDescriptionSection("Refreshes with all registered rendertargets")
+                            .build())
+                    .build()
+
+            val selectionModeCommandGroupProjection = CommandStripProjection(CommandGroup(commands + refreshRenderTargetsCommand),
                     CommandStripPresentationModel.builder()
                             .setCommandPresentationState(CommandButtonPresentationState.MEDIUM)
                             .build())
             addFlowComponent(selectionModeCommandGroupProjection)
+
         }
 
          return RibbonTask("Viewport", outputFlowBand, outputArrayIndexBand, selectionModeBand)
+    }
+
+    private fun EngineContext.retrieveRenderTargetTextures(): MutableList<OutputConfig> {
+        val renderTargetTextures = mutableListOf<OutputConfig>(OutputConfig.Default)
+        for (target in gpuContext.registeredRenderTargets) {
+            for (i in target.textures.indices) {
+                val name = target.name + " - " + i // TODO: Revive names here
+                if (target is CubeMapArrayRenderTarget) {
+                    renderTargetTextures.add(OutputConfig.RenderTargetCubeMapArray(target, i.coerceIn(0, target.textures[i].dimension.depth)))
+                } else if (target is CubeMapRenderTarget) {
+                    renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i]))
+                } else {
+                    renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D))
+                }
+            }
+        }
+        return renderTargetTextures
     }
 }

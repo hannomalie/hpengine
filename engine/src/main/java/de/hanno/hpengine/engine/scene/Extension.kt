@@ -248,7 +248,8 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
             gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
             // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(4, deferredRenderingBuffer.laBuffer.renderedTextures[1], 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            GL42.glBindImageTexture(4, deferredRenderingBuffer.reflectionBuffer.renderedTextures[0], 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            GL42.glBindImageTexture(7, deferredRenderingBuffer.reflectionBuffer.renderedTextures[1], 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
             secondPassReflectionProgram.use()
             secondPassReflectionProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
             secondPassReflectionProgram.setUniform("screenHeight", engineContext.config.height.toFloat())

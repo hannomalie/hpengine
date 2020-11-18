@@ -405,8 +405,9 @@ void main(void) {
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
-	vec3 environmentLight = 4*environmentLightAO.rgb;
-	environmentLight += vec3(0.25f) * color.rgb;
+	environmentLightAO.rgb += refracted.rgb;
+	vec3 environmentLight = environmentLightAO.rgb;
+//	environmentLight += vec3(0.25f) * color.rgb;
 	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 

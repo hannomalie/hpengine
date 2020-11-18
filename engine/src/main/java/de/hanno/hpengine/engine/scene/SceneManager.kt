@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager

@@ -7,9 +7,10 @@ layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D specularMap;
-layout(binding=4, rgba16f) uniform image2D out_Specular;
+layout(binding=4, rgba16f) uniform image2D out_Diffuse;
 layout(binding=5) uniform sampler2D visibilityMap;
 layout(binding=6) uniform samplerCube skyBox;
+layout(binding=7, rgba16f) uniform image2D out_Specular;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -56,8 +57,11 @@ void main(void) {
 	float depthFloat = texture2D(normalMap, st).w;
 	depthFloat = textureLod(visibilityMap, st, 0).g;
 
-	vec4 finalColor = textureLod(skyBox, reflect(V, normalWorld), glossiness * 8);
-	imageStore(out_Specular, storePos, vec4(finalColor.rgb, metallic));
 
-//	imageStore(out_Specular, storePos, vec4(st,0,0));
+	vec3 normal = boxProject(positionWorld, normalWorld, vec3(-500), vec3(500));
+	vec3 reflectedNormal = boxProject(positionWorld, reflect(V, normalWorld), vec3(-500), vec3(500));
+
+	imageStore(out_Diffuse, storePos, vec4(textureLod(skyBox, normal, 8).rgb, 0));
+	imageStore(out_Specular, storePos, vec4(textureLod(skyBox, reflectedNormal, roughness * 8).rgb, 0));
+
 }

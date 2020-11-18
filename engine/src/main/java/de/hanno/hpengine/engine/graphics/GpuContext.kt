@@ -130,6 +130,8 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun register(target: RenderTarget<*>)
 
+    fun clearRenderTargets()
+
     fun finishFrame(renderState: RenderState)
 
     fun isSupported(feature: GpuFeature): Boolean
