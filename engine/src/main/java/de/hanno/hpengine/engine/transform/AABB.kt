@@ -20,6 +20,22 @@ inline val Vector3fc.y
 inline val Vector3fc.z
     get() = z()
 
+inline var Vector3f.x
+    get() = x()
+    set(value) {
+        x = value
+    }
+inline var Vector3f.y
+    get() = y()
+    set(value) {
+        y = value
+    }
+inline var Vector3f.z
+    get() = z()
+    set(value) {
+        z = value
+    }
+
 inline val Vector4fc.x
     get() = x()
 inline val Vector4fc.y

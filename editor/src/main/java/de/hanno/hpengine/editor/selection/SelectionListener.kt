@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbe
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import de.hanno.hpengine.engine.scene.Scene
@@ -47,8 +48,7 @@ class SelectionListener(internal var tree: JTree,
 
         val node = treeNode.userObject
 
-        if (node is EnvironmentProbe) {
-        } else if (node is Entity) {
+        if (node is Entity) {
             unselectOr(node) { editorComponents.selectionSystem.selectEntity(it) }
         } else if (node is MeshSelection) {
             unselectOr(node) { editorComponents.selectionSystem.selectMesh(node) }
@@ -64,6 +64,8 @@ class SelectionListener(internal var tree: JTree,
             unselectOr(node) { editorComponents.selectionSystem.selectScene(node)}
         } else if (node is GIVolumeComponent) {
             unselectOr(node) { editorComponents.selectionSystem.selectGiVolume(node) }
+        } else if (node is ReflectionProbe) {
+            unselectOr(node) { editorComponents.selectionSystem.selectReflectionProbe(ReflectionProbeSelection(node)) }
         }
     }
 

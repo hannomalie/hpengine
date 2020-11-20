@@ -62,6 +62,6 @@ void main(void) {
 	vec3 reflectedNormal = boxProject(positionWorld, reflect(V, normalWorld), vec3(-500), vec3(500));
 
 	imageStore(out_Diffuse, storePos, vec4(textureLod(skyBox, normal, 8).rgb, 0));
-	imageStore(out_Specular, storePos, vec4(textureLod(skyBox, reflectedNormal, roughness * 8).rgb, 0));
+	imageStore(out_Specular, storePos, vec4(textureLod(skyBox, reflectedNormal, glossiness * 8).rgb, 0));
 
 }

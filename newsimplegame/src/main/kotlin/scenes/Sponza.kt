@@ -3,6 +3,7 @@ package scenes
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbe
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.textureManager
@@ -36,6 +37,13 @@ val Engine.sponzaScene
                     }
                     transform.translate(Vector3f(deltaSeconds * 20f, 0f, 0f))
                 }
+            }
+
+            entity("Probe0") {
+                addComponent(ReflectionProbe(Vector3f(100f), this))
+            }
+            entity("Probe1") {
+                addComponent(ReflectionProbe(Vector3f(200f), this))
             }
         }
     }

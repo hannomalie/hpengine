@@ -7,7 +7,7 @@ layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
 
-layout(binding=7) uniform samplerCube probeCubeMap;
+layout(binding=7) uniform samplerCubeArray probeCubeMaps;
 
 //include(globals_structs.glsl)
 //include(globals.glsl)
@@ -25,9 +25,10 @@ uniform vec3 eyePosition = vec3(0);
 uniform int probeCount = 64;
 uniform vec3 probeDimensions = vec3(50);
 
-layout(std430, binding=4) buffer _probePositions {
-	vec4 probePositions[];
+layout(std430, binding=4) buffer _probeMinMax {
+	vec4 probeMinMax[];
 };
+
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_indirectDiffuse;
 layout(location=1)out vec4 out_indirectSpecular;
@@ -55,15 +56,20 @@ void main(void) {
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
 
 	for(int probeIndex = 0; probeIndex < probeCount; probeIndex++) {
-		vec3 probePosition = probePositions[probeIndex].xyz;
-		if(isInside(positionWorld, probePosition - probeDimensionsHalf, probePosition + probeDimensionsHalf)) {
+		vec3 probeMin = probeMinMax[2*probeIndex].xyz;
+		vec3 probeMax = probeMinMax[2*probeIndex+1].xyz;
+		vec3 probeExtents = probeMax - probeMin;
+		vec3 probePosition = probeMin + 0.5*probeExtents;
+
+		if(isInside(positionWorld, probeMin, probeMax)) {
+
 			vec3 normal = normalWorld;
-			normal = boxProject(positionWorld, normal, vec3(-50), vec3(50));
-			resultDiffuse += textureLod(probeCubeMap, normal, 8).rgb;
+			normal = boxProject(positionWorld, normal, probeMin, probeMax);
+			resultDiffuse += textureLod(probeCubeMaps, vec4(normal, probeIndex), 8).rgb;
 
 			vec3 reflectedNormal = reflect(V, normalWorld);
-			reflectedNormal = boxProject(positionWorld, reflectedNormal, vec3(-50), vec3(50));
-			resultSpecular += textureLod(probeCubeMap, reflectedNormal, 0).rgb;
+			reflectedNormal = boxProject(positionWorld, reflectedNormal, probeMin, probeMax);
+			resultSpecular += textureLod(probeCubeMaps, vec4(reflectedNormal, probeIndex), 0).rgb;
 		}
 	}
 

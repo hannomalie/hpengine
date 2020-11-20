@@ -380,15 +380,14 @@ void main(void) {
   	
   	float metallic = colorMetallic.a;
   	
-	const float metalSpecularBoost = 1.0;
-  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), metalSpecularBoost*colorMetallic.rgb, metallic);
-  	const float metalBias = 0.0;
+	const float metalSpecularBoost = 1.0f;
+  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), metalSpecularBoost * colorMetallic.rgb, metallic);
+  	const float metalBias = 0.0f;
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
-	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
-	lightDiffuseSpecular += textureLod(indirectHalfScreen, 	st, 0);
+	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0) + textureLod(indirectHalfScreen, st, 0);
 	vec4 reflection = textureLod(reflection, st, 0);
-	lightDiffuseSpecular.rgb += reflection.rgb * reflection.a;
+	lightDiffuseSpecular.rgb += specularColor.rgb * reflection.rgb;
 
 	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
 	float additiveness = textureLod(forwardRenderedRevealageMap, st, 0).a;
@@ -437,29 +436,4 @@ void main(void) {
         vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(maxValue)); // whitescale marks the maximum value we can have before tone mapping
 	    out_color.rgb = out_color.rgb * whiteScale;
     }
-
-//    out_color.rgb = vec3(ambientTerm.rgb);
-//    out_color.rgb = 0.2*vec3(additiveness);
-//	out_color.rg = 10*textureLod(motionMap, st, 0).xy;
-//	out_color.b = 0;
-
-	//out_color.rgb *= aoReflect.gba;
-	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
-//	out_color.rgb = normalView.xyz;
-	//out_color.rgb = vec3(normalView.xyz*0.5+0.5);
-//	out_color.rgb = specularColor.xyz;
-//	out_color.rgb = lightDiffuseSpecular.rgb;
-//	out_color.rgb = vec3(motionVec,0);
-//	out_color.rgb = 10*environmentLight;
-//	out_color.rgb = lit.rgb;
-//	out_color.rgb = vec3(roughness,roughness,roughness);
-	//out_color.rgb = specularColor;
-//	out_color.rgb = vec3(ao,ao,ao);
-	//out_color.rgb = reflectedColor.rgb;
-	//float motion = textureLod(motionMap, st, 0).r;
-	//out_color.rgb = vec3(motion,0);
-//	out_color.rgb = colorMetallic.rgb;
-//	out_color.rgb = scattering.rgb;
-	//out_color.rgb = refracted.rgb;
-//	out_color.rgb = vec3(textureLod(pointLightShadowMaps, vec4(normalWorld,0), 0).r, 0, 0)*0.005f;
 }

@@ -134,34 +134,30 @@ fun <T : Enum<*>> KMutableProperty0<T>.toComboBox(values: Array<T>): JComboBox<T
     }
 }
 
-fun KProperty0<Vector3f>.toColorPickerInput(): JComponent {
-    return ColorPicker(false, false).apply {
-        val initialValue = get()
-        color = Color(
-                (initialValue.x * 255f).toInt(),
-                (initialValue.y * 255f).toInt(),
-                (initialValue.z * 255f).toInt()
-        )
-        addColorListener {
-            get().x = it.color.red.toFloat() / 255f
-            get().y = it.color.green.toFloat() / 255f
-            get().z = it.color.blue.toFloat() / 255f
-        }
+fun KProperty0<Vector3f>.toColorPickerInput(): JComponent = ColorPicker(false, false).apply {
+    val initialValue = get()
+    color = Color(
+            (initialValue.x * 255f).toInt(),
+            (initialValue.y * 255f).toInt(),
+            (initialValue.z * 255f).toInt()
+    )
+    addColorListener {
+        get().x = it.color.red.toFloat() / 255f
+        get().y = it.color.green.toFloat() / 255f
+        get().z = it.color.blue.toFloat() / 255f
     }
 }
 @JvmName("toVec4ColorPickerInput")
-fun KProperty0<Vector4f>.toColorPickerInput(): JComponent {
-    return ColorPicker(false, false).apply {
-        val initialValue = get()
-        color = Color(
-                (initialValue.x * 255f).toInt(),
-                (initialValue.y * 255f).toInt(),
-                (initialValue.z * 255f).toInt()
-        )
-        addColorListener {
-            get().x = it.color.red.toFloat() / 255f
-            get().y = it.color.green.toFloat() / 255f
-            get().z = it.color.blue.toFloat() / 255f
-        }
+fun KProperty0<Vector4f>.toColorPickerInput(): JComponent = ColorPicker(false, false).apply {
+    val initialValue = get()
+    color = Color(
+            (initialValue.x * 255f).toInt(),
+            (initialValue.y * 255f).toInt(),
+            (initialValue.z * 255f).toInt()
+    )
+    addColorListener {
+        get().x = it.color.red.toFloat() / 255f
+        get().y = it.color.green.toFloat() / 255f
+        get().z = it.color.blue.toFloat() / 255f
     }
 }

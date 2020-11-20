@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor.grids
 
+import com.sun.java.accessibility.util.SwingEventMonitor.addChangeListener
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.Update
 import net.miginfocom.swing.MigLayout
@@ -9,6 +10,8 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JSlider
 import javax.swing.JTextField
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty0
 
@@ -74,10 +77,19 @@ abstract class SliderInput @JvmOverloads constructor(orientation: Int,
     abstract fun onValueChange(value: Int, delta: Int)
 }
 
-fun KMutableProperty0<Float>.toSliderInput(min: Int, max: Int): SliderInput {
-    return object : SliderInput(JSlider.HORIZONTAL, min = min, max = max, initialValue = (get() * 100f).toInt()) {
-        override fun onValueChange(value: Int, delta: Int) {
-            set(value.toFloat() / 100f)
-        }
+fun KMutableProperty0<Float>.toSliderInput(min: Int, max: Int): SliderInput = object : SliderInput(JSlider.HORIZONTAL, min = min, max = max, initialValue = (get() * 100f).toInt()) {
+    override fun onValueChange(value: Int, delta: Int) {
+        set(value.toFloat() / 100f)
     }
+}
+
+fun KMutableProperty0<Float>.toTextInput(): JTextField = JTextField(get().toString()).apply {
+    document.addDocumentListener(object : DocumentListener {
+        override fun insertUpdate(e: DocumentEvent) { onChange() }
+        override fun removeUpdate(e: DocumentEvent) { onChange() }
+        override fun changedUpdate(e: DocumentEvent) { onChange() }
+        fun onChange() {
+            set(document.getText(0, document.length-1).toFloat())
+        }
+    })
 }

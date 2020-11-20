@@ -259,6 +259,7 @@ fun CubeMapArray.createViews(gpuContext: GpuContext<OpenGl>): List<CubeMap> {
 fun CubeMapArray.createView(gpuContext: GpuContext<OpenGl>, index: Int): CubeMap {
     val cubeMapView = gpuContext.genTextures()
     require(index < dimension.depth) { "Index out of bounds: $index / ${dimension.depth}" }
+
     gpuContext.invoke {
         GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, id,
                 internalFormat, 0, mipmapCount-1,

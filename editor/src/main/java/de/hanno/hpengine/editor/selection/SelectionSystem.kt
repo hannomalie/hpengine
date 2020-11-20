@@ -10,6 +10,7 @@ import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.grids.MeshGrid
 import de.hanno.hpengine.editor.grids.ModelGrid
 import de.hanno.hpengine.editor.grids.PointLightGrid
+import de.hanno.hpengine.editor.grids.ReflectionProbeGrid
 import de.hanno.hpengine.editor.grids.SceneGrid
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.SelectionMode
@@ -298,8 +299,15 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
     fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeLater {
         selection = pickedMesh
         sidePanel.verticalBox(
-            unselectButton,
-            MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.materialManager)
+                unselectButton,
+                MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.materialManager)
+        )
+    }
+    fun selectReflectionProbe(pickedReflectionProbe: ReflectionProbeSelection) = SwingUtils.invokeLater {
+        selection = pickedReflectionProbe
+        sidePanel.verticalBox(
+                unselectButton,
+                ReflectionProbeGrid(pickedReflectionProbe.reflectionProbe)
         )
     }
 
