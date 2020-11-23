@@ -141,7 +141,7 @@ object ViewTask {
                 } else if (target is CubeMapRenderTarget) {
                     renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i]))
                 } else {
-                    renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D))
+                    renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D, target.factorsForDebugRendering[i]))
                 }
             }
         }

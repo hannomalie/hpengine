@@ -23,9 +23,12 @@ uniform mat4 modelMatrix;
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
+layout(std430, binding=2) buffer _directionalLightState {
+	DirectionalLightState directionalLight;
+};
 
 //include(globals.glsl)
-
+//include(global_lighting.glsl)
 
 void main(void) {
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
@@ -61,7 +64,10 @@ void main(void) {
 	vec3 normal = boxProject(positionWorld, normalWorld, vec3(-500), vec3(500));
 	vec3 reflectedNormal = boxProject(positionWorld, reflect(V, normalWorld), vec3(-500), vec3(500));
 
-	imageStore(out_Diffuse, storePos, vec4(textureLod(skyBox, normal, 8).rgb, 0));
-	imageStore(out_Specular, storePos, vec4(textureLod(skyBox, reflectedNormal, glossiness * 8).rgb, 0));
+	vec4 resultDiffuse = vec4(textureLod(skyBox, normal, 8).rgb, 0);
+	vec4 resultSpecular = vec4(textureLod(skyBox, reflectedNormal, glossiness * 8).rgb, 0);
+
+	imageStore(out_Diffuse, storePos, resultDiffuse);
+	imageStore(out_Specular, storePos, resultSpecular);
 
 }

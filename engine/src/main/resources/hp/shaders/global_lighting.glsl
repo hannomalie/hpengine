@@ -27,32 +27,32 @@ float maxDepth(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
 	return result;
 }
 
-vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW, DirectionalLightState light, sampler2D shadowMap)
+vec3 chebyshevUpperBound(float dist, vec2 shadowMapCoords, DirectionalLightState light, sampler2D shadowMap)
 {
-    if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-        float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
+    if (shadowMapCoords.x < 0 || shadowMapCoords.x > 1 || shadowMapCoords.y < 0 || shadowMapCoords.y > 1) {
+        float fadeOut = max(abs(shadowMapCoords.x), abs(shadowMapCoords.y)) - 1;
         return vec3(0,0,0);
     }
     if(USE_PCF) {
-        return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
+        return PCF(shadowMap, shadowMapCoords.xy, dist, 0.002);
     }
 
 
     // We retrive the two moments previously stored (depth and depth*depth)
-    vec4 shadowMapSample = textureLod(shadowMap,ShadowCoordPostW.xy, 2);
+    vec4 shadowMapSample = textureLod(shadowMap, shadowMapCoords, 2);
     vec2 moments = shadowMapSample.rg;
     vec2 momentsUnblurred = moments;
 
     const bool AVOID_LIGHT_BLEEDING = false;
     if(AVOID_LIGHT_BLEEDING) {
-        float envelopeMaxDepth = maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0025);
-        envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0017);
-        envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.00125);
+        float envelopeMaxDepth = maxDepth(shadowMap, shadowMapCoords, 0.0025);
+        envelopeMaxDepth += maxDepth(shadowMap, shadowMapCoords, 0.0017);
+        envelopeMaxDepth += maxDepth(shadowMap, shadowMapCoords, 0.00125);
         envelopeMaxDepth /= 3;
         if(envelopeMaxDepth < dist - 0.005) { return vec3(0,0,0); }
     }
 
-    moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0125, 1).rg;
+    moments = blur(shadowMap, shadowMapCoords, 0.0125, 1).rg;
     //moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
     //moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
     //moments /= 3;
@@ -81,49 +81,60 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW, DirectionalLightStat
 
     return vec3(p_max,p_max,p_max);
 }
-float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D shadowMap) {
+vec2 getShadowMapCoords(vec3 positionWorld, DirectionalLightState light) {
 
     mat4 shadowMatrix = light.viewProjectionMatrix;
 
-    float visibility = 1.0;
     vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
     positionShadow.xyz /= positionShadow.w;
     float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-    visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow, light, shadowMap), 0, 1).r;
-    return visibility;
+    return positionShadow.xy;
+}
+
+float getVisibility(vec3 positionWorld, DirectionalLightState light, sampler2D shadowMap) {
+
+    mat4 shadowMatrix = light.viewProjectionMatrix;
+
+    vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
+    positionShadow.xyz /= positionShadow.w;
+    float depthInLightSpace = positionShadow.z;
+    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+    vec2 shadowMapCoords = positionShadow.xy;
+
+    return clamp(chebyshevUpperBound(depthInLightSpace, shadowMapCoords, light, shadowMap), 0, 1).r;
 }
 
 #ifdef BINDLESSTEXTURES
-vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW, DirectionalLightState light)
+vec3 chebyshevUpperBound(float dist, vec2 shadowMapCoords, DirectionalLightState light)
 {
 	if(uint64_t(light.shadowMapHandle) > 0) {
         sampler2D shadowMap = sampler2D(light.shadowMapHandle);
 
-        if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-            float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
+        if (shadowMapCoords.x < 0 || shadowMapCoords.x > 1 || shadowMapCoords.y < 0 || shadowMapCoords.y > 1) {
+            float fadeOut = max(abs(shadowMapCoords.x), abs(shadowMapCoords.y)) - 1;
             return vec3(0,0,0);
         }
         if(USE_PCF) {
-            return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
+            return PCF(shadowMap, shadowMapCoords, dist, 0.002);
         }
 
 
         // We retrive the two moments previously stored (depth and depth*depth)
-        vec4 shadowMapSample = textureLod(shadowMap,ShadowCoordPostW.xy, 2);
+        vec4 shadowMapSample = textureLod(shadowMap, shadowMapCoords, 2);
         vec2 moments = shadowMapSample.rg;
         vec2 momentsUnblurred = moments;
 
         const bool AVOID_LIGHT_BLEEDING = false;
         if(AVOID_LIGHT_BLEEDING) {
-            float envelopeMaxDepth = maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0025);
-            envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0017);
-            envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.00125);
+            float envelopeMaxDepth = maxDepth(shadowMap, shadowMapCoords.xy, 0.0025);
+            envelopeMaxDepth += maxDepth(shadowMap, shadowMapCoords.xy, 0.0017);
+            envelopeMaxDepth += maxDepth(shadowMap, shadowMapCoords.xy, 0.00125);
             envelopeMaxDepth /= 3;
             if(envelopeMaxDepth < dist - 0.005) { return vec3(0,0,0); }
         }
 
-        moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0125, 1).rg;
+        moments = blur(shadowMap, shadowMapCoords.xy, 0.0125, 1).rg;
         //moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
         //moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
         //moments /= 3;

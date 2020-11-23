@@ -43,11 +43,13 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
     //                Reflective shadowmaps?
     //                .add(new ColorAttachmentDefinitions(new String[]{"Shadow", "Shadow", "Shadow"}, GL30.GL_RGBA32F))
         textures = listOf(ColorAttachmentDefinition("Shadow", GL30.GL_RGBA16F)).toTextures(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)
-    )
+    ).apply {
+        factorsForDebugRendering[0] = 100f
+    }
 
     private val directionalShadowPassProgram: Program<Uniforms> = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "directional_shadowmap_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "shadowmap_fragment.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
+            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
             Uniforms.Empty)
 
     private var renderedInCycle: Long = 0

@@ -33,7 +33,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/simpletexture_fragment.glsl")))
 
-    private val debugFrameProgram = programManager.getProgram(
+    val debugFrameProgram = programManager.getProgram(
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
             FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/debugframe_fragment.glsl")))
 
@@ -46,15 +46,17 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
     fun drawToQuad(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
                    texture: Int = finalImage,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-                   program: Program<Uniforms> = renderToQuadProgram) {
-        draw(renderTarget, texture, buffer, program, false)
+                   program: Program<Uniforms> = renderToQuadProgram,
+                   factorForDebugRendering: Float = 1f) {
+        draw(renderTarget, texture, buffer, program, false, factorForDebugRendering)
     }
 
     fun drawToQuad(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
                    texture: Texture2D,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-                   program: Program<Uniforms> = renderToQuadProgram) {
-        drawToQuad(renderTarget, texture.id, buffer, program)
+                   program: Program<Uniforms> = renderToQuadProgram,
+                    factorForDebugRendering: Float = 1f) {
+        drawToQuad(renderTarget, texture.id, buffer, program, factorForDebugRendering)
     }
 
     fun renderCubeMapDebug(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
@@ -83,13 +85,21 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
             GL11.glDeleteTextures(textureView.id)
         }
     }
-    private fun draw(renderTarget: FrontBufferTarget, texture: Int, buffer: VertexBuffer = gpuContext.fullscreenBuffer, program: Program<Uniforms>, clear: Boolean) {
+    private fun draw(
+            renderTarget: FrontBufferTarget,
+            texture: Int,
+            buffer: VertexBuffer = gpuContext.fullscreenBuffer,
+            program: Program<Uniforms>,
+            clear: Boolean,
+            factorForDebugRendering: Float = 1f
+    ) {
 
         gpuContext.disable(GlCap.BLEND)
 
         renderTarget.use(gpuContext, clear = clear)
 
         program.use()
+        program.setUniform("factorForDebugRendering", factorForDebugRendering)
 
         gpuContext.disable(GlCap.DEPTH_TEST)
 

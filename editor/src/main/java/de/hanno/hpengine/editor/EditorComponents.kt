@@ -10,7 +10,6 @@ import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
-import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
@@ -24,7 +23,6 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -72,7 +70,7 @@ sealed class OutputConfig {
     object Default : OutputConfig() {
         override fun toString(): String = "Default"
     }
-    class Texture2D(val name: String, val texture: de.hanno.hpengine.engine.model.texture.Texture2D) : OutputConfig() {
+    class Texture2D(val name: String, val texture: de.hanno.hpengine.engine.model.texture.Texture2D, val factorForDebugRendering: Float) : OutputConfig() {
         override fun toString() = name
     }
     class TextureCubeMap(val name: String, val texture: de.hanno.hpengine.engine.model.texture.CubeMap) : OutputConfig(){
@@ -250,7 +248,12 @@ class EditorComponents(val engineContext: EngineContext,
                 textureRenderer.drawToQuad(engineContext.deferredRenderingBuffer.finalBuffer, engineContext.deferredRenderingBuffer.finalMap)
             }
             is OutputConfig.Texture2D -> {
-                textureRenderer.drawToQuad(engineContext.deferredRenderingBuffer.finalBuffer, selection.texture)
+                textureRenderer.drawToQuad(
+                        engineContext.deferredRenderingBuffer.finalBuffer,
+                        selection.texture,
+                        program = textureRenderer.debugFrameProgram,
+                        factorForDebugRendering = selection.factorForDebugRendering
+                )
             }
             is OutputConfig.TextureCubeMap -> {
                 textureRenderer.renderCubeMapDebug(engineContext.deferredRenderingBuffer.finalBuffer, selection.texture)

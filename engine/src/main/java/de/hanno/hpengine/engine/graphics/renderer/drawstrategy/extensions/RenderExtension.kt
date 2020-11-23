@@ -34,6 +34,10 @@ class CompoundExtension<TYPE : BackendType>(val extensions: List<RenderExtension
     override fun extract(scene: Scene, renderState: RenderState) {
         extensions.forEach { it.extract(scene, renderState) }
     }
+
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        extensions.forEach { it.update(scene, deltaSeconds) }
+    }
     companion object {
         operator fun <TYPE : BackendType> invoke(vararg extension: RenderExtension<TYPE>) = CompoundExtension(extension.toList())
     }

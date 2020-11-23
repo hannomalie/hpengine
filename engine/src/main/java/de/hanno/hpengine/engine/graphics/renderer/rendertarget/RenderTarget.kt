@@ -70,6 +70,7 @@ interface RenderTarget<T : Texture> : FrontBufferTarget {
     var drawBuffers: IntArray
     var mipMapCount: Int
     val renderedTexture: Int
+    val factorsForDebugRendering: MutableList<Float>
 
     fun setTargetTexture(textureID: Int, index: Int, mipMapLevel: Int = 0)
 
@@ -160,6 +161,8 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
     override var drawBuffers: IntArray = IntArray(textures.size)
     override var mipMapCount = Util.calculateMipMapCount(max(width, height))
 
+    // TODO: This is probably not the nicest way to implement this but i am in a hurry :)
+    override val factorsForDebugRendering = textures.map { 1f }.toMutableList()
     init {
         gpuContext.invoke {
             gpuContext.bindFrameBuffer(frameBuffer)

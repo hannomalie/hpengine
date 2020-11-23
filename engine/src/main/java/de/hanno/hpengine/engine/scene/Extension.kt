@@ -222,7 +222,9 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
             renderState.skyBoxMaterialIndex = scene.getEntity("Skybox")!!.getComponent(ModelComponent::class.java)!!.material.materialIndex
         }
     }
-    override val deferredRendererExtension = object: RenderExtension<OpenGl> {
+    override val deferredRendererExtension = SkyboxRenderExtension()
+
+    inner class SkyboxRenderExtension() : RenderExtension<OpenGl> {
         private val gpuContext = engineContext.gpuContext
         private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
 

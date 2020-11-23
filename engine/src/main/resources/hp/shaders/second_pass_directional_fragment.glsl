@@ -7,8 +7,6 @@ layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=7) uniform sampler2D visibilityMap;
 
-layout(binding=8) uniform samplerCubeArray probes;
-
 #ifdef BINDLESSTEXTURES
 #else
 layout(binding=8) uniform sampler2D directionalLightShadowMap;
@@ -126,7 +124,7 @@ void main(void) {
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	out_DiffuseSpecular.a = 1;
 
-//	out_DiffuseSpecular = vec4(1,0.1,0, 1);
+//	out_DiffuseSpecular = vec4(100*textureLod(directionalLightShadowMap, st, 0).rgb, 1);
 
 //	out_DiffuseSpecular = vec4(color,1);
 	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
