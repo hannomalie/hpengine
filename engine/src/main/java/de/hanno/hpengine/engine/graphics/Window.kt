@@ -2,14 +2,17 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
-import de.hanno.hpengine.util.commandqueue.CommandQueue
+import kotlinx.coroutines.runBlocking
 import org.joml.Vector4f
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.awt.AWTGLCanvas
 import org.lwjgl.opengl.awt.GLData
 import java.awt.AWTException
-import javax.swing.SwingUtilities
+import java.lang.IllegalStateException
 
 
 interface Window<T : BackendType>: OpenGlExecutor {
@@ -35,15 +38,36 @@ interface Window<T : BackendType>: OpenGlExecutor {
     val frontBuffer: FrontBufferTarget
 }
 
-abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
-    val commandQueue = CommandQueue { SwingUtilities.isEventDispatchThread() }
-
-    fun init() {
-        if (!initCalled) {
-            initGL()
-            initCalled = true
-        }
+private fun Config.createGlData(): GLData {
+    val glData = GLData().apply {
+        majorVersion = 4
+        minorVersion = 5
+        forwardCompatible = true
+//            samples = 4
+        swapInterval = if (this@createGlData.performance.isVsync) 1 else 0
+//            debug = true
     }
+    return glData
+}
+
+class CustomGlCanvas(config: Config, val executor: OpenGlExecutorImpl): AWTGLCanvas(config.createGlData()) {
+    // Caution, this has to be called when the canvas is attached to a window
+    fun init() = runBlocking(executor.coroutineContext) {
+        isFocusable = true
+        createContext()
+        makeCurrent()
+        initGL()
+    }
+
+    override fun initGL() {
+        GL.createCapabilities()
+        println("OpenGL thread id: ${Thread.currentThread().id}")
+        println("OpenGL thread former name: ${Thread.currentThread().name}")
+        println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION))
+        handle = context
+        Thread.currentThread().name = "OpenGlAWTCanvas"
+    }
+    override fun paintGL() { }
 
     fun makeCurrent() {
         canvas.makeCurrent(context)
@@ -51,14 +75,17 @@ abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
     fun isCurrent() = canvas.isCurrent(context)
 
     fun createContext() {
-        if (context == 0L) {
-            try {
-                context = canvas.create(this, data, effective)
-            } catch (var3: AWTException) {
-                throw RuntimeException("Exception while creating the OpenGL context", var3)
-            }
+        if (context != 0L) throw IllegalStateException("You tried to create a contex twice, which isnot possible")
+
+        try {
+            context = canvas.create(this, data, effective)
+        } catch (var3: AWTException) {
+            throw RuntimeException("Exception while creating the OpenGL context", var3)
         }
     }
+
+    var handle: Long = -1
+        private set
 
     val canvas
         get() = super.platformCanvas

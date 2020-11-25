@@ -313,16 +313,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
 
     override fun createProgramId(): Int = window.invoke { GL20.glCreateProgram() }
 
-    override fun destroy() {
-        try {
-            window.shutdown()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-
-    }
-
-
     override fun genFrameBuffer() = window.invoke { glGenFramebuffers() }
 
     override fun clearCubeMap(textureId: Int, textureFormat: Int) = window.invoke {
@@ -477,5 +467,4 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
         }
     }
 
-    override fun shutdown() { }
 }

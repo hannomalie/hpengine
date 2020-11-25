@@ -10,17 +10,17 @@ import scenes.lotsOfPlanesScene
 import scenes.sponzaScene
 import java.io.File
 
-object Game {
+object GameEditor {
 
     @JvmStatic
     fun main(args: Array<String>) {
 
         val config = ConfigImpl(
-            Directories(
-                    gameDir = GameDirectory<Game>(File("/home/tenter/workspace/hpengine/newsimplegame/src/main/resources/game")),
-                    engineDir = EngineDirectory(File("/home/tenter/workspace/hpengine/engine/src/main/resources/hp"))
-            ),
-            debug = DebugConfig(isUseFileReloading = true)
+                Directories(
+                        gameDir = GameDirectory<Game>(File("/home/tenter/workspace/hpengine/newsimplegame/src/main/resources/game")),
+                        engineDir = EngineDirectory(File("/home/tenter/workspace/hpengine/engine/src/main/resources/hp"))
+                ),
+                debug = DebugConfig(isUseFileReloading = true)
         )
         val (engine, editor) = EngineWithEditor(config)
 
@@ -30,3 +30,21 @@ object Game {
         editor.frame.onSceneReload?.invoke()
     }
 }
+
+object Game {
+
+    @JvmStatic
+    fun main(args: Array<String>) {
+
+        val config = ConfigImpl(
+                Directories(
+                        gameDir = GameDirectory<Game>(File("/home/tenter/workspace/hpengine/newsimplegame/src/main/resources/game")),
+                        engineDir = EngineDirectory(File("/home/tenter/workspace/hpengine/engine/src/main/resources/hp"))
+                ),
+                debug = DebugConfig(isUseFileReloading = true)
+        )
+        val engine = Engine(config)
+        engine.scene = engine.sponzaScene
+    }
+}
+

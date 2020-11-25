@@ -20,7 +20,6 @@ interface OpenGlExecutor {
     suspend fun <T> execute(block: () -> T): T
     operator fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE
 
-    fun shutdown()
 }
 interface GpuContext<T: BackendType>: OpenGlExecutor {
 
@@ -118,9 +117,6 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
     fun genTextures(): Int
 
     fun createProgramId(): Int
-
-    fun destroy()
-
 
     fun genFrameBuffer(): Int
 

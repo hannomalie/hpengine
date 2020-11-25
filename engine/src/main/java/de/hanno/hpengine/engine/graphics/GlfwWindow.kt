@@ -28,7 +28,8 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
                  title: String,
                  override var vSync: Boolean = true,
                  errorCallback: GLFWErrorCallbackI = printErrorCallback,
-                 closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback): Window<OpenGl>, OpenGlExecutor {
+                 closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
+                   val executor: OpenGlExecutor = OpenGlExecutorImpl()): Window<OpenGl>, OpenGlExecutor by executor {
 
     override var title = title
         set(value) {
@@ -60,6 +61,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     }
 
     override val handle: Long
+
     init {
         glfwSetErrorCallback(errorCallback)
         glfwInit()
@@ -73,14 +75,17 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
             throw RuntimeException("Failed to create windowHandle")
         }
 
-        glfwMakeContextCurrent(handle)
+        executor.invoke {
+            makeContextCurrent()
+            GL.createCapabilities()
 
-        glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
-        glfwSwapInterval(if(vSync) 1 else 0)
+            glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
+            glfwSwapInterval(if(vSync) 1 else 0)
 
-        setCallbacks(framebufferSizeCallback, closeCallback)
-        glfwMakeContextCurrent(handle)
-        glfwShowWindow(handle)
+            setCallbacks(framebufferSizeCallback, closeCallback)
+            glfwShowWindow(handle)
+        }
+
         frontBuffer = createFrontBufferRenderTarget()
     }
 
@@ -103,19 +108,6 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override fun getMouseButton(buttonCode: Int): Int = glfwGetMouseButton(handle, buttonCode)
     override fun swapBuffers() = glfwSwapBuffers(handle)
     fun makeContextCurrent() = glfwMakeContextCurrent(handle)
-
-    val executor = OpenGlExecutorImpl().apply {
-        invoke {
-            makeContextCurrent()
-            GL.createCapabilities()
-        }
-    }
-    override val openGLThreadId: Long
-        get() = executor.openGLThreadId
-
-    override suspend fun <T> execute(block: () -> T): T = executor.execute(block)
-    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE = executor.invoke(block)
-    override fun shutdown() = executor.shutdown()
 
 }
 

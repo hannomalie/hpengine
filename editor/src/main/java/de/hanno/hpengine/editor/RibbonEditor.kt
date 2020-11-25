@@ -19,26 +19,28 @@ import java.awt.Dimension
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.JComponent
+import javax.swing.JFrame
 import javax.swing.JPanel
 
-class RibbonEditor : JRibbonFrame("HPEngine") {
+class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFrame("HPEngine") {
     var onSceneReload: (() -> Unit)? = null
+
     init {
         isFocusable = true
         focusTraversalKeysEnabled = false
-        preferredSize = Dimension(1280, 720)
-    }
+        preferredSize = Dimension(config.width, config.height)
+        defaultCloseOperation = JFrame.EXIT_ON_CLOSE
 
-    lateinit var canvas: CustomGlCanvas
-        private set
-
-    fun init(canvas: CustomGlCanvas) {
-        this.canvas = canvas
         add(canvas, BorderLayout.CENTER)
+        SwingUtils.invokeAndWait {
+            pack()
+        }
+        isVisible = true
+        transferFocus()
     }
 
     val emptySidePanel = JPanel()
-    val sidePanel = object: JPanel() {
+    val sidePanel = object : JPanel() {
         override fun add(comp: Component): Component {
             comp.preferredSize = Dimension(fixedWidth, 800)
             add(comp, "wrap")
@@ -92,8 +94,8 @@ fun main(args: Array<String>) {
 
     val loaded = LoadModelCommand("assets/models/doom3monster/monster.md5mesh", "hellknight", engine.scene.materialManager, engine.config.directories.gameDir).execute()
     loaded.entities.first().getComponent(ModelComponent::class.java)!!.spatial.boundingVolume.localAABB = AABBData(
-        Vector3f(-60f, -10f, -35f),
-        Vector3f(60f, 130f, 50f)
+            Vector3f(-60f, -10f, -35f),
+            Vector3f(60f, 130f, 50f)
     )
     println("loaded entities : " + loaded.entities.size)
     engine.sceneManager.addAll(loaded.entities)
