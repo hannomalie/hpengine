@@ -26,7 +26,7 @@ class ComputeProgram @JvmOverloads constructor(
 
     override fun load() {
         clearUniforms()
-        computeShader = ComputeShader.load(programManager, computeShaderSource, defines)
+        computeShader = ComputeShader(programManager, computeShaderSource, defines)
         printIfError("ComputeShader load " + computeShaderSource.name)
         LOGGER.info("Loaded computeshader " + computeShaderSource.name)
         printIfError("Create program " + computeShaderSource.name)

@@ -66,9 +66,9 @@ class Program<T : Uniforms> constructor(
         gpuContext.invoke {
             clearUniforms()
 
-            vertexShader = VertexShader.load(programManager, vertexShaderSource, defines)
-            fragmentShader = fragmentShaderSource?.let { FragmentShader.load(programManager, it, defines) }
-            geometryShader = geometryShaderSource?.let { GeometryShader.load(programManager, it, defines) }
+            vertexShader = VertexShader(programManager, vertexShaderSource, defines)
+            fragmentShader = fragmentShaderSource?.let { FragmentShader(programManager, it, defines) }
+            geometryShader = geometryShaderSource?.let { GeometryShader(programManager, it, defines) }
 
             attachShader(vertexShader)
             fragmentShader?.let { attachShader(it) }

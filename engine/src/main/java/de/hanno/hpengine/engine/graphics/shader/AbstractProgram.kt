@@ -24,8 +24,10 @@ import java.util.HashMap
 abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = Defines(), val uniforms: T): Reloadable {
     abstract var shaders: List<Shader>
         protected set
+
     val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
-    protected var uniformBindings = HashMap<String, UniformBinding>()
+
+    protected val uniformBindings = HashMap<String, UniformBinding>()
 
     fun registerUniforms() {
         uniforms.registeredUniforms.forEach {

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.directory.EngineDirectory
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
@@ -12,11 +13,12 @@ import java.io.IOException
 import java.util.logging.Logger
 import java.util.regex.Pattern
 
-interface Shader : Reloadable {
-    var shaderSource: CodeSource
-    var id: Int
+sealed class Shader(var shaderSource: CodeSource,
+                    val id: Int,
+                    val shaderType: ShaderType) : Reloadable {
 
-    val shaderType: ShaderType
+    constructor(programManager: OpenGlProgramManager, sourceCode: CodeSource, defines: Defines = Defines(), shaderType: ShaderType):
+            this(sourceCode, programManager.loadShader(shaderType, sourceCode, defines), shaderType)
 
     enum class ShaderType constructor(val glShaderType: Int) {
         VertexShader(GL20.GL_VERTEX_SHADER),
@@ -79,3 +81,8 @@ interface Shader : Reloadable {
 
     }
 }
+
+class VertexShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.VertexShader)
+class FragmentShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.FragmentShader)
+class GeometryShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.GeometryShader)
+class ComputeShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.ComputeShader)
