@@ -16,11 +16,6 @@ import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.delay
 
-class RenderStateManager(renderStateFactory: () -> RenderState) {
-    val renderState: TripleBuffer<RenderState> = TripleBuffer(renderStateFactory,
-            { currentStaging, currentRead -> currentStaging.cycle < currentRead.cycle })
-}
-
 class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                     val renderStateManager: RenderStateManager = engineContext.renderStateManager,
                     val materialManager: MaterialManager = engineContext.materialManager) : Manager {

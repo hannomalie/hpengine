@@ -4,10 +4,7 @@ import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
-import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
@@ -25,13 +22,11 @@ import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.struct.StructArray
-import de.hanno.struct.copyTo
-import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import java.util.EnumSet
 
 
-class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material) : BaseComponent(entity) {
+class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<*>, initMaterial: Material = model.material) : BaseComponent(entity) {
     val spatial: TransformSpatial = TransformSpatial(entity.transform, getBoundingVolume(entity.transform))
     var material = initMaterial
         set(value) {

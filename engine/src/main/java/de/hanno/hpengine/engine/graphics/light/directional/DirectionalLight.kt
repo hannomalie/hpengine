@@ -2,18 +2,15 @@ package de.hanno.hpengine.engine.graphics.light.directional
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.input
-import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.scene.Scene
-import kotlinx.coroutines.CoroutineScope
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 
-class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
+class DirectionalLight(entity: Entity) : de.hanno.hpengine.engine.camera.Camera(entity, 1f) {
     private val castsShadows = false
     var color = Vector3f(1f, 1f, 1f)
     var scatterFactor = 1f
@@ -30,29 +27,29 @@ class DirectionalLight(entity: Entity) : Camera(entity, 1f) {
             val moveAmount = 100 * deltaSeconds
             val degreesPerSecond = 45f
             val rotateAmount = Math.toRadians(degreesPerSecond.toDouble()).toFloat() * deltaSeconds
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_UP)) {
-                this@DirectionalLightController.entity.transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_UP)) {
+                entity.transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_DOWN)) {
-                this@DirectionalLightController.entity.transform.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_DOWN)) {
+                entity.transform.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_LEFT)) {
-                this@DirectionalLightController.entity.transform.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_LEFT)) {
+                entity.transform.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) {
-                this@DirectionalLightController.entity.transform.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) {
+                entity.transform.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_8)) {
-                this@DirectionalLightController.entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_8)) {
+                entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
-                this@DirectionalLightController.entity.transform.translate(Vector3f(0f, moveAmount, 0f))
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_2)) {
+                entity.transform.translate(Vector3f(0f, moveAmount, 0f))
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_4)) {
-                this@DirectionalLightController.entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_4)) {
+                entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
             }
-            if (this@DirectionalLightController.engine.input.isKeyPressed(GLFW.GLFW_KEY_6)) {
-                this@DirectionalLightController.entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
+            if (engine.input.isKeyPressed(GLFW.GLFW_KEY_6)) {
+                entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
             }
         }
 

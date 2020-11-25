@@ -1,10 +1,14 @@
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
+import de.hanno.hpengine.engine.materialManager
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
+import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
@@ -24,7 +28,6 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
     init {
         try {
             loadLotsOfInstances(engine, "assets/models/doom3monster/monster.md5mesh", 1, "hellknight")
-//            loadLotsOfInstances(engine, "assets/models/cube.obj", 100, "cube")
             isInitialized = true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -32,43 +35,44 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
     }
 
     protected fun loadLotsOfInstances(engine: Engine, assetPath: String, scale: Int, name: String) {
-        val loaded = LoadModelCommand(engine.directories.gameDir.resolve(assetPath), name, engine.scene.materialManager, engine.directories.gameDir).execute()
-        println("loaded entities : " + loaded.entities.size)
-        for (entity in loaded.entities) {
-            //                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
-            //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
-            val clusters = ArrayList<Cluster>()
-            val clustersComponent = ClustersComponent(entity)
-            for (clusterIndex in 0..2) {
-                val cluster = Cluster()
-                val random = Random()
-                val count = 6
-                for (x in -count until count) {
-                    for (y in -count until count) {
-                        for (z in -count until count) {
-                            val trafo = Transform()
-                            trafo.scale(scale.toFloat())
-                            val randomFloat = random.nextFloat() - 0.5f
-                            trafo.rotate(Vector3f(1f, 0f, 0f), -90)
-                            trafo.rotate(Vector3f(0f, 0f, 1f), (random.nextFloat() * 360f).toInt())
-                            trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance.toFloat() * x.toFloat(), 0.001f * randomFloat, randomFloat * maxDistance.toFloat() * z.toFloat())))
+        val entity = Entity(name).apply {
+            modelComponent(
+                    StaticModelLoader().load(assetPath, engine.materialManager, engine.directories.gameDir)
+            )
+        }
+        //                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
+        //                entity.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
+        val clusters = ArrayList<Cluster>()
+        val clustersComponent = ClustersComponent(entity)
+        for (clusterIndex in 0..2) {
+            val cluster = Cluster()
+            val random = Random()
+            val count = 6
+            for (x in -count until count) {
+                for (y in -count until count) {
+                    for (z in -count until count) {
+                        val trafo = Transform()
+                        trafo.scale(scale.toFloat())
+                        val randomFloat = random.nextFloat() - 0.5f
+                        trafo.rotate(Vector3f(1f, 0f, 0f), -90)
+                        trafo.rotate(Vector3f(0f, 0f, 1f), (random.nextFloat() * 360f).toInt())
+                        trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance.toFloat() * x.toFloat(), 0.001f * randomFloat, randomFloat * maxDistance.toFloat() * z.toFloat())))
 
-                            val modelComponent = entity.getComponent(ModelComponent::class.java)
-                            val materials = modelComponent!!.materials
-                            ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, null, AnimatedTransformSpatial(trafo, modelComponent))
-                        }
+                        val modelComponent = entity.getComponent(ModelComponent::class.java)
+                        val materials = modelComponent!!.materials
+                        ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, null, AnimatedTransformSpatial(trafo, modelComponent))
                     }
                 }
-                clusters.add(cluster)
-                println("Added " + cluster.size)
             }
-            clustersComponent.addClusters(clusters)
-            entity.addComponent(clustersComponent)
+            clusters.add(cluster)
+            println("Added " + cluster.size)
         }
+        clustersComponent.addClusters(clusters)
+        entity.addComponent(clustersComponent)
 
-        //        Entity debugCam = new Entity("DebugCam");
-        //        loaded.entities.add(debugCam.addComponent(new Camera(debugCam)));
+//        Entity debugCam = new Entity("DebugCam");
+//        loaded.entities.add(debugCam.addComponent(new Camera(debugCam)));
 
-        engine.sceneManager.addAll(loaded.entities)
+        engine.sceneManager.add(entity)
     }
 }

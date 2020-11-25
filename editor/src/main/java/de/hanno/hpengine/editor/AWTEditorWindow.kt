@@ -124,7 +124,7 @@ class AWTEditorWindow(val config: ConfigImpl, val addResourceContext: AddResourc
 
     override val frontBuffer = canvas.createFrontBufferRenderTarget()
 
-    override fun swapBuffers() {
+    override fun swapBuffers() = withLockedCanvas {
         canvas.swapBuffers()
     }
 
@@ -132,31 +132,29 @@ class AWTEditorWindow(val config: ConfigImpl, val addResourceContext: AddResourc
     }
 
     override suspend fun <T> execute(block: () -> T): T {
-        return withContext(executor.coroutineContext) {
-            withLockedCanvas {
-                block()
-            }
-        }
-    }
+        if(executor.isOpenGLThread) return block()
 
-    private inline fun <T> withLockedCanvas(block: () -> T): T = try {
-        canvas.beforeRender()
-        block()
-    } catch (e: Exception) {
-        e.printStackTrace()
-        throw e
-    } finally {
-        canvas.afterRender()
+        return withContext(executor.coroutineContext) {
+            block()
+        }
     }
 
     override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE {
         if(executor.isOpenGLThread) return block()
 
         return executor.invoke {
-            withLockedCanvas {
-                block()
-            }
+            block()
         }
+    }
+
+    private inline fun <T> withLockedCanvas(block: () -> T): T = try {
+        canvas.canvas.lock()
+        block()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        throw e
+    } finally {
+        canvas.canvas.unlock()
     }
 
     override fun shutdown() {

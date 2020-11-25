@@ -5,8 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import javax.inject.Inject
 
 class SimpleCustomComponent @Inject constructor(override val entity: Entity) : CustomComponent {
-
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
 //        println("Update called in SimpleCustomComponent")
     }
 }

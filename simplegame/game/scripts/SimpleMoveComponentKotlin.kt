@@ -2,8 +2,8 @@
 
 import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.instancing.instances
 import de.hanno.hpengine.engine.model.Instance
-import de.hanno.hpengine.engine.model.instances
 import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
@@ -15,14 +15,14 @@ class SimpleMoveComponentKotlin @Inject constructor(override val entity: Entity)
     val reversedRandoms = randoms.reversed()
     val lifeTimes = entity.instances.map { 0f }.toFloatArray()
 
-    override fun CoroutineScope.update(scene: Scene, deltaSeconds: Float) {
-        for((index, instance) in this@SimpleMoveComponentKotlin.entity.instances.withIndex()) {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        for((index, instance) in entity.instances.withIndex()) {
             with(ParticleSystem) {
-                val lifeTime = this@SimpleMoveComponentKotlin.lifeTimes[index]
-                instance.update(this@SimpleMoveComponentKotlin.randoms[index], this@SimpleMoveComponentKotlin.reversedRandoms[index], lifeTime, deltaSeconds)
-                this@SimpleMoveComponentKotlin.lifeTimes[index] += deltaSeconds
-                if(this.getMaxLifeTime(this@SimpleMoveComponentKotlin.randoms[index]) > this.maxLifeTime) {
-                    this@SimpleMoveComponentKotlin.lifeTimes[index] = 0f
+                val lifeTime = lifeTimes[index]
+                instance.update(randoms[index], reversedRandoms[index], lifeTime, deltaSeconds)
+                lifeTimes[index] += deltaSeconds
+                if(this.getMaxLifeTime(randoms[index]) > this.maxLifeTime) {
+                    lifeTimes[index] = 0f
                 }
             }
         }

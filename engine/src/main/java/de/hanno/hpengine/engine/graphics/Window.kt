@@ -12,7 +12,7 @@ import java.awt.AWTException
 import javax.swing.SwingUtilities
 
 
-interface Window<T: BackendType>: OpenGlExecutor {
+interface Window<T : BackendType>: OpenGlExecutor {
     val handle: Long // TODO: Remove this, because it is OpenGl/GLFW specific
 
     var title: String
@@ -46,34 +46,22 @@ abstract class CustomGlCanvas(glData: GLData): AWTGLCanvas(glData) {
     }
 
     fun makeCurrent() {
-        platformCanvas.makeCurrent(context)
+        canvas.makeCurrent(context)
     }
-    fun isCurrent() = platformCanvas.isCurrent(context)
+    fun isCurrent() = canvas.isCurrent(context)
 
     fun createContext() {
         if (context == 0L) {
             try {
-                context = platformCanvas.create(this, data, effective)
+                context = canvas.create(this, data, effective)
             } catch (var3: AWTException) {
                 throw RuntimeException("Exception while creating the OpenGL context", var3)
             }
         }
     }
 
-    public override fun beforeRender() {
-        super.beforeRender()
-    }
-
-    public override fun afterRender() {
-        super.afterRender()
-    }
-
-    fun unlock() {
-        platformCanvas.unlock()
-    }
-    fun lock() {
-        platformCanvas.lock()
-    }
+    val canvas
+        get() = super.platformCanvas
 
     fun createFrontBufferRenderTarget(): FrontBufferTarget {
         return object: FrontBufferTarget {
