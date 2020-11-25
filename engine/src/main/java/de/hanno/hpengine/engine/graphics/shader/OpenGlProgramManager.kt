@@ -27,16 +27,11 @@ import kotlin.reflect.KProperty
 sealed class UniformDelegate<T>(var _value: T) : ReadWriteProperty<Uniforms, T> {
     lateinit var name: String
         internal set
-    var location = -1
-        private set
     override fun getValue(thisRef: Uniforms, property: KProperty<*>): T = _value
     override fun setValue(thisRef: Uniforms, property: KProperty<*>, value: T) {
         _value = value
     }
 
-    fun onRegister(program: AbstractProgram<*>) {
-        location = program.getUniformLocation(name)
-    }
 }
 
 class IntType(initial: Int = 0): UniformDelegate<Int>(initial)

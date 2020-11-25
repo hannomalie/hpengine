@@ -3,38 +3,18 @@ package de.hanno.hpengine.engine.graphics.renderer.pipelines
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.DrawParameters
-import de.hanno.hpengine.engine.graphics.EntityStruct
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
-import de.hanno.hpengine.engine.graphics.shader.BooleanType
-import de.hanno.hpengine.engine.graphics.shader.FloatType
-import de.hanno.hpengine.engine.graphics.shader.IntType
-import de.hanno.hpengine.engine.graphics.shader.Mat4
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.SSBO
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
-import de.hanno.hpengine.engine.graphics.shader.Vec3
-import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.math.Matrix4f
-import de.hanno.hpengine.engine.model.material.MaterialStruct
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
-import de.hanno.hpengine.engine.scene.VertexStructPacked
-import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.struct.copyTo
-import org.joml.Vector3f
-import org.lwjgl.BufferUtils
 
 open class IndirectPipeline @JvmOverloads constructor(private val engine: EngineContext,
                                                       private val useFrustumCulling: Boolean = true,
@@ -121,7 +101,7 @@ fun <T: FirstPassUniforms> IndirectDrawDescription<T>.draw() {
     with(commandOrganization) {
         drawCountBuffer.put(0, commandCount)
         profiled("Actually render") {
-            val uniforms: FirstPassUniforms = program.uniformsXXX
+            val uniforms: FirstPassUniforms = program.uniforms
             uniforms.entityIndex = 0
             uniforms.entityBaseIndex = 0
             uniforms.indirect = true

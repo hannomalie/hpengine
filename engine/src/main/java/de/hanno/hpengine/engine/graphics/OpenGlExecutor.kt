@@ -18,7 +18,7 @@ interface OpenGlExecutor {
     val openGLThreadId: Long
 
     suspend fun <T> execute(block: () -> T): T
-    operator fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE
+    operator fun <T> invoke(block: () -> T): T
 
 }
 interface GpuContext<T: BackendType>: OpenGlExecutor {

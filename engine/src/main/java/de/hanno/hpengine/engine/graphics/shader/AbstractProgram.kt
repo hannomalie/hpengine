@@ -21,45 +21,49 @@ import java.nio.LongBuffer
 import java.util.ArrayList
 import java.util.HashMap
 
-abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = Defines(), val uniformsXXX: T): Reloadable {
+abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = Defines(), val uniforms: T): Reloadable {
     abstract var shaders: List<Shader>
         protected set
     val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
-    protected var uniforms = HashMap<String, Uniform?>()
+    protected var uniformBindings = HashMap<String, UniformBinding>()
 
     fun registerUniforms() {
-        uniformsXXX.registeredUniforms.forEach {
-            putInMapIfAbsent(it.name)
-            it.onRegister(this)
+        uniforms.registeredUniforms.forEach {
+            if (!uniformBindings.containsKey(it.name)) {
+                uniformBindings[it.name] = when(it) {
+                    is SSBO<*> -> UniformBinding(it.name, it.bindingIndex)
+                    else -> UniformBinding(it.name, getUniformLocation(it.name))
+                }
+            }
         }
     }
 
-    open fun use() {
+    fun use() {
         GL20.glUseProgram(id)
     }
     protected fun clearUniforms() {
-        uniforms.clear()
+        uniformBindings.clear()
     }
 
     fun setUniform(name: String, value: Int) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.set(value)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(value)
     }
 
     fun setUniform(name: String, value: Boolean) {
         val valueAsInt = if (value) 1 else 0
-        putInMapIfAbsent(name)
-        uniforms[name]!!.set(valueAsInt)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(valueAsInt)
     }
 
     fun setUniform(name: String, value: Float) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.set(value)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(value)
     }
 
     fun setUniform(name: String, value: Long) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.set(value)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(value)
     }
 
     var longBuffer: LongBuffer? = null
@@ -75,68 +79,57 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
 
     fun setUniform(name: String, buffer: LongBuffer?) {
         buffer!!.rewind()
-        putInMapIfAbsent(name)
-        uniforms[name]!!.set(buffer)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(buffer)
     }
 
     fun setUniform(name: String, value: Double) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.set(value.toFloat())
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(value.toFloat())
     }
 
     fun setUniformAsMatrix4(name: String, matrixBuffer: FloatBuffer) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.setAsMatrix4(matrixBuffer)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.setAsMatrix4(matrixBuffer)
     }
 
     fun setUniformAsMatrix4(name: String, matrixBuffer: ByteBuffer) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.setAsMatrix4(matrixBuffer)
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.setAsMatrix4(matrixBuffer)
     }
 
     fun setUniform(name: String, x: Float, y: Float, z: Float) {
-        putInMapIfAbsent(name)
-        uniforms[name]!![x, y] = z
+        createBindingIfMissing(name)
+        uniformBindings[name]!![x, y] = z
     }
 
     fun setUniform(name: String, vec: Vector3f) {
-        putInMapIfAbsent(name)
-        uniforms[name]!![vec.x, vec.y] = vec.z
+        createBindingIfMissing(name)
+        uniformBindings[name]!![vec.x, vec.y] = vec.z
     }
     fun setUniform(name: String, vec: Vector3fc) {
-        putInMapIfAbsent(name)
-        uniforms[name]!![vec.x, vec.y] = vec.z
+        createBindingIfMissing(name)
+        uniformBindings[name]!![vec.x, vec.y] = vec.z
     }
 
-    fun setUniformVector3ArrayAsFloatBuffer(name: String, values: FloatBuffer?) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.setVec3ArrayAsFloatBuffer(values)
+    fun setUniformVector3ArrayAsFloatBuffer(name: String, values: FloatBuffer) {
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.setVec3ArrayAsFloatBuffer(values)
     }
 
-    fun setUniformFloatArrayAsFloatBuffer(name: String, values: FloatBuffer?) {
-        putInMapIfAbsent(name)
-        uniforms[name]!!.setFloatArrayAsFloatBuffer(values)
+    fun setUniformFloatArrayAsFloatBuffer(name: String, values: FloatBuffer) {
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.setFloatArrayAsFloatBuffer(values)
     }
 
-    fun setUniformAsBlock(name: String, fs: FloatArray?) {
-        putBlockInMapIfAbsent(name)
-        try {
-            (uniforms[name] as UniformBlock?)!!.set(fs)
-        } catch (e: ClassCastException) {
-            System.err.println("You can't set a non block uniform as block!")
-            e.printStackTrace()
+    private fun createBindingIfMissing(name: String) {
+        if (!uniformBindings.containsKey(name)) {
+            uniformBindings[name] = UniformBinding(name, getUniformLocation(name))
         }
     }
-
-    protected fun putInMapIfAbsent(name: String) {
-        if (!uniforms.containsKey(name)) {
-            uniforms[name] = Uniform(this, name)
-        }
-    }
-
-    private fun putBlockInMapIfAbsent(name: String) {
-        if (!uniforms.containsKey(name)) {
-            uniforms[name] = UniformBlock(this, name)
+    private fun createShaderStorageBindingIfMissing(name: String) {
+        if (!uniformBindings.containsKey(name)) {
+            uniformBindings[name] = UniformBinding(name, getShaderStorageBlockIndex(name))
         }
     }
 
@@ -164,31 +157,23 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
         GL43.glShaderStorageBlockBinding(id, getShaderStorageBlockIndex(name), bindingIndex)
     }
 
-    fun getUniform(key: String?): Uniform? {
-        return uniforms[key]
-    }
-
-    fun addEmptyUniform(uniform: Uniform) {
-        uniforms[uniform.name] = uniform
-    }
-
     fun UniformDelegate<*>.bind() = when (this) {
-        is Mat4 -> GL20.glUniformMatrix4fv(location, false, _value)
-        is Vec3 -> GL20.glUniform3f(location, _value.x, _value.y, _value.z)
-        is SSBO<*> -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, bindingIndex, _value.id)
-        is IntType -> GL20.glUniform1i(location, _value)
-        is BooleanType -> GL20.glUniform1i(location, if(_value) 1 else 0)
-        is FloatType -> GL20.glUniform1f(location, _value)
+        is Mat4 -> GL20.glUniformMatrix4fv(uniformBindings[name]!!.location, false, _value)
+        is Vec3 -> GL20.glUniform3f(uniformBindings[name]!!.location, _value.x, _value.y, _value.z)
+        is SSBO<*> -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, uniformBindings[name]!!.location, _value.id)
+        is IntType -> GL20.glUniform1i(uniformBindings[name]!!.location, _value)
+        is BooleanType -> GL20.glUniform1i(uniformBindings[name]!!.location, if(_value) 1 else 0)
+        is FloatType -> GL20.glUniform1f(uniformBindings[name]!!.location, _value)
     }
 
-    fun bind() = uniformsXXX.registeredUniforms.forEach {
+    fun bind() = uniforms.registeredUniforms.forEach {
         it.bind()
     }
 }
 
 inline fun <T: Uniforms> AbstractProgram<T>.useAndBind(block: (T) -> Unit) {
     use()
-    block(uniformsXXX)
+    block(uniforms)
     bind()
 }
 fun FloatBuffer.safePut(matrix: FloatBuffer) {

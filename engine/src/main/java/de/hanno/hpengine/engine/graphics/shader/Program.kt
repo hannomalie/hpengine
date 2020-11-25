@@ -36,8 +36,8 @@ class Program<T : Uniforms> constructor(
         val geometryShaderSource: CodeSource?,
         val fragmentShaderSource: CodeSource?,
         defines: Defines,
-        uniformsXXX: T
-) : AbstractProgram<T>(programManager.gpuContext.createProgramId(), defines, uniformsXXX) {
+        uniforms: T
+) : AbstractProgram<T>(programManager.gpuContext.createProgramId(), defines, uniforms) {
     val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
     private val localDefines = HashMap<String, Any>()

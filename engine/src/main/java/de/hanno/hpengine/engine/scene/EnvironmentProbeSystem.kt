@@ -368,7 +368,7 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
     }
 
     @JvmOverloads
-    fun bindEnvironmentProbePositions(program: AbstractProgram<*>, activeProbeCount: Int = probes.size, minPositions: FloatBuffer? = this.minPositions, maxPositions: FloatBuffer? = this.maxPositions, weights: FloatBuffer? = this.weights) {
+    fun bindEnvironmentProbePositions(program: AbstractProgram<*>, activeProbeCount: Int = probes.size, minPositions: FloatBuffer = this.minPositions, maxPositions: FloatBuffer = this.maxPositions, weights: FloatBuffer = this.weights) {
         program.setUniform("activeProbeCount", activeProbeCount)
         program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", minPositions)
         program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", maxPositions)
