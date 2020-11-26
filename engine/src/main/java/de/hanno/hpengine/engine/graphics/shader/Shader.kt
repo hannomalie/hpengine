@@ -6,40 +6,58 @@ import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.Reloadable
+import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL32
-import org.lwjgl.opengl.GL43
 import java.io.IOException
 import java.util.logging.Logger
 import java.util.regex.Pattern
 
-sealed class Shader(var shaderSource: CodeSource,
-                    val id: Int,
+sealed class Shader(private val programManager: ProgramManager<*>,
+                    var source: CodeSource,
+                    val defines: Defines = Defines(),
                     val shaderType: ShaderType) : Reloadable {
+    private val gpuContext = programManager.gpuContext
 
-    constructor(programManager: OpenGlProgramManager, sourceCode: CodeSource, defines: Defines = Defines(), shaderType: ShaderType):
-            this(sourceCode, programManager.loadShader(shaderType, sourceCode, defines), shaderType)
+    val id = programManager.gpuContext { GL20.glCreateShader(shaderType.glShaderType) } // TODO: Abstract createShader in gpuContext
 
-    enum class ShaderType constructor(val glShaderType: Int) {
-        VertexShader(GL20.GL_VERTEX_SHADER),
-        FragmentShader(GL20.GL_FRAGMENT_SHADER),
-        GeometryShader(GL32.GL_GEOMETRY_SHADER),
-        ComputeShader(GL43.GL_COMPUTE_SHADER)
-    }
+    override fun load() {
+        source.load()
 
-    class ShaderLoadException(private val shaderSource: String) : RuntimeException() {
+        val resultingShaderSource = programManager.run { source.toResultingShaderSource(defines) }
 
-        override fun toString(): String {
-            val source = shaderSource.lines().mapIndexed { index, it -> "${index+1}:$it\n" }.fold("", { a, b -> a+b})
-            return source
+        gpuContext.invoke {
+            GL20.glShaderSource(id, resultingShaderSource)
+            GL20.glCompileShader(id)
         }
 
+        val shaderLoadFailed = gpuContext.invoke {
+            val shaderStatus = GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS)
+            if (shaderStatus == GL11.GL_FALSE) {
+                System.err.println("Could not compile " + shaderType + ": " + source.name)
+                var shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
+                shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, resultingShaderSource.lines().size)
+                System.err.println(shaderInfoLog)
+                true
+            } else false
+        }
+
+        if (shaderLoadFailed) {
+            throw ShaderLoadException(resultingShaderSource)
+        }
     }
 
-    override fun load() = shaderSource.load()
-    override fun unload() = shaderSource.unload()
+    override fun reload() = load()
+    override fun unload() {
+        source.unload()
+        GL20.glDeleteShader(id)
+    }
+
     override val name: String
-        get() = shaderSource.name
+        get() = source.name
+
+    init {
+        load()
+    }
 
     companion object {
 

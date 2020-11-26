@@ -17,12 +17,6 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     val gpuContext: GpuContext<BACKEND>
 
     fun update(deltaSeconds: Float)
-    fun loadShader(shaderType: Shader.ShaderType, shaderSource: CodeSource, defines: Defines = Defines()): Int
-
-    @JvmDefault
-    fun loadShader(shaderType: Shader.ShaderType, shaderSource: CodeSource) = loadShader(shaderType, shaderSource, Defines())
-
-
     fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram
     fun getComputeProgram(codeSourceAsset: Asset): ComputeProgram = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), null)
     fun getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)
@@ -49,6 +43,7 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     val linesProgram: Program<LinesProgramUniforms>
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
     val Uniforms.shaderDeclarations: String
+    fun CodeSource.toResultingShaderSource(defines: Defines): String
 }
 
 class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {

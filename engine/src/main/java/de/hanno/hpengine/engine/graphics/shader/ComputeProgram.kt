@@ -21,7 +21,7 @@ class ComputeProgram @JvmOverloads constructor(
 
     init {
         load()
-        create()
+        createFileListeners()
     }
 
     override fun load() {
@@ -84,7 +84,7 @@ class ComputeProgram @JvmOverloads constructor(
                 computeShader!!.reload()
                 self.load()
                 true
-            } catch (e: Shader.ShaderLoadException) {
+            } catch (e: ShaderLoadException) {
                 false
             }
         }

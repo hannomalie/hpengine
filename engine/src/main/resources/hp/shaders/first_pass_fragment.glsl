@@ -1,4 +1,3 @@
-
 #ifdef BINDLESSTEXTURES
 #else
 layout(binding=0) uniform sampler2D diffuseMap;

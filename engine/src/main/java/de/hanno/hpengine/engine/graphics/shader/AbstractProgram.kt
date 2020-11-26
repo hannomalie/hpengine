@@ -30,12 +30,11 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
     protected val uniformBindings = HashMap<String, UniformBinding>()
 
     fun registerUniforms() {
+        uniformBindings.clear()
         uniforms.registeredUniforms.forEach {
-            if (!uniformBindings.containsKey(it.name)) {
-                uniformBindings[it.name] = when(it) {
-                    is SSBO<*> -> UniformBinding(it.name, it.bindingIndex)
-                    else -> UniformBinding(it.name, getUniformLocation(it.name))
-                }
+            uniformBindings[it.name] = when(it) {
+                is SSBO<*> -> UniformBinding(it.name, it.bindingIndex)
+                else -> UniformBinding(it.name, getUniformLocation(it.name))
             }
         }
     }

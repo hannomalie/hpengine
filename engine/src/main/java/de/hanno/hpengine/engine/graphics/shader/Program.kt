@@ -4,11 +4,8 @@ import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
-import de.hanno.hpengine.log.ConsoleLogger.getLogger
-import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
@@ -27,63 +24,39 @@ import org.lwjgl.opengl.GL20.glLinkProgram
 import org.lwjgl.opengl.GL20.glUseProgram
 import org.lwjgl.opengl.GL20.glValidateProgram
 import java.util.EnumSet
-import java.util.HashMap
 import java.util.StringJoiner
 
 class Program<T : Uniforms> constructor(
-        private val programManager: OpenGlProgramManager,
-        val vertexShaderSource: CodeSource,
-        val geometryShaderSource: CodeSource?,
-        val fragmentShaderSource: CodeSource?,
-        defines: Defines,
+        programManager: OpenGlProgramManager,
+        val vertexShader: VertexShader,
+        val geometryShader: GeometryShader? = null,
+        val fragmentShader: FragmentShader? = null,
+        defines: Defines = Defines(),
         uniforms: T
 ) : AbstractProgram<T>(programManager.gpuContext.createProgramId(), defines, uniforms) {
+
     val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
-    private val localDefines = HashMap<String, Any>()
+    override var shaders: List<Shader> = listOfNotNull(vertexShader, fragmentShader, geometryShader)
 
-    override var shaders: List<Shader> = emptyList()
-    private lateinit var vertexShader: VertexShader
-    private var geometryShader: GeometryShader? = null
-    private var fragmentShader: FragmentShader? = null
+    override val name: String = StringJoiner(", ").apply {
+        geometryShader?.let { add(it.name) }
+        add(vertexShader.name)
+        fragmentShader?.let { add(it.name) }
+    }.toString()
 
-    val defineString: String
-        get() {
-            val builder = StringBuilder()
+    override fun load() = gpuContext.invoke {
+        shaders.forEach { it.attach() }
 
-            for (shaderDefine in localDefines.entries) {
-                builder.append(shaderDefine.defineText)
-                builder.append("\n")
-            }
-            return builder.toString()
-        }
+        bindShaderAttributeChannels()
+        linkProgram()
+        validateProgram()
 
-    init {
-        load()
         registerUniforms()
-    }
-    override fun load() {
-        gpuContext.invoke {
-            clearUniforms()
 
-            vertexShader = VertexShader(programManager, vertexShaderSource, defines)
-            fragmentShader = fragmentShaderSource?.let { FragmentShader(programManager, it, defines) }
-            geometryShader = geometryShaderSource?.let { GeometryShader(programManager, it, defines) }
+        gpuContext.backend.gpuContext.exceptionOnError()
 
-            attachShader(vertexShader)
-            fragmentShader?.let { attachShader(it) }
-            geometryShader?.let { attachShader(it) }
-
-            bindShaderAttributeChannels()
-            linkProgram()
-            validateProgram()
-
-            gpuContext.backend.gpuContext.exceptionOnError()
-
-            create()
-
-            shaders = listOfNotNull(vertexShader, fragmentShader, geometryShader)
-        }
+        createFileListeners()
     }
 
     private fun validateProgram() {
@@ -104,43 +77,27 @@ class Program<T : Uniforms> constructor(
         }
     }
 
-    private fun attachShader(shader: Shader) {
-        glAttachShader(id, shader.id)
-        gpuContext.backend.gpuContext.exceptionOnError(shader.name)
+    private fun Shader.attach() {
+        glAttachShader(this@Program.id, id)
+        gpuContext.backend.gpuContext.exceptionOnError(name)
 
     }
 
-    private fun detachShader(shader: Shader) {
-        glDetachShader(id, shader.id)
-    }
-
-    private fun printError(text: String): Boolean {
-        val error = GL11.glGetError()
-        val isError = error != GL11.GL_NO_ERROR
-        if (isError) {
-            LOGGER.severe(text + " " + GLU.gluErrorString(error))
-            LOGGER.info(glGetProgramInfoLog(id))
-        }
-
-        return isError
+    private fun Shader.detach() {
+        glDetachShader(this@Program.id, id)
     }
 
     override fun unload() {
         glDeleteProgram(id)
+        shaders.forEach { it.unload() }
     }
 
     override fun reload() = try {
         gpuContext.invoke {
-            detachShader(vertexShader)
-            fragmentShader?.let { fragmentShader ->
-                detachShader(fragmentShader)
-                fragmentShader.reload()
+            shaders.forEach {
+                it.detach()
+                it.reload()
             }
-            geometryShader?.let { geometryShader ->
-                detachShader(geometryShader)
-                geometryShader.reload()
-            }
-            vertexShader.reload()
 
             load()
         }
@@ -148,28 +105,20 @@ class Program<T : Uniforms> constructor(
         e.printStackTrace()
     }
 
-    override val name: String = StringJoiner(", ")
-            .add(fragmentShaderSource?.name ?: "")
-            .add(vertexShaderSource.name).toString()
-
     override fun equals(other: Any?): Boolean {
-        if (other !is Program<*>) {
-            return false
-        }
+        if (other !is Program<*>) return false
 
-        val otherProgram = other as Program<T>?
-
-        return (this.geometryShaderSource == null && otherProgram!!.geometryShaderSource == null || this.geometryShaderSource == otherProgram!!.geometryShaderSource) &&
-                this.vertexShaderSource == otherProgram.vertexShaderSource &&
-                this.fragmentShaderSource == otherProgram.fragmentShaderSource &&
-                this.defines.isEmpty()
+        return geometryShader == other.geometryShader &&
+                vertexShader == other.vertexShader &&
+                fragmentShader == other.fragmentShader &&
+                defines == other.defines
     }
 
     override fun hashCode(): Int {
         var hash = 0
-        hash += geometryShaderSource?.hashCode() ?: 0
-        hash += vertexShaderSource.hashCode()
-        hash += fragmentShaderSource?.hashCode() ?: 0
+        hash += geometryShader.hashCode()
+        hash += vertexShader.hashCode()
+        hash += fragmentShader.hashCode()
         hash += defines.hashCode()
         return hash
     }
@@ -187,23 +136,17 @@ class Program<T : Uniforms> constructor(
         glDeleteProgram(id)
     }
 
-    fun addDefine(name: String, define: Any) {
-        localDefines[name] = define
-    }
-
-    fun removeDefine(name: String) {
-        localDefines.remove(name)
-    }
-
     @Subscribe
     @Handler
     fun handle(e: GlobalDefineChangedEvent) {
         reload()
     }
 
-    companion object {
-        private val LOGGER = getLogger()
+    init {
+        load()
+    }
 
+    companion object {
         val Map.Entry<String, Any>.defineText: String
             get() = when (value) {
                 is Boolean -> "const bool $key = $value;\n"
@@ -230,13 +173,17 @@ private fun AbstractProgram<*>.removeOldListeners() {
     fileListeners.clear()
 }
 
-fun Program<*>.create() {
-    val sources: List<FileBasedCodeSource> = listOfNotNull(fragmentShaderSource, vertexShaderSource, geometryShaderSource)
-            .filterIsInstance<FileBasedCodeSource>()
+fun Program<*>.createFileListeners() {
+    val sources: List<FileBasedCodeSource> = listOfNotNull(
+        fragmentShader?.source,
+        vertexShader.source,
+        geometryShader?.source
+    ).filterIsInstance<FileBasedCodeSource>()
+
     replaceOldListeners(sources, this)
 }
 
-fun ComputeProgram.create() {
+fun ComputeProgram.createFileListeners() {
     val sources: List<FileBasedCodeSource> = listOfNotNull(computeShaderSource)
     replaceOldListeners(sources, this)
 }

@@ -17,7 +17,6 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
-import java.io.IOException
 import java.nio.FloatBuffer
 import java.util.WeakHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -130,7 +129,14 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                                            uniforms: T): Program<T> {
 
         return gpuContext.invoke {
-            Program(this, vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines, uniforms).apply {
+            Program(
+                this,
+                VertexShader(this, vertexShaderSource, defines),
+                geometryShaderSource?.let { GeometryShader(this, it, defines) },
+                fragmentShaderSource?.let { FragmentShader(this, it, defines) },
+                defines,
+                uniforms
+            ).apply {
                 programsCache.add(this)
                 eventBus.register(this)
             }
@@ -142,60 +148,20 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         if(config.debug.isUseFileReloading) {
             programsCache.forEach { program ->
                 program.shaders.forEach { shader ->
-                    if (shader.shaderSource is StringBasedCodeSource || shader.shaderSource is WrappedCodeSource) {
-                        programsSourceCache.putIfAbsent(shader, shader.shaderSource.source)
-                        if (shader.shaderSource.hasChanged(programsSourceCache[shader]!!)) program.reload()
+                    if (shader.source is StringBasedCodeSource || shader.source is WrappedCodeSource) {
+                        programsSourceCache.putIfAbsent(shader, shader.source.source)
+                        if (shader.source.hasChanged(programsSourceCache[shader]!!)) program.reload()
                     }
                 }
             }
         }
     }
 
-    override fun loadShader(shaderType: Shader.ShaderType, shaderSource: CodeSource, defines: Defines): Int {
-
-        var resultingShaderSource = (gpuContext.getOpenGlVersionsDefine()
-                + gpuContext.getOpenGlExtensionsDefine()
-                + defines.toString()
-                + ShaderDefine.getGlobalDefinesString(config))
-
-        var newlineCount = resultingShaderSource.split("\n".toRegex()).toTypedArray().size - 1
-
-        var actualShaderSource = shaderSource.source
-
-        try {
-            val tuple = Shader.replaceIncludes(config.directories.engineDir, actualShaderSource, newlineCount)
-            actualShaderSource = tuple.left
-            newlineCount = tuple.right
-            resultingShaderSource += actualShaderSource
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        val shaderId: Int = gpuContext.invoke {
-            GL20.glCreateShader(shaderType.glShaderType).also { shaderId ->
-                GL20.glShaderSource(shaderId, resultingShaderSource)
-                GL20.glCompileShader(shaderId)
-            }
-        }
-
-        val shaderLoadFailed = gpuContext.invoke {
-            val shaderStatus = GL20.glGetShaderi(shaderId, GL20.GL_COMPILE_STATUS)
-            if (shaderStatus == GL11.GL_FALSE) {
-                System.err.println("Could not compile " + shaderType + ": " + shaderSource.name)
-                var shaderInfoLog = GL20.glGetShaderInfoLog(shaderId, 10000)
-                shaderInfoLog = Shader.replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, newlineCount)
-                System.err.println(shaderInfoLog)
-                true
-            } else false
-        }
-
-        if (shaderLoadFailed) {
-            throw Shader.ShaderLoadException(resultingShaderSource)
-        }
-
-        Shader.LOGGER.finer(resultingShaderSource)
-        gpuContext.exceptionOnError("loadShader: " + shaderType + ": " + shaderSource.name)
-
-        return shaderId
+    override fun CodeSource.toResultingShaderSource(defines: Defines): String {
+        return gpuContext.getOpenGlVersionsDefine() +
+                gpuContext.getOpenGlExtensionsDefine() +
+                defines.toString() +
+                ShaderDefine.getGlobalDefinesString(config) +
+                Shader.replaceIncludes(config.directories.engineDir, source, 0).left
     }
 }
