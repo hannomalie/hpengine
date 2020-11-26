@@ -12,6 +12,7 @@ import de.hanno.hpengine.util.ressources.OnFileChangeListener
 import de.hanno.hpengine.util.ressources.Reloadable
 import net.engio.mbassy.listener.Handler
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL20.GL_LINK_STATUS
 import org.lwjgl.opengl.GL20.GL_VALIDATE_STATUS
 import org.lwjgl.opengl.GL20.glAttachShader
@@ -46,45 +47,26 @@ class Program<T : Uniforms> constructor(
     }.toString()
 
     override fun load() = gpuContext.invoke {
-        shaders.forEach { it.attach() }
+        shaders.forEach { attach(it) }
 
         bindShaderAttributeChannels()
         linkProgram()
         validateProgram()
 
         registerUniforms()
-
         gpuContext.backend.gpuContext.exceptionOnError()
 
         createFileListeners()
     }
 
-    private fun validateProgram() {
-        glValidateProgram(id)
-        val validationResult = glGetProgrami(id, GL_VALIDATE_STATUS)
-        if (GL11.GL_FALSE == validationResult) {
-            System.err.println(glGetProgramInfoLog(id))
-            throw IllegalStateException("Program invalid: $name")
-        }
-    }
-
-    private fun linkProgram() {
-        glLinkProgram(id)
-        val linkResult = glGetProgrami(id, GL_LINK_STATUS)
-        if (GL11.GL_FALSE == linkResult) {
-            System.err.println(glGetProgramInfoLog(id))
-            throw IllegalStateException("Program not linked: $name")
-        }
-    }
-
-    private fun Shader.attach() {
-        glAttachShader(this@Program.id, id)
-        gpuContext.backend.gpuContext.exceptionOnError(name)
+    private fun attach(shader: Shader) {
+        glAttachShader(id, shader.id)
+        gpuContext.backend.gpuContext.exceptionOnError(shader.name)
 
     }
 
-    private fun Shader.detach() {
-        glDetachShader(this@Program.id, id)
+    private fun detach(shader: Shader) {
+        glDetachShader(id, shader.id)
     }
 
     override fun unload() {
@@ -95,7 +77,7 @@ class Program<T : Uniforms> constructor(
     override fun reload() = try {
         gpuContext.invoke {
             shaders.forEach {
-                it.detach()
+                detach(it)
                 it.reload()
             }
 
@@ -159,12 +141,36 @@ class Program<T : Uniforms> constructor(
 
 }
 
-private fun AbstractProgram<*>.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
-    removeOldListeners()
-    fileListeners.addAll(sources.toFileChangeListeners(reloadable))
+fun <T : Uniforms> AbstractProgram<T>.validateProgram() {
+    glValidateProgram(id)
+    val validationResult = glGetProgrami(id, GL_VALIDATE_STATUS)
+    if (GL11.GL_FALSE == validationResult) {
+        System.err.println(glGetProgramInfoLog(id))
+        throw IllegalStateException("Program invalid: $name")
+    }
 }
 
-private fun AbstractProgram<*>.removeOldListeners() {
+fun <T : Uniforms> AbstractProgram<T>.linkProgram() {
+    glLinkProgram(id)
+    val linkResult = glGetProgrami(id, GL_LINK_STATUS)
+    if (GL11.GL_FALSE == linkResult) {
+        System.err.println(glGetProgramInfoLog(id))
+        throw IllegalStateException("Program not linked: $name")
+    }
+}
+
+inline fun <T: Uniforms> Program<T>.useAndBind(block: (T) -> Unit) {
+    use()
+    block(uniforms)
+    bind()
+}
+
+fun AbstractProgram<*>.replaceOldListeners(sources: List<FileBasedCodeSource>, reloadable: Reloadable) {
+    removeOldListeners()
+    fileListeners.addAll(sources.registerFileChangeListeners(reloadable))
+}
+
+fun AbstractProgram<*>.removeOldListeners() {
     FileMonitor.monitor.observers.forEach { observer ->
         fileListeners.forEach { listener ->
             observer.removeListener(listener)
@@ -184,16 +190,16 @@ fun Program<*>.createFileListeners() {
 }
 
 fun ComputeProgram.createFileListeners() {
-    val sources: List<FileBasedCodeSource> = listOfNotNull(computeShaderSource)
+    val sources: List<FileBasedCodeSource> = listOf(computeShader.source).filterIsInstance<FileBasedCodeSource>()
     replaceOldListeners(sources, this)
 }
 
-fun List<FileBasedCodeSource>.toFileChangeListeners(reloadable: Reloadable): List<OnFileChangeListener> {
-    return map { codeSource ->
-        FileMonitor.addOnFileChangeListener(
-                codeSource.file,
-                { file -> file.name.startsWith("globals") },
-                { reloadable.reload() }
-        )
-    }
+fun List<FileBasedCodeSource>.registerFileChangeListeners(reloadable: Reloadable): List<OnFileChangeListener> {
+    return map { it.registerFileChangeListener(reloadable) }
 }
+
+fun FileBasedCodeSource.registerFileChangeListener(reloadable: Reloadable) = FileMonitor.addOnFileChangeListener(
+    file,
+    { file -> file.name.startsWith("globals") },
+    { reloadable.reload() }
+)

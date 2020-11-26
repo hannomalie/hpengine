@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.TypedTuple
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.CodeSource
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.Reloadable
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
@@ -55,6 +56,18 @@ sealed class Shader(private val programManager: ProgramManager<*>,
     override val name: String
         get() = source.name
 
+    override fun equals(other: Any?): Boolean {
+        if(other !is Shader) return false
+
+        return id == other.id && defines == other.defines
+    }
+
+    override fun hashCode(): Int {
+        var hash = 0
+        hash += id.hashCode()
+        hash += defines.hashCode()
+        return hash
+    }
     init {
         load()
     }

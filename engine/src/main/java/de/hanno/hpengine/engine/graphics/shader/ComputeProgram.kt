@@ -1,23 +1,23 @@
 package de.hanno.hpengine.engine.graphics.shader
 
-import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL20.glGetProgramInfoLog
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
-import java.util.StringJoiner
 import java.util.logging.Logger
 
 class ComputeProgram @JvmOverloads constructor(
-        private val programManager: OpenGlProgramManager,
-        val computeShaderSource: FileBasedCodeSource,
+        private programManager: OpenGlProgramManager,
+        val computeShader: ComputeShader,
         defines: Defines = Defines()) : AbstractProgram<Uniforms>(programManager.gpuContext.createProgramId(), defines, Uniforms.Empty) {
-    private var computeShader: ComputeShader? = null
 
-    override var shaders: List<Shader> = emptyList()
+    constructor(programManager: OpenGlProgramManager,
+                computeShaderSource: FileBasedCodeSource,
+                defines: Defines = Defines()): this(programManager, ComputeShader(programManager, computeShaderSource, defines), defines)
+
+    private val gpuContext = programManager.gpuContext
+    override var shaders: List<Shader> = listOf(computeShader)
 
     init {
         load()
@@ -25,43 +25,22 @@ class ComputeProgram @JvmOverloads constructor(
     }
 
     override fun load() {
-        clearUniforms()
-        computeShader = ComputeShader(programManager, computeShaderSource, defines)
-        printIfError("ComputeShader load " + computeShaderSource.name)
-        LOGGER.info("Loaded computeshader " + computeShaderSource.name)
-        printIfError("Create program " + computeShaderSource.name)
-        attachShader(computeShader!!)
-        printIfError("Attach shader " + computeShaderSource.name)
-        GL20.glLinkProgram(id)
-        printIfError("Link program " + computeShaderSource.name)
-        GL20.glValidateProgram(id)
-        printIfError("Validate program " + computeShaderSource.name)
+        shaders.forEach { attach(it) }
 
-        if (GL20.glGetProgrami(id, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-            System.err.println("Could not link shader: " + computeShaderSource.filename)
-            System.err.println(GL20.glGetProgramInfoLog(id, 10000))
-        }
+        linkProgram()
+        validateProgram()
 
-        printIfError("ComputeShader load ")
-        shaders = listOfNotNull(computeShader)
+        registerUniforms()
+        gpuContext.backend.gpuContext.exceptionOnError()
+
+        createFileListeners()
     }
 
-    private fun printIfError(text: String): Boolean {
-        val error = GL11.glGetError()
-        val isError = error != GL11.GL_NO_ERROR
-        if (isError) {
-            LOGGER.severe(text + " " + GLU.gluErrorString(error))
-            LOGGER.info(glGetProgramInfoLog(id))
-        }
-
-        return isError
-    }
-
-    private fun attachShader(shader: Shader) {
+    private fun attach(shader: Shader) {
         GL20.glAttachShader(id, shader.id)
     }
 
-    private fun detachShader(shader: Shader) {
+    private fun detach(shader: Shader) {
         GL20.glDetachShader(id, shader.id)
     }
 
@@ -75,39 +54,29 @@ class ComputeProgram @JvmOverloads constructor(
         GL20.glDeleteProgram(id)
     }
 
-    override fun reload() {
-        val self = this
-
-        val result = programManager.gpuContext.invoke {
-            detachShader(computeShader!!)
-            try {
-                computeShader!!.reload()
-                self.load()
-                true
-            } catch (e: ShaderLoadException) {
-                false
-            }
+    override fun reload() = try {
+        gpuContext.invoke {
+            detach(computeShader)
+            computeShader.reload()
+            load()
         }
-        if (result == java.lang.Boolean.TRUE) {
-            LOGGER.info("Program reloaded")
-        } else {
-            LOGGER.severe("Program not reloaded")
-        }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 
-    override val name: String = StringJoiner(", ").add(computeShaderSource.filename).toString()
+    override val name: String = computeShader.name
 
     override fun equals(other: Any?): Boolean {
         if (other !is ComputeProgram) {
             return false
         }
 
-        return this.computeShaderSource == other.computeShaderSource && this.defines.isEmpty()
+        return this.computeShader == other.computeShader && this.defines == other.defines
     }
 
     override fun hashCode(): Int {
         var hash = 0
-        hash += computeShaderSource.hashCode()
+        hash += computeShader.hashCode()
         hash += defines.hashCode()
         return hash
     }

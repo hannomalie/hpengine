@@ -29,6 +29,10 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
 
     protected val uniformBindings = HashMap<String, UniformBinding>()
 
+    fun use() {
+        GL20.glUseProgram(id)
+    }
+
     fun registerUniforms() {
         uniformBindings.clear()
         uniforms.registeredUniforms.forEach {
@@ -39,9 +43,6 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
         }
     }
 
-    fun use() {
-        GL20.glUseProgram(id)
-    }
     protected fun clearUniforms() {
         uniformBindings.clear()
     }
@@ -172,11 +173,6 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
     }
 }
 
-inline fun <T: Uniforms> AbstractProgram<T>.useAndBind(block: (T) -> Unit) {
-    use()
-    block(uniforms)
-    bind()
-}
 fun FloatBuffer.safePut(matrix: FloatBuffer) {
     rewind()
     put(matrix)
