@@ -7,6 +7,7 @@ import java.io.IOException
 interface CodeSource: Reloadable {
     val source: String
 }
+interface ReloadableCodeSource: CodeSource
 class StringBasedCodeSource(override val name: String, override val source: String): CodeSource
 
 class FileBasedCodeSource(val file: File) : CodeSource {
@@ -51,3 +52,4 @@ fun FileBasedCodeSource.enhanced(name: String = this.name + System.currentTimeMi
                                  enhancer: String.() -> String) = WrappedCodeSource(this, name, enhancer)
 
 fun CodeSource.hasChanged(reference: String): Boolean = reference != source
+fun CodeSource.hasChanged(reference: Int): Boolean = reference != source.hashCode()

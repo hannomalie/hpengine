@@ -1,13 +1,12 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbe
-import de.hanno.hpengine.engine.scene.EnvironmentProbe
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.scene
-import de.hanno.hpengine.engine.textureManager
-import de.hanno.hpengine.engine.transform.AABBData
 import org.joml.Vector3f
 
 val Engine.sponzaScene
@@ -20,7 +19,12 @@ val Engine.sponzaScene
                     materialManager = scene.materialManager,
                     modelComponentManager = scene.modelComponentManager,
                     gameDirectory = engineContext.config.directories.gameDir
-                )
+                ).apply {
+                    val bricksMaterial = materials.first { it.name == "bricks" } as SimpleMaterial
+                    bricksMaterial.materialInfo.program = engineContext.programManager.heightMappingFirstPassProgram
+                    bricksMaterial.materialInfo = bricksMaterial.materialInfo
+                            .copy(parallaxScale = 0.3f, parallaxBias = 0.3f)
+                }
             }
 
             entity("Sphere") {

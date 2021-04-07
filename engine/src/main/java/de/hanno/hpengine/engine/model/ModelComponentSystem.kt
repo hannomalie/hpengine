@@ -83,8 +83,8 @@ class ModelComponentSystem(val engine: EngineContext,
                 target = gpuEntitiesArray.getAtIndex(counter)
 
                 for(cluster in entity.clusters) {
-                    // TODO: This is so lame, but for some reason extraction has to be done twive. investigate here!
-                    if(cluster.updatedInCycle == -1L || cluster.updatedInCycle == 0L || cluster.updatedInCycle >= scene.currentCycle) {
+                    // TODO: This is so lame, but for some reason extraction has to be done twice. investigate here!
+//                    if(cluster.updatedInCycle == -1L || cluster.updatedInCycle == 0L || cluster.updatedInCycle >= scene.currentCycle) {
                         for (instance in cluster) {
                             target = gpuEntitiesArray.getAtIndex(counter)
                             val instanceMatrix = instance.transform.transformation
@@ -105,9 +105,9 @@ class ModelComponentSystem(val engine: EngineContext,
                             counter++
                         }
                         cluster.updatedInCycle++
-                    } else {
-                        counter += cluster.size
-                    }
+//                    } else {
+//                        counter += cluster.size
+//                    }
                 }
 
                 // TODO: This has to be the outer loop i think?

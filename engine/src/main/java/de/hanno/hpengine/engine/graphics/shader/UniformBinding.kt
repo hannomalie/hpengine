@@ -31,6 +31,12 @@ data class UniformBinding(val name: String, val location: Int) {
         }
     }
 
+    operator fun set(x: Float, y: Float) {
+        if (location != -1) {
+            GL20.glUniform2f(location, x, y)
+        }
+    }
+
     fun setAsMatrix4(values: FloatBuffer) {
         if (location != -1) {
             GL20.glUniformMatrix4fv(location, false, values)

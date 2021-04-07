@@ -270,6 +270,7 @@ class EditorComponents(val engineContext: EngineContext,
         data class Arrow(val scale: Vector3f, val color: Vector3f)
         val ninetyDegrees = Math.toRadians(90.0).toFloat()
 
+        engineContext.gpuContext.cullFace = false
         when(selectionSystem.selection) {
             is EntitySelection -> {
                 val transform = state[selectionTransform]

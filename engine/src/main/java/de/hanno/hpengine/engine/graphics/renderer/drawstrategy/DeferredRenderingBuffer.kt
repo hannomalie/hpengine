@@ -81,7 +81,8 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
             height = height / 2,
             textures = listOf(
                     ColorAttachmentDefinition("AO/Scattering", GL30.GL_RGBA16F),
-                    ColorAttachmentDefinition("Indirect", GL30.GL_RGBA16F)
+                    ColorAttachmentDefinition("Indirect", GL30.GL_RGBA16F),
+                    ColorAttachmentDefinition("Bent Normals", GL30.GL_RGBA16F)
             ).toTextures(gpuContext, width / 2, height / 2)
     )
 

@@ -8,6 +8,7 @@ import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.addUnselectButton
+import de.hanno.hpengine.editor.verticalBox
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
@@ -145,10 +146,10 @@ class MaterialRibbonTask(val engineContext: EngineContext,
                             if (selection is MaterialSelection && selection.material == material) {
                                 selectionSystem.unselect()
                             } else {
-                                editor.sidePanel.doWithRefresh {
-                                    addUnselectButton()
-                                    add(MaterialGrid(engineContext.textureManager, material))
-                                }
+                                editor.sidePanel.verticalBox(
+                                    selectionSystem.unselectButton,
+                                    MaterialGrid(engineContext, engineContext.textureManager, material)
+                                )
                             }
                         } else {
                             selectionSystem.unselect()

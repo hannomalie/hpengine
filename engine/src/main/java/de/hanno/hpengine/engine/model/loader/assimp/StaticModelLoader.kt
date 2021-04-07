@@ -32,6 +32,7 @@ import org.lwjgl.assimp.Assimp.AI_MATKEY_NAME
 import org.lwjgl.assimp.Assimp.aiGetMaterialColor
 import org.lwjgl.assimp.Assimp.aiGetMaterialString
 import org.lwjgl.assimp.Assimp.aiTextureType_DIFFUSE
+import org.lwjgl.assimp.Assimp.aiTextureType_DISPLACEMENT
 import org.lwjgl.assimp.Assimp.aiTextureType_HEIGHT
 import org.lwjgl.assimp.Assimp.aiTextureType_NONE
 import org.lwjgl.assimp.Assimp.aiTextureType_NORMALS
@@ -97,8 +98,11 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
         materialInfo.putIfNotNull(SimpleMaterial.MAP.DIFFUSE, retrieveTexture(aiTextureType_DIFFUSE))
-        val normalOrHeightMap = retrieveTexture(aiTextureType_NORMALS) ?: retrieveTexture(aiTextureType_HEIGHT)
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
+        // super odd, but assimp seems to interpret normal maps as type height map O.O
+        materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, retrieveTexture(aiTextureType_NORMALS) ?: retrieveTexture(aiTextureType_HEIGHT))
+
+        // TODO: I can't do ?: retrieveTexture(aiTextureType_HEIGHT) because the height map is most often given, but contains normals....
+        materialInfo.putIfNotNull(SimpleMaterial.MAP.HEIGHT, retrieveTexture(aiTextureType_DISPLACEMENT))
         materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
 
         return SimpleMaterial(name.dataString(), materialInfo)

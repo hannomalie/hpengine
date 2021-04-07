@@ -9,8 +9,8 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lines
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Faces
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
@@ -52,7 +52,7 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
                       programAnimated: Program<AnimatedFirstPassUniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
+        val mode = if (engine.config.debug.isDrawLines) Lines else Faces
         IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera).draw()
         IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera).draw()
 

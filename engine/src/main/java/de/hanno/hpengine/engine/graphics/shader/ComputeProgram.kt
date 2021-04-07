@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL43
 import java.util.logging.Logger
 
 class ComputeProgram @JvmOverloads constructor(
-        private programManager: OpenGlProgramManager,
+        programManager: OpenGlProgramManager,
         val computeShader: ComputeShader,
         defines: Defines = Defines()) : AbstractProgram<Uniforms>(programManager.gpuContext.createProgramId(), defines, Uniforms.Empty) {
 

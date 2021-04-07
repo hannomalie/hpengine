@@ -1,11 +1,12 @@
 package de.hanno.hpengine.engine.vertexbuffer
 
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveType
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import org.lwjgl.opengl.ARBIndirectParameters
+import org.lwjgl.opengl.ARBIndirectParameters.*
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL31
 import org.lwjgl.opengl.GL42
@@ -41,16 +42,20 @@ fun VertexBuffer.drawDebug(indexBuffer: IndexBuffer, lineWidth: Float = 1f): Int
     return verticesCount
 }
 
-fun IndexBuffer.drawLinesInstancedBaseVertex(command: DrawElementsIndirectCommand, bindIndexBuffer: Boolean): Int {
-    return this.drawLinesInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex, bindIndexBuffer)
+fun IndexBuffer.drawLinesInstancedBaseVertex(command: DrawElementsIndirectCommand, bindIndexBuffer: Boolean, mode: RenderingMode, primitiveType: PrimitiveType): Int {
+    return drawLinesInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex, bindIndexBuffer, mode, primitiveType)
 }
 
-fun IndexBuffer.drawLinesInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int, baseVertexIndex: Int, bindIndexBuffer: Boolean = true): Int {
+fun IndexBuffer.drawLinesInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int,
+                                             baseVertexIndex: Int, bindIndexBuffer: Boolean = true,
+                                             mode: RenderingMode, primitiveType: PrimitiveType): Int {
     if(bindIndexBuffer) bind()
 
-    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
-    GL11.glLineWidth(1f)
-    GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
+    if(mode == RenderingMode.Lines) {
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+        GL11.glLineWidth(1f)
+    }
+    GL42.glDrawElementsInstancedBaseVertexBaseInstance(primitiveType.type, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
 
     return indexCount / 3
@@ -61,11 +66,15 @@ fun drawLinesInstancedBaseVertex(indexCount: Int, instanceCount: Int): Int {
     return indexCount / 3
 }
 
-fun IndexBuffer.drawInstancedBaseVertex(command: DrawElementsIndirectCommand, bindIndexBuffer: Boolean): Int {
-    return drawInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex, bindIndexBuffer)
+fun IndexBuffer.drawInstancedBaseVertex(command: DrawElementsIndirectCommand, bindIndexBuffer: Boolean, mode: RenderingMode, primitiveType: PrimitiveType): Int {
+    return drawInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex, bindIndexBuffer, mode, primitiveType)
 }
 fun drawInstancedBaseVertex(command: DrawElementsIndirectCommand): Int {
     return drawInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex)
+}
+
+fun IndexBuffer.drawPatchesInstancedBaseVertex(command: DrawElementsIndirectCommand, bindIndexBuffer: Boolean, mode: RenderingMode, primitiveType: PrimitiveType): Int {
+    return drawPatchesInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex, bindIndexBuffer, mode, primitiveType)
 }
 
 @JvmOverloads
@@ -99,11 +108,35 @@ fun VertexBuffer.drawActually(indexBuffer: IndexBuffer?): Int {
  * @param baseVertexIndex the integer index, not the byte offset
  * @return
  */
-fun IndexBuffer.drawInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int, baseVertexIndex: Int, bindIndexBuffer: Boolean): Int {
+fun IndexBuffer.drawInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int,
+                                        baseVertexIndex: Int, bindIndexBuffer: Boolean, mode: RenderingMode,
+                                        primitiveType: PrimitiveType): Int {
     if (bindIndexBuffer) {
         bind()
     }
-    GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
+    if(mode == RenderingMode.Lines) {
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+        GL11.glLineWidth(1f)
+    }
+    GL42.glDrawElementsInstancedBaseVertexBaseInstance(primitiveType.type, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
+
+    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
+
+    return indexCount/3
+}
+fun IndexBuffer.drawPatchesInstancedBaseVertex(indexCount: Int, instanceCount: Int, indexOffset: Int,
+                                               baseVertexIndex: Int, bindIndexBuffer: Boolean,
+                                               mode: RenderingMode, primitiveType: PrimitiveType): Int {
+    if (bindIndexBuffer) {
+        bind()
+    }
+    if(mode == RenderingMode.Lines) {
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+        GL11.glLineWidth(1f)
+    }
+    GL42.glDrawElementsInstancedBaseVertexBaseInstance(primitiveType.type, indexCount, GL11.GL_UNSIGNED_INT, (4 * indexOffset).toLong(), instanceCount, baseVertexIndex, 0)
+
+    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
 
     return indexCount/3
 }
@@ -116,11 +149,18 @@ fun multiDrawElementsIndirectCount(indexBuffer: IndexBuffer,
                                                 commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
                                                 drawCountBuffer: AtomicCounterBuffer,
                                                 drawCount: Long = 0,
-                                                maxDrawCount: Int) {
+                                                maxDrawCount: Int,
+                                                mode: RenderingMode) {
     drawCountBuffer.bindAsParameterBuffer()
     indexBuffer.bind()
     commandBuffer.bind()
-    ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
+
+    if(mode == RenderingMode.Lines) {
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+        GL11.glLineWidth(1f)
+    }
+    glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
+    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
     drawCountBuffer.unbind()
     indexBuffer.unbind()
 }
@@ -129,10 +169,10 @@ fun VertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer: PersistentMa
                                                      drawCountBuffer: AtomicCounterBuffer,
                                                      drawCount: Long = 0,
                                                      maxDrawCount: Int,
-                                                     mode: PrimitiveMode) {
+                                                     mode: RenderingMode) {
     return when(mode) {
-        PrimitiveMode.Lines -> drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, maxDrawCount)
-        PrimitiveMode.Triangles -> multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, drawCount, maxDrawCount)
+        RenderingMode.Lines -> drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, maxDrawCount, mode)
+        RenderingMode.Faces -> multiDrawElementsIndirectCount(indexBuffer, commandBuffer, drawCountBuffer, drawCount, maxDrawCount, mode)
     }
 }
 
@@ -140,7 +180,7 @@ fun VertexIndexBuffer.multiDrawElementsIndirect(commandBuffer: PersistentMappedS
                                                      drawCount: Int,
                                                      isDrawLines: Boolean) {
     if(isDrawLines) {
-        drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, drawCount) // This might be wrong
+        drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, drawCount, RenderingMode.Lines) // This might be wrong
     } else {
         multiDrawElementsIndirect(indexBuffer, commandBuffer, drawCount)
     }
@@ -153,15 +193,18 @@ fun multiDrawElementsIndirect(indexBuffer: IndexBuffer, commandBuffer: Persisten
     indexBuffer.unbind()
 }
 
-fun VertexIndexBuffer.drawLinesInstancedIndirectBaseVertex(commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>, primitiveCount: Int) {
-    drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, primitiveCount)
+fun VertexIndexBuffer.drawLinesInstancedIndirectBaseVertex(commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>, primitiveCount: Int, mode: RenderingMode) {
+    drawLinesInstancedIndirectBaseVertex(indexBuffer, commandBuffer, primitiveCount, mode)
 }
 
-fun drawLinesInstancedIndirectBaseVertex(indexBuffer: IndexBuffer, commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>, primitiveCount: Int) {
+fun drawLinesInstancedIndirectBaseVertex(indexBuffer: IndexBuffer, commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                                         primitiveCount: Int, mode: RenderingMode) {
     indexBuffer.bind()
     commandBuffer.bind()
-    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
-    GL11.glLineWidth(1f)
+    if(mode == RenderingMode.Lines) {
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
+        GL11.glLineWidth(1f)
+    }
     glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0)
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
 }

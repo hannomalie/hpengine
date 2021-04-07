@@ -416,7 +416,7 @@ void main(void) {
 	}
 
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
-	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
+//	vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 //	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
 	out_color.rgb = out_color.rgb * (1-resultingRevealage) + (resultingAdditiveness * averageColor.rgb);// * (1-resultingRevealage);

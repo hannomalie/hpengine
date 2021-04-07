@@ -2,18 +2,17 @@ package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.ENVIRONMENTMAP_TYPE
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.model.texture.TextureDimension2D
+import de.hanno.hpengine.engine.scene.HpVector2f
 import de.hanno.hpengine.engine.scene.HpVector3f
 import de.hanno.struct.Struct
+import org.joml.Vector2f
 import org.joml.Vector3f
-import java.io.Serializable
 
 class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED): Struct() {
     val diffuse by HpVector3f()
@@ -34,8 +33,12 @@ class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMA
     var specularMapHandle: Long by 0L
     var heightMapHandle: Long by 0L
 
-    var occlusionMapHandle: Long by 0L
+    var displacementMapHandle: Long by 0L
     var roughnessMapHandle: Long by 0L
+
+    var uvScale by HpVector2f()
+    var lodFactor by 0.0f
+    var useWorldSpaceXZAsTexCoords by 0
 
 }
 
@@ -46,6 +49,9 @@ data class MaterialInfo @JvmOverloads constructor(val diffuse: Vector3f = Vector
                                                   var transparency: Float = 0f,
                                                   var parallaxScale: Float = 0.04f,
                                                   var parallaxBias: Float = 0.02f,
+                                                  var uvScale: Vector2f = Vector2f(1.0f, 1.0f),
+                                                  var lodFactor: Float = 100f,
+                                                  var useWorldSpaceXZAsTexCoords: Boolean = false,
                                                   var materialType: MaterialType = DEFAULT,
                                                   var transparencyType: TransparencyType = TransparencyType.BINARY,
                                                   var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
@@ -60,7 +66,7 @@ data class MaterialInfo @JvmOverloads constructor(val diffuse: Vector3f = Vector
     fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)
     fun getHasDiffuseMap() = maps.containsKey(MAP.DIFFUSE)
     fun getHasHeightMap() = maps.containsKey(MAP.HEIGHT)
-    fun getHasOcclusionMap() = maps.containsKey(MAP.OCCLUSION)
+    fun getHasDisplacentMap() = maps.containsKey(MAP.DISPLACEMENT)
     fun getHasRoughnessMap() = maps.containsKey(MAP.ROUGHNESS)
 
     val textureLess = maps.isEmpty()

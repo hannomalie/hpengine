@@ -21,6 +21,9 @@ struct Material {
     uvec2 handleOcclusion;
     uvec2 handleRoughness;
 
+    vec2 uvScale;
+    float lodFactor;
+    int useWorldSpaceXZAsTexCoords;
 };
 
 struct PointLight {

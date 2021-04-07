@@ -7,7 +7,7 @@ import javax.swing.JPanel
 class DirectionalLightGrid(directionalLight: DirectionalLight): JPanel() {
     init {
         layout = MigLayout("wrap 2")
-        labeled("Radius", directionalLight::scatterFactor.toSliderInput(1, 100))
+        labeled("Radius", directionalLight::scatterFactor.toSliderInput(0.1f, 1f))
         labeled("Color", directionalLight::color.toColorPickerInput())
     }
 

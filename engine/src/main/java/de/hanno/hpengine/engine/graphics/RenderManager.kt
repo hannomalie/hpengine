@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.launchEndlessLoop
+import de.hanno.hpengine.engine.launchEndlessRenderLoop
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
@@ -39,7 +40,7 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
     }
     init {
         var lastTimeSwapped = true
-        launchEndlessLoop { deltaSeconds ->
+        launchEndlessRenderLoop { deltaSeconds ->
             engineContext.gpuContext.invoke(block = {
                 try {
                     renderState.startRead()

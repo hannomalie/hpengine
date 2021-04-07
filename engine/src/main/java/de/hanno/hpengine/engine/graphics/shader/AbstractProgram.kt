@@ -8,6 +8,8 @@ import de.hanno.hpengine.engine.transform.y
 import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
 import de.hanno.hpengine.util.ressources.Reloadable
+import org.joml.Vector2f
+import org.joml.Vector2fc
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -102,16 +104,20 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
 
     fun setUniform(name: String, x: Float, y: Float, z: Float) {
         createBindingIfMissing(name)
-        uniformBindings[name]!![x, y] = z
+        uniformBindings[name]!!.set(x, y, z)
     }
 
     fun setUniform(name: String, vec: Vector3f) {
         createBindingIfMissing(name)
-        uniformBindings[name]!![vec.x, vec.y] = vec.z
+        uniformBindings[name]!!.set(vec.x, vec.y, vec.z)
     }
     fun setUniform(name: String, vec: Vector3fc) {
         createBindingIfMissing(name)
-        uniformBindings[name]!![vec.x, vec.y] = vec.z
+        uniformBindings[name]!!.set(vec.x, vec.y, vec.z)
+    }
+    fun setUniform(name: String, vec: Vector2f) {
+        createBindingIfMissing(name)
+        uniformBindings[name]!!.set(vec.x, vec.y)
     }
 
     fun setUniformVector3ArrayAsFloatBuffer(name: String, values: FloatBuffer) {

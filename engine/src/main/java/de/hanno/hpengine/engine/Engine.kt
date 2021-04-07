@@ -155,7 +155,21 @@ fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalSc
             yield()
         }
     }
+}
+fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
+    var currentTimeNs = System.nanoTime()
+    val dtS = 1 / 60.0
 
+    while (true) {
+        val newTimeNs = System.nanoTime()
+        val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
+        val frameTimeS = frameTimeNs / 1000000000.0
+        currentTimeNs = newTimeNs
+        val deltaTime = frameTimeS//min(frameTimeS, dtS)
+        val deltaSeconds = deltaTime.toFloat()
+
+        actualUpdateStep(deltaSeconds)
+    }
 }
 
 inline val Engine.addResourceContext

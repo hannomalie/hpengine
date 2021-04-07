@@ -13,33 +13,21 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.safePut
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL15.glGetQueryObjectui
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL40.GL_ONE
 import org.lwjgl.opengl.GL40.GL_ONE_MINUS_SRC_ALPHA
-import org.lwjgl.opengl.GL40.GL_QUERY_RESULT
-import org.lwjgl.opengl.GL40.GL_QUERY_RESULT_AVAILABLE
-import org.lwjgl.opengl.GL40.GL_SAMPLES_PASSED
-import org.lwjgl.opengl.GL40.GL_TRUE
 import org.lwjgl.opengl.GL40.GL_ZERO
-import org.lwjgl.opengl.GL40.glBeginQuery
 import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
 import org.lwjgl.opengl.GL40.glBlendFunci
-import org.lwjgl.opengl.GL40.glEndQuery
-import org.lwjgl.opengl.GL40.glGenQueries
-import org.lwjgl.opengl.GL40.glGetQueryObjectui64
 
 class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer

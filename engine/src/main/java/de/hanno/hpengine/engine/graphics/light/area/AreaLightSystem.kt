@@ -42,7 +42,6 @@ import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
-import kotlinx.coroutines.CoroutineScope
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12

@@ -37,14 +37,11 @@ sealed class Shader(private val programManager: ProgramManager<*>,
                 System.err.println("Could not compile " + shaderType + ": " + source.name)
                 var shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
                 shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, resultingShaderSource.lines().size)
-                System.err.println(shaderInfoLog)
-                true
-            } else false
+                ShaderLoadException(shaderInfoLog)
+            } else null
         }
 
-        if (shaderLoadFailed) {
-            throw ShaderLoadException(resultingShaderSource)
-        }
+        shaderLoadFailed?.let { throw it }
     }
 
     override fun reload() = load()
@@ -114,6 +111,9 @@ sealed class Shader(private val programManager: ProgramManager<*>,
 }
 
 class VertexShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.VertexShader)
-class FragmentShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.FragmentShader)
+class TesselationControlShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.TesselationControlShader)
+class TesselationEvaluationShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.TesselationEvaluationShader)
 class GeometryShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.GeometryShader)
+class FragmentShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.FragmentShader)
+
 class ComputeShader(programManager: OpenGlProgramManager, shaderSource: CodeSource, defines: Defines = Defines()) : Shader(programManager, shaderSource, defines, ShaderType.ComputeShader)

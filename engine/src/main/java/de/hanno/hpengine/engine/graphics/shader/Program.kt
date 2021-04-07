@@ -30,6 +30,8 @@ import java.util.StringJoiner
 class Program<T : Uniforms> constructor(
         programManager: OpenGlProgramManager,
         val vertexShader: VertexShader,
+        val tesselationControlShader: TesselationControlShader? = null,
+        val tesselationEvaluationShader: TesselationEvaluationShader? = null,
         val geometryShader: GeometryShader? = null,
         val fragmentShader: FragmentShader? = null,
         defines: Defines = Defines(),
@@ -38,7 +40,7 @@ class Program<T : Uniforms> constructor(
 
     val gpuContext: GpuContext<OpenGl> = programManager.gpuContext
 
-    override var shaders: List<Shader> = listOfNotNull(vertexShader, fragmentShader, geometryShader)
+    override var shaders: List<Shader> = listOfNotNull(vertexShader, fragmentShader, geometryShader, tesselationControlShader, tesselationEvaluationShader)
 
     override val name: String = StringJoiner(", ").apply {
         geometryShader?.let { add(it.name) }
@@ -78,6 +80,7 @@ class Program<T : Uniforms> constructor(
         gpuContext.invoke {
             shaders.forEach {
                 detach(it)
+                gpuContext.getExceptionOnError("Couldn't detach, maybe is already detached")
                 it.reload()
             }
 
@@ -91,6 +94,8 @@ class Program<T : Uniforms> constructor(
         if (other !is Program<*>) return false
 
         return geometryShader == other.geometryShader &&
+                tesselationControlShader == other.tesselationControlShader &&
+                tesselationEvaluationShader == tesselationEvaluationShader &&
                 vertexShader == other.vertexShader &&
                 fragmentShader == other.fragmentShader &&
                 defines == other.defines

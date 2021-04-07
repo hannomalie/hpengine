@@ -45,7 +45,7 @@ class ModelGrid(val model: Model<*>, val modelComponent: ModelComponent, val mat
             labeled("Animations", JLabel(model.animations.size.toString()))
             model.animations.forEach {
                 labeled(it.key, JLabel(""))
-                labeled("", it.value::fps.toSliderInput(0,10000))
+                labeled("", it.value::fps.toSliderInput(0f,100f))
             }
         }
     }

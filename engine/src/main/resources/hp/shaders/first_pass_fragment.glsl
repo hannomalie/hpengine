@@ -67,7 +67,7 @@ void main(void) {
 	vec3 normal_world = vertexShaderOutput.normal_world;
 
 	vec3 V = -normalize((position_world.xyz + eyePosition.xyz).xyz);
-	vec2 UV = vertexShaderOutput.texCoord;
+	vec2 UV = vertexShaderOutput.texCoord * material.uvScale;
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
 	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;

@@ -8,10 +8,10 @@ class CameraGrid(val camera: Camera): JPanel() {
     init {
         layout = MigLayout("wrap 2")
         labeled("Entity", camera.entity::name.toTextField())
-        labeled("Exposure", camera::exposure.toSliderInput(0, 10*100))
-        labeled("Field of view", camera::fov.toSliderInput(30*100, 120*100))
-        labeled("FocalDepth", camera::focalDepth.toSliderInput(0, 150*100))
-        labeled("FocalLength", camera::focalLength.toSliderInput(15*100, 200*100))
-        labeled("fStop", camera::fStop.toSliderInput(0, 20*100))
+        labeled("Exposure", camera::exposure.toSliderInput(0f, 10f))
+        labeled("Field of view", camera::fov.toSliderInput(30f, 120f))
+        labeled("FocalDepth", camera::focalDepth.toSliderInput(0f, 150f))
+        labeled("FocalLength", camera::focalLength.toSliderInput(15f, 200f))
+        labeled("fStop", camera::fStop.toSliderInput(0f, 20f))
     }
 }

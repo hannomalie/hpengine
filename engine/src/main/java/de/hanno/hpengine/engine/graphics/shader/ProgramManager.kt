@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.shader
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.directory.Asset
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
@@ -20,12 +21,21 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram
     fun getComputeProgram(codeSourceAsset: Asset): ComputeProgram = getComputeProgram(codeSourceAsset.toCodeSource(), Defines(), null)
     fun getComputeProgram(codeSourceAsset: Asset, defines: Defines = Defines(), uniforms: Uniforms? = null): ComputeProgram = getComputeProgram(codeSourceAsset.toCodeSource(), defines, uniforms)
+    fun getComputeProgram(codeSource: CodeSource): ComputeProgram // TODO: Enhance and make like the other geometry pipeline
 
     fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
-                   fragmentShaderSource: CodeSource?,
-                   geometryShaderSource: CodeSource?,
-                   defines: Defines,
-                   uniforms: T): Program<T>
+                                 fragmentShaderSource: CodeSource?,
+                                 geometryShaderSource: CodeSource?,
+                                 defines: Defines,
+                                 uniforms: T): Program<T>
+
+    fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
+                                 fragmentShaderSource: CodeSource?,
+                                 geometryShaderSource: CodeSource?,
+                                 tesselationControlShaderSource: CodeSource?,
+                                 tesselationEvaluationShaderSource: CodeSource?,
+                                 defines: Defines,
+                                 uniforms: T): Program<T>
 
     fun <T: Uniforms> getProgram(vertexShaderSource: CodeSource,
                                  fragmentShaderSource: CodeSource?,
@@ -41,6 +51,7 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
     }
 
     val linesProgram: Program<LinesProgramUniforms>
+    val heightMappingFirstPassProgram: Program<FirstPassUniforms>
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
     val Uniforms.shaderDeclarations: String
     fun CodeSource.toResultingShaderSource(defines: Defines): String

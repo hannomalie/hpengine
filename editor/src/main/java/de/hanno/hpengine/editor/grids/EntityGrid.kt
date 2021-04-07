@@ -1,9 +1,9 @@
 package de.hanno.hpengine.editor.grids
 
-import com.sun.java.accessibility.util.SwingEventMonitor.addChangeListener
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.Update
 import net.miginfocom.swing.MigLayout
+import java.util.Hashtable
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -44,23 +44,24 @@ fun JComponent.labeled(label: String, component: JComponent) {
 }
 
 
-abstract class SliderInput @JvmOverloads constructor(orientation: Int,
-                                                     min: Int,
-                                                     max: Int,
-                                                     initialValue: Int,
-                                                     minorTickSpacing: Int = (max - min) / 10,
-                                                     majorTickSpacing: Int = (max - min) / 4) : JPanel() {
+abstract class DecimalSliderInput @JvmOverloads constructor(orientation: Int,
+                                                            min: Float,
+                                                            max: Float,
+                                                            initialValue: Float,
+                                                            majorTickSpacing: Float = (max - min) / 4) : JPanel() {
 
     private var lastValue = 0
 
     init {
-        lastValue = initialValue
-        val slider = JSlider(orientation, min, max, initialValue).apply {
+        lastValue = initialValue.scaleToInt()
+        val slider = JSlider(orientation, min.scaleToInt(), max.scaleToInt(), initialValue.scaleToInt()).apply {
             paintTicks = true
             paintLabels = true
 
-            this.minorTickSpacing = minorTickSpacing
-            this.majorTickSpacing = majorTickSpacing
+            this.majorTickSpacing = majorTickSpacing.scaleToInt()
+
+            val labelsMajor = (0 .. 4).map { it * (max.scaleToInt() / 4) }.associateWith { JLabel("${it.scaleToFloat()}") }
+            labelTable = Hashtable(labelsMajor)
 
             addChangeListener { e ->
                 val delta = value - lastValue
@@ -74,12 +75,25 @@ abstract class SliderInput @JvmOverloads constructor(orientation: Int,
 
     }
 
+    fun Float.scaleToInt() = (this * internalFactor).toInt()
+    fun Int.scaleToFloat() = toFloat() / internalFactor.toFloat()
+
     abstract fun onValueChange(value: Int, delta: Int)
+
+    companion object {
+        val internalFactor: Int = 1000
+    }
 }
 
-fun KMutableProperty0<Float>.toSliderInput(min: Int, max: Int): SliderInput = object : SliderInput(JSlider.HORIZONTAL, min = min, max = max, initialValue = (get() * 100f).toInt()) {
+fun KMutableProperty0<Float>.toSliderInput(min: Float, max: Float): DecimalSliderInput = object : DecimalSliderInput(JSlider.HORIZONTAL, min = min, max = max, initialValue = get()) {
     override fun onValueChange(value: Int, delta: Int) {
-        set(value.toFloat() / 100f)
+        set(value.scaleToFloat())
+    }
+}
+
+fun KMutableProperty0<Int>.toSliderInput(min: Int, max: Int): DecimalSliderInput = object : DecimalSliderInput(JSlider.HORIZONTAL, min = min.toFloat(), max = max.toFloat(), initialValue = get().toFloat()) {
+    override fun onValueChange(value: Int, delta: Int) {
+        set(value.scaleToFloat().toInt())
     }
 }
 

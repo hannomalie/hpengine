@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
@@ -76,7 +76,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     override fun draw(renderState: RenderState, programStatic: Program<StaticFirstPassUniforms>, programAnimated: Program<AnimatedFirstPassUniforms>, firstPassResult: FirstPassResult) {
         profiled("Actual draw entities") {
-            val mode = if(engine.config.debug.isDrawLines) PrimitiveMode.Lines else PrimitiveMode.Triangles
+            val mode = if(engine.config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Faces
 
             val drawDescriptionStatic = IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera)
             val drawDescriptionAnimated = IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera)
@@ -220,7 +220,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
                        offsetBuffer: PersistentMappedStructBuffer<IntStruct>,
                        beforeRender: () -> Unit,
                        phase: Pipeline.CullingPhase,
-                       mode: PrimitiveMode) = profiled("Actually render") {
+                       mode: RenderingMode) = profiled("Actually render") {
         program.use()
         beforeRender()
         program.setUniform("entityIndex", 0)

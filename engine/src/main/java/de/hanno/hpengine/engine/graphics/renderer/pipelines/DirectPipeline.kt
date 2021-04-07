@@ -4,36 +4,18 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Lines
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveMode.Triangles
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveType
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lines
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Faces
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
-import de.hanno.hpengine.engine.graphics.shader.BooleanType
-import de.hanno.hpengine.engine.graphics.shader.FloatType
-import de.hanno.hpengine.engine.graphics.shader.IntType
-import de.hanno.hpengine.engine.graphics.shader.Mat4
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.SSBO
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
-import de.hanno.hpengine.engine.graphics.shader.Vec3
-import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.math.Matrix4f
-import de.hanno.hpengine.engine.model.material.MaterialStruct
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
-import de.hanno.hpengine.engine.scene.VertexStructPacked
-import de.hanno.hpengine.engine.transform.Transform
 import org.joml.FrustumIntersection
-import org.joml.Vector3f
-import org.lwjgl.BufferUtils
 
 open class DirectPipeline(private val engine: EngineContext) : Pipeline {
 
@@ -57,7 +39,7 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
                       programAnimated: Program<AnimatedFirstPassUniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        val mode = if (engine.config.debug.isDrawLines) Lines else Triangles
+        val mode = if (engine.config.debug.isDrawLines) Lines else Faces
 
         val drawDescriptionStatic = DirectDrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera)
         drawDescriptionStatic.draw(engine.gpuContext)
@@ -94,8 +76,9 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         gpuContext.cullFace = batch.materialInfo.cullBackFaces
         gpuContext.depthTest = batch.materialInfo.depthTest
         program.setTextureUniforms(batch.materialInfo.maps)
-        vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
+        vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = PrimitiveType.Triangles)
     }
+
     val batchesWithOwnProgram = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
@@ -107,7 +90,9 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
             gpuContext.cullFace = batch.materialInfo.cullBackFaces
             gpuContext.depthTest = batch.materialInfo.depthTest
             program.setTextureUniforms(batch.materialInfo.maps)
-            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode)
+            val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
+
+            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = primitiveType)
         }
     }
 }

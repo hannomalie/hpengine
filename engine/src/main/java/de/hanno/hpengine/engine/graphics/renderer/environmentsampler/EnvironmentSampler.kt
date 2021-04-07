@@ -6,10 +6,6 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.GpuContext.Companion.exitOnGLError
-import de.hanno.hpengine.engine.graphics.light.area.AreaLight
-import de.hanno.hpengine.engine.graphics.light.point.PointLight
-import de.hanno.hpengine.engine.graphics.light.tube.TubeLight
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer.Companion.invoke
@@ -26,16 +22,12 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.EnvironmentProbe
 import de.hanno.hpengine.engine.scene.EnvironmentProbeSystem
-import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
-import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
-import org.joml.Vector3f
-import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13

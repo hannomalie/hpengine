@@ -88,6 +88,7 @@ map_Kh textures/Sponza_Bricks_a_height.png
 map_bump textures/Sponza_Bricks_a_Normal.png
 map_Ns textures/Sponza_Bricks_a_Roughness.png
 bump textures/Sponza_Bricks_a_Normal.png
+disp textures/Sponza_Bricks_a_height.png
 
 newmtl arch
 Ns 10.0000

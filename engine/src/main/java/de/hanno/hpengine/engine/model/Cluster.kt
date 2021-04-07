@@ -72,7 +72,9 @@ class Cluster : ArrayList<Instance>(), Updatable {
         val minDistance = boundingVolume.boundingSphereRadius
 
         if (!clusterIsInFrustum) return 0
-        if(distanceToClusterCenter < minDistance) return size
+        if(distanceToClusterCenter < minDistance
+                || distanceToClusterCenter == Float.NEGATIVE_INFINITY
+                || distanceToClusterCenter == Float.POSITIVE_INFINITY) return size
 
         val percent = 1f - (distanceToClusterCenter / maxDistance)
         return max(0, (percent * size.toFloat()).toInt())

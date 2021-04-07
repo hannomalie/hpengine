@@ -58,6 +58,7 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
+
 interface Extension {
     val manager: Manager?
         get() = null
@@ -224,7 +225,7 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
     }
     override val deferredRendererExtension = SkyboxRenderExtension()
 
-    inner class SkyboxRenderExtension() : RenderExtension<OpenGl> {
+    inner class SkyboxRenderExtension : RenderExtension<OpenGl> {
         private val gpuContext = engineContext.gpuContext
         private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
@@ -284,8 +285,8 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
                 material = materialManager.registerMaterial("skybox", materialInfo) // TODO Investigate why this doesnt update in UI
             }
             customComponent { scene, _ ->
-                val camPosition = scene.activeCamera.getPosition()
-                this@entity.transform.identity().translate(camPosition)
+                val eyePosition = scene.activeCamera.getPosition()
+                this@entity.transform.identity().translate(eyePosition)
                 this@entity.transform.scale(1000f)
             }
         }
@@ -308,3 +309,4 @@ class AreaLightExtension(val engineContext: EngineContext): Extension {
 class AmbientCubesExtension(val engineContext: EngineContext): Extension {
     override val deferredRendererExtension = AmbientCubeGridExtension(engineContext)
 }
+

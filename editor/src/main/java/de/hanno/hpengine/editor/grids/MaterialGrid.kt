@@ -1,6 +1,8 @@
 package de.hanno.hpengine.editor.grids
 
 import com.bric.colorpicker.ColorPicker
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
@@ -10,6 +12,7 @@ import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import net.miginfocom.swing.MigLayout
+import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.awt.Color
@@ -21,20 +24,42 @@ import kotlin.math.min
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty0
 
-class MaterialGrid(val textureManager: TextureManager, val material: Material) : JPanel() {
-    private val info = material.materialInfo as MaterialInfo
+var Vector2f.myX
+    get() = x
+    set(value) { x = value }
+var Vector2f.myY
+    get() = y
+    set(value) { y = value }
+
+class MaterialGrid(val engineContext: EngineContext,
+                   val textureManager: TextureManager,
+                   val material: Material) : JPanel() {
+    private val info = material.materialInfo
+
+    private val heightMappingFirstpassProgram = engineContext.programManager.heightMappingFirstPassProgram
+
+    var useHeightMapping: Boolean
+        get() = info.program == heightMappingFirstpassProgram
+        set(value) {
+            info.program = if(value) heightMappingFirstpassProgram else null
+        }
 
     init {
         layout = MigLayout("wrap 2")
         labeled("Name", JLabel(material.name))
         labeled("MaterialType", info::materialType.toComboBox(MaterialType.values()))
         labeled("TransparancyType", info::transparencyType.toComboBox(SimpleMaterial.TransparencyType.values()))
-        labeled("Ambient", info::ambient.toSliderInput(0, 100))
-        labeled("Metallic", info::metallic.toSliderInput(0, 100))
-        labeled("Roughness", info::roughness.toSliderInput(0, 100))
-        labeled("Transparency", info::transparency.toSliderInput(0, 100))
-        labeled("ParallaxBias", info::parallaxBias.toSliderInput(0, 100))
-        labeled("ParallaxScale", info::parallaxScale.toSliderInput(0, 100))
+        labeled("Ambient", info::ambient.toSliderInput(0f, 1f))
+        labeled("Metallic", info::metallic.toSliderInput(0f, 1f))
+        labeled("Roughness", info::roughness.toSliderInput(0f, 1f))
+        labeled("Transparency", info::transparency.toSliderInput(0f, 1f))
+        labeled("ParallaxBias", info::parallaxBias.toSliderInput(0f, 1f))
+        labeled("ParallaxScale", info::parallaxScale.toSliderInput(0f, 1f))
+        labeled("UV Scale X", info.uvScale::myX.toSliderInput(0f, 5f))
+        labeled("UV Scale y", info.uvScale::myY.toSliderInput(0f, 5f))
+        labeled("LOD Factor", info::lodFactor.toSliderInput(0f, 500f))
+        labeled("Use world XZ as UV", info::useWorldSpaceXZAsTexCoords.toCheckBox())
+        labeled("Heightmapping", ::useHeightMapping.toCheckBox())
 
         labeled("Diffuse", info::diffuse.toColorPickerInput())
         labeled("Textures", info.toTextureComboBoxes(textureManager))
@@ -43,12 +68,12 @@ class MaterialGrid(val textureManager: TextureManager, val material: Material) :
 }
 sealed class TextureSelection(val key: String) {
     override fun toString() = key.takeLast(min(25, key.length))
-    override fun equals(other: Any?): Boolean {
-        return (other as? TextureSelection)?.key == key
-    }
+    override fun equals(other: Any?): Boolean = (other as? TextureSelection)?.key == key
+    override fun hashCode(): Int = key.hashCode()
 
     class Selection2D(key: String, val texture: Texture): TextureSelection(key)
     class SelectionCube(key: String, val texture: Texture): TextureSelection(key)
+    class Other(val texture: Texture? = null): TextureSelection("Other")
     object None: TextureSelection("None")
 }
 
@@ -67,29 +92,27 @@ fun MaterialInfo.toTextureComboBoxes(textureManager: TextureManager): JComponent
                         }
                     }
                     selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
-                        if (foundTexture == null) {
-                            TextureSelection.None
-                        } else {
-                            TextureSelection.SelectionCube(foundTexture.key, value)
+                        when (foundTexture) {
+                            null -> TextureSelection.Other(value)
+                            else -> TextureSelection.SelectionCube(foundTexture.key, value)
                         }
                     }
                 }
             }
             else -> {
-                mapType to JComboBox((retrieve2DTextureItems() + TextureSelection.None).toTypedArray()).apply {
+                mapType to JComboBox((retrieve2DTextureItems() + TextureSelection.Other() + TextureSelection.None).toTypedArray()).apply {
                     addActionListener {
                         val typedSelectedItem = selectedItem as TextureSelection
-                        val selected = retrieve2DTextureItems().find { it.key == typedSelectedItem.key } ?: TextureSelection.None
-                        when(selected) {
+                        val foundTextureOrNull = retrieve2DTextureItems().find { it.key == typedSelectedItem.key }
+                        when(val selected = foundTextureOrNull ?: (if(typedSelectedItem is TextureSelection.Other) typedSelectedItem else TextureSelection.None)) {
                             is TextureSelection.Selection2D -> maps[mapType] = selected.texture
                             TextureSelection.None -> maps.remove(mapType)
                         }
                     }
                     selectedItem = retrieveInitialSelection(mapType, textureManager) { foundTexture, value ->
-                        if(foundTexture == null) {
-                            TextureSelection.None
-                        } else {
-                            TextureSelection.Selection2D(foundTexture.key, value)
+                        when (foundTexture) {
+                            null -> TextureSelection.Other(value)
+                            else -> TextureSelection.Selection2D(foundTexture.key, value)
                         }
                     }
                 }

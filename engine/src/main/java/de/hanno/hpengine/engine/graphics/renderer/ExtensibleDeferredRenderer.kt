@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
@@ -53,6 +52,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
             Defines(),
             StaticFirstPassUniforms(gpuContext)
     )
+
     val simpleColorProgramAnimated = programManager.getProgram(
             config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
             config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),

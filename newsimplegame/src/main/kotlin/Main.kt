@@ -5,8 +5,8 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
-import scenes.lotsOfCubesScene
-import scenes.lotsOfPlanesScene
+import scenes.materialsDemo
+import scenes.oceanDemo
 import scenes.sponzaScene
 import java.io.File
 
@@ -44,7 +44,7 @@ object Game {
                 debug = DebugConfig(isUseFileReloading = true)
         )
         val engine = Engine(config)
-        engine.scene = engine.sponzaScene
+        engine.scene = engine.materialsDemo
     }
 }
 

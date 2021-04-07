@@ -6,6 +6,8 @@ layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=7) uniform sampler2D visibilityMap;
+layout(binding=9) uniform sampler2D aoBentNormalsMap;
+layout(binding=10) uniform sampler2D depthAndIndicesMap;
 
 #ifdef BINDLESSTEXTURES
 #else
@@ -50,20 +52,70 @@ vec3 blurESM(sampler2D sampler, vec2 texCoords, float dist, float inBlurDistance
 	return result/N;
 }
 
+vec2 getViewPosInTextureSpace(vec3 viewPosition) {
+	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
+	projectedCoord.xy /= projectedCoord.w;
+	projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+	return projectedCoord.xy;
+}
+
+const uint  g_sss_steps            = 8;     // Quality/performance
+const float g_sss_ray_max_distance = 10.0f; // Max shadow length
+const float g_sss_tolerance        = 0.5f; // Error in favor of reducing gaps
+const float g_sss_step_length      = g_sss_ray_max_distance / float(g_sss_steps);
+
+float ScreenSpaceShadows(vec3 positionView, vec3 lightDirectionView)
+{
+	// Compute ray position and direction (in view-space)
+	vec3 ray_pos = positionView;
+	vec3 ray_dir = lightDirectionView;
+
+	// Compute ray step
+	vec3 ray_step = ray_dir * g_sss_step_length;
+
+	// Ray march towards the light
+	float occlusion = 0.0;
+	for (uint i = 0; i < g_sss_steps; i++)
+	{
+		// Step the ray
+		ray_pos += ray_step;
+
+		// Compute the difference between the ray's and the camera's depth
+		vec2 ray_uv = getViewPosInTextureSpace(ray_pos);
+		vec3 rayPositionView = textureLod(positionMap, ray_uv, 0).xyz;
+		float depth_z = rayPositionView.z;
+		float depth_delta = ray_pos.z - depth_z;
+
+		// If the ray is behind what the camera "sees" (positive depth_delta)
+		if (abs(g_sss_tolerance - depth_delta) < g_sss_tolerance)
+//		if ( (0.0 < depth_delta) && (depth_delta < g_sss_tolerance) )
+		{
+			// Consider the pixel to be shadowed/occluded
+			occlusion = 1.0f;
+			break;
+		}
+	}
+
+	// Fade out as we approach the edges of the screen
+//	occlusion *= screen_fade(ray_uv);
+
+	return 1.0f - occlusion;
+}
+
 void main(void) {
 	
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
 
-	float depth = texture2D(normalMap, st).w;
-	vec3 positionView = texture2D(positionMap, st).xyz;
+	float depth = textureLod(visibilityMap, st, 0).g;
+	vec3 positionView = textureLod(positionMap, st, 0).xyz;
 	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
 	//positionView = positionViewPreW.xyz / positionViewPreW.w;
   	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
-	vec3 color = texture2D(diffuseMap, st).xyz;
-	float roughness = texture2D(positionMap, st).a;
+	vec3 color = textureLod(diffuseMap, st, 0).xyz;
+	float roughness = textureLod(positionMap, st, 0).a;
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -76,11 +128,11 @@ void main(void) {
 	if (positionView.z > -0.0001) {
 //	  discard;
 	}
-	vec4 normalAmbient = texture2D(normalMap, st);
+	vec4 normalAmbient = textureLod(normalMap, st, 0);
 	vec3 normalView = normalAmbient.xyz;
 	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
 	
-	float metallic = texture2D(diffuseMap, st).a;
+	float metallic = textureLod(diffuseMap, st, 0).a;
 	float glossiness = (1-roughness);
 	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
 	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
@@ -103,6 +155,12 @@ void main(void) {
 	float visibility = getVisibility(positionWorld.xyz, directionalLight, directionalLightShadowMap);
 #endif
 
+	vec4 aoBentNormals = textureLod(aoBentNormalsMap, st, 0);
+	vec3 bentNormal = aoBentNormals.gba;
+
+//	float ssdo = 1-ScreenSpaceShadows(positionView, lightDirectionView);
+//	visibility = min(visibility, ssdo);
+
 	if(materialType == FOLIAGE) {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
@@ -114,8 +172,8 @@ void main(void) {
 	} else {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
     	finalColor *= visibility;
-	}
 
+	}
 
 	out_DiffuseSpecular.rgb = 4 * finalColor; // TODO: Extract value 4 as global HDR scaler
 

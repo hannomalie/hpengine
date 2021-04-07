@@ -84,7 +84,7 @@ class BatchingSystem {
                     if(!clusterIsCulled) {
                         val batch = (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, index)) { (_, _) -> RenderBatch() }
                         with(batch){
-                            entityBufferIndex = meshBufferIndex + modelComponent.entity.clusters.subList(0, index).sumBy { it.size }
+                            entityBufferIndex = 1 /* entity itself occupies one slot*/ + meshBufferIndex + modelComponent.entity.clusters.subList(0, index).sumBy { it.size }
                             this.movedInCycle = entity.movedInCycle
                             this.isDrawLines = drawLines
                             this.cameraWorldPosition = cameraWorldPosition

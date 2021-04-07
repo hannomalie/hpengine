@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.transform.AABBData
+import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
@@ -39,11 +40,15 @@ class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFram
         transferFocus()
     }
 
-    val emptySidePanel = JPanel()
+    val emptySidePanel = JPanel().apply {
+        preferredSize = Dimension(fixedWidth, canvas.height)
+
+    }
     val sidePanel = object : JPanel() {
         override fun add(comp: Component): Component {
-            comp.preferredSize = Dimension(fixedWidth, 800)
-            add(comp, "wrap")
+//            TODO: I am not able to set the size of the panel somehow
+//            comp.preferredSize = Dimension(fixedWidth, comp.height)
+            add(ReloadableScrollPane(comp), "wrap")
             return this
         }
     }.apply {

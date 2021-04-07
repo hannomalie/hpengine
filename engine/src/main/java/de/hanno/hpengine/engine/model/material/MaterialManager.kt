@@ -119,13 +119,16 @@ class MaterialManager(val config: Config,
             target.parallaxScale = material.materialInfo.parallaxScale
             target.transparency = material.materialInfo.transparency
             target.materialType = material.materialInfo.materialType
+            target.lodFactor = material.materialInfo.lodFactor
+            target.useWorldSpaceXZAsTexCoords = if(material.materialInfo.useWorldSpaceXZAsTexCoords) 1 else 0
             target.environmentMapId = material.materialInfo.maps[MAP.ENVIRONMENT]?.id ?: 0
             target.diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
             target.normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
             target.specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
             target.heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
-            target.occlusionMapHandle = material.materialInfo.maps[MAP.OCCLUSION]?.handle ?: 0
+            target.displacementMapHandle = material.materialInfo.maps[MAP.DISPLACEMENT]?.handle ?: 0
             target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
+            target.uvScale.set(material.materialInfo.uvScale)
         }
         renderState.entitiesState.materialBuffer.resize(materialsAsStructs.size)
         materialsAsStructs.copyTo(renderState.entitiesState.materialBuffer, true)

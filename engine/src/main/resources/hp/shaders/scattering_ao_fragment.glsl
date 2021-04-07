@@ -40,7 +40,10 @@ layout(std430, binding=5) buffer _voxelGrids {
     VoxelGridArray voxelGridArray;
 };
 in vec2 pass_TextureCoord;
+
 layout(location=0)out vec4 out_AOScattering;
+layout(location=1)out vec4 out_Indirect;
+layout(location=2)out vec4 out_BentNormals;
 
 
 float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
@@ -321,16 +324,16 @@ vec3 getNormal(in vec2 uv) {
 }
 
 float doAmbientOcclusion(in vec2 tcoord,in vec2 uv, in vec3 p, in vec3 cnorm) {
-    float g_bias = 0.5f;
+    float g_bias = 0.15f;
     float g_scale = 0.01;
-    float g_intensity = 3.5;
+    float g_intensity = 1.5;
 
     vec3 diff = getPosition(tcoord + uv) - p;
     const vec3 v = normalize(diff);
     const float d = length(diff)*g_scale;
     return max(0.0,dot(cnorm,v)-g_bias)*(1.0/(1.0+d))*g_intensity;
 }
-float getAmbientOcclusion(vec2 st) {
+vec4 getAmbientOcclusionBentNormal(vec2 st) {
 
     const bool useCrytekAO = true;
     if(useCrytekAO) {
@@ -346,19 +349,30 @@ float getAmbientOcclusion(vec2 st) {
 
         //**SSAO Calculation**//
         int iterations = 4;
+		vec3 bentNormal = n;
         for (int j = 0; j < iterations; ++j) {
-          vec2 coord1 = reflect(vec[j],rand)*rad;
+          vec2 coord1 = reflect(vec[j],rand)*rad * 0.2;
           vec2 coord2 = vec2(coord1.x*0.707 - coord1.y*0.707,
                       coord1.x*0.707 + coord1.y*0.707);
 
-          ao += doAmbientOcclusion(st,coord1*0.25, p, n);
-          ao += doAmbientOcclusion(st,coord2*0.5, p, n);
-          ao += doAmbientOcclusion(st,coord1*0.75, p, n);
-          ao += doAmbientOcclusion(st,coord2, p, n);
-        }
-        ao/= float(iterations)*4.0;
+			float ao0 = doAmbientOcclusion(st,coord1*0.25, p, n);
+            float ao1 = doAmbientOcclusion(st,coord2*0.5, p, n);
+            float ao2 = doAmbientOcclusion(st,coord1*0.75, p, n);
+            float ao3 = doAmbientOcclusion(st,coord2, p, n);
 
-        return 1.0*(1-ao);
+			ao += ao0 + ao1 + ao2 + ao3;
+
+			vec3 bentNormal0 = (getPosition(st + coord1*0.25) - p) * (ao0);
+			vec3 bentNormal1 = (getPosition(st + coord2*0.5) - p) * (ao1);
+			vec3 bentNormal2 = (getPosition(st + coord1*0.75) - p) * (ao2);
+			vec3 bentNormal3 = (getPosition(st + coord2) - p) * (ao3);
+
+			bentNormal += bentNormal0 + bentNormal1 + bentNormal2 + bentNormal3;
+        }
+		ao/= float(iterations)*4.0f;
+		bentNormal/= float(iterations)*4.0f;
+
+        return vec4(1-ao, bentNormal);
 
     } else {
         float ao = 1;
@@ -400,7 +414,7 @@ float getAmbientOcclusion(vec2 st) {
 		}
 
         ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
-        return ao;
+        return vec4(ao,0,0,0);
     }
 }
 void main(void) {
@@ -415,7 +429,9 @@ void main(void) {
 
 	vec4 result = vec4(0,0,0,0);
   	if(useAmbientOcclusion) {
-		result.r = getAmbientOcclusion(st);
+		vec4 aoBentNormal = getAmbientOcclusionBentNormal(st);
+		result.r = aoBentNormal.r;
+		out_BentNormals.gba = aoBentNormal.gba;
   	}
   	if(SCATTERING) {
   		result.gba = 10*directionalLight.scatterFactor * scatter(positionWorld, eyePosition);
