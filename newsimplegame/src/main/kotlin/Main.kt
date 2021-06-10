@@ -25,7 +25,7 @@ object GameEditor {
         val (engine, editor) = EngineWithEditor(config)
 
         editor.frame.onSceneReload = {
-            engine.scene = engine.sponzaScene
+            engine.scene = engine.oceanDemo
         }
         editor.frame.onSceneReload?.invoke()
     }

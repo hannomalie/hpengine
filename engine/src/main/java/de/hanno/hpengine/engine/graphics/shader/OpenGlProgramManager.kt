@@ -219,7 +219,7 @@ val vertexShaderSource = StringBasedCodeSource(
         out vec3 WorldPos_CS_in;
         out vec2 TexCoord_CS_in;
         out vec3 Normal_CS_in;
-        out Entity entity_CS_in;
+        out int entityBufferIndex_CS_in;
         
         void main()
         {
@@ -227,7 +227,7 @@ val vertexShaderSource = StringBasedCodeSource(
             if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
         
             Entity entity = entities[entityBufferIndex];
-            entity_CS_in = entity;
+            entityBufferIndex_CS_in = entityBufferIndex;
             Material material = materials[entity.materialIndex];
             
             VertexPacked vertex = vertices[gl_VertexID];
@@ -260,13 +260,13 @@ val tesselationControlShaderSource = StringBasedCodeSource(
             in vec3 WorldPos_CS_in[];
             in vec2 TexCoord_CS_in[];
             in vec3 Normal_CS_in[];
-            in Entity entity_CS_in[];
+            in int entityBufferIndex_CS_in[];
 
             // attributes of the output CPs
             out vec3 WorldPos_ES_in[];
             out vec2 TexCoord_ES_in[];
             out vec3 Normal_ES_in[];
-            out Entity entity_ES_in[];
+            out int entityBufferIndex_ES_in[];
             
             float GetTessLevel(float Distance0, float Distance1)
             {
@@ -301,12 +301,12 @@ val tesselationControlShaderSource = StringBasedCodeSource(
             
             void main()
             {
-                Material material_CS_in = materials[entity_CS_in[0].materialIndex];
+                Material material_CS_in = materials[entities[entityBufferIndex_ES_in[0]].materialIndex];
                 // Set the control points of the output patch
                 TexCoord_ES_in[gl_InvocationID] = TexCoord_CS_in[gl_InvocationID];
                 Normal_ES_in[gl_InvocationID] = Normal_CS_in[gl_InvocationID];
                 WorldPos_ES_in[gl_InvocationID] = WorldPos_CS_in[gl_InvocationID];
-                entity_ES_in[gl_InvocationID] = entity_CS_in[gl_InvocationID];
+                entityBufferIndex_ES_in[gl_InvocationID] = entityBufferIndex_CS_in[gl_InvocationID];
                 
                 // Calculate the distance from the camera to the three control points
                 float EyeToVertexDistance0 = distance(eyePosition, WorldPos_ES_in[0]);
@@ -327,16 +327,17 @@ val tesselationEvaluationShaderSource = object: ReloadableCodeSource {
     override val name: String = "tesselation"
     override val source: String
         get() = """
-    //                layout(triangles, equal_spacing, ccw) in;
+//                layout(triangles, equal_spacing, ccw) in;
                 layout(triangles, fractional_even_spacing, ccw) in;
+                
                 #ifdef BINDLESSTEXTURES
                 #else
                 layout(binding=3) uniform sampler2D displacementMap;
                 uniform bool hasDisplacementMap = false;
                 layout(binding=4) uniform sampler2D heightMap;
                 uniform bool hasHeightMap = false;
-    
                 #endif
+                
                 //include(globals_structs.glsl)
                 
                 layout(std430, binding=1) buffer _materials {
@@ -354,13 +355,13 @@ val tesselationEvaluationShaderSource = object: ReloadableCodeSource {
                 in vec3 WorldPos_ES_in[];
                 in vec2 TexCoord_ES_in[];
                 in vec3 Normal_ES_in[];
-                in Entity entity_ES_in[];
+                in int entityBufferIndex_ES_in[];
     
                 out vec3 WorldPos_GS_in;
                 out vec2 TexCoord_GS_in;
                 out vec3 Normal_GS_in;
                 flat out Material material_GS_in;
-                flat out Entity entity_GS_in;
+                flat out int entityBufferIndex_GS_in;
                 
                 vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)
                 {
@@ -374,12 +375,23 @@ val tesselationEvaluationShaderSource = object: ReloadableCodeSource {
                 
                 void main()
                 {
-                    Material material = materials[entity_ES_in[0].materialIndex];
+                    Material material = materials[entities[entityBufferIndex_ES_in[0]].materialIndex];
+                    
+                    #ifdef BINDLESSTEXTURES
+                    sampler2D displacementMap;
+                    bool hasDisplacementMap = uint64_t(material.handleDisplacement) > 0;
+                    if(hasDisplacementMap) { displacementMap = sampler2D(material.handleDisplacement); };
+                    
+                    sampler2D heightMap;
+                    bool hasHeightMap = uint64_t(material.handleHeight) > 0;
+                    if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
+                    #endif
+                
                     // Interpolate the attributes of the output vertex using the barycentric coordinates
                     TexCoord_GS_in = interpolate2D(TexCoord_ES_in[0], TexCoord_ES_in[1], TexCoord_ES_in[2]);
                     WorldPos_GS_in = interpolate3D(WorldPos_ES_in[0], WorldPos_ES_in[1], WorldPos_ES_in[2]);
                     material_GS_in = material;
-                    entity_GS_in = entity_ES_in[0];
+                    entityBufferIndex_GS_in = entityBufferIndex_ES_in[0];
                     Normal_GS_in = interpolate3D(Normal_ES_in[0], Normal_ES_in[1], Normal_ES_in[2]);
                     Normal_GS_in = normalize(Normal_GS_in);
                     // Displace the vertex along the normal
@@ -410,13 +422,13 @@ val geometryShaderSource = StringBasedCodeSource(
         in vec2 TexCoord_GS_in[3];
         in vec3 Normal_GS_in[3];
         flat in Material material_GS_in[3];
-        flat in Entity entity_GS_in[3];
+        flat in int entityBufferIndex_GS_in[3];
         
         out vec3 WorldPos_FS_in;
         out vec2 TexCoord_FS_in;
         out vec3 Normal_FS_in;
         flat out Material material_FS_in;
-        flat out Entity entity_FS_in;
+        flat out int entityBufferIndex_FS_in;
         
         vec3 calculateFaceNormal(vec3 a, vec3 b, vec3 c) {
             vec3 dir = cross(b-a, c-a);
@@ -431,7 +443,7 @@ val geometryShaderSource = StringBasedCodeSource(
                 TexCoord_FS_in = TexCoord_GS_in[i];
                 Normal_FS_in = calculateFaceNormal(WorldPos_GS_in[0], WorldPos_GS_in[1], WorldPos_GS_in[2]);//Normal_GS_in[i];
                 material_FS_in = material_GS_in[i];
-                entity_FS_in = entity_GS_in[i];
+                entityBufferIndex_FS_in = entityBufferIndex_GS_in[i];
                 gl_Position = viewProjectionMatrix * vec4(WorldPos_GS_in[i], 1.0f);
                 EmitVertex();
             }
@@ -463,6 +475,10 @@ val fragmentShaderSource = StringBasedCodeSource(
             
             //include(globals_structs.glsl)
             
+            layout(std430, binding=3) buffer _entities {
+                Entity entities[2000];
+            };
+            
             uniform vec3 eyePosition;
             uniform mat4 viewProjectionMatrix;
             uniform mat4 viewMatrix;
@@ -470,7 +486,7 @@ val fragmentShaderSource = StringBasedCodeSource(
             in vec3 WorldPos_FS_in;
             in vec2 TexCoord_FS_in;
             in vec3 Normal_FS_in;
-            flat in Entity entity_FS_in;
+            flat in int entityBufferIndex_FS_in;
             flat in Material material_FS_in;
             
             layout(location=0)out vec4 out_positionRoughness;
@@ -488,17 +504,43 @@ val fragmentShaderSource = StringBasedCodeSource(
             
             void main()
             {
+                Entity entity = entities[entityBufferIndex_FS_in];
                 vec2 motionVec = vec2(0); // TODO implement me
                 float depth = gl_FragDepth; // TODO implement me
                 Material material = material_FS_in;
                 vec2 UV = TexCoord_FS_in.xy * material.uvScale;
-                Entity entity = entity_FS_in;
                 vec3 V = -normalize((WorldPos_FS_in.xyz + eyePosition.xyz).xyz);
                 out_positionRoughness = vec4((viewMatrix * vec4(WorldPos_FS_in, 1.0f)).xyz, material.roughness);
                 out_normalAmbient = vec4((viewMatrix * vec4(Normal_FS_in, 0.0f)).xyz, material.ambient);
                 
                 vec4 color = vec4(material.diffuse, 1);
                 float alpha = material.transparency;
+                
+                #ifdef BINDLESSTEXTURES
+                	sampler2D diffuseMap;
+                	bool hasDiffuseMap = uint64_t(material.handleDiffuse) > 0;
+                	if(hasDiffuseMap) { diffuseMap = sampler2D(material.handleDiffuse); }
+
+                	sampler2D normalMap;
+                	bool hasNormalMap = uint64_t(material.handleNormal) > 0;
+                	if(hasNormalMap) { normalMap = sampler2D(material.handleNormal); }
+
+                	sampler2D specularMap;
+                	bool hasSpecularMap = uint64_t(material.handleSpecular) > 0;
+                	if(hasSpecularMap) { specularMap = sampler2D(material.handleSpecular); }
+
+                	sampler2D heightMap;
+                	bool hasHeightMap = uint64_t(material.handleHeight) > 0;
+                	if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
+
+                	sampler2D displacementMap;
+                	bool hasDisplacementMap = uint64_t(material.handleDisplacement) > 0;
+                	if(hasDisplacementMap) { displacementMap = sampler2D(material.handleDisplacement); }
+
+                	sampler2D roughnessMap;
+                	bool hasRoughnessMap = uint64_t(material.handleRoughness) >= 0;
+                	if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }
+                #endif
                 
                 if(hasDiffuseMap) {
                     color = textureLod(diffuseMap, UV, 0);

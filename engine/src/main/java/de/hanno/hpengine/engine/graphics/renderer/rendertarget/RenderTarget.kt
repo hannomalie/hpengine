@@ -293,16 +293,11 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
             GL11.glTexParameterfv(GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer)
         }
 
-        fun generateTextureHandle(gpuContext: GpuContext<OpenGl>, textureId: Int): Long {
-            val handle = if (gpuContext.isSupported(BindlessTextures)) {
-                val handle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
-                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
-                handle
-            } else {
-                -1
-            }
-            return handle
-        }
+        fun generateTextureHandle(gpuContext: GpuContext<OpenGl>, textureId: Int): Long = if (gpuContext.isSupported(BindlessTextures)) {
+            val handle = ARBBindlessTexture.glGetTextureHandleARB(textureId)
+            ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
+            handle
+        } else -1
 
         fun createTexture(gpuContext: GpuContext<OpenGl>,
                           textureFilter: TextureFilterConfig,
@@ -317,14 +312,10 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
             )
         }
 
-        fun getComponentsForFormat(internalFormat: Int): Int {
-            return if (GL_RGBA8 == internalFormat || GL_RGBA16F == internalFormat || GL_RGBA32F == internalFormat) {
-                GL11.GL_RGBA
-            } else if (GL_R32F == internalFormat) {
-                GL11.GL_RED
-            } else {
-                throw IllegalArgumentException("Component identifier missing for internalFormat $internalFormat")
-            }
+        fun getComponentsForFormat(internalFormat: Int): Int = when(internalFormat) {
+            GL_RGBA8, GL_RGBA16F, GL_RGBA32F -> GL11.GL_RGBA
+            GL_R32F -> GL11.GL_RED
+            else -> throw IllegalArgumentException("Component identifier missing for internalFormat $internalFormat")
         }
     }
 

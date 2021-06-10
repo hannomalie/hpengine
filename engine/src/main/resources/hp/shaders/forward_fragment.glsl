@@ -7,8 +7,8 @@ layout(binding=1) uniform sampler2D normalMap;
 uniform bool hasNormalMap = false;
 layout(binding=2) uniform sampler2D specularMap;
 uniform bool hasSpecularMap = false;
-layout(binding=3) uniform sampler2D occlusionMap;
-uniform bool hasOcclusionMap = false;
+layout(binding=3) uniform sampler2D displacementMap;
+uniform bool hasDisplacementMap = false;
 layout(binding=4) uniform sampler2D heightMap;
 uniform bool hasHeightMap = false;
 ////
@@ -87,10 +87,9 @@ void main()
     bool hasHeightMap = uint64_t(material.handleHeight) > 0;
     if(hasHeightMap) { heightMap = sampler2D(material.handleHeight); };
 
-    sampler2D occlusionMap;
-    bool hasOcclusionMap = uint64_t(material.handleOcclusion) > 0;
-    if(hasOcclusionMap) { occlusionMap = sampler2D(material.handleOcclusion); }
-
+    sampler2D displacementMap;
+    bool hasDisplacementMap = uint64_t(material.handleDisplacement) > 0;
+    if(hasDisplacementMap) { displacementMap = sampler2D(material.handleDisplacement); }
     sampler2D roughnessMap;
     bool hasRoughnessMap = uint64_t(material.handleRoughness) != 0;
     if(hasRoughnessMap) { roughnessMap = sampler2D(material.handleRoughness); }

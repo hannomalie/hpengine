@@ -36,7 +36,11 @@ sealed class Shader(private val programManager: ProgramManager<*>,
             if (shaderStatus == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + shaderType + ": " + source.name)
                 var shaderInfoLog = GL20.glGetShaderInfoLog(id, 10000)
-                shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, resultingShaderSource.lines().size)
+                val lines = resultingShaderSource.lines()
+                System.err.println("Could not compile " + shaderType + ": " + source.name)
+                System.err.println("Problematic line:")
+                System.err.println(lines[Regex("""\d\((.*)\)""").find(shaderInfoLog)!!.groups[1]!!.value.toInt()-1])
+                shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, lines.size)
                 ShaderLoadException(shaderInfoLog)
             } else null
         }
@@ -101,7 +105,7 @@ sealed class Shader(private val programManager: ProgramManager<*>,
                 val oldLineNumber = loCMatcher.group(1)
                 val newLineNumber = Integer.parseInt(oldLineNumber) - newlineCount
                 val regex = String.format("\\($oldLineNumber\\) :", oldLineNumber).toRegex()
-                shaderInfoLog = shaderInfoLog.replace(regex, "(ln $newLineNumber) :")
+                shaderInfoLog = shaderInfoLog.replace(regex, "(line $newLineNumber) :")
             }
 
             return shaderInfoLog

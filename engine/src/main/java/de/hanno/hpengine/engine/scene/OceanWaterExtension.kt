@@ -197,6 +197,7 @@ class OceanWaterExtension(val engineContext: EngineContext): Extension {
                     put(SimpleMaterial.MAP.DIFFUSE, albedoMap)
                     put(SimpleMaterial.MAP.ROUGHNESS, roughnessMap)
                     put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
+                    put(SimpleMaterial.MAP.DIFFUSE, displacementMap)
                 }
             }
         }
@@ -314,15 +315,7 @@ class OceanWaterExtension(val engineContext: EngineContext): Extension {
             mergeDisplacementMapsShader.setUniform("N", N)
             mergeDisplacementMapsShader.setUniform("L", oceanWaterRenderState.L)
             mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-            GL42.glBindImageTexture(
-                0,
-                displacementMap.id,
-                0,
-                false,
-                0,
-                GL15.GL_WRITE_ONLY,
-                displacementMap.internalFormat
-            )
+            GL42.glBindImageTexture(0, displacementMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, displacementMap.internalFormat)
             engineContext.gpuContext.bindTexture(1, displacementMapX)
             engineContext.gpuContext.bindTexture(2, displacementMapY)
             engineContext.gpuContext.bindTexture(3, displacementMapZ)

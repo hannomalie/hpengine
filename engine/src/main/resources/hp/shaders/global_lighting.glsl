@@ -175,7 +175,7 @@ float getVisibility(vec3 positionWorld, DirectionalLightState light) {
     positionShadow.xyz /= positionShadow.w;
     float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-    visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow, light), 0, 1).r;
+    visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow.xy, light), 0, 1).r;
     return visibility;
 }
 #endif

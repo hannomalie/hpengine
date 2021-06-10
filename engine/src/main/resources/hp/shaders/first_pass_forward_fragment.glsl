@@ -190,10 +190,6 @@ void main(void) {
   	out_colorMetallic = color;
   	out_colorMetallic.w = float(materialMetallic);
 
-	if(uint64_t(material.handleOcclusion) > 0) {
-	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
-	}
-
 	out_positionRoughness.w = materialRoughness;
 	if(uint64_t(material.handleRoughness) != 0) {
         sampler2D _roughnessMap = sampler2D((material.handleRoughness));

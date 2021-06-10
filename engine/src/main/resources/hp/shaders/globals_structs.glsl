@@ -18,7 +18,7 @@ struct Material {
     uvec2 handleSpecular;
     uvec2 handleHeight;
 
-    uvec2 handleOcclusion;
+    uvec2 handleDisplacement;
     uvec2 handleRoughness;
 
     vec2 uvScale;

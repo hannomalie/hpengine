@@ -293,7 +293,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 			float rand = surface3(randomPosition + vec3(0.0003f)*vec3(time%1000000), 0.5f);
 			for(int voxelGridIndex = 0; voxelGridIndex < voxelGridArray.size; voxelGridIndex++) {
 				VoxelGrid voxelGrid = voxelGridArray.voxelGrids[voxelGridIndex];
-#ifdef BINDLESS_TEXTURES
+#ifdef BINDLESSTEXTURES
 				sampler3D gridSampler = toSampler(voxelGrid.gridHandle);
 				vec4 voxel = voxelFetch(voxelGrid, gridSampler, currentPosition, mipLevel);
 #else

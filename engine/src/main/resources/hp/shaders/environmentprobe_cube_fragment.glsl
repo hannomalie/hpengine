@@ -20,8 +20,8 @@ layout(binding=1) uniform sampler2D normalMap;
 uniform bool hasNormalMap = false;
 layout(binding=2) uniform sampler2D specularMap;
 uniform bool hasSpecularMap = false;
-layout(binding=3) uniform sampler2D occlusionMap;
-uniform bool hasOcclusionMap = false;
+layout(binding=3) uniform sampler2D displacementMap;
+uniform bool hasDisplacementMap = false;
 layout(binding=4) uniform sampler2D heightMap;
 uniform bool hasHeightMap = false;
 ////
@@ -134,7 +134,7 @@ void main()
 		}
 	}
 
-	#if BINDLESS_TEXTURES
+	#if BINDLESSTEXTURES
 	float visibility = getVisibility(pass_WorldPosition, directionalLight);
 	#else
 	float visibility = getVisibility(pass_WorldPosition.xyz, directionalLight, directionalLightShadowMap);
