@@ -25,6 +25,7 @@ interface Manager: Updatable {
 
     @JvmDefault
     fun afterSetScene(lastScene: Scene, currentScene: Scene) { }
+
     @JvmDefault fun init(sceneManager: SceneManager) { }
 
 }

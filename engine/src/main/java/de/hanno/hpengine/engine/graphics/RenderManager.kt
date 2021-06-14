@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
-import de.hanno.hpengine.engine.launchEndlessLoop
 import de.hanno.hpengine.engine.launchEndlessRenderLoop
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -17,9 +16,11 @@ import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.delay
 
-class RenderManager(val engineContext: EngineContext, // TODO: Make generic
-                    val renderStateManager: RenderStateManager = engineContext.renderStateManager,
-                    val materialManager: MaterialManager = engineContext.materialManager) : Manager {
+class RenderManager(
+    val engineContext: EngineContext, // TODO: Make generic
+    val renderStateManager: RenderStateManager = engineContext.renderStateManager,
+    val materialManager: MaterialManager = engineContext.extensions.materialExtension.manager
+) : Manager {
 
     val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
     private val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
@@ -29,8 +30,6 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
     val fpsCounter = FPSCounter()
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
-
-    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) = clear()
 
     fun finishCycle(scene: Scene, deltaSeconds: Float) {
         renderState.currentWriteState.deltaSeconds = deltaSeconds
@@ -56,6 +55,8 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                                 }
                             }
 
+                            textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
+
                             profiled("finishFrame") {
                                 engineContext.gpuContext.finishFrame(renderState.currentReadState)
                                 engineContext.renderSystems.forEach {
@@ -63,12 +64,11 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
                                 }
                             }
 
-                            textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
-
                             profiled("checkCommandSyncs") {
                                 engineContext.gpuContext.checkCommandSyncs()
                             }
 
+                            engineContext.window.swapBuffers()
                             fpsCounter.update()
 
                         }
@@ -83,9 +83,9 @@ class RenderManager(val engineContext: EngineContext, // TODO: Make generic
             })
             // https://bugs.openjdk.java.net/browse/JDK-4852178
             // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
-            if(isUnix) {
+//            if(isUnix) {
                 delay(5)
-            }
+//            }
         }
 //        GlobalScope.launch {
 //            while(true) {

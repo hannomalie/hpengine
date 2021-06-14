@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
-import kotlinx.coroutines.CoroutineScope
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW.*
@@ -96,11 +95,12 @@ class MovableInputComponent(val engine: EngineContext, override val entity: Enti
 
 class InputComponentSystem(val engine: EngineContext): ComponentSystem<InputControllerComponent> {
     override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
-    private val components = mutableListOf<InputControllerComponent>()
-    override fun getComponents(): List<InputControllerComponent> = components
+    private val _components = mutableListOf<InputControllerComponent>()
+    override val components: List<InputControllerComponent>
+        get() = _components
 
     override fun addComponent(component: InputControllerComponent) {
-        components.add(component)
+        _components.add(component)
     }
-    override fun clear() = components.clear()
+    override fun clear() = _components.clear()
 }

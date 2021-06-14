@@ -27,7 +27,7 @@ class MaterialManager(val config: Config,
                 textureManager: TextureManager = engineContext.textureManager,
                 singleThreadContext: AddResourceContext = engineContext.addResourceContext): this(config, eventBus, textureManager, singleThreadContext)
 
-    var materials: MutableList<SimpleMaterial> = mutableListOf()
+    val materials: MutableList<SimpleMaterial> = mutableListOf()
 
     val defaultMaterial: SimpleMaterial
 
@@ -87,13 +87,24 @@ class MaterialManager(val config: Config,
     fun registerMaterial(name: String, materialInfo: MaterialInfo): SimpleMaterial = SimpleMaterial(name, materialInfo).apply {
         registerMaterial(this)
     }
+    fun forceRegisterMaterial(name: String, materialInfo: MaterialInfo): SimpleMaterial = SimpleMaterial(name, materialInfo).apply {
+        forceRegisterMaterial(this)
+    }
 
     override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
         clear()
     }
+
+    override fun clear() {
+        materials.clear()
+    }
+    fun forceRegisterMaterial(material: SimpleMaterial) = singleThreadContext.launch {
+        materials.remove(material)
+        registerMaterial(material)
+    }
     fun registerMaterial(material: SimpleMaterial) = singleThreadContext.launch {
 //        This happens often, I have to reconsider that somehow
-//        require(materials.none { material.name == it.name }) { "Material with name ${material.name} already registerd!" }
+        require(materials.none { material.name == it.name }) { "Material with name ${material.name} already registered!" }
 
         material.materialIndex = materials.size
         materials.add(material)

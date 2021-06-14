@@ -18,7 +18,6 @@ import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.enhanced
-import kotlinx.coroutines.CoroutineScope
 import org.joml.Vector3f
 import kotlin.random.Random
 
@@ -27,11 +26,11 @@ val Engine.lotsOfPlanesScene
         entities {
             entity("Ground") {
                 modelComponent(
-                        name = "Ground",
-                        file = "assets/models/plane.obj",
-                        materialManager = scene.materialManager,
-                        modelComponentManager = scene.modelComponentManager,
-                        gameDirectory = engineContext.config.directories.gameDir
+                    name = "Ground",
+                    file = "assets/models/plane.obj",
+                    materialManager = engineContext.extensions.materialExtension.manager,
+                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
+                    gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                 }
@@ -127,8 +126,8 @@ val Engine.lotsOfPlanesScene
                 modelComponent(
                     name = "Plane",
                     file = "assets/blender_grass/Low/Low Grass.obj",
-                    materialManager = scene.materialManager,
-                    modelComponentManager = scene.modelComponentManager,
+                    materialManager = engineContext.extensions.materialExtension.manager,
+                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.put(SimpleMaterial.MAP.HEIGHT, engineContext.textureManager.getTexture("assets/blender_grass/Low/Grass_height.png", false))

@@ -22,6 +22,9 @@ interface Material {
 class SimpleMaterial(override val name: String,
                      override var materialInfo: MaterialInfo): Material {
 
+    init {
+        require(name.isNotEmpty()) { "Name may not empty for material! $materialInfo" }
+    }
     override var materialIndex = -1
 
     enum class MaterialType {

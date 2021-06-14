@@ -35,6 +35,8 @@ interface Window<T : BackendType>: OpenGlExecutor {
     fun pollEvents()
     fun swapBuffers()
 
+    fun awaitEvents()
+
     val frontBuffer: FrontBufferTarget
 }
 

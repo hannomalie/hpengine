@@ -226,7 +226,7 @@ class OceanWaterExtension(val engineContext: EngineContext): Extension {
 
         override fun extract(scene: Scene, renderState: RenderState) {
             val target = renderState[oceanwaterRenderState]
-            componentSystem.getComponents().firstOrNull()?.let {
+            componentSystem.components.firstOrNull()?.let {
                 target.intensity = it.windspeed
                 target.timeFactor = it.timeFactor
                 target.amplitude = it.amplitude

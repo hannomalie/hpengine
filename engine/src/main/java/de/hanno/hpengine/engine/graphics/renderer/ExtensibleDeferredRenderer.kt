@@ -33,46 +33,56 @@ import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 
-class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem, Backend<OpenGl> {
+class ExtensibleDeferredRenderer(val engineContext: EngineContext) : RenderSystem, Backend<OpenGl> {
     val window: Window<OpenGl> = engineContext.window
     val backend: Backend<OpenGl> = engineContext.backend
     val config: Config = engineContext.config
     val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
     val renderSystems: MutableList<RenderSystem> = engineContext.renderSystems
     val renderStateManager: RenderStateManager = engineContext.renderStateManager
-    val materialManager: MaterialManager = engineContext.materialManager
+    val materialManager: MaterialManager = engineContext.extensions.materialExtension.manager
 
     val combinePassExtension = CombinePassRenderExtension(engineContext)
     val postProcessingExtension = PostProcessingExtension(engineContext)
 
     val simpleColorProgramStatic = programManager.getProgram(
-            config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
-            null,
-            Defines(),
-            StaticFirstPassUniforms(gpuContext)
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        null,
+        Defines(),
+        StaticFirstPassUniforms(gpuContext)
     )
 
     val simpleColorProgramAnimated = programManager.getProgram(
-            config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
-            config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
-            null,
-            Defines(Define.getDefine("ANIMATED", true)),
-            AnimatedFirstPassUniforms(gpuContext)
+        config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
+        config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
+        null,
+        Defines(Define.getDefine("ANIMATED", true)),
+        AnimatedFirstPassUniforms(gpuContext)
     )
 
     val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
 
     val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
-        object: DirectPipeline(engineContext) {
-            override fun beforeDrawAnimated(renderState: RenderState, program: Program<AnimatedFirstPassUniforms>, renderCam: Camera) {
+        object : DirectPipeline(engineContext) {
+            override fun beforeDrawAnimated(
+                renderState: RenderState,
+                program: Program<AnimatedFirstPassUniforms>,
+                renderCam: Camera
+            ) {
                 super.beforeDrawAnimated(renderState, program, renderCam)
                 customBeforeDraw()
             }
-            override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {
+
+            override fun beforeDrawStatic(
+                renderState: RenderState,
+                program: Program<StaticFirstPassUniforms>,
+                renderCam: Camera
+            ) {
                 super.beforeDrawStatic(renderState, program, renderCam)
                 customBeforeDraw()
             }
+
             private fun customBeforeDraw() {
                 deferredRenderingBuffer.use(gpuContext, false)
                 gpuContext.cullFace = true
@@ -119,7 +129,12 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         profiled("FirstPass") {
 
             profiled("MainPipeline") {
-                renderState[pipeline].draw(renderState, simpleColorProgramStatic, simpleColorProgramAnimated, result.firstPassResult)
+                renderState[pipeline].draw(
+                    renderState,
+                    simpleColorProgramStatic,
+                    simpleColorProgramAnimated,
+                    result.firstPassResult
+                )
             }
 
             for (extension in extensions) {
@@ -146,7 +161,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext): RenderSystem
         combinePassExtension.renderCombinePass(renderState)
 
         runCatching {
-            if(config.effects.isEnablePostprocessing) {
+            if (config.effects.isEnablePostprocessing) {
                 // TODO This has to be implemented differently, so that
                 // it is written to the final texture somehow
                 profiled("PostProcessing") {

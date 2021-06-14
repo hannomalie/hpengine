@@ -14,9 +14,6 @@ interface ManagerRegistry {
         }
     }
     fun <T : Manager> register(manager: T): T
-    fun clearManagers() {
-        managers.forEach { it.value.clear() }
-    }
 
     fun onEntityAdded(entities: List<Entity>) {
         managers.forEach {

@@ -2,7 +2,6 @@ package de.hanno.hpengine.editor.tasks
 
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.scene.SceneManager
 import org.pushingpixels.flamingo.api.common.RichTooltip

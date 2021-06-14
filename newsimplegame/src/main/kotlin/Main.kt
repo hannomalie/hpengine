@@ -5,6 +5,10 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.pushingpixels.substance.api.SubstanceCortex
 import scenes.materialsDemo
 import scenes.oceanDemo
 import scenes.sponzaScene
@@ -44,7 +48,6 @@ object Game {
                 debug = DebugConfig(isUseFileReloading = true)
         )
         val engine = Engine(config)
-        engine.scene = engine.materialsDemo
     }
 }
 

@@ -5,6 +5,10 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.config.DebugConfig
+import de.hanno.hpengine.engine.directory.Directories
+import de.hanno.hpengine.engine.directory.EngineDirectory
+import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.scene.AddResourceContext
@@ -17,6 +21,7 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
+import java.io.File
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.JComponent
@@ -85,9 +90,12 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorWindow> {
     val addResourceContext = AddResourceContext()
     val window = AWTEditorWindow(config, addResourceContext)
-    val engineContext = EngineContext(config = config, window = window, addResourceContext = addResourceContext)
-    val extension = EditorExtension(engineContext, config, window.frame)
-    engineContext.add(extension)
+    val extension = EditorExtension(config, window.frame)
+    val engineContext = EngineContext(config = config, additionalExtensions = listOf(extension), window = window, addResourceContext = addResourceContext)
+
+    extension.engineContext = engineContext
+
+    engineContext.init()
 
     val engine = Engine(engineContext)
     extension.editorComponents.init(engine)
@@ -95,14 +103,27 @@ fun EngineWithEditor(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorW
 }
 
 fun main(args: Array<String>) {
-    val (engine) = EngineWithEditor()
 
-    val loaded = LoadModelCommand("assets/models/doom3monster/monster.md5mesh", "hellknight", engine.scene.materialManager, engine.config.directories.gameDir).execute()
+    val config = ConfigImpl(
+        Directories(
+            gameDir = GameDirectory<RibbonEditor>(File("C:\\Users\\Tenter\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game")),
+            engineDir = EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp"))
+        ),
+        debug = DebugConfig(isUseFileReloading = true)
+    )
+
+    val (engine) = EngineWithEditor(config)
+
+    val loaded = LoadModelCommand(
+        "assets/models/doom3monster/monster.md5mesh",
+        "hellknight",
+        engine.engineContext.extensions.materialExtension.manager,
+        engine.config.directories.gameDir
+    ).execute()
     loaded.entities.first().getComponent(ModelComponent::class.java)!!.spatial.boundingVolume.localAABB = AABBData(
             Vector3f(-60f, -10f, -35f),
             Vector3f(60f, 130f, 50f)
     )
     println("loaded entities : " + loaded.entities.size)
     engine.sceneManager.addAll(loaded.entities)
-
 }

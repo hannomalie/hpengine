@@ -29,7 +29,8 @@ interface EntitySystemRegistry {
     }
     fun <T : EntitySystem> register(system: T): T
     fun gatherEntities(scene: Scene) {
-        for(system in getSystems()) { system.gatherEntities(scene)
+        for(system in getSystems()) {
+            system.gatherEntities(scene)
         }
     }
 
@@ -80,9 +81,9 @@ abstract class SimpleEntitySystem(val componentClasses: List<Class<out Component
     override fun gatherEntities(scene: Scene) {
         entities.clear()
         if(componentClasses.isEmpty()) {
-            entities.addAll(scene.entityManager.getEntities())
+            entities.addAll(scene.getEntities())
         } else {
-            entities.addAll(scene.entityManager.getEntities().filter { it.hasComponents(componentClasses) })
+            entities.addAll(scene.getEntities().filter { it.hasComponents(componentClasses) })
         }
         gatherComponents()
     }

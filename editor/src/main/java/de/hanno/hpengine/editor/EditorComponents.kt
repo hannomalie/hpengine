@@ -42,6 +42,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.clusters
+import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.scene.Extension
 import de.hanno.hpengine.engine.scene.HpVector4f
@@ -84,12 +85,16 @@ sealed class OutputConfig {
         override fun toString() = renderTarget.name + cubeMapIndex.toString()
     }
 }
-class EditorExtension(val engineContext: EngineContext,
-                      val config: ConfigImpl,
+class EditorExtension(val config: ConfigImpl,
                       val editor: RibbonEditor): Extension {
-    val editorComponents = EditorComponents(engineContext, config, editor)
-    override val manager = EditorManager(engineContext, editorComponents)
-    override val renderSystem = editorComponents
+    lateinit var engineContext: EngineContext
+        internal set
+
+    val editorComponents by lazy { EditorComponents(engineContext, config, editor) }
+    override val manager by lazy {
+        EditorManager(engineContext, editorComponents)
+    }
+    override val renderSystem by lazy { editorComponents }
 }
 val JRibbon.tasks: List<RibbonTask>
     get() = mutableListOf<RibbonTask>().apply {
@@ -97,7 +102,7 @@ val JRibbon.tasks: List<RibbonTask>
     }
 class EditorComponents(val engineContext: EngineContext,
                        val config: ConfigImpl,
-                       val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl() {
+                       val editor: RibbonEditor) : RenderSystem, EditorInputConfig by EditorInputConfigImpl(), Manager {
 
     val onReload: (() -> Unit)?
         get() = editor.onSceneReload
@@ -106,8 +111,16 @@ class EditorComponents(val engineContext: EngineContext,
     private val sidePanel = editor.sidePanel
     val sphereHolder = SphereHolder(engineContext)
     val boxRenderer = SimpleModelRenderer(engineContext)
-    val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/pyramid.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
-    val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load("assets/models/torus.obj", engineContext.materialManager, engineContext.config.directories.engineDir))
+    val pyramidRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load(
+        "assets/models/pyramid.obj",
+        engineContext.extensions.materialExtension.manager,
+        engineContext.config.directories.engineDir
+    ))
+    val torusRenderer = SimpleModelRenderer(engineContext, model = StaticModelLoader().load(
+        "assets/models/torus.obj",
+        engineContext.extensions.materialExtension.manager,
+        engineContext.config.directories.engineDir
+    ))
     val environmentProbeSphereHolder = SphereHolder(engineContext, engineContext.run { programManager.getProgram(
         EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
         EngineAsset("shaders/environmentprobe_color_fragment.glsl").toCodeSource())
@@ -126,20 +139,20 @@ class EditorComponents(val engineContext: EngineContext,
     val lineVerticesCount = engineContext.renderStateManager.renderState.registerState { IntStruct() }
     val selectionTransform = engineContext.renderStateManager.renderState.registerState { Transform().apply { identity() } }
 
-    fun onEntityAdded(entities: List<Entity>) {
+    override fun onEntityAdded(entities: List<Entity>) {
         if(!this::sceneTree.isInitialized) return
         sceneTree.reload()
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
-    fun onComponentAdded(component: Component) {
+    override fun onComponentAdded(component: Component) {
         if(!this::sceneTree.isInitialized) return
         sceneTree.reload()
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
 
-    fun afterSetScene(scene: Scene, scene2: Scene) {
+    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
         if(!this::sceneTree.isInitialized) return
-        sceneTree.reload()
+        recreateSceneTree(currentScene)
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
 
@@ -352,7 +365,7 @@ class EditorComponents(val engineContext: EngineContext,
         }
     }
 
-    fun init(sceneManager: SceneManager) {
+    override fun init(sceneManager: SceneManager) {
 
         this.sceneManager = sceneManager
         recreateSceneTree(sceneManager.scene)

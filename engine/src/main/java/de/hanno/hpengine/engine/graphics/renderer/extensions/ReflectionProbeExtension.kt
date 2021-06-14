@@ -113,7 +113,7 @@ class ReflectionProbeRenderExtension(val engineContext: EngineContext,
     private val probesPerFrame = 1
 
     override fun extract(scene: Scene, renderState: RenderState) {
-        val componentCount = componentSystem.getComponents().size
+        val componentCount = componentSystem.components.size
         val targetState = renderState[reflectionProbeRenderState]
 
         targetState.reRenderProbesInCycle = if(engineContext.config.debug.reRenderProbes) renderState.cycle else 0L
@@ -122,7 +122,7 @@ class ReflectionProbeRenderExtension(val engineContext: EngineContext,
         probeMinMaxStructBuffer.resize(componentCount*2)
         val probePositions = targetState.probePositions
         probePositions.clear()
-        componentSystem.getComponents().forEachIndexed { index, probe ->
+        componentSystem.components.forEachIndexed { index, probe ->
             probeMinMaxStructBuffer[2*index].set(Vector3f(probe.entity.transform.position).sub(probe.halfExtents))
             probeMinMaxStructBuffer[2*index+1].set(Vector3f(probe.entity.transform.position).add(probe.halfExtents))
             probePositions.add(Vector3f(probe.entity.transform.position))
@@ -158,7 +158,7 @@ class ReflectionProbeRenderExtension(val engineContext: EngineContext,
             engineContext.config.debug.reRenderProbes = false
             renderedInCycle = renderState.cycle
         }
-        if(renderCounter < componentSystem.getComponents().size) {
+        if(renderCounter < componentSystem.components.size) {
             probeRenderers[renderCounter].renderProbes(renderState, renderCounter, 1)
             renderCounter += 1
         }

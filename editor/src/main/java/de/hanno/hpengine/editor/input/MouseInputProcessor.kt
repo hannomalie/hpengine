@@ -4,9 +4,7 @@ import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
-import de.hanno.hpengine.engine.scene.CameraExtension.Companion.camera
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
@@ -16,6 +14,7 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.lang.Math
 import kotlin.reflect.KProperty0
 
 class MouseInputProcessor(val engineContext: EngineContext,
@@ -64,7 +63,7 @@ class MouseInputProcessor(val engineContext: EngineContext,
             entity.transform.rotateLocalY((-yawAmount).toFloat())
             entity.transform.translateLocal(oldTranslation)
         } else {
-            val activeCamera = editorComponents.sceneManager.scene.activeCamera
+            val activeCamera = editorComponents.sceneManager.scene.extensions.cameraExtension.activeCamera
 
             val viewPort = intArrayOf(0, 0, engineContext.window.width, engineContext.window.height)
             val entityPositionDevice = Vector4f()

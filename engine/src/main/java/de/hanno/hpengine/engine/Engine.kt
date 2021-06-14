@@ -1,9 +1,6 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.eventBus
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.input
+import de.hanno.hpengine.engine.backend.*
 import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -21,42 +18,48 @@ import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import java.io.File
+import java.lang.Runnable
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
-class Engine @JvmOverloads constructor(val engineContext: EngineContext,
-                                       val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext),
-                                       val renderManager: RenderManager = RenderManager(engineContext)) {
+class Engine @JvmOverloads constructor(
+    val engineContext: EngineContext,
+    val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext),
+    val renderManager: RenderManager = RenderManager(engineContext)
+) {
 
-    constructor(config: Config): this(EngineContext(config))
+    constructor(config: Config) : this(EngineContext(config))
     constructor() : this(
         ConfigImpl(
-            directories = Directories(EngineDirectory(File(Directories.ENGINEDIR_NAME)), GameDirectory(File(Directories.GAMEDIR_NAME), null))
+            directories = Directories(
+                EngineDirectory(File(Directories.ENGINEDIR_NAME)),
+                GameDirectory(File(Directories.GAMEDIR_NAME), null)
+            )
         )
     )
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
-    private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
+    private val updateThreadNamer: (Runnable) -> Thread =
+        { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
-    val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext, nonBaseExtensions = emptyList()))
+    val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
 
     init {
-        sceneManager.scene.extensions.forEach { it.init(sceneManager) }
+        engineContext.extensions.forEach { it.init(sceneManager) }
+
         engineContext.renderSystems.add(0, renderer)
     }
+
     var scene: Scene
         get() = sceneManager.scene
-        set(value) { sceneManager.scene = value }
+        set(value) {
+            sceneManager.scene = value
+        }
 
     val directories: Directories = engineContext.config.directories
 
@@ -65,13 +68,18 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
     init {
         engineContext.eventBus.register(this)
         launchEndlessLoop { deltaSeconds ->
-            executeCommands()
-            withContext(updateScopeDispatcher) {
-                update(deltaSeconds)
+            try {
+                executeCommands()
+                withContext(updateScopeDispatcher) {
+                    update(deltaSeconds)
+                }
+                extract(deltaSeconds)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            extract(deltaSeconds)
         }
         engineContext.eventBus.post(EngineInitializedEvent())
+
     }
 
 
@@ -92,11 +100,13 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
 
     suspend fun update(deltaSeconds: Float) = try {
         scene.currentCycle = updateCycle.get()
-        scene.update(scene, deltaSeconds)
+        sceneManager.update(scene, deltaSeconds)
+//        scene.update(scene, deltaSeconds)
         renderManager.update(scene, deltaSeconds)
 
         engineContext.window.invoke { engineContext.input.update() }
         engineContext.update(deltaSeconds)
+        engineContext.window.awaitEvents()
         cpsCounter.update()
 
     } catch (e: Exception) {
@@ -124,7 +134,8 @@ class Engine @JvmOverloads constructor(val engineContext: EngineContext,
                             val entity = this
                             addComponent(object : CustomComponent {
                                 override val entity = entity
-                                override suspend fun update(scene: Scene, deltaSeconds: Float) = println("XXXXXXXXXXXXXXXXXXXX")
+                                override suspend fun update(scene: Scene, deltaSeconds: Float) =
+                                    println("XXXXXXXXXXXXXXXXXXXX")
                             })
                         }
                     }
@@ -156,6 +167,7 @@ fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalSc
         }
     }
 }
+
 fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
     var currentTimeNs = System.nanoTime()
     val dtS = 1 / 60.0
@@ -181,7 +193,7 @@ inline val Engine.textureManager
 inline val Engine.programManager
     get() = engineContext.backend.programManager
 inline val Engine.materialManager
-    get() = engineContext.materialManager
+    get() = engineContext.extensions.materialExtension.manager
 inline val Engine.renderSystems
     get() = engineContext.renderSystems
 inline val Engine.gpuContext

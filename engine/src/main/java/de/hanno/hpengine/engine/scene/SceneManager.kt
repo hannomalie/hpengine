@@ -1,40 +1,30 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
-import kotlinx.coroutines.CoroutineScope
 
 class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manager {
     val addResourceContext: AddResourceContext = engineContext.backend.addResourceContext
     var scene: Scene = initialScene
-        set(value) {
-            beforeSetScene(field, value)
-            addResourceContext.locked {
-                field = value
-            }
-            field.afterUnsetScene()
-            value.afterSetScene()
-            afterSetScene(field, value)
+        set(value) = addResourceContext.locked {
+            val oldScene = field
+            beforeSetScene(currentScene = oldScene, nextScene = value)
+            field = value
+            afterSetScene(oldScene, value)
         }
 
-    fun addAll(entities: List<Entity>) {
-        addResourceContext.locked {
-            with(scene) { addAll(entities) }
+    init {
+        initialScene.entitySystems.gatherEntities(initialScene)
+        engineContext.extensions.forEach {
+            it.run { initialScene.decorate() }
         }
+    }
+    fun addAll(entities: List<Entity>) = addResourceContext.locked {
+        scene.addAll(entities)
     }
     fun add(entity: Entity) = addAll(listOf(entity))
-
-    fun addComponent(selection: Entity, component: Component) {
-        addResourceContext.locked {
-            with(scene) {
-                addComponent(selection, component)
-            }
-            onComponentAdded(component)
-        }
-    }
 
     override fun onComponentAdded(component: Component) {
         scene.addComponent(component.entity, component)
@@ -44,13 +34,19 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
         scene.update(scene, deltaSeconds)
     }
 
-    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
-        engineContext.afterSetScene(lastScene, currentScene)
-    }
-
     override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
-        scene.clear()
+        currentScene.clear()
         nextScene.entitySystems.gatherEntities(nextScene)
+        engineContext.extensions.forEach {
+            it.run { nextScene.decorate() }
+        }
+        engineContext.extensions.forEach {
+            it.componentSystem?.onEntityAdded(nextScene.getEntities())
+            it.manager?.beforeSetScene(currentScene, nextScene)
+        }
     }
 
+    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
+        engineContext.extensions.forEach { it.manager?.afterSetScene(lastScene, currentScene) }
+    }
 }

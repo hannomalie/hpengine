@@ -32,19 +32,20 @@ class ModelComponentSystem(val engine: EngineContext,
 
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
-    private val components = CopyOnWriteArrayList<ModelComponent>()
-
     val allocations: MutableMap<ModelComponent, Allocation> = mutableMapOf()
+
+    private val _components = CopyOnWriteArrayList<ModelComponent>()
     private var gpuJointsArray = StructArray(size = 1000) { Matrix4f() }
 
-    override fun getComponents(): List<ModelComponent> = components
+    override val components: List<ModelComponent>
+        get() = _components
 
     init {
         engine.eventBus.register(this)
     }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        for (component in getComponents()) {
+        for (component in components) {
             component.update(scene, deltaSeconds)
         }
         updateGpuJointsArray()
@@ -53,7 +54,7 @@ class ModelComponentSystem(val engine: EngineContext,
         val materials = materialManager.materials
         val gpuEntitiesArray = scene.entityManager.gpuEntitiesArray
 
-        for(modelComponent in getComponents()) {
+        for(modelComponent in components) {
             if(counter >= gpuEntitiesArray.size) { throw IllegalStateException("More model components then size of gpu entities array") }
 
             val allocation = allocations[modelComponent]!!
@@ -137,7 +138,7 @@ class ModelComponentSystem(val engine: EngineContext,
 
     override fun addComponent(component: ModelComponent) {
         allocateVertexIndexBufferSpace(listOf(component.entity))
-        components.add(component)
+        _components.add(component)
 
         // TODO: Implement for reload feature
         // FileMonitor.addOnFileChangeListener(component.model.file) { }
@@ -188,7 +189,7 @@ class ModelComponentSystem(val engine: EngineContext,
         this.allocations.putAll(allocations)
     }
     override fun clear() {
-        components.clear()
+        _components.clear()
 
         vertexIndexBufferStatic.resetAllocations()
         vertexIndexBufferAnimated.resetAllocations()

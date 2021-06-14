@@ -15,39 +15,81 @@ val Engine.materialsDemo
         entities {
             entity("PlaneStone") {
                 modelComponent(
-                        name = "PlaneStone",
-                        file = "assets/models/plane.obj",
-                        materialManager = scene.materialManager,
-                        modelComponentManager = scene.modelComponentManager,
-                        gameDirectory = engineContext.config.directories.gameDir
+                    name = "PlaneStone",
+                    file = "assets/models/plane.obj",
+                    materialManager = engineContext.extensions.materialExtension.manager,
+                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
+                    gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
-                    this.material = scene.materialManager.registerMaterial("stone", MaterialInfo().apply {
-                        put(SimpleMaterial.MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineContext.gameDir))
-                        put(SimpleMaterial.MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineContext.gameDir))
-                        put(SimpleMaterial.MAP.HEIGHT, textureManager.getTexture("assets/textures/stone_height.png", directory = engineContext.gameDir))
-                        program = engineContext.programManager.heightMappingFirstPassProgram
-                        parallaxScale = 0.3f
-                        parallaxBias = 0.3f
-                    })
+                    this.material = engineContext.extensions.materialExtension.manager.registerMaterial(
+                        "stone",
+                        MaterialInfo().apply {
+                            put(
+                                SimpleMaterial.MAP.DIFFUSE,
+                                textureManager.getTexture(
+                                    "assets/textures/stone_diffuse.png",
+                                    true,
+                                    engineContext.gameDir
+                                )
+                            )
+                            put(
+                                SimpleMaterial.MAP.NORMAL,
+                                textureManager.getTexture(
+                                    "assets/textures/stone_normal.png",
+                                    directory = engineContext.gameDir
+                                )
+                            )
+                            put(
+                                SimpleMaterial.MAP.HEIGHT,
+                                textureManager.getTexture(
+                                    "assets/textures/stone_height.png",
+                                    directory = engineContext.gameDir
+                                )
+                            )
+                            program = engineContext.programManager.heightMappingFirstPassProgram
+                            parallaxScale = 0.3f
+                            parallaxBias = 0.3f
+                        })
                 }
                 transform.scale(10f)
             }
             entity("PlaneBricks") {
                 modelComponent(
-                        name = "PlaneBricks",
-                        file = "assets/models/plane.obj",
-                        materialManager = scene.materialManager,
-                        modelComponentManager = scene.modelComponentManager,
-                        gameDirectory = engineContext.config.directories.gameDir
+                    name = "PlaneBricks",
+                    file = "assets/models/plane.obj",
+                    materialManager = engineContext.extensions.materialExtension.manager,
+                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
+                    gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
-                    this.material = scene.materialManager.registerMaterial("bricks", MaterialInfo().apply {
-                        put(SimpleMaterial.MAP.DIFFUSE, textureManager.getTexture("assets/models/textures/Sponza_Bricks_a_Albedo.png", true, engineContext.gameDir))
-                        put(SimpleMaterial.MAP.NORMAL, textureManager.getTexture("assets/models/textures/Sponza_Bricks_a_Normal.png", directory = engineContext.gameDir))
-                        put(SimpleMaterial.MAP.HEIGHT, textureManager.getTexture("assets/models/textures/Sponza_Bricks_a_height.dds", directory = engineContext.gameDir))
-                        program = engineContext.programManager.heightMappingFirstPassProgram
-                        parallaxScale = 0.3f
-                        parallaxBias = 0.3f
-                    })
+                    this.material = engineContext.extensions.materialExtension.manager.registerMaterial(
+                        "bricks",
+                        MaterialInfo().apply {
+                            put(
+                                SimpleMaterial.MAP.DIFFUSE,
+                                textureManager.getTexture(
+                                    "assets/models/textures/Sponza_Bricks_a_Albedo.png",
+                                    true,
+                                    engineContext.gameDir
+                                )
+                            )
+                            put(
+                                SimpleMaterial.MAP.NORMAL,
+                                textureManager.getTexture(
+                                    "assets/models/textures/Sponza_Bricks_a_Normal.png",
+                                    directory = engineContext.gameDir
+                                )
+                            )
+                            put(
+                                SimpleMaterial.MAP.HEIGHT,
+                                textureManager.getTexture(
+                                    "assets/models/textures/Sponza_Bricks_a_height.dds",
+                                    directory = engineContext.gameDir
+                                )
+                            )
+                            program = engineContext.programManager.heightMappingFirstPassProgram
+                            parallaxScale = 0.3f
+                            parallaxBias = 0.3f
+                        })
                 }
                 transform.translate(Vector3f(10f, 0f, 0f))
                 transform.scale(10f)

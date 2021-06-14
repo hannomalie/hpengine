@@ -26,14 +26,17 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSou
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
-class SphereHolder(val engine: EngineContext,
-                   val sphereProgram: Program<Uniforms> = engine.run {
-                       programManager.getProgram(
-                           EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
-                           EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource())
-                   }) : RenderSystem {
+class SphereHolder(
+    val engine: EngineContext,
+    val sphereProgram: Program<Uniforms> = engine.run {
+        programManager.getProgram(
+            EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
+            EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource()
+        )
+    }
+) : RenderSystem {
 
-    val materialManager: MaterialManager = engine.materialManager
+    val materialManager: MaterialManager = engine.extensions.materialExtension.manager
     val gpuContext = engine.gpuContext
     val sphereEntity = Entity("[Editor] Pivot")
 
@@ -56,25 +59,40 @@ class SphereHolder(val engine: EngineContext,
         baseVertex = vertexIndexOffsets.vertexOffset
         baseInstance = 0
     }
-    val sphereRenderBatch = RenderBatch(entityBufferIndex = 0, isDrawLines = false,
-            cameraWorldPosition = Vector3f(0f, 0f, 0f), drawElementsIndirectCommand = sphereCommand, isVisibleForCamera = true, update = Update.DYNAMIC,
-            entityMinWorld = Vector3f(0f, 0f, 0f), entityMaxWorld = Vector3f(0f, 0f, 0f), centerWorld = Vector3f(),
-            boundingSphereRadius = 1000f, animated = false, materialInfo = sphereModelComponent.material.materialInfo,
-            entityIndex = sphereEntity.index, meshIndex = 0)
+    val sphereRenderBatch = RenderBatch(
+        entityBufferIndex = 0,
+        isDrawLines = false,
+        cameraWorldPosition = Vector3f(0f, 0f, 0f),
+        drawElementsIndirectCommand = sphereCommand,
+        isVisibleForCamera = true,
+        update = Update.DYNAMIC,
+        entityMinWorld = Vector3f(0f, 0f, 0f),
+        entityMaxWorld = Vector3f(0f, 0f, 0f),
+        centerWorld = Vector3f(),
+        boundingSphereRadius = 1000f,
+        animated = false,
+        materialInfo = sphereModelComponent.material.materialInfo,
+        entityIndex = sphereEntity.index,
+        meshIndex = 0
+    )
 
     val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
+
     override fun render(result: DrawResult, renderState: RenderState) {
         render(renderState, sphereEntity.transform.position, Vector3f(0f, 0f, 1f))
     }
-    fun render(state: RenderState, spherePosition: Vector3f,
-               color: Vector3f, useDepthTest: Boolean = true,
-               beforeDraw: (Program<Uniforms>.() -> Unit)? = null) {
+
+    fun render(
+        state: RenderState, spherePosition: Vector3f,
+        color: Vector3f, useDepthTest: Boolean = true,
+        beforeDraw: (Program<Uniforms>.() -> Unit)? = null
+    ) {
 
         val scaling = (0.1f * sphereEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = Transform().scale(scaling).translate(spherePosition)
-        if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
+        if (useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
@@ -82,23 +100,28 @@ class SphereHolder(val engine: EngineContext,
         sphereProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
         sphereProgram.setUniform("diffuseColor", color)
         sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
-        if (beforeDraw != null) { sphereProgram.beforeDraw() }
+        if (beforeDraw != null) {
+            sphereProgram.beforeDraw()
+        }
 
         sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch, sphereProgram)
 
     }
-    fun render(state: RenderState, useDepthTest: Boolean = true,
-               draw: (SphereHolder.(RenderState) -> Unit)) {
+
+    fun render(
+        state: RenderState, useDepthTest: Boolean = true,
+        draw: (SphereHolder.(RenderState) -> Unit)
+    ) {
 
         val transformation = Transform()
-        if(useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
+        if (useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
         engine.gpuContext.cullFace = false
         engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
         sphereProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-        sphereProgram.setUniform("diffuseColor", Vector3f(1f,0f,0f))
+        sphereProgram.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
         sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
 
         draw(state)

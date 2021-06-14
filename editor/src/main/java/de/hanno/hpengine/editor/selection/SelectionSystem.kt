@@ -291,22 +291,22 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedModel
         sidePanel.verticalBox(
             unselectButton,
-            ModelGrid(pickedModel.model, pickedModel.modelComponent, editorComponents.sceneManager.scene.materialManager)
+            ModelGrid(pickedModel.model, pickedModel.modelComponent, engineContext.extensions.materialExtension.manager)
         )
     }
 
     fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeLater {
         selection = pickedMesh
         sidePanel.verticalBox(
-                unselectButton,
-                MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.materialManager)
+            unselectButton,
+            MeshGrid(pickedMesh.mesh, pickedMesh.entity, engineContext.extensions.materialExtension.manager)
         )
     }
     fun selectReflectionProbe(pickedReflectionProbe: ReflectionProbeSelection) = SwingUtils.invokeLater {
         selection = pickedReflectionProbe
         sidePanel.verticalBox(
-                unselectButton,
-                ReflectionProbeGrid(pickedReflectionProbe.reflectionProbe)
+            unselectButton,
+            ReflectionProbeGrid(pickedReflectionProbe.reflectionProbe)
         )
     }
 

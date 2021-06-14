@@ -110,4 +110,8 @@ class AWTEditorWindow(val config: ConfigImpl,
     } finally {
         canvas.canvas.unlock()
     }
+
+    override fun awaitEvents() {
+
+    }
 }

@@ -63,7 +63,7 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
 
         (component as? EnvironmentProbe)?.let { probe ->
             val sampler = EnvironmentSampler(probe.entity, probe,
-                    256, 256, getComponents().indexOf(probe),
+                    256, 256, components.indexOf(probe),
                     this, engine.programManager,
                     engine.config, engine.textureManager)
             probe.sampler = sampler
@@ -72,10 +72,10 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
         updateBuffers()
     }
     private inline val probes: List<EnvironmentProbe>
-        get() = getComponents()
+        get() = components
 
     val EnvironmentProbe.index: Int
-        get() = getComponents().indexOf(this)
+        get() = components.indexOf(this)
 
     fun EnvironmentProbe.getTextureUnitIndex(gpuContext: GpuContext<*>): Int {
         val index = index
@@ -359,7 +359,7 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
         renderState.environmentProbesState.environmentMapWeights = weights
         renderState[extractedProbes].apply {
             clear()
-            addAll(getComponents())
+            addAll(components)
         }
 
     }

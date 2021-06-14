@@ -4,11 +4,8 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
 import org.joml.Vector4f
+import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.glfw.GLFWErrorCallbackI
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback
-import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.GL_FALSE
@@ -63,8 +60,9 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override val handle: Long
 
     init {
+        check(glfwInit()) { "Unable to initialize GLFW" }
         glfwSetErrorCallback(errorCallback)
-        glfwInit()
+        glfwDefaultWindowHints()
         glfwWindowHint(GLFW_RESIZABLE, GL11.GL_TRUE)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
@@ -74,6 +72,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         if (handle == 0L) {
             throw RuntimeException("Failed to create windowHandle")
         }
+        setCallbacks(framebufferSizeCallback, closeCallback)
 
         executor.invoke {
             makeContextCurrent()
@@ -82,9 +81,8 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
             glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
             glfwSwapInterval(if(vSync) 1 else 0)
 
-            setCallbacks(framebufferSizeCallback, closeCallback)
-            glfwShowWindow(handle)
         }
+        glfwShowWindow(handle)
 
         frontBuffer = createFrontBufferRenderTarget()
     }
@@ -98,7 +96,6 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override fun hideWindow() = glfwHideWindow(handle)
 
     private fun setCallbacks(framebufferSizeCallback: GLFWFramebufferSizeCallback, closeCallback: GLFWWindowCloseCallbackI) {
-        glfwMakeContextCurrent(handle)
         glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
         glfwSetWindowCloseCallback(handle, closeCallback)
     }
@@ -108,6 +105,9 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
     override fun getMouseButton(buttonCode: Int): Int = glfwGetMouseButton(handle, buttonCode)
     override fun swapBuffers() = glfwSwapBuffers(handle)
     fun makeContextCurrent() = glfwMakeContextCurrent(handle)
+    override fun awaitEvents() {
+        glfwWaitEvents()
+    }
 
 }
 

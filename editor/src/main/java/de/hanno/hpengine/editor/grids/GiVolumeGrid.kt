@@ -22,7 +22,7 @@ class GiVolumeGrid(val giVolumeComponent: GIVolumeComponent, val engineContext: 
         layout = MigLayout("wrap 2")
         add(JButton("Use cam").apply {
             addActionListener {
-                sceneManager.scene.activeCamera = giVolumeComponent.orthoCam
+                sceneManager.scene.extensions.cameraExtension.activeCamera = giVolumeComponent.orthoCam
             }
         })
         add(JButton("Restore scene cam").apply {

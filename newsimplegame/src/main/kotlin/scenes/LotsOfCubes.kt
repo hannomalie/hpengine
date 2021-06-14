@@ -9,13 +9,11 @@ import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.scene.scene
-import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.engine.transform.TransformSpatial
 import org.joml.Vector3f
 import java.util.ArrayList
-import kotlin.random.Random
+
 var maxDistance = 15
 var clusterDistance = 10 * maxDistance
 var clusterLocations = arrayOf(
@@ -34,8 +32,8 @@ val Engine.lotsOfCubesScene
                 modelComponent(
                     name = "Plane",
                     file = "assets/models/cube.obj",
-                    materialManager = scene.materialManager,
-                    modelComponentManager = scene.modelComponentManager,
+                    materialManager = engineContext.extensions.materialExtension.manager,
+                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.put(SimpleMaterial.MAP.DIFFUSE, engineContext.textureManager.getTexture("assets/textures/grass.png", true))

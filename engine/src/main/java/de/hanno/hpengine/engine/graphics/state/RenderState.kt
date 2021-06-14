@@ -38,7 +38,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     var camera = Camera(Entity("RenderStateCameraEntity"), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
-    var sceneInitiallyDrawn: Boolean = false
+    var sceneInitiallyDrawn: Boolean = false // TODO: Remove this completely
     var sceneMin = Vector3f()
     var sceneMax = Vector3f()
 

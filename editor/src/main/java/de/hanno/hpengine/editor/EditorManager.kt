@@ -27,9 +27,11 @@ class EditorManager(val engineContext: EngineContext, val editorComponents: Edit
     override fun onEntityAdded(entities: List<Entity>) {
         editorComponents.onEntityAdded(entities)
     }
-
     override fun onComponentAdded(component: Component) {
         editorComponents.onComponentAdded(component)
+    }
+    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
+        editorComponents.beforeSetScene(currentScene, nextScene)
     }
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
 
@@ -62,7 +64,7 @@ class EditorManager(val engineContext: EngineContext, val editorComponents: Edit
     }
 
     override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
-        editorComponents.recreateSceneTree(currentScene)
+        editorComponents.afterSetScene(lastScene, currentScene)
     }
 
 }

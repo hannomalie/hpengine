@@ -21,27 +21,29 @@ class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<C
     private val lineVertices = PersistentMappedStructBuffer(24, engineContext.gpuContext, { HpVector4f() })
     override val componentClass: Class<Camera> = Camera::class.java
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        for (component in getComponents()) {
+        for (component in components) {
             component.update(scene, deltaSeconds)
         }
     }
-    private val components = mutableListOf<Camera>()
-    override fun getComponents(): List<Camera> = components
+    private val _components = mutableListOf<Camera>()
+    override val components: List<Camera>
+        get() = _components
 
-    fun create(entity: Entity) = Camera(entity, engineContext.config.width.toFloat() / engineContext.config.height.toFloat())
-    fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean) = Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { components.add(it); }
+    fun create(entity: Entity, projectionMatrix: Matrix4f, near:Float, far:Float, fov:Float, ratio:Float, perspective:Boolean): Camera {
+        return Camera(entity, projectionMatrix, near, far, fov, ratio).apply { this.perspective = perspective }.also { _components.add(it); }
+    }
 
     override fun addComponent(component: Camera) {
-        components.add(component)
+        _components.add(component)
     }
-    override fun clear() = components.clear()
+    override fun clear() = _components.clear()
 
     override fun extract(renderState: RenderState) {
         if (engineContext.config.debug.isDrawCameras) {
             renderState[frustumLines].apply {
                 clear()
-                components.indices.forEach { i ->
-                    val corners = components[i].frustumCorners
+                _components.indices.forEach { i ->
+                    val corners = _components[i].frustumCorners
 
                     addLine(corners[0], corners[1])
                     addLine(corners[1], corners[2])
@@ -67,4 +69,10 @@ class CameraComponentSystem(val engineContext: EngineContext): ComponentSystem<C
             engineContext.drawLines(lineVertices, renderState[frustumLines], color = Vector3f(1f, 0f, 0f))
         }
     }
+
 }
+
+fun Camera(
+    engineContext: EngineContext,
+    entity: Entity
+) = Camera(entity, engineContext.config.width.toFloat() / engineContext.config.height.toFloat())

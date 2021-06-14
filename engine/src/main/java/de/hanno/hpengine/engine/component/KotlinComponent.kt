@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
-import kotlinx.coroutines.CoroutineScope
 import java.util.HashMap
 
 class KotlinComponent(val engine: Engine, override val codeSource: CodeSource) : BaseComponent(Entity()), ScriptComponent {

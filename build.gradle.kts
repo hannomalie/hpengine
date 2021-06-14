@@ -1,8 +1,4 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.Arrays
-
-
-
 
 plugins {
     kotlin("jvm") version "1.3.72"
@@ -29,14 +25,15 @@ allprojects {
 
     repositories {
 
+        flatDir {
+            dir(project.rootDir.resolve("libs").absolutePath)
+        }
+
         mavenCentral()
         mavenLocal()
         maven {
             name = "local-dir"
-            setUrl("${project.rootDir.resolve("libs").absolutePath}")
-        }
-        flatDir {
-            dir("${project.rootDir.resolve("libs").absolutePath}")
+            setUrl(project.rootDir.resolve("libs").absolutePath)
         }
         maven {
             name = "java.net"
@@ -55,9 +52,6 @@ allprojects {
             setUrl("http://dl.bintray.com/kotlin/kotlinx")
         }
 
-        maven {
-            setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
-        }
         maven {
             setUrl("https://oss.sonatype.org")
         }

@@ -6,10 +6,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.CameraComponentSystem
-import de.hanno.hpengine.engine.camera.InputComponentSystem
-import de.hanno.hpengine.engine.camera.MovableInputComponent
+import de.hanno.hpengine.engine.camera.*
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
@@ -32,11 +29,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Direct
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.*
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
@@ -72,7 +65,8 @@ interface Extension {
         get() = null
     val deferredRendererExtension: RenderExtension<OpenGl>?
         get() = null
-    @JvmDefault fun Scene.onInit() { }
+
+    fun Scene.decorate() { }
 
     fun init(sceneManager: SceneManager) {
         // TODO: Include other components here
@@ -81,67 +75,96 @@ interface Extension {
 }
 
 
-class BaseExtensions private constructor(val engineContext: EngineContext,
-                                         private val extensions: MutableList<Extension>): List<Extension> by extensions {
-    constructor(engineContext: EngineContext): this(engineContext, mutableListOf())
+class BaseExtensions private constructor(
+    val engineContext: EngineContext,
+    additionalExtensions: List<Extension>,
+    private val _extensions: MutableList<Extension> = mutableListOf()
+    ) : List<Extension> by _extensions {
 
-    private fun <T: Extension> T.add(): T = also { extensions.add(it) }
+    val extensions: List<Extension>
+        get() = _extensions
 
+    companion object {
+        operator fun invoke(engineContext: EngineContext, additionalExtensions: List<Extension>): BaseExtensions =
+            BaseExtensions(engineContext, mutableListOf(
+                AmbientOcclusionExtension(engineContext),
+//        TesselationExtension(engineContext),
+                OceanWaterExtension(engineContext),
+                ReflectionProbeExtension(engineContext)
+//        GiVolumeExtension (engineContext, baseExtensions.pointLightExtension.deferredRendererExtension
+            ).apply { addAll(additionalExtensions) })
+    }
+    private fun <T : Extension> T.add(): T = also { _extensions.add(it) }
+
+    val materialExtension = MaterialExtension(engineContext).add()
+    val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
     val physicsExtension = PhysicsExtension(engineContext)
     val directionalLightExtension = DirectionalLightExtension(engineContext).add()
     val cameraExtension = CameraExtension(engineContext).add()
     val pointLightExtension = PointLightExtension(engineContext).add()
     val areaLightExtension = AreaLightExtension(engineContext).add()
     val tubeLightExtension = TubeLightExtension(engineContext).add()
-    val materialExtension = MaterialExtension(engineContext).add()
     val customComponentExtension = CustomComponentExtension(engineContext).add()
     val scriptComponentExtension = ScriptComponentExtension(engineContext).add()
     val clustersComponentExtension = ClustersComponentExtension(engineContext).add()
     val inputComponentExtension = InputComponentExtension(engineContext).add()
-    val modelComponentExtension = ModelComponentExtension(engineContext, materialExtension.manager).add()
     val skyboxExtension = SkyboxExtension(engineContext).add()
     val forwardExtension = ForwardExtension(engineContext).add()
+
+    init {
+        _extensions.addAll(additionalExtensions)
+    }
+
 }
-class ForwardExtension(val engineContext: EngineContext): Extension {
+
+class ForwardExtension(val engineContext: EngineContext) : Extension {
     override val deferredRendererExtension = ForwardRenderExtension(engineContext)
 }
 
-class AmbientOcclusionExtension(val engineContext: EngineContext): Extension {
+class AmbientOcclusionExtension(val engineContext: EngineContext) : Extension {
     override val deferredRendererExtension = AOScatteringExtension(engineContext)
 }
-class PhysicsExtension(val engineContext: EngineContext): Extension {
+
+class PhysicsExtension(val engineContext: EngineContext) : Extension {
     override val manager = PhysicsManager(engineContext, config = engineContext.config)
     override val renderSystem = manager
 }
-class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager): Extension {
+
+class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager) : Extension {
     override val manager = ModelComponentManager()
     override val componentSystem = ModelComponentSystem(engineContext, manager, materialManager)
 }
-class InputComponentExtension(val engineContext: EngineContext): Extension {
+
+class InputComponentExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = InputComponentSystem(engineContext)
 }
 
-class ClustersComponentExtension(val engineContext: EngineContext): Extension {
+class ClustersComponentExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = ClustersComponentSystem()
 }
 
-class ScriptComponentExtension(val engineContext: EngineContext): Extension {
+class ScriptComponentExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = ScriptComponentSystem()
 }
-class CustomComponentExtension(val engineContext: EngineContext): Extension {
+
+class CustomComponentExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = CustomComponentSystem()
 }
-class MaterialExtension(val engineContext: EngineContext): Extension {
+
+class MaterialExtension(val engineContext: EngineContext) : Extension {
     override val manager = MaterialManager(engineContext)
 }
-class GiVolumeExtension(val engineContext: EngineContext,
-                        val pointLightExtension: BvHPointLightSecondPassExtension): Extension {
+
+class GiVolumeExtension(
+    val engineContext: EngineContext,
+    val pointLightExtension: BvHPointLightSecondPassExtension
+) : Extension {
     override val componentSystem = SimpleComponentSystem(GIVolumeComponent::class.java)
     override val componentClass: Class<*> = GIVolumeComponent::class.java
     override val deferredRendererExtension = VoxelConeTracingExtension(engineContext, pointLightExtension)
 
     override val entitySystem = GIVolumeSystem(engineContext, deferredRendererExtension)
-    override fun Scene.onInit() {
+    override fun Scene.decorate() {
         entity("GlobalGiGrid") {
             addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(100f)))
             customComponent { scene, _ ->
@@ -150,40 +173,58 @@ class GiVolumeExtension(val engineContext: EngineContext,
         }
         // TODO: Global grid makes sense maybe, but this one shouldn't live here forever, but I use it for testing purposes
         entity("SecondGiGrid") {
-            transform.translation(Vector3f(0f,0f,50f))
+            transform.translation(Vector3f(0f, 0f, 50f))
             addComponent(GIVolumeComponent(this, engineContext.textureManager.createGIVolumeGrids(), Vector3f(30f)))
         }
     }
 }
 
-class DirectionalLightExtension(val engineContext: EngineContext): Extension {
+class DirectionalLightExtension(val engineContext: EngineContext) : Extension {
     override val deferredRendererExtension = CompoundExtension(
         DirectionalLightShadowMapExtension(engineContext),
         DirectionalLightSecondPassExtension(engineContext)
     )
     override val entitySystem = DirectionalLightSystem(engineContext)
     override val renderSystem = entitySystem
-    override fun Scene.onInit() {
+    override fun Scene.decorate() {
         entity("DirectionalLight") {
             addComponent(DirectionalLight(this))
             addComponent(DirectionalLight.DirectionalLightController(engineContext, this))
         }
     }
 }
-class TubeLightExtension(val engineContext: EngineContext): Extension {
+
+class TubeLightExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = TubeLightComponentSystem()
 }
 
-class CameraExtension(val engineContext: EngineContext): Extension {
+class CameraExtension(val engineContext: EngineContext) : Extension {
     override val componentClass: Class<*> = Camera::class.java
     override val componentSystem = CameraComponentSystem(engineContext)
     override val renderSystem = componentSystem
-    override fun Scene.onInit() {
+    override fun Scene.decorate() {
         entity(cameraEntityName) {
             addComponent(MovableInputComponent(engineContext, this))
-            addComponent(baseExtensions.cameraExtension.componentSystem.create(this))
+            addComponent(
+                Camera(engineContext.extensions.cameraExtension.componentSystem.engineContext, this).apply {
+                    activeCamera = this
+                }
+            )
+        }.apply {
+            activeCameraEntity = this
         }
     }
+
+    override val deferredRendererExtension: RenderExtension<OpenGl> = object: RenderExtension<OpenGl> {
+        override fun extract(scene: Scene, renderState: RenderState) {
+            renderState.camera.init(activeCamera)
+        }
+    }
+
+    lateinit var activeCameraEntity: Entity
+    lateinit var activeCamera: Camera
+    val Entity.isActiveCameraEntity get() = ::activeCameraEntity.isInitialized && this == activeCameraEntity
+
     companion object {
         val cameraEntityName = "MainCamera"
         val Scene.cameraEntity: Entity
@@ -195,32 +236,69 @@ class CameraExtension(val engineContext: EngineContext): Extension {
     }
 }
 
-class EnvironmentProbeExtension(val engineContext: EngineContext): Extension {
+class EnvironmentProbeExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = EnvironmentProbeSystem(engineContext)
     override val renderSystem = componentSystem
 }
-class SkyboxExtension(val engineContext: EngineContext): Extension {
-    private val firstpassProgramVertexSource = engineContext.config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
-    private val firstpassProgramFragmentSource = engineContext.config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
+
+class SkyboxExtension(val engineContext: EngineContext) : Extension {
+    private val firstpassProgramVertexSource =
+        engineContext.config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
+    private val firstpassProgramFragmentSource =
+        engineContext.config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 
     private val simpleColorProgramStatic = engineContext.programManager.getProgram(
-            firstpassProgramVertexSource,
-            firstpassProgramFragmentSource.enhanced {
-                replace(
-                        "//END",
-                        """
+        firstpassProgramVertexSource,
+        firstpassProgramFragmentSource.enhanced {
+            replace(
+                "//END",
+                """
                             out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
                         """.trimIndent()
-                )
-            }, StaticFirstPassUniforms(engineContext.gpuContext) as FirstPassUniforms
+            )
+        }, StaticFirstPassUniforms(engineContext.gpuContext) as FirstPassUniforms
     )
+
     init {
-        engineContext.gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, engineContext.textureManager.cubeMap.id)
+        engineContext.gpuContext.bindTexture(
+            6,
+            GlTextureTarget.TEXTURE_CUBE_MAP,
+            engineContext.textureManager.cubeMap.id
+        )
     }
 
-    override val renderSystem = object: RenderSystem {
+    private fun SkyBoxEntity(): Entity = Entity("Skybox").apply {
+        modelComponent(
+            name = "Plane",
+            file = "assets/models/skybox.obj",
+            materialManager = engineContext.extensions.materialExtension.manager,
+            modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
+            gameDirectory = engineContext.config.directories.engineDir
+        ).apply {
+            val materialInfo = material.materialInfo.copy(
+                materialType = SimpleMaterial.MaterialType.UNLIT,
+                cullBackFaces = false,
+                isShadowCasting = false,
+                program = simpleColorProgramStatic
+            ).apply {
+                put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
+            }
+            material = engineContext.extensions.materialExtension.manager.forceRegisterMaterial(
+                "skybox",
+                materialInfo
+            ) // TODO Investigate why this doesnt update in UI
+        }
+        customComponent { scene, _ ->
+            val eyePosition = scene.extensions.cameraExtension.activeCamera.getPosition()
+            this.transform.identity().translate(eyePosition)
+            this.transform.scale(1000f)
+        }
+    }
+
+    override val renderSystem = object : RenderSystem {
         override fun extract(scene: Scene, renderState: RenderState) {
-            renderState.skyBoxMaterialIndex = scene.getEntity("Skybox")!!.getComponent(ModelComponent::class.java)!!.material.materialIndex
+            renderState.skyBoxMaterialIndex =
+                scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
         }
     }
     override val deferredRendererExtension = SkyboxRenderExtension()
@@ -230,12 +308,17 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
         private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
         private val secondPassReflectionProgram = engineContext.programManager.getComputeProgram(
-                engineContext.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
+            engineContext.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
         )
-        val skyBoxTexture = engineContext.renderStateManager.renderState.registerState { IntStruct().apply { value = engineContext.textureManager.cubeMap.id } }
+        val skyBoxTexture = engineContext.renderStateManager.renderState.registerState {
+            IntStruct().apply {
+                value = engineContext.textureManager.cubeMap.id
+            }
+        }
+
         override fun extract(scene: Scene, renderState: RenderState) {
             scene.skyBox?.let {
-                it.getComponent(ModelComponent::class.java)!!.model.material.materialInfo.maps[SimpleMaterial.MAP.ENVIRONMENT]?.let {
+                it.getComponent(ModelComponent::class.java)?.model?.material?.materialInfo?.maps?.get(SimpleMaterial.MAP.ENVIRONMENT)?.let {
                     renderState[skyBoxTexture].value = it.id
                 }
             }
@@ -251,49 +334,50 @@ class SkyboxExtension(val engineContext: EngineContext): Extension {
             gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
             // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(4, deferredRenderingBuffer.reflectionBuffer.renderedTextures[0], 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
-            GL42.glBindImageTexture(7, deferredRenderingBuffer.reflectionBuffer.renderedTextures[1], 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            GL42.glBindImageTexture(
+                4,
+                deferredRenderingBuffer.reflectionBuffer.renderedTextures[0],
+                0,
+                false,
+                0,
+                GL15.GL_READ_WRITE,
+                GL30.GL_RGBA16F
+            )
+            GL42.glBindImageTexture(
+                7,
+                deferredRenderingBuffer.reflectionBuffer.renderedTextures[1],
+                0,
+                false,
+                0,
+                GL15.GL_READ_WRITE,
+                GL30.GL_RGBA16F
+            )
             secondPassReflectionProgram.use()
             secondPassReflectionProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
             secondPassReflectionProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
             secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-            secondPassReflectionProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+            secondPassReflectionProgram.setUniformAsMatrix4(
+                "projectionMatrix",
+                renderState.camera.projectionMatrixAsBuffer
+            )
             secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
-            secondPassReflectionProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
+            secondPassReflectionProgram.dispatchCompute(
+                engineContext.config.width / 16,
+                engineContext.config.height / 16,
+                1
+            )
         }
     }
 
     val Scene.skyBox: Entity?
         get() = getEntity("Skybox")
 
-    override fun Scene.onInit() {
-        entity("Skybox") {
-            modelComponent(
-                    name = "Plane",
-                    file = "assets/models/skybox.obj",
-                    materialManager = this@onInit.materialManager,
-                    modelComponentManager = this@onInit.modelComponentManager,
-                    gameDirectory = engineContext.config.directories.gameDir
-            ).apply {
-                val materialInfo = material.materialInfo.copy(
-                    materialType = SimpleMaterial.MaterialType.UNLIT,
-                    cullBackFaces = false,
-                    isShadowCasting = false,
-                    program = simpleColorProgramStatic).apply {
-                    put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
-                }
-                material = materialManager.registerMaterial("skybox", materialInfo) // TODO Investigate why this doesnt update in UI
-            }
-            customComponent { scene, _ ->
-                val eyePosition = scene.activeCamera.getPosition()
-                this@entity.transform.identity().translate(eyePosition)
-                this@entity.transform.scale(1000f)
-            }
-        }
+    override fun Scene.decorate() {
+        add(SkyBoxEntity())
     }
 }
 
-class PointLightExtension(val engineContext: EngineContext): Extension {
+class PointLightExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = PointLightComponentSystem()
     val pointLightSystem = PointLightSystem(engineContext)
     override val renderSystem = pointLightSystem
@@ -301,12 +385,12 @@ class PointLightExtension(val engineContext: EngineContext): Extension {
     override val deferredRendererExtension = BvHPointLightSecondPassExtension(engineContext)
 }
 
-class AreaLightExtension(val engineContext: EngineContext): Extension {
+class AreaLightExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = AreaLightComponentSystem()
     override val renderSystem = AreaLightSystem(engineContext)
 }
 
-class AmbientCubesExtension(val engineContext: EngineContext): Extension {
+class AmbientCubesExtension(val engineContext: EngineContext) : Extension {
     override val deferredRendererExtension = AmbientCubeGridExtension(engineContext)
 }
 

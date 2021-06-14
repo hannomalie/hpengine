@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.instancing
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Cluster
@@ -16,11 +15,6 @@ import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.lang.IllegalStateException
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -128,14 +122,14 @@ class ClustersComponent(override val entity: Entity): Component {
 
 class ClustersComponentSystem : ComponentSystem<ClustersComponent> {
     override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
-    private val components = mutableListOf<ClustersComponent>()
+    private val _components = mutableListOf<ClustersComponent>()
     val instances = mutableListOf<Instance>()
 
 
-    override fun getComponents() = components
+    override val components get() = _components
 
     override fun addComponent(component: ClustersComponent) {
-        components.add(component)
+        _components.add(component)
         instances.addAll(component.getInstances())
     }
 }

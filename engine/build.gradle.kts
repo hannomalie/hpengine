@@ -5,11 +5,6 @@ plugins {
     kotlin("jvm")
 }
 
-//
-//java.sourceSets {
-//    getByName("main").java.srcDirs("src/main/java")
-//    getByName("test").java.srcDirs("src/test/java")
-//}
 kotlin.sourceSets {
     getByName("main").kotlin.srcDirs("src/main/java")
     getByName("test").kotlin.srcDirs("src/test/java")
@@ -36,14 +31,18 @@ dependencies {
 
     api("javax.inject:javax.inject:1")
 
-    api("de.swirtz:ktsRunner:0.0.7")
+    api("com.github.s1monw1:KtsRunner:v0.0.7")
 
+    api(fileTree(mapOf("dir" to "../libs", "include" to "*.jar")))
     api("", "PNGDecoder")
     api("", "dds", "1.0.1-SNAPSHOT")
+    api("", "dahie-dds", "1.0.0-SNAPSHOT")
+    api("", "DDSUtils")
 
     api("org.lwjgl:lwjgl:$lwjgl_version")
     api("org.lwjgl:lwjgl-glfw:$lwjgl_version")
     api("org.lwjgl:lwjgl-jawt:$lwjgl_version")
+    api("org.lwjglx:lwjgl3-awt:0.1.8")
     api("org.lwjgl:lwjgl-jemalloc:$lwjgl_version")
     api("org.lwjgl:lwjgl-nanovg:$lwjgl_version")
     api("org.lwjgl:lwjgl-opencl:$lwjgl_version")
@@ -59,15 +58,13 @@ dependencies {
 
     api("org.joml:joml:1.9.3")
     api("", "lwjgl3-awt", "0.1.6")
-    api("", "vecmath")
-    api("", "rsyntaxtextarea")
+    api("javax.vecmath:vecmath:1.5.2")
     api("jfree:jfreechart:1.0.13")
     api("jcommon:jcommon:0.9.5")
     api("commons-lang:commons-lang:2.3")
     api("set.sf.sociaal:jbullet:3.0.0.20130526")
     api("com.google.guava:guava:10.0.1")
     api("net.engio:mbassador:1.2.4")
-    api("", "dahie-dds", "1")
     api("commons-io:commons-io:2.4")
     api("de.ruedigermoeller:fst:2.33")
     api("com.carrotsearch:hppc:0.7.2")

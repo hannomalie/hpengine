@@ -191,7 +191,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
         materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
 
-        return materialManager.registerMaterial(name.dataString(), materialInfo)
+        return materialManager.registerMaterial(name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) }, materialInfo)
     }
     private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)

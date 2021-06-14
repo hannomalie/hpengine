@@ -2,10 +2,7 @@ package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.addResourceContext
 import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.addResourceContext
 import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -13,22 +10,14 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 import org.joml.Vector4f
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.util.ArrayList
-import java.util.HashMap
 import java.util.logging.Logger
-import javax.swing.JFileChooser
-import javax.swing.JMenu
-import javax.swing.JMenuItem
-import javax.swing.JPopupMenu
-import javax.swing.JTree
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
@@ -79,7 +68,7 @@ open class SceneTree(val engineContext: EngineContext,
         val top = rootNode
         top.removeAllChildren()
 
-        spanTree(top, scene.entityManager.getEntities())
+        spanTree(top, scene.getEntities())
         LOGGER.info("Added " + scene.getEntities().size)
 
         if (selectionListener == null) {
@@ -143,11 +132,13 @@ open class SceneTree(val engineContext: EngineContext,
                                                 require(selectedFile.canonicalPath.startsWith(baseDirPath)) { "Can only load from within the game directory" }
 
                                                 val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "")
-                                                val loadedModels = LoadModelCommand(resultingPath,
-                                                        "Model_${System.currentTimeMillis()}",
-                                                        scene.materialManager,
-                                                        engineContext.config.directories.gameDir,
-                                                        selection).execute()
+                                                val loadedModels = LoadModelCommand(
+                                                    resultingPath,
+                                                    "Model_${System.currentTimeMillis()}",
+                                                    engineContext.extensions.materialExtension.manager,
+                                                    engineContext.config.directories.gameDir,
+                                                    selection
+                                                ).execute()
                                                 engineContext.addResourceContext.launch {
                                                     with(scene) {
                                                         addAll(loadedModels.entities)

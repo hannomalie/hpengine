@@ -11,15 +11,15 @@ val Engine.hellknightScene
         entities {
             entity("Hellknight") {
                 modelComponent(
-                        name = "Hellknight",
-                        file = "doom3monster/monster.md5mesh",
-                        materialManager = scene.materialManager,
-                        modelComponentManager = scene.baseExtensions.modelComponentExtension.manager,
-                        gameDirectory = engineContext.config.directories.gameDir,
-                        aabb = AABBData(
-                            Vector3f(-60f, -10f, -35f),
-                            Vector3f(60f, 130f, 50f)
-                        )
+                    name = "Hellknight",
+                    file = "doom3monster/monster.md5mesh",
+                    materialManager = engineContext.extensions.materialExtension.manager,
+                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
+                    gameDirectory = engineContext.config.directories.gameDir,
+                    aabb = AABBData(
+                        Vector3f(-60f, -10f, -35f),
+                        Vector3f(60f, 130f, 50f)
+                    )
                 )
             }
         }

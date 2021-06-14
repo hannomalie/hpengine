@@ -3,11 +3,9 @@ package de.hanno.hpengine.editor.tasks
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
-import de.hanno.hpengine.editor.selection.addUnselectButton
 import de.hanno.hpengine.editor.verticalBox
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.textureManager
@@ -123,41 +121,47 @@ class MaterialRibbonTask(val engineContext: EngineContext,
             resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
         }
 
-        fun retrieveMaterialCommands(): List<Command> = sceneManager.scene.materialManager.materials.mapNotNull { material ->
-            val icon = if (material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
-                val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
-                if (diffuseMap != null) {
-                    val image = ImageIO.read(File(diffuseMap.file.absolutePath))
-                    EditorComponents.getResizableIconFromImageSource(image)
-                } else {
-                    EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
-                }
-            } else {
-                EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
-            }
-
-
-            Command.builder()
-                    .setText(material.name)
-                    .setAction { event ->
-                        // unselect and select material here
-                        if (event.command.isToggleSelected) {
-                            val selection = selectionSystem.selection
-                            if (selection is MaterialSelection && selection.material == material) {
-                                selectionSystem.unselect()
-                            } else {
-                                editor.sidePanel.verticalBox(
-                                    selectionSystem.unselectButton,
-                                    MaterialGrid(engineContext, engineContext.textureManager, material)
-                                )
-                            }
+        fun retrieveMaterialCommands(): List<Command> {
+            var result = emptyList<Command>()
+            engineContext.addResourceContext.locked {
+                result = engineContext.extensions.materialExtension.manager.materials.mapNotNull { material ->
+                    val icon = if (material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
+                        val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
+                        if (diffuseMap != null) {
+                            val image = ImageIO.read(File(diffuseMap.file.absolutePath))
+                            EditorComponents.getResizableIconFromImageSource(image)
                         } else {
-                            selectionSystem.unselect()
+                            EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
                         }
+                    } else {
+                        EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
                     }
-                    .setIconFactory { icon }
-                    .setToggle()
-                    .build()
+
+
+                    Command.builder()
+                        .setText(material.name)
+                        .setAction { event ->
+                            // unselect and select material here
+                            if (event.command.isToggleSelected) {
+                                val selection = selectionSystem.selection
+                                if (selection is MaterialSelection && selection.material == material) {
+                                    selectionSystem.unselect()
+                                } else {
+                                    editor.sidePanel.verticalBox(
+                                        selectionSystem.unselectButton,
+                                        MaterialGrid(engineContext, engineContext.textureManager, material)
+                                    )
+                                }
+                            } else {
+                                selectionSystem.unselect()
+                            }
+                        }
+                        .setIconFactory { icon }
+                        .setToggle()
+                        .build()
+                }
+            }
+            return result
         }
     }
 }

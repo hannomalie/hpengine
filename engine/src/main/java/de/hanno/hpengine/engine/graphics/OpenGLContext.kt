@@ -43,6 +43,7 @@ import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL44
 import org.lwjgl.opengl.GLUtil
 import org.lwjgl.opengl.NVXGPUMemoryInfo
+import java.lang.Integer.max
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.ArrayList
@@ -214,7 +215,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     }
 
     override fun viewPort(x: Int, y: Int, width: Int, height: Int) {
-        GL11.glViewport(x, y, width, height)
+        GL11.glViewport(x, y, max(width, 0), max(height, 0))
     }
 
     override fun clearColorBuffer() {
@@ -337,9 +338,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     override fun finishFrame(renderState: RenderState) {
         profiled("Create new fence") {
             createNewGPUFenceForReadState(renderState)
-        }
-        profiled("Swap buffers") {
-            window.swapBuffers()
         }
     }
 

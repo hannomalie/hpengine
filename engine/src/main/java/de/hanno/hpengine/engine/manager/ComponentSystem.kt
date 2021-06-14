@@ -9,17 +9,15 @@ import org.apache.logging.log4j.Logger
 
 interface ComponentSystem<T : Component> {
     suspend fun update(scene: Scene, deltaSeconds: Float) {
-        for(component in getComponents()) {
+        for(component in components) {
             component.update(scene, deltaSeconds)
         }
     }
-    fun getComponents(): List<T>
+
+    val components: List<T>
     fun addComponent(component: T)
     fun clear() { }
     fun extract(renderState: RenderState) {}
-    fun onSceneSet() {
-        clear()
-    }
 
     fun onEntityAdded(entities: List<Entity>): MutableList<Component> {
         val matchedComponents = mutableSetOf<Component>()
@@ -54,16 +52,17 @@ interface ComponentSystem<T : Component> {
 
 open class SimpleComponentSystem<T: Component>(override val componentClass: Class<T>, theComponents: List<T> = emptyList()) : ComponentSystem<T> {
     override val logger: Logger = LogManager.getLogger(this.javaClass)
-    private val components = mutableListOf<T>().apply { addAll(theComponents) }
+    private val _components = mutableListOf<T>().apply { addAll(theComponents) }
 
-    override fun getComponents(): List<T> = components
+    override val components: List<T>
+        get() = _components
 
     override fun addComponent(component: T) {
-        components.add(component)
+        _components.add(component)
         logger.debug("Added component $component")
     }
 
     override fun clear() {
-        components.clear()
+        _components.clear()
     }
 }
