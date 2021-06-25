@@ -16,10 +16,7 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
         }
 
     init {
-        initialScene.entitySystems.gatherEntities(initialScene)
-        engineContext.extensions.forEach {
-            it.run { initialScene.decorate() }
-        }
+        beforeSetScene(scene, scene)
     }
     fun addAll(entities: List<Entity>) = addResourceContext.locked {
         scene.addAll(entities)

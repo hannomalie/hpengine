@@ -59,6 +59,7 @@ interface Extension {
         get() = null
     val componentClass: Class<*>?
         get() = null
+
     val entitySystem: EntitySystem?
         get() = null
     val renderSystem: RenderSystem?
@@ -130,7 +131,7 @@ class PhysicsExtension(val engineContext: EngineContext) : Extension {
     override val renderSystem = manager
 }
 
-class ModelComponentExtension(val engineContext: EngineContext, materialManager: MaterialManager) : Extension {
+class ModelComponentExtension(val engineContext: EngineContext, val materialManager: MaterialManager) : Extension {
     override val manager = ModelComponentManager()
     override val componentSystem = ModelComponentSystem(engineContext, manager, materialManager)
 }
@@ -184,6 +185,7 @@ class DirectionalLightExtension(val engineContext: EngineContext) : Extension {
         DirectionalLightShadowMapExtension(engineContext),
         DirectionalLightSecondPassExtension(engineContext)
     )
+
     override val entitySystem = DirectionalLightSystem(engineContext)
     override val renderSystem = entitySystem
     override fun Scene.decorate() {
@@ -206,7 +208,7 @@ class CameraExtension(val engineContext: EngineContext) : Extension {
         entity(cameraEntityName) {
             addComponent(MovableInputComponent(engineContext, this))
             addComponent(
-                Camera(engineContext.extensions.cameraExtension.componentSystem.engineContext, this).apply {
+                Camera(engineContext, this).apply {
                     activeCamera = this
                 }
             )

@@ -56,8 +56,8 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     var currentCycle: Long = 0
     val aabb = AABB(Vector3f(), 50f)
 
-    private val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
-    private val managers: ManagerRegistry = SimpleManagerRegistry()
+    val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
+    val managers: ManagerRegistry = SimpleManagerRegistry()
     val entitySystems = SimpleEntitySystemRegistry()
 
     val entityManager = EntityManager().also { managers.register(it) }
@@ -66,7 +66,9 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
     init {
         engineContext.extensions.forEach { extension ->
-            extension.componentSystem?.let { componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>) }
+            extension.componentSystem?.let {
+                componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>)
+            }
             extension.entitySystem?.let { entitySystems.register(it) }
             extension.manager?.let { managers.register(it) }
         }

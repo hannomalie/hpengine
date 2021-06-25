@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.backend.EngineContext
@@ -104,8 +105,10 @@ open class SceneTree(val engineContext: EngineContext,
         val componentNode = DefaultMutableTreeNode(component)
         current.add(componentNode)
         if (component is ModelComponent) {
+            current.add(DefaultMutableTreeNode(MaterialSelection(component.model.material)))
             for (mesh in component.meshes) {
                 componentNode.add(DefaultMutableTreeNode(MeshSelection(component.entity, mesh)))
+                componentNode.add(DefaultMutableTreeNode(MaterialSelection(mesh.material)))
             }
         }
     }

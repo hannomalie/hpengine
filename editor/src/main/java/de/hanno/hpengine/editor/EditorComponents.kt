@@ -90,7 +90,9 @@ class EditorExtension(val config: ConfigImpl,
     lateinit var engineContext: EngineContext
         internal set
 
-    val editorComponents by lazy { EditorComponents(engineContext, config, editor) }
+    val editorComponents by lazy {
+        EditorComponents(engineContext, config, editor)
+    }
     override val manager by lazy {
         EditorManager(engineContext, editorComponents)
     }

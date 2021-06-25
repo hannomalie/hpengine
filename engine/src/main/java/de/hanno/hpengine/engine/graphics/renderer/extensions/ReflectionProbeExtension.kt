@@ -58,10 +58,11 @@ class ReflectionProbe(val extents: Vector3f = Vector3f(100f), override val entit
         get() = Vector3f(extents).mul(0.5f)
 }
 class ReflectionProbeExtension(val engineContext: EngineContext): Extension {
-    override val manager = object: Manager {
+    override val manager = object : Manager {
         override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
             engineContext.config.debug.reRenderProbes = true
         }
+
         override fun onEntityAdded(entities: List<Entity>) {
             engineContext.config.debug.reRenderProbes = true
         }
@@ -70,6 +71,7 @@ class ReflectionProbeExtension(val engineContext: EngineContext): Extension {
             engineContext.config.debug.reRenderProbes = true
         }
     }
+
     override val componentSystem = SimpleComponentSystem(ReflectionProbe::class.java)
     override val deferredRendererExtension = ReflectionProbeRenderExtension(engineContext, componentSystem)
 }

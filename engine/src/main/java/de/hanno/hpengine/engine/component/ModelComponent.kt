@@ -128,10 +128,10 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
         val bytesPerInstance: Int
             get() = 16 * java.lang.Float.BYTES + 16 * Integer.BYTES + 8 * java.lang.Float.BYTES
 
-        fun Entity.modelComponent(model: StaticModel) {
+        fun Entity.modelComponent(model: AnimatedModel) {
             addComponent(ModelComponent(this, model, model.material))
         }
-        fun Entity.modelComponent(model: AnimatedModel) {
+        fun Entity.modelComponent(model: StaticModel) {
             addComponent(ModelComponent(this, model, model.material))
         }
 

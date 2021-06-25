@@ -34,7 +34,6 @@ import org.lwjgl.opengl.GL42
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.random.Random
-import kotlin.random.nextUInt
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 
@@ -171,37 +170,37 @@ class OceanWaterExtension(val engineContext: EngineContext): Extension {
     private val inversionShader = engineContext.programManager.getComputeProgram(engineContext.EngineAsset("shaders/ocean/inversion_compute.glsl").toCodeSource())
     private val mergeDisplacementMapsShader = engineContext.programManager.getComputeProgram(engineContext.EngineAsset("shaders/ocean/merge_displacement_maps_compute.glsl").toCodeSource())
 
-    override val entitySystem = object: SimpleEntitySystem(listOf(OceanWater::class.java)) {
-        override fun onComponentAdded(scene: Scene, component: Component) {
-            super.onComponentAdded(scene, component)
-            adjustOceanMaterial()
-        }
+    override val entitySystem = object : SimpleEntitySystem(listOf(OceanWater::class.java)) {
+            override fun onComponentAdded(scene: Scene, component: Component) {
+                super.onComponentAdded(scene, component)
+                adjustOceanMaterial()
+            }
 
-        override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
-            super.onEntityAdded(scene, entities)
-            adjustOceanMaterial()
-        }
+            override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
+                super.onEntityAdded(scene, entities)
+                adjustOceanMaterial()
+            }
 
-        private fun adjustOceanMaterial() {
-            components.firstOrNull()?.let {
-                it as OceanWater
-                it.entity.getComponent(ModelComponent::class.java)!!.model.material.materialInfo.apply {
-                    lodFactor = 100.0f
-                    roughness = 0.0f
-                    metallic = 1.0f
-                    diffuse.set(0f,0.1f,1f)
-                    ambient = 0.05f
-                    parallaxBias = 0.0f
-                    put(SimpleMaterial.MAP.DISPLACEMENT, displacementMap)
-                    put(SimpleMaterial.MAP.NORMAL, normalMap)
-                    put(SimpleMaterial.MAP.DIFFUSE, albedoMap)
-                    put(SimpleMaterial.MAP.ROUGHNESS, roughnessMap)
-                    put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
-                    put(SimpleMaterial.MAP.DIFFUSE, displacementMap)
+            private fun adjustOceanMaterial() {
+                components.firstOrNull()?.let {
+                    it as OceanWater
+                    it.entity.getComponent(ModelComponent::class.java)!!.model.material.materialInfo.apply {
+                        lodFactor = 100.0f
+                        roughness = 0.0f
+                        metallic = 1.0f
+                        diffuse.set(0f, 0.1f, 1f)
+                        ambient = 0.05f
+                        parallaxBias = 0.0f
+                        put(SimpleMaterial.MAP.DISPLACEMENT, displacementMap)
+                        put(SimpleMaterial.MAP.NORMAL, normalMap)
+                        put(SimpleMaterial.MAP.DIFFUSE, albedoMap)
+                        put(SimpleMaterial.MAP.ROUGHNESS, roughnessMap)
+                        put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
+                        put(SimpleMaterial.MAP.DIFFUSE, displacementMap)
+                    }
                 }
             }
         }
-    }
 
     override val renderSystem = object: RenderSystem {
         val oceanwaterRenderState = engineContext.renderStateManager.renderState.registerState { OceanWaterRenderState() }
