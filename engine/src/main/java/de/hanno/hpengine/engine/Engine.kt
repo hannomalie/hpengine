@@ -1,7 +1,9 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.engine.backend.*
-import de.hanno.hpengine.engine.component.CustomComponent
+import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.eventBus
+import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
@@ -15,13 +17,19 @@ import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.scene
+import de.hanno.hpengine.engine.scene.baseExtensionsModule
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.receiveOrNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
+import org.koin.core.context.startKoin
+import org.koin.dsl.module
 import java.io.File
-import java.lang.Runnable
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
@@ -44,14 +52,12 @@ class Engine @JvmOverloads constructor(
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
-    private val updateThreadNamer: (Runnable) -> Thread =
-        { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
+    private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
     val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
 
     init {
         engineContext.extensions.forEach { it.init(sceneManager) }
-
         engineContext.renderSystems.add(0, renderer)
     }
 
@@ -101,7 +107,6 @@ class Engine @JvmOverloads constructor(
     suspend fun update(deltaSeconds: Float) = try {
         scene.currentCycle = updateCycle.get()
         sceneManager.update(scene, deltaSeconds)
-//        scene.update(scene, deltaSeconds)
         renderManager.update(scene, deltaSeconds)
 
         engineContext.window.invoke { engineContext.input.update() }
@@ -124,23 +129,23 @@ class Engine @JvmOverloads constructor(
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val engine = Engine();
-
-            // This can be run as a default test scene
-            {
-                engine.scene = scene("Foo", engine.engineContext) {
-                    entities {
-                        entity("Bar") {
-                            val entity = this
-                            addComponent(object : CustomComponent {
-                                override val entity = entity
-                                override suspend fun update(scene: Scene, deltaSeconds: Float) =
-                                    println("XXXXXXXXXXXXXXXXXXXX")
-                            })
-                        }
-                    }
+            val baseModule = module {
+                single<Config> {
+                    ConfigImpl(
+                        directories = Directories(
+                            EngineDirectory(File(Directories.ENGINEDIR_NAME)),
+                            GameDirectory(File(Directories.GAMEDIR_NAME), null)
+                        )
+                    )
                 }
+                single { EngineContext(get()) }
             }
+            val koin = startKoin {
+                modules(baseModule, baseExtensionsModule)
+            }
+            val engineContext = koin.koin.get<EngineContext>()
+            val engine = Engine(engineContext)
+
         }
 
     }

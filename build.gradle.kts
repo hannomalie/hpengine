@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.5.20"
     application
 }
 version = "1.0.0-SNAPSHOT"
@@ -49,7 +49,7 @@ allprojects {
         }
         maven {
             name = "kotlinx"
-            setUrl("http://dl.bintray.com/kotlin/kotlinx")
+            setUrl("https://dl.bintray.com/kotlin/kotlinx")
         }
 
         maven {

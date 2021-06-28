@@ -9,9 +9,12 @@ import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.index
+import de.hanno.hpengine.engine.graphics.BatchingSystem
+import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.clusters
+import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.instancing.instances
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
@@ -22,13 +25,13 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ModelComponentSystem(val engine: EngineContext,
+class ModelComponentSystem(val engineContext: EngineContext,
                            val manager: ModelComponentManager,
                            val materialManager: MaterialManager) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(engine.gpuContext, 10)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(engine.gpuContext, 10)
+    val vertexIndexBufferStatic = VertexIndexBuffer(engineContext.gpuContext, 10)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(engineContext.gpuContext, 10)
 
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
@@ -37,22 +40,30 @@ class ModelComponentSystem(val engine: EngineContext,
     private val _components = CopyOnWriteArrayList<ModelComponent>()
     private var gpuJointsArray = StructArray(size = 1000) { Matrix4f() }
 
+    private val batchingSystem = BatchingSystem()
+    var gpuEntitiesArray = StructArray(size = 1000) { EntityStruct() }
+    val entityIndices: MutableMap<ModelComponent, Int> = mutableMapOf()
+
     override val components: List<ModelComponent>
         get() = _components
 
     init {
-        engine.eventBus.register(this)
+        engineContext.eventBus.register(this)
     }
+
+    val ModelComponent.entityIndex
+        get() = entityIndices[this]!!
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         for (component in components) {
             component.update(scene, deltaSeconds)
         }
+        cacheEntityIndices(scene)
+        updateGpuEntitiesArray(scene)
         updateGpuJointsArray()
 
         var counter = 0
         val materials = materialManager.materials
-        val gpuEntitiesArray = scene.entityManager.gpuEntitiesArray
 
         for(modelComponent in components) {
             if(counter >= gpuEntitiesArray.size) { throw IllegalStateException("More model components then size of gpu entities array") }
@@ -136,6 +147,14 @@ class ModelComponentSystem(val engine: EngineContext,
         }
     }
 
+    private fun getRequiredEntityBufferSize(): Int {
+        return components.sumBy { it.entity.instanceCount * it.meshes.size }
+    }
+    private fun updateGpuEntitiesArray(scene: Scene) {
+        gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
+        gpuEntitiesArray.buffer.rewind()
+    }
+
     override fun addComponent(component: ModelComponent) {
         allocateVertexIndexBufferSpace(listOf(component.entity))
         _components.add(component)
@@ -171,12 +190,12 @@ class ModelComponentSystem(val engine: EngineContext,
             if (c.model.isStatic) {
                 val vertexIndexBuffer = vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(engineContext.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
                 Allocation.Static(vertexIndexOffsetsForMeshes)
             } else {
                 val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(engine.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(engineContext.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
 
                 val elements = (c.model as AnimatedModel).animation.frames
                         .flatMap { frame -> frame.jointMatrices.toList() }
@@ -200,6 +219,21 @@ class ModelComponentSystem(val engine: EngineContext,
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
         gpuJointsArray.safeCopyTo(renderState.entitiesState.jointsBuffer)
+
+        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
+
+        batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
+            components, engineContext.config.debug.isDrawLines,
+            allocations, entityIndices)
+    }
+
+    fun cacheEntityIndices(scene: Scene) {
+        entityIndices.clear()
+        var index = 0
+        for (current in components) {
+            entityIndices[current] = index
+            index += current.entity.instanceCount * current.meshes.size
+        }
     }
 }
 

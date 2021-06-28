@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
@@ -11,11 +12,21 @@ import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.MaterialExtension
+import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneScope
+import de.hanno.hpengine.engine.scene.baseExtensionsModule
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
+import org.koin.dsl.bind
+import org.koin.dsl.module
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import java.awt.BorderLayout
 import java.awt.Color
@@ -102,6 +113,31 @@ fun EngineWithEditor(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorW
     return Pair(engine, window)
 }
 
+fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorWindow> {
+    val addResourceContext = AddResourceContext()
+    val window = AWTEditorWindow(config, addResourceContext)
+    val extension = EditorExtension(config, window.frame)
+
+    val baseModule = module {
+        single { config } bind Config::class
+        single { EngineContext(get(), additionalExtensions = listOf(extension), window = window, addResourceContext = addResourceContext) }
+    }
+
+    val application = startKoin {
+//        printLogger(Level.DEBUG)
+        modules(baseModule, baseExtensionsModule)
+    }
+
+    val engineContext = application.koin.get<EngineContext>()
+    extension.engineContext = engineContext
+
+    engineContext.init()
+
+    val engine = Engine(engineContext)
+    extension.editorComponents.init(engine)
+    return Pair(engine, window)
+}
+
 fun main(args: Array<String>) {
 
     val config = ConfigImpl(
@@ -112,7 +148,14 @@ fun main(args: Array<String>) {
         debug = DebugConfig(isUseFileReloading = true)
     )
 
-    val (engine) = EngineWithEditor(config)
+    val (engine) = EngineWithEditorXXX(config)
+
+
+    val scene = GlobalContext.get().get<SceneScope>().apply {
+        val materialExtension = scope.get<MaterialExtension>()
+        val materialManager = scope.get<MaterialManager>()
+        println("materialExtension = $materialExtension")
+    }
 
     val loaded = LoadModelCommand(
         "assets/models/doom3monster/monster.md5mesh",
@@ -125,5 +168,7 @@ fun main(args: Array<String>) {
             Vector3f(60f, 130f, 50f)
     )
     println("loaded entities : " + loaded.entities.size)
-    engine.sceneManager.addAll(loaded.entities)
+    scene.addAll(loaded.entities)
+
+    engine.sceneManager.scene = scene
 }

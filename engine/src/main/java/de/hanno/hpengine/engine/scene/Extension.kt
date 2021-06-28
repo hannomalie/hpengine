@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
@@ -47,6 +48,10 @@ import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import org.joml.Vector3f
+import org.koin.core.module.Module
+import org.koin.core.qualifier.TypeQualifier
+import org.koin.dsl.bind
+import org.koin.dsl.module
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
@@ -75,12 +80,52 @@ interface Extension {
     }
 }
 
+//class SceneScope
+typealias SceneScope = Scene
+
+val baseExtensionsModule = module {
+    single { BaseExtensions(get(), emptyList()) }
+
+    single(createdAtStart=true) { MaterialExtension(get()) } bind Extension::class
+    single(createdAtStart=true) { PhysicsExtension(get()) } bind Extension::class
+    single(createdAtStart=true) { DirectionalLightExtension(get()) } bind Extension::class
+    single(createdAtStart=true) { CameraExtension(get()) } bind Extension::class
+    single(createdAtStart=true) { PointLightExtension(get()) } bind Extension::class
+    single(createdAtStart=true) { AreaLightExtension(get()) } bind Extension::class
+    single(createdAtStart=true) { SkyboxExtension(get()) } bind Extension::class
+
+    single(createdAtStart=true) { BvHPointLightSecondPassExtension(get()) } bind RenderExtension::class
+    single(createdAtStart=true) { SkyboxExtension.SkyboxRenderExtension(get()) } bind RenderExtension::class
+    single(createdAtStart=true) { ForwardRenderExtension(get()) } bind RenderExtension::class
+
+
+    factory { Scene(engineContext = get()) }
+
+    scope<SceneScope> {
+        scoped { EntityManager() } bind Manager::class
+        scoped { MaterialManager(get()) } bind Manager::class
+        scoped { ModelComponentManager() } bind Manager::class
+        scoped { ModelComponentSystem(get(), get(), get()) } bind ComponentSystem::class
+        scoped { PhysicsManager(engineContext = get(), config = get()) } bind Manager::class
+        scoped { DirectionalLightSystem(get()) } bind EntitySystem::class
+        scoped { CameraComponentSystem(get()) } bind ComponentSystem::class
+        scoped { PointLightComponentSystem() } bind ComponentSystem::class
+        scoped { PointLightSystem(get()) } bind EntitySystem::class
+        scoped { AreaLightComponentSystem() } bind ComponentSystem::class
+        scoped { AreaLightSystem(get()) } bind EntitySystem::class
+        scoped { TubeLightComponentSystem() } bind ComponentSystem::class
+        scoped { CustomComponentSystem() } bind ComponentSystem::class
+        scoped { ScriptComponentSystem() } bind ComponentSystem::class
+        scoped { ClustersComponentSystem() } bind ComponentSystem::class
+        scoped { InputComponentSystem(get()) } bind ComponentSystem::class
+    }
+}
 
 class BaseExtensions private constructor(
     val engineContext: EngineContext,
     additionalExtensions: List<Extension>,
     private val _extensions: MutableList<Extension> = mutableListOf()
-    ) : List<Extension> by _extensions {
+) : List<Extension> by _extensions {
 
     val extensions: List<Extension>
         get() = _extensions
@@ -297,15 +342,17 @@ class SkyboxExtension(val engineContext: EngineContext) : Extension {
         }
     }
 
-    override val renderSystem = object : RenderSystem {
+    override val renderSystem = SkyboxRenderSystem()
+
+    class SkyboxRenderSystem : RenderSystem {
         override fun extract(scene: Scene, renderState: RenderState) {
-            renderState.skyBoxMaterialIndex =
-                scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
+            renderState.skyBoxMaterialIndex = scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
         }
     }
-    override val deferredRendererExtension = SkyboxRenderExtension()
 
-    inner class SkyboxRenderExtension : RenderExtension<OpenGl> {
+    override val deferredRendererExtension = SkyboxRenderExtension(engineContext)
+
+    class SkyboxRenderExtension(val engineContext: EngineContext) : RenderExtension<OpenGl> {
         private val gpuContext = engineContext.gpuContext
         private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
 
@@ -371,13 +418,13 @@ class SkyboxExtension(val engineContext: EngineContext) : Extension {
         }
     }
 
-    val Scene.skyBox: Entity?
-        get() = getEntity("Skybox")
-
     override fun Scene.decorate() {
         add(SkyBoxEntity())
     }
 }
+
+val Scene.skyBox: Entity?
+    get() = getEntity("Skybox")
 
 class PointLightExtension(val engineContext: EngineContext) : Extension {
     override val componentSystem = PointLightComponentSystem()

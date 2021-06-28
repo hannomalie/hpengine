@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
+import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
 import de.hanno.hpengine.engine.graphics.light.area.AreaLight
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
@@ -14,12 +15,21 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
+import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.manager.ManagerRegistry
 import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
+import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
 import org.joml.Vector3f
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.KoinScopeComponent
+import org.koin.core.component.createScope
+import org.koin.core.component.getScopeId
+import org.koin.core.component.inject
+import org.koin.core.component.newScope
+import org.koin.core.scope.Scope
 
 class SceneSyntax(val scene: Scene) {
     fun entity(name: String, block: Entity.() -> Unit) {
@@ -49,31 +59,27 @@ fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(nam
 }
 
 class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(),
-                                      val engineContext: EngineContext) : Updatable {
+                                      val engineContext: EngineContext) : Updatable, KoinScopeComponent {
+    override val scope: Scope = createScope()
 
     private val baseExtensions: BaseExtensions = engineContext.extensions
 
     var currentCycle: Long = 0
     val aabb = AABB(Vector3f(), 50f)
 
-    val componentSystems: ComponentSystemRegistry = ComponentSystemRegistry()
-    val managers: ManagerRegistry = SimpleManagerRegistry()
-    val entitySystems = SimpleEntitySystemRegistry()
+    val componentSystems: List<ComponentSystem<*>>
+        get() = scope.getAll()
 
-    val entityManager = EntityManager().also { managers.register(it) }
+    val managers: List<Manager>
+        get() = scope.getAll()
+
+    val entitySystems: List<EntitySystem>
+        get() = scope.getAll()
+
+    val entityManager: EntityManager
+        get() = scope.get()
 
     val extensions = baseExtensions
-
-    init {
-        engineContext.extensions.forEach { extension ->
-            extension.componentSystem?.let {
-                componentSystems.register(it.componentClass as Class<Component>, it as ComponentSystem<Component>)
-            }
-            extension.entitySystem?.let { entitySystems.register(it) }
-            extension.manager?.let { managers.register(it) }
-        }
-    }
-
 
     fun restoreWorldCamera() {
         baseExtensions.cameraExtension.activeCamera = cameraEntity.getComponent(Camera::class.java)!!
@@ -83,33 +89,29 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         currentWriteState.sceneMin.set(aabb.min)
         currentWriteState.sceneMax.set(aabb.max)
 
-        for (system in componentSystems.getSystems()) {
+        for (system in componentSystems) {
             system.extract(currentWriteState)
         }
-        for (system in entitySystems.systems) {
+        for (system in entitySystems) {
             system.extract(currentWriteState)
         }
-        for (manager in managers.managers) {
-            manager.value.extract(this, currentWriteState)
+        for (manager in managers) {
+            manager.extract(this, currentWriteState)
         }
     }
-
     override fun toString() = name
 
     fun clear() {
-        componentSystems.clearSystems()
-        entitySystems.clearSystems()
-        entityManager.clear()
+        scope.close()
     }
 
     fun getEntities() = entityManager.getEntities()
     fun addAll(entities: List<Entity>) {
-        with(entityManager) { add(entities) }
-        entityManager.cacheEntityIndices(this)
+        entityManager.add(entities)
 
-        with(entitySystems) { onEntityAdded(this@Scene, entities) }
-        with(componentSystems) { onEntityAdded(entities) }
-        with(managers) { onEntityAdded(entities) }
+        entitySystems.forEach { it.onEntityAdded(this@Scene, entities) }
+        componentSystems.forEach { it.onEntityAdded(entities) }
+        managers.forEach { it.onEntityAdded(entities) }
 
         calculateBoundingVolume()
 
@@ -117,29 +119,24 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     fun onComponentAdded(component: Component) {
-        with(componentSystems) { onComponentAdded(component) }
-        with(managers) { onComponentAdded(component) }
-        with(entitySystems) { onComponentAdded(this@Scene, component) }
+
+        componentSystems.forEach { it.onComponentAdded(component) }
+        managers.forEach { it.onComponentAdded(component) }
+        entitySystems.forEach { it.onComponentAdded(this@Scene, component) }
 
         entityManager.componentAddedInCycle = currentCycle
     }
 
     val pointLights
         get() = baseExtensions.pointLightExtension.componentSystem.components
-    val tubeLights
-        get() = baseExtensions.tubeLightExtension.componentSystem.components
-    val areaLights: List<AreaLight>
-        get() = baseExtensions.areaLightExtension.componentSystem.components
 
-    fun getAreaLightSystem(): AreaLightSystem = entitySystems.get(AreaLightSystem::class.java)
-    fun getPointLightSystem(): PointLightSystem = entitySystems.get(PointLightSystem::class.java)
     fun add(entity: Entity) = addAll(listOf(entity))
     fun getEntity(name: String): Entity? = entityManager.getEntities().find { e -> e.name == name }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        managers.update(scene, deltaSeconds)
-        componentSystems.update(scene, deltaSeconds)
-        entitySystems.update(scene, deltaSeconds)
+        managers.forEach { it.update(scene, deltaSeconds) }
+        componentSystems.forEach { it.update(scene, deltaSeconds) }
+        entitySystems.forEach { it.update(scene, deltaSeconds) }
     }
 
     fun addComponent(selection: Entity, component: Component) {

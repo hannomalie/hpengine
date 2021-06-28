@@ -16,7 +16,12 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
         }
 
     init {
-        beforeSetScene(scene, scene)
+        scene.entitySystems.forEach { it.gatherEntities(scene) }
+        engineContext.extensions.forEach { it.run { scene.decorate() } }
+        engineContext.extensions.forEach {
+            it.componentSystem?.onEntityAdded(scene.getEntities())
+            it.manager?.beforeSetScene(scene, scene)
+        }
     }
     fun addAll(entities: List<Entity>) = addResourceContext.locked {
         scene.addAll(entities)
@@ -33,10 +38,8 @@ class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manag
 
     override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
         currentScene.clear()
-        nextScene.entitySystems.gatherEntities(nextScene)
-        engineContext.extensions.forEach {
-            it.run { nextScene.decorate() }
-        }
+        nextScene.entitySystems.forEach { it.gatherEntities(nextScene) }
+        engineContext.extensions.forEach { it.run { nextScene.decorate() } }
         engineContext.extensions.forEach {
             it.componentSystem?.onEntityAdded(nextScene.getEntities())
             it.manager?.beforeSetScene(currentScene, nextScene)

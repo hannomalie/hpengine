@@ -29,13 +29,6 @@ class EntityManager : Manager {
 
     private val entityContainer: EntityContainer = SimpleContainer()
 
-    var gpuEntitiesArray = StructArray(size = 1000) { EntityStruct() }
-    val entityIndices: MutableMap<ModelComponent, Int> = mutableMapOf()
-    val ModelComponent.entityIndex
-        get() = entityIndices[this]!!
-
-    private val batchingSystem = BatchingSystem()
-
     var entityMovedInCycle: Long = 0
     var staticEntityMovedInCycle: Long = 0
     var entityAddedInCycle: Long = 0
@@ -104,39 +97,13 @@ class EntityManager : Manager {
             scene.calculateBoundingVolume()
             entity.movedInCycle = scene.currentCycle
         }
-        cacheEntityIndices(scene)
-        updateGpuEntitiesArray(scene)
-    }
-
-    fun cacheEntityIndices(scene: Scene) {
-        entityIndices.clear()
-        var index = 0
-        for (current in scene.extensions.modelComponentExtension.componentSystem.components) {
-            entityIndices[current] = index
-            index += current.entity.instanceCount * current.meshes.size
-        }
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {
-        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
-
-        batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
-            scene.extensions.modelComponentExtension.componentSystem.components, scene.engineContext.config.debug.isDrawLines,
-            scene.extensions.modelComponentExtension.componentSystem.allocations, entityIndices)
-
         renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
         renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
         renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
         renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
-    }
-
-    private fun getRequiredEntityBufferSize(scene: Scene): Int {
-        return scene.extensions.modelComponentExtension.componentSystem.components.sumBy { it.entity.instanceCount * it.meshes.size }
-    }
-
-    private fun updateGpuEntitiesArray(scene: Scene) {
-        gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize(scene))
-        gpuEntitiesArray.buffer.rewind()
     }
 
     companion object {

@@ -1,5 +1,4 @@
 import org.gradle.internal.os.OperatingSystem
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
@@ -71,8 +70,8 @@ dependencies {
     api("de.hanno.compiler:java-compiler:1.4")
     api("commons-beanutils:commons-beanutils:1.9.3")
     api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
-//    api("de.hanno.structs:structs:1.0.1-SNAPSHOT")
-    api("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
+    api("de.hanno.structs:structs:1.0.1-SNAPSHOT")
+//    api("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
     val radianceVersion =  "3.0-SNAPSHOT"
     api("org.pushing-pixels:radiance-ember:$radianceVersion")
     api("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
@@ -84,6 +83,10 @@ dependencies {
     api("org.apache.logging.log4j:log4j-api:2.13.0")
     api("org.apache.logging.log4j:log4j-core:2.13.0")
     api("io.github.classgraph:classgraph:4.8.89")
+
+    val koinVersion= "3.1.1"
+    api("io.insert-koin:koin-core:$koinVersion")
+    testImplementation("io.insert-koin:koin-test:$koinVersion")
 
     testImplementation("junit:junit:4.12")
 }

@@ -106,7 +106,7 @@ object TextureTask {
                             val files = fc.selectedFiles.toList()
                             GlobalScope.launch {
                                 if(files.size > 1) {
-                                    engine.textureManager.getCubeMap(files.map { it.name }.min()!!, files)
+                                    engine.textureManager.getCubeMap(files.map { it.name }.minOrNull()!!, files)
                                 } else {
                                     val file = files.first()
                                     engine.textureManager.getCubeMap(file.name, file)

@@ -297,12 +297,10 @@ class EditorComponents(val engineContext: EngineContext,
                                 Arrow(Vector3f(5f, 0.1f, 0.1f), Vector3f(1f, 0f, 0f))).forEach { arrow ->
                             val transformation = Transform()
                             transformation.scaleLocal(3f)
-                            if(arrow.scale.x > 2f) {
-                                transformation.rotateAffine(ninetyDegrees, 0f, 0f, 1f)
-                            } else if (arrow.scale.y > 2f) {
-                                transformation.rotateAffine(ninetyDegrees, 0f, 1f, 0f)
-                            } else {
-                                transformation.rotateAffine(ninetyDegrees, 1f, 0f, 0f)
+                            when {
+                                arrow.scale.x > 2f -> transformation.rotateAffine(ninetyDegrees, 0f, 0f, 1f)
+                                arrow.scale.y > 2f -> transformation.rotateAffine(ninetyDegrees, 0f, 1f, 0f)
+                                else -> transformation.rotateAffine(ninetyDegrees, 1f, 0f, 0f)
                             }
                             when(transformSpace) {
                                 TransformSpace.World -> Unit
