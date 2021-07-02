@@ -15,9 +15,10 @@ import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.Dimension
 import javax.swing.JFrame
 
-class AWTEditorWindow(val config: ConfigImpl,
-                      val addResourceContext: AddResourceContext,
-                      val executor: OpenGlExecutorImpl = OpenGlExecutorImpl()) : Window<OpenGl>, OpenGlExecutor by executor {
+class AWTEditorWindow(
+    val config: ConfigImpl,
+    val executor: OpenGlExecutorImpl = OpenGlExecutorImpl()
+) : Window<OpenGl>, OpenGlExecutor by executor {
 
     override var handle: Long = 0
         private set
@@ -84,22 +85,6 @@ class AWTEditorWindow(val config: ConfigImpl,
 
     override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) {
     }
-
-//    override suspend fun <T> execute(block: () -> T): T {
-//        if(executor.isOpenGLThread) return block()
-//
-//        return withContext(executor.coroutineContext) {
-//            block()
-//        }
-//    }
-//
-//    override fun <RETURN_TYPE> invoke(block: () -> RETURN_TYPE): RETURN_TYPE {
-//        if(executor.isOpenGLThread) return block()
-//
-//        return executor.invoke {
-//            block()
-//        }
-//    }
 
     private inline fun <T> withLockedCanvas(block: () -> T): T = try {
         canvas.canvas.lock()

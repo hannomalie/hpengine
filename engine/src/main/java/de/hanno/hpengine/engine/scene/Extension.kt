@@ -69,33 +69,15 @@ import org.koin.core.component.get
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
+import org.koin.dsl.single
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
 
 interface Extension {
-    val manager: Manager?
-        get() = null
-    val componentSystem: ComponentSystem<*>?
-        get() = null
-    val componentClass: Class<*>?
-        get() = null
-
-    val entitySystem: EntitySystem?
-        get() = null
-    val renderSystem: RenderSystem?
-        get() = null
-    val deferredRendererExtension: RenderExtension<OpenGl>?
-        get() = null
-
     fun extract(scene: Scene, renderState: RenderState) { }
     fun Scene.decorate() { }
-
-    fun init(sceneManager: SceneManager) {
-        // TODO: Include other components here
-        manager?.init(sceneManager)
-    }
 }
 
 //class SceneScope
@@ -106,7 +88,7 @@ val baseModule = module {
     single { AddResourceContext() }
     single { MBassadorEventBus() } bind EventBus::class
 
-    single { TextureManager(get(), get(), get(), get()) }
+    single { TextureManager(get(), get(), get(), get()) } bind Manager::class
     single { OpenGLContext.invoke(get()) } bind GpuContext::class
     single { OpenGlProgramManager(get(), get(), get()) } bind ProgramManager::class
     single { Input(get(), get()) }
@@ -159,8 +141,6 @@ val baseModule = module {
     single { SkyboxExtension.SkyboxRenderSystem() } bind RenderSystem::class
     single { SkyboxExtension.SkyboxRenderExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
     single { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
-
-
 
     factory { Scene() }
 

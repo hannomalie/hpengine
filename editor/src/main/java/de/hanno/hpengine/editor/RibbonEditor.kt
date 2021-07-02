@@ -1,7 +1,5 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.editor.input.EditorInputConfig
-import de.hanno.hpengine.editor.input.EditorInputConfigImpl
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config
@@ -16,9 +14,6 @@ import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.Extension
 import de.hanno.hpengine.engine.scene.SceneScope
 import de.hanno.hpengine.engine.scene.baseModule
 import de.hanno.hpengine.engine.transform.AABBData
@@ -27,7 +22,6 @@ import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -108,7 +102,7 @@ fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEdit
         single { config } bind Config::class
     }
     val editorModule = module {
-        single { AWTEditorWindow(get(), get()) } bind Window::class
+        single { AWTEditorWindow(get()) } bind Window::class
         single {
             val window: AWTEditorWindow = get()
             window.frame

@@ -12,7 +12,6 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.awt.AWTGLCanvas
 import org.lwjgl.opengl.awt.GLData
 import java.awt.AWTException
-import java.lang.IllegalStateException
 
 
 interface Window<T : BackendType>: OpenGlExecutor {
@@ -97,11 +96,16 @@ class CustomGlCanvas(config: Config, val executor: OpenGlExecutorImpl): AWTGLCan
             override val frameBuffer = FrameBuffer.FrontBuffer
             override val name = "FrontBuffer"
 
+            private val scale: Double
+                get() {
+                    val dotsPerInch = java.awt.Toolkit.getDefaultToolkit().screenResolution
+                    return dotsPerInch.toDouble() / 96.toDouble()
+                }
             override val width: Int
-                get() = this@CustomGlCanvas.width
+                get() = (this@CustomGlCanvas.width * scale).toInt()
 
             override val height: Int
-                get() = this@CustomGlCanvas.height
+                get() = (this@CustomGlCanvas.height * scale).toInt()
 
             override fun use(gpuContext: GpuContext<OpenGl>, clear: Boolean) {
                 gpuContext.bindFrameBuffer(frameBuffer)
