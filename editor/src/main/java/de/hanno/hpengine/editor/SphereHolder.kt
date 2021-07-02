@@ -1,25 +1,28 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.index
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.MaterialManager.Companion.createDefaultMaterial
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -27,8 +30,12 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class SphereHolder(
-    val engine: EngineContext,
-    val sphereProgram: Program<Uniforms> = engine.run {
+    val config: Config,
+    val textureManager: TextureManager,
+    val gpuContext: GpuContext<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val programManager: ProgramManager<OpenGl>,
+    val sphereProgram: Program<Uniforms> = config.run {
         programManager.getProgram(
             EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
             EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource()
@@ -36,21 +43,19 @@ class SphereHolder(
     }
 ) : RenderSystem {
 
-    val materialManager: MaterialManager = engine.extensions.materialExtension.manager
-    val gpuContext = engine.gpuContext
     val sphereEntity = Entity("[Editor] Pivot")
 
     val sphere = run {
-        StaticModelLoader().load("assets/models/sphere.obj", materialManager, engine.config.directories.engineDir)
+        StaticModelLoader().load("assets/models/sphere.obj", textureManager, config.directories.engineDir)
     }
 
-    val sphereModelComponent = ModelComponent(sphereEntity, sphere, materialManager.defaultMaterial).apply {
+    val sphereModelComponent = ModelComponent(sphereEntity, sphere, createDefaultMaterial(config, textureManager)).apply {
         sphereEntity.addComponent(this)
     }
     val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
-        sphereModelComponent.putToBuffer(engine.gpuContext, sphereVertexIndexBuffer, this)
+        sphereModelComponent.putToBuffer(gpuContext, sphereVertexIndexBuffer, this)
     }
     val sphereCommand = DrawElementsIndirectCommand().apply {
         count = sphere.indices.size
@@ -92,8 +97,8 @@ class SphereHolder(
 
         val scaling = (0.1f * sphereEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = Transform().scale(scaling).translate(spherePosition)
-        if (useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
-        engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+        if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
+        deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -114,9 +119,9 @@ class SphereHolder(
     ) {
 
         val transformation = Transform()
-        if (useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
-        engine.gpuContext.cullFace = false
-        engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+        if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
+        gpuContext.cullFace = false
+        deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)

@@ -10,12 +10,14 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
+import de.hanno.hpengine.engine.scene.CameraExtension
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.isEqualTo
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.koin.core.component.get
 import java.util.WeakHashMap
 import java.util.logging.Logger
 
@@ -75,7 +77,7 @@ class EntityManager : Manager {
                 LOGGER.warning(e.message)
             }
         }
-        val predicate: (Entity) -> Boolean = { !scene.extensions.cameraExtension.run { it.isActiveCameraEntity } }
+        val predicate: (Entity) -> Boolean = { !scene.get<CameraExtension>().run { it.isActiveCameraEntity } }
         for (entity in entityContainer.entities.filter(predicate)) {
             transformCache.putIfAbsent(entity, Matrix4f(entity.transform))
 

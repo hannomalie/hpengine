@@ -18,7 +18,6 @@ val Engine.materialsDemo
                     name = "PlaneStone",
                     file = "assets/models/plane.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     this.material = engineContext.extensions.materialExtension.manager.registerMaterial(
@@ -58,7 +57,6 @@ val Engine.materialsDemo
                     name = "PlaneBricks",
                     file = "assets/models/plane.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     this.material = engineContext.extensions.materialExtension.manager.registerMaterial(

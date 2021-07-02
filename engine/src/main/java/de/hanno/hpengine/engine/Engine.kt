@@ -13,11 +13,9 @@ import de.hanno.hpengine.engine.directory.GameAsset
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.event.EngineInitializedEvent
 import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.baseExtensionsModule
+import de.hanno.hpengine.engine.scene.baseModule
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.GlobalScope
@@ -36,30 +34,14 @@ import kotlin.math.min
 
 class Engine @JvmOverloads constructor(
     val engineContext: EngineContext,
-    val renderer: RenderSystem = ExtensibleDeferredRenderer(engineContext),
-    val renderManager: RenderManager = RenderManager(engineContext)
+    val renderManager: RenderManager,
+    val sceneManager: SceneManager
 ) {
-
-    constructor(config: Config) : this(EngineContext(config))
-    constructor() : this(
-        ConfigImpl(
-            directories = Directories(
-                EngineDirectory(File(Directories.ENGINEDIR_NAME)),
-                GameDirectory(File(Directories.GAMEDIR_NAME), null)
-            )
-        )
-    )
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
-    val sceneManager = SceneManager(engineContext, Scene("InitialScene", engineContext))
-
-    init {
-        engineContext.extensions.forEach { it.init(sceneManager) }
-        engineContext.renderSystems.add(0, renderer)
-    }
 
     var scene: Scene
         get() = sceneManager.scene
@@ -72,6 +54,7 @@ class Engine @JvmOverloads constructor(
     val updateCycle = AtomicLong()
 
     init {
+        sceneManager.scene = Scene("InitialScene")
         engineContext.eventBus.register(this)
         launchEndlessLoop { deltaSeconds ->
             try {
@@ -89,7 +72,8 @@ class Engine @JvmOverloads constructor(
     }
 
 
-    private suspend fun executeCommands() = withContext(engineContext.addResourceContext.singleThreadDispatcher) {
+//    private suspend fun executeCommands() = withContext(engineContext.addResourceContext.singleThreadDispatcher) {
+    private suspend fun executeCommands() {
         while (!engineContext.addResourceContext.channel.isEmpty) {
             val command = engineContext.addResourceContext.channel.receiveOrNull() ?: break
             command.invoke()
@@ -100,17 +84,18 @@ class Engine @JvmOverloads constructor(
         renderManager.renderState.currentWriteState.cycle = updateCycle.get()
         renderManager.renderState.currentWriteState.time = System.currentTimeMillis()
 
+        renderSystems.forEach { it.extract(scene, renderManager.renderState.currentWriteState) }
+
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
         return updateCycle.getAndIncrement()
     }
 
     suspend fun update(deltaSeconds: Float) = try {
         scene.currentCycle = updateCycle.get()
+
         sceneManager.update(scene, deltaSeconds)
-        renderManager.update(scene, deltaSeconds)
 
         engineContext.window.invoke { engineContext.input.update() }
-        engineContext.update(deltaSeconds)
         engineContext.window.awaitEvents()
         cpsCounter.update()
 
@@ -129,7 +114,7 @@ class Engine @JvmOverloads constructor(
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val baseModule = module {
+            val configModule = module {
                 single<Config> {
                     ConfigImpl(
                         directories = Directories(
@@ -138,14 +123,12 @@ class Engine @JvmOverloads constructor(
                         )
                     )
                 }
-                single { EngineContext(get()) }
             }
-            val koin = startKoin {
-                modules(baseModule, baseExtensionsModule)
+            val application = startKoin {
+                modules(configModule, baseModule)
             }
-            val engineContext = koin.koin.get<EngineContext>()
-            val engine = Engine(engineContext)
 
+            val engine = application.koin.get<Engine>()
         }
 
     }
@@ -197,8 +180,6 @@ inline val Engine.textureManager
     get() = engineContext.backend.textureManager
 inline val Engine.programManager
     get() = engineContext.backend.programManager
-inline val Engine.materialManager
-    get() = engineContext.extensions.materialExtension.manager
 inline val Engine.renderSystems
     get() = engineContext.renderSystems
 inline val Engine.gpuContext

@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.backend.textureManager
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.BLEND
@@ -14,6 +15,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -22,16 +24,23 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector4f
 import org.lwjgl.opengl.GL30
 
-class DirectionalLightShadowMapExtension(private val engineContext: EngineContext) : RenderExtension<OpenGl> {
+class DirectionalLightShadowMapExtension(
+    val config: Config,
+    val programManager: ProgramManager<OpenGl>,
+    val textureManager: TextureManager,
+    val gpuContext: GpuContext<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer
+) : RenderExtension<OpenGl> {
 
-    private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
     val renderTarget = RenderTarget(
         gpuContext = gpuContext,
         frameBuffer = FrameBuffer(gpuContext, DepthBuffer(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
@@ -46,9 +55,9 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
         factorsForDebugRendering[0] = 100f
     }
 
-    private val directionalShadowPassProgram: Program<Uniforms> = engineContext.programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
+    private val directionalShadowPassProgram: Program<Uniforms> = programManager.getProgram(
+            FileBasedCodeSource(config.engineDir.resolve("shaders/directional_shadowmap_vertex.glsl")),
+            FileBasedCodeSource(config.engineDir.resolve("shaders/shadowmap_fragment.glsl")),
             Uniforms.Empty)
 
     private var renderedInCycle: Long = 0
@@ -56,10 +65,6 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
     val shadowMapId = renderTarget.renderedTexture
 //    val shadowMapWorldPositionId = renderTarget.getRenderedTexture(2)
 //    val shadowMapColorMapId = renderTarget.getRenderedTexture(1)
-
-    init {
-        engineContext.eventBus.register(this)
-    }
 
     override fun extract(scene: Scene, renderState: RenderState) {
         renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
@@ -101,7 +106,7 @@ class DirectionalLightShadowMapExtension(private val engineContext: EngineContex
                 renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, directionalShadowPassProgram, bindIndexBuffer = false)
             }
         }
-        engineContext.textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)
+        textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)
         firstPassResult.directionalLightShadowMapWasRendered = true
 
         renderedInCycle = renderState.cycle

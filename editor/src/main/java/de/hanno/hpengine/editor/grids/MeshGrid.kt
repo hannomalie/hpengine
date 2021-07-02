@@ -36,10 +36,10 @@ class MeshGrid(val mesh: Mesh<*>, val entity: Entity, val materialManager: Mater
         }
     }
 
-    fun KMutableProperty0<Material>.toComboBox(): JComboBox<SimpleMaterial> {
+    fun KMutableProperty0<Material>.toComboBox(): JComboBox<Material> {
         return JComboBox(materialManager.materials.toTypedArray()).apply {
             addActionListener {
-                this@toComboBox.set(this.selectedItem as SimpleMaterial)
+                this@toComboBox.set(this.selectedItem as Material)
             }
             selectedItem = this@toComboBox.get()
         }

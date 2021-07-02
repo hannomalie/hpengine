@@ -1,34 +1,36 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.DrawParameters
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Faces
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.struct.copyTo
 
-open class IndirectPipeline @JvmOverloads constructor(private val engine: EngineContext,
+open class IndirectPipeline @JvmOverloads constructor(private val config: Config,
+                                                      private val gpuContext: GpuContext<OpenGl>,
                                                       private val useFrustumCulling: Boolean = true,
                                                       private val useBackFaceCulling: Boolean = true,
                                                       private val useLineDrawingIfActivated: Boolean = true) : Pipeline {
 
     protected var verticesCount = 0
     protected var entitiesCount = 0
-    protected var commandOrganizationStatic = CommandOrganization(engine.gpuContext)
-    protected var commandOrganizationAnimated = CommandOrganization(engine.gpuContext)
+    protected var commandOrganizationStatic = CommandOrganization(gpuContext)
+    protected var commandOrganizationAnimated = CommandOrganization(gpuContext)
 
     init {
-        require(engine.gpuContext.isSupported(BindlessTextures)) { "Cannot use indirect pipeline without bindless textures feature" }
-        require(engine.gpuContext.isSupported(DrawParameters)) { "Cannot use indirect pipeline without drawcount buffer" }
+        require(gpuContext.isSupported(BindlessTextures)) { "Cannot use indirect pipeline without bindless textures feature" }
+        require(gpuContext.isSupported(DrawParameters)) { "Cannot use indirect pipeline without drawcount buffer" }
     }
 
     override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
@@ -52,7 +54,7 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
                       programAnimated: Program<AnimatedFirstPassUniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        val mode = if (engine.config.debug.isDrawLines) Lines else Faces
+        val mode = if (config.debug.isDrawLines) Lines else Faces
         IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera).draw()
         IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera).draw()
 
@@ -70,9 +72,9 @@ open class IndirectPipeline @JvmOverloads constructor(private val engine: Engine
 
     fun beforeDraw(renderState: RenderState, program: Program<out FirstPassUniforms>,
                    vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
-        engine.gpuContext.cullFace = useBackFaceCulling
+        gpuContext.cullFace = useBackFaceCulling
         program.use()
-        program.setUniforms(renderState, renderCam, engine.config)
+        program.setUniforms(renderState, renderCam, config)
     }
 
 }

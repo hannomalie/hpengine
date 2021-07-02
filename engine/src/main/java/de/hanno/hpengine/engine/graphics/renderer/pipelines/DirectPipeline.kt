@@ -1,23 +1,22 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.DirectDrawDescription
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveType
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Faces
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.joml.FrustumIntersection
 
-open class DirectPipeline(private val engine: EngineContext) : Pipeline {
+open class DirectPipeline(private val config: Config, private val gpuContext: GpuContext<OpenGl>) : Pipeline {
 
     private var verticesCount = 0
     private var entitiesCount = 0
@@ -39,13 +38,13 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
                       programAnimated: Program<AnimatedFirstPassUniforms>,
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
-        val mode = if (engine.config.debug.isDrawLines) Lines else Faces
+        val mode = if (config.debug.isDrawLines) Lines else Faces
 
         val drawDescriptionStatic = DirectDrawDescription(renderState, filteredRenderBatchesStatic, programStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera)
-        drawDescriptionStatic.draw(engine.gpuContext)
+        drawDescriptionStatic.draw(gpuContext)
 
         val drawDescriptionAnimated = DirectDrawDescription(renderState, filteredRenderBatchesAnimated, programAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera)
-        drawDescriptionAnimated.draw(engine.gpuContext)
+        drawDescriptionAnimated.draw(gpuContext)
 
         firstPassResult.verticesDrawn += verticesCount
         firstPassResult.entitiesDrawn += entitiesCount
@@ -62,9 +61,9 @@ open class DirectPipeline(private val engine: EngineContext) : Pipeline {
     fun beforeDraw(renderState: RenderState, program: Program<out FirstPassUniforms>,
                    vertexStructArray: PersistentMappedStructBuffer<*>,
                    renderCam: Camera) {
-        engine.gpuContext.cullFace = !engine.config.debug.isDrawLines
+        gpuContext.cullFace = !config.debug.isDrawLines
         program.use()
-        program.setUniforms(renderState, renderCam, engine.config)
+        program.setUniforms(renderState, renderCam, config)
     }
 
 }

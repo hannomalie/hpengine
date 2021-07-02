@@ -2,7 +2,9 @@ package de.hanno.hpengine.editor.grids
 
 import com.bric.colorpicker.ColorPicker
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
@@ -31,12 +33,12 @@ var Vector2f.myY
     get() = y
     set(value) { y = value }
 
-class MaterialGrid(val engineContext: EngineContext,
+class MaterialGrid(val programManager: ProgramManager<OpenGl>,
                    val textureManager: TextureManager,
                    val material: Material) : JPanel() {
     private val info = material.materialInfo
 
-    private val heightMappingFirstpassProgram = engineContext.programManager.heightMappingFirstPassProgram
+    private val heightMappingFirstpassProgram = programManager.heightMappingFirstPassProgram
 
     var useHeightMapping: Boolean
         get() = info.program == heightMappingFirstpassProgram

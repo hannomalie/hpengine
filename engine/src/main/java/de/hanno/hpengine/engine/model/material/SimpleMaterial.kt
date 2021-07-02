@@ -19,7 +19,7 @@ interface Material {
     }
 }
 
-class SimpleMaterial(override val name: String,
+data class SimpleMaterial(override val name: String,
                      override var materialInfo: MaterialInfo): Material {
 
     init {

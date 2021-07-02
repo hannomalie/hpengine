@@ -16,22 +16,22 @@ import com.bulletphysics.linearmath.DebugDrawModes
 import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.PhysicsComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.renderer.LineRenderer
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.renderer.addLine
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
@@ -41,18 +41,21 @@ import de.hanno.hpengine.util.commandqueue.FutureCallable
 import org.joml.Vector3fc
 import java.util.ArrayList
 import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
 import java.util.function.Supplier
 import java.util.logging.Logger
 import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
-class PhysicsManager(private val engineContext: EngineContext,
-                     gravity: Vector3f = Vector3f(0f, -20f, 0f),
-                     private val config: Config) : Manager, RenderSystem {
+class PhysicsManager(
+    private val config: Config,
+    val renderStateManager: RenderStateManager,
+    val programManager: ProgramManager<OpenGl>,
+    val gpuContext: GpuContext<OpenGl>,
+    gravity: Vector3f = Vector3f(0f, -20f, 0f)
+) : Manager, RenderSystem {
 
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
+    private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
     val linePoints = mutableListOf<Vector3fc>()
 
     private var dynamicsWorld: DynamicsWorld? = null
@@ -77,7 +80,8 @@ class PhysicsManager(private val engineContext: EngineContext,
         }.start()
     }
 
-    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) = clearWorld()
+    override fun beforeSetScene(nextScene: Scene) = clearWorld()
+
     @JvmOverloads
     fun addBallPhysicsComponent(owner: Entity, radius: Float = 1f, mass: Float = 10f): PhysicsComponent {
         val sphereShape = SphereShape(radius)
@@ -186,7 +190,7 @@ class PhysicsManager(private val engineContext: EngineContext,
     override fun render(result: DrawResult, renderState: RenderState) {
         if (config.debug.isDrawLines) {
             debugDrawWorld()
-            engineContext.drawLines(lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))
+            drawLines(renderStateManager, programManager, lineVertices, linePoints, color = org.joml.Vector3f(1f, 1f, 0f))
         }
     }
 

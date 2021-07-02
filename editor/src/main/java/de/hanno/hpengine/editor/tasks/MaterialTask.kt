@@ -8,13 +8,19 @@ import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.verticalBox
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.textureManager
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
+import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.koin.core.component.get
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
@@ -29,15 +35,19 @@ import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.JFileChooser
 
-class MaterialRibbonTask(val engineContext: EngineContext,
+class MaterialRibbonTask(val addResourceContext: AddResourceContext,
+                         val textureManager: TextureManager,
+                         val programManager: ProgramManager<OpenGl>,
                          val sceneManager: SceneManager,
                          val editor: RibbonEditor,
-                         val selectionSystem: SelectionSystem): RibbonTask("Material", MaterialRibbonBand(engineContext, sceneManager, editor, selectionSystem)), EditorRibbonTask {
+                         val selectionSystem: SelectionSystem): RibbonTask("Material", MaterialRibbonBand(addResourceContext, textureManager, programManager, sceneManager, editor, selectionSystem)), EditorRibbonTask {
 
     override fun reloadContent() {
         bands.toList().firstIsInstance<MaterialRibbonBand>().updateMaterials()
     }
-    class MaterialRibbonBand(val engineContext: EngineContext,
+    class MaterialRibbonBand(val addResourceContext: AddResourceContext,
+                             val textureManager: TextureManager,
+                             val programManager: ProgramManager<OpenGl>,
                              val sceneManager: SceneManager,
                              val editor: RibbonEditor,
                              val selectionSystem: SelectionSystem): JRibbonBand("Material", null) {
@@ -50,7 +60,7 @@ class MaterialRibbonTask(val engineContext: EngineContext,
                     val returnVal = fc.showOpenDialog(editor)
                     if (returnVal == JFileChooser.APPROVE_OPTION) {
                         val file = fc.selectedFile
-                        engineContext.textureManager.getCubeMap(file.name, file = file)
+                        textureManager.getCubeMap(file.name, file = file)
                     }
                 }
                 .setActionRichTooltip(RichTooltip.builder()
@@ -123,8 +133,8 @@ class MaterialRibbonTask(val engineContext: EngineContext,
 
         fun retrieveMaterialCommands(): List<Command> {
             var result = emptyList<Command>()
-            engineContext.addResourceContext.locked {
-                result = engineContext.extensions.materialExtension.manager.materials.mapNotNull { material ->
+            addResourceContext.locked {
+                result = sceneManager.scene.get<MaterialManager>().materials.mapNotNull { material ->
                     val icon = if (material.materialInfo.maps.containsKey(SimpleMaterial.MAP.DIFFUSE)) {
                         val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
                         if (diffuseMap != null) {
@@ -149,7 +159,7 @@ class MaterialRibbonTask(val engineContext: EngineContext,
                                 } else {
                                     editor.sidePanel.verticalBox(
                                         selectionSystem.unselectButton,
-                                        MaterialGrid(engineContext, engineContext.textureManager, material)
+                                        MaterialGrid(programManager, textureManager, material)
                                     )
                                 }
                             } else {

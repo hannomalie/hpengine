@@ -29,7 +29,6 @@ val Engine.lotsOfPlanesScene
                     name = "Ground",
                     file = "assets/models/plane.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
@@ -127,7 +126,6 @@ val Engine.lotsOfPlanesScene
                     name = "Plane",
                     file = "assets/blender_grass/Low/Low Grass.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.put(SimpleMaterial.MAP.HEIGHT, engineContext.textureManager.getTexture("assets/blender_grass/Low/Grass_height.png", false))

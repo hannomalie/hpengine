@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.Entit
 import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader;
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader;
 import de.hanno.hpengine.engine.model.material.MaterialManager;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -17,15 +18,15 @@ import java.util.List;
 public class LoadModelCommand implements Command<EntityListResult> {
     private final String file;
     private final String name;
-    private MaterialManager materialManager;
+    private TextureManager textureManager;
     private final AbstractDirectory gameDir;
     private Entity entity;
 
-    public LoadModelCommand(String file, String name, MaterialManager materialManager, GameDirectory gameDir) {
-        this(file, name, materialManager, gameDir, null);
+    public LoadModelCommand(String file, String name, TextureManager textureManager, GameDirectory gameDir) {
+        this(file, name, textureManager, gameDir, null);
     }
-    public LoadModelCommand(String file, String name, MaterialManager materialManager, AbstractDirectory gameDir, Entity entity) {
-        this.materialManager = materialManager;
+    public LoadModelCommand(String file, String name, TextureManager textureManager, AbstractDirectory gameDir, Entity entity) {
+        this.textureManager = textureManager;
         this.gameDir = gameDir;
         this.entity = entity;
         if(this.entity == null) {
@@ -45,7 +46,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
             long start = System.currentTimeMillis();
 
             List<Entity> entities = new ArrayList<>();
-            Model model = getModel(materialManager, gameDir);
+            Model model = getModel(textureManager, gameDir);
             ModelComponent modelComponent = new ModelComponent(entity, model, model.getMaterial());
             entity.addComponent(modelComponent);
 
@@ -61,12 +62,12 @@ public class LoadModelCommand implements Command<EntityListResult> {
         }
     }
 
-    protected Model getModel(MaterialManager materialManager, AbstractDirectory textureDir) throws Exception {
+    protected Model getModel(TextureManager textureManager, AbstractDirectory textureDir) throws Exception {
         Model model;
         if(file.endsWith("md5mesh")) {
-            model = new AnimatedModelLoader().load(file, materialManager, gameDir);
+            model = new AnimatedModelLoader().load(file, textureManager, gameDir);
         } else {
-            model = new StaticModelLoader().load(file, materialManager, gameDir);
+            model = new StaticModelLoader().load(file, textureManager, gameDir);
         }
         return model;
     }

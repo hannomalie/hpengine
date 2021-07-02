@@ -1,52 +1,36 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 
-class SceneManager(val engineContext: EngineContext, initialScene: Scene): Manager {
-    val addResourceContext: AddResourceContext = engineContext.backend.addResourceContext
-    var scene: Scene = initialScene
-        set(value) = addResourceContext.locked {
-            val oldScene = field
-            beforeSetScene(currentScene = oldScene, nextScene = value)
-            field = value
-            afterSetScene(oldScene, value)
+class SceneManager(val addResourceContext: AddResourceContext): Manager {
+    private var _scene: Scene? = null
+    var scene: Scene
+        get() {
+            return _scene!!
         }
-
-    init {
-        scene.entitySystems.forEach { it.gatherEntities(scene) }
-        engineContext.extensions.forEach { it.run { scene.decorate() } }
-        engineContext.extensions.forEach {
-            it.componentSystem?.onEntityAdded(scene.getEntities())
-            it.manager?.beforeSetScene(scene, scene)
+        set(value) {
+            val oldScene = _scene
+            _scene = value
+            afterSetScene(oldScene, _scene!!)
         }
-    }
-    fun addAll(entities: List<Entity>) = addResourceContext.locked {
-        scene.addAll(entities)
-    }
-    fun add(entity: Entity) = addAll(listOf(entity))
-
-    override fun onComponentAdded(component: Component) {
-        scene.addComponent(component.entity, component)
-    }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         scene.update(scene, deltaSeconds)
     }
 
-    override fun beforeSetScene(currentScene: Scene, nextScene: Scene) {
-        currentScene.clear()
-        nextScene.entitySystems.forEach { it.gatherEntities(nextScene) }
-        engineContext.extensions.forEach { it.run { nextScene.decorate() } }
-        engineContext.extensions.forEach {
-            it.componentSystem?.onEntityAdded(nextScene.getEntities())
-            it.manager?.beforeSetScene(currentScene, nextScene)
-        }
+    override fun beforeSetScene(nextScene: Scene) {
+////        currentScene.clear() // TODO: Where to close old scopes?
+//        nextScene.entitySystems.forEach { it.gatherEntities(nextScene) }
+//        nextScene.extensions.forEach { it.run { nextScene.decorate() } }
+//
+//        nextScene.componentSystems.forEach {
+//            it.onEntityAdded(nextScene.getEntities())
+//        }
+////         TODO: Why does this not work?
+//        nextScene.managers.forEach { it.beforeSetScene(nextScene) }
     }
 
-    override fun afterSetScene(lastScene: Scene, currentScene: Scene) {
-        engineContext.extensions.forEach { it.manager?.afterSetScene(lastScene, currentScene) }
+    override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
+        currentScene.managers.filterNot { it is SceneManager }.forEach { it.afterSetScene(lastScene, currentScene) }
     }
 }

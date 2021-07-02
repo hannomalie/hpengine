@@ -3,13 +3,15 @@ package de.hanno.hpengine.editor
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.eventBus
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
+import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -18,29 +20,38 @@ import org.joml.Vector4f
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.logging.Logger
-import javax.swing.*
+import javax.swing.JFileChooser
+import javax.swing.JMenu
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
+import javax.swing.JTree
+import javax.swing.SwingUtilities
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-open class SceneTree(val engineContext: EngineContext,
-                val editorComponents: EditorComponents,
-                val scene: Scene,
-                val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(scene)) : JTree(rootNode) {
+open class SceneTree(
+    val config: Config,
+    val textureManager: TextureManager,
+    val addResourceContext: AddResourceContext,
+    val editorComponents: EditorComponents,
+    val scene: Scene,
+    val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(scene)
+) : JTree(rootNode) {
 
     private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null
 
     init {
         reload()
-        engineContext.eventBus.register(this)
     }
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
-        if(userObject == query) return this
+        if (userObject == query) return this
 
         return children().toList().filterIsInstance<DefaultMutableTreeNode>().firstNotNullResult { it.findChild(query) }
     }
+
     fun getSelectionPath(query: Any): TreePath? = rootNode.findChild(query)?.path?.let { TreePath(it) }
 
     fun select(any: Any) = SwingUtils.invokeLater {
@@ -49,6 +60,7 @@ open class SceneTree(val engineContext: EngineContext,
             this@SceneTree.scrollPathToVisible(it)
         }
     }
+
     fun unselect() = SwingUtils.invokeLater {
         selectionPath = null
     }
@@ -96,7 +108,7 @@ open class SceneTree(val engineContext: EngineContext,
             val current = DefaultMutableTreeNode(entity)
             rootEntityMappings[entity.parent]!!.add(current)
         }
-        if(parent.isRoot) {
+        if (parent.isRoot) {
             parent.add(DefaultMutableTreeNode(editorComponents.sphereHolder.sphereEntity))
         }
     }
@@ -120,59 +132,60 @@ open class SceneTree(val engineContext: EngineContext,
 
 }
 
-    fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
-        if (mouseEvent.isPopupTrigger) {
-            when (selection) {
-                is Entity -> {
-                    JPopupMenu().apply {
-                        val menu = JMenu("Add").apply {
-                            val modelComponentMenuItem = JMenuItem("ModelComponent").apply {
-                                addActionListener {
-                                    JFileChooser(engineContext.config.gameDir.baseDir).apply {
-                                        if (showOpenDialog(editorComponents.editor) == JFileChooser.APPROVE_OPTION) {
-                                            GlobalScope.launch {
-                                                val baseDirPath = engineContext.config.gameDir.baseDir.canonicalPath.toString()
-                                                require(selectedFile.canonicalPath.startsWith(baseDirPath)) { "Can only load from within the game directory" }
+fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
+    if (mouseEvent.isPopupTrigger) {
+        when (selection) {
+            is Entity -> {
+                JPopupMenu().apply {
+                    val menu = JMenu("Add").apply {
+                        val modelComponentMenuItem = JMenuItem("ModelComponent").apply {
+                            addActionListener {
+                                JFileChooser(config.gameDir.baseDir).apply {
+                                    if (showOpenDialog(editorComponents.editor) == JFileChooser.APPROVE_OPTION) {
+                                        GlobalScope.launch {
+                                            val baseDirPath =
+                                                config.gameDir.baseDir.canonicalPath.toString()
+                                            require(selectedFile.canonicalPath.startsWith(baseDirPath)) { "Can only load from within the game directory" }
 
-                                                val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "")
-                                                val loadedModels = LoadModelCommand(
-                                                    resultingPath,
-                                                    "Model_${System.currentTimeMillis()}",
-                                                    engineContext.extensions.materialExtension.manager,
-                                                    engineContext.config.directories.gameDir,
-                                                    selection
-                                                ).execute()
-                                                engineContext.addResourceContext.launch {
-                                                    with(scene) {
-                                                        addAll(loadedModels.entities)
-                                                    }
+                                            val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "")
+                                            val loadedModels = LoadModelCommand(
+                                                resultingPath,
+                                                "Model_${System.currentTimeMillis()}",
+                                                textureManager,
+                                                config.directories.gameDir,
+                                                selection
+                                            ).execute()
+                                            addResourceContext.launch {
+                                                with(scene) {
+                                                    addAll(loadedModels.entities)
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                            val lightMenuItem = JMenu("Light").apply {
-                                add(JMenuItem("PointLight").apply {
-                                    addActionListener {
-                                        GlobalScope.launch {
-                                            val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f))
-                                            scene.addComponent(selection, component)
-                                        }
-                                    }
-                                })
-                            }
-
-                            add(modelComponentMenuItem)
-                            add(lightMenuItem)
                         }
-                        add(menu)
-                        show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
+                        val lightMenuItem = JMenu("Light").apply {
+                            add(JMenuItem("PointLight").apply {
+                                addActionListener {
+                                    GlobalScope.launch {
+                                        val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f))
+                                        scene.addComponent(selection, component)
+                                    }
+                                }
+                            })
+                        }
+
+                        add(modelComponentMenuItem)
+                        add(lightMenuItem)
                     }
+                    add(menu)
+                    show(mouseEvent.component, mouseEvent.x, mouseEvent.y)
                 }
             }
         }
     }
+}
 
 fun SceneTree.addDefaultMouseListener() {
     addMouseListener(object : MouseAdapter() {

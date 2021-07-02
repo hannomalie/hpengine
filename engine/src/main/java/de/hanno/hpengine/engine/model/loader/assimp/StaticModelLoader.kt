@@ -46,13 +46,13 @@ import kotlin.math.max
 const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinIdenticalVertices + Assimp.aiProcess_GenNormals + Assimp.aiProcess_GenSmoothNormals
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
-    fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): StaticModel {
+    fun load(file: String, textureManager: TextureManager, resourcesDir: AbstractDirectory): StaticModel {
         val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).path, flags) ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val deferredMaterials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, materialManager.textureManager) }
+            GlobalScope.async { aiMaterial.processMaterial(Path.of(file).parent.toString(), resourcesDir, textureManager) }
         }
 
         val numMeshes: Int = aiScene.mNumMeshes()
@@ -60,7 +60,6 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val materials = runBlocking {
             deferredMaterials.awaitAll()
         }
-        materialManager.registerMaterials(materials)
         val meshes: List<StaticMesh> = (0 until numMeshes).map { i ->
             val aiMesh = AIMesh.create(aiMeshes[i])
             aiMesh.processMesh(materials)

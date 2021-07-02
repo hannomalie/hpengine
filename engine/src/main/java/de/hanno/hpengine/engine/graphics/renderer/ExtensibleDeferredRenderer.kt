@@ -27,23 +27,22 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.StateRef
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 
-class ExtensibleDeferredRenderer(val engineContext: EngineContext) : RenderSystem, Backend<OpenGl> {
-    val window: Window<OpenGl> = engineContext.window
-    val backend: Backend<OpenGl> = engineContext.backend
-    val config: Config = engineContext.config
-    val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
-    val renderSystems: MutableList<RenderSystem> = engineContext.renderSystems
-    val renderStateManager: RenderStateManager = engineContext.renderStateManager
-    val materialManager: MaterialManager = engineContext.extensions.materialExtension.manager
+class ExtensibleDeferredRenderer(
+    val window: Window<OpenGl>,
+    val backend: Backend<OpenGl>,
+    val config: Config,
+    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val renderStateManager: RenderStateManager,
+    val extensions: List<RenderExtension<OpenGl>>
+) : RenderSystem, Backend<OpenGl> {
 
-    val combinePassExtension = CombinePassRenderExtension(engineContext)
-    val postProcessingExtension = PostProcessingExtension(engineContext)
+    val combinePassExtension = CombinePassRenderExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
+    val postProcessingExtension = PostProcessingExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
 
     val simpleColorProgramStatic = programManager.getProgram(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -61,10 +60,16 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext) : RenderSyste
         AnimatedFirstPassUniforms(gpuContext)
     )
 
-    val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
+    val textureRenderer = SimpleTextureRenderer(
+        config,
+        gpuContext,
+        deferredRenderingBuffer.colorReflectivenessTexture,
+        programManager,
+        window.frontBuffer
+    )
 
-    val pipeline: StateRef<DirectPipeline> = engineContext.renderStateManager.renderState.registerState {
-        object : DirectPipeline(engineContext) {
+    val pipeline: StateRef<DirectPipeline> = renderStateManager.renderState.registerState {
+        object : DirectPipeline(config, gpuContext) {
             override fun beforeDrawAnimated(
                 renderState: RenderState,
                 program: Program<AnimatedFirstPassUniforms>,
@@ -94,8 +99,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext) : RenderSyste
         }
     }
 
-    val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(engineContext)
-    val extensions: MutableList<RenderExtension<OpenGl>> = mutableListOf()
+    val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
 
     override val eventBus
         get() = backend.eventBus
@@ -111,7 +115,7 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext) : RenderSyste
         get() = backend.addResourceContext
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        val currentWriteState = engineContext.renderStateManager.renderState.currentWriteState
+        val currentWriteState = renderStateManager.renderState.currentWriteState
 
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
 
@@ -174,5 +178,9 @@ class ExtensibleDeferredRenderer(val engineContext: EngineContext) : RenderSyste
         }.onFailure {
             println("Not able to render texture")
         }
+    }
+
+    override fun renderEditor(result: DrawResult, renderState: RenderState) {
+        extensions.forEach { it.renderEditor(renderState, result) }
     }
 }

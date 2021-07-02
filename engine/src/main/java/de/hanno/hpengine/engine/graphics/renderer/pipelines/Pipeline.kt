@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CoarseCullingPhase.ONE
@@ -10,7 +9,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhas
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_ONE
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase.STATIC_TWO
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.lwjgl.opengl.GL30
 
@@ -41,19 +39,5 @@ interface Pipeline {
 
     companion object {
         val HIGHZ_FORMAT = GL30.GL_R32F
-
-        inline fun <reified T> create(engine: Engine,
-                                      useFrustumCulling: Boolean,
-                                      useBackfaceCulling: Boolean,
-                                      useLineDrawingIfActivated: Boolean): Pipeline {
-            return when(T::class) {
-                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(engine.engineContext, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(engine.engineContext, useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
-                else -> IndirectPipeline(engine.engineContext,
-                        useFrustumCulling = useFrustumCulling,
-                        useBackFaceCulling = useBackfaceCulling,
-                        useLineDrawingIfActivated = useLineDrawingIfActivated)
-            }
-        }
     }
 }

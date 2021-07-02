@@ -8,11 +8,10 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.Model
-import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
@@ -135,20 +134,21 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
             addComponent(ModelComponent(this, model, model.material))
         }
 
-        fun Entity.modelComponent(name: String,
-                                  file: String,
-                                  materialManager: MaterialManager,
-                                  modelComponentManager: ModelComponentManager,
-                                  gameDirectory: AbstractDirectory,
-                                  aabb: AABBData? = null): ModelComponent {
+        fun Entity.modelComponent(
+            name: String,
+            file: String,
+            textureManager: TextureManager,
+            directory: AbstractDirectory,
+            aabb: AABBData? = null
+        ): ModelComponent {
 
-            val loadedModel = modelComponentManager.modelCache.computeIfAbsent(file) { file ->
-                LoadModelCommand(file,
-                        name,
-                        materialManager,
-                        gameDirectory,
-                        this).execute().entities.first().components.firstIsInstance<ModelComponent>().model
-            }
+            val loadedModel = LoadModelCommand(
+                file,
+                name,
+                textureManager,
+                directory,
+                this
+            ).execute().entities.first().components.firstIsInstance<ModelComponent>().model
 
             val modelComponent = ModelComponent(this, loadedModel, loadedModel.material)
             aabb?.let { modelComponent.spatial.boundingVolume.localAABB = it.copy() }

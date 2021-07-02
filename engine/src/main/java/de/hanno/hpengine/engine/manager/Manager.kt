@@ -21,10 +21,10 @@ interface Manager: Updatable {
     fun extract(scene: Scene, renderState: RenderState) {}
 
     @JvmDefault
-    fun beforeSetScene(currentScene: Scene, nextScene: Scene) { }
+    fun beforeSetScene(nextScene: Scene) { }
 
     @JvmDefault
-    fun afterSetScene(lastScene: Scene, currentScene: Scene) { }
+    fun afterSetScene(lastScene: Scene?, currentScene: Scene) { }
 
     @JvmDefault fun init(sceneManager: SceneManager) { }
 

@@ -16,29 +16,38 @@ import de.hanno.hpengine.editor.grids.SceneGrid
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.verticalBox
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.OceanWaterExtension
 import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.koin.core.component.get
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.awt.event.MouseAdapter
@@ -84,12 +93,19 @@ class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
     }
 }
 
-class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
+class SelectionSystem(
+    val config: Config,
+    val gpuContext: GpuContext<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val editorComponents: EditorComponents,
+    val renderStateManager: RenderStateManager,
+    val programManager: ProgramManager<OpenGl>,
+    val textureManager: TextureManager
+) : RenderSystem {
     val mouseAdapter = editorComponents.mouseAdapter
-    val engineContext = editorComponents.engineContext
     val editor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
+    private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
 
     var axisDragged: AxisConstraint = AxisConstraint.None
 
@@ -102,13 +118,13 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         if(axisDragged != AxisConstraint.None) return
 
         mouseAdapter.mouseClicked?.let { event ->
-            engineContext.deferredRenderingBuffer.use(engineContext.gpuContext, false)
-            engineContext.gpuContext.readBuffer(4)
+            deferredRenderingBuffer.use(gpuContext, false)
+            gpuContext.readBuffer(4)
             floatBuffer.rewind()
-            val ratio = Vector2f(editor.canvas.width.toFloat() / engineContext.config.width.toFloat(),
-                    editor.canvas.height.toFloat() / engineContext.config.height.toFloat())
+            val ratio = Vector2f(editor.canvas.width.toFloat() / config.width.toFloat(),
+                    editor.canvas.height.toFloat() / config.height.toFloat())
             val adjustedX = (event.x / ratio.x).toInt()
-            val adjustedY = engineContext.config.height - (event.y / ratio.y).toInt()
+            val adjustedY = config.height - (event.y / ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
 
             val entityIndex = floatBuffer.get()
@@ -185,10 +201,10 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
 
         when(selection) {
             is SceneSelection -> {
-                engineContext.gpuContext.disable(GlCap.DEPTH_TEST)
-                engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
+                gpuContext.disable(GlCap.DEPTH_TEST)
+                deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
                 val linePoints = mutableListOf<Vector3fc>().apply { addAABBLines(selection.scene.aabb.min, selection.scene.aabb.max) }
-                engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 1f))
+                drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 1f))
             }
             is EntitySelection -> {
 //                val entity = selection.entity
@@ -291,7 +307,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedModel
         sidePanel.verticalBox(
             unselectButton,
-            ModelGrid(pickedModel.model, pickedModel.modelComponent, engineContext.extensions.materialExtension.manager)
+            ModelGrid(pickedModel.model, pickedModel.modelComponent, editorComponents.sceneManager.scene.get())
         )
     }
 
@@ -299,7 +315,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = pickedMesh
         sidePanel.verticalBox(
             unselectButton,
-            MeshGrid(pickedMesh.mesh, pickedMesh.entity, engineContext.extensions.materialExtension.manager)
+            MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.get())
         )
     }
     fun selectReflectionProbe(pickedReflectionProbe: ReflectionProbeSelection) = SwingUtils.invokeLater {
@@ -314,7 +330,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = MaterialSelection(pickedMaterial)
         sidePanel.verticalBox(
             unselectButton,
-            MaterialGrid(engineContext, engineContext.textureManager, pickedMaterial)
+            MaterialGrid(programManager, textureManager, pickedMaterial)
         )
     }
 
@@ -322,7 +338,7 @@ class SelectionSystem(val editorComponents: EditorComponents) : RenderSystem {
         selection = GiVolumeSelection(giVolumeComponent)
         sidePanel.verticalBox(
                 unselectButton,
-                GiVolumeGrid(giVolumeComponent, engineContext, editorComponents.sceneManager)
+                GiVolumeGrid(gpuContext, config, textureManager, giVolumeComponent, editorComponents.sceneManager)
         )
     }
     fun selectOceanWater(oceanWaterComponent: OceanWaterExtension.OceanWater) = SwingUtils.invokeLater {

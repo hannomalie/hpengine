@@ -17,7 +17,6 @@ val Engine.sponzaScene
                     name = "Sponza",
                     file = "assets/models/sponza.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     val bricksMaterial = materials.first { it.name == "bricks" } as SimpleMaterial
@@ -32,7 +31,6 @@ val Engine.sponzaScene
                     name = "Sphere",
                     file = "assets/models/sphere.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 )
                 customComponent { scene, deltaSeconds ->

@@ -6,17 +6,22 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.addLine
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.Scene
@@ -120,17 +125,21 @@ fun List<BvhNode.Leaf>.toTree(): BvhNode.Inner {
 val Vector4f.xyz: Vector3f
     get() = Vector3f(x, y, z)
 
-class BvHPointLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
-    private val gpuContext = engineContext.gpuContext
-    private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
-    private val lineVertices = PersistentMappedStructBuffer(100, engineContext.gpuContext, { HpVector4f() })
+class BvHPointLightSecondPassExtension(
+    val config: Config,
+    val gpuContext: GpuContext<OpenGl>,
+    val renderStateManager: RenderStateManager,
+    val programManager: ProgramManager<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer
+): RenderExtension<OpenGl> {
+    private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
 
-    private val secondPassPointBvhComputeProgram = engineContext.programManager.getComputeProgram(engineContext.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
+    private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    val bvh = PersistentMappedStructBuffer(0, engineContext.gpuContext, { BvhNodeGpu() })
+    val bvh = PersistentMappedStructBuffer(0, gpuContext, { BvhNodeGpu() })
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -204,20 +213,20 @@ class BvHPointLightSecondPassExtension(val engineContext: EngineContext): Render
             secondPassPointBvhComputeProgram.use()
             secondPassPointBvhComputeProgram.setUniform("nodeCount", nodeCount)
             secondPassPointBvhComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
-            secondPassPointBvhComputeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
-            secondPassPointBvhComputeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
+            secondPassPointBvhComputeProgram.setUniform("screenWidth", config.width.toFloat())
+            secondPassPointBvhComputeProgram.setUniform("screenHeight", config.height.toFloat())
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassPointBvhComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
             secondPassPointBvhComputeProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
             secondPassPointBvhComputeProgram.bindShaderStorageBuffer(3, bvh)
-            secondPassPointBvhComputeProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
+            secondPassPointBvhComputeProgram.dispatchCompute(config.width / 16, config.height / 16, 1)
         }
     }
 
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
-        if(engineContext.config.debug.drawBvhInnerNodes) {
+        if(config.debug.drawBvhInnerNodes) {
 
             val linePoints = mutableListOf<Vector3fc>().apply {
                 tree?.run {
@@ -234,9 +243,9 @@ class BvHPointLightSecondPassExtension(val engineContext: EngineContext): Render
                     }
                 }
             }
-            engineContext.deferredRenderingBuffer.finalBuffer.use(engineContext.gpuContext, false)
-            engineContext.gpuContext.blend = false
-            engineContext.drawLines(lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
+            deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+            gpuContext.blend = false
+            drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 0f))
         }
 
     }

@@ -110,6 +110,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 }
 interface RenderSystem: Updatable {
     @JvmDefault fun render(result: DrawResult, renderState: RenderState) { }
+    @JvmDefault fun renderEditor(result: DrawResult, renderState: RenderState) { }
     @JvmDefault fun afterFrameFinished() { }
     @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
 }

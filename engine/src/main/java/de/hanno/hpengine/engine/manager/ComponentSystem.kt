@@ -37,7 +37,11 @@ interface ComponentSystem<T : Component> {
         val correspondingComponents = components.filter { componentClass.isAssignableFrom(it.javaClass) }
 
         logger.debug("${correspondingComponents.size} components corresponding")
-        correspondingComponents.forEach { component -> addComponent(componentClass.cast(component)) }
+        correspondingComponents.forEach { component ->
+            if(!this.components.contains(component)) {
+                addComponent(componentClass.cast(component))
+            }
+        }
         return correspondingComponents
     }
 

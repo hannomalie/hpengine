@@ -2,12 +2,9 @@ import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.instancing.ClustersComponent
 import de.hanno.hpengine.engine.materialManager
 import de.hanno.hpengine.engine.model.Cluster
-import de.hanno.hpengine.engine.model.animation.Animation
-import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.transform.AnimatedTransformSpatial
 import de.hanno.hpengine.engine.transform.Transform
@@ -23,7 +20,13 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
 
     internal var maxDistance = 475
     internal var clusterDistance = 3 * maxDistance
-    internal var clusterLocations = arrayOf(Vector3f(clusterDistance.toFloat(), 0f, clusterDistance.toFloat()), Vector3f(clusterDistance.toFloat(), 0f, (-clusterDistance).toFloat()), Vector3f((-clusterDistance).toFloat(), 0f, (-clusterDistance).toFloat()), Vector3f(0f, 0f, 0f), Vector3f((-clusterDistance).toFloat(), 0f, clusterDistance.toFloat()))
+    internal var clusterLocations = arrayOf(
+        Vector3f(clusterDistance.toFloat(), 0f, clusterDistance.toFloat()),
+        Vector3f(clusterDistance.toFloat(), 0f, (-clusterDistance).toFloat()),
+        Vector3f((-clusterDistance).toFloat(), 0f, (-clusterDistance).toFloat()),
+        Vector3f(0f, 0f, 0f),
+        Vector3f((-clusterDistance).toFloat(), 0f, clusterDistance.toFloat())
+    )
 
     init {
         try {
@@ -37,7 +40,7 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
     protected fun loadLotsOfInstances(engine: Engine, assetPath: String, scale: Int, name: String) {
         val entity = Entity(name).apply {
             modelComponent(
-                    StaticModelLoader().load(assetPath, engine.materialManager, engine.directories.gameDir)
+                StaticModelLoader().load(assetPath, engine.materialManager, engine.directories.gameDir)
             )
         }
         //                File componentScriptFile = new File(engine.getDirectories().getGameDir() + "/scripts/SimpleMoveComponent.java");
@@ -56,11 +59,27 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
                         val randomFloat = random.nextFloat() - 0.5f
                         trafo.rotate(Vector3f(1f, 0f, 0f), -90)
                         trafo.rotate(Vector3f(0f, 0f, 1f), (random.nextFloat() * 360f).toInt())
-                        trafo.setTranslation(Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(Vector3f(randomFloat * maxDistance.toFloat() * x.toFloat(), 0.001f * randomFloat, randomFloat * maxDistance.toFloat() * z.toFloat())))
+                        trafo.setTranslation(
+                            Vector3f().add(Vector3f(clusterLocations[clusterIndex % clusterLocations.size])).add(
+                                Vector3f(
+                                    randomFloat * maxDistance.toFloat() * x.toFloat(),
+                                    0.001f * randomFloat,
+                                    randomFloat * maxDistance.toFloat() * z.toFloat()
+                                )
+                            )
+                        )
 
                         val modelComponent = entity.getComponent(ModelComponent::class.java)
                         val materials = modelComponent!!.materials
-                        ClustersComponent.addInstance(entity, cluster, trafo, modelComponent, materials, null, AnimatedTransformSpatial(trafo, modelComponent))
+                        ClustersComponent.addInstance(
+                            entity,
+                            cluster,
+                            trafo,
+                            modelComponent,
+                            materials,
+                            null,
+                            AnimatedTransformSpatial(trafo, modelComponent)
+                        )
                     }
                 }
             }
@@ -73,6 +92,6 @@ class InitInstancedAnimatedKotlin @Inject constructor(val engine: Engine) {
 //        Entity debugCam = new Entity("DebugCam");
 //        loaded.entities.add(debugCam.addComponent(new Camera(debugCam)));
 
-        engine.sceneManager.add(entity)
+        engine.sceneManager.scene.addAll(listOf(entity))
     }
 }

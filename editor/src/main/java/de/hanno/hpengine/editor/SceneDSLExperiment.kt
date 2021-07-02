@@ -15,7 +15,7 @@ fun main() {
         }
     }
 
-    val (engine, editor) = EngineWithEditor()
+    val (engine, editor) = EngineWithEditorXXX()
 
     engine.scene = scene.convert(engine.engineContext)
     editor.frame.onSceneReload = {

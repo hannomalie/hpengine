@@ -7,12 +7,11 @@ import de.hanno.hpengine.editor.doWithRefresh
 import de.hanno.hpengine.editor.grids.TextureGrid
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.addUnselectButton
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.textureManager
+import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.model.texture.FileBasedCubeMap
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
-import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.pushingpixels.flamingo.api.common.RichTooltip
@@ -32,9 +31,9 @@ import javax.swing.JFileChooser
 
 object TextureTask {
 
-    operator fun invoke(engine: EngineContext, sceneManager: SceneManager, editor: RibbonEditor, selectionSystem: SelectionSystem): RibbonTask {
+    operator fun invoke(gpuContext: GpuContext<OpenGl>, textureManager: TextureManager, editor: RibbonEditor, selectionSystem: SelectionSystem): RibbonTask {
         fun retrieveTextureCommands(): List<Command> {
-            return engine.textureManager.textures.values.mapNotNull {
+            return textureManager.textures.values.mapNotNull {
                 if (it is FileBasedTexture2D) {
                     val image = ImageIO.read(File(it.file.absolutePath))
                     Command.builder()
@@ -44,7 +43,7 @@ object TextureTask {
                             if (event.command.isToggleSelected) {
                                 editor.sidePanel.doWithRefresh {
                                     addUnselectButton()
-                                    add(TextureGrid(engine.gpuContext, it))
+                                    add(TextureGrid(gpuContext, it))
                                 }
                             } else {
                                 selectionSystem.unselect()
@@ -60,7 +59,7 @@ object TextureTask {
                                 if (event.command.isToggleSelected) {
                                     editor.sidePanel.doWithRefresh {
                                         addUnselectButton()
-                                        add(TextureGrid(engine.gpuContext, it))
+                                        add(TextureGrid(gpuContext, it))
                                     }
                                 } else {
                                     selectionSystem.unselect()
@@ -82,7 +81,7 @@ object TextureTask {
                         if (returnVal == JFileChooser.APPROVE_OPTION) {
                             val file = fc.selectedFile
                             GlobalScope.launch {
-                                engine.textureManager.getTexture(file.name, file = file)
+                                textureManager.getTexture(file.name, file = file)
                             }
                         }
                     }
@@ -106,10 +105,10 @@ object TextureTask {
                             val files = fc.selectedFiles.toList()
                             GlobalScope.launch {
                                 if(files.size > 1) {
-                                    engine.textureManager.getCubeMap(files.map { it.name }.minOrNull()!!, files)
+                                    textureManager.getCubeMap(files.map { it.name }.minOrNull()!!, files)
                                 } else {
                                     val file = files.first()
-                                    engine.textureManager.getCubeMap(file.name, file)
+                                    textureManager.getCubeMap(file.name, file)
                                 }
                             }
                         }

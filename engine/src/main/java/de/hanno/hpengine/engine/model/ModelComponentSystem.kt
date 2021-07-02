@@ -58,7 +58,7 @@ class ModelComponentSystem(val engineContext: EngineContext,
         for (component in components) {
             component.update(scene, deltaSeconds)
         }
-        cacheEntityIndices(scene)
+        cacheEntityIndices()
         updateGpuEntitiesArray(scene)
         updateGpuJointsArray()
 
@@ -215,6 +215,7 @@ class ModelComponentSystem(val engineContext: EngineContext,
     }
 
     override fun extract(renderState: RenderState) {
+        cacheEntityIndices() // TODO: Move this to update step
         renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
@@ -227,7 +228,7 @@ class ModelComponentSystem(val engineContext: EngineContext,
             allocations, entityIndices)
     }
 
-    fun cacheEntityIndices(scene: Scene) {
+    fun cacheEntityIndices() {
         entityIndices.clear()
         var index = 0
         for (current in components) {

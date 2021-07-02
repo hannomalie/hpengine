@@ -6,8 +6,10 @@ import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
@@ -30,11 +32,11 @@ import javax.swing.event.ListDataListener
 import kotlin.reflect.KMutableProperty0
 
 object ViewTask {
-    operator fun invoke(engine: EngineContext,
-                        sceneManager: SceneManager,
-                        config: ConfigImpl,
-                        inputConfig: EditorInputConfig,
-                        outputConfig: KMutableProperty0<OutputConfig>): RibbonTask {
+    operator fun invoke(
+        gpuContext: GpuContext<OpenGl>,
+        inputConfig: EditorInputConfig,
+        outputConfig: KMutableProperty0<OutputConfig>
+    ): RibbonTask {
 
         val directTextureOutputArrayIndexComboBoxModel = RibbonDefaultComboBoxContentModel.builder<Int>()
             .setItems((0 until 100).toList().toTypedArray())
@@ -56,7 +58,7 @@ object ViewTask {
                 }
 
         val outputFlowBandModel = RibbonDefaultComboBoxContentModel.builder<OutputConfig>()
-                .setItems(engine.retrieveRenderTargetTextures().toTypedArray())
+                .setItems(gpuContext.retrieveRenderTargetTextures().toTypedArray())
                 .build().apply {
                     addListDataListener(object : ListDataListener {
                         override fun intervalRemoved(e: ListDataEvent?) {}
@@ -111,7 +113,7 @@ object ViewTask {
                     .setAction {
                         SwingUtils.invokeLater {
                             outputFlowBandModel.removeAllElements()
-                            outputFlowBandModel.addAll(engine.retrieveRenderTargetTextures())
+                            outputFlowBandModel.addAll(gpuContext.retrieveRenderTargetTextures())
                         }
                     }
                     .setActionRichTooltip(RichTooltip.builder()
@@ -131,9 +133,9 @@ object ViewTask {
          return RibbonTask("Viewport", outputFlowBand, outputArrayIndexBand, selectionModeBand)
     }
 
-    private fun EngineContext.retrieveRenderTargetTextures(): MutableList<OutputConfig> {
+    private fun GpuContext<OpenGl>.retrieveRenderTargetTextures(): MutableList<OutputConfig> {
         val renderTargetTextures = mutableListOf<OutputConfig>(OutputConfig.Default)
-        for (target in gpuContext.registeredRenderTargets) {
+        for (target in registeredRenderTargets) {
             for (i in target.textures.indices) {
                 val name = target.name + " - " + i // TODO: Revive names here
                 if (target is CubeMapArrayRenderTarget) {

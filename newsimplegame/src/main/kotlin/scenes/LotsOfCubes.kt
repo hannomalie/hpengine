@@ -33,7 +33,6 @@ val Engine.lotsOfCubesScene
                     name = "Plane",
                     file = "assets/models/cube.obj",
                     materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     material.materialInfo.put(SimpleMaterial.MAP.DIFFUSE, engineContext.textureManager.getTexture("assets/textures/grass.png", true))

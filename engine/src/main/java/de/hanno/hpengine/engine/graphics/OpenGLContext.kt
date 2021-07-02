@@ -136,8 +136,6 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         (0 until GL11.glGetInteger(GL30.GL_NUM_EXTENSIONS)).mapNotNull { GL30.glGetStringi(GL11.GL_EXTENSIONS, it) }
     }
 
-    override fun update(seconds: Float) { }
-
     override fun checkCommandSyncs() {
         val signaledJustNow = commandSyncs.check()
 

@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -41,7 +42,7 @@ val defaultFlagsAnimated = Assimp.aiProcess_Triangulate + Assimp.aiProcess_JoinI
         Assimp.aiProcess_GenNormals
 
 class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
-    fun load(file: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): AnimatedModel {
+    fun load(file: String, textureManager: TextureManager, resourcesDir: AbstractDirectory): AnimatedModel {
         val path = resourcesDir.resolve(file).path.apply {
             require(File(this).exists()) { "File doesn't exist: $this" }
         }
@@ -51,7 +52,11 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val materials = (0 until numMaterials).map { i ->
             val aiMaterial = AIMaterial.create(aiMaterials!![i])
-            aiMaterial.processMaterial(Path.of(file).parent.toString(), materialManager, resourcesDir)
+            aiMaterial.processMaterial(
+                Path.of(file).parent.toString(),
+                resourcesDir,
+                textureManager
+            )
         }
 
         val boneList: MutableList<Bone> = ArrayList()
@@ -156,8 +161,11 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         }
         return node
     }
-    private fun AIMaterial.processMaterial(texturesDir: String, materialManager: MaterialManager, resourcesDir: AbstractDirectory): Material {
-        val textureManager = materialManager.textureManager
+    private fun AIMaterial.processMaterial(
+        texturesDir: String,
+        resourcesDir: AbstractDirectory,
+        textureManager: TextureManager
+    ): Material {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
@@ -191,7 +199,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
         materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
 
-        return materialManager.registerMaterial(name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) }, materialInfo)
+        return SimpleMaterial(name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) }, materialInfo)
     }
     private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)

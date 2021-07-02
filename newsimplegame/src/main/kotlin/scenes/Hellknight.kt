@@ -1,7 +1,9 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.transform.AABBData
 import org.joml.Vector3f
@@ -13,9 +15,8 @@ val Engine.hellknightScene
                 modelComponent(
                     name = "Hellknight",
                     file = "doom3monster/monster.md5mesh",
-                    materialManager = engineContext.extensions.materialExtension.manager,
-                    modelComponentManager = engineContext.extensions.modelComponentExtension.manager,
-                    gameDirectory = engineContext.config.directories.gameDir,
+                    textureManager = engineContext.textureManager,
+                    directory = engineContext.config.directories.gameDir,
                     aabb = AABBData(
                         Vector3f(-60f, -10f, -35f),
                         Vector3f(60f, 130f, 50f)

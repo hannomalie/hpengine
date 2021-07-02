@@ -18,7 +18,7 @@ interface RenderExtension<TYPE : BackendType>: Updatable {
     @JvmDefault fun extract(scene: Scene, renderState: RenderState) {}
 }
 
-class CompoundExtension<TYPE : BackendType>(val extensions: List<RenderExtension<TYPE>>): RenderExtension<TYPE> {
+open class CompoundExtension<TYPE : BackendType>(val extensions: List<RenderExtension<TYPE>>): RenderExtension<TYPE> {
     override fun renderFirstPass(backend: Backend<TYPE>, gpuContext: GpuContext<TYPE>, firstPassResult: FirstPassResult, renderState: RenderState) {
         extensions.forEach { it.renderFirstPass(backend, gpuContext, firstPassResult, renderState) }
     }

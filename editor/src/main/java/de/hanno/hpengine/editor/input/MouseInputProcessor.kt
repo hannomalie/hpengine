@@ -4,7 +4,11 @@ import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.CameraExtension
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
@@ -12,12 +16,14 @@ import org.joml.Quaternionf
 import org.joml.Quaternionfc
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.koin.core.component.get
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.lang.Math
 import kotlin.reflect.KProperty0
 
-class MouseInputProcessor(val engineContext: EngineContext,
+class MouseInputProcessor(val window: Window<OpenGl>,
+                          val addResourceContext: AddResourceContext,
                           val selection: KProperty0<Selection>,
                           val editorComponents: EditorComponents) : MouseAdapter() {
     private var lastX: Float? = null
@@ -42,7 +48,7 @@ class MouseInputProcessor(val engineContext: EngineContext,
         entityOrNull?.transform?.transformation?.get(oldTransform)
     }
 
-    override fun mouseDragged(e: MouseEvent) = engineContext.addResourceContext.launch { // TODO: This is not too nice but I don't know how else it could be done
+    override fun mouseDragged(e: MouseEvent) = addResourceContext.launch { // TODO: This is not too nice but I don't know how else it could be done
         val rotationDelta = 10f
         val rotationAmount = 2.0f * 0.05 * rotationDelta
 
@@ -57,15 +63,15 @@ class MouseInputProcessor(val engineContext: EngineContext,
 
         val entityOrNull = getEntityOrNull()
         if(entityOrNull == null) {
-            val entity = editorComponents.sceneManager.scene.cameraEntity
+            val entity = editorComponents.sceneManager.scene.get<CameraExtension>().activeCamera.entity
             val oldTranslation = entity.transform.getTranslation(Vector3f())
             entity.transform.rotationX(pitchAmount.toFloat())
             entity.transform.rotateLocalY((-yawAmount).toFloat())
             entity.transform.translateLocal(oldTranslation)
         } else {
-            val activeCamera = editorComponents.sceneManager.scene.extensions.cameraExtension.activeCamera
 
-            val viewPort = intArrayOf(0, 0, engineContext.window.width, engineContext.window.height)
+            val activeCamera = editorComponents.sceneManager.scene.get<CameraExtension>().activeCamera
+            val viewPort = intArrayOf(0, 0, window.width, window.height)
             val entityPositionDevice = Vector4f()
             activeCamera.viewProjectionMatrix.project(entityOrNull.transform.position, viewPort, entityPositionDevice)
             val positionDeviceNew = entityPositionDevice.xyz.add(Vector3f(deltaX, deltaY, 0f))

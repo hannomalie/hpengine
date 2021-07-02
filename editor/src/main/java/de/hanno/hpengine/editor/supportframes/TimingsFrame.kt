@@ -1,18 +1,12 @@
 package de.hanno.hpengine.editor.supportframes
 
-import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.addResourceContext
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.renderSystems
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.TextArea
 import javax.swing.JFrame
 import javax.swing.JPanel
 
-class TimingsFrame(engine: Engine): JFrame("Timings") {
+class TimingsFrame : JFrame("Timings") {
     init {
         size = Dimension(500, 500)
         val frame = this
@@ -26,33 +20,33 @@ class TimingsFrame(engine: Engine): JFrame("Timings") {
             }
 
 //            TODO: Reimplement properly
-            engine.renderSystems.add(object : RenderSystem {
-                override fun afterFrameFinished() {
-                    engine.addResourceContext.launch {
-                        SwingUtils.invokeLater {
-                            if(engine.engineContext.config.profiling.showFps) {
-                                val fpsCounter = engine.renderManager.fpsCounter
-                                val fpsInfo = "${fpsCounter.fps.toInt()} fps @ ${fpsCounter.msPerFrame} ms"
-                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps @ ${engine.cpsCounter.msPerFrame} ms"
-                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n"
-                            } else {
-                                textArea.text = ""
-                            }
-
-                            if(GPUProfiler.dumpAveragesRequested) {
-                                var drawResult = engine.engineContext.renderStateManager.renderState.currentReadState.latestDrawResult.toString()
-                                if (GPUProfiler.dumpAveragesRequested) {
-                                    drawResult += GPUProfiler.currentAverages
-                                }
-                                textArea.text += GPUProfiler.currentAverages + "\n\n"
-                            }
-                            if (GPUProfiler.porfiling) {
-                                textArea.text += GPUProfiler.currentTimings
-                            }
-                        }
-                    }
-                }
-            })
+//            engine.renderSystems.add(object : RenderSystem {
+//                override fun afterFrameFinished() {
+//                    engine.addResourceContext.launch {
+//                        SwingUtils.invokeLater {
+//                            if(engine.engineContext.config.profiling.showFps) {
+//                                val fpsCounter = engine.renderManager.fpsCounter
+//                                val fpsInfo = "${fpsCounter.fps.toInt()} fps @ ${fpsCounter.msPerFrame} ms"
+//                                val cpsInfo = "${engine.cpsCounter.fps.toInt()} cps @ ${engine.cpsCounter.msPerFrame} ms"
+//                                textArea.text = "HPEngine | $fpsInfo | $cpsInfo\n\n"
+//                            } else {
+//                                textArea.text = ""
+//                            }
+//
+//                            if(GPUProfiler.dumpAveragesRequested) {
+//                                var drawResult = engine.engineContext.renderStateManager.renderState.currentReadState.latestDrawResult.toString()
+//                                if (GPUProfiler.dumpAveragesRequested) {
+//                                    drawResult += GPUProfiler.currentAverages
+//                                }
+//                                textArea.text += GPUProfiler.currentAverages + "\n\n"
+//                            }
+//                            if (GPUProfiler.porfiling) {
+//                                textArea.text += GPUProfiler.currentTimings
+//                            }
+//                        }
+//                    }
+//                }
+//            })
         })
 
         frame.isVisible = true

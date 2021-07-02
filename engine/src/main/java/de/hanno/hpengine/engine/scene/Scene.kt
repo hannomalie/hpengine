@@ -1,34 +1,21 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
-import de.hanno.hpengine.engine.entity.SimpleEntitySystemRegistry
-import de.hanno.hpengine.engine.graphics.light.area.AreaLight
-import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.manager.ComponentSystemRegistry
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.manager.ManagerRegistry
-import de.hanno.hpengine.engine.manager.SimpleManagerRegistry
-import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.scene.CameraExtension.Companion.cameraEntity
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
 import org.joml.Vector3f
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.KoinScopeComponent
 import org.koin.core.component.createScope
-import org.koin.core.component.getScopeId
-import org.koin.core.component.inject
-import org.koin.core.component.newScope
+import org.koin.core.component.get
 import org.koin.core.scope.Scope
 
 class SceneSyntax(val scene: Scene) {
@@ -47,22 +34,13 @@ class EntitiesSyntax {
     fun entity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply(block).apply { entities.add(this) }
 }
 
-fun scene(name: String, engineContext: EngineContext, block: SceneSyntax.() -> Unit): Scene = SceneSyntax(Scene(name, engineContext)).run {
+fun scene(name: String, block: SceneSyntax.() -> Unit): Scene = SceneSyntax(Scene(name)).run {
     block()
     return scene
 }
 
-fun Engine.scene(name: String, block: SceneSyntax.() -> Unit): Scene = scene(name, engineContext) {
-//    baseExtensions.materialExtension.manager.registerMaterials(sceneManager.scene.baseExtensions.materialExtension.manager.materials)
-    engineContext.extensions.modelComponentExtension.manager.modelCache.putAll(engineContext.extensions.modelComponentExtension.manager.modelCache)
-    block()
-}
-
-class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis(),
-                                      val engineContext: EngineContext) : Updatable, KoinScopeComponent {
-    override val scope: Scope = createScope()
-
-    private val baseExtensions: BaseExtensions = engineContext.extensions
+class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.currentTimeMillis()) : Updatable, KoinScopeComponent {
+    override val scope: Scope by lazy { createScope() }
 
     var currentCycle: Long = 0
     val aabb = AABB(Vector3f(), 50f)
@@ -79,16 +57,29 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val entityManager: EntityManager
         get() = scope.get()
 
-    val extensions = baseExtensions
+    val extensions: List<Extension>
+        get() = scope.getAll()
 
     fun restoreWorldCamera() {
-        baseExtensions.cameraExtension.activeCamera = cameraEntity.getComponent(Camera::class.java)!!
+        get<CameraExtension>().activeCameraEntity = cameraEntity
     }
 
+    init {
+        entitySystems.forEach { it.gatherEntities(this) }
+        extensions.forEach { it.run { decorate() } }
+
+        componentSystems.forEach {
+            it.onEntityAdded(this.getEntities())
+        }
+        managers.forEach { it.beforeSetScene(this) }
+    }
     fun extract(currentWriteState: RenderState) {
         currentWriteState.sceneMin.set(aabb.min)
         currentWriteState.sceneMax.set(aabb.max)
 
+        for (extension in extensions) {
+            extension.extract(this, currentWriteState)
+        }
         for (system in componentSystems) {
             system.extract(currentWriteState)
         }
@@ -106,7 +97,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     fun getEntities() = entityManager.getEntities()
-    fun addAll(entities: List<Entity>) {
+    fun addAll(entities: List<Entity>) = get<AddResourceContext>().launch {
         entityManager.add(entities)
 
         entitySystems.forEach { it.onEntityAdded(this@Scene, entities) }
@@ -118,7 +109,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         entityManager.entityAddedInCycle = currentCycle
     }
 
-    fun onComponentAdded(component: Component) {
+    fun onComponentAdded(component: Component) = get<AddResourceContext>().launch {
 
         componentSystems.forEach { it.onComponentAdded(component) }
         managers.forEach { it.onComponentAdded(component) }
@@ -127,14 +118,11 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         entityManager.componentAddedInCycle = currentCycle
     }
 
-    val pointLights
-        get() = baseExtensions.pointLightExtension.componentSystem.components
-
     fun add(entity: Entity) = addAll(listOf(entity))
     fun getEntity(name: String): Entity? = entityManager.getEntities().find { e -> e.name == name }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        managers.forEach { it.update(scene, deltaSeconds) }
+        managers.filterNot { it is SceneManager }.forEach { it.update(scene, deltaSeconds) }
         componentSystems.forEach { it.update(scene, deltaSeconds) }
         entitySystems.forEach { it.update(scene, deltaSeconds) }
     }
@@ -148,9 +136,12 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         aabb.localAABB = entityManager.getEntities().calculateAABB()
     }
 
-    fun entity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply {
-        block()
+    fun entity(name: String, block: Entity.() -> Unit): Entity = newEntity(name, block).apply {
         add(this)
     }
 
+}
+
+fun newEntity(name: String, block: Entity.() -> Unit): Entity = Entity(name).apply {
+    block()
 }

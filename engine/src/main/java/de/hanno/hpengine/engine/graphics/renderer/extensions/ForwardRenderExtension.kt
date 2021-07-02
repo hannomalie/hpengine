@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -15,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.safePut
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -29,13 +31,17 @@ import org.lwjgl.opengl.GL40.GL_ZERO
 import org.lwjgl.opengl.GL40.glBlendFuncSeparatei
 import org.lwjgl.opengl.GL40.glBlendFunci
 
-class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
-    val deferredRenderingBuffer: DeferredRenderingBuffer = engineContext.deferredRenderingBuffer
+class ForwardRenderExtension(
+    val config: Config,
+    val gpuContext: GpuContext<OpenGl>,
+    val programManager: ProgramManager<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer
+): RenderExtension<OpenGl> {
 
-    val firstpassDefaultVertexshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
-    val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))
+    val firstpassDefaultVertexshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "first_pass_vertex.glsl"))
+    val firstpassDefaultFragmentshaderSource = FileBasedCodeSource(config.engineDir.resolve("shaders/" + "forward_fragment.glsl"))
 
-    val programStatic = engineContext.programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, StaticFirstPassUniforms(engineContext.gpuContext))
+    val programStatic = programManager.getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, StaticFirstPassUniforms(gpuContext))
 
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         deferredRenderingBuffer.forwardBuffer.use(gpuContext, false)
@@ -44,10 +50,10 @@ class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<
         GL30.glClearBufferfv(GL11.GL_COLOR, 1, floatArrayOf(1f, 1f, 1f, 1f))
 //        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, deferredRenderingBuffer.depthBufferTexture)
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, deferredRenderingBuffer.depthBufferTexture, 0)
-        engineContext.gpuContext.depthMask = false
-        engineContext.gpuContext.depthFunc = GlDepthFunc.LEQUAL
-        engineContext.gpuContext.blend = true
-        engineContext.gpuContext.blendEquation = BlendMode.FUNC_ADD
+        gpuContext.depthMask = false
+        gpuContext.depthFunc = GlDepthFunc.LEQUAL
+        gpuContext.blend = true
+        gpuContext.blendEquation = BlendMode.FUNC_ADD
         glBlendFunci(0, GL_ONE, GL_ONE)
         glBlendFuncSeparatei(1, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
 
@@ -66,7 +72,7 @@ class ForwardRenderExtension(val engineContext: EngineContext): RenderExtension<
             programStatic.setTextureUniforms(batch.materialInfo.maps)
             val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic, bindIndexBuffer = false)
         }
-        engineContext.gpuContext.disable(GlCap.BLEND)
+        gpuContext.disable(GlCap.BLEND)
         deferredRenderingBuffer.forwardBuffer.unUse()
     }
 

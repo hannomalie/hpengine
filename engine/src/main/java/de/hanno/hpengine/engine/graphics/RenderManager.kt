@@ -1,13 +1,16 @@
 package de.hanno.hpengine.engine.graphics
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.input
+import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
+import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.launchEndlessRenderLoop
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -17,30 +20,40 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.delay
 
 class RenderManager(
-    val engineContext: EngineContext, // TODO: Make generic
-    val renderStateManager: RenderStateManager = engineContext.renderStateManager,
-    val materialManager: MaterialManager = engineContext.extensions.materialExtension.manager
+    val config: Config,
+    val input: Input,
+    val gpuContext: GpuContext<OpenGl>,
+    val window: Window<OpenGl>,
+    val programManager: ProgramManager<OpenGl>,
+    val renderStateManager: RenderStateManager,
+    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val renderSystems: List<RenderSystem>
 ) : Manager {
 
-    val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
-    private val textureRenderer = SimpleTextureRenderer(engineContext, deferredRenderingBuffer.colorReflectivenessTexture)
+    private val textureRenderer = SimpleTextureRenderer(
+        config,
+        gpuContext,
+        deferredRenderingBuffer.colorReflectivenessTexture,
+        programManager,
+        window.frontBuffer
+    )
 
     inline val renderState: TripleBuffer<RenderState>
         get() = renderStateManager.renderState
     val fpsCounter = FPSCounter()
 
-    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engineContext.input)
+    var recorder: RenderStateRecorder = SimpleRenderStateRecorder(input)
 
     fun finishCycle(scene: Scene, deltaSeconds: Float) {
         renderState.currentWriteState.deltaSeconds = deltaSeconds
         scene.extract(renderState.currentWriteState)
-        engineContext.extract(scene, renderState.currentWriteState)
+        extract(scene, renderState.currentWriteState)
         renderState.swapStaging()
     }
     init {
         var lastTimeSwapped = true
         launchEndlessRenderLoop { deltaSeconds ->
-            engineContext.gpuContext.invoke(block = {
+            gpuContext.invoke(block = {
                 try {
                     renderState.startRead()
 
@@ -50,25 +63,28 @@ class RenderManager(
                             val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
                             profiled("renderSystems") {
-                                engineContext.renderSystems.forEach {
+                                renderSystems.forEach {
                                     it.render(drawResult, renderState.currentReadState)
+                                }
+                                renderSystems.forEach {
+                                    it.renderEditor(drawResult, renderState.currentReadState)
                                 }
                             }
 
-                            textureRenderer.drawToQuad(engineContext.window.frontBuffer, deferredRenderingBuffer.finalMap)
+                            textureRenderer.drawToQuad(window.frontBuffer, deferredRenderingBuffer.finalMap)
 
                             profiled("finishFrame") {
-                                engineContext.gpuContext.finishFrame(renderState.currentReadState)
-                                engineContext.renderSystems.forEach {
+                                gpuContext.finishFrame(renderState.currentReadState)
+                                renderSystems.forEach {
                                     it.afterFrameFinished()
                                 }
                             }
 
                             profiled("checkCommandSyncs") {
-                                engineContext.gpuContext.checkCommandSyncs()
+                                gpuContext.checkCommandSyncs()
                             }
 
-                            engineContext.window.swapBuffers()
+                            window.swapBuffers()
                             fpsCounter.update()
 
                         }
@@ -89,7 +105,7 @@ class RenderManager(
         }
 //        GlobalScope.launch {
 //            while(true) {
-//                engineContext.gpuContext.invoke(block = {
+//                gpuContext.invoke(block = {
 //                    runnable()
 //                })
 //                // https://bugs.openjdk.java.net/browse/JDK-4852178
@@ -103,7 +119,7 @@ class RenderManager(
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
 
-        this@RenderManager.engineContext.renderSystems.forEach {
+        this@RenderManager.renderSystems.forEach {
             it.run { update(scene, deltaSeconds) }
         }
     }

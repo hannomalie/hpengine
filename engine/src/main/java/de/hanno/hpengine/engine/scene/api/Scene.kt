@@ -1,8 +1,10 @@
 package de.hanno.hpengine.engine.scene.api
 
 import de.hanno.hpengine.engine.backend.EngineContext
+import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
+import de.hanno.hpengine.engine.model.material.MaterialManager
 
 data class Scene(val name: String, val entities: MutableList<Entity> = mutableListOf())
 fun scene(name: String, block: Scene.() -> Unit): Scene = Scene(name).apply(block)
@@ -26,7 +28,7 @@ enum class Directory { Game, Engine }
 
 data class CustomComponent(val update: suspend (de.hanno.hpengine.engine.scene.Scene, Float) -> Unit): Component
 
-fun Scene.convert(engineContext: EngineContext) = de.hanno.hpengine.engine.scene.Scene(name, engineContext).apply {
+fun Scene.convert(engineContext: EngineContext) = de.hanno.hpengine.engine.scene.Scene(name).apply {
     addAll(entities.map {
         de.hanno.hpengine.engine.entity.Entity(it.name).apply {
             it.components.forEach {
@@ -37,8 +39,8 @@ fun Scene.convert(engineContext: EngineContext) = de.hanno.hpengine.engine.scene
                             Directory.Engine -> engineContext.config.engineDir
                         }
                         val model = when(it) {
-                            is AnimatedModelComponent -> AnimatedModelLoader().load(it.file, engineContext.extensions.materialExtension.manager, dir)
-                            is StaticModelComponent -> StaticModelLoader().load(it.file, engineContext.extensions.materialExtension.manager, dir)
+                            is AnimatedModelComponent -> AnimatedModelLoader().load(it.file, engineContext.textureManager, dir)
+                            is StaticModelComponent -> StaticModelLoader().load(it.file, engineContext.textureManager, dir)
                         }
                         de.hanno.hpengine.engine.component.ModelComponent(this, model)
                     }

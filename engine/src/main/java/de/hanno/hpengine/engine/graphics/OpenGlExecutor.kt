@@ -51,7 +51,7 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun createNewGPUFenceForReadState(currentReadState: RenderState)
 
-    fun update(seconds: Float)
+    fun update(seconds: Float) { }
 
     var cullFace: Boolean
     var cullMode: CullMode

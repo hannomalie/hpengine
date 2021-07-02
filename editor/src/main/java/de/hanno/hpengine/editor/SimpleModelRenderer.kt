@@ -1,26 +1,29 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.index
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.MaterialManager.Companion.createDefaultMaterial
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -28,13 +31,17 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 
 class SimpleModelRenderer(
-    val engine: EngineContext,
+    val config: Config,
+    val textureManager: TextureManager,
+    val gpuContext: GpuContext<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val programManager: ProgramManager<OpenGl>,
     val model: StaticModel = StaticModelLoader().load(
         "assets/models/cube.obj",
-        engine.extensions.materialExtension.manager,
-        engine.config.directories.engineDir
+        textureManager,
+        config.directories.engineDir
     ),
-    val program: Program<Uniforms> = engine.run {
+    val program: Program<Uniforms> = config.run {
         programManager.getProgram(
             EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
             EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource()
@@ -42,17 +49,15 @@ class SimpleModelRenderer(
     }
 ) : RenderSystem {
 
-    val materialManager: MaterialManager = engine.extensions.materialExtension.manager
-    val gpuContext = engine.gpuContext
     val modelEntity = Entity("Box")
 
-    val modelComponent = ModelComponent(modelEntity, model, materialManager.defaultMaterial).apply {
+    val modelComponent = ModelComponent(modelEntity, model, createDefaultMaterial(config, textureManager)).apply {
         modelEntity.addComponent(this)
     }
     val modelVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     val vertexIndexOffsets = modelVertexIndexBuffer.allocateForComponent(modelComponent).apply {
-        modelComponent.putToBuffer(engine.gpuContext, modelVertexIndexBuffer, this)
+        modelComponent.putToBuffer(gpuContext, modelVertexIndexBuffer, this)
     }
     val modelCommand = DrawElementsIndirectCommand().apply {
         count = model.indices.size
@@ -94,8 +99,8 @@ class SimpleModelRenderer(
 
         val scaling = (0.1f * modelEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = Transform().scale(scaling).translate(boxPosition)
-        if (useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
-        engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+        if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
+        deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
         program.use()
         program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -116,8 +121,8 @@ class SimpleModelRenderer(
     ) {
 
         val transformation = Transform()
-        if (useDepthTest) engine.gpuContext.enable(GlCap.DEPTH_TEST) else engine.gpuContext.disable(GlCap.DEPTH_TEST)
-        engine.deferredRenderingBuffer.finalBuffer.use(engine.gpuContext, false)
+        if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
+        deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
         program.use()
         program.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         program.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)

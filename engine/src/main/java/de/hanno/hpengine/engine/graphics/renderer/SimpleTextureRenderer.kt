@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -24,18 +25,21 @@ import de.hanno.hpengine.engine.model.texture.createView
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
 
-open class SimpleTextureRenderer(val engineContext: EngineContext,
-                                 var texture: Texture,
-                                 programManager: ProgramManager<OpenGl> = engineContext.programManager) : RenderSystem {
-    private val gpuContext: GpuContext<OpenGl> = engineContext.gpuContext
+open class SimpleTextureRenderer(
+    config: Config,
+    private val gpuContext: GpuContext<OpenGl>,
+    var texture: Texture,
+    private val programManager: ProgramManager<OpenGl>,
+    private val frontBuffer: FrontBufferTarget) : RenderSystem {
+
 
     private val renderToQuadProgram: Program<Uniforms> = programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/simpletexture_fragment.glsl")))
+            FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+            FileBasedCodeSource(config.engineDir.resolve("shaders/simpletexture_fragment.glsl")))
 
     val debugFrameProgram = programManager.getProgram(
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
-            FileBasedCodeSource(engineContext.config.engineDir.resolve("shaders/debugframe_fragment.glsl")))
+            FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),
+            FileBasedCodeSource(config.engineDir.resolve("shaders/debugframe_fragment.glsl")))
 
     open var finalImage = texture.id
 
@@ -43,7 +47,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
         drawToQuad(texture = finalImage)
     }
 
-    fun drawToQuad(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
+    fun drawToQuad(renderTarget: FrontBufferTarget = frontBuffer,
                    texture: Int = finalImage,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
                    program: Program<Uniforms> = renderToQuadProgram,
@@ -51,7 +55,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
         draw(renderTarget, texture, buffer, program, false, factorForDebugRendering)
     }
 
-    fun drawToQuad(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
+    fun drawToQuad(renderTarget: FrontBufferTarget = frontBuffer,
                    texture: Texture2D,
                    buffer: VertexBuffer = gpuContext.fullscreenBuffer,
                    program: Program<Uniforms> = renderToQuadProgram,
@@ -59,7 +63,7 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
         drawToQuad(renderTarget, texture.id, buffer, program, factorForDebugRendering)
     }
 
-    fun renderCubeMapDebug(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
+    fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
                            cubeMapArrayRenderTarget: CubeMapArrayRenderTarget?, cubeMapIndex: Int) {
         if(cubeMapArrayRenderTarget == null) return
 
@@ -72,11 +76,11 @@ open class SimpleTextureRenderer(val engineContext: EngineContext,
                     clear = false)
         }
     }
-    fun renderCubeMapDebug(renderTarget: FrontBufferTarget = engineContext.window.frontBuffer,
+    fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
                            cubeMap: CubeMap) {
 
         (0..5).map { faceIndex ->
-            val textureView = cubeMap.createView(engineContext.gpuContext, faceIndex)
+            val textureView = cubeMap.createView(gpuContext, faceIndex)
             draw(renderTarget = renderTarget,
                     texture = textureView.id,
                     program = debugFrameProgram,
