@@ -1,12 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.engine.backend.Backend
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.eventBus
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
@@ -41,6 +36,8 @@ class DirectionalLightShadowMapExtension(
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ) : RenderExtension<OpenGl> {
 
+    private var forceRerender = true
+
     val renderTarget = RenderTarget(
         gpuContext = gpuContext,
         frameBuffer = FrameBuffer(gpuContext, DepthBuffer(gpuContext, SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION)),
@@ -63,8 +60,6 @@ class DirectionalLightShadowMapExtension(
     private var renderedInCycle: Long = 0
 
     val shadowMapId = renderTarget.renderedTexture
-//    val shadowMapWorldPositionId = renderTarget.getRenderedTexture(2)
-//    val shadowMapColorMapId = renderTarget.getRenderedTexture(1)
 
     override fun extract(scene: Scene, renderState: RenderState) {
         renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
@@ -73,11 +68,21 @@ class DirectionalLightShadowMapExtension(
     }
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
         profiled("Directional shadowmap") {
-            if (renderedInCycle < renderState.directionalLightHasMovedInCycle ||
+            val needsRerender =  forceRerender ||
+                    renderedInCycle < renderState.directionalLightHasMovedInCycle ||
                     renderedInCycle < renderState.entitiesState.anyEntityMovedInCycle ||
-                    renderedInCycle < renderState.entitiesState.entityAddedInCycle) {
+                    renderedInCycle < renderState.entitiesState.entityAddedInCycle ||
+                    renderState.entitiesState.renderBatchesAnimated.isNotEmpty()
+
+            if (needsRerender) {
                 drawShadowMap(renderState, firstPassResult)
             }
+        }
+    }
+
+    override fun beforeSetScene(nextScene: Scene) {
+        gpuContext {
+            forceRerender = true
         }
     }
 
@@ -110,7 +115,7 @@ class DirectionalLightShadowMapExtension(
         firstPassResult.directionalLightShadowMapWasRendered = true
 
         renderedInCycle = renderState.cycle
-
+        forceRerender = false
     }
 
     companion object {

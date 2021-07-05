@@ -17,8 +17,6 @@ import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.verticalBox
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -39,7 +37,6 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.OceanWaterExtension
@@ -359,20 +356,20 @@ class SelectionSystem(
         }
     }
 
-    fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight) = SwingUtils.invokeLater {
+    fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight, scene: Scene) = SwingUtils.invokeLater {
         selection = DirectionalLightSelection(pickedDirectionalLight)
         sidePanel.verticalBox(
             unselectButton,
             DirectionalLightGrid(pickedDirectionalLight),
-            CameraGrid(pickedDirectionalLight)
+            CameraGrid(pickedDirectionalLight, scene)
         )
     }
 
-    fun selectCamera(pickedCamera: Camera) = SwingUtils.invokeLater {
+    fun selectCamera(pickedCamera: Camera, scene: Scene) = SwingUtils.invokeLater {
         selection = CameraSelection(pickedCamera)
         sidePanel.verticalBox(
             unselectButton,
-            CameraGrid(pickedCamera)
+            CameraGrid(pickedCamera, scene)
         )
     }
 

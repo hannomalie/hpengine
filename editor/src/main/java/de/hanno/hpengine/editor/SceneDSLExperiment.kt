@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.scene.api.Directory
 import de.hanno.hpengine.engine.scene.api.StaticModelComponent
 import de.hanno.hpengine.engine.scene.api.convert
@@ -15,7 +16,10 @@ fun main() {
         }
     }
 
-    val (engine, editor) = EngineWithEditorXXX()
+    val application = EngineWithEditorXXX()
+
+    val engine = application.koin.get<Engine>()
+    val editor = application.koin.get<AWTEditorWindow>()
 
     engine.scene = scene.convert(engine.engineContext)
     editor.frame.onSceneReload = {

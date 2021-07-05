@@ -15,12 +15,14 @@ class DirectionalLightRenderSystem: RenderSystem {
         val light = directionalLightSystem.getDirectionalLight() ?: return
 
         with(light) {
-            renderState.directionalLightState[0].color.set(color)
-            renderState.directionalLightState[0].direction.set(direction)
-            renderState.directionalLightState[0].scatterFactor = scatterFactor
-            renderState.directionalLightState[0].viewMatrix.set(viewMatrix)
-            renderState.directionalLightState[0].projectionMatrix.set(projectionMatrix)
-            renderState.directionalLightState[0].viewProjectionMatrix.set(viewProjectionMatrix)
+            val directionalLightState = renderState.directionalLightState[0]
+
+            directionalLightState.color.set(color)
+            directionalLightState.direction.set(direction)
+            directionalLightState.scatterFactor = scatterFactor
+            directionalLightState.viewMatrix.set(viewMatrix)
+            directionalLightState.projectionMatrix.set(projectionMatrix)
+            directionalLightState.viewProjectionMatrix.set(viewProjectionMatrix)
         }
     }
 }
@@ -32,11 +34,14 @@ class DirectionalLightSystem: SimpleEntitySystem(listOf(DirectionalLight::class.
 
         light.update(scene, deltaSeconds)
 
-        if(scene.entityManager.run { light.entity.hasMoved }) {
+        if(scene.entityManager.run { light._entity.hasMoved }) {
             scene.currentCycle.also { directionalLightMovedInCycle = it }
         }
     }
 
+    override fun extract(renderState: RenderState) {
+        renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+    }
     fun getDirectionalLight() = getComponents(DirectionalLight::class.java).firstOrNull()
 
 }

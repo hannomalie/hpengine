@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
@@ -16,6 +17,7 @@ interface RenderExtension<TYPE : BackendType>: Updatable {
     @JvmDefault fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     @JvmDefault fun renderEditor(renderState: RenderState, result: DrawResult) {}
     @JvmDefault fun extract(scene: Scene, renderState: RenderState) {}
+    @JvmDefault fun beforeSetScene(nextScene: Scene) {}
 }
 
 open class CompoundExtension<TYPE : BackendType>(val extensions: List<RenderExtension<TYPE>>): RenderExtension<TYPE> {

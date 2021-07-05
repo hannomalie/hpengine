@@ -15,7 +15,7 @@ import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
 open class Camera @JvmOverloads constructor(
-        override var entity: Entity,
+        override val entity: Entity,
         ratio: Float = 1280f/720f): Component {
 
     var exposure = 5f

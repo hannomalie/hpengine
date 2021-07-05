@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
 import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.SceneManager
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.RichTooltip
@@ -35,8 +36,29 @@ object ViewTask {
     operator fun invoke(
         gpuContext: GpuContext<OpenGl>,
         inputConfig: EditorInputConfig,
-        outputConfig: KMutableProperty0<OutputConfig>
+        outputConfig: KMutableProperty0<OutputConfig>,
+        addResourceContext: AddResourceContext
     ): RibbonTask {
+
+        fun GpuContext<OpenGl>.retrieveRenderTargetTextures(): MutableList<OutputConfig> {
+            val renderTargetTextures = mutableListOf<OutputConfig>(OutputConfig.Default)
+            addResourceContext.locked {
+                for (target in registeredRenderTargets) {
+                    for (i in target.textures.indices) {
+                        val name = target.name + " - " + i // TODO: Revive names here
+                        if (target is CubeMapArrayRenderTarget) {
+                            renderTargetTextures.add(OutputConfig.RenderTargetCubeMapArray(target, i.coerceIn(0, target.textures[i].dimension.depth)))
+                        } else if (target is CubeMapRenderTarget) {
+                            renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i]))
+                        } else {
+                            renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D, target.factorsForDebugRendering[i]))
+                        }
+                    }
+                }
+            }
+            return renderTargetTextures
+        }
+
 
         val directTextureOutputArrayIndexComboBoxModel = RibbonDefaultComboBoxContentModel.builder<Int>()
             .setItems((0 until 100).toList().toTypedArray())
@@ -133,20 +155,4 @@ object ViewTask {
          return RibbonTask("Viewport", outputFlowBand, outputArrayIndexBand, selectionModeBand)
     }
 
-    private fun GpuContext<OpenGl>.retrieveRenderTargetTextures(): MutableList<OutputConfig> {
-        val renderTargetTextures = mutableListOf<OutputConfig>(OutputConfig.Default)
-        for (target in registeredRenderTargets) {
-            for (i in target.textures.indices) {
-                val name = target.name + " - " + i // TODO: Revive names here
-                if (target is CubeMapArrayRenderTarget) {
-                    renderTargetTextures.add(OutputConfig.RenderTargetCubeMapArray(target, i.coerceIn(0, target.textures[i].dimension.depth)))
-                } else if (target is CubeMapRenderTarget) {
-                    renderTargetTextures.add(OutputConfig.TextureCubeMap(name, target.textures[i]))
-                } else {
-                    renderTargetTextures.add(OutputConfig.Texture2D(name, target.textures[i] as Texture2D, target.factorsForDebugRendering[i]))
-                }
-            }
-        }
-        return renderTargetTextures
-    }
 }

@@ -78,7 +78,7 @@ class MouseInputProcessor(val window: Window<OpenGl>,
             val entityNewWorldPosition = Vector4f()
             activeCamera.viewProjectionMatrix.unproject(positionDeviceNew, viewPort, entityNewWorldPosition)
 
-            val constraintAxis = editorComponents.selectionSystem.axisDragged
+            val constraintAxis = editorComponents.constraintAxis
 
             val movement = entityNewWorldPosition.xyz.sub(entityOrNull.transform.position)
             val axisConstrainedMovement = when(constraintAxis) {

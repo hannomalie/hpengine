@@ -16,6 +16,8 @@ interface CustomComponent: Component {
                 override suspend fun update(scene: Scene, deltaSeconds: Float) {
                     update.invoke(scene, deltaSeconds)
                 }
+
+                override fun toString(): String = "CustomComponent"
             })
         }
     }

@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.camera.*
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
-import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.config.Config
@@ -41,7 +40,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.graphics.renderer.extensions.*
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
@@ -69,7 +67,6 @@ import org.koin.core.component.get
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
-import org.koin.dsl.single
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
@@ -79,9 +76,6 @@ interface Extension {
     fun extract(scene: Scene, renderState: RenderState) { }
     fun Scene.decorate() { }
 }
-
-//class SceneScope
-typealias SceneScope = Scene
 
 val baseModule = module {
 
@@ -144,7 +138,7 @@ val baseModule = module {
 
     factory { Scene() }
 
-    scope<SceneScope> {
+    scope<Scene> {
         scoped { EntityManager() } bind Manager::class
         scoped { MaterialManager(config = get(), textureManager = get(), singleThreadContext = get()) } bind Manager::class
         scoped { ModelComponentManager() } bind Manager::class

@@ -21,7 +21,7 @@ import de.hanno.hpengine.engine.scene.Extension
 import de.hanno.hpengine.engine.scene.Scene
 import java.util.concurrent.CopyOnWriteArrayList
 
-class EngineContext(
+data class EngineContext(
     val config: Config,
     val addResourceContext: AddResourceContext,
     val window: Window<OpenGl> = GlfwWindow(config.width, config.height, "HPEngine", config.performance.isVsync),
@@ -42,6 +42,8 @@ class EngineContext(
     fun extract(scene: Scene, renderState: RenderState) {
         renderSystems.forEach { it.extract(scene, renderState) }
     }
+
+    override fun toString(): String = "EngineContext"
 }
 
 inline val EngineContext.input: Input

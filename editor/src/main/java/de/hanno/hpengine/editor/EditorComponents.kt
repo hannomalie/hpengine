@@ -478,11 +478,15 @@ class EditorComponents(
         SwingUtils.invokeLater {
             ribbon.setApplicationMenuCommand(ApplicationMenu(sceneManager))
 
-            addTask(ViewTask(gpuContext, this, ::outPutConfig))
+            addTask(ViewTask(gpuContext, this, ::outPutConfig, addResourceContext))
             addTask(SceneTask(sceneManager, this))
             addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(gpuContext, textureManager, editor, selectionSystem))
             addTask(MaterialRibbonTask(addResourceContext, textureManager, programManager, sceneManager, editor, selectionSystem))
+        }
+        SwingUtils.invokeLater {
+            TimingsFrame()
+            ConfigFrame(config, editor)
         }
     }
 
@@ -490,27 +494,6 @@ class EditorComponents(
 
         recreateSceneTree(nextScene)
 
-    }
-    override fun init(sceneManager: SceneManager) {
-
-//        recreateSceneTree(sceneManager.scene)
-
-//        SwingUtils.invokeLater {
-//            ribbon.setApplicationMenuCommand(ApplicationMenu(sceneManager))
-//
-//            addTask(ViewTask(gpuContext, this, ::outPutConfig))
-//            addTask(SceneTask(sceneManager, this))
-//            addTask(TransformTask(this, selectionSystem))
-//            addTask(TextureTask(gpuContext, textureManager, editor, selectionSystem))
-//            addTask(MaterialRibbonTask(addResourceContext, textureManager, programManager, sceneManager, editor, selectionSystem))
-//        }
-    }
-
-    fun init() {
-        SwingUtils.invokeLater {
-            TimingsFrame()
-            ConfigFrame(config, editor)
-        }
     }
 
     fun recreateSceneTree(scene: Scene) {

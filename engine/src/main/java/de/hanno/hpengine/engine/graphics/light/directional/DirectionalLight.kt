@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.light.directional
 
 import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.input
+import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.InputControllerComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.scene.Scene
@@ -10,19 +11,19 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 
-class DirectionalLight(entity: Entity) : de.hanno.hpengine.engine.camera.Camera(entity, 1f) {
+data class DirectionalLight(val _entity: Entity) : Camera(_entity, 1f) {
     private val castsShadows = false
     var color = Vector3f(1f, 1f, 1f)
     var scatterFactor = 1f
 
     val direction: Vector3f
-        get() = entity.transform.viewDirection
+        get() = _entity.transform.viewDirection
 
     fun translate(offset: Vector3f?) {
-        entity.transform.translate(offset)
+        _entity.transform.translate(offset)
     }
 
-    class DirectionalLightController(private val engine: EngineContext, entity: Entity) : InputControllerComponent(entity) {
+    data class DirectionalLightController(private val engine: EngineContext, private val _entity: Entity) : InputControllerComponent(_entity) {
         override suspend fun update(scene: Scene, deltaSeconds: Float) {
             val moveAmount = 100 * deltaSeconds
             val degreesPerSecond = 45f
@@ -52,11 +53,6 @@ class DirectionalLight(entity: Entity) : de.hanno.hpengine.engine.camera.Camera(
                 entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
             }
         }
-
-        companion object {
-            private const val serialVersionUID = 1L
-        }
-
     }
 
     init {
@@ -66,7 +62,7 @@ class DirectionalLight(entity: Entity) : de.hanno.hpengine.engine.camera.Camera(
         width = 1500f
         height = 1500f
         far = (-5000).toFloat()
-        entity.transform.translate(Vector3f(12f, 300f, 2f))
-        entity.transform.rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
+        _entity.transform.translate(Vector3f(12f, 300f, 2f))
+        _entity.transform.rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
     }
 }

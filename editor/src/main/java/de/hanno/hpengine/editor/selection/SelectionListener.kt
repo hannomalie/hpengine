@@ -51,8 +51,8 @@ class SelectionListener(internal var tree: JTree,
                 is MeshSelection -> unselectOr(node) { selectMesh(node) }
                 is ModelComponent -> unselectOr(node) { selectModel(ModelSelection(node.entity, node.entity.getComponent(ModelComponent::class.java)!!, node.model)) }
                 is PointLight -> unselectOr(node) { selectPointLight(node) }
-                is DirectionalLight -> unselectOr(node) { selectDirectionalLight(node) }
-                is Camera -> unselectOr(node) { selectCamera(node) }
+                is DirectionalLight -> unselectOr(node) { selectDirectionalLight(node, editorComponents.sceneManager.scene) }
+                is Camera -> unselectOr(node) { selectCamera(node, editorComponents.sceneManager.scene) }
                 is Scene -> unselectOr(node) { selectScene(node) }
                 is GIVolumeComponent -> unselectOr(node) { selectGiVolume(node) }
                 is OceanWaterExtension.OceanWater -> unselectOr(node) { selectOceanWater(node) }

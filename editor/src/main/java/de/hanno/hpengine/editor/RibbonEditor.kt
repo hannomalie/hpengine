@@ -14,12 +14,13 @@ import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.SceneScope
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.baseModule
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
+import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
@@ -96,7 +97,7 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
     }
 }
 
-fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEditorWindow> {
+fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): KoinApplication {
 
     val configModule = module {
         single { config } bind Config::class
@@ -118,10 +119,7 @@ fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): Pair<Engine, AWTEdit
         modules(configModule, editorModule, baseModule)
     }
 
-    return Pair<Engine, AWTEditorWindow>(application.koin.get(), application.koin.get()).apply {
-        application.koin.get<EditorComponents>().init() // TODO: Question this
-        application.koin.get<EditorComponents>().init(application.koin.get()) // TODO: Question this
-    }
+    return application
 }
 
 fun main(args: Array<String>) {
@@ -134,23 +132,26 @@ fun main(args: Array<String>) {
         debug = DebugConfig(isUseFileReloading = true)
     )
 
-    val (engine) = EngineWithEditorXXX(config)
+    val application = EngineWithEditorXXX(config)
 
-
-    val scene = GlobalContext.get().get<SceneScope>()
-
-    val loaded = LoadModelCommand(
-        "assets/models/doom3monster/monster.md5mesh",
-        "hellknight",
-        GlobalContext.get().get(),
-        engine.config.directories.gameDir
-    ).execute()
-    loaded.entities.first().getComponent(ModelComponent::class.java)!!.spatial.boundingVolume.localAABB = AABBData(
-            Vector3f(-60f, -10f, -35f),
-            Vector3f(60f, 130f, 50f)
-    )
-    println("loaded entities : " + loaded.entities.size)
-    scene.addAll(loaded.entities)
-
-    engine.sceneManager.scene = scene
+    val engine = application.koin.get<Engine>()
+    application.koin.get<AWTEditorWindow>().apply {
+        frame.onSceneReload = {
+            val scene: Scene = GlobalContext.get().get<Scene>().apply {
+                val loaded = LoadModelCommand(
+                    "assets/models/doom3monster/monster.md5mesh",
+                    "hellknight",
+                    GlobalContext.get().get(),
+                    engine.config.directories.gameDir
+                ).execute()
+                loaded.entities.first().getComponent(ModelComponent::class.java)!!.spatial.boundingVolume.localAABB = AABBData(
+                    Vector3f(-60f, -10f, -35f),
+                    Vector3f(60f, 130f, 50f)
+                )
+                println("loaded entities : " + loaded.entities.size)
+                addAll(loaded.entities)
+            }
+            engine.sceneManager.scene = scene
+        }.apply { invoke() }
+    }
 }
