@@ -1,8 +1,6 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.config
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.DebugConfig
@@ -11,17 +9,19 @@ import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.dsl.AnimatedModelComponentDescription
+import de.hanno.hpengine.engine.scene.dsl.Directory
+import de.hanno.hpengine.engine.scene.dsl.convert
+import de.hanno.hpengine.engine.scene.dsl.entity
+import de.hanno.hpengine.engine.scene.dsl.scene
 import de.hanno.hpengine.engine.scene.baseModule
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
 import org.koin.core.KoinApplication
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.binds
@@ -110,16 +110,14 @@ fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): KoinApplication {
         }
         single {
             EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
-        } binds(arrayOf(RenderSystem::class, Manager::class))
+        } binds (arrayOf(RenderSystem::class, Manager::class))
         single { EditorManager(get(), get()) } bind Manager::class
     }
 
-    val application = startKoin {
+    return startKoin {
 //        printLogger(Level.DEBUG)
         modules(configModule, editorModule, baseModule)
     }
-
-    return application
 }
 
 fun main(args: Array<String>) {
@@ -137,21 +135,23 @@ fun main(args: Array<String>) {
     val engine = application.koin.get<Engine>()
     application.koin.get<AWTEditorWindow>().apply {
         frame.onSceneReload = {
-            val scene: Scene = GlobalContext.get().get<Scene>().apply {
-                val loaded = LoadModelCommand(
-                    "assets/models/doom3monster/monster.md5mesh",
-                    "hellknight",
-                    GlobalContext.get().get(),
-                    engine.config.directories.gameDir
-                ).execute()
-                loaded.entities.first().getComponent(ModelComponent::class.java)!!.spatial.boundingVolume.localAABB = AABBData(
-                    Vector3f(-60f, -10f, -35f),
-                    Vector3f(60f, 130f, 50f)
-                )
-                println("loaded entities : " + loaded.entities.size)
-                addAll(loaded.entities)
-            }
-            engine.sceneManager.scene = scene
+
+            val sceneDescription = scene("Hellknight") {
+                entity("hellknight") {
+                    add(
+                        AnimatedModelComponentDescription(
+                            "assets/models/doom3monster/monster.md5mesh",
+                            Directory.Game,
+                            AABBData(
+                                Vector3f(-60f, -10f, -35f),
+                                Vector3f(60f, 130f, 50f)
+                            )
+                        )
+                    )
+                }
+            }.convert(engine.engineContext)
+
+            engine.sceneManager.scene = sceneDescription
         }.apply { invoke() }
     }
 }

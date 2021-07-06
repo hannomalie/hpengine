@@ -64,6 +64,7 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSou
 import de.hanno.hpengine.util.ressources.enhanced
 import org.joml.Vector3f
 import org.koin.core.component.get
+import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -78,7 +79,108 @@ interface Extension {
 }
 
 val baseModule = module {
+    addBackendModule()
 
+    single { EngineContext(get(), get(), get(), get(), get(), renderSystems = getAll(), get()) }
+    single { Engine(get(), get(), get()) }
+
+    addCameraModule()
+    addSkyboxModule()
+    addReflectionProbeModule()
+    addPointlightModule()
+    addGIModule()
+    addOceanWaterModule()
+    addDirectionalLightModule()
+
+    single { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) } bind RenderSystem::class
+    single { ForwardRenderExtension(get(), get(), get(), get()) } bind RenderExtension::class
+    single { AOScatteringExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
+
+    factory { Scene() }
+
+    scope<Scene> {
+        scoped { EntityManager() } bind Manager::class
+        scoped { MaterialManager(get(), get(), get()) } bind Manager::class
+        scoped { ModelComponentManager() } bind Manager::class
+        scoped { ModelComponentSystem(get(), get(), get()) } bind ComponentSystem::class
+        scoped { PhysicsManager(get(), get(), get(), get()) } bind Manager::class
+        scoped { AreaLightComponentSystem() } bind ComponentSystem::class
+        scoped { AreaLightSystem(get()) } bind EntitySystem::class
+        scoped { TubeLightComponentSystem() } bind ComponentSystem::class
+        scoped { CustomComponentSystem() } bind ComponentSystem::class
+        scoped { ScriptComponentSystem() } bind ComponentSystem::class
+        scoped { ClustersComponentSystem() } bind ComponentSystem::class
+        scoped { InputComponentSystem(get()) } bind ComponentSystem::class
+    }
+}
+
+private fun Module.addGIModule() {
+//        single { GiVolumeExtension() } bind Extension::class
+//        single { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
+//
+//        scope<SceneScope> {
+//            scoped { GiVolumeComponentSystem() } bind ComponentSystem::class
+//            scoped { GIVolumeSystem(get(), get()) } bind EntitySystem::class
+//        }
+}
+
+private fun Module.addPointlightModule() {
+    single { BvHPointLightSecondPassExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
+    scope<Scene> {
+        scoped { PointLightComponentSystem() } bind ComponentSystem::class
+        scoped { PointLightSystem(get()) } binds (arrayOf(EntitySystem::class, RenderSystem::class))
+    }
+}
+
+private fun Module.addDirectionalLightModule() {
+    single { DirectionalLightExtension(get()) } bind Extension::class
+    single { DirectionalLightRenderSystem() } bind RenderSystem::class
+    single { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
+    scope<Scene> {
+        scoped { DirectionalLightSystem() } bind EntitySystem::class
+    }
+}
+
+private fun Module.addOceanWaterModule() {
+    single { OceanWaterRenderSystem(get(), get(), get(), get()) } bind RenderSystem::class
+    scope<Scene> {
+        scoped { OceanWaterComponenSystem() } bind ComponentSystem::class
+        scoped { OceanWaterEntitySystem(get()) } bind EntitySystem::class
+    }
+}
+
+private fun Module.addReflectionProbeModule() {
+    single { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
+    scope<Scene> {
+        scoped { ReflectionProbeComponentSystem() } bind ComponentSystem::class
+        scoped { ReflectionProbeManager(get()) } bind Manager::class
+    }
+}
+
+private fun Module.addCameraModule() {
+    single { CameraExtension(get()) } bind Extension::class
+    single { CameraRenderSystem(get(), get(), get(), get()) } bind RenderSystem::class
+    scope<Scene> {
+        scoped { CameraComponentSystem(get(), get(), get(), get()) } bind ComponentSystem::class
+    }
+}
+
+private fun Module.addSkyboxModule() {
+    single { SkyboxExtension(get()) } bind Extension::class
+    single { SkyboxExtension.SkyboxRenderSystem() } bind RenderSystem::class
+    single {
+        SkyboxExtension.SkyboxRenderExtension(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
+    } bind RenderExtension::class
+}
+
+private fun Module.addBackendModule() {
     single { AddResourceContext() }
     single { MBassadorEventBus() } bind EventBus::class
 
@@ -101,65 +203,7 @@ val baseModule = module {
         val gpuContext: GpuContext<OpenGl> = get()
         RenderStateManager { RenderState(gpuContext) }
     }
-    single { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) } bind RenderSystem::class
-
-    single { EngineContext(get(), get(), get(), get(), get(), renderSystems = getAll(), get()) }
-    single { Engine(get(), get(), get()) }
-
     single { SceneManager(get()) } bind Manager::class
-
-    single { DirectionalLightExtension(get()) } bind Extension::class
-    single { CameraExtension(get()) } bind Extension::class
-    single { SkyboxExtension(get()) } bind Extension::class
-
-    single { BvHPointLightSecondPassExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
-    single { ForwardRenderExtension(get(), get(), get(), get()) } bind RenderExtension::class
-    single { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
-
-    "GI stuff".apply {
-//        single { GiVolumeExtension() } bind Extension::class
-//        single { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
-//
-//        scope<SceneScope> {
-//            scoped { GiVolumeComponentSystem() } bind ComponentSystem::class
-//            scoped { GIVolumeSystem(get(), get()) } bind EntitySystem::class
-//        }
-    }
-
-    single { CameraRenderSystem(get(), get(), get(), get()) } bind RenderSystem::class
-    single { AOScatteringExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
-
-    single { OceanWaterRenderSystem(get(), get(), get(), get()) } bind RenderSystem::class
-
-    single { DirectionalLightRenderSystem() } bind RenderSystem::class
-    single { SkyboxExtension.SkyboxRenderSystem() } bind RenderSystem::class
-    single { SkyboxExtension.SkyboxRenderExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
-    single { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
-
-    factory { Scene() }
-
-    scope<Scene> {
-        scoped { EntityManager() } bind Manager::class
-        scoped { MaterialManager(config = get(), textureManager = get(), singleThreadContext = get()) } bind Manager::class
-        scoped { ModelComponentManager() } bind Manager::class
-        scoped { ModelComponentSystem(get(), get(), get()) } bind ComponentSystem::class
-        scoped { PhysicsManager(get(), get(), get(), get()) } bind Manager::class
-        scoped { DirectionalLightSystem() } bind EntitySystem::class
-        scoped { CameraComponentSystem(get(), get(), get(), get()) } bind ComponentSystem::class
-        scoped { PointLightComponentSystem() } bind ComponentSystem::class
-        scoped { PointLightSystem(get()) } binds(arrayOf(EntitySystem::class, RenderSystem::class))
-        scoped { AreaLightComponentSystem() } bind ComponentSystem::class
-        scoped { AreaLightSystem(get()) } bind EntitySystem::class
-        scoped { TubeLightComponentSystem() } bind ComponentSystem::class
-        scoped { CustomComponentSystem() } bind ComponentSystem::class
-        scoped { ScriptComponentSystem() } bind ComponentSystem::class
-        scoped { ClustersComponentSystem() } bind ComponentSystem::class
-        scoped { InputComponentSystem(get()) } bind ComponentSystem::class
-        scoped { ReflectionProbeComponentSystem() } bind ComponentSystem::class
-        scoped { ReflectionProbeManager(get()) } bind Manager::class
-        scoped { OceanWaterComponenSystem() } bind ComponentSystem::class
-        scoped { OceanWaterEntitySystem(get()) } bind EntitySystem::class
-    }
 }
 
 class GiVolumeComponentSystem: SimpleComponentSystem<GIVolumeComponent>(GIVolumeComponent::class.java)

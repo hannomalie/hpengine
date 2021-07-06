@@ -24,17 +24,6 @@ class MaterialManager(
     val singleThreadContext: AddResourceContext
 ) : Manager {
 
-    constructor(
-        engineContext: EngineContext,
-        config: Config = engineContext.config,
-        textureManager: TextureManager = engineContext.textureManager,
-        singleThreadContext: AddResourceContext = engineContext.addResourceContext
-    ): this(
-        config,
-        textureManager,
-        singleThreadContext
-    )
-
     val materials: MutableList<Material> = mutableListOf()
 
     val engineDir = config.directories.engineDir
