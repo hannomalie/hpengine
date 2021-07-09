@@ -1,7 +1,6 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.scene.OceanWaterExtension
@@ -20,7 +19,7 @@ val Engine.oceanDemo
                     this.material = engineContext.extensions.materialExtension.manager.registerMaterial(
                         "ocean",
                         MaterialInfo().apply {
-                            program = engineContext.programManager.heightMappingFirstPassProgram
+                            program = engineContext.backend.programManager.heightMappingFirstPassProgram
                             diffuse.set(0f, 0f, 1f)
                             metallic = 0.8f
                             roughness = 0.7f

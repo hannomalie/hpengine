@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.component
 
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
@@ -61,7 +60,7 @@ class GIVolumeComponent(override val entity: Entity,
 
 }
 
-class GIVolumeSystem(val engine: EngineContext, val voxelConeTracingExtension: VoxelConeTracingExtension) : SimpleEntitySystem(listOf(GIVolumeComponent::class.java)) {
+class GIVolumeSystem(val voxelConeTracingExtension: VoxelConeTracingExtension) : SimpleEntitySystem(listOf(GIVolumeComponent::class.java)) {
 
     override fun extract(renderState: RenderState) {
         updateGiVolumes(renderState)

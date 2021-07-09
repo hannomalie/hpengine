@@ -1,8 +1,6 @@
 package de.hanno.hpengine.editor.input
 
 import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import java.awt.Event.SHIFT_MASK
 import java.awt.event.ActionEvent

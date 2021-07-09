@@ -38,7 +38,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     var camera = Camera(Entity("RenderStateCameraEntity"), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
-    var sceneInitiallyDrawn: Boolean = false // TODO: Remove this completely
     var sceneMin = Vector3f()
     var sceneMax = Vector3f()
 
@@ -86,7 +85,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         skyBoxMaterialIndex = source.skyBoxMaterialIndex
         directionalLightHasMovedInCycle = source.directionalLightHasMovedInCycle
         pointLightMovedInCycle = source.pointLightMovedInCycle
-        sceneInitiallyDrawn = source.sceneInitiallyDrawn
         sceneMin = source.sceneMin
         sceneMax = source.sceneMax
         latestDrawResult.set(latestDrawResult)

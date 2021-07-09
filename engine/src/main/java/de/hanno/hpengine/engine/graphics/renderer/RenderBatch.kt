@@ -25,7 +25,8 @@ class RenderBatch(
         var animated : Boolean = false,
         var boundingSphereRadius: Float = 0.0f,
         var materialInfo: MaterialInfo = MaterialInfo(),
-        var entityBufferIndex: Int = 0) {
+        var entityBufferIndex: Int = 0,
+        var contributesToGi: Boolean = true) {
 
     val isShadowCasting: Boolean
         get() = materialInfo.isShadowCasting

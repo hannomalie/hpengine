@@ -1,11 +1,12 @@
 package de.hanno.hpengine.editor.appmenu
 
 import de.hanno.hpengine.editor.EditorComponents
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.dsl.SceneDescription
+import de.hanno.hpengine.engine.scene.dsl.convert
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.koin.core.component.get
 import org.pushingpixels.flamingo.api.common.model.Command
 import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandGroup
@@ -21,7 +22,7 @@ object ApplicationMenu {
                 .setExtraText("Creates an empty scene")
                 .setAction {
                     GlobalScope.launch {
-                        sceneManager.scene = Scene("Scene_${System.currentTimeMillis()}")
+                        sceneManager.scene = SceneDescription("Scene_${System.currentTimeMillis()}").convert(sceneManager.scene.get())
                     }
                 }
                 .build()

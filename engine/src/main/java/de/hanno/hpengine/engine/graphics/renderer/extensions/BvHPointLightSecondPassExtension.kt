@@ -1,11 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.extensions
 
-import com.dreizak.miniball.highdim.Miniball
-import com.dreizak.miniball.model.ArrayPointSet
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
@@ -24,14 +19,9 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.engine.transform.x
-import de.hanno.hpengine.engine.transform.y
-import de.hanno.hpengine.engine.transform.z
 import de.hanno.struct.Struct
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -40,7 +30,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
-import java.util.function.Consumer
 
 class BvhNodeGpu: Struct() {
     val positionRadius by HpVector4f()

@@ -1,16 +1,16 @@
 package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.BufferableMatrix4f
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.eventBus
-import de.hanno.hpengine.engine.backend.gpuContext
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.clusters
@@ -25,13 +25,16 @@ import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 import java.util.concurrent.CopyOnWriteArrayList
 
-class ModelComponentSystem(val engineContext: EngineContext,
-                           val manager: ModelComponentManager,
-                           val materialManager: MaterialManager) : ComponentSystem<ModelComponent> {
+class ModelComponentSystem(
+    val manager: ModelComponentManager,
+    val materialManager: MaterialManager,
+    val gpuContext: GpuContext<OpenGl>,
+    val config: Config
+) : ComponentSystem<ModelComponent> {
     override val componentClass: Class<ModelComponent> = ModelComponent::class.java
 
-    val vertexIndexBufferStatic = VertexIndexBuffer(engineContext.gpuContext, 10)
-    val vertexIndexBufferAnimated = VertexIndexBuffer(engineContext.gpuContext, 10)
+    val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
+    val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
 
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
@@ -46,10 +49,6 @@ class ModelComponentSystem(val engineContext: EngineContext,
 
     override val components: List<ModelComponent>
         get() = _components
-
-    init {
-        engineContext.eventBus.register(this)
-    }
 
     val ModelComponent.entityIndex
         get() = entityIndices[this]!!
@@ -190,12 +189,20 @@ class ModelComponentSystem(val engineContext: EngineContext,
             if (c.model.isStatic) {
                 val vertexIndexBuffer = vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(engineContext.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(
+                    gpuContext,
+                    vertexIndexBuffer,
+                    vertexIndexOffsets
+                )
                 Allocation.Static(vertexIndexOffsetsForMeshes)
             } else {
                 val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(engineContext.gpuContext, vertexIndexBuffer, vertexIndexOffsets)
+                val vertexIndexOffsetsForMeshes = c.putToBuffer(
+                    gpuContext,
+                    vertexIndexBuffer,
+                    vertexIndexOffsets
+                )
 
                 val elements = (c.model as AnimatedModel).animation.frames
                         .flatMap { frame -> frame.jointMatrices.toList() }
@@ -224,7 +231,7 @@ class ModelComponentSystem(val engineContext: EngineContext,
         gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
 
         batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
-            components, engineContext.config.debug.isDrawLines,
+            components, config.debug.isDrawLines,
             allocations, entityIndices)
     }
 

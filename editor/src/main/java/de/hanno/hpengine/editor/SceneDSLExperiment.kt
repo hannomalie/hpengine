@@ -18,11 +18,11 @@ fun main() {
 
     val application = EngineWithEditorXXX()
 
-    val engine = application.koin.get<Engine>()
+    val engine = Engine(application)
     val editor = application.koin.get<AWTEditorWindow>()
 
-    engine.scene = scene.convert(engine.engineContext)
+    engine.scene = scene.convert(application)
     editor.frame.onSceneReload = {
-        engine.scene = scene.convert(engine.engineContext)
+        engine.scene = scene.convert(application)
     }
 }

@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.CameraExtension
+import de.hanno.hpengine.engine.extension.CameraExtension
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
@@ -26,7 +26,7 @@ class GiVolumeGrid(val gpuContext: GpuContext<OpenGl>, val config: Config, val t
         layout = MigLayout("wrap 2")
         add(JButton("Use cam").apply {
             addActionListener {
-                sceneManager.scene.get<CameraExtension>().activeCameraEntity = giVolumeComponent.orthoCam.entity
+                sceneManager.scene.get<CameraExtension>().run { sceneManager.scene.activeCameraEntity = giVolumeComponent.orthoCam.entity }
             }
         })
         add(JButton("Restore scene cam").apply {

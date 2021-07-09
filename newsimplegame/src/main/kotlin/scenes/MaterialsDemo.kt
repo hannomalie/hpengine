@@ -1,7 +1,6 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbe
 import de.hanno.hpengine.engine.model.material.MaterialInfo
@@ -45,7 +44,7 @@ val Engine.materialsDemo
                                     directory = engineContext.gameDir
                                 )
                             )
-                            program = engineContext.programManager.heightMappingFirstPassProgram
+                            program = engineContext.backend.programManager.heightMappingFirstPassProgram
                             parallaxScale = 0.3f
                             parallaxBias = 0.3f
                         })
@@ -84,7 +83,7 @@ val Engine.materialsDemo
                                     directory = engineContext.gameDir
                                 )
                             )
-                            program = engineContext.programManager.heightMappingFirstPassProgram
+                            program = engineContext.backend.programManager.heightMappingFirstPassProgram
                             parallaxScale = 0.3f
                             parallaxBias = 0.3f
                         })

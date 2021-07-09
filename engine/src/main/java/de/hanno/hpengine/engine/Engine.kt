@@ -1,21 +1,20 @@
 package de.hanno.hpengine.engine
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.eventBus
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.input
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.directory.EngineAsset
 import de.hanno.hpengine.engine.directory.EngineDirectory
-import de.hanno.hpengine.engine.directory.GameAsset
 import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.event.EngineInitializedEvent
+import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.graphics.RenderManager
+import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.baseModule
+import de.hanno.hpengine.engine.scene.dsl.SceneDescription
+import de.hanno.hpengine.engine.scene.dsl.convert
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.GlobalScope
@@ -25,6 +24,7 @@ import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import java.io.File
@@ -32,15 +32,21 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
-class Engine @JvmOverloads constructor(
-    val engineContext: EngineContext,
-    val renderManager: RenderManager,
-    val sceneManager: SceneManager
-) {
+
+class Engine constructor(application: KoinApplication) {
+
+    private val koin = application.koin
+    private val config = koin.get<Config>()
+    private val addResourceContext = koin.get<AddResourceContext>()
+    private val window = koin.get<Window<*>>()
+    private val input = koin.get<Input>()
+    private val renderManager = koin.get<RenderManager>()
+    private val sceneManager = koin.get<SceneManager>()
 
     val cpsCounter = FPSCounter()
     private var updateThreadCounter = 0
-    private val updateThreadNamer: (Runnable) -> Thread = { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
+    private val updateThreadNamer: (Runnable) -> Thread =
+        { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
 
     var scene: Scene
@@ -49,13 +55,10 @@ class Engine @JvmOverloads constructor(
             sceneManager.scene = value
         }
 
-    val directories: Directories = engineContext.config.directories
-
     val updateCycle = AtomicLong()
 
     init {
-        sceneManager.scene = Scene("InitialScene")
-        engineContext.eventBus.register(this)
+        sceneManager.scene = SceneDescription("InitialScene").convert(application)
         launchEndlessLoop { deltaSeconds ->
             try {
                 executeCommands()
@@ -67,15 +70,14 @@ class Engine @JvmOverloads constructor(
                 e.printStackTrace()
             }
         }
-        engineContext.eventBus.post(EngineInitializedEvent())
 
     }
 
 
-//    private suspend fun executeCommands() = withContext(engineContext.addResourceContext.singleThreadDispatcher) {
+    //    private suspend fun executeCommands() = withContext(addResourceContext.singleThreadDispatcher) {
     private suspend fun executeCommands() {
-        while (!engineContext.addResourceContext.channel.isEmpty) {
-            val command = engineContext.addResourceContext.channel.receiveOrNull() ?: break
+        while (!addResourceContext.channel.isEmpty) {
+            val command = addResourceContext.channel.receiveOrNull() ?: break
             command.invoke()
         }
     }
@@ -84,9 +86,10 @@ class Engine @JvmOverloads constructor(
         renderManager.renderState.currentWriteState.cycle = updateCycle.get()
         renderManager.renderState.currentWriteState.time = System.currentTimeMillis()
 
-        renderSystems.forEach { it.extract(scene, renderManager.renderState.currentWriteState) }
+        koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, renderManager.renderState.currentWriteState) }
 
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
+
         return updateCycle.getAndIncrement()
     }
 
@@ -95,8 +98,8 @@ class Engine @JvmOverloads constructor(
 
         sceneManager.update(scene, deltaSeconds)
 
-        engineContext.window.invoke { engineContext.input.update() }
-        engineContext.window.awaitEvents()
+        window.invoke { input.update() }
+        window.awaitEvents()
         cpsCounter.update()
 
     } catch (e: Exception) {
@@ -104,10 +107,8 @@ class Engine @JvmOverloads constructor(
     }
 
 
-    fun EngineAsset(relativePath: String): EngineAsset = config.EngineAsset(relativePath)
-    fun GameAsset(relativePath: String): GameAsset = config.GameAsset(relativePath)
-    val firstpassProgramVertexSource = EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
-    val firstpassProgramFragmentSource = EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
+    val firstpassProgramVertexSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
+    val firstpassProgramFragmentSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 
     companion object {
 
@@ -171,24 +172,3 @@ fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = Gl
         actualUpdateStep(deltaSeconds)
     }
 }
-
-inline val Engine.addResourceContext
-    get() = engineContext.backend.addResourceContext
-inline val Engine.input
-    get() = engineContext.backend.input
-inline val Engine.textureManager
-    get() = engineContext.backend.textureManager
-inline val Engine.programManager
-    get() = engineContext.backend.programManager
-inline val Engine.renderSystems
-    get() = engineContext.renderSystems
-inline val Engine.gpuContext
-    get() = engineContext.gpuContext
-inline val Engine.eventBus
-    get() = engineContext.backend.eventBus
-inline val Engine.window
-    get() = engineContext.window
-inline val Engine.deferredRenderingBuffer
-    get() = engineContext.deferredRenderingBuffer
-inline val Engine.config
-    get() = engineContext.config

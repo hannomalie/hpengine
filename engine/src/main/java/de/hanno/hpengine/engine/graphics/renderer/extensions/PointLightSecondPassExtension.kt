@@ -1,24 +1,29 @@
 package de.hanno.hpengine.engine.graphics.renderer.extensions
 
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
+import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
-class PointLightSecondPassExtension(val engineContext: EngineContext): RenderExtension<OpenGl> {
-    private val gpuContext = engineContext.gpuContext
-    private val deferredRenderingBuffer = engineContext.deferredRenderingBuffer
+class PointLightSecondPassExtension(
+    val gpuContext: GpuContext<OpenGl>,
+    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val config: Config,
+    programManager: ProgramManager<OpenGl>
+) : RenderExtension<OpenGl> {
 
-    private val secondPassPointComputeProgram = engineContext.programManager.getComputeProgram(engineContext.EngineAsset("shaders/second_pass_point_trivial_compute.glsl"))
+    private val secondPassPointComputeProgram =
+        programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_compute.glsl"))
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
         if (renderState.lightState.pointLights.isEmpty()) {
@@ -37,17 +42,32 @@ class PointLightSecondPassExtension(val engineContext: EngineContext): RenderExt
             gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
             renderState.lightState.pointLightShadowMapStrategy.bindTextures()
             // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(4, deferredRenderingBuffer.lightAccumulationMapOneId, 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F)
+            GL42.glBindImageTexture(
+                4,
+                deferredRenderingBuffer.lightAccumulationMapOneId,
+                0,
+                false,
+                0,
+                GL15.GL_READ_WRITE,
+                GL30.GL_RGBA16F
+            )
             secondPassPointComputeProgram.use()
             secondPassPointComputeProgram.setUniform("pointLightCount", renderState.lightState.pointLights.size)
-            secondPassPointComputeProgram.setUniform("screenWidth", engineContext.config.width.toFloat())
-            secondPassPointComputeProgram.setUniform("screenHeight", engineContext.config.height.toFloat())
+            secondPassPointComputeProgram.setUniform("screenWidth", config.width.toFloat())
+            secondPassPointComputeProgram.setUniform("screenHeight", config.height.toFloat())
             secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix)
             secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix)
-            secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS)
+            secondPassPointComputeProgram.setUniform(
+                "maxPointLightShadowmaps",
+                PointLightSystem.MAX_POINTLIGHT_SHADOWMAPS
+            )
             secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
             secondPassPointComputeProgram.bindShaderStorageBuffer(2, renderState.lightState.pointLightBuffer)
-            secondPassPointComputeProgram.dispatchCompute(engineContext.config.width / 16, engineContext.config.height / 16, 1)
+            secondPassPointComputeProgram.dispatchCompute(
+                config.width / 16,
+                config.height / 16,
+                1
+            )
         }
     }
 }

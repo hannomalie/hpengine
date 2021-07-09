@@ -1,7 +1,6 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbe
@@ -20,9 +19,10 @@ val Engine.sponzaScene
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
                     val bricksMaterial = materials.first { it.name == "bricks" } as SimpleMaterial
-                    bricksMaterial.materialInfo.program = engineContext.programManager.heightMappingFirstPassProgram
+                    bricksMaterial.materialInfo.program =
+                        engineContext.backend.programManager.heightMappingFirstPassProgram
                     bricksMaterial.materialInfo = bricksMaterial.materialInfo
-                            .copy(parallaxScale = 0.3f, parallaxBias = 0.3f)
+                        .copy(parallaxScale = 0.3f, parallaxBias = 0.3f)
                 }
             }
 

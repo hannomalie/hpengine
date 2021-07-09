@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.camera
 
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -93,6 +92,6 @@ class CameraComponentSystem(
 }
 
 fun Camera(
-    engineContext: EngineContext,
-    entity: Entity
-) = Camera(entity, engineContext.config.width.toFloat() / engineContext.config.height.toFloat())
+    entity: Entity,
+    config: Config
+) = Camera(entity, config.width.toFloat() / config.height.toFloat())

@@ -1,10 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
 import de.hanno.hpengine.engine.backend.Backend
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -146,17 +143,30 @@ class VoxelConeTracingExtension(
     private var litInCycle: Long = -1
     private val entityVoxelizedInCycle = mutableMapOf<String, Long>()
 
+    private var sceneInitiallyDrawn = false
+    private var voxelizeDynamicEntites = false
+
+    override fun afterSetScene(nextScene: Scene) {
+        sceneInitiallyDrawn = false
+        entityVoxelizedInCycle.clear()
+    }
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
         val bounces = 1
 
-        val entitiesToVoxelize = if(!renderState.sceneInitiallyDrawn || config.debug.isForceRevoxelization) {
+        val entitiesToVoxelize = if(!sceneInitiallyDrawn || config.debug.isForceRevoxelization) {
             renderState.renderBatchesStatic
         } else {
             renderState.renderBatchesStatic.filter { batch ->
                 val entityVoxelizationCycle = entityVoxelizedInCycle[batch.entityName]
-                entityVoxelizationCycle == null || (batch.movedInCycle > entityVoxelizationCycle && batch.update == Update.DYNAMIC)
+                val voxelizeBecauseItIsDynamic = voxelizeDynamicEntites && batch.update == Update.DYNAMIC
+                val preventVoxelization = !batch.contributesToGi || if(voxelizeDynamicEntites) false else batch.update == Update.DYNAMIC
+                if(entityVoxelizationCycle == null) {
+                    !preventVoxelization
+                } else {
+                    batch.movedInCycle > entityVoxelizationCycle && voxelizeBecauseItIsDynamic
+                }
             }
         }
 
@@ -183,7 +193,7 @@ class VoxelConeTracingExtension(
         for(voxelGridIndex in 0 until maxGridCount) {
             val currentVoxelGrid = voxelGrids[voxelGridIndex]
             profiled("Clear voxels") {
-                if (config.debug.isForceRevoxelization || !renderState.sceneInitiallyDrawn) {
+                if (config.debug.isForceRevoxelization || !sceneInitiallyDrawn) {
                     ARBClearTexture.glClearTexImage(currentVoxelGrid.grid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
                     ARBClearTexture.glClearTexImage(currentVoxelGrid.indexGrid, 0, indexGridTextureFormat, GL11.GL_INT, ZERO_BUFFER_INT)
                     ARBClearTexture.glClearTexImage(currentVoxelGrid.normalGrid, 0, gridTextureFormat, GL11.GL_FLOAT, ZERO_BUFFER)
@@ -229,7 +239,6 @@ class VoxelConeTracingExtension(
                     for (entity in batches) {
                         voxelizerStatic.setTextureUniforms(entity.materialInfo.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(entity, voxelizerStatic, bindIndexBuffer = false)
-                        entityVoxelizedInCycle[entity.entityName] = renderState.cycle
                     }
                 }
 
@@ -239,6 +248,11 @@ class VoxelConeTracingExtension(
                 }
             }
         }
+
+        for (entity in batches) {
+            entityVoxelizedInCycle[entity.entityName] = renderState.cycle
+        }
+        sceneInitiallyDrawn = true
     }
 
     fun injectLight(renderState: RenderState, bounces: Int, needsLightInjection: Boolean) {

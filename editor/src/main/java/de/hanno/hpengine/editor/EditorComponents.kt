@@ -498,7 +498,7 @@ class EditorComponents(
 
     fun recreateSceneTree(scene: Scene) {
         SwingUtils.invokeLater {
-            sceneTree = SceneTree(config, textureManager, addResourceContext, this, scene).apply {
+            sceneTree = SceneTree(config, textureManager, addResourceContext, this, sceneManager).apply {
                 addDefaultMouseListener()
                 SwingUtils.invokeLater {
                     sceneTreePane = ReloadableScrollPane(this).apply {

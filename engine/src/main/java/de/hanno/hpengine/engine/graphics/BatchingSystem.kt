@@ -69,6 +69,7 @@ class BatchingSystem {
                     materialInfo = mesh.material.materialInfo
                     entityIndex = entity.index
                     entityName = entity.name
+                    contributesToGi = entity.contributesToGi
                     this.meshIndex = meshIndex
                 }
 
@@ -107,6 +108,7 @@ class BatchingSystem {
                             materialInfo = mesh.material.materialInfo
                             entityIndex = entity.index
                             entityName = entity.name
+                            contributesToGi = entity.contributesToGi
                             this.meshIndex = meshIndex
                         }
 

@@ -1,14 +1,12 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.backend.EngineContext
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
-import de.hanno.hpengine.engine.backend.textureManager
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommand
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
@@ -23,6 +21,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRende
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget.Companion.invoke
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.EnvironmentProbeState
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -30,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.engine.model.texture.TextureDimension.Companion.invoke
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
@@ -47,7 +47,13 @@ import java.nio.FloatBuffer
 import java.util.Random
 import java.util.stream.Collectors
 
-class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponentSystem<EnvironmentProbe>(EnvironmentProbe::class.java), RenderSystem {
+class EnvironmentProbeSystem(
+    val programManager: ProgramManager<OpenGl>,
+    val config: Config,
+    val textureManager: TextureManager,
+    renderStateManager: RenderStateManager,
+    val gpuContext: GpuContext<OpenGl>
+) : SimpleComponentSystem<EnvironmentProbe>(EnvironmentProbe::class.java), RenderSystem {
     private val renderProbeCommandQueue = RenderProbeCommandQueue()
     val environmentMapsArray: CubeMapArray
     private val environmentMapsArray1: CubeMapArray
@@ -62,10 +68,12 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
         super.onComponentAdded(component)
 
         (component as? EnvironmentProbe)?.let { probe ->
-            val sampler = EnvironmentSampler(probe.entity, probe,
-                    256, 256, components.indexOf(probe),
-                    this, engine.programManager,
-                    engine.config, engine.textureManager)
+            val sampler = EnvironmentSampler(
+                probe.entity, probe,
+                256, 256, components.indexOf(probe),
+                this, programManager,
+                config, textureManager
+            )
             probe.sampler = sampler
         }
 
@@ -293,7 +301,7 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
 
     @JvmOverloads
     fun draw(urgent: Boolean = false) {
-        if (!engine.config.quality.isDrawProbes) {
+        if (!config.quality.isDrawProbes) {
             return
         }
         prepareProbeRendering()
@@ -305,7 +313,7 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
     }
 
     fun drawAlternating(camera: Entity, renderState: RenderState) {
-        if (!engine.config.quality.isDrawProbes) {
+        if (!config.quality.isDrawProbes) {
             return
         }
         prepareProbeRendering()
@@ -317,10 +325,10 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
     }
 
     fun prepareProbeRendering() {
-        engine.gpuContext.depthMask = true
-        engine.gpuContext.enable(GlCap.DEPTH_TEST)
-        engine.gpuContext.enable(GlCap.CULL_FACE)
-        cubeMapArrayRenderTarget.use(engine.gpuContext, false)
+        gpuContext.depthMask = true
+        gpuContext.enable(GlCap.DEPTH_TEST)
+        gpuContext.enable(GlCap.CULL_FACE)
+        cubeMapArrayRenderTarget.use(gpuContext, false)
     }
 
     fun getEnvironmentMapsArray(index: Int): CubeMapArray = when (index) {
@@ -349,7 +357,7 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
         drawAlternating(renderState.camera.entity, renderState)
     }
 
-    val extractedProbes = engine.renderStateManager.renderState.registerState { mutableListOf<EnvironmentProbe>() }
+    val extractedProbes = renderStateManager.renderState.registerState { mutableListOf<EnvironmentProbe>() }
     override fun extract(scene: Scene, renderState: RenderState) {
         renderState.environmentProbesState.environmapsArray0Id = getEnvironmentMapsArray(0).id
         renderState.environmentProbesState.environmapsArray3Id = getEnvironmentMapsArray(3).id
@@ -387,11 +395,21 @@ class EnvironmentProbeSystem(private val engine: EngineContext) : SimpleComponen
         val dimension = invoke(RESOLUTION, RESOLUTION, MAX_PROBES)
         val filterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
         val wrapMode = GL11.GL_REPEAT
-        val gpuContext = engine.gpuContext
+        val gpuContext = gpuContext
         environmentMapsArray = CubeMapArray(gpuContext, dimension, filterConfig, GL30.GL_RGBA32F, wrapMode)
         environmentMapsArray1 = CubeMapArray(gpuContext, dimension, filterConfig, GL11.GL_RGBA8, wrapMode)
         environmentMapsArray2 = CubeMapArray(gpuContext, dimension, filterConfig, GL11.GL_RGBA8, wrapMode)
         environmentMapsArray3 = CubeMapArray(gpuContext, dimension, filterConfig, GL11.GL_RGBA8, wrapMode)
-        cubeMapArrayRenderTarget = invoke(gpuContext, RESOLUTION, RESOLUTION, "CubeMapArrayRenderTarget", Vector4f(0f, 0f, 0f, 0f), environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3)
+        cubeMapArrayRenderTarget = invoke(
+            gpuContext,
+            RESOLUTION,
+            RESOLUTION,
+            "CubeMapArrayRenderTarget",
+            Vector4f(0f, 0f, 0f, 0f),
+            environmentMapsArray,
+            environmentMapsArray1,
+            environmentMapsArray2,
+            environmentMapsArray3
+        )
     }
 }

@@ -1,8 +1,6 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
@@ -119,7 +117,7 @@ val Engine.lotsOfPlanesScene
                                 discard;
                             }
                         """.trimIndent())
-                    }, StaticFirstPassUniforms(engineContext.gpuContext)
+                    }, StaticFirstPassUniforms(engineContext.backend.gpuContext)
                 ) as Program<FirstPassUniforms>
 
                 modelComponent(
@@ -128,7 +126,13 @@ val Engine.lotsOfPlanesScene
                     materialManager = engineContext.extensions.materialExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
-                    material.materialInfo.put(SimpleMaterial.MAP.HEIGHT, engineContext.textureManager.getTexture("assets/blender_grass/Low/Grass_height.png", false))
+                    material.materialInfo.put(
+                        SimpleMaterial.MAP.HEIGHT,
+                        engineContext.backend.textureManager.getTexture(
+                            "assets/blender_grass/Low/Grass_height.png",
+                            false
+                        )
+                    )
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                     material.materialInfo.program = simpleColorProgramStatic
                 }

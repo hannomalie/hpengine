@@ -46,6 +46,7 @@ fun <R, T> extensionState(defaultValue: T): ExtensionState<R, T> = ExtensionStat
 private var entityCounter = 0
 class Entity @JvmOverloads constructor(var name: String = "Entity" + entityCounter++,
                                             position: Vector3f = Vector3f(0f, 0f, 0f)): Parentable<Entity>, Updatable {
+    var contributesToGi: Boolean = true
     val transform: Transform = Transform()
 
     private val simpleSpatial = TransformSpatial(transform, AABB(Vector3f(-5f), Vector3f(5f)))

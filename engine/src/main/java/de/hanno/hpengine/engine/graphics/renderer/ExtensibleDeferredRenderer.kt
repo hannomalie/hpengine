@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import de.hanno.hpengine.engine.backend.Backend
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config

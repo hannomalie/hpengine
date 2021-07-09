@@ -1,20 +1,19 @@
-package de.hanno.hpengine.engine.scene
+package de.hanno.hpengine.engine.extension
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.Backend
-import de.hanno.hpengine.engine.backend.EngineContext
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
-import de.hanno.hpengine.engine.backend.gpuContext
-import de.hanno.hpengine.engine.backend.programManager
-import de.hanno.hpengine.engine.backend.textureManager
-import de.hanno.hpengine.engine.camera.*
-import de.hanno.hpengine.engine.component.CustomComponent.Companion.customComponent
+import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.camera.CameraComponentSystem
+import de.hanno.hpengine.engine.camera.CameraRenderSystem
+import de.hanno.hpengine.engine.camera.InputComponentSystem
+import de.hanno.hpengine.engine.camera.MovableInputComponentComponentSystem
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
+import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
@@ -27,11 +26,12 @@ import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightRenderSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.engine.graphics.light.probe.EvaluateProbeRenderExtension
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -40,8 +40,14 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
-import de.hanno.hpengine.engine.graphics.renderer.extensions.*
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeComponentSystem
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeManager
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
@@ -51,18 +57,32 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
-import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.ModelComponentManager
 import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.OceanWaterComponenSystem
+import de.hanno.hpengine.engine.scene.OceanWaterEntitySystem
+import de.hanno.hpengine.engine.scene.OceanWaterRenderSystem
+import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.dsl.CameraDescription
+import de.hanno.hpengine.engine.scene.dsl.CustomComponentDescription
+import de.hanno.hpengine.engine.scene.dsl.DirectionalLightControllerComponentDescription
+import de.hanno.hpengine.engine.scene.dsl.DirectionalLightDescription
+import de.hanno.hpengine.engine.scene.dsl.Directory
+import de.hanno.hpengine.engine.scene.dsl.MovableInputComponentDescription
+import de.hanno.hpengine.engine.scene.dsl.SceneDescription
+import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
+import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
-import org.joml.Vector3f
 import org.koin.core.component.get
 import org.koin.core.module.Module
 import org.koin.dsl.bind
@@ -72,103 +92,85 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
-
-interface Extension {
-    fun extract(scene: Scene, renderState: RenderState) { }
-    fun Scene.decorate() { }
-}
-
 val baseModule = module {
     addBackendModule()
-
-    single { EngineContext(get(), get(), get(), get(), get(), renderSystems = getAll(), get()) }
-    single { Engine(get(), get(), get()) }
-
     addCameraModule()
     addSkyboxModule()
     addReflectionProbeModule()
-    addPointlightModule()
+    addPointLightModule()
     addGIModule()
     addOceanWaterModule()
     addDirectionalLightModule()
 
-    single { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) } bind RenderSystem::class
-    single { ForwardRenderExtension(get(), get(), get(), get()) } bind RenderExtension::class
-    single { AOScatteringExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
+    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) }
+    renderExtension { ForwardRenderExtension(get(), get(), get(), get()) }
+    renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }
+//    TODO: Fails because of shader code errors
+//    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
 
-    factory { Scene() }
+    manager { EntityManager() }
+    manager { MaterialManager(get(), get(), get()) }
+    manager { ModelComponentManager() }
+    manager { PhysicsManager(get(), get(), get(), get()) }
 
     scope<Scene> {
-        scoped { EntityManager() } bind Manager::class
-        scoped { MaterialManager(get(), get(), get()) } bind Manager::class
-        scoped { ModelComponentManager() } bind Manager::class
-        scoped { ModelComponentSystem(get(), get(), get()) } bind ComponentSystem::class
-        scoped { PhysicsManager(get(), get(), get(), get()) } bind Manager::class
-        scoped { AreaLightComponentSystem() } bind ComponentSystem::class
-        scoped { AreaLightSystem(get()) } bind EntitySystem::class
-        scoped { TubeLightComponentSystem() } bind ComponentSystem::class
-        scoped { CustomComponentSystem() } bind ComponentSystem::class
-        scoped { ScriptComponentSystem() } bind ComponentSystem::class
-        scoped { ClustersComponentSystem() } bind ComponentSystem::class
-        scoped { InputComponentSystem(get()) } bind ComponentSystem::class
+        scoped { AreaLightSystem(get(), get(), get(), get()) } binds arrayOf(EntitySystem::class, RenderSystem::class)
+    }
+    componentSystem { AreaLightComponentSystem() }
+    componentSystem { ModelComponentSystem(get(), get(), get(), get()) }
+    componentSystem { TubeLightComponentSystem() }
+    componentSystem { CustomComponentSystem() }
+    componentSystem { ScriptComponentSystem() }
+    componentSystem { ClustersComponentSystem() }
+    componentSystem { InputComponentSystem() }
+    componentSystem { MovableInputComponentComponentSystem() }
+}
+
+fun Module.addGIModule() {
+    extension { GiVolumeExtension() }
+    renderExtension { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) }
+    componentSystem { GiVolumeComponentSystem() }
+    entitySystem { GIVolumeSystem(get()) }
+}
+
+fun Module.addPointLightModule() {
+    renderExtension { BvHPointLightSecondPassExtension(get(), get(), get(), get(), get()) }
+    componentSystem { PointLightComponentSystem() }
+    scope<Scene> {
+        scoped { PointLightSystem(get(), get(), get()) } binds (arrayOf(EntitySystem::class, RenderSystem::class))
     }
 }
 
-private fun Module.addGIModule() {
-//        single { GiVolumeExtension() } bind Extension::class
-//        single { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
-//
-//        scope<SceneScope> {
-//            scoped { GiVolumeComponentSystem() } bind ComponentSystem::class
-//            scoped { GIVolumeSystem(get(), get()) } bind EntitySystem::class
-//        }
+fun Module.addDirectionalLightModule() {
+    extension { DirectionalLightExtension() }
+    renderSystem { DirectionalLightRenderSystem() }
+    renderExtension { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) }
+    componentSystem { DirectionalLightControllerComponentSystem() }
+    entitySystem { DirectionalLightSystem() }
 }
 
-private fun Module.addPointlightModule() {
-    single { BvHPointLightSecondPassExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
-    scope<Scene> {
-        scoped { PointLightComponentSystem() } bind ComponentSystem::class
-        scoped { PointLightSystem(get()) } binds (arrayOf(EntitySystem::class, RenderSystem::class))
-    }
+fun Module.addOceanWaterModule() {
+    renderSystem { OceanWaterRenderSystem(get(), get(), get(), get()) }
+    componentSystem { OceanWaterComponenSystem() }
+    entitySystem { OceanWaterEntitySystem(get()) }
 }
 
-private fun Module.addDirectionalLightModule() {
-    single { DirectionalLightExtension(get()) } bind Extension::class
-    single { DirectionalLightRenderSystem() } bind RenderSystem::class
-    single { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) } bind RenderExtension::class
-    scope<Scene> {
-        scoped { DirectionalLightSystem() } bind EntitySystem::class
-    }
+fun Module.addReflectionProbeModule() {
+    renderExtension { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) }
+    componentSystem { ReflectionProbeComponentSystem() }
+    manager { ReflectionProbeManager(get()) }
 }
 
-private fun Module.addOceanWaterModule() {
-    single { OceanWaterRenderSystem(get(), get(), get(), get()) } bind RenderSystem::class
-    scope<Scene> {
-        scoped { OceanWaterComponenSystem() } bind ComponentSystem::class
-        scoped { OceanWaterEntitySystem(get()) } bind EntitySystem::class
-    }
+fun Module.addCameraModule() {
+    extension { CameraExtension() }
+    renderSystem { CameraRenderSystem(get(), get(), get(), get()) }
+    componentSystem { CameraComponentSystem(get(), get(), get(), get()) }
 }
 
-private fun Module.addReflectionProbeModule() {
-    single { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) } bind RenderExtension::class
-    scope<Scene> {
-        scoped { ReflectionProbeComponentSystem() } bind ComponentSystem::class
-        scoped { ReflectionProbeManager(get()) } bind Manager::class
-    }
-}
-
-private fun Module.addCameraModule() {
-    single { CameraExtension(get()) } bind Extension::class
-    single { CameraRenderSystem(get(), get(), get(), get()) } bind RenderSystem::class
-    scope<Scene> {
-        scoped { CameraComponentSystem(get(), get(), get(), get()) } bind ComponentSystem::class
-    }
-}
-
-private fun Module.addSkyboxModule() {
-    single { SkyboxExtension(get()) } bind Extension::class
-    single { SkyboxExtension.SkyboxRenderSystem() } bind RenderSystem::class
-    single {
+fun Module.addSkyboxModule() {
+    extension { SkyboxExtension(get(), get(), get(), get()) }
+    renderSystem { SkyboxExtension.SkyboxRenderSystem() }
+    renderExtension {
         SkyboxExtension.SkyboxRenderExtension(
             get(),
             get(),
@@ -177,16 +179,16 @@ private fun Module.addSkyboxModule() {
             get(),
             get()
         )
-    } bind RenderExtension::class
+    }
 }
 
-private fun Module.addBackendModule() {
+fun Module.addBackendModule() {
     single { AddResourceContext() }
     single { MBassadorEventBus() } bind EventBus::class
 
     single { TextureManager(get(), get(), get(), get()) } bind Manager::class
     single { OpenGLContext.invoke(get()) } bind GpuContext::class
-    single { OpenGlProgramManager(get(), get(), get()) } bind ProgramManager::class
+    single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, Manager::class)
     single { Input(get(), get()) }
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
     single {
@@ -208,19 +210,20 @@ private fun Module.addBackendModule() {
 
 class GiVolumeComponentSystem: SimpleComponentSystem<GIVolumeComponent>(GIVolumeComponent::class.java)
 class GiVolumeExtension : Extension {
-    override fun Scene.decorate() {
-        entity("GlobalGiGrid") {
-            addComponent(GIVolumeComponent(this, get<TextureManager>().createGIVolumeGrids(), Vector3f(100f)))
-            customComponent { scene, _ ->
-                boundingVolume.setLocalAABB(scene.aabb.min, scene.aabb.max)
-            }
-        }
-        // TODO: Global grid makes sense maybe, but this one shouldn't live here forever, but I use it for testing purposes
-        entity("SecondGiGrid") {
-            transform.translation(Vector3f(0f, 0f, 50f))
-            addComponent(GIVolumeComponent(this, get<TextureManager>().createGIVolumeGrids(), Vector3f(30f)))
-        }
-    }
+    // TODO: Migrate to SceneDescription.decorate
+//    override fun Scene.decorate() {
+//        entity("GlobalGiGrid") {
+//            addComponent(GIVolumeComponent(this, get<TextureManager>().createGIVolumeGrids(), Vector3f(100f)))
+//            customComponent { scene, _ ->
+//                boundingVolume.setLocalAABB(scene.aabb.min, scene.aabb.max)
+//            }
+//        }
+//        // TODO: Global grid makes sense maybe, but this one shouldn't live here forever, but I use it for testing purposes
+//        entity("SecondGiGrid") {
+//            transform.translation(Vector3f(0f, 0f, 50f))
+//            addComponent(GIVolumeComponent(this, get<TextureManager>().createGIVolumeGrids(), Vector3f(30f)))
+//        }
+//    }
 }
 
 class DirectionalLightDeferredRenderingExtension(
@@ -235,41 +238,43 @@ class DirectionalLightDeferredRenderingExtension(
         DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer)
     )
 )
-class DirectionalLightExtension(val engineContext: EngineContext) : Extension {
-    override fun Scene.decorate() {
+
+class DirectionalLightExtension : Extension {
+    override fun SceneDescription.decorate() {
         entity("DirectionalLight") {
-            addComponent(DirectionalLight(this))
-            addComponent(DirectionalLight.DirectionalLightController(engineContext, this))
+            add(DirectionalLightControllerComponentDescription())
+            add(DirectionalLightDescription())
         }
     }
 }
 
-class CameraExtension(val engineContext: EngineContext) : Extension {
-    override fun Scene.decorate() = add(_cameraEntity)
+class CameraExtension : Extension {
+    override fun SceneDescription.decorate() {
+        entity(cameraEntityName) {
+            add(MovableInputComponentDescription())
+            add(CameraDescription())
+        }
+    }
 
     override fun extract(scene: Scene, renderState: RenderState) {
-        renderState.camera.init(activeCamera)
+        renderState.camera.init(scene.activeCamera)
     }
 
-    private val _cameraEntity = newEntity(cameraEntityName) {
-        addComponent(MovableInputComponent(engineContext, this))
-        addComponent(
-            Camera(engineContext, this)
-        )
-    }
-    var activeCameraEntity: Entity = _cameraEntity.apply {
-        activeCameraEntity = this
-    }
-
-    val activeCamera: Camera
-        get() = activeCameraEntity.getComponent(Camera::class.java)!!
-
-    val Entity.isActiveCameraEntity get() = this == activeCameraEntity
+    var _activeCameraEntity: Entity? = null
+    var Scene.activeCameraEntity: Entity
+        get() = _activeCameraEntity ?: cameraEntity
+        set(value) { _activeCameraEntity = value }
 
     companion object {
         val cameraEntityName = "MainCamera"
         val Scene.cameraEntity: Entity
             get() = getEntity(cameraEntityName)!!
+
+        val Scene.activeCameraEntity: Entity
+            get() = get<CameraExtension>().run { this@activeCameraEntity.activeCameraEntity }
+
+        val Scene.activeCamera: Camera
+            get() = get<CameraExtension>().run { this@activeCamera.activeCameraEntity }.getComponent(Camera::class.java)!!
 
         val Scene.camera
             get() = cameraEntity.getComponent(Camera::class.java)!!
@@ -277,13 +282,18 @@ class CameraExtension(val engineContext: EngineContext) : Extension {
     }
 }
 
-class SkyboxExtension(val engineContext: EngineContext) : Extension {
+class SkyboxExtension(
+    val config: Config,
+    programManager: ProgramManager<OpenGl>,
+    gpuContext: GpuContext<OpenGl>,
+    val textureManager: TextureManager
+) : Extension {
     private val firstpassProgramVertexSource =
-        engineContext.config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
+        config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
     private val firstpassProgramFragmentSource =
-        engineContext.config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
+        config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 
-    private val simpleColorProgramStatic = engineContext.programManager.getProgram(
+    private val simpleColorProgramStatic = programManager.getProgram(
         firstpassProgramVertexSource,
         firstpassProgramFragmentSource.enhanced {
             replace(
@@ -292,47 +302,51 @@ class SkyboxExtension(val engineContext: EngineContext) : Extension {
                             out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
                         """.trimIndent()
             )
-        }, StaticFirstPassUniforms(engineContext.gpuContext) as FirstPassUniforms
+        }, StaticFirstPassUniforms(gpuContext) as FirstPassUniforms
     )
 
     init {
-        engineContext.gpuContext.bindTexture(
+        gpuContext.bindTexture(
             6,
             GlTextureTarget.TEXTURE_CUBE_MAP,
-            engineContext.textureManager.cubeMap.id
+            textureManager.cubeMap.id
         )
-    }
-
-    private fun SkyBoxEntity(): Entity = Entity("Skybox").apply {
-        modelComponent(
-            name = "Plane",
-            file = "assets/models/skybox.obj",
-            textureManager = engineContext.textureManager,
-            directory = engineContext.config.directories.engineDir
-        ).apply {
-            val materialInfo = material.materialInfo.copy(
-                materialType = SimpleMaterial.MaterialType.UNLIT,
-                cullBackFaces = false,
-                isShadowCasting = false,
-                program = simpleColorProgramStatic
-            ).apply {
-                put(SimpleMaterial.MAP.ENVIRONMENT, engineContext.textureManager.cubeMap)
-            }
-            material = SimpleMaterial(
-                "skybox",
-                materialInfo
-            ) // TODO Investigate why this doesnt update in UI
-        }
-        customComponent { scene, _ ->
-            val eyePosition = scene.get<CameraExtension>().activeCamera.getPosition()
-            this.transform.identity().translate(eyePosition)
-            this.transform.scale(1000f)
-        }
     }
 
     class SkyboxRenderSystem : RenderSystem {
         override fun extract(scene: Scene, renderState: RenderState) {
-            renderState.skyBoxMaterialIndex = scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
+            renderState.skyBoxMaterialIndex =
+                scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
+        }
+    }
+
+    override fun SceneDescription.decorate() {
+        entity("Skybox") {
+            contributesToGi = false
+            add(
+                StaticModelComponentDescription(
+                    "assets/models/skybox.obj",
+                    Directory.Engine,
+                    material = SimpleMaterial(
+                        name = "Skybox",
+                        materialInfo = MaterialInfo(
+                            materialType = SimpleMaterial.MaterialType.UNLIT,
+                            cullBackFaces = false,
+                            isShadowCasting = false,
+                            program = simpleColorProgramStatic
+                        )
+                    ).apply {
+                        materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, textureManager.cubeMap)
+                    }
+                )
+            )
+            add(
+                CustomComponentDescription { scene, entity, _ ->
+                    val eyePosition = scene.get<CameraExtension>().run { scene.activeCameraEntity.transform.position }
+                    entity.transform.identity().translate(eyePosition)
+                    entity.transform.scale(1000f)
+                }
+            )
         }
     }
 
@@ -356,9 +370,10 @@ class SkyboxExtension(val engineContext: EngineContext) : Extension {
 
         override fun extract(scene: Scene, renderState: RenderState) {
             scene.skyBox?.let {
-                it.getComponent(ModelComponent::class.java)?.model?.material?.materialInfo?.maps?.get(SimpleMaterial.MAP.ENVIRONMENT)?.let {
-                    renderState[skyBoxTexture].value = it.id
-                }
+                it.getComponent(ModelComponent::class.java)?.model?.material?.materialInfo?.maps?.get(SimpleMaterial.MAP.ENVIRONMENT)
+                    ?.let {
+                        renderState[skyBoxTexture].value = it.id
+                    }
             }
         }
 
@@ -405,10 +420,6 @@ class SkyboxExtension(val engineContext: EngineContext) : Extension {
                 1
             )
         }
-    }
-
-    override fun Scene.decorate() {
-        add(SkyBoxEntity())
     }
 }
 

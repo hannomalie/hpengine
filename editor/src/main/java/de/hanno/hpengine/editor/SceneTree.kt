@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
@@ -35,15 +36,17 @@ open class SceneTree(
     val textureManager: TextureManager,
     val addResourceContext: AddResourceContext,
     val editorComponents: EditorComponents,
-    val scene: Scene,
-    val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(scene)
+    val sceneManager: SceneManager,
+    val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(sceneManager.scene)
 ) : JTree(rootNode) {
 
     private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null
 
     init {
-        reload()
+        addResourceContext.launch {
+            reload()
+        }
     }
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
@@ -81,8 +84,8 @@ open class SceneTree(
         val top = rootNode
         top.removeAllChildren()
 
-        spanTree(top, scene.getEntities())
-        LOGGER.info("Added " + scene.getEntities().size)
+        spanTree(top, sceneManager.scene.getEntities())
+        LOGGER.info("Added " + sceneManager.scene.getEntities().size)
 
         if (selectionListener == null) {
             selectionListener = SelectionListener(this, editorComponents)
@@ -156,7 +159,7 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
                                                 selection
                                             ).execute()
                                             addResourceContext.launch {
-                                                with(scene) {
+                                                with(sceneManager.scene) {
                                                     addAll(loadedModels.entities)
                                                 }
                                             }
@@ -170,7 +173,7 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
                                 addActionListener {
                                     GlobalScope.launch {
                                         val component = PointLight(selection, Vector4f(1f, 1f, 1f, 1f))
-                                        scene.addComponent(selection, component)
+                                        sceneManager.scene.addComponent(selection, component)
                                     }
                                 }
                             })

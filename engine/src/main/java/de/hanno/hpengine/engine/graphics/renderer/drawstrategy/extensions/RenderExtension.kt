@@ -18,6 +18,7 @@ interface RenderExtension<TYPE : BackendType>: Updatable {
     @JvmDefault fun renderEditor(renderState: RenderState, result: DrawResult) {}
     @JvmDefault fun extract(scene: Scene, renderState: RenderState) {}
     @JvmDefault fun beforeSetScene(nextScene: Scene) {}
+    @JvmDefault fun afterSetScene(nextScene: Scene) {}
 }
 
 open class CompoundExtension<TYPE : BackendType>(val extensions: List<RenderExtension<TYPE>>): RenderExtension<TYPE> {

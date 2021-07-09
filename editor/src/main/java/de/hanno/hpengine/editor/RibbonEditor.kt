@@ -16,7 +16,8 @@ import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.convert
 import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.engine.scene.dsl.scene
-import de.hanno.hpengine.engine.scene.baseModule
+import de.hanno.hpengine.engine.extension.baseModule
+import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
@@ -132,11 +133,11 @@ fun main(args: Array<String>) {
 
     val application = EngineWithEditorXXX(config)
 
-    val engine = application.koin.get<Engine>()
+    val engine = Engine(application)
     application.koin.get<AWTEditorWindow>().apply {
         frame.onSceneReload = {
 
-            val sceneDescription = scene("Hellknight") {
+            val scene = scene("Hellknight") {
                 entity("hellknight") {
                     add(
                         AnimatedModelComponentDescription(
@@ -149,9 +150,9 @@ fun main(args: Array<String>) {
                         )
                     )
                 }
-            }.convert(engine.engineContext)
+            }.convert(application)
 
-            engine.sceneManager.scene = sceneDescription
+            application.koin.get<SceneManager>().scene = scene
         }.apply { invoke() }
     }
 }

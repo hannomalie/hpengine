@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.model.texture
 
-import de.hanno.hpengine.engine.backend.gpuContext
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -48,7 +47,6 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.GL_RGBA32F
-import org.lwjgl.opengl.GL32
 import org.lwjgl.opengl.GL42
 import org.lwjgl.opengl.GL43
 import java.awt.Color

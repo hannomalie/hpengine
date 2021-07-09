@@ -1,5 +1,4 @@
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.EngineConsumer
@@ -14,7 +13,7 @@ class InitDoomMonsterKotlin @Inject constructor(val engine: Engine) : EngineCons
             modelComponent(
                 AnimatedModelLoader().load(
                     "assets/models/doom3monster/monster.md5mesh",
-                    engine.engineContext.textureManager,
+                    engine.engineContext.backend.textureManager,
                     engine.directories.gameDir
                 )
             ).apply {

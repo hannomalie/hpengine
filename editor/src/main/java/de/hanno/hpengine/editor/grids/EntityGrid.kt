@@ -21,6 +21,7 @@ class EntityGrid(val entity: Entity): JPanel() {
         labeled("Name", entity::name.toTextField())
         labeled("Visible", entity::visible.toCheckBox())
         labeled("Update", entity::updateType.toComboBox(Update.values()))
+        labeled("Contributes to GI", entity::contributesToGi.toCheckBox())
     }
 
 }

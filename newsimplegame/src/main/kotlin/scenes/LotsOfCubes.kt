@@ -1,7 +1,6 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.backend.textureManager
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.instancing.ClustersComponent
@@ -35,7 +34,10 @@ val Engine.lotsOfCubesScene
                     materialManager = engineContext.extensions.materialExtension.manager,
                     gameDirectory = engineContext.config.directories.gameDir
                 ).apply {
-                    material.materialInfo.put(SimpleMaterial.MAP.DIFFUSE, engineContext.textureManager.getTexture("assets/textures/grass.png", true))
+                    material.materialInfo.put(
+                        SimpleMaterial.MAP.DIFFUSE,
+                        engineContext.backend.textureManager.getTexture("assets/textures/grass.png", true)
+                    )
                     material.materialInfo.materialType = SimpleMaterial.MaterialType.FOLIAGE
                 }
 
