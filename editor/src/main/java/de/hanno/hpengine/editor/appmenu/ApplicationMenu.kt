@@ -22,7 +22,7 @@ object ApplicationMenu {
                 .setExtraText("Creates an empty scene")
                 .setAction {
                     GlobalScope.launch {
-                        sceneManager.scene = SceneDescription("Scene_${System.currentTimeMillis()}").convert(sceneManager.scene.get())
+                        sceneManager.scene = SceneDescription("Scene_${System.currentTimeMillis()}").convert(sceneManager.scene.get(), sceneManager.scene.get())
                     }
                 }
                 .build()

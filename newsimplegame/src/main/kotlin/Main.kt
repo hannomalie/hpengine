@@ -1,10 +1,9 @@
-import de.hanno.hpengine.editor.EngineWithEditorXXX
+import de.hanno.hpengine.editor.EngineWithEditor
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
-import scenes.oceanDemo
 import java.io.File
 
 object GameEditor {
@@ -19,7 +18,7 @@ object GameEditor {
                 ),
                 debug = DebugConfig(isUseFileReloading = true)
         )
-        val (engine, editor) = EngineWithEditorXXX(config)
+        val (engine, editor) = EngineWithEditor(config)
 
         editor.frame.onSceneReload = {
             engine.scene = engine.oceanDemo

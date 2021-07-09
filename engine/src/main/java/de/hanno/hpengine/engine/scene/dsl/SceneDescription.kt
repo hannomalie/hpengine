@@ -1,10 +1,12 @@
 package de.hanno.hpengine.engine.scene.dsl
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.MovableInputComponent
 import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.directory.EngineAsset
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponent
@@ -57,9 +59,7 @@ class DirectionalLightDescription: ComponentDescription
 class MovableInputComponentDescription: ComponentDescription
 class CameraDescription: ComponentDescription
 
-fun SceneDescription.convert(application: KoinApplication) = Scene(name).apply {
-    val config = application.koin.get<Config>()
-    val textureManager = application.koin.get<TextureManager>()
+fun SceneDescription.convert(config: Config, textureManager: TextureManager) = Scene(name).apply {
 
     val extensions = scope.getAll<Extension>().distinct()
     extensions.forEach {

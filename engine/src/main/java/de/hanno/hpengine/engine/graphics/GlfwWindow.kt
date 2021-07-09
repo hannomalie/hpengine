@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
 import org.joml.Vector4f
@@ -20,13 +21,14 @@ private val exitOnCloseCallback = GLFWWindowCloseCallbackI { l: Long ->
     exitProcess(0)
 }
 
-class GlfwWindow @JvmOverloads constructor(override var width: Int,
-                 override var height: Int,
-                 title: String,
-                 override var vSync: Boolean = true,
-                 errorCallback: GLFWErrorCallbackI = printErrorCallback,
-                 closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
-                   val executor: OpenGlExecutor = OpenGlExecutorImpl()): Window<OpenGl>, OpenGlExecutor by executor {
+class GlfwWindow @JvmOverloads constructor(
+    override var width: Int,
+    override var height: Int,
+    title: String,
+    override var vSync: Boolean = true,
+    errorCallback: GLFWErrorCallbackI = printErrorCallback,
+    closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
+    val executor: OpenGlExecutor = OpenGlExecutorImpl()): Window<OpenGl>, OpenGlExecutor by executor {
 
     override var title = title
         set(value) {
@@ -35,6 +37,7 @@ class GlfwWindow @JvmOverloads constructor(override var width: Int,
         }
     override val frontBuffer: FrontBufferTarget
 
+    constructor(config: Config): this(config.width, config.height, "HPEngine", config.performance.isVsync)
 //     TODO: Avoid this somehow, move to update, but only when update is called before all the
 //    contexts and stuff, or the fresh window will get a message dialog that it doesnt respond
     private val pollEventsThread = Thread({

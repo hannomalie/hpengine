@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.extension
 
-import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -31,7 +30,6 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightRende
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
-import de.hanno.hpengine.engine.graphics.light.probe.EvaluateProbeRenderExtension
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget

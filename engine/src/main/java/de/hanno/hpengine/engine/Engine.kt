@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.extension.baseModule
+import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -26,6 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import java.io.File
 import java.util.concurrent.Executors
@@ -33,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
 
-class Engine constructor(application: KoinApplication) {
+class Engine constructor(val application: KoinApplication) {
 
     private val koin = application.koin
     private val config = koin.get<Config>()
@@ -58,7 +60,7 @@ class Engine constructor(application: KoinApplication) {
     val updateCycle = AtomicLong()
 
     init {
-        sceneManager.scene = SceneDescription("InitialScene").convert(application)
+        sceneManager.scene = SceneDescription("InitialScene").convert(koin.get(), koin.get())
         launchEndlessLoop { deltaSeconds ->
             try {
                 executeCommands()
@@ -125,11 +127,14 @@ class Engine constructor(application: KoinApplication) {
                     )
                 }
             }
+            val windowModule = module {
+                single { GlfwWindow(get()) } bind Window::class
+            }
             val application = startKoin {
-                modules(configModule, baseModule)
+                modules(configModule, windowModule, baseModule)
             }
 
-            val engine = application.koin.get<Engine>()
+            val engine = Engine(application)
         }
 
     }

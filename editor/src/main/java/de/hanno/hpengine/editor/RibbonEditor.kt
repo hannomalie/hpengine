@@ -17,13 +17,12 @@ import de.hanno.hpengine.engine.scene.dsl.convert
 import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.engine.scene.dsl.scene
 import de.hanno.hpengine.engine.extension.baseModule
-import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.joml.Vector3f
-import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
+import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -98,27 +97,27 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
     }
 }
 
-fun EngineWithEditorXXX(config: ConfigImpl = ConfigImpl()): KoinApplication {
-
-    val configModule = module {
-        single { config } bind Config::class
+val editorModule = module {
+    single { AWTEditorWindow(get()) } bind Window::class
+    single {
+        val window: AWTEditorWindow = get()
+        window.frame
     }
-    val editorModule = module {
-        single { AWTEditorWindow(get()) } bind Window::class
-        single {
-            val window: AWTEditorWindow = get()
-            window.frame
-        }
-        single {
-            EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
-        } binds (arrayOf(RenderSystem::class, Manager::class))
-        single { EditorManager(get(), get()) } bind Manager::class
-    }
+    single {
+        EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+    } binds (arrayOf(RenderSystem::class, Manager::class))
+    single { EditorManager(get(), get()) } bind Manager::class
+}
 
-    return startKoin {
+fun EngineWithEditor(config: ConfigImpl = ConfigImpl()) = Engine(
+    startKoin {
 //        printLogger(Level.DEBUG)
-        modules(configModule, editorModule, baseModule)
+        modules(config.toModule(), editorModule, baseModule)
     }
+)
+
+private fun ConfigImpl.toModule(): Module = module {
+    single { this@toModule } bind Config::class
 }
 
 fun main(args: Array<String>) {
@@ -131,13 +130,11 @@ fun main(args: Array<String>) {
         debug = DebugConfig(isUseFileReloading = true)
     )
 
-    val application = EngineWithEditorXXX(config)
+    val engine = EngineWithEditor(config)
 
-    val engine = Engine(application)
-    application.koin.get<AWTEditorWindow>().apply {
+    engine.application.koin.get<AWTEditorWindow>().apply {
         frame.onSceneReload = {
-
-            val scene = scene("Hellknight") {
+            engine.scene = scene("Hellknight") {
                 entity("hellknight") {
                     add(
                         AnimatedModelComponentDescription(
@@ -150,9 +147,7 @@ fun main(args: Array<String>) {
                         )
                     )
                 }
-            }.convert(application)
-
-            application.koin.get<SceneManager>().scene = scene
+            }.convert(engine.application.koin.get(), engine.application.koin.get())
         }.apply { invoke() }
     }
 }
