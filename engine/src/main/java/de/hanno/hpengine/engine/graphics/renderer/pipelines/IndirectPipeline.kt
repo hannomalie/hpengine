@@ -40,13 +40,14 @@ open class IndirectPipeline @JvmOverloads constructor(private val config: Config
         entitiesCount = 0
 
         fun CommandOrganization.prepare(batches: List<RenderBatch>) {
-            filteredRenderBatches = batches.filter { !it.shouldBeSkipped(camera) }
+            filteredRenderBatches = batches.filterNot { it.shouldBeSkipped(camera) }.filterNot { it.hasOwnProgram }
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
         }
 
         commandOrganizationStatic.prepare(renderState.renderBatchesStatic)
         commandOrganizationAnimated.prepare(renderState.renderBatchesAnimated)
+
     }
 
     override fun draw(renderState: RenderState,
@@ -60,6 +61,7 @@ open class IndirectPipeline @JvmOverloads constructor(private val config: Config
 
         firstPassResult.verticesDrawn += verticesCount
         firstPassResult.entitiesDrawn += entitiesCount
+
     }
 
     override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {

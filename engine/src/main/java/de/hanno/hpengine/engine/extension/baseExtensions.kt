@@ -169,14 +169,7 @@ fun Module.addSkyboxModule() {
     extension { SkyboxExtension(get(), get(), get(), get()) }
     renderSystem { SkyboxExtension.SkyboxRenderSystem() }
     renderExtension {
-        SkyboxExtension.SkyboxRenderExtension(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get()
-        )
+        SkyboxExtension.SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
     }
 }
 
@@ -376,7 +369,6 @@ class SkyboxExtension(
         }
 
         override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-
             gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
             gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
             gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)

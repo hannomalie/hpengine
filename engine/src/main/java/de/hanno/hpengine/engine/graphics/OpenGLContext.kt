@@ -109,7 +109,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
         get() = window.invoke { GL11.glGetError() != GL11.GL_NO_ERROR }
 
     override val features = run {
-        val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) null else null // TODO: FIXME
+        val bindlessTextures = if(capabilities.GL_ARB_bindless_texture) BindlessTextures else null
         val drawParameters = if(capabilities.GL_ARB_shader_draw_parameters) DrawParameters else null
         val nvShader5 = if(capabilities.GL_NV_gpu_shader5) NvShader5 else null
         val arbShader5 = if(capabilities.GL_ARB_gpu_shader5) ArbShader5 else null

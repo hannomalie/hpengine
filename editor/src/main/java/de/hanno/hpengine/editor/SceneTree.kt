@@ -136,7 +136,7 @@ open class SceneTree(
 }
 
 fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
-    if (mouseEvent.isPopupTrigger) {
+    if (mouseEvent.isPopupTrigger || mouseEvent.button == 3) {
         when (selection) {
             is Entity -> {
                 JPopupMenu().apply {
@@ -150,7 +150,11 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
                                                 config.gameDir.baseDir.canonicalPath.toString()
                                             require(selectedFile.canonicalPath.startsWith(baseDirPath)) { "Can only load from within the game directory" }
 
-                                            val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "")
+                                            val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "").let {
+                                                if(it.startsWith("/")) it.replaceFirst("/", "") else it
+                                            }.let {
+                                                if(it.startsWith("\\")) it.replaceFirst("\\", "") else it
+                                            }
                                             val loadedModels = LoadModelCommand(
                                                 resultingPath,
                                                 "Model_${System.currentTimeMillis()}",

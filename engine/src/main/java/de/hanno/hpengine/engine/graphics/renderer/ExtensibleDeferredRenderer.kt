@@ -4,10 +4,7 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.RenderStateManager
-import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.profiled
+import de.hanno.hpengine.engine.graphics.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -17,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSec
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IndirectPipeline
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
@@ -67,8 +65,42 @@ class ExtensibleDeferredRenderer(
         window.frontBuffer
     )
 
+    private val useIndirectRendering
+        get() = config.performance.isIndirectRendering && gpuContext.isSupported(BindlessTextures)
+    private val shouldBeSkippedForDirectRendering: RenderBatch.(Camera) -> Boolean = { if (useIndirectRendering) !hasOwnProgram else false }
+
     val pipeline: StateRef<DirectPipeline> = renderStateManager.renderState.registerState {
-        object : DirectPipeline(config, gpuContext) {
+        object : DirectPipeline(config, gpuContext, shouldBeSkippedForDirectRendering) {
+            override fun beforeDrawAnimated(
+                renderState: RenderState,
+                program: Program<AnimatedFirstPassUniforms>,
+                renderCam: Camera
+            ) {
+                super.beforeDrawAnimated(renderState, program, renderCam)
+                customBeforeDraw()
+            }
+
+            override fun beforeDrawStatic(
+                renderState: RenderState,
+                program: Program<StaticFirstPassUniforms>,
+                renderCam: Camera
+            ) {
+                super.beforeDrawStatic(renderState, program, renderCam)
+                customBeforeDraw()
+            }
+
+            private fun customBeforeDraw() {
+                deferredRenderingBuffer.use(gpuContext, false)
+                gpuContext.cullFace = true
+                gpuContext.depthMask = true
+                gpuContext.depthTest = true
+                gpuContext.depthFunc = GlDepthFunc.LESS
+                gpuContext.blend = false
+            }
+        }
+    }
+    val indirectPipeline: StateRef<IndirectPipeline> = renderStateManager.renderState.registerState {
+        object : IndirectPipeline(config, gpuContext) {
             override fun beforeDrawAnimated(
                 renderState: RenderState,
                 program: Program<AnimatedFirstPassUniforms>,
@@ -117,6 +149,9 @@ class ExtensibleDeferredRenderer(
         val currentWriteState = renderStateManager.renderState.currentWriteState
 
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
+        if(useIndirectRendering) {
+            currentWriteState.customState[indirectPipeline].prepare(currentWriteState, currentWriteState.camera)
+        }
 
         extensions.forEach { it.update(scene, deltaSeconds) }
     }
@@ -132,6 +167,15 @@ class ExtensibleDeferredRenderer(
         profiled("FirstPass") {
 
             profiled("MainPipeline") {
+                if(useIndirectRendering) {
+                    renderState[indirectPipeline].draw(
+                        renderState,
+                        simpleColorProgramStatic,
+                        simpleColorProgramAnimated,
+                        result.firstPassResult
+                    )
+                }
+
                 renderState[pipeline].draw(
                     renderState,
                     simpleColorProgramStatic,

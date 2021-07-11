@@ -16,7 +16,11 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.joml.FrustumIntersection
 
-open class DirectPipeline(private val config: Config, private val gpuContext: GpuContext<OpenGl>) : Pipeline {
+open class DirectPipeline(
+    private val config: Config,
+    private val gpuContext: GpuContext<OpenGl>,
+    private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = RenderBatch::shouldBeSkipped
+) : Pipeline {
 
     private var verticesCount = 0
     private var entitiesCount = 0

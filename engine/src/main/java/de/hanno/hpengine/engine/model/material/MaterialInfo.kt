@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.ENVIRONMENTMAP_TYPE

@@ -56,7 +56,7 @@ data class GameAsset(override val directory: GameDirectory, override val relativ
     }
 }
 
-class EngineDirectory(baseDir: File): AbstractDirectory(baseDir, EngineDirectory::class.java.protectionDomain.codeSource.location.path.toString().endsWith("jar")) {
+data class EngineDirectory(val _baseDir: File): AbstractDirectory(_baseDir, EngineDirectory::class.java.protectionDomain.codeSource.location.path.toString().endsWith("jar")) {
     val shaders by lazy { resolve("shaders") }
     val assets by lazy { resolve("assets") }
     val models by lazy { assets.resolve("models") }
@@ -64,7 +64,7 @@ class EngineDirectory(baseDir: File): AbstractDirectory(baseDir, EngineDirectory
 
     override fun toAsset(relativePath: String) = EngineAsset(this, relativePath)
 }
-class GameDirectory(baseDir: File, gameClazz: Class<*>?): AbstractDirectory(baseDir, gameClazz?.protectionDomain?.codeSource?.location?.path?.toString()?.endsWith("jar") ?: false) {
+data class GameDirectory(val _baseDir: File, val gameClazz: Class<*>?): AbstractDirectory(_baseDir, gameClazz?.protectionDomain?.codeSource?.location?.path?.toString()?.endsWith("jar") ?: false) {
     val name = baseDir.name
     val assets by lazy { resolve("assets") }
     val models by lazy { assets.resolve("models") }

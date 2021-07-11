@@ -47,7 +47,8 @@ const val defaultFlagsStatic = Assimp.aiProcess_Triangulate + Assimp.aiProcess_J
 
 class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
     fun load(file: String, textureManager: TextureManager, resourcesDir: AbstractDirectory): StaticModel {
-        val aiScene = Assimp.aiImportFile(resourcesDir.resolve(file).path, flags) ?: throw IllegalStateException("Cannot load model $file")
+        val absolutePath = resourcesDir.resolve(file).absolutePath
+        val aiScene = Assimp.aiImportFile(absolutePath, flags) ?: throw IllegalStateException("Cannot load model $absolutePath")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val deferredMaterials = (0 until numMaterials).map { i ->

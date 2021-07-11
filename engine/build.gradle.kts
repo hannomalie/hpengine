@@ -71,7 +71,7 @@ dependencies {
     api("commons-beanutils:commons-beanutils:1.9.3")
     api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     api("de.hanno.structs:structs:1.0.1-SNAPSHOT")
-//    api("com.github.hannespernpeintner:kotlin-structs:a1692d5a8d")
+//    api("com.github.hannomalie:kotlin-structs:master-SNAPSHOT")
     val radianceVersion =  "3.0-SNAPSHOT"
     api("org.pushing-pixels:radiance-ember:$radianceVersion")
     api("org.pushing-pixels:radiance-substance-extras:$radianceVersion")
