@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import MaterialStruktImpl.Companion.type
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.EntityStruct
@@ -15,26 +16,28 @@ import de.hanno.hpengine.engine.graphics.shader.Vec3
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.math.Matrix4f
-import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
 import de.hanno.hpengine.engine.scene.VertexStructPacked
 import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
-import org.lwjgl.BufferUtils
+import org.lwjgl.BufferUtils.createFloatBuffer
 
 
 sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
-    var materials by SSBO("Material", 1, PersistentMappedStructBuffer(1, gpuContext, { MaterialStruct() }))
+    var materials by SSBO("Material", 1, PersistentMappedBuffer(1, gpuContext).typed(MaterialStrukt.type))
     var entities by SSBO("Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { EntityStruct() }))
     var entityOffsets by SSBO("int", 4, PersistentMappedStructBuffer(1, gpuContext, { IntStruct() }))
     var useRainEffect by BooleanType(false)
     var rainEffect by FloatType(0f)
-    var viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    var lastViewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    var projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
-    var viewProjectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
+    var viewMatrix by Mat4(createTransformBuffer())
+    var lastViewMatrix by Mat4(createTransformBuffer())
+    var projectionMatrix by Mat4(createTransformBuffer())
+    var viewProjectionMatrix by Mat4(createTransformBuffer())
+
+    private fun createTransformBuffer() = createFloatBuffer(16).apply { Transform().get(this) }
 
     var eyePosition by Vec3(Vector3f())
     var near by FloatType()

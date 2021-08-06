@@ -1,17 +1,28 @@
 package de.hanno.hpengine.engine.graphics.state
 
+import EntityStruktImpl.Companion.type
+import MaterialStruktImpl.Companion.type
+import Matrix4fStruktImpl.Companion.type
 import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatches
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.Allocator
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBufferAllocator
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.engine.math.Matrix4f
-import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.math.Matrix4fStrukt
+import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.scene.BatchKey
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import java.util.HashMap
 
 class EntitiesState(gpuContext: GpuContext<*>) {
+    private val ssboAllocator = PersistentMappedBufferAllocator(gpuContext)
+
     val cash: MutableMap<BatchKey, RenderBatch> = HashMap()
     var entityMovedInCycle: Long = -1
     var staticEntityMovedInCycle: Long = -1
@@ -23,8 +34,9 @@ class EntitiesState(gpuContext: GpuContext<*>) {
     var renderBatchesAnimated = RenderBatches()
     var vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
     var vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
-    var entitiesBuffer = PersistentMappedStructBuffer(0, gpuContext, { EntityStruct() })
-    var jointsBuffer = PersistentMappedStructBuffer(0, gpuContext, { Matrix4f() })
-    val materialBuffer = PersistentMappedStructBuffer(0, gpuContext, { MaterialStruct() })
+
+    var entitiesBuffer = PersistentMappedBuffer(EntityStrukt.type.sizeInBytes, gpuContext).typed(EntityStrukt.type)
+    var jointsBuffer = PersistentMappedBuffer(Matrix4fStrukt.type.sizeInBytes, gpuContext).typed(Matrix4fStrukt.type)
+    val materialBuffer = PersistentMappedBuffer(MaterialStrukt.type.sizeInBytes, gpuContext).typed(MaterialStrukt.type)
 
 }

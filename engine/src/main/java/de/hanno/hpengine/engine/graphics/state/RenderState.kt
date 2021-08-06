@@ -5,14 +5,15 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.CommandOrganization
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.engine.lifecycle.Updatable
-import de.hanno.hpengine.engine.model.material.MaterialStruct
+import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.copyFrom
@@ -54,10 +55,10 @@ class RenderState(private val gpuContext: GpuContext<*>) {
     val vertexIndexBufferAnimated: VertexIndexBuffer
         get() = entitiesState.vertexIndexBufferAnimated
 
-    val entitiesBuffer: PersistentMappedStructBuffer<EntityStruct>
+    val entitiesBuffer: PersistentTypedBuffer<EntityStrukt>
         get() = entitiesState.entitiesBuffer
 
-    val materialBuffer: PersistentMappedStructBuffer<MaterialStruct>
+    val materialBuffer: PersistentTypedBuffer<MaterialStrukt>
         get() = entitiesState.materialBuffer
 
     var deltaSeconds: Float = 0.1f

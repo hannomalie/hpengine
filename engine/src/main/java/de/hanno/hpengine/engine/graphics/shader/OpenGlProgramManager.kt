@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.GpuBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.transform.Transform
@@ -15,7 +15,6 @@ import de.hanno.hpengine.util.ressources.ReloadableCodeSource
 import de.hanno.hpengine.util.ressources.StringBasedCodeSource
 import de.hanno.hpengine.util.ressources.WrappedCodeSource
 import de.hanno.hpengine.util.ressources.hasChanged
-import de.hanno.struct.Struct
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
@@ -39,7 +38,7 @@ class FloatType(initial: Float = 0f): UniformDelegate<Float>(initial)
 class BooleanType(initial: Boolean): UniformDelegate<Boolean>(initial)
 class Mat4(initial: FloatBuffer = BufferUtils.createFloatBuffer(16).apply { Transform().get(this) }) : UniformDelegate<FloatBuffer>(initial)
 class Vec3(initial: Vector3f) : UniformDelegate<Vector3f>(initial)
-class SSBO<T: Struct>(val dataType: String, val bindingIndex: Int, initial: PersistentMappedStructBuffer<T>) : UniformDelegate<PersistentMappedStructBuffer<T>>(initial)
+class SSBO(val dataType: String, val bindingIndex: Int, initial: GpuBuffer) : UniformDelegate<GpuBuffer>(initial)
 
 open class Uniforms {
     val registeredUniforms = mutableListOf<UniformDelegate<*>>()
@@ -63,7 +62,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         when (it) {
             is Mat4 -> "uniform mat4 ${it.name};"
             is Vec3 -> "uniform vec3 ${it.name};"
-            is SSBO<*> -> {
+            is SSBO -> {
                 """layout(std430, binding=${it.bindingIndex}) buffer _${it.name} {
                       ${it.dataType} ${it.name}[];
                    };""".trimIndent()

@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
@@ -92,6 +93,7 @@ class ExtensibleDeferredRenderer(
             private fun customBeforeDraw() {
                 deferredRenderingBuffer.use(gpuContext, false)
                 gpuContext.cullFace = true
+                gpuContext.cullMode = CullMode.BACK
                 gpuContext.depthMask = true
                 gpuContext.depthTest = true
                 gpuContext.depthFunc = GlDepthFunc.LESS

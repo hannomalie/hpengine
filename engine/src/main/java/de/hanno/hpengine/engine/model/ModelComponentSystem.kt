@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.struct.StructArray
+import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -226,9 +227,13 @@ class ModelComponentSystem(
         renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
-        gpuJointsArray.safeCopyTo(renderState.entitiesState.jointsBuffer)
+//        gpuJointsArray.safeCopyTo(renderState.entitiesState.jointsBuffer)
+//        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
 
-        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
+        renderState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.buffer.capacity())
+        renderState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.buffer.capacity())
+        gpuJointsArray.buffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
+        gpuEntitiesArray.buffer.copyTo(renderState.entitiesBuffer.buffer, true)
 
         batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
             components, config.debug.isDrawLines,

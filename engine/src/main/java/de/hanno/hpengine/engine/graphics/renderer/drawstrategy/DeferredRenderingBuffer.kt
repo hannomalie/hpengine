@@ -2,9 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
-import de.hanno.hpengine.engine.graphics.buffer.StorageBuffer
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig

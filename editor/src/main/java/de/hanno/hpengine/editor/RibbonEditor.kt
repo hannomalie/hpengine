@@ -124,8 +124,8 @@ fun main(args: Array<String>) {
 
     val config = ConfigImpl(
         Directories(
-            gameDir = GameDirectory<RibbonEditor>(File("C:\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game")),
-            engineDir = EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp"))
+            gameDir = GameDirectory<RibbonEditor>(File("C:\\users\\tenter\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game")),
+            engineDir = EngineDirectory(File("C:\\workspace\\users\\tenter\\hpengine\\engine\\src\\main\\resources\\hp"))
         ),
         debug = DebugConfig(isUseFileReloading = true)
     )

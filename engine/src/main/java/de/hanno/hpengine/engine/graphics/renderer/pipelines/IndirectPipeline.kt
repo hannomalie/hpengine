@@ -65,15 +65,17 @@ open class IndirectPipeline @JvmOverloads constructor(private val config: Config
     }
 
     override fun beforeDrawStatic(renderState: RenderState, program: Program<StaticFirstPassUniforms>, renderCam: Camera) {
-        beforeDraw(renderState, program, renderState.vertexIndexBufferStatic.vertexStructArray, renderCam)
+        beforeDraw(renderState, program, renderCam)
     }
 
     override fun beforeDrawAnimated(renderState: RenderState, program: Program<AnimatedFirstPassUniforms>, renderCam: Camera) {
-        beforeDraw(renderState, program, renderState.vertexIndexBufferAnimated.animatedVertexStructArray, renderCam)
+        beforeDraw(renderState, program, renderCam)
     }
 
-    fun beforeDraw(renderState: RenderState, program: Program<out FirstPassUniforms>,
-                   vertexBuffer: PersistentMappedStructBuffer<*>, renderCam: Camera) {
+    fun beforeDraw(
+        renderState: RenderState, program: Program<out FirstPassUniforms>,
+        renderCam: Camera
+    ) {
         gpuContext.cullFace = useBackFaceCulling
         program.use()
         program.setUniforms(renderState, renderCam, config)

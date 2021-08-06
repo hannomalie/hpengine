@@ -1,11 +1,15 @@
 package de.hanno.hpengine.engine.scene
 
 import com.google.common.collect.ImmutableSet
+import de.hanno.hpengine.engine.math.Vector4fStrukt
+import de.hanno.hpengine.engine.math.Vector4iStrukt
 import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.FloatThree
 import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.FloatTwo
 import de.hanno.struct.Struct
 import org.joml.Vector2f
 import org.joml.Vector3f
+import struktgen.api.Strukt
+import java.nio.ByteBuffer
 
 typealias HpVector3f = de.hanno.hpengine.engine.math.Vector3f
 typealias HpVector4f = de.hanno.hpengine.engine.math.Vector4f
@@ -32,6 +36,13 @@ class VertexStructPacked: Struct() {
         val sizeInBytes = 4 * 4 * java.lang.Float.BYTES
     }
 }
+interface VertexStruktPacked: Strukt {
+    val ByteBuffer.position: Vector4fStrukt
+    val ByteBuffer.texCoord: Vector4fStrukt
+    val ByteBuffer.normal: Vector4fStrukt
+    val ByteBuffer.dummy: Vector4fStrukt
+    companion object
+}
 class AnimatedVertexStruct : Struct() {
     val position by HpVector3f()
     val texCoord by HpVector2f()
@@ -54,10 +65,29 @@ class AnimatedVertexStructPacked : Struct() {
     val dummy1 by HpVector4f()
     val dummy2 by HpVector4f()
 
+    override fun toString(): String {
+        return "AnimatedVertexStructPacked(position=(${position.x}, ${position.y}, ${position.z}), " +
+                "texCoord=(${texCoord.x}, ${texCoord.y}), normal=(${normal.x}, ${normal.y}, ${normal.z}), " +
+                "weights=(${weights.x},${weights.y},${weights.z},${weights.w}), " +
+                "jointIndices=(${jointIndices.x},${jointIndices.y},${jointIndices.z},${jointIndices.w}))"
+    }
+
     companion object {
         val sizeInBytes = AnimatedVertexStructPacked().sizeInBytes
 
     }
+}
+interface AnimatedVertexStruktPacked : Strukt {
+    val ByteBuffer.position: Vector4fStrukt
+    val ByteBuffer.texCoord: Vector4fStrukt
+    val ByteBuffer.normal: Vector4fStrukt
+    val ByteBuffer.weights: Vector4fStrukt
+    val ByteBuffer.jointIndices: Vector4iStrukt
+    val ByteBuffer.dummy: Vector4fStrukt
+    val ByteBuffer.dummy1: Vector4fStrukt
+    val ByteBuffer.dummy2: Vector4fStrukt
+
+    companion object
 }
 
 data class Vertex (val position: Vector3f = Vector3f(),

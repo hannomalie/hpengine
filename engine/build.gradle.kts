@@ -2,6 +2,7 @@ import org.gradle.internal.os.OperatingSystem
 
 plugins {
     kotlin("jvm")
+    id("com.google.devtools.ksp") version "1.5.20-1.0.0-beta04"
 }
 
 kotlin.sourceSets {
@@ -84,9 +85,18 @@ dependencies {
     api("org.apache.logging.log4j:log4j-core:2.13.0")
     api("io.github.classgraph:classgraph:4.8.89")
 
+    api("de.hanno.struktgen:api:1.0.0-SNAPSHOT")
+    ksp("de.hanno.struktgen:processor:1.0.0-SNAPSHOT")
+
     val koinVersion= "3.1.1"
     api("io.insert-koin:koin-core:$koinVersion")
     testImplementation("io.insert-koin:koin-test:$koinVersion")
 
     testImplementation("junit:junit:4.12")
+}
+
+kotlin {
+    sourceSets["main"].apply {
+        kotlin.srcDir("build/generated/ksp/main/kotlin/")
+    }
 }

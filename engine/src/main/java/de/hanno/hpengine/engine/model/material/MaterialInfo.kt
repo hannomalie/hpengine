@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.ENVIRONMENTMAP_TYPE
@@ -8,40 +7,12 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType.BINARY
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.scene.HpVector2f
-import de.hanno.hpengine.engine.scene.HpVector3f
-import de.hanno.struct.Struct
 import org.joml.Vector2f
 import org.joml.Vector3f
-
-class MaterialStruct(val environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED): Struct() {
-    val diffuse by HpVector3f()
-    var metallic by 0.0f
-
-    var roughness by 0.0f
-    var ambient by 0.0f
-    var parallaxBias by 0.0f
-    var parallaxScale by 0.0f
-
-    var transparency by 0.0f
-    var materialType by MaterialType::class.java
-    val transparencyType by TransparencyType::class.java
-    var environmentMapId by 0
-
-    var diffuseMapHandle: Long by 0L
-    var normalMapHandle: Long by 0L
-    var specularMapHandle: Long by 0L
-    var heightMapHandle: Long by 0L
-
-    var displacementMapHandle: Long by 0L
-    var roughnessMapHandle: Long by 0L
-
-    var uvScale by HpVector2f()
-    var lodFactor by 0.0f
-    var useWorldSpaceXZAsTexCoords by 0
-
-}
+import struktgen.api.Strukt
+import java.nio.ByteBuffer
 
 data class MaterialInfo @JvmOverloads constructor(val diffuse: Vector3f = Vector3f(1f, 1f, 1f),
                                                   var roughness: Float = 0.95f,
@@ -54,7 +25,7 @@ data class MaterialInfo @JvmOverloads constructor(val diffuse: Vector3f = Vector
                                                   var lodFactor: Float = 100f,
                                                   var useWorldSpaceXZAsTexCoords: Boolean = false,
                                                   var materialType: MaterialType = DEFAULT,
-                                                  var transparencyType: TransparencyType = TransparencyType.BINARY,
+                                                  var transparencyType: TransparencyType = BINARY,
                                                   var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
                                                   var depthTest: Boolean = true,
                                                   val maps: MutableMap<MAP, Texture> = mutableMapOf(),
@@ -78,4 +49,44 @@ data class MaterialInfo @JvmOverloads constructor(val diffuse: Vector3f = Vector
     fun remove(map: MAP) {
         maps.remove(map)
     }
+}
+
+
+interface Vector2fStrukt: Strukt {
+    var ByteBuffer.x: Float
+    var ByteBuffer.y: Float
+    companion object
+}
+interface Vector3fStrukt: Strukt {
+    var ByteBuffer.x: Float
+    var ByteBuffer.y: Float
+    var ByteBuffer.z: Float
+    companion object
+}
+interface MaterialStrukt: Strukt {
+    val ByteBuffer.diffuse: Vector3fStrukt
+    var ByteBuffer.metallic: Float
+
+    var ByteBuffer.roughness: Float
+    var ByteBuffer.ambient: Float
+    var ByteBuffer.parallaxBias: Float
+    var ByteBuffer.parallaxScale: Float
+
+    var ByteBuffer.transparency: Float
+    var ByteBuffer.materialType: MaterialType
+    var ByteBuffer.transparencyType: TransparencyType
+    var ByteBuffer.environmentMapId: Int
+
+    var ByteBuffer.diffuseMapHandle: Long
+    var ByteBuffer.normalMapHandle: Long
+    var ByteBuffer.specularMapHandle: Long
+    var ByteBuffer.heightMapHandle: Long
+
+    var ByteBuffer.displacementMapHandle: Long
+    var ByteBuffer.roughnessMapHandle: Long
+
+    val ByteBuffer.uvScale: Vector2fStrukt
+    var ByteBuffer.lodFactor: Float
+    var ByteBuffer.useWorldSpaceXZAsTexCoords: Int
+    companion object
 }

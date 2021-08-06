@@ -1,7 +1,9 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.transform.x
 import de.hanno.hpengine.engine.transform.y
@@ -9,7 +11,6 @@ import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
 import de.hanno.hpengine.util.ressources.Reloadable
 import org.joml.Vector2f
-import org.joml.Vector2fc
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -39,8 +40,12 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
         uniformBindings.clear()
         uniforms.registeredUniforms.forEach {
             uniformBindings[it.name] = when(it) {
-                is SSBO<*> -> UniformBinding(it.name, it.bindingIndex)
-                else -> UniformBinding(it.name, getUniformLocation(it.name))
+                is SSBO -> UniformBinding(it.name, it.bindingIndex)
+                is BooleanType -> UniformBinding(it.name, getUniformLocation(it.name))
+                is FloatType -> UniformBinding(it.name, getUniformLocation(it.name))
+                is IntType -> UniformBinding(it.name, getUniformLocation(it.name))
+                is Mat4 -> UniformBinding(it.name, getUniformLocation(it.name))
+                is Vec3 -> UniformBinding(it.name, getUniformLocation(it.name))
             }
         }
     }
@@ -152,6 +157,12 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
     fun bindShaderStorageBuffer(index: Int, buffer: PersistentMappedStructBuffer<*>) {
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, buffer.id)
     }
+    fun bindShaderStorageBuffer(index: Int, buffer: PersistentMappedBuffer) {
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, buffer.id)
+    }
+    fun bindShaderStorageBuffer(index: Int, buffer: PersistentTypedBuffer<*>) {
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, buffer.persistentMappedBuffer.id)
+    }
 
     fun bindAtomicCounterBufferBuffer(index: Int, block: GPUBuffer) {
         GL30.glBindBufferBase(GL42.GL_ATOMIC_COUNTER_BUFFER, index, block.id)
@@ -168,7 +179,7 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
     fun UniformDelegate<*>.bind() = when (this) {
         is Mat4 -> GL20.glUniformMatrix4fv(uniformBindings[name]!!.location, false, _value)
         is Vec3 -> GL20.glUniform3f(uniformBindings[name]!!.location, _value.x, _value.y, _value.z)
-        is SSBO<*> -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, uniformBindings[name]!!.location, _value.id)
+        is SSBO -> GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, uniformBindings[name]!!.location, _value.id)
         is IntType -> GL20.glUniform1i(uniformBindings[name]!!.location, _value)
         is BooleanType -> GL20.glUniform1i(uniformBindings[name]!!.location, if(_value) 1 else 0)
         is FloatType -> GL20.glUniform1f(uniformBindings[name]!!.location, _value)

@@ -19,24 +19,6 @@ interface GPUBuffer {
     fun unbind()
 
     @JvmDefault
-    fun putValues(values: ByteBuffer) {
-        putValues(0, values)
-    }
-
-    @JvmDefault
-    fun putValues(byteOffset: Int, values: ByteBuffer) {
-        if (values.capacity() > sizeInBytes) {
-            sizeInBytes = values.capacity()
-        }
-        bind()
-        values.rewind()
-        buffer.rewind()
-        buffer.position(byteOffset)
-        buffer.put(values)
-        buffer.rewind()
-    }
-
-    @JvmDefault
     fun putValues(vararg values: Float) {
         putValues(0, *values)
     }

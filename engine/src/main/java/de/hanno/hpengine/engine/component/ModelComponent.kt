@@ -166,19 +166,13 @@ fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
                                vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
 
     synchronized(indexBuffer) {
-        val compiledVertices = model.uniqueVertices
-
         val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
-        val result: StructArray<*> = model.verticesStructArray
-        val bytesPerObject = model.bytesPerVertex
-
         if(model is StaticModel) {
-            indexBuffer.vertexStructArray.addAll(model.verticesStructArrayPacked)
+            indexBuffer.vertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesStructArrayPacked.buffer)
         } else if(model is AnimatedModel) {
-            indexBuffer.animatedVertexStructArray.addAll(model.verticesStructArrayPacked)
+            indexBuffer.animatedVertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesStructArrayPacked.buffer)
         } else throw IllegalStateException("Unsupported mode") // TODO: sealed classes!!
-
 
 //        TODO: Does this have to be on gpu thread?
 //        gpuContext.execute("ModelComponent.putToBuffer") {

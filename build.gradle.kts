@@ -10,6 +10,7 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
+        google()
     }
 }
 
@@ -31,6 +32,7 @@ allprojects {
 
         mavenCentral()
         mavenLocal()
+        google()
         maven {
             name = "local-dir"
             setUrl(project.rootDir.resolve("libs").absolutePath)
@@ -39,18 +41,18 @@ allprojects {
             name = "java.net"
             setUrl("https://maven.java.net/content/repositories/public/")
         }
-        maven {
-            name = "my-bintray-repo"
-            setUrl("https://dl.bintray.com/h-pernpeintner/maven-repo")
-        }
+//        maven {
+//            name = "my-bintray-repo"
+//            setUrl("https://dl.bintray.com/h-pernpeintner/maven-repo")
+//        }
         maven {
             name = "snapshots-repo"
             setUrl("https://oss.sonatype.org/content/repositories/snapshots")
         }
-        maven {
-            name = "kotlinx"
-            setUrl("https://dl.bintray.com/kotlin/kotlinx")
-        }
+//        maven {
+//            name = "kotlinx"
+//            setUrl("https://dl.bintray.com/kotlin/kotlinx")
+//        }
 
         maven {
             setUrl("https://oss.sonatype.org")

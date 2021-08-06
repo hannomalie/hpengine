@@ -15,8 +15,6 @@ import org.joml.Vector3f
 
 class BatchingSystem {
 
-    private val tempDistVector = Vector3f()
-
     fun extract(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f,
                 modelComponents: List<ModelComponent>, drawLines: Boolean,
                 allocations: MutableMap<ModelComponent, ModelComponentSystem.Allocation>,

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.material
 
+import MaterialStruktImpl.Companion.type
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -10,11 +11,12 @@ import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
-import de.hanno.struct.resize
 import org.joml.Vector3f
 import org.koin.core.component.get
+import org.lwjgl.BufferUtils
+import struktgen.TypedBuffer
+import java.nio.ByteBuffer
 
 class MaterialManager(
     val config: Config,
@@ -26,7 +28,9 @@ class MaterialManager(
 
     val engineDir = config.directories.engineDir
 
-    var materialsAsStructs = StructArray(1000) { MaterialStruct() }
+    var materialsBuffer = object: TypedBuffer<MaterialStrukt>(MaterialStrukt.type) {
+        override val byteBuffer = BufferUtils.createByteBuffer(1000 * MaterialStrukt.type.sizeInBytes)
+    }
 
     fun initDefaultMaterials() {
 
@@ -102,31 +106,43 @@ class MaterialManager(
 //        TODO: Remove most of this
         renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
-        materialsAsStructs.resize(materials.size)
-        for ((index, material) in materials.withIndex()) {
-            val target = materialsAsStructs[index]
-            target.diffuse.set(material.materialInfo.diffuse)
-            target.metallic = material.materialInfo.metallic
-            target.roughness = material.materialInfo.roughness
-            target.ambient = material.materialInfo.ambient
-            target.parallaxBias = material.materialInfo.parallaxBias
-            target.parallaxScale = material.materialInfo.parallaxScale
-            target.transparency = material.materialInfo.transparency
-            target.materialType = material.materialInfo.materialType
-            target.lodFactor = material.materialInfo.lodFactor
-            target.useWorldSpaceXZAsTexCoords = if(material.materialInfo.useWorldSpaceXZAsTexCoords) 1 else 0
-            target.environmentMapId = material.materialInfo.maps[MAP.ENVIRONMENT]?.id ?: 0
-            target.diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
-            target.normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
-            target.specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
-            target.heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
-            target.displacementMapHandle = material.materialInfo.maps[MAP.DISPLACEMENT]?.handle ?: 0
-            target.roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
-            target.uvScale.set(material.materialInfo.uvScale)
+        materialsBuffer = materialsBuffer.resize(materials.size)
+
+        materialsBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
+            val material = materials[index]
+
+            it.run {
+                diffuse.run {
+                    x = material.materialInfo.diffuse.x
+                    y = material.materialInfo.diffuse.y
+                    z = material.materialInfo.diffuse.z
+                }
+                metallic = material.materialInfo.metallic
+                roughness = material.materialInfo.roughness
+                ambient = material.materialInfo.ambient
+                parallaxBias = material.materialInfo.parallaxBias
+                parallaxScale = material.materialInfo.parallaxScale
+                transparency = material.materialInfo.transparency
+                materialType = material.materialInfo.materialType
+                lodFactor = material.materialInfo.lodFactor
+                useWorldSpaceXZAsTexCoords = if(material.materialInfo.useWorldSpaceXZAsTexCoords) 1 else 0
+                environmentMapId = material.materialInfo.maps[MAP.ENVIRONMENT]?.id ?: 0
+                diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
+                normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
+                specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
+                heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
+                displacementMapHandle = material.materialInfo.maps[MAP.DISPLACEMENT]?.handle ?: 0
+                roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
+                uvScale.run {
+                    x = material.materialInfo.uvScale.x
+                    y = material.materialInfo.uvScale.y
+                }
+            }
         }
-        renderState.entitiesState.materialBuffer.resize(materialsAsStructs.size)
-        materialsAsStructs.copyTo(renderState.entitiesState.materialBuffer, true)
+        renderState.entitiesState.materialBuffer.resize(materialsBuffer.size)
+        materialsBuffer.byteBuffer.copyTo(renderState.entitiesState.materialBuffer.buffer, true)
     }
+
 
     companion object {
         fun createDefaultMaterial(config: Config, textureManager: TextureManager): SimpleMaterial {
@@ -137,3 +153,21 @@ class MaterialManager(
         }
     }
 }
+
+val TypedBuffer<MaterialStrukt>.size: Int
+    get() = byteBuffer.capacity() / struktType.sizeInBytes
+
+private fun TypedBuffer<MaterialStrukt>.resize(size: Int): TypedBuffer<MaterialStrukt> = this.let {
+    val resized = it.byteBuffer.resize(size)
+    if (resized != it) object: TypedBuffer<MaterialStrukt>(MaterialStrukt.type) {
+        override val byteBuffer = resized
+    } else it
+}
+
+fun ByteBuffer.resize(sizeInBytes: Int, copyContent: Boolean = true) = if(capacity() < sizeInBytes) {
+    BufferUtils.createByteBuffer(sizeInBytes).apply {
+        if(copyContent) {
+            put(this@resize)
+        }
+    }
+} else this
