@@ -3,17 +3,13 @@ package de.hanno.hpengine.engine.graphics.state
 import EntityStruktImpl.Companion.type
 import MaterialStruktImpl.Companion.type
 import Matrix4fStruktImpl.Companion.type
-import de.hanno.hpengine.engine.graphics.EntityStruct
 import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatches
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.Allocator
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBufferAllocator
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.scene.BatchKey

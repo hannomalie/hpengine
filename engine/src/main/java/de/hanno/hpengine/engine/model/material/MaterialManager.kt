@@ -28,9 +28,7 @@ class MaterialManager(
 
     val engineDir = config.directories.engineDir
 
-    var materialsBuffer = object: TypedBuffer<MaterialStrukt>(MaterialStrukt.type) {
-        override val byteBuffer = BufferUtils.createByteBuffer(1000 * MaterialStrukt.type.sizeInBytes)
-    }
+    var materialsBuffer = TypedBuffer(BufferUtils.createByteBuffer(1000 * MaterialStrukt.type.sizeInBytes), MaterialStrukt.type)
 
     fun initDefaultMaterials() {
 
@@ -159,9 +157,7 @@ val TypedBuffer<MaterialStrukt>.size: Int
 
 private fun TypedBuffer<MaterialStrukt>.resize(size: Int): TypedBuffer<MaterialStrukt> = this.let {
     val resized = it.byteBuffer.resize(size)
-    if (resized != it) object: TypedBuffer<MaterialStrukt>(MaterialStrukt.type) {
-        override val byteBuffer = resized
-    } else it
+    if (resized != it) TypedBuffer(resized, MaterialStrukt.type) else it
 }
 
 fun ByteBuffer.resize(sizeInBytes: Int, copyContent: Boolean = true) = if(capacity() < sizeInBytes) {

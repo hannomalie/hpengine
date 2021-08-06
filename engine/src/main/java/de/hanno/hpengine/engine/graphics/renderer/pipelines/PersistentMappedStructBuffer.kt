@@ -15,6 +15,7 @@ import org.lwjgl.opengl.GL43
 import org.lwjgl.opengl.GL44
 import struktgen.StruktType
 import struktgen.TypedBuffer
+import struktgen.api.Strukt
 import java.nio.ByteBuffer
 import kotlin.math.max
 
@@ -279,6 +280,10 @@ fun CommandBuffer(
 class IntStruct : Struct() {
     var value by 0
     override fun toString() = "$value"
+}
+interface IntStrukt: Strukt {
+    val ByteBuffer.value: Int
+    companion object
 }
 
 fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) = PersistentMappedStructBuffer(size, gpuContext, { IntStruct() }, GL40.GL_ELEMENT_ARRAY_BUFFER)

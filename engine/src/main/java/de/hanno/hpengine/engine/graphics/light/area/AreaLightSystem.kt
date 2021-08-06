@@ -1,11 +1,12 @@
 package de.hanno.hpengine.engine.graphics.light.area
 
+import EntityStruktImpl.Companion.type
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
@@ -17,7 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
@@ -50,6 +51,7 @@ import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
 import java.nio.FloatBuffer
 import java.util.ArrayList
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer as NewPersistentMappedBuffer
 
 class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
 
@@ -219,7 +221,7 @@ class AreaLightSystem(
 }
 
 class AreaShadowPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
-    var entitiesBuffer by SSBO("Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { EntityStruct() }))
+    var entitiesBuffer by SSBO("Entity", 3, NewPersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }

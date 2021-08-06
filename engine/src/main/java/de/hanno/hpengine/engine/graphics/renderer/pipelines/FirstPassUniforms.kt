@@ -1,9 +1,11 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import EntityStruktImpl.Companion.type
+import IntStruktImpl.Companion.type
 import MaterialStruktImpl.Companion.type
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.EntityStruct
+import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.shader.BooleanType
 import de.hanno.hpengine.engine.graphics.shader.FloatType
@@ -28,8 +30,8 @@ import org.lwjgl.BufferUtils.createFloatBuffer
 
 sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
     var materials by SSBO("Material", 1, PersistentMappedBuffer(1, gpuContext).typed(MaterialStrukt.type))
-    var entities by SSBO("Entity", 3, PersistentMappedStructBuffer(1, gpuContext, { EntityStruct() }))
-    var entityOffsets by SSBO("int", 4, PersistentMappedStructBuffer(1, gpuContext, { IntStruct() }))
+    var entities by SSBO("Entity", 3, PersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
+    var entityOffsets by SSBO("int", 4, PersistentMappedBuffer(1, gpuContext).typed(IntStrukt.type))
     var useRainEffect by BooleanType(false)
     var rainEffect by FloatType(0f)
     var viewMatrix by Mat4(createTransformBuffer())
