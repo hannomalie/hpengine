@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.math
 
+import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.w
 import de.hanno.hpengine.engine.transform.x
@@ -225,6 +226,25 @@ interface Matrix4fStrukt: Strukt {
     var ByteBuffer.m33: Float
 
     fun set(buffer: ByteBuffer, target: org.joml.Matrix4fc) = buffer.run {
+        m00 = target.m00()
+        m01 = target.m01()
+        m02 = target.m02()
+        m03 = target.m03()
+        m10 = target.m10()
+        m11 = target.m11()
+        m12 = target.m12()
+        m13 = target.m13()
+        m20 = target.m20()
+        m21 = target.m21()
+        m22 = target.m22()
+        m23 = target.m23()
+        m30 = target.m30()
+        m31 = target.m31()
+        m32 = target.m32()
+        m33 = target.m33()
+    }
+
+    fun set(buffer: ByteBuffer, target: BufferableMatrix4f) = buffer.run {
         m00 = target.m00()
         m01 = target.m01()
         m02 = target.m02()

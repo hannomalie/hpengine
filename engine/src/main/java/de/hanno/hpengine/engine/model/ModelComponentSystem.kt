@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.model
 
 import EntityStruktImpl.Companion.type
+import Matrix4fStruktImpl.Companion.sizeInBytes
+import Matrix4fStruktImpl.Companion.type
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -18,6 +20,7 @@ import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.instancing.instances
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.math.Matrix4f
+import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
@@ -28,6 +31,7 @@ import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
+import struktgen.typed
 import java.nio.ByteBuffer
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -47,7 +51,7 @@ class ModelComponentSystem(
     val allocations: MutableMap<ModelComponent, Allocation> = mutableMapOf()
 
     private val _components = CopyOnWriteArrayList<ModelComponent>()
-    private var gpuJointsArray = StructArray(size = 1000) { Matrix4f() }
+    private var gpuJointsArray = BufferUtils.createByteBuffer(1000 * Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
     private val batchingSystem = BatchingSystem()
     var gpuEntitiesArray = TypedBuffer(BufferUtils.createByteBuffer(EntityStrukt.type.sizeInBytes * 1000), EntityStrukt.type)
@@ -174,11 +178,12 @@ class ModelComponentSystem(
 
     private fun updateGpuJointsArray() {
         gpuJointsArray = gpuJointsArray.enlarge(joints.size)
-        gpuJointsArray.buffer.rewind()
+        gpuJointsArray.byteBuffer.rewind()
 
         for((index, joint) in joints.withIndex()) {
-            val target = gpuJointsArray.getAtIndex(index)
-            target.set(joint)
+            gpuJointsArray[index].run {
+                set(gpuJointsArray.byteBuffer, joint)
+            }
         }
     }
 
@@ -239,9 +244,9 @@ class ModelComponentSystem(
 //        gpuJointsArray.safeCopyTo(renderState.entitiesState.jointsBuffer)
 //        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
 
-        renderState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.buffer.capacity())
+        renderState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
         renderState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
-        gpuJointsArray.buffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
+        gpuJointsArray.byteBuffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
         gpuEntitiesArray.byteBuffer.copyTo(renderState.entitiesBuffer.buffer, true)
 
         batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
