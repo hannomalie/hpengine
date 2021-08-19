@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import DrawElementsIndirectCommandStruktImpl.Companion.type
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.buffer.flags
 import de.hanno.struct.Array
@@ -11,11 +12,12 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL40
+import org.lwjgl.opengl.GL40.GL_DRAW_INDIRECT_BUFFER
 import org.lwjgl.opengl.GL43
 import org.lwjgl.opengl.GL44
-import struktgen.StruktType
 import struktgen.TypedBuffer
 import struktgen.api.Strukt
+import struktgen.api.StruktType
 import java.nio.ByteBuffer
 import kotlin.math.max
 
@@ -268,21 +270,14 @@ fun <T : Struct> Array<T>.safeCopyTo(target: PersistentMappedStructBuffer<T>, re
 fun CommandBuffer(
     gpuContext: GpuContext<*>,
     size: Int = 1000
-): PersistentMappedStructBuffer<DrawElementsIndirectCommand> {
-    return PersistentMappedStructBuffer(
-        size,
-        gpuContext,
-        { DrawElementsIndirectCommand() },
-        GL40.GL_DRAW_INDIRECT_BUFFER
-    )
-}
+) = PersistentMappedBuffer( size * DrawElementsIndirectCommandStrukt.type.sizeInBytes, gpuContext, GL_DRAW_INDIRECT_BUFFER).typed(DrawElementsIndirectCommandStrukt.type)
 
 class IntStruct : Struct() {
     var value by 0
     override fun toString() = "$value"
 }
 interface IntStrukt: Strukt {
-    val ByteBuffer.value: Int
+    var ByteBuffer.value: Int
     companion object
 }
 

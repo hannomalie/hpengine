@@ -173,7 +173,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config
     private fun cullPhase(renderState: RenderState,
                           commandOrganization: CommandOrganization,
                           drawCountBuffer: AtomicCounterBuffer,
-                          targetCommandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                          targetCommandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
                           phase: Pipeline.CullingPhase, cullCam: Camera) = profiled("Culling Phase") {
         cull(renderState, commandOrganization, phase, cullCam)
 
@@ -221,7 +221,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config
                        commandOrganization: CommandOrganization,
                        vertexIndexBuffer: VertexIndexBuffer,
                        drawCountBuffer: AtomicCounterBuffer,
-                       commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                       commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
                        offsetBuffer: PersistentMappedStructBuffer<IntStruct>,
                        beforeRender: () -> Unit,
                        phase: Pipeline.CullingPhase,

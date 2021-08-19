@@ -221,7 +221,7 @@ class AreaLightSystem(
 }
 
 class AreaShadowPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
-    var entitiesBuffer by SSBO("Entity", 3, NewPersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
+    var entitiesBuffer by SSBO("Entity", 3, de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer(1, gpuContext).typed(EntityStrukt.type))
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
 }

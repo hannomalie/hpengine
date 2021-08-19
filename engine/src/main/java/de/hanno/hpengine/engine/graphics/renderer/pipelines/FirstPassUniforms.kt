@@ -1,8 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import AnimatedVertexStruktPackedImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.type
 import MaterialStruktImpl.Companion.type
+import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.EntityStrukt
@@ -21,8 +23,8 @@ import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
-import de.hanno.hpengine.engine.scene.VertexStructPacked
+import de.hanno.hpengine.engine.scene.AnimatedVertexStruktPacked
+import de.hanno.hpengine.engine.scene.VertexStruktPacked
 import de.hanno.hpengine.engine.transform.Transform
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils.createFloatBuffer
@@ -53,11 +55,11 @@ sealed class FirstPassUniforms(gpuContext: GpuContext<*>): Uniforms() {
     var indirect by BooleanType(true)
 }
 open class StaticFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
-    var vertices by SSBO("VertexPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { VertexStructPacked() }))
+    var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(VertexStruktPacked.type))
 }
 open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
     var joints by SSBO("mat4", 6, PersistentMappedStructBuffer(1, gpuContext, { Matrix4f() }))
-    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedStructBuffer(1, gpuContext, { AnimatedVertexStructPacked() }))
+    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(AnimatedVertexStruktPacked.type))
 }
 
 fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera, config: Config) {

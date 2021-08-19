@@ -4,7 +4,6 @@ import VertexStruktPackedImpl.Companion.sizeInBytes
 import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
-import de.hanno.hpengine.engine.scene.VertexStruct
 import de.hanno.hpengine.engine.scene.VertexStruktPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
@@ -21,7 +20,7 @@ class StaticModel(override val file: File,
 
     override fun calculateBoundingVolume() = AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
 
-    override val bytesPerVertex = VertexStruct.sizeInBytes
+    override val bytesPerVertex = VertexStruktPacked.sizeInBytes
 
     override val verticesPacked = TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * VertexStruktPacked.sizeInBytes), VertexStruktPacked.type).apply {
         byteBuffer.run {

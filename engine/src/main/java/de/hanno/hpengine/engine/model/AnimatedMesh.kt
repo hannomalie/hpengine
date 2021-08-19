@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
-import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
@@ -81,7 +80,7 @@ class AnimatedMesh(override var name: String,
 
 class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
                     val animations: Map<String, Animation>, material: Material = meshes.first().material): AbstractModel<AnimatedVertex>(meshes, material) {
-    override val bytesPerVertex = AnimatedVertexStruct.sizeInBytes
+    override val bytesPerVertex = AnimatedVertexStruktPacked.sizeInBytes
     override val path = file.absolutePath
 
     init {

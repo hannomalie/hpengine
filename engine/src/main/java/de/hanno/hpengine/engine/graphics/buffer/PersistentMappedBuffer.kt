@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.buffer
 
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.GpuBuffer
 import org.lwjgl.opengl.GL43
 
 open class PersistentMappedBuffer @JvmOverloads constructor(val gpuContext: GpuContext<*>,

@@ -15,9 +15,11 @@ import org.lwjgl.opengl.GL45.glCopyNamedBufferSubData
 
 val flags = GL_MAP_WRITE_BIT or GL_MAP_PERSISTENT_BIT or GL_MAP_COHERENT_BIT
 
-abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(private val gpuContext: GpuContext<*>,
-                                              protected var target: Int,
-                                              capacityInBytes: Int = 1024) : GPUBuffer {
+abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(
+    private val gpuContext: GpuContext<*>,
+    protected var target: Int,
+    capacityInBytes: Int = 1024
+) : GPUBuffer {
     private var bufferDefinition: BufferDefinition = createBuffer(capacityInBytes)
         set(value) {
             val oldBufferDefinition = bufferDefinition
@@ -72,15 +74,18 @@ abstract class AbstractPersistentMappedBuffer @JvmOverloads constructor(private 
             glDeleteBuffers(id)
         }
     }
+
     private fun createBuffer(capacityInBytes: Int): BufferDefinition = gpuContext.window.invoke {
         val id = glGenBuffers()
         glBindBuffer(target, id)
         GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)
         val xxxx = BufferUtils.createByteBuffer(capacityInBytes)
-        val byteBuffer = GL30.glMapBufferRange(target,
-                0, capacityInBytes.toLong(), flags,
+        val byteBuffer = GL30.glMapBufferRange(
+            target,
+            0, capacityInBytes.toLong(), flags,
 //                null)!!
-                xxxx)!!
+            xxxx
+        )!!
         BufferDefinition(id, byteBuffer, gpuContext)
     }
 

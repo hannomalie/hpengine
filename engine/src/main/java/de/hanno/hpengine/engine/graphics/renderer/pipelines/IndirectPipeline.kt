@@ -84,20 +84,28 @@ open class IndirectPipeline @JvmOverloads constructor(private val config: Config
 }
 
 fun addCommands(renderBatches: List<RenderBatch>,
-                commandBuffer: PersistentMappedStructBuffer<DrawElementsIndirectCommand>,
+                commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
                 entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>) {
 
     val resultingCommandCount = renderBatches.sumBy{ it.instanceCount }
     entityOffsetBuffer.enlarge(resultingCommandCount)
-    commandBuffer.enlarge(resultingCommandCount)
+    commandBuffer.persistentMappedBuffer.enlarge(resultingCommandCount)
 
-    var index = 0
-    for (batch in renderBatches) {
-        for(instanceIndex in 0 until batch.instanceCount) {
-            batch.drawElementsIndirectCommand.copyTo(commandBuffer[index])
-            commandBuffer[index].primCount = 1
-            entityOffsetBuffer[index].value = batch.entityBufferIndex + instanceIndex
-            index++
+    commandBuffer.typedBuffer.byteBuffer.run {
+        var index = 0
+        for (batch in renderBatches) {
+            for(instanceIndex in 0 until batch.instanceCount) {
+                commandBuffer.typedBuffer[index].run {
+                    count.run { value = batch.drawElementsIndirectCommand.count }
+                    primCount.run { value = batch.drawElementsIndirectCommand.primCount }
+                    firstIndex.run { value = batch.drawElementsIndirectCommand.firstIndex }
+                    baseVertex.run { value = batch.drawElementsIndirectCommand.baseVertex }
+                    baseInstance.run { value = batch.drawElementsIndirectCommand.baseInstance }
+                    primCount.run { value = 1 }
+                }
+                entityOffsetBuffer[index].value = batch.entityBufferIndex + instanceIndex
+                index++
+            }
         }
     }
 }
