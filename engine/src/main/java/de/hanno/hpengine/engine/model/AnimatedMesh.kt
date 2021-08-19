@@ -1,12 +1,14 @@
 package de.hanno.hpengine.engine.model
 
+import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
+import AnimatedVertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.AnimatedVertex
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruct
-import de.hanno.hpengine.engine.scene.AnimatedVertexStructPacked
+import de.hanno.hpengine.engine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
@@ -17,6 +19,8 @@ import de.hanno.struct.StructArray
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
+import org.lwjgl.BufferUtils
+import struktgen.TypedBuffer
 import java.io.File
 
 class AnimatedMesh(override var name: String,
@@ -88,30 +92,20 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
     val animation = animations.entries.first().value // TOOD: Use all animations
     val animationController = AnimationController(animation)
 
-    override val verticesStructArray = StructArray(uniqueVertices.size) { AnimatedVertexStruct() }.apply {
-        for (i in uniqueVertices.indices) {
-            val animatedVertex = uniqueVertices[i]
-            val (position, texCoord, normal, weights, jointIndices) = animatedVertex
-            val target = getAtIndex(i)
-            target.position.set(position)
-            target.texCoord.set(texCoord)
-            target.normal.set(normal)
-            target.weights.set(weights)
-            target.jointIndices.set(jointIndices)
-        }
-    }
-    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.vertices.size }) { AnimatedVertexStructPacked() }.apply {
-        var counter = 0
-        for (mesh in meshes) {
-            for(animatedVertex in mesh.vertices) {
-                val (position, texCoord, normal, weights, jointIndices) = animatedVertex
-                val target = getAtIndex(counter)
-                target.position.set(position)
-                target.texCoord.set(texCoord)
-                target.normal.set(normal)
-                target.weights.set(weights)
-                target.jointIndices.set(jointIndices)
-                counter++
+    override val verticesPacked = TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes), AnimatedVertexStruktPacked.type).apply {
+        byteBuffer.run {
+            var counter = 0
+            for(mesh in meshes) {
+                for (vertex in mesh.vertices) {
+                    this@apply[counter].run {
+                        position.run { set(vertex.position) }
+                        texCoord.run { set(vertex.texCoord) }
+                        normal.run {set(vertex.normal) }
+                        weights.run { set(vertex.weights) }
+                        jointIndices.run { set(vertex.jointIndices) }
+                    }
+                    counter++
+                }
             }
         }
     }

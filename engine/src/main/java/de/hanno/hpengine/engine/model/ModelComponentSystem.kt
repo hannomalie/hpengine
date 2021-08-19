@@ -19,20 +19,14 @@ import de.hanno.hpengine.engine.instancing.clusters
 import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.instancing.instances
 import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.struct.Array
-import de.hanno.struct.Struct
-import de.hanno.struct.StructArray
 import de.hanno.struct.copyTo
-import de.hanno.struct.enlarge
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import struktgen.typed
-import java.nio.ByteBuffer
 import java.util.concurrent.CopyOnWriteArrayList
 
 class ModelComponentSystem(
@@ -51,10 +45,10 @@ class ModelComponentSystem(
     val allocations: MutableMap<ModelComponent, Allocation> = mutableMapOf()
 
     private val _components = CopyOnWriteArrayList<ModelComponent>()
-    private var gpuJointsArray = BufferUtils.createByteBuffer(1000 * Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
+    private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
     private val batchingSystem = BatchingSystem()
-    var gpuEntitiesArray = TypedBuffer(BufferUtils.createByteBuffer(EntityStrukt.type.sizeInBytes * 1000), EntityStrukt.type)
+    var gpuEntitiesArray = TypedBuffer(BufferUtils.createByteBuffer(EntityStrukt.type.sizeInBytes), EntityStrukt.type)
     val entityIndices: MutableMap<ModelComponent, Int> = mutableMapOf()
 
     override val components: List<ModelComponent>
@@ -68,7 +62,7 @@ class ModelComponentSystem(
             component.update(scene, deltaSeconds)
         }
         cacheEntityIndices()
-        updateGpuEntitiesArray(scene)
+        updateGpuEntitiesArray()
         updateGpuJointsArray()
 
         var counter = 0
@@ -163,9 +157,8 @@ class ModelComponentSystem(
     private fun getRequiredEntityBufferSize(): Int {
         return components.sumBy { it.entity.instanceCount * it.meshes.size }
     }
-    private fun updateGpuEntitiesArray(scene: Scene) {
+    private fun updateGpuEntitiesArray() {
         gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
-        gpuEntitiesArray.byteBuffer.rewind()
     }
 
     override fun addComponent(component: ModelComponent) {
@@ -178,7 +171,6 @@ class ModelComponentSystem(
 
     private fun updateGpuJointsArray() {
         gpuJointsArray = gpuJointsArray.enlarge(joints.size)
-        gpuJointsArray.byteBuffer.rewind()
 
         for((index, joint) in joints.withIndex()) {
             gpuJointsArray[index].run {
@@ -205,7 +197,6 @@ class ModelComponentSystem(
                 val vertexIndexBuffer = vertexIndexBufferStatic
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                 val vertexIndexOffsetsForMeshes = c.putToBuffer(
-                    gpuContext,
                     vertexIndexBuffer,
                     vertexIndexOffsets
                 )
@@ -214,7 +205,6 @@ class ModelComponentSystem(
                 val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
                 val vertexIndexOffsetsForMeshes = c.putToBuffer(
-                    gpuContext,
                     vertexIndexBuffer,
                     vertexIndexOffsets
                 )
@@ -241,9 +231,6 @@ class ModelComponentSystem(
         renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
 
-//        gpuJointsArray.safeCopyTo(renderState.entitiesState.jointsBuffer)
-//        gpuEntitiesArray.safeCopyTo(renderState.entitiesBuffer)
-
         renderState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
         renderState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
         gpuJointsArray.byteBuffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
@@ -264,13 +251,13 @@ class ModelComponentSystem(
     }
 }
 
-fun <T> TypedBuffer<T>.enlarge(size: Int, copyContent: Boolean = true) = enlargeToBytes(size * struktType.sizeInBytes, copyContent)
+fun <T> TypedBuffer<T>.enlarge(size: Int, copyContent: Boolean = true, rewindBuffers: Boolean = true) = enlargeToBytes(size * struktType.sizeInBytes, copyContent, rewindBuffers)
 
-fun <T> TypedBuffer<T>.enlargeToBytes(sizeInBytes: Int, copyContent: Boolean = true) = if(byteBuffer.capacity() < sizeInBytes) {
+fun <T> TypedBuffer<T>.enlargeToBytes(sizeInBytes: Int, copyContent: Boolean = true, rewindBuffers: Boolean = true) = if(byteBuffer.capacity() < sizeInBytes) {
     TypedBuffer(BufferUtils.createByteBuffer(sizeInBytes), struktType).apply {
         if(copyContent) {
             val self = this@apply
-            this@enlargeToBytes.byteBuffer.copyTo(self.byteBuffer)
+            this@enlargeToBytes.byteBuffer.copyTo(self.byteBuffer, rewindBuffers = rewindBuffers)
         }
     }
 } else this

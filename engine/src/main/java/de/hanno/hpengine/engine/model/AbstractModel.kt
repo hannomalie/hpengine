@@ -21,6 +21,9 @@ abstract class AbstractModel<T>(final override val meshes: List<Mesh<T>>,
     final override val meshIndexCounts = meshes.map { it.indexBufferValues.size }
     val meshIndexSum = meshIndexCounts.sum()
 
+    override var triangleCount: Int = meshes.sumBy { it.triangleCount }
+    override val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
+
     override var indices = de.hanno.struct.StructArray(meshIndexSum) { IntStruct() }.apply {
         var offsetPerMesh = 0
         meshes.forEach { mesh ->
@@ -28,8 +31,6 @@ abstract class AbstractModel<T>(final override val meshes: List<Mesh<T>>,
             offsetPerMesh += mesh.indexBufferValues.size
         }
     }
-    override var triangleCount: Int = meshes.sumBy { it.triangleCount }
-    override val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
 
     override var material: Material = material
         set(value) {

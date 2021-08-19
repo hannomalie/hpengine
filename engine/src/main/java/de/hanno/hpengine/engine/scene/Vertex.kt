@@ -7,7 +7,9 @@ import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.FloatThree
 import de.hanno.hpengine.engine.vertexbuffer.DataChannelComponent.FloatTwo
 import de.hanno.struct.Struct
 import org.joml.Vector2f
+import org.joml.Vector2fc
 import org.joml.Vector3f
+import org.joml.Vector3fc
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
@@ -15,15 +17,18 @@ typealias HpVector3f = de.hanno.hpengine.engine.math.Vector3f
 typealias HpVector4f = de.hanno.hpengine.engine.math.Vector4f
 typealias HpVector4i = de.hanno.hpengine.engine.math.Vector4i
 typealias HpVector2f = de.hanno.hpengine.engine.math.Vector2f
+
 class VertexStruct : Struct() {
     val position by HpVector3f()
     val texCoord by HpVector2f()
     val normal by HpVector3f()
+
     companion object {
         val sizeInBytes = 8 * java.lang.Float.BYTES
     }
 }
-class VertexStructPacked: Struct() {
+
+class VertexStructPacked : Struct() {
     val position by HpVector4f()
     val texCoord by HpVector4f()
     val normal by HpVector4f()
@@ -32,17 +37,21 @@ class VertexStructPacked: Struct() {
         return "VertexStructPacked(position=(${position.x}, ${position.y}, ${position.z}), " +
                 "texCoord=(${texCoord.x}, ${texCoord.y}), normal=(${normal.x}, ${normal.y}, ${normal.z}))"
     }
+
     companion object {
         val sizeInBytes = 4 * 4 * java.lang.Float.BYTES
     }
 }
-interface VertexStruktPacked: Strukt {
+
+interface VertexStruktPacked : Strukt {
     val ByteBuffer.position: Vector4fStrukt
     val ByteBuffer.texCoord: Vector4fStrukt
     val ByteBuffer.normal: Vector4fStrukt
     val ByteBuffer.dummy: Vector4fStrukt
+
     companion object
 }
+
 class AnimatedVertexStruct : Struct() {
     val position by HpVector3f()
     val texCoord by HpVector2f()
@@ -55,6 +64,7 @@ class AnimatedVertexStruct : Struct() {
         val sizeInBytes = AnimatedVertexStruct().sizeInBytes
     }
 }
+
 class AnimatedVertexStructPacked : Struct() {
     val position by HpVector4f()
     val texCoord by HpVector4f()
@@ -77,6 +87,7 @@ class AnimatedVertexStructPacked : Struct() {
 
     }
 }
+
 interface AnimatedVertexStruktPacked : Strukt {
     val ByteBuffer.position: Vector4fStrukt
     val ByteBuffer.texCoord: Vector4fStrukt
@@ -90,9 +101,11 @@ interface AnimatedVertexStruktPacked : Strukt {
     companion object
 }
 
-data class Vertex (val position: Vector3f = Vector3f(),
-                  val texCoord: Vector2f = Vector2f(),
-                  val normal: Vector3f = Vector3f()) {
+data class Vertex(
+    val position: Vector3fc = Vector3f(),
+    val texCoord: Vector2fc = Vector2f(),
+    val normal: Vector3fc = Vector3f()
+) {
 
     companion object {
         val channels by lazy {

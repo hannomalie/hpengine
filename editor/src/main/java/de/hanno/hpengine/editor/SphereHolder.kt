@@ -55,7 +55,7 @@ class SphereHolder(
     val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
-        sphereModelComponent.putToBuffer(gpuContext, sphereVertexIndexBuffer, this)
+        sphereModelComponent.putToBuffer(sphereVertexIndexBuffer, this)
     }
     val sphereCommand = DrawElementsIndirectCommand().apply {
         count = sphere.indices.size

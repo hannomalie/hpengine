@@ -305,7 +305,7 @@ data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMapped
     fun addAll(offset: Int? = null, elements: ByteBuffer) {
         val offset = offset ?: buffer.capacity()
         ensureCapacityInBytes(offset + elements.capacity())
-        elements.copyTo(buffer, targetOffset = offset)
+        elements.copyTo(buffer, rewindBuffers = true, targetOffset = offset)
     }
 }
 

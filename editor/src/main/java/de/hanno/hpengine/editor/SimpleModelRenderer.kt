@@ -57,7 +57,7 @@ class SimpleModelRenderer(
     val modelVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
 
     val vertexIndexOffsets = modelVertexIndexBuffer.allocateForComponent(modelComponent).apply {
-        modelComponent.putToBuffer(gpuContext, modelVertexIndexBuffer, this)
+        modelComponent.putToBuffer(modelVertexIndexBuffer, this)
     }
     val modelCommand = DrawElementsIndirectCommand().apply {
         count = model.indices.size

@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.transform.boundingSphereRadius
 import de.hanno.struct.Struct
 import de.hanno.struct.StructArray
 import org.joml.Matrix4f
+import struktgen.TypedBuffer
+import struktgen.api.Strukt
 import java.io.File
 
 interface Model<T> {
@@ -14,9 +16,7 @@ interface Model<T> {
 
     val path: String
 
-    val verticesStructArray: StructArray<out Struct>
-
-    val verticesStructArrayPacked: StructArray<out Struct>
+    val verticesPacked: TypedBuffer<out Strukt>
 
     val meshes: List<Mesh<T>>
 

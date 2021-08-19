@@ -17,6 +17,7 @@ import de.hanno.hpengine.engine.scene.dsl.convert
 import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.engine.scene.dsl.scene
 import de.hanno.hpengine.engine.extension.baseModule
+import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
@@ -124,8 +125,8 @@ fun main(args: Array<String>) {
 
     val config = ConfigImpl(
         Directories(
-            gameDir = GameDirectory<RibbonEditor>(File("C:\\users\\tenter\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game")),
-            engineDir = EngineDirectory(File("C:\\workspace\\users\\tenter\\hpengine\\engine\\src\\main\\resources\\hp"))
+            gameDir = GameDirectory<RibbonEditor>(File("C:\\Users\\Tenter\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game")),
+            engineDir = EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp"))
         ),
         debug = DebugConfig(isUseFileReloading = true)
     )
@@ -136,14 +137,20 @@ fun main(args: Array<String>) {
         frame.onSceneReload = {
             engine.scene = scene("Hellknight") {
                 entity("hellknight") {
+//                    add(
+//                        AnimatedModelComponentDescription(
+//                            "assets/models/doom3monster/monster.md5mesh",
+//                            Directory.Game,
+//                            AABBData(
+//                                Vector3f(-60f, -10f, -35f),
+//                                Vector3f(60f, 130f, 50f)
+//                            )
+//                        )
+//                    )
                     add(
-                        AnimatedModelComponentDescription(
-                            "assets/models/doom3monster/monster.md5mesh",
+                        StaticModelComponentDescription(
+                            "assets/models/sponza.obj",
                             Directory.Game,
-                            AABBData(
-                                Vector3f(-60f, -10f, -35f),
-                                Vector3f(60f, 130f, 50f)
-                            )
                         )
                     )
                 }

@@ -10,6 +10,7 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
 import de.hanno.hpengine.util.ressources.OnFileChangeListener
 import de.hanno.hpengine.util.ressources.Reloadable
+import de.hanno.hpengine.util.ressources.WrappedCodeSource
 import net.engio.mbassy.listener.Handler
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
@@ -185,13 +186,14 @@ fun AbstractProgram<*>.removeOldListeners() {
 }
 
 fun Program<*>.createFileListeners() {
-    val sources: List<FileBasedCodeSource> = listOfNotNull(
+    val sources = listOfNotNull(
         fragmentShader?.source,
         vertexShader.source,
         geometryShader?.source
-    ).filterIsInstance<FileBasedCodeSource>()
+    )
+    val fileBasedSources = sources.filterIsInstance<FileBasedCodeSource>() + sources.filterIsInstance<WrappedCodeSource>().map { it.underlying }
 
-    replaceOldListeners(sources, this)
+    replaceOldListeners(fileBasedSources, this)
 }
 
 fun ComputeProgram.createFileListeners() {
@@ -205,6 +207,10 @@ fun List<FileBasedCodeSource>.registerFileChangeListeners(reloadable: Reloadable
 
 fun FileBasedCodeSource.registerFileChangeListener(reloadable: Reloadable) = FileMonitor.addOnFileChangeListener(
     file,
-    { file -> file.name.startsWith("globals") },
-    { reloadable.reload() }
+    { file ->
+        file.name.startsWith("globals")
+    },
+    {
+        reloadable.reload()
+    }
 )

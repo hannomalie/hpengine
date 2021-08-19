@@ -21,11 +21,12 @@ import java.util.UUID
 
 data class IndexedFace(val a: Int, val b: Int, val c: Int)
 
-class StaticMesh(override var name: String = "",
-                 override val vertices: List<Vertex>,
-                 override val faces: List<IndexedFace>,
-                 override var material: Material
-                 ) : Serializable, Mesh<Vertex> {
+class StaticMesh(
+    override var name: String = "",
+    override val vertices: List<Vertex>,
+    override val faces: List<IndexedFace>,
+    override var material: Material
+) : Serializable, Mesh<Vertex> {
 
     val uuid = UUID.randomUUID()
 
@@ -35,9 +36,9 @@ class StaticMesh(override var name: String = "",
 
     override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
         faces.withIndex().forEach { (index, face) ->
-            getAtIndex(index*3).value = face.a
-            getAtIndex(index*3+1).value = face.b
-            getAtIndex(index*3+2).value = face.c
+            getAtIndex(index * 3).value = face.a
+            getAtIndex(index * 3 + 1).value = face.b
+            getAtIndex(index * 3 + 2).value = face.c
         }
     }
 
@@ -45,9 +46,8 @@ class StaticMesh(override var name: String = "",
         get() = faces.size
 
     class CompiledVertex(val position: Vector3f, val texCoords: Vector2f, val normal: Vector3f) {
-        fun asFloats(): FloatArray {
-            return floatArrayOf(position.x, position.y, position.z, texCoords.x, texCoords.y, normal.x, normal.y, normal.z)
-        }
+        fun tpFloats(): FloatArray =
+            floatArrayOf(position.x, position.y, position.z, texCoords.x, texCoords.y, normal.x, normal.y, normal.z)
     }
 
     class CompiledFace(val positions: Array<Vector3f>, val texCoords: Array<Vector2f>, val normals: Array<Vector3f>) {
@@ -79,17 +79,21 @@ class StaticMesh(override var name: String = "",
 
         private const val serialVersionUID = 1L
 
-        fun calculateAABB(modelMatrix: Matrix4f?, vertices: Collection<Vertex>, faces: Collection<IndexedFace>): AABBData {
+        fun calculateAABB(
+            modelMatrix: Matrix4f?,
+            vertices: Collection<Vertex>,
+            faces: Collection<IndexedFace>
+        ): AABBData {
             val min = Vector3f(absoluteMaximum)
             val max = Vector3f(absoluteMinimum)
 
             val positions = vertices.map { it.position } // TODO: Optimization, use vertex array instead of positions
             for (face in faces) {
-                val vertices = listOf(positions[face.a],positions[face.b],positions[face.c])
+                val vertices = listOf(positions[face.a], positions[face.b], positions[face.c])
 
-                        for (j in 0..2) {
+                for (j in 0..2) {
                     val positionV3 = vertices[j]
-                    val position = Vector4f(positionV3.x, positionV3.y, positionV3.z, 1f)
+                    val position = Vector4f(positionV3.x(), positionV3.y(), positionV3.z(), 1f)
                     if (modelMatrix != null) {
                         position.mul(modelMatrix)
                     }
@@ -106,6 +110,7 @@ class StaticMesh(override var name: String = "",
 
             return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
         }
+
         fun calculateAABB(modelMatrix: Matrix4f?, min: Vector3f, max: Vector3f, faces: List<CompiledFace>) {
             min.set(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
             max.set(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)

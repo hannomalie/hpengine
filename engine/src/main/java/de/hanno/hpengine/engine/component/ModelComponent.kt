@@ -161,23 +161,21 @@ class ModelComponent @JvmOverloads constructor(entity: Entity, val model: Model<
 fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexOffsets {
     return allocate(modelComponent.model.uniqueVertices.size, modelComponent.indices.size)
 }
-fun ModelComponent.putToBuffer(gpuContext: GpuContext<*>,
-                               indexBuffer: VertexIndexBuffer,
-                               vertexIndexOffsets: VertexIndexOffsets): List<VertexIndexOffsets> {
+fun ModelComponent.putToBuffer(
+    indexBuffer: VertexIndexBuffer,
+    vertexIndexOffsets: VertexIndexOffsets
+): List<VertexIndexOffsets> {
 
     synchronized(indexBuffer) {
         val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
         if(model is StaticModel) {
-            indexBuffer.vertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesStructArrayPacked.buffer)
+            indexBuffer.vertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesPacked.byteBuffer)
         } else if(model is AnimatedModel) {
-            indexBuffer.animatedVertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesStructArrayPacked.buffer)
+            indexBuffer.animatedVertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesPacked.byteBuffer)
         } else throw IllegalStateException("Unsupported mode") // TODO: sealed classes!!
 
-//        TODO: Does this have to be on gpu thread?
-//        gpuContext.execute("ModelComponent.putToBuffer") {
-            indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, indices)
-//        }
+        indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, indices)
 
         return vertexIndexOffsetsForMeshes
     }

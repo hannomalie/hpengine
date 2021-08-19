@@ -1,12 +1,15 @@
 package de.hanno.hpengine.engine.model
 
+import VertexStruktPackedImpl.Companion.sizeInBytes
+import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruct
-import de.hanno.hpengine.engine.scene.VertexStructPacked
+import de.hanno.hpengine.engine.scene.VertexStruktPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
-import de.hanno.struct.StructArray
+import org.lwjgl.BufferUtils
+import struktgen.TypedBuffer
 import java.io.File
 
 class StaticModel(override val file: File,
@@ -20,30 +23,22 @@ class StaticModel(override val file: File,
 
     override val bytesPerVertex = VertexStruct.sizeInBytes
 
-    override val verticesStructArray = StructArray(uniqueVertices.size) { VertexStruct() }.apply {
-        for (i in uniqueVertices.indices) {
-            val vertex = uniqueVertices[i]
-            val (position, texCoord, normal) = vertex
-            val target = getAtIndex(i)
-            target.position.set(position)
-            target.texCoord.set(texCoord)
-            target.normal.set(normal)
-        }
-    }
-
-    override val verticesStructArrayPacked = StructArray(meshes.sumBy { it.vertices.size }) { VertexStructPacked() }.apply {
-        var counter = 0
-        for(mesh in meshes) {
-            for(vertex in mesh.vertices) {
-                val (position, texCoord, normal) = vertex
-                val target = getAtIndex(counter)
-                target.position.set(position)
-                target.texCoord.set(texCoord)
-                target.normal.set(normal)
-                counter++
+    override val verticesPacked = TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * VertexStruktPacked.sizeInBytes), VertexStruktPacked.type).apply {
+        byteBuffer.run {
+            var counter = 0
+            for(mesh in meshes) {
+                for (vertex in mesh.vertices) {
+                    this@apply[counter].run {
+                        position.run { set(vertex.position) }
+                        texCoord.run { set(vertex.texCoord) }
+                        normal.run {set(vertex.normal) }
+                    }
+                    counter++
+                }
             }
         }
     }
 
     override fun toString(): String = "StaticModel($path)"
 }
+
