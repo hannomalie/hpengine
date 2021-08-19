@@ -6,6 +6,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 interface ComponentSystem<T : Component> {
     suspend fun update(scene: Scene, deltaSeconds: Float) {
@@ -16,34 +18,27 @@ interface ComponentSystem<T : Component> {
 
     val components: List<T>
     fun addComponent(component: T)
+    fun addComponents(components: List<T>) = components.forEach(::addComponent)
+
     fun clear() { }
     fun extract(renderState: RenderState) {}
 
     fun onEntityAdded(entities: List<Entity>): MutableList<Component> {
-        val matchedComponents = mutableSetOf<Component>()
-        for (entity in entities) {
-            matchedComponents.addAll(addCorrespondingComponents(entity.components.toList()))
-        }
-        logger.debug("${matchedComponents.size} components matched")
-        return matchedComponents.toMutableList()
+        val correspondingComponents = entities.flatMap { it.components.filterForCorresponding() }
+
+        addComponents(correspondingComponents)
+
+        return correspondingComponents.toMutableList()
     }
 
 
     fun onComponentAdded(component: Component) {
-        addCorrespondingComponents(listOf(component))
+        addComponents(listOf(component).filterForCorresponding())
     }
 
-    fun addCorrespondingComponents(components: List<Component>): List<Component> {
-        val correspondingComponents = components.filter { componentClass.isAssignableFrom(it.javaClass) }
+    fun List<Component>.filterForCorresponding(): List<T> = filter { it.isCorresponding() } as List<T>
 
-        logger.debug("${correspondingComponents.size} components corresponding")
-        correspondingComponents.forEach { component ->
-            if(!this.components.contains(component)) {
-                addComponent(componentClass.cast(component))
-            }
-        }
-        return correspondingComponents
-    }
+    fun Component.isCorresponding() = componentClass.isAssignableFrom(javaClass)
 
     val componentClass: Class<T>
     val logger: Logger

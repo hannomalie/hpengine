@@ -70,7 +70,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 //        extensions.forEach { it.run { decorate() } }
 
         componentSystems.forEach {
-            it.onEntityAdded(this.getEntities())
+            it.onEntityAdded(getEntities())
         }
         managers.forEach { it.beforeSetScene(this) }
     }

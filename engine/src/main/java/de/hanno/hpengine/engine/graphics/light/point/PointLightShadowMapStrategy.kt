@@ -279,7 +279,7 @@ class DualParaboloidShadowMapStrategy(
 
                         val command = DrawElementsIndirectCommand().apply {
                             primCount = e.instanceCount
-                            count = allocation.forMeshes[0].indexOffset
+                            count = allocation.indexOffset
                             firstIndex = allocation.indexOffset
                             baseVertex = allocation.vertexOffset
                         }
@@ -323,7 +323,7 @@ class DualParaboloidShadowMapStrategy(
 
                         val command = DrawElementsIndirectCommand().apply {
                             primCount = e.instanceCount
-                            count = allocation.forMeshes[0].indexOffset // what?
+                            count = allocation.indexOffset // what?
                             firstIndex = allocation.indexOffset
                             baseVertex = allocation.vertexOffset
                         }

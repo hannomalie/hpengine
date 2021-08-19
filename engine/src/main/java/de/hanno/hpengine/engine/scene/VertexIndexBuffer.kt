@@ -4,7 +4,6 @@ import AnimatedVertexStruktPackedImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
 import org.lwjgl.BufferUtils

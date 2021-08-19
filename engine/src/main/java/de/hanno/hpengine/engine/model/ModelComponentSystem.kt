@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.BatchingSystem
 import de.hanno.hpengine.engine.graphics.EntityStrukt
@@ -162,11 +161,16 @@ class ModelComponentSystem(
     }
 
     override fun addComponent(component: ModelComponent) {
-        allocateVertexIndexBufferSpace(listOf(component.entity))
+        allocateVertexIndexBufferSpace(listOf(component).filterForCorresponding())
         _components.add(component)
 
         // TODO: Implement for reload feature
         // FileMonitor.addOnFileChangeListener(component.model.file) { }
+    }
+    override fun addComponents(components: List<ModelComponent>) {
+        val correspondingComponents = components.filterForCorresponding()
+        allocateVertexIndexBufferSpace(correspondingComponents)
+        _components.addAll(correspondingComponents)
     }
 
     private fun updateGpuJointsArray() {
@@ -190,8 +194,7 @@ class ModelComponentSystem(
         class Animated(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>, val jointsOffset: Int): Allocation(forMeshes)
     }
 
-    fun allocateVertexIndexBufferSpace(entities: List<Entity>) {
-        val components = entities.flatMap { it.components.filterIsInstance<ModelComponent>() }
+    fun allocateVertexIndexBufferSpace(components: List<ModelComponent>) {
         val allocations = components.associateWith { c ->
             if (c.model.isStatic) {
                 val vertexIndexBuffer = vertexIndexBufferStatic
