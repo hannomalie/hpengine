@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.graphics.light.area
 
+import AreaLightStruktImpl.Companion.sizeInBytes
+import AreaLightStruktImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
@@ -36,6 +38,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
+import de.hanno.hpengine.engine.model.enlarge
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.Scene
@@ -49,6 +52,7 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
+import struktgen.TypedBuffer
 import java.nio.FloatBuffer
 import java.util.ArrayList
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer as NewPersistentMappedBuffer
@@ -63,7 +67,7 @@ class AreaLightSystem(
 ) : SimpleEntitySystem(listOf(AreaLight::class.java)), RenderSystem {
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
-    private var gpuAreaLightArray = StructArray(size = 20) { AreaLightStruct() }
+    private var gpuAreaLightArray = TypedBuffer(BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes), AreaLightStrukt.type)
 
     val lightBuffer: PersistentMappedBuffer =
         window.invoke { PersistentMappedBuffer(gpuContext, 1000) }
@@ -174,20 +178,24 @@ class AreaLightSystem(
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
 //        TODO: Resize with instance count
-        this@AreaLightSystem.gpuAreaLightArray = this@AreaLightSystem.gpuAreaLightArray.enlarge(this@AreaLightSystem.getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
-        this@AreaLightSystem.gpuAreaLightArray.buffer.rewind()
-
-        for((index, areaLight) in this@AreaLightSystem.getComponents(AreaLight::class.java).withIndex()) {
-            val target = this@AreaLightSystem.gpuAreaLightArray.getAtIndex(index)
-            target.trafo.set(areaLight.entity.transform)
-            target.color.set(areaLight.color)
-            target.dummy0 = -1
-            target.widthHeightRange.x = areaLight.width
-            target.widthHeightRange.y = areaLight.height
-            target.widthHeightRange.z = areaLight.range
-            target.dummy1 = -1
+        this@AreaLightSystem.gpuAreaLightArray = gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
+        val byteBuffer = gpuAreaLightArray.byteBuffer
+        byteBuffer.rewind()
+        byteBuffer.run {
+            for((index, areaLight) in getComponents(AreaLight::class.java).withIndex()) {
+                gpuAreaLightArray[index].run {
+                    trafo.set(byteBuffer, areaLight.entity.transform)
+                    color.set(byteBuffer, areaLight.color)
+                    dummy0.run { value = -1 }
+                    widthHeightRange.run { x = areaLight.width }
+                    widthHeightRange.run { y = areaLight.height }
+                    widthHeightRange.run { z = areaLight.range }
+                    dummy1.run { value = -1 }
+                }
+            }
         }
-        this@AreaLightSystem.gpuAreaLightArray
+
+        gpuAreaLightArray
     }
     private fun getRequiredAreaLightBufferSize() =
             getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount }

@@ -265,13 +265,6 @@ interface Matrix4fStrukt: Strukt {
     companion object
 }
 
-
-
-class AABB : Struct() {
-    val min by Vector3f()
-    val max by Vector3f()
-}
-
 val identityMatrix4fBuffer = BufferUtils.createFloatBuffer(16).apply {
     Transform().get(this)
 }
