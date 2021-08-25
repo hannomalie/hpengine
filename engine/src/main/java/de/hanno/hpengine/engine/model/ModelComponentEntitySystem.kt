@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.component.allocateForComponent
 import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.BatchingSystem
@@ -29,6 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class ModelComponentEntitySystem(
     val materialManager: MaterialManager,
+    val entityManager: EntityManager,
     val gpuContext: GpuContext<OpenGl>,
     val config: Config,
     entityBuffer: EntityBuffer): SimpleEntitySystem(listOf(ModelComponent::class.java)) {
@@ -76,7 +78,7 @@ class ModelComponentEntitySystem(
                         materialIndex = targetMaterialIndex
                         update = entity.updateType.asDouble.toInt()
                         meshBufferIndex = entityBufferIndex + targetMeshIndex
-                        entityIndex = entity.index
+                        entityIndex = entityManager.entities.indexOf(entity)
                         meshIndex = targetMeshIndex
                         baseVertex = allocation.forMeshes[targetMeshIndex].vertexOffset
                         baseJointIndex = allocation.baseJointIndex

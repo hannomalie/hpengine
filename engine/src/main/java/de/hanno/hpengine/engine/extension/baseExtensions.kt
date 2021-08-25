@@ -93,7 +93,7 @@ import org.lwjgl.opengl.GL42
 
 val baseModule = module {
     manager { EntityManager() }
-    entitySystem { ModelComponentEntitySystem(get(), get(), get(), get()) }
+    entitySystem { ModelComponentEntitySystem(get(), get(), get(), get(), get()) }
 
     addBackendModule()
     addCameraModule()

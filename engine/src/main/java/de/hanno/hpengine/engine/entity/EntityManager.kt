@@ -57,7 +57,7 @@ class EntityManager : Manager {
         }
     }
 
-    fun getEntities() = entityContainer.entities
+    val entities get() = entityContainer.entities
 
     override fun clear() = entityContainer.clear()
 

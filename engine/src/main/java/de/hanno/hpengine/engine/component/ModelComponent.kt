@@ -1,8 +1,9 @@
 package de.hanno.hpengine.engine.component
 
+import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
+import VertexStruktPackedImpl.Companion.sizeInBytes
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.AnimatedModel
@@ -12,9 +13,11 @@ import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets
+import de.hanno.hpengine.engine.scene.VertexStruktPacked
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.Transform
@@ -169,11 +172,11 @@ fun ModelComponent.putToBuffer(
     synchronized(indexBuffer) {
         val vertexIndexOffsetsForMeshes = captureIndexAndVertexOffsets(vertexIndexOffsets)
 
-        if(model is StaticModel) {
-            indexBuffer.vertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesPacked.byteBuffer)
-        } else if(model is AnimatedModel) {
-            indexBuffer.animatedVertexStructArray.addAll(vertexIndexOffsets.vertexOffset, model.verticesPacked.byteBuffer)
-        } else throw IllegalStateException("Unsupported mode") // TODO: sealed classes!!
+        when (model) {
+            is StaticModel -> indexBuffer.vertexStructArray.addAll(vertexIndexOffsets.vertexOffset * VertexStruktPacked.sizeInBytes, model.verticesPacked.byteBuffer)
+            is AnimatedModel -> indexBuffer.animatedVertexStructArray.addAll(vertexIndexOffsets.vertexOffset * AnimatedVertexStruktPacked.sizeInBytes, model.verticesPacked.byteBuffer)
+            else -> throw IllegalStateException("Unsupported mode")
+        } // TODO: sealed classes!!
 
         indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, indices)
 
@@ -185,12 +188,11 @@ fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexO
     var currentIndexOffset = vertexIndexOffsets.indexOffset
     var currentVertexOffset = vertexIndexOffsets.vertexOffset
 
-    val meshVertexIndexOffsets = model.meshes.indices.map { i ->
+    return model.meshes.indices.map { i ->
         val mesh = model.meshes[i] as Mesh<*>
         VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
             currentIndexOffset += mesh.indexBufferValues.size
             currentVertexOffset += mesh.vertices.size
         }
     }
-    return meshVertexIndexOffsets
 }

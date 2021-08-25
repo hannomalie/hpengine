@@ -97,7 +97,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         scope.close()
     }
 
-    fun getEntities() = entityManager.getEntities()
+    fun getEntities() = entityManager.entities
     fun addAll(entities: List<Entity>) = get<AddResourceContext>().launch {
         entityManager.add(entities)
 
@@ -120,7 +120,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     fun add(entity: Entity) = addAll(listOf(entity))
-    fun getEntity(name: String): Entity? = entityManager.getEntities().find { e -> e.name == name }
+    fun getEntity(name: String): Entity? = entityManager.entities.find { e -> e.name == name }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         managers.filterNot { it is SceneManager }.forEach { it.update(scene, deltaSeconds) }
@@ -134,7 +134,7 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     fun calculateBoundingVolume() {
-        aabb.localAABB = entityManager.getEntities().calculateAABB()
+        aabb.localAABB = entityManager.entities.calculateAABB()
     }
 
     fun entity(name: String, block: Entity.() -> Unit): Entity = newEntity(name, block).apply {
