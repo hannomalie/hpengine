@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.extension.CameraExtension
 import de.hanno.hpengine.engine.extension.CameraExtension.Companion.cameraEntity
+import de.hanno.hpengine.engine.model.EntityBuffer
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.isEqualTo
 import org.joml.Matrix4f

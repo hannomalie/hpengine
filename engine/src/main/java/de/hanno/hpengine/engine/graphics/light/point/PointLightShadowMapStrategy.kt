@@ -27,7 +27,7 @@ import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.instanceCount
-import de.hanno.hpengine.engine.model.ModelComponentSystem
+import de.hanno.hpengine.engine.model.ModelComponentEntitySystem
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
@@ -241,7 +241,7 @@ class DualParaboloidShadowMapStrategy(
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
         val entities: List<Entity> = TODO("Reimplement properly with extracted state etc.")//entityManager.getEntities()
-        val modelComponentSystem: ModelComponentSystem =
+        val modelComponentEntitySystem: ModelComponentEntitySystem =
             TODO("Reimplement properly with extracted state etc.")//modelComponentSystem
 
         profiled("PointLight shadowmaps") {
@@ -266,7 +266,7 @@ class DualParaboloidShadowMapStrategy(
                 for (e in entities) {
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
 
-                        val allocation = modelComponentSystem.allocations[modelComponent]!!
+                        val allocation = modelComponentEntitySystem.allocations[modelComponent]!!
                         pointShadowPassProgram.setUniformAsMatrix4(
                             "modelMatrix",
                             e.transform.transformation.get(modelMatrixBuffer)
@@ -309,7 +309,7 @@ class DualParaboloidShadowMapStrategy(
                 gpuContext.clearDepthAndColorBuffer()
                 for (e in entities) {
                     e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                        val allocation = modelComponentSystem.allocations[modelComponent]!!
+                        val allocation = modelComponentEntitySystem.allocations[modelComponent]!!
 
                         pointShadowPassProgram.setUniformAsMatrix4(
                             "modelMatrix",

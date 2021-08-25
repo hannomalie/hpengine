@@ -57,7 +57,8 @@ import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.model.ModelComponentManager
+import de.hanno.hpengine.engine.model.EntityBuffer
+import de.hanno.hpengine.engine.model.ModelComponentEntitySystem
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -91,6 +92,9 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
 val baseModule = module {
+    manager { EntityManager() }
+    entitySystem { ModelComponentEntitySystem(get(), get(), get(), get()) }
+
     addBackendModule()
     addCameraModule()
     addSkyboxModule()
@@ -106,16 +110,15 @@ val baseModule = module {
 //    TODO: Fails because of shader code errors
 //    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
 
-    manager { EntityManager() }
     manager { MaterialManager(get(), get(), get()) }
-    manager { ModelComponentManager() }
     manager { PhysicsManager(get(), get(), get(), get()) }
 
     scope<Scene> {
         scoped { AreaLightSystem(get(), get(), get(), get()) } binds arrayOf(EntitySystem::class, RenderSystem::class)
+        scoped { EntityBuffer() }
     }
     componentSystem { AreaLightComponentSystem() }
-    componentSystem { ModelComponentSystem(get(), get(), get(), get()) }
+    componentSystem { ModelComponentSystem() }
     componentSystem { TubeLightComponentSystem() }
     componentSystem { CustomComponentSystem() }
     componentSystem { ScriptComponentSystem() }

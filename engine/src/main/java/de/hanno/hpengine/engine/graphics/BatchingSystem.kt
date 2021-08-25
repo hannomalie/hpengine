@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.clusters
 import de.hanno.hpengine.engine.instancing.instanceCount
+import de.hanno.hpengine.engine.model.ModelComponentEntitySystem
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.scene.BatchKey
 import org.joml.FrustumIntersection
@@ -17,7 +18,7 @@ class BatchingSystem {
 
     fun extract(camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f,
                 modelComponents: List<ModelComponent>, drawLines: Boolean,
-                allocations: MutableMap<ModelComponent, ModelComponentSystem.Allocation>,
+                allocations: MutableMap<ModelComponent, ModelComponentEntitySystem.Allocation>,
                 entityIndices: MutableMap<ModelComponent, Int>) {
 
         currentWriteState.entitiesState.renderBatchesStatic.clear()
