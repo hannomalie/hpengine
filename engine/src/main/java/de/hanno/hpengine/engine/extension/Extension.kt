@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.extension
 
 import de.hanno.hpengine.engine.entity.EntitySystem
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -36,11 +36,11 @@ inline fun <reified T: Manager> Module.manager(
     scope<Scene> { scoped(null, definition) bind Manager::class }
 }
 
-inline fun <reified T: RenderExtension<*>> Module.renderExtension(
+inline fun <reified T: DeferredRenderExtension<*>> Module.renderExtension(
     createdAtStart: Boolean = false,
     noinline definition: Definition<T>
 ): Pair<Module, InstanceFactory<*>> {
-    return single(null, createdAtStart, definition) bind RenderExtension::class
+    return single(null, createdAtStart, definition) bind DeferredRenderExtension::class
 }
 inline fun <reified T: RenderSystem> Module.renderSystem(
     createdAtStart: Boolean = false,

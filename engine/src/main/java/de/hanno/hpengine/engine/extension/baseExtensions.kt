@@ -23,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
@@ -32,12 +33,13 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
+import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
@@ -91,6 +93,16 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
+val deferredRendererModule = module {
+    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) }
+}
+val textureRendererModule = module {
+    renderSystem {
+        val window: Window<*> = get()
+        val textureManager: TextureManager = get()
+        SimpleTextureRenderer(get(), get(), textureManager.defaultTexture, get(), window.frontBuffer)
+    }
+}
 val baseModule = module {
     manager { EntityManager() }
     entitySystem { ModelComponentEntitySystem(get(), get(), get(), get(), get()) }
@@ -104,7 +116,6 @@ val baseModule = module {
     addOceanWaterModule()
     addDirectionalLightModule()
 
-    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) }
     renderExtension { ForwardRenderExtension(get(), get(), get(), get()) }
     renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }
 //    TODO: Fails because of shader code errors
@@ -228,7 +239,7 @@ class DirectionalLightDeferredRenderingExtension(
     deferredRenderingBuffer: DeferredRenderingBuffer
 ): CompoundExtension<OpenGl>(
     listOf(
-        DirectionalLightShadowMapExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer),
+        DirectionalLightShadowMapExtension(config, programManager, textureManager, gpuContext),
         DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer)
     )
 )
@@ -351,7 +362,7 @@ class SkyboxExtension(
         val programManager: ProgramManager<OpenGl>,
         val textureManager: TextureManager,
         val renderStateManager: RenderStateManager
-    ) : RenderExtension<OpenGl> {
+    ) : DeferredRenderExtension<OpenGl> {
 
         private val secondPassReflectionProgram = programManager.getComputeProgram(
             config.EngineAsset("shaders/second_pass_skybox_reflection.glsl")

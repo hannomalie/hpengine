@@ -1,9 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
 import AnimatedVertexStruktPackedImpl.Companion.type
 import EntityStruktImpl.Companion.type
 import IntStruktImpl.Companion.type
 import MaterialStruktImpl.Companion.type
+import Matrix4fStruktImpl.Companion.sizeInBytes
+import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
@@ -20,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.shader.Vec3
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.math.Matrix4f
+import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
@@ -58,8 +62,8 @@ open class StaticFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms
     var vertices by SSBO("VertexPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(VertexStruktPacked.type))
 }
 open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUniforms(gpuContext) {
-    var joints by SSBO("mat4", 6, PersistentMappedStructBuffer(1, gpuContext, { Matrix4f() }))
-    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedBuffer(1, gpuContext).typed(AnimatedVertexStruktPacked.type))
+    var joints by SSBO("mat4", 6, PersistentMappedBuffer(Matrix4fStrukt.sizeInBytes, gpuContext).typed(Matrix4fStrukt.type))
+    var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedBuffer(AnimatedVertexStruktPacked.sizeInBytes, gpuContext).typed(AnimatedVertexStruktPacked.type))
 }
 
 fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera, config: Config) {

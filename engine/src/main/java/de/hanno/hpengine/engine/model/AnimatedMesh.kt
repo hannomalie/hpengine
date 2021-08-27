@@ -79,7 +79,7 @@ class AnimatedMesh(override var name: String,
 }
 
 class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
-                    val animations: Map<String, Animation>, material: Material = meshes.first().material): AbstractModel<AnimatedVertex>(meshes, material) {
+                    val animations: Map<String, Animation>, material: Material = meshes.first().material): Model<AnimatedVertex>(meshes, material) {
     override val bytesPerVertex = AnimatedVertexStruktPacked.sizeInBytes
     override val path = file.absolutePath
 
@@ -108,7 +108,6 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
             }
         }
     }
-    override val isStatic = false
 
     fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
@@ -116,9 +115,7 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
 
     // Working with mesh bounding volumes doesnt make sense for animated models as they are heavily transformed
     // and its better to use a relaxed shared volume for the whole model
-    override fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB {
-        return getBoundingVolume(transform)
-    }
+    override fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>) = getBoundingVolume(transform)
     override val boundingVolume: AABB = calculateBoundingVolume()
 
     override fun calculateBoundingVolume() = AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())

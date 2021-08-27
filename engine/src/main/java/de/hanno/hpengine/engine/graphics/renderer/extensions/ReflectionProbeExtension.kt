@@ -20,7 +20,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -90,7 +90,7 @@ class ReflectionProbeRenderExtension(
     val textureManager: TextureManager,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>
-) : RenderExtension<OpenGl> {
+) : DeferredRenderExtension<OpenGl> {
 
     val reflectionProbeRenderState = renderStateManager.renderState.registerState {
         ReflectionProbeRenderState(gpuContext, renderStateManager)

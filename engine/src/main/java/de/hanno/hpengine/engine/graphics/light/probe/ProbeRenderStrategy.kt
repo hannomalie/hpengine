@@ -19,7 +19,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
@@ -34,7 +34,6 @@ import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -46,7 +45,6 @@ import org.lwjgl.opengl.GL30.GL_RG16F
 import org.lwjgl.opengl.GL30.GL_RGBA16F
 import org.lwjgl.opengl.GL30.glFinish
 import org.lwjgl.opengl.GL43
-import java.io.File
 import java.nio.FloatBuffer
 
 
@@ -242,7 +240,7 @@ class EvaluateProbeRenderExtension(
     textureManager: TextureManager,
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-): RenderExtension<OpenGl> {
+): DeferredRenderExtension<OpenGl> {
 
     private val probeRenderStrategy = ProbeRenderStrategy(
         config,

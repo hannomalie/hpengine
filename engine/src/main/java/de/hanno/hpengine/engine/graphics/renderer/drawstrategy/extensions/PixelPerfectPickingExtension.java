@@ -13,7 +13,7 @@ import org.joml.Vector2f;
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
 
-public class PixelPerfectPickingExtension implements RenderExtension<OpenGl> {
+public class PixelPerfectPickingExtension implements DeferredRenderExtension<OpenGl> {
 
     private final FloatBuffer floatBuffer;
 

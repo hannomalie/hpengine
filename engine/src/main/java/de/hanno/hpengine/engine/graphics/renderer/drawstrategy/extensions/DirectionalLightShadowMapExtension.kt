@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -32,9 +31,8 @@ class DirectionalLightShadowMapExtension(
     val config: Config,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager,
-    val gpuContext: GpuContext<OpenGl>,
-    val deferredRenderingBuffer: DeferredRenderingBuffer
-) : RenderExtension<OpenGl> {
+    val gpuContext: GpuContext<OpenGl>
+) : DeferredRenderExtension<OpenGl> {
 
     private var forceRerender = true
 

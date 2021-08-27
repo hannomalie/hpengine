@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.manager.Manager
-import org.koin.core.component.get
 
 class SceneManager(val addResourceContext: AddResourceContext): Manager {
     private var _scene: Scene? = null
@@ -36,7 +35,7 @@ class SceneManager(val addResourceContext: AddResourceContext): Manager {
     }
 
     override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
-        currentScene.scope.getAll<RenderExtension<*>>().forEach { it.afterSetScene(currentScene) }
+        currentScene.scope.getAll<DeferredRenderExtension<*>>().forEach { it.afterSetScene(currentScene) }
         currentScene.managers.filterNot { it is SceneManager }.forEach { it.afterSetScene(lastScene, currentScene) }
     }
 }

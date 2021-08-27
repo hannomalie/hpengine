@@ -13,7 +13,7 @@ import java.io.File
 
 class StaticModel(override val file: File,
                   meshes: List<StaticMesh>,
-                  material: Material = meshes.first().material) : AbstractModel<Vertex>(meshes, material) {
+                  material: Material = meshes.first().material) : Model<Vertex>(meshes, material) {
 
     override val path: String = file.absolutePath
     override val boundingVolume: AABB = calculateBoundingVolume()

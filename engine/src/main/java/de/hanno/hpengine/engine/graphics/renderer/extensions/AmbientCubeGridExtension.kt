@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRendering
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
@@ -54,7 +54,7 @@ class AmbientCubeGridExtension(
     val gpuContext: GpuContext<OpenGl>,
     textureManager: TextureManager,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-) : RenderExtension<OpenGl> {
+) : DeferredRenderExtension<OpenGl> {
 
     private var renderedInCycle: Long = -1
     val probeRenderer = ProbeRenderer(gpuContext, config, programManager, textureManager)

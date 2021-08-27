@@ -13,7 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
@@ -120,7 +120,7 @@ class BvHPointLightSecondPassExtension(
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
     val deferredRenderingBuffer: DeferredRenderingBuffer
-): RenderExtension<OpenGl> {
+): DeferredRenderExtension<OpenGl> {
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
 
     private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))

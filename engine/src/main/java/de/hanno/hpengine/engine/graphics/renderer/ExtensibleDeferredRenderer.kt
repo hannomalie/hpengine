@@ -9,9 +9,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
@@ -36,7 +35,7 @@ class ExtensibleDeferredRenderer(
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val renderStateManager: RenderStateManager,
-    val extensions: List<RenderExtension<OpenGl>>
+    val extensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem, Backend<OpenGl> {
 
     val combinePassExtension = CombinePassRenderExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
@@ -131,8 +130,6 @@ class ExtensibleDeferredRenderer(
             }
         }
     }
-
-    val directionalLightSecondPassExtension = DirectionalLightSecondPassExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
 
     override val eventBus
         get() = backend.eventBus

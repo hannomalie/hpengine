@@ -66,8 +66,11 @@ class RenderManager(
                                 renderSystems.forEach {
                                     it.render(drawResult, renderState.currentReadState)
                                 }
-                                renderSystems.forEach {
-                                    it.renderEditor(drawResult, renderState.currentReadState)
+
+                                if (config.debug.isEditorOverlay) {
+                                    renderSystems.forEach {
+                                        it.renderEditor(drawResult, renderState.currentReadState)
+                                    }
                                 }
                             }
 

@@ -10,10 +10,10 @@ import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
@@ -33,14 +33,14 @@ class SphereHolder(
     val config: Config,
     val textureManager: TextureManager,
     val gpuContext: GpuContext<OpenGl>,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
     val programManager: ProgramManager<OpenGl>,
     val sphereProgram: Program<Uniforms> = config.run {
         programManager.getProgram(
             EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
             EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource()
         )
-    }
+    },
+    val targetBuffer: RenderTarget2D
 ) : RenderSystem {
 
     val sphereEntity = Entity("[Editor] Pivot")
@@ -98,7 +98,7 @@ class SphereHolder(
         val scaling = (0.1f * sphereEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
         val transformation = Transform().scale(scaling).translate(spherePosition)
         if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
-        deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+        targetBuffer.use(gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
@@ -121,7 +121,7 @@ class SphereHolder(
         val transformation = Transform()
         if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
         gpuContext.cullFace = false
-        deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+        targetBuffer.use(gpuContext, false)
         sphereProgram.use()
         sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
         sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)

@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import org.lwjgl.opengl.GL15
@@ -20,7 +20,7 @@ class PointLightSecondPassExtension(
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val config: Config,
     programManager: ProgramManager<OpenGl>
-) : RenderExtension<OpenGl> {
+) : DeferredRenderExtension<OpenGl> {
 
     private val secondPassPointComputeProgram =
         programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_compute.glsl"))

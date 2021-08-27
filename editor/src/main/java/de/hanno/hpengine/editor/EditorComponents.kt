@@ -62,7 +62,6 @@ import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.JRibbon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
-import org.pushingpixels.meteor.awt.children
 import org.pushingpixels.neon.api.icon.ResizableIcon
 import org.pushingpixels.photon.api.icon.SvgBatikResizableIcon
 import java.awt.BorderLayout
@@ -123,28 +122,47 @@ class EditorComponents(
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     private val sidePanel = editor.sidePanel
-    val sphereHolder = SphereHolder(config, textureManager, gpuContext, deferredRenderingBuffer, programManager)
-    val boxRenderer = SimpleModelRenderer(config, textureManager, gpuContext, deferredRenderingBuffer, programManager)
+    val sphereHolder = SphereHolder(
+        config,
+        textureManager,
+        gpuContext,
+        programManager,
+        targetBuffer = deferredRenderingBuffer.finalBuffer
+    )
+    val boxRenderer = SimpleModelRenderer(
+        config,
+        textureManager,
+        gpuContext,
+        programManager,
+        targetBuffer = deferredRenderingBuffer.finalBuffer
+    )
     val pyramidRenderer = SimpleModelRenderer(
-        config, textureManager, gpuContext, deferredRenderingBuffer, programManager, model = StaticModelLoader().load(
+        config, textureManager, gpuContext, programManager, model = StaticModelLoader().load(
             "assets/models/pyramid.obj",
             textureManager,
             config.directories.engineDir
-        )
+        ), targetBuffer = deferredRenderingBuffer.finalBuffer
     )
     val torusRenderer = SimpleModelRenderer(
-        config, textureManager, gpuContext, deferredRenderingBuffer, programManager, model = StaticModelLoader().load(
+        config, textureManager, gpuContext, programManager, model = StaticModelLoader().load(
             "assets/models/torus.obj",
             textureManager,
             config.directories.engineDir
-        )
+        ), targetBuffer = deferredRenderingBuffer.finalBuffer
     )
-    val environmentProbeSphereHolder = SphereHolder(config, textureManager, gpuContext, deferredRenderingBuffer, programManager, programManager.run {
-        getProgram(
-            config.EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
-            config.EngineAsset("shaders/environmentprobe_color_fragment.glsl").toCodeSource()
-        )
-    })
+    val environmentProbeSphereHolder = SphereHolder(
+        config,
+        textureManager,
+        gpuContext,
+        programManager,
+        programManager.run {
+            getProgram(
+                config.EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
+                config.EngineAsset("shaders/environmentprobe_color_fragment.glsl").toCodeSource()
+            )
+        },
+        deferredRenderingBuffer.finalBuffer
+    )
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
 
@@ -272,26 +290,20 @@ class EditorComponents(
             }
         }
 
-        if (config.debug.isEditorOverlay) {
-            extensibleDeferredRenderer?.let {
-                it.extensions.forEach { it.renderEditor(renderState, result) }
-            }
+        if (config.debug.isDrawBoundingVolumes) {
+            deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+            gpuContext.blend = false
+            gpuContext.depthTest = true
 
-            if (config.debug.isDrawBoundingVolumes) {
-                deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
-                gpuContext.blend = false
-                gpuContext.depthTest = true
-
-                drawLines(
-                    renderStateManager = renderStateManager,
-                    programManager = programManager,
-                    vertices = renderState[lineVertices],
-                    verticesCount = renderState[lineVerticesCount].value,
-                    color = Vector3f(1f, 0f, 0f)
-                )
-            }
-
+            drawLines(
+                renderStateManager = renderStateManager,
+                programManager = programManager,
+                vertices = renderState[lineVertices],
+                verticesCount = renderState[lineVerticesCount].value,
+                color = Vector3f(1f, 0f, 0f)
+            )
         }
+
         if (config.debug.visualizeProbes) {
             extensibleDeferredRenderer?.let {
                 it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let { extension ->

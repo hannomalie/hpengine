@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.extension.baseModule
+import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
@@ -131,7 +132,7 @@ class Engine constructor(val application: KoinApplication) {
                 single { GlfwWindow(get()) } bind Window::class
             }
             val application = startKoin {
-                modules(configModule, windowModule, baseModule)
+                modules(configModule, windowModule, baseModule, deferredRendererModule)
             }
 
             val engine = Engine(application)

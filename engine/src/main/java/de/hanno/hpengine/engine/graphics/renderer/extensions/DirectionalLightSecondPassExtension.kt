@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -25,7 +25,7 @@ class DirectionalLightSecondPassExtension(
     private val textureManager: TextureManager,
     private val gpuContext: GpuContext<OpenGl>,
     private val deferredRenderingBuffer: DeferredRenderingBuffer
-) : RenderExtension<OpenGl> {
+) : DeferredRenderExtension<OpenGl> {
     private val secondPassDirectionalProgram = programManager.getProgram(
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_vertex.glsl")),
         FileBasedCodeSource(config.engineDir.resolve("shaders/second_pass_directional_fragment.glsl"))
@@ -43,7 +43,6 @@ class DirectionalLightSecondPassExtension(
             gpuContext.blendEquation = BlendMode.FUNC_ADD
             gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
 
-            deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
 //                    GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.depthBufferTexture)
             GL32.glFramebufferTexture(
                 GL30.GL_FRAMEBUFFER,

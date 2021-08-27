@@ -7,21 +7,20 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.extension.baseModule
+import de.hanno.hpengine.engine.extension.deferredRendererModule
+import de.hanno.hpengine.engine.extension.textureRendererModule
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.Directory
+import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.convert
 import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.engine.scene.dsl.scene
-import de.hanno.hpengine.engine.extension.baseModule
-import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
-import org.joml.Vector3f
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.bind
@@ -112,8 +111,7 @@ val editorModule = module {
 
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()) = Engine(
     startKoin {
-//        printLogger(Level.DEBUG)
-        modules(config.toModule(), editorModule, baseModule)
+        modules(config.toModule(), editorModule, baseModule, deferredRendererModule)
     }
 )
 

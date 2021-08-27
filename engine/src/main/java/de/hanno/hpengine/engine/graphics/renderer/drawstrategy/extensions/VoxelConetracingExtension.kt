@@ -83,7 +83,7 @@ class VoxelConeTracingExtension(
     val gpuContext: GpuContext<OpenGl>,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
-    val pointLightExtension: BvHPointLightSecondPassExtension, val deferredRenderingBuffer: DeferredRenderingBuffer) : RenderExtension<OpenGl> {
+    val pointLightExtension: BvHPointLightSecondPassExtension, val deferredRenderingBuffer: DeferredRenderingBuffer) : DeferredRenderExtension<OpenGl> {
 
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
     val voxelGrids = renderStateManager.renderState.registerState {

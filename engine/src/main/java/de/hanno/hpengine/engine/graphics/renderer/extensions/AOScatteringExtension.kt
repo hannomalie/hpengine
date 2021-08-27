@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -23,7 +23,7 @@ class AOScatteringExtension(
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager
-): RenderExtension<OpenGl> {
+): DeferredRenderExtension<OpenGl> {
     val gBuffer = deferredRenderingBuffer
     private val aoScatteringProgram = programManager.getProgram(
             config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),

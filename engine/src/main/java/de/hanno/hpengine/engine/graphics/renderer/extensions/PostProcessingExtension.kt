@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -19,7 +19,7 @@ class PostProcessingExtension(private val config: Config,
                               private val textureManager: TextureManager,
                               private val gpuContext: GpuContext<OpenGl>,
                               private val deferredRenderingBuffer: DeferredRenderingBuffer
-): RenderExtension<OpenGl> {
+): DeferredRenderExtension<OpenGl> {
 
     private val postProcessProgram = programManager.getProgram(
             FileBasedCodeSource(config.engineDir.resolve("shaders/" + "passthrough_vertex.glsl")),

@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.RenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
@@ -21,7 +21,7 @@ class CombinePassRenderExtension(private val config: Config,
                                  private val programManager: ProgramManager<OpenGl>,
                                  private val textureManager: TextureManager,
                                  private val gpuContext: GpuContext<OpenGl>,
-                                 private val deferredRenderingBuffer: DeferredRenderingBuffer): RenderExtension<OpenGl> {
+                                 private val deferredRenderingBuffer: DeferredRenderingBuffer): DeferredRenderExtension<OpenGl> {
 
     private val combineProgram = programManager.getProgram(
         config.EngineAsset("shaders/combine_pass_vertex.glsl").toCodeSource(),

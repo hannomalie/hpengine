@@ -3,52 +3,62 @@ package de.hanno.hpengine.engine.model
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.transform.AABB
+import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.boundingSphereRadius
 import de.hanno.struct.Struct
-import de.hanno.struct.StructArray
+import de.hanno.struct.copyTo
 import org.joml.Matrix4f
 import struktgen.TypedBuffer
 import struktgen.api.Strukt
 import java.io.File
 
-interface Model<T> {
-    val file: File
 
-    val path: String
+@JvmOverloads
+fun <T: Struct> de.hanno.struct.StructArray<T>.copyTo(target: de.hanno.struct.StructArray<T>, offset: Int, rewindBuffers: Boolean = true) {
+    buffer.copyTo(target.buffer, rewindBuffers, slidingWindow.sizeInBytes * offset)
+}
 
-    val verticesPacked: TypedBuffer<out Strukt>
+sealed class Model<T>(val meshes: List<Mesh<T>>,
+                      material: Material) : SimpleSpatial(), Spatial {
 
-    val meshes: List<Mesh<T>>
+    val meshIndexCounts = meshes.map { it.indexBufferValues.size }
+    val meshIndexSum = meshIndexCounts.sum()
 
-    val boundingSphereRadius: Float
-        get() = boundingVolume.boundingSphereRadius
+    var triangleCount: Int = meshes.sumBy { it.triangleCount }
+    val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
 
-    val triangleCount: Int
-
-    val boundingVolume: AABB
-
-    val indices: StructArray<IntStruct>
-
-    val uniqueVertices: List<T>
-
-    val isStatic: Boolean
-        get() = true
-
-    val isInvertTexCoordY: Boolean
-        get() = true
-
-    val bytesPerVertex: Int
-
-    fun getBoundingVolume(transform: Matrix4f): AABB {
-        boundingVolume.recalculate(transform)
-        return boundingVolume
+    var indices = de.hanno.struct.StructArray(meshIndexSum) { IntStruct() }.apply {
+        var offsetPerMesh = 0
+        meshes.forEach { mesh ->
+            mesh.indexBufferValues.copyTo(this, offset = offsetPerMesh)
+            offsetPerMesh += mesh.indexBufferValues.size
+        }
     }
 
+    var material: Material = material
+        set(value) {
+            meshes.forEach { it.material = value }
+            field = value
+        }
+    abstract val file: File
+    abstract val path: String
+    abstract val verticesPacked: TypedBuffer<out Strukt>
+    val boundingSphereRadius: Float
+        get() = boundingVolume.boundingSphereRadius
+    abstract override val boundingVolume: AABB
+
+    val isStatic: Boolean
+        get() = when(this) {
+            is AnimatedModel -> false
+            is StaticModel -> true
+        }
+    val isInvertTexCoordY: Boolean
+        get() = true
+    abstract val bytesPerVertex: Int
+
+    abstract fun calculateBoundingVolume(): AABB
     fun getBoundingSphereRadius(mesh: Mesh<*>): Float = mesh.spatial.boundingSphereRadius
-
-    fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB = mesh.spatial.getBoundingVolume(transform)
-
+    open fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>): AABB = mesh.spatial.getBoundingVolume(transform)
     fun getBoundingVolume(mesh: Mesh<*>): AABB = mesh.spatial.boundingVolume
-    var material: Material
-    val meshIndexCounts: List<Int>
 }
