@@ -115,12 +115,10 @@ class TextureManager(val config: Config,
 
     private val temp = loadDefaultTexture()
     val defaultTexture = temp.first
-    val defaultTextureAsBufferedImage = temp.second
 
-
-    private fun loadDefaultTexture(): Pair<Texture, BufferedImage> {
+    private fun loadDefaultTexture(): Pair<FileBasedTexture2D, BufferedImage> {
         val defaultTexturePath = "assets/textures/default/gi_flag.png"
-        val defaultTexture = engineDir.getTexture(defaultTexturePath, true)
+        val defaultTexture = engineDir.getTexture(defaultTexturePath, true) as FileBasedTexture2D
         val defaultTextureAsBufferedImage = loadImage(defaultTexturePath)
         return Pair(defaultTexture, defaultTextureAsBufferedImage)
     }

@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentTypedBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.scene.Scene
@@ -107,6 +108,10 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
 }
 interface RenderSystem: Updatable {
+    val sharedRenderTarget: RenderTarget<*>?
+        get() = null
+    val requiresClearSharedRenderTarget: Boolean
+        get() = false
     @JvmDefault fun render(result: DrawResult, renderState: RenderState) { }
     @JvmDefault fun renderEditor(result: DrawResult, renderState: RenderState) { }
     @JvmDefault fun afterFrameFinished() { }

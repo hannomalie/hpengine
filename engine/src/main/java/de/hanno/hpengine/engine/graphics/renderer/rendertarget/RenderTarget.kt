@@ -272,7 +272,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
 
         val LOGGER = Logger.getLogger(RenderTarget::class.java.name)
 
-        fun validateFrameBufferState() {
+        fun RenderTargetImpl<*>.validateFrameBufferState() {
             val frameBufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER)
             if (frameBufferStatus != GL_FRAMEBUFFER_COMPLETE) {
                 LOGGER.severe("RenderTarget fucked up")
@@ -285,7 +285,7 @@ private class RenderTargetImpl<T : Texture> @JvmOverloads constructor(private va
                     GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE -> LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE")
                     GL_FRAMEBUFFER_UNDEFINED -> LOGGER.severe("GL_FRAMEBUFFER_UNDEFINED")
                 }
-                throw RuntimeException()
+                throw RuntimeException("Rendertarget $name fucked up")
             }
         }
 

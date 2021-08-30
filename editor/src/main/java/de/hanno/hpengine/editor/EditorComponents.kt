@@ -27,25 +27,23 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AmbientCubeGridExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.putLinesPoints
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.instancing.clusters
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.HpVector4f
@@ -58,6 +56,7 @@ import org.joml.AxisAngle4f
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
+import org.joml.Vector4f
 import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.JRibbon
@@ -112,11 +111,23 @@ class EditorComponents(
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager,
     val addResourceContext: AddResourceContext,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
     val renderStateManager: RenderStateManager,
-    val sceneManager: SceneManager
+    val sceneManager: SceneManager,
+    val targetTexture: Texture2D
 ) : RenderSystem, EditorInputConfig by EditorInputConfigImpl(), Manager {
 
+    val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
+        gpuContext,
+        FrameBuffer(
+            gpuContext,
+            null
+        ),
+        targetTexture.dimension.width,
+        targetTexture.dimension.height,
+        listOf(targetTexture),
+        "EditorFinalOutput",
+        Vector4f(0f)
+    )
     val onReload: (() -> Unit)?
         get() = editor.onSceneReload
     private var outPutConfig: OutputConfig = OutputConfig.Default
@@ -127,28 +138,28 @@ class EditorComponents(
         textureManager,
         gpuContext,
         programManager,
-        targetBuffer = deferredRenderingBuffer.finalBuffer
+        targetBuffer = targetBuffer
     )
     val boxRenderer = SimpleModelRenderer(
         config,
         textureManager,
         gpuContext,
         programManager,
-        targetBuffer = deferredRenderingBuffer.finalBuffer
+        targetBuffer = targetBuffer
     )
     val pyramidRenderer = SimpleModelRenderer(
         config, textureManager, gpuContext, programManager, model = StaticModelLoader().load(
             "assets/models/pyramid.obj",
             textureManager,
             config.directories.engineDir
-        ), targetBuffer = deferredRenderingBuffer.finalBuffer
+        ), targetBuffer = targetBuffer
     )
     val torusRenderer = SimpleModelRenderer(
         config, textureManager, gpuContext, programManager, model = StaticModelLoader().load(
             "assets/models/torus.obj",
             textureManager,
             config.directories.engineDir
-        ), targetBuffer = deferredRenderingBuffer.finalBuffer
+        ), targetBuffer = targetBuffer
     )
     val environmentProbeSphereHolder = SphereHolder(
         config,
@@ -161,16 +172,24 @@ class EditorComponents(
                 config.EngineAsset("shaders/environmentprobe_color_fragment.glsl").toCodeSource()
             )
         },
-        deferredRenderingBuffer.finalBuffer
+        targetBuffer
     )
 
     val mouseAdapter = MouseAdapterImpl(editor.canvas)
 
-    val selectionSystem = SelectionSystem(config, gpuContext, deferredRenderingBuffer, this, renderStateManager, programManager, textureManager)
+    val selectionSystem = SelectionSystem(
+        config,
+        gpuContext,
+        this,
+        renderStateManager,
+        programManager,
+        textureManager,
+        targetBuffer
+    )
     val textureRenderer = SimpleTextureRenderer(
         config,
         gpuContext,
-        deferredRenderingBuffer.colorReflectivenessTexture,
+        targetBuffer.textures.first(),
         programManager,
         window.frontBuffer
     )
@@ -231,7 +250,6 @@ class EditorComponents(
     }
 
     override fun renderEditor(result: DrawResult, renderState: RenderState) {
-        val extensibleDeferredRenderer: ExtensibleDeferredRenderer? = null // TODO: Inject this somehow
         selectionSystem.render(result, renderState)
         sphereHolder.render(renderState, draw = { state: RenderState ->
             state.lightState.pointLights.forEach {
@@ -256,7 +274,7 @@ class EditorComponents(
         if (mouseAdapter.mousePressStarted) {
             mouseAdapter.mousePressed?.let { event ->
                 run {
-                    deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+                    targetBuffer.use(gpuContext, false)
                     val ratio = Vector2f(
                         editor.canvas.width.toFloat() / config.width.toFloat(),
                         editor.canvas.height.toFloat() / config.height.toFloat()
@@ -291,7 +309,7 @@ class EditorComponents(
         }
 
         if (config.debug.isDrawBoundingVolumes) {
-            deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+            targetBuffer.use(gpuContext, false)
             gpuContext.blend = false
             gpuContext.depthTest = true
 
@@ -304,56 +322,25 @@ class EditorComponents(
             )
         }
 
-        if (config.debug.visualizeProbes) {
-            extensibleDeferredRenderer?.let {
-                it.extensions.filterIsInstance<AmbientCubeGridExtension>().firstOrNull()?.let { extension ->
-                    gpuContext.depthMask = true
-                    gpuContext.disable(GlCap.BLEND)
-                    environmentProbeSphereHolder.render(renderState) {
-
-                        extension.probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                            val transformation = Transform().translate(position)
-                            sphereProgram.setUniform(
-                                "pointLightPositionWorld",
-                                extension.probeRenderer.probePositions[probeIndex]
-                            )
-                            sphereProgram.setUniform("probeIndex", probeIndex)
-                            sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-                            sphereProgram.setUniform("probeDimensions", extension.probeRenderer.probeDimensions)
-                            sphereProgram.bindShaderStorageBuffer(4, extension.probeRenderer.probePositionsStructBuffer)
-                            sphereProgram.bindShaderStorageBuffer(5, extension.probeRenderer.probeAmbientCubeValues)
-
-                            sphereVertexIndexBuffer.indexBuffer.draw(
-                                sphereRenderBatch,
-                                sphereProgram,
-                                bindIndexBuffer = false
-                            )
-                        }
-                    }
-                }
-            }
-        }
         when (val selection = outPutConfig) {
             OutputConfig.Default -> {
                 textureRenderer.drawToQuad(
-                    deferredRenderingBuffer.finalBuffer,
-                    deferredRenderingBuffer.finalMap
+                    targetBuffer.renderedTexture
                 )
             }
             is OutputConfig.Texture2D -> {
                 textureRenderer.drawToQuad(
-                    deferredRenderingBuffer.finalBuffer,
                     selection.texture,
                     program = textureRenderer.debugFrameProgram,
                     factorForDebugRendering = selection.factorForDebugRendering
                 )
             }
             is OutputConfig.TextureCubeMap -> {
-                textureRenderer.renderCubeMapDebug(deferredRenderingBuffer.finalBuffer, selection.texture)
+                textureRenderer.renderCubeMapDebug(targetBuffer, selection.texture)
             }
             is OutputConfig.RenderTargetCubeMapArray -> {
                 textureRenderer.renderCubeMapDebug(
-                    deferredRenderingBuffer.finalBuffer,
+                    targetBuffer,
                     selection.renderTarget,
                     selection.cubeMapIndex
                 )

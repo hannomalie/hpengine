@@ -33,10 +33,12 @@ import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.OceanWaterExtension
@@ -93,12 +95,13 @@ class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
 class SelectionSystem(
     val config: Config,
     val gpuContext: GpuContext<OpenGl>,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
     val editorComponents: EditorComponents,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
-    val textureManager: TextureManager
+    val textureManager: TextureManager,
+    val finalOutput: RenderTarget2D
 ) : RenderSystem {
+
     val mouseAdapter = editorComponents.mouseAdapter
     val editor = editorComponents.editor
     val sidePanel = editorComponents.editor.sidePanel
@@ -115,91 +118,26 @@ class SelectionSystem(
         if(axisDragged != AxisConstraint.None) return
 
         mouseAdapter.mouseClicked?.let { event ->
-            deferredRenderingBuffer.use(gpuContext, false)
-            gpuContext.readBuffer(4)
+            finalOutput.use(gpuContext, false)
+            gpuContext.readBuffer(0)
             floatBuffer.rewind()
-            val ratio = Vector2f(editor.canvas.width.toFloat() / config.width.toFloat(),
-                    editor.canvas.height.toFloat() / config.height.toFloat())
+            val ratio = Vector2f(
+                editor.canvas.width.toFloat() / config.width.toFloat(),
+                editor.canvas.height.toFloat() / config.height.toFloat()
+            )
             val adjustedX = (event.x / ratio.x).toInt()
             val adjustedY = config.height - (event.y / ratio.y).toInt()
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
 
-            val entityIndex = floatBuffer.get()
-            val entityIndexAsInt = entityIndex.toInt()
-            if(entityIndexAsInt in editorComponents.sceneManager.scene.getEntities().indices) {
-                val pickedEntity = editorComponents.sceneManager.scene.getEntities()[entityIndexAsInt]
-                val meshIndex = floatBuffer.get(3)
-                val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
+            val entityIndex = floatBuffer.get().toInt()
 
-//             TODO: This is too ugly, recode
-                when(selection) {
-                    is EntitySelection -> {
-                        when(selection) {
-                            is ModelSelection -> if(selection.model.path == modelComponent?.model?.path) unselect() else selectModel(selection)
-                            is MeshSelection -> {
-                                val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
-                                when {
-                                    selection.mesh == selectedMesh -> {
-                                        unselect()
-                                        editorComponents.sceneTree.unselect()
-                                    }
-                                    selectedMesh != null -> {
-                                        val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                        editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
-                                        selectMesh(pickedMesh)
-                                    }
-                                    else -> Unit
-                                }
-                            }
-                            else -> {
-                                when(editorComponents.selectionMode) {
-                                    SelectionMode.Entity -> {
-                                        if(selection.entity.name == pickedEntity.name) {
-                                            unselect()
-                                            editorComponents.sceneTree.unselect()
-                                        } else {
-                                            selectEntity(pickedEntity)
-                                            editorComponents.sceneTree.select(pickedEntity)
-                                        }
-                                    }
-                                    SelectionMode.Mesh -> {
-                                        val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
-                                        if(selectedMesh != null) {
-                                            val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                            editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
-                                            selectMesh(pickedMesh)
-                                        } else Unit
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Selection.None -> when(editorComponents.selectionMode) {
-                        SelectionMode.Entity -> {
-                            selectEntity(pickedEntity)
-                            editorComponents.sceneTree.select(pickedEntity)
-                        }
-                        SelectionMode.Mesh -> {
-                            if(modelComponent != null) {
-                                val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
-                                val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
-                                selectMesh(pickedMesh)
-                            } else Unit
-                        }
-                    }
-                    is Material -> selectMaterial(selection)
-                    else -> Unit
-                }.let {}
-            } else {
-                println("You picked $entityIndex which is a $entityIndexAsInt as Int, can't select that")
-            }
+            onClick(entityIndex, selection)
         }
 
         when(selection) {
             is SceneSelection -> {
                 gpuContext.disable(GlCap.DEPTH_TEST)
-                deferredRenderingBuffer.finalBuffer.use(gpuContext, false)
+                finalOutput.use(gpuContext, false)
                 val linePoints = mutableListOf<Vector3fc>().apply { addAABBLines(selection.scene.aabb.min, selection.scene.aabb.max) }
                 drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 1f))
             }
@@ -275,6 +213,92 @@ class SelectionSystem(
 //                }
             }
         }
+    }
+
+    private fun onClick(
+        entityIndexAsInt: Int,
+        selection: Selection
+    ) {
+        if(entityIndexAsInt >= editorComponents.sceneManager.scene.getEntities().size) {
+            println("You picked entity index with in value $entityIndexAsInt as, can't select that")
+            return
+        }
+
+        val pickedEntity = editorComponents.sceneManager.scene.getEntities()[entityIndexAsInt]
+        val meshIndex = floatBuffer.get(3)
+        val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
+
+        when (selection) {
+            is EntitySelection -> {
+                when (selection) {
+                    is ModelSelection -> if (selection.model.path == modelComponent?.model?.path) unselect() else selectModel(
+                        selection
+                    )
+                    is MeshSelection -> {
+                        val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
+                        when {
+                            selection.mesh == selectedMesh -> {
+                                unselect()
+                                editorComponents.sceneTree.unselect()
+                            }
+                            selectedMesh != null -> {
+                                val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                                editorComponents.sceneTree.select(
+                                    MeshSelection(
+                                        modelComponent.entity,
+                                        selectedMesh
+                                    )
+                                )
+                                selectMesh(pickedMesh)
+                            }
+                            else -> Unit
+                        }
+                    }
+                    else -> {
+                        when (editorComponents.selectionMode) {
+                            SelectionMode.Entity -> {
+                                if (selection.entity.name == pickedEntity.name) {
+                                    unselect()
+                                    editorComponents.sceneTree.unselect()
+                                } else {
+                                    selectEntity(pickedEntity)
+                                    editorComponents.sceneTree.select(pickedEntity)
+                                }
+                            }
+                            SelectionMode.Mesh -> {
+                                val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
+                                if (selectedMesh != null) {
+                                    val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                                    editorComponents.sceneTree.select(
+                                        MeshSelection(
+                                            modelComponent.entity,
+                                            selectedMesh
+                                        )
+                                    )
+                                    selectMesh(pickedMesh)
+                                } else Unit
+                            }
+                        }
+                    }
+                }
+            }
+            Selection.None -> when (editorComponents.selectionMode) {
+                SelectionMode.Entity -> {
+                    selectEntity(pickedEntity)
+                    editorComponents.sceneTree.select(pickedEntity)
+                }
+                SelectionMode.Mesh -> {
+                    if (modelComponent != null) {
+                        val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
+                        val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
+                        editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
+                        selectMesh(pickedMesh)
+                    } else Unit
+                }
+            }
+            is Material -> selectMaterial(selection)
+            else -> Unit
+        }.let {}
     }
 
     val unselectButton = SwingUtils.invokeAndWait {

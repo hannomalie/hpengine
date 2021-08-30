@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder
@@ -13,11 +12,13 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.launchEndlessRenderLoop
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.delay
+
+data class FinalOutput(val texture2D: Texture2D)
 
 class RenderManager(
     val config: Config,
@@ -26,14 +27,14 @@ class RenderManager(
     val window: Window<OpenGl>,
     val programManager: ProgramManager<OpenGl>,
     val renderStateManager: RenderStateManager,
-    val deferredRenderingBuffer: DeferredRenderingBuffer,
+    val finalOutput: FinalOutput,
     val renderSystems: List<RenderSystem>
 ) : Manager {
 
     private val textureRenderer = SimpleTextureRenderer(
         config,
         gpuContext,
-        deferredRenderingBuffer.colorReflectivenessTexture,
+        finalOutput.texture2D,
         programManager,
         window.frontBuffer
     )
@@ -63,8 +64,14 @@ class RenderManager(
                             val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
 
                             profiled("renderSystems") {
-                                renderSystems.forEach {
-                                    it.render(drawResult, renderState.currentReadState)
+                                renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
+
+                                    val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                    gpuContext.clearColor(1f,0f,0f,1f)
+                                    renderTarget?.use(gpuContext, clear)
+                                    renderSystems.forEachIndexed { index, renderSystem ->
+                                        renderSystem.render(drawResult, renderState.currentReadState)
+                                    }
                                 }
 
                                 if (config.debug.isEditorOverlay) {
@@ -74,7 +81,8 @@ class RenderManager(
                                 }
                             }
 
-                            textureRenderer.drawToQuad(window.frontBuffer, deferredRenderingBuffer.finalMap)
+                            window.frontBuffer.use(gpuContext, false)
+                            textureRenderer.drawToQuad(finalOutput.texture2D)
 
                             profiled("finishFrame") {
                                 gpuContext.finishFrame(renderState.currentReadState)

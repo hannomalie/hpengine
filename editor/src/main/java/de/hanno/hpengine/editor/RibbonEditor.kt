@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.extension.textureRendererModule
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
+import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
@@ -100,11 +101,16 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
 val editorModule = module {
     single { AWTEditorWindow(get()) } bind Window::class
     single {
+        val window: Window<*> = get()
+        window.frontBuffer
+    }
+    single {
         val window: AWTEditorWindow = get()
         window.frame
     }
     single {
-        EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        val finalOutput: FinalOutput = get()
+        EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), finalOutput.texture2D)
     } binds (arrayOf(RenderSystem::class, Manager::class))
     single { EditorManager(get(), get()) } bind Manager::class
 }
@@ -119,7 +125,7 @@ private fun ConfigImpl.toModule(): Module = module {
     single { this@toModule } bind Config::class
 }
 
-fun main(args: Array<String>) {
+fun main() {
 
     val config = ConfigImpl(
         Directories(

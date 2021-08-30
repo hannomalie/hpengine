@@ -14,18 +14,17 @@ import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.texture.CubeMap
-import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
-import de.hanno.hpengine.engine.vertexbuffer.draw
-import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.createView
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
 
 open class SimpleTextureRenderer(
     config: Config,
     private val gpuContext: GpuContext<OpenGl>,
-    var texture: Texture,
+    var texture: Texture2D,
     private val programManager: ProgramManager<OpenGl>,
     private val frontBuffer: FrontBufferTarget) : RenderSystem {
 
@@ -40,64 +39,63 @@ open class SimpleTextureRenderer(
 
     open var finalImage = texture.id
 
-    final override fun render(result: DrawResult, renderState: RenderState) {
+    override fun render(result: DrawResult, renderState: RenderState) {
         drawToQuad(texture = finalImage)
     }
 
-    fun drawToQuad(renderTarget: FrontBufferTarget = frontBuffer,
-                   texture: Int = finalImage,
-                   buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-                   program: Program<Uniforms> = renderToQuadProgram,
-                   factorForDebugRendering: Float = 1f) {
-        draw(renderTarget, texture, buffer, program, false, factorForDebugRendering)
+    fun drawToQuad(
+        texture: Int = finalImage,
+        buffer: VertexBuffer = gpuContext.fullscreenBuffer,
+        program: Program<Uniforms> = renderToQuadProgram,
+        factorForDebugRendering: Float = 1f
+    ) {
+        draw(texture, buffer, program, factorForDebugRendering)
     }
 
-    fun drawToQuad(renderTarget: FrontBufferTarget = frontBuffer,
-                   texture: Texture2D,
-                   buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-                   program: Program<Uniforms> = renderToQuadProgram,
-                    factorForDebugRendering: Float = 1f) {
-        drawToQuad(renderTarget, texture.id, buffer, program, factorForDebugRendering)
+    fun drawToQuad(
+        texture: Texture2D,
+        buffer: VertexBuffer = gpuContext.fullscreenBuffer,
+        program: Program<Uniforms> = renderToQuadProgram,
+        factorForDebugRendering: Float = 1f
+    ) {
+        drawToQuad(texture.id, buffer, program, factorForDebugRendering)
     }
 
     fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
                            cubeMapArrayRenderTarget: CubeMapArrayRenderTarget?, cubeMapIndex: Int) {
         if(cubeMapArrayRenderTarget == null) return
+        renderTarget.use(gpuContext, true)
 
         (0..5).map { faceIndex ->
             val textureView = cubeMapArrayRenderTarget.cubeMapFaceViews[6 * cubeMapIndex + faceIndex]
-            draw(renderTarget = renderTarget,
-                    texture = textureView.id,
-                    program = debugFrameProgram,
-                    buffer = gpuContext.sixDebugBuffers[faceIndex],
-                    clear = false)
+            draw(
+                texture = textureView.id,
+                buffer = gpuContext.sixDebugBuffers[faceIndex],
+                program = debugFrameProgram
+            )
         }
     }
     fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
                            cubeMap: CubeMap) {
-
+        renderTarget.use(gpuContext, true)
         (0..5).map { faceIndex ->
             val textureView = cubeMap.createView(gpuContext, faceIndex)
-            draw(renderTarget = renderTarget,
-                    texture = textureView.id,
-                    program = debugFrameProgram,
-                    buffer = gpuContext.sixDebugBuffers[faceIndex],
-                    clear = false)
+            draw(
+                texture = textureView.id,
+                buffer = gpuContext.sixDebugBuffers[faceIndex],
+                program = debugFrameProgram
+            )
             GL11.glDeleteTextures(textureView.id)
         }
     }
     private fun draw(
-            renderTarget: FrontBufferTarget,
-            texture: Int,
-            buffer: VertexBuffer = gpuContext.fullscreenBuffer,
-            program: Program<Uniforms>,
-            clear: Boolean,
-            factorForDebugRendering: Float = 1f
+        texture: Int,
+        buffer: VertexBuffer = gpuContext.fullscreenBuffer,
+        program: Program<Uniforms>,
+        factorForDebugRendering: Float = 1f
     ) {
 
         gpuContext.disable(GlCap.BLEND)
-
-        renderTarget.use(gpuContext, clear = clear)
 
         program.use()
         program.setUniform("factorForDebugRendering", factorForDebugRendering)

@@ -19,11 +19,11 @@ import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
+import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.RenderStateManager
-import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
@@ -36,10 +36,11 @@ import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
@@ -51,6 +52,12 @@ import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeRend
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -95,12 +102,68 @@ import org.lwjgl.opengl.GL42
 
 val deferredRendererModule = module {
     renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) }
+    single {
+        val config: Config = get()
+        val gpuContext: GpuContext<OpenGl> = get()
+        DeferredRenderingBuffer(
+            gpuContext,
+            config.width,
+            config.height
+        )
+    }
+    single {
+        val deferredRenderingBuffer: DeferredRenderingBuffer = get()
+        FinalOutput(deferredRenderingBuffer.finalMap)
+    }
 }
 val textureRendererModule = module {
+    // TODO: This is a dependency for many systems, remove the dependencies somehow or make
+    // the extensions optional
+    single {
+        val config: Config = get()
+        val gpuContext: GpuContext<OpenGl> = get()
+        DeferredRenderingBuffer(
+            gpuContext,
+            config.width,
+            config.height
+        )
+    }
+
+    single {
+        val config: Config = get()
+        val gpuContext: GpuContext<OpenGl> = get()
+
+        RenderTarget(
+            gpuContext,
+            FrameBuffer(gpuContext,
+                depthBuffer = DepthBuffer(gpuContext, config.width, config.height)
+            ),
+            name = "Final Image",
+            width = config.width,
+            height = config.height,
+            textures = listOf(
+                ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(gpuContext, config.width, config.height
+            )
+        )
+
+    }
+    single {
+        val renderTarget: RenderTarget2D = get()
+        FinalOutput(renderTarget.textures.first())
+    }
     renderSystem {
-        val window: Window<*> = get()
         val textureManager: TextureManager = get()
-        SimpleTextureRenderer(get(), get(), textureManager.defaultTexture, get(), window.frontBuffer)
+        val renderTarget: RenderTarget2D = get()
+        val gpuContext: GpuContext<OpenGl> = get()
+
+        object: SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
+            override val sharedRenderTarget = renderTarget
+            override val requiresClearSharedRenderTarget = true
+            override fun render(result: DrawResult, renderState: RenderState) {
+                gpuContext.clearColor(1f,0f,0f,1f)
+                drawToQuad(texture = texture)
+            }
+        }
     }
 }
 val baseModule = module {
@@ -196,16 +259,7 @@ fun Module.addBackendModule() {
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, Manager::class)
     single { Input(get(), get()) }
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
-    single {
-        val config: Config = get()
-        val gpuContext: GpuContext<OpenGl> = get()
-        DeferredRenderingBuffer(
-            gpuContext,
-            config.width,
-            config.height
-        )
-    }
-    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), getAll()) } bind Manager::class
+    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), getAll<RenderSystem>().distinct()) } bind Manager::class // TODO: Why do I have to call distinct, hell?
     single {
         val gpuContext: GpuContext<OpenGl> = get()
         RenderStateManager { RenderState(gpuContext) }
