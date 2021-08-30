@@ -6,12 +6,11 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.camera.CameraComponentSystem
-import de.hanno.hpengine.engine.camera.CameraRenderSystem
+import de.hanno.hpengine.engine.camera.CameraRenderExtension
 import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.camera.MovableInputComponentComponentSystem
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
-import de.hanno.hpengine.engine.component.GIVolumeSystem
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -27,7 +26,6 @@ import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightRenderSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
@@ -117,18 +115,6 @@ val deferredRendererModule = module {
     }
 }
 val textureRendererModule = module {
-    // TODO: This is a dependency for many systems, remove the dependencies somehow or make
-    // the extensions optional
-    single {
-        val config: Config = get()
-        val gpuContext: GpuContext<OpenGl> = get()
-        DeferredRenderingBuffer(
-            gpuContext,
-            config.width,
-            config.height
-        )
-    }
-
     single {
         val config: Config = get()
         val gpuContext: GpuContext<OpenGl> = get()
@@ -205,7 +191,6 @@ fun Module.addGIModule() {
     extension { GiVolumeExtension() }
     renderExtension { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) }
     componentSystem { GiVolumeComponentSystem() }
-    entitySystem { GIVolumeSystem(get()) }
 }
 
 fun Module.addPointLightModule() {
@@ -218,7 +203,6 @@ fun Module.addPointLightModule() {
 
 fun Module.addDirectionalLightModule() {
     extension { DirectionalLightExtension() }
-    renderSystem { DirectionalLightRenderSystem() }
     renderExtension { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) }
     componentSystem { DirectionalLightControllerComponentSystem() }
     entitySystem { DirectionalLightSystem() }
@@ -238,13 +222,12 @@ fun Module.addReflectionProbeModule() {
 
 fun Module.addCameraModule() {
     extension { CameraExtension() }
-    renderSystem { CameraRenderSystem(get(), get(), get(), get()) }
+    renderExtension { CameraRenderExtension(get(), get(), get(), get()) }
     componentSystem { CameraComponentSystem(get(), get(), get(), get()) }
 }
 
 fun Module.addSkyboxModule() {
     extension { SkyboxExtension(get(), get(), get(), get()) }
-    renderSystem { SkyboxExtension.SkyboxRenderSystem() }
     renderExtension {
         SkyboxExtension.SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
     }
@@ -259,7 +242,7 @@ fun Module.addBackendModule() {
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, Manager::class)
     single { Input(get(), get()) }
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
-    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), getAll<RenderSystem>().distinct()) } bind Manager::class // TODO: Why do I have to call distinct, hell?
+    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), getAll()) } bind Manager::class
     single {
         val gpuContext: GpuContext<OpenGl> = get()
         RenderStateManager { RenderState(gpuContext) }
@@ -372,11 +355,9 @@ class SkyboxExtension(
         )
     }
 
-    class SkyboxRenderSystem : RenderSystem {
-        override fun extract(scene: Scene, renderState: RenderState) {
-            renderState.skyBoxMaterialIndex =
-                scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
-        }
+    override fun extract(scene: Scene, renderState: RenderState) {
+        renderState.skyBoxMaterialIndex =
+            scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
     }
 
     override fun SceneDescription.decorate() {

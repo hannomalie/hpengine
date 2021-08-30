@@ -117,6 +117,7 @@ interface RenderSystem: Updatable {
     @JvmDefault fun afterFrameFinished() { }
     @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
     @JvmDefault fun beforeSetScene(nextScene: Scene) { }
+    fun afterSetScene(currentScene: Scene) {}
 }
 
 class CustomStates {

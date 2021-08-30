@@ -225,4 +225,8 @@ class ExtensibleDeferredRenderer(
     override fun renderEditor(result: DrawResult, renderState: RenderState) {
         extensions.forEach { it.renderEditor(renderState, result) }
     }
+
+    override fun afterSetScene(currentScene: Scene) {
+        extensions.forEach { it.afterSetScene(currentScene) }
+    }
 }

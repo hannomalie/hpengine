@@ -83,7 +83,9 @@ class VoxelConeTracingExtension(
     val gpuContext: GpuContext<OpenGl>,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
-    val pointLightExtension: BvHPointLightSecondPassExtension, val deferredRenderingBuffer: DeferredRenderingBuffer) : DeferredRenderExtension<OpenGl> {
+    val pointLightExtension: BvHPointLightSecondPassExtension,
+    val deferredRenderingBuffer: DeferredRenderingBuffer
+) : DeferredRenderExtension<OpenGl> {
 
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
     val voxelGrids = renderStateManager.renderState.registerState {
@@ -396,7 +398,12 @@ class VoxelConeTracingExtension(
         gpuContext.depthTest = true
     }
 
+    override fun extract(scene: Scene, renderState: RenderState) {
+        extract(renderState, scene.componentSystems.filterIsInstance<GIVolumeComponent>())
+    }
     fun extract(renderState: RenderState, list: List<GIVolumeComponent>) {
+        if(list.isEmpty()) return
+
         val targetSize = list.size
         renderState[voxelGrids].resize(targetSize)
         for (index in renderState[voxelGrids].indices) {
@@ -441,33 +448,6 @@ class VoxelConeTracingExtension(
         val gridTextureFormatSized = GL11.GL_RGBA8//GL30.GL_R32UI;
         val indexGridTextureFormat = GL_RED_INTEGER//GL30.GL_R32UI;
         val indexGridTextureFormatSized = GL30.GL_R16I//GL30.GL_R32UI;
-
-
-        val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
-            Transform().get(this)
-        }
-
-        var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {
-            put(0f)
-            put(0f)
-            put(0f)
-            put(0f)
-            rewind()
-        }
-        var ZERO_BUFFER_INT = BufferUtils.createIntBuffer(4).apply {
-            put(0)
-            put(0)
-            put(0)
-            put(0)
-            rewind()
-        }
-        var BLUE_BUFFER = BufferUtils.createFloatBuffer(4).apply {
-            put(0f)
-            put(0f)
-            put(1f)
-            put(0f)
-            rewind()
-        }
     }
 }
 
@@ -482,4 +462,29 @@ class VoxelizerUniformsAnimated(val gpuContext: GpuContext<OpenGl>) : AnimatedFi
     val voxelGridCount by IntType()
     val voxelGrids by SSBO("VoxelGrid", 5, PersistentMappedStructBuffer(1, gpuContext, { VoxelGrid() }))
     val writeVoxels by BooleanType(true)
+}
+
+var ZERO_BUFFER = BufferUtils.createFloatBuffer(4).apply {
+    put(0f)
+    put(0f)
+    put(0f)
+    put(0f)
+    rewind()
+}
+var ZERO_BUFFER_INT = BufferUtils.createIntBuffer(4).apply {
+    put(0)
+    put(0)
+    put(0)
+    put(0)
+    rewind()
+}
+var BLUE_BUFFER = BufferUtils.createFloatBuffer(4).apply {
+    put(0f)
+    put(0f)
+    put(1f)
+    put(0f)
+    rewind()
+}
+val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
+    Transform().get(this)
 }

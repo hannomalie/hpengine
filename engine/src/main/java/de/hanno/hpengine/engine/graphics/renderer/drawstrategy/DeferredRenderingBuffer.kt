@@ -134,12 +134,13 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
         var IMPORTANCE_SAMPLE_COUNT = 8
         @Volatile
         var USE_COMPUTESHADER_FOR_REFLECTIONS = false
-        @JvmField
-        @Volatile
-        var RENDER_PROBES_WITH_FIRST_BOUNCE = true
+
         @JvmField
         @Volatile
         var RENDER_PROBES_WITH_SECOND_BOUNCE = true
         private val identityMatrixBuffer = BufferUtils.createFloatBuffer(16)
     }
 }
+
+@Volatile
+var RENDER_PROBES_WITH_FIRST_BOUNCE = true

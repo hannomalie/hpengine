@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.scene
 
+import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.config.Config
@@ -14,8 +15,10 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RENDER_PROBES_WITH_FIRST_BOUNCE
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget.Companion.invoke
@@ -47,6 +50,16 @@ import java.nio.FloatBuffer
 import java.util.Random
 import java.util.stream.Collectors
 
+class EnvironmentProbeRenderExtension(): DeferredRenderExtension<OpenGl> {
+    override fun renderFirstPass(
+        backend: Backend<OpenGl>,
+        gpuContext: GpuContext<OpenGl>,
+        firstPassResult: FirstPassResult,
+        renderState: RenderState
+    ) {
+
+    }
+}
 class EnvironmentProbeSystem(
     val programManager: ProgramManager<OpenGl>,
     val config: Config,
@@ -102,7 +115,7 @@ class EnvironmentProbeSystem(
     private val transformBuffer = BufferUtils.createFloatBuffer(16)
     private fun EnvironmentSampler.bindProgramSpecificsPerCubeMap(probe: EnvironmentProbe, program: Program<Uniforms>, renderState: RenderState) {
         program.use()
-        program.setUniform("firstBounceForProbe", DeferredRenderingBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE)
+        program.setUniform("firstBounceForProbe", RENDER_PROBES_WITH_FIRST_BOUNCE)
         program.setUniform("probePosition", probe.entity.transform.center)
         program.setUniform("probeSize", probe.size)
         program.setUniform("activePointLightCount", renderState.lightState.pointLights.size)
@@ -383,14 +396,6 @@ class EnvironmentProbeSystem(
         program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", weights)
     }
 
-    companion object {
-        const val MAX_PROBES = 25
-        const val RESOLUTION = 256
-        val CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION)
-        var DEFAULT_PROBE_UPDATE = EnvironmentProbe.Update.DYNAMIC
-
-    }
-
     init {
         val dimension = invoke(RESOLUTION, RESOLUTION, MAX_PROBES)
         val filterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
@@ -411,5 +416,13 @@ class EnvironmentProbeSystem(
             environmentMapsArray2,
             environmentMapsArray3
         )
+    }
+
+    companion object {
+        const val MAX_PROBES = 25
+        const val RESOLUTION = 256
+        val CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION)
+        var DEFAULT_PROBE_UPDATE = EnvironmentProbe.Update.DYNAMIC
+
     }
 }

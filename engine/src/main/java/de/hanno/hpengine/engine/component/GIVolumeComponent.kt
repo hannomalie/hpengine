@@ -59,16 +59,3 @@ class GIVolumeComponent(override val entity: Entity,
     override fun toString(): String = "GIVolumeComponent $resolution"
 
 }
-
-class GIVolumeSystem(val voxelConeTracingExtension: VoxelConeTracingExtension) : SimpleEntitySystem(listOf(GIVolumeComponent::class.java)) {
-
-    override fun extract(renderState: RenderState) {
-        updateGiVolumes(renderState)
-    }
-    private fun updateGiVolumes(renderState: RenderState) {
-        val componentList = components.filterIsInstance<GIVolumeComponent>()
-        if (componentList.isNotEmpty()) {
-            voxelConeTracingExtension.extract(renderState, componentList)
-        }
-    }
-}

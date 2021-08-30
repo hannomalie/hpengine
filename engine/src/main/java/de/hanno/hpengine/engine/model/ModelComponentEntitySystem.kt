@@ -33,14 +33,15 @@ class ModelComponentEntitySystem(
     val entityManager: EntityManager,
     val gpuContext: GpuContext<OpenGl>,
     val config: Config,
-    entityBuffer: EntityBuffer): SimpleEntitySystem(listOf(ModelComponent::class.java)) {
+    entityBuffer: EntityBuffer
+) : SimpleEntitySystem(listOf(ModelComponent::class.java)) {
 
     val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
     val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
 
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
-    val allocations: MutableMap<ModelComponent, ModelComponentEntitySystem.Allocation> = mutableMapOf()
+    val allocations: MutableMap<ModelComponent, Allocation> = mutableMapOf()
 
     private val _components = CopyOnWriteArrayList<ModelComponent>()
     private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
@@ -60,8 +61,10 @@ class ModelComponentEntitySystem(
         var counter = 0
         val materials = materialManager.materials
 
-        for(modelComponent in getComponents(ModelComponent::class.java)) {
-            if(counter >= gpuEntitiesArray.size) { throw IllegalStateException("More model components then size of gpu entities array") }
+        for (modelComponent in getComponents(ModelComponent::class.java)) {
+            if (counter >= gpuEntitiesArray.size) {
+                throw IllegalStateException("More model components then size of gpu entities array")
+            }
 
             val allocation = allocations[modelComponent]!!
 
@@ -91,13 +94,14 @@ class ModelComponentEntitySystem(
                     counter++
                     currentEntity = gpuEntitiesArray[counter]
 
-                    for(cluster in entity.clusters) {
+                    for (cluster in entity.clusters) {
                         // TODO: This is so lame, but for some reason extraction has to be done twice. investigate here!
 //                    if(cluster.updatedInCycle == -1L || cluster.updatedInCycle == 0L || cluster.updatedInCycle >= scene.currentCycle) {
                         for (instance in cluster) {
                             currentEntity = gpuEntitiesArray[counter]
                             val instanceMatrix = instance.transform.transformation
-                            val instanceMaterialIndex = if(instance.materials.isEmpty()) targetMaterialIndex else materials.indexOf(instance.materials[targetMeshIndex])
+                            val instanceMaterialIndex =
+                                if (instance.materials.isEmpty()) targetMaterialIndex else materials.indexOf(instance.materials[targetMeshIndex])
 
                             currentEntity.run {
                                 materialIndex = instanceMaterialIndex
@@ -132,7 +136,7 @@ class ModelComponentEntitySystem(
                                 baseVertex = allocation.forMeshes.first().vertexOffset
                                 baseJointIndex = allocation.baseJointIndex
                                 animationFrame0 = instance.animationController?.currentFrameIndex ?: 0
-                                isInvertedTexCoordY = if(modelComponent.isInvertTexCoordY) 1 else 0
+                                isInvertedTexCoordY = if (modelComponent.isInvertTexCoordY) 1 else 0
                                 val boundingVolume = instance.spatial.boundingVolume
                                 setTrafoAndBoundingVolume(instanceMatrix, boundingVolume)
                             }
@@ -149,17 +153,19 @@ class ModelComponentEntitySystem(
     private fun getRequiredEntityBufferSize(): Int {
         return components.filterIsInstance<ModelComponent>().sumBy { it.entity.instanceCount * it.meshes.size }
     }
+
     private fun updateGpuEntitiesArray() {
         gpuEntitiesArray = gpuEntitiesArray.enlarge(getRequiredEntityBufferSize())
     }
 
     override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
         super.onEntityAdded(scene, entities)
-        entities.flatMap{ it.components }.forEach { onComponentAdded(scene, it) }
+        entities.flatMap { it.components }.forEach { onComponentAdded(scene, it) }
     }
+
     override fun onComponentAdded(scene: Scene, component: Component) {
         super.onComponentAdded(scene, component)
-        if(component is ModelComponent) {
+        if (component is ModelComponent) {
             allocateVertexIndexBufferSpace(listOf(component))
         }
     }
@@ -167,7 +173,7 @@ class ModelComponentEntitySystem(
     private fun updateGpuJointsArray() {
         gpuJointsArray = gpuJointsArray.enlarge(joints.size)
 
-        for((index, joint) in joints.withIndex()) {
+        for ((index, joint) in joints.withIndex()) {
             gpuJointsArray[index].run {
                 set(gpuJointsArray.byteBuffer, joint)
             }
@@ -178,11 +184,13 @@ class ModelComponentEntitySystem(
         init {
             require(forMeshes.isNotEmpty())
         }
+
         val indexOffset = forMeshes.first().indexOffset
         val vertexOffset = forMeshes.first().vertexOffset
 
-        class Static(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>): Allocation(forMeshes)
-        class Animated(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>, val jointsOffset: Int): Allocation(forMeshes)
+        class Static(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) : Allocation(forMeshes)
+        class Animated(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>, val jointsOffset: Int) :
+            Allocation(forMeshes)
     }
 
     fun allocateVertexIndexBufferSpace(components: List<ModelComponent>) {
@@ -213,6 +221,7 @@ class ModelComponentEntitySystem(
 
         this.allocations.putAll(allocations)
     }
+
     override fun clear() {
         _components.clear()
 
@@ -230,9 +239,11 @@ class ModelComponentEntitySystem(
         gpuJointsArray.byteBuffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
         gpuEntitiesArray.byteBuffer.copyTo(renderState.entitiesBuffer.buffer, true)
 
-        batchingSystem.extract(renderState.camera, renderState, renderState.camera.getPosition(),
+        batchingSystem.extract(
+            renderState.camera, renderState, renderState.camera.getPosition(),
             getComponents(ModelComponent::class.java), config.debug.isDrawLines,
-            allocations, entityIndices)
+            allocations, entityIndices
+        )
     }
 
     fun cacheEntityIndices() {
@@ -249,7 +260,7 @@ class ModelComponentEntitySystem(
 }
 
 val ModelComponentEntitySystem.Allocation.baseJointIndex: Int
-    get() = when(this) {
+    get() = when (this) {
         is ModelComponentEntitySystem.Allocation.Static -> 0
         is ModelComponentEntitySystem.Allocation.Animated -> jointsOffset
     }

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene
 
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 
 class SceneManager(val addResourceContext: AddResourceContext): Manager {
@@ -35,7 +36,7 @@ class SceneManager(val addResourceContext: AddResourceContext): Manager {
     }
 
     override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
-        currentScene.scope.getAll<DeferredRenderExtension<*>>().forEach { it.afterSetScene(currentScene) }
+        currentScene.scope.getAll<RenderSystem>().forEach { it.afterSetScene(currentScene) }
         currentScene.managers.filterNot { it is SceneManager }.forEach { it.afterSetScene(lastScene, currentScene) }
     }
 }

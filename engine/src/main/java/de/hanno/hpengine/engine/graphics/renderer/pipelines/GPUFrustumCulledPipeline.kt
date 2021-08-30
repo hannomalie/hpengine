@@ -16,7 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.ZERO_BUFFER
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.renderHighZMap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.Companion.HIGHZ_FORMAT
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
@@ -96,7 +96,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config
         }
     }
     private fun beforeDraw(drawDescriptionStatic: IndirectDrawDescription<StaticFirstPassUniforms>, drawDescriptionAnimated: IndirectDrawDescription<AnimatedFirstPassUniforms>) {
-        ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, VoxelConeTracingExtension.ZERO_BUFFER)
+        ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
         val cullAndRender = { profilerString: String,
                               phase: Pipeline.CoarseCullingPhase ->
             profiled(profilerString) {

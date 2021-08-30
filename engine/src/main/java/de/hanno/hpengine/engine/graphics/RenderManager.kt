@@ -67,7 +67,6 @@ class RenderManager(
                                 renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
 
                                     val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                    gpuContext.clearColor(1f,0f,0f,1f)
                                     renderTarget?.use(gpuContext, clear)
                                     renderSystems.forEachIndexed { index, renderSystem ->
                                         renderSystem.render(drawResult, renderState.currentReadState)

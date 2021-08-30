@@ -6,26 +6,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import org.koin.core.component.get
 
-class DirectionalLightRenderSystem: RenderSystem {
-
-    override fun extract(scene: Scene, renderState: RenderState) {
-        val directionalLightSystem = scene.get<DirectionalLightSystem>()
-
-        renderState.directionalLightHasMovedInCycle = directionalLightSystem.directionalLightMovedInCycle
-        val light = directionalLightSystem.getDirectionalLight() ?: return
-
-        with(light) {
-            val directionalLightState = renderState.directionalLightState[0]
-
-            directionalLightState.color.set(color)
-            directionalLightState.direction.set(direction)
-            directionalLightState.scatterFactor = scatterFactor
-            directionalLightState.viewMatrix.set(viewMatrix)
-            directionalLightState.projectionMatrix.set(projectionMatrix)
-            directionalLightState.viewProjectionMatrix.set(viewProjectionMatrix)
-        }
-    }
-}
 class DirectionalLightSystem: SimpleEntitySystem(listOf(DirectionalLight::class.java)) {
     var directionalLightMovedInCycle: Long = 0
 
@@ -41,6 +21,21 @@ class DirectionalLightSystem: SimpleEntitySystem(listOf(DirectionalLight::class.
 
     override fun extract(renderState: RenderState) {
         renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+
+        renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+        val light = getDirectionalLight() ?: return
+
+        with(light) {
+            val directionalLightState = renderState.directionalLightState[0]
+
+            directionalLightState.color.set(color)
+            directionalLightState.direction.set(direction)
+            directionalLightState.scatterFactor = scatterFactor
+            directionalLightState.viewMatrix.set(viewMatrix)
+            directionalLightState.projectionMatrix.set(projectionMatrix)
+            directionalLightState.viewProjectionMatrix.set(viewProjectionMatrix)
+        }
+
     }
     fun getDirectionalLight() = getComponents(DirectionalLight::class.java).firstOrNull()
 

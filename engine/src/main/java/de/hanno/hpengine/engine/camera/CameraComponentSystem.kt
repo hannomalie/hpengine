@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.camera
 
+import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -8,6 +9,8 @@ import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.renderer.addLine
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -20,17 +23,22 @@ import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.koin.core.component.get
 
-class CameraRenderSystem(
+class CameraRenderExtension(
     val config: Config,
     val gpuContext: GpuContext<OpenGl>,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>
-): RenderSystem {
+): DeferredRenderExtension<OpenGl> {
 
     private val frustumLines = renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
     private val lineVertices = PersistentMappedStructBuffer(24, gpuContext, { HpVector4f() })
 
-    override fun render(result: DrawResult, renderState: RenderState) {
+    override fun renderFirstPass(
+        backend: Backend<OpenGl>,
+        gpuContext: GpuContext<OpenGl>,
+        firstPassResult: FirstPassResult,
+        renderState: RenderState
+    ) {
         if (config.debug.isDrawCameras) {
             drawLines(renderStateManager, programManager, lineVertices, renderState[frustumLines], color = Vector3f(1f, 0f, 0f))
         }
