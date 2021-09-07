@@ -104,6 +104,8 @@ class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height
 
     val visibilityMap: Int = gBuffer.getRenderedTexture(4)
 
+    val idMap: Texture2D = gBuffer.textures[4]
+
     val finalMap: Texture2D = finalBuffer.textures[0]
 
     val finalMapId: Int = finalBuffer.getRenderedTexture(0)

@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
@@ -49,6 +50,7 @@ import org.joml.Vector3fc
 import org.koin.core.component.get
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL45
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JButton
@@ -99,7 +101,7 @@ class SelectionSystem(
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager,
-    val finalOutput: RenderTarget2D
+    val idTexture: IdTexture
 ) : RenderSystem {
 
     val mouseAdapter = editorComponents.mouseAdapter
@@ -118,8 +120,6 @@ class SelectionSystem(
         if(axisDragged != AxisConstraint.None) return
 
         mouseAdapter.mouseClicked?.let { event ->
-            finalOutput.use(gpuContext, false)
-            gpuContext.readBuffer(0)
             floatBuffer.rewind()
             val ratio = Vector2f(
                 editor.canvas.width.toFloat() / config.width.toFloat(),
@@ -127,8 +127,19 @@ class SelectionSystem(
             )
             val adjustedX = (event.x / ratio.x).toInt()
             val adjustedY = config.height - (event.y / ratio.y).toInt()
-            GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer)
-
+            GL45.glGetTextureSubImage(
+                idTexture.texture.id,
+                0,
+                adjustedX,
+                adjustedY,
+                0,
+                1,
+                1,
+                1,
+                GL11.GL_RGBA,
+                GL11.GL_FLOAT,
+                floatBuffer
+            )
             val entityIndex = floatBuffer.get().toInt()
 
             onClick(entityIndex, selection)
@@ -137,7 +148,6 @@ class SelectionSystem(
         when(selection) {
             is SceneSelection -> {
                 gpuContext.disable(GlCap.DEPTH_TEST)
-                finalOutput.use(gpuContext, false)
                 val linePoints = mutableListOf<Vector3fc>().apply { addAABBLines(selection.scene.aabb.min, selection.scene.aabb.max) }
                 drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 1f))
             }

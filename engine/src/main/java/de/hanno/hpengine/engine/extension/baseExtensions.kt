@@ -70,6 +70,7 @@ import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
@@ -98,6 +99,8 @@ import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 
+data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
+
 val deferredRendererModule = module {
     renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) }
     single {
@@ -108,6 +111,10 @@ val deferredRendererModule = module {
             config.width,
             config.height
         )
+    }
+    single {
+        val deferredRenderingBuffer: DeferredRenderingBuffer = get()
+        IdTexture(deferredRenderingBuffer.idMap)
     }
     single {
         val deferredRenderingBuffer: DeferredRenderingBuffer = get()
@@ -132,6 +139,10 @@ val textureRendererModule = module {
             )
         )
 
+    }
+    single {
+        val textureManager: TextureManager = get()
+        IdTexture(textureManager.defaultTexture.backingTexture)
     }
     single {
         val renderTarget: RenderTarget2D = get()

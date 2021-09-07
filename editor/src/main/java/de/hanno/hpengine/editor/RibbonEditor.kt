@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.extension.textureRendererModule
@@ -110,7 +111,8 @@ val editorModule = module {
     }
     single {
         val finalOutput: FinalOutput = get()
-        EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), finalOutput.texture2D)
+        val idTexture: IdTexture = get()
+        EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), finalOutput.texture2D, idTexture)
     } binds (arrayOf(RenderSystem::class, Manager::class))
     single { EditorManager(get(), get()) } bind Manager::class
 }

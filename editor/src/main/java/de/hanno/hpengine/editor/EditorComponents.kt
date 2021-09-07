@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
@@ -113,7 +114,8 @@ class EditorComponents(
     val addResourceContext: AddResourceContext,
     val renderStateManager: RenderStateManager,
     val sceneManager: SceneManager,
-    val targetTexture: Texture2D
+    val targetTexture: Texture2D,
+    val idTexture: IdTexture
 ) : RenderSystem, EditorInputConfig by EditorInputConfigImpl(), Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
@@ -184,7 +186,7 @@ class EditorComponents(
         renderStateManager,
         programManager,
         textureManager,
-        targetBuffer
+        idTexture
     )
     val textureRenderer = SimpleTextureRenderer(
         config,
