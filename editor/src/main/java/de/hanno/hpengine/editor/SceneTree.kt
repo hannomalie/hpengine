@@ -2,19 +2,16 @@ package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MeshSelection
+import de.hanno.hpengine.editor.selection.ModelComponentSelection
 import de.hanno.hpengine.editor.selection.SelectionListener
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.EntitySystem
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -113,14 +110,20 @@ class SceneTree(
     }
 
     private fun addComponentNode(current: DefaultMutableTreeNode, component: Component) {
-        val componentNode = DefaultMutableTreeNode(component)
-        current.add(componentNode)
         if (component is ModelComponent) {
+            val componentNode = DefaultMutableTreeNode(ModelComponentSelection(component.entity, component))
+            current.add(componentNode)
+
             current.add(DefaultMutableTreeNode(MaterialSelection(component.model.material)))
             for (mesh in component.meshes) {
-                componentNode.add(DefaultMutableTreeNode(MeshSelection(component.entity, mesh)))
-                componentNode.add(DefaultMutableTreeNode(MaterialSelection(mesh.material)))
+                componentNode.add(
+                    DefaultMutableTreeNode(MeshSelection(component.entity, mesh)).apply {
+                        add(DefaultMutableTreeNode(MaterialSelection(mesh.material)))
+                    }
+                )
             }
+        } else {
+            current.add(DefaultMutableTreeNode(component))
         }
     }
 

@@ -18,11 +18,21 @@ sealed class Selection {
 }
 
 data class SceneSelection(val scene: Scene): Selection()
-data class MaterialSelection(val material: Material): Selection()
-
-open class EntitySelection(val entity: Entity): Selection()
-data class MeshSelection(private val _entity: Entity, val mesh: Mesh<*>): EntitySelection(_entity)
-data class ModelSelection(private val _entity: Entity, val modelComponent: ModelComponent, val model: Model<*>): EntitySelection(_entity)
+data class MaterialSelection(val material: Material): Selection() {
+    override fun toString() = material.name
+}
+open class EntitySelection(val entity: Entity): Selection() {
+    override fun toString(): String = entity.name
+}
+data class MeshSelection(private val _entity: Entity, val mesh: Mesh<*>): EntitySelection(_entity) {
+    override fun toString(): String = mesh.name
+}
+data class ModelSelection(private val _entity: Entity, val modelComponent: ModelComponent, val model: Model<*>): EntitySelection(_entity) {
+    override fun toString(): String = model.file.name
+}
+data class ModelComponentSelection(private val _entity: Entity, val modelComponent: ModelComponent): EntitySelection(_entity) {
+    override fun toString(): String = modelComponent.model.file.name
+}
 data class PointLightSelection(val light: PointLight): EntitySelection(light.entity)
 data class DirectionalLightSelection(val light: DirectionalLight): EntitySelection(light._entity)
 data class CameraSelection(val camera: Camera): EntitySelection(camera.entity)

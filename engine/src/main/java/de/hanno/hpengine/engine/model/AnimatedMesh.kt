@@ -22,18 +22,20 @@ import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import java.io.File
 
-class AnimatedMesh(override var name: String,
-                   override val vertices: List<AnimatedVertex>,
-                   override val faces: List<IndexedFace>,
-                   val aabb: AABBData,
-                   override var material: Material): Mesh<AnimatedVertex> {
+class AnimatedMesh(
+    override var name: String,
+    override val vertices: List<AnimatedVertex>,
+    override val faces: List<IndexedFace>,
+    val aabb: AABBData,
+    override var material: Material
+) : Mesh<AnimatedVertex> {
     var model: AnimatedModel? = null
 
-    override val indexBufferValues = StructArray(faces.size*3) { IntStruct() }.apply {
+    override val indexBufferValues = StructArray(faces.size * 3) { IntStruct() }.apply {
         faces.forEachIndexed { index, face ->
-            this.getAtIndex(3*index).value = face.a
-            this.getAtIndex(3*index+1).value = face.b
-            this.getAtIndex(3*index+2).value = face.c
+            this.getAtIndex(3 * index).value = face.a
+            this.getAtIndex(3 * index + 1).value = face.b
+            this.getAtIndex(3 * index + 2).value = face.c
         }
     }
 
@@ -48,13 +50,17 @@ class AnimatedMesh(override var name: String,
     fun calculateAABB(modelMatrix: Matrix4f?) = calculateBoundingAABB(modelMatrix, vertices, faces)
 
     companion object {
-        fun calculateBoundingAABB(modelMatrix: Matrix4f?, vertices: List<AnimatedVertex>, faces: Collection<IndexedFace>): AABBData {
+        fun calculateBoundingAABB(
+            modelMatrix: Matrix4f?,
+            vertices: List<AnimatedVertex>,
+            faces: Collection<IndexedFace>
+        ): AABBData {
             val min = Vector3f(absoluteMaximum)
             val max = Vector3f(absoluteMinimum)
 
             val positions = vertices.map { it.position } // TODO: Optimization, use vertex array instead of positions
             for (face in faces) {
-                val vertices = listOf(positions[face.a],positions[face.b],positions[face.c])
+                val vertices = listOf(positions[face.a], positions[face.b], positions[face.c])
 
                 for (j in 0..2) {
                     val positionV3 = vertices[j]
@@ -78,8 +84,12 @@ class AnimatedMesh(override var name: String,
     }
 }
 
-class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
-                    val animations: Map<String, Animation>, material: Material = meshes.first().material): Model<AnimatedVertex>(meshes, material) {
+class AnimatedModel(
+    override val file: File,
+    meshes: List<AnimatedMesh>,
+    val animations: Map<String, Animation>,
+    material: Material = meshes.first().material
+) : Model<AnimatedVertex>(meshes, material) {
     override val bytesPerVertex = AnimatedVertexStruktPacked.sizeInBytes
     override val path = file.absolutePath
 
@@ -88,26 +98,29 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
             mesh.model = this
         }
     }
+
     val animation = animations.entries.first().value // TOOD: Use all animations
     val animationController = AnimationController(animation)
 
-    override val verticesPacked = TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes), AnimatedVertexStruktPacked.type).apply {
-        byteBuffer.run {
-            var counter = 0
-            for(mesh in meshes) {
-                for (vertex in mesh.vertices) {
-                    this@apply[counter].run {
-                        position.run { set(vertex.position) }
-                        texCoord.run { set(vertex.texCoord) }
-                        normal.run {set(vertex.normal) }
-                        weights.run { set(vertex.weights) }
-                        jointIndices.run { set(vertex.jointIndices) }
+    override val verticesPacked =
+        TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),
+            AnimatedVertexStruktPacked.type).apply {
+            byteBuffer.run {
+                var counter = 0
+                for (mesh in meshes) {
+                    for (vertex in mesh.vertices) {
+                        this@apply[counter].run {
+                            position.run { set(vertex.position) }
+                            texCoord.run { set(vertex.texCoord) }
+                            normal.run { set(vertex.normal) }
+                            weights.run { set(vertex.weights) }
+                            jointIndices.run { set(vertex.jointIndices) }
+                        }
+                        counter++
                     }
-                    counter++
                 }
             }
         }
-    }
 
     fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
@@ -118,6 +131,7 @@ class AnimatedModel(override val file: File, meshes: List<AnimatedMesh>,
     override fun getBoundingVolume(transform: Matrix4f, mesh: Mesh<*>) = getBoundingVolume(transform)
     override val boundingVolume: AABB = calculateBoundingVolume()
 
-    override fun calculateBoundingVolume() = AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
+    override fun calculateBoundingVolume() =
+        AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
 }
 

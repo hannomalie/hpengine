@@ -1,6 +1,5 @@
 package de.hanno.hpengine.editor.selection
 
-import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SceneTree
 import de.hanno.hpengine.editor.SwingUtils
@@ -8,10 +7,10 @@ import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
 import de.hanno.hpengine.editor.grids.GiVolumeGrid
-import de.hanno.hpengine.editor.grids.OceanWaterGrid
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.grids.MeshGrid
 import de.hanno.hpengine.editor.grids.ModelGrid
+import de.hanno.hpengine.editor.grids.OceanWaterGrid
 import de.hanno.hpengine.editor.grids.PointLightGrid
 import de.hanno.hpengine.editor.grids.ReflectionProbeGrid
 import de.hanno.hpengine.editor.grids.SceneGrid
@@ -34,15 +33,12 @@ import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.OceanWaterExtension

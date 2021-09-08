@@ -10,7 +10,7 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.WindowConstants
 
-class ConfigFrame(config: ConfigImpl, editor: RibbonEditor): JFrame("Config") {
+class ConfigFrame(config: ConfigImpl, editor: RibbonEditor) : JFrame("Config") {
     init {
         val configPane = ReloadableScrollPane(ConfigGrid(config)).apply {
             this.preferredSize = Dimension(editor.canvas.width, editor.canvas.height)
@@ -18,10 +18,10 @@ class ConfigFrame(config: ConfigImpl, editor: RibbonEditor): JFrame("Config") {
         size = Dimension(500, 500)
         defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
         add(
-                JPanel().apply {
-                    layout = BorderLayout()
-                    add(configPane, BorderLayout.CENTER)
-                }
+            JPanel().apply {
+                layout = BorderLayout()
+                add(configPane, BorderLayout.CENTER)
+            }
         )
         isVisible = true
     }

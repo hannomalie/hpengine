@@ -24,7 +24,6 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
@@ -36,7 +35,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.putLinesPoints
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -70,35 +68,6 @@ import java.awt.Dimension
 import java.awt.Image
 import javax.swing.BorderFactory
 
-sealed class OutputConfig {
-    object Default : OutputConfig() {
-        override fun toString(): String = "Default"
-    }
-
-    class Texture2D(
-        val name: String,
-        val texture: de.hanno.hpengine.engine.model.texture.Texture2D,
-        val factorForDebugRendering: Float
-    ) : OutputConfig() {
-        override fun toString() = name
-    }
-
-    class TextureCubeMap(val name: String, val texture: de.hanno.hpengine.engine.model.texture.CubeMap) :
-        OutputConfig() {
-        override fun toString() = name
-    }
-
-    data class RenderTargetCubeMapArray(val renderTarget: CubeMapArrayRenderTarget, val cubeMapIndex: Int) :
-        OutputConfig() {
-        init {
-            val cubeMapArraySize = renderTarget.arraySize
-            require(cubeMapIndex < cubeMapArraySize) { "CubeMap index $cubeMapIndex is ot of bounds. Should be smaller than $cubeMapArraySize" }
-        }
-
-        override fun toString() = renderTarget.name + cubeMapIndex.toString()
-    }
-}
-
 val JRibbon.tasks: List<RibbonTask>
     get() = mutableListOf<RibbonTask>().apply {
         addAll((0 until taskCount).map { getTask(it) })
@@ -115,9 +84,10 @@ class EditorComponents(
     val renderStateManager: RenderStateManager,
     val sceneManager: SceneManager,
     val targetTexture: Texture2D,
-    val idTexture: IdTexture,
     val editorInputConfig: EditorInputConfigImpl,
-    val sceneTree: SceneTree
+    val sceneTree: SceneTree,
+    val selectionSystem: SelectionSystem,
+    val mouseAdapter: MouseAdapterImpl
 ) : RenderSystem, EditorInputConfig by editorInputConfig, Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
@@ -132,11 +102,11 @@ class EditorComponents(
         "EditorFinalOutput",
         Vector4f(0f)
     )
+
     val onReload: (() -> Unit)?
         get() = editor.onSceneReload
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
-    private val sidePanel = editor.sidePanel
     val sphereHolder = SphereHolder(
         config,
         textureManager,
@@ -179,22 +149,6 @@ class EditorComponents(
         targetBuffer
     )
 
-    val mouseAdapter = MouseAdapterImpl(editor.canvas)
-
-    val selectionSystem = SelectionSystem(
-        config,
-        editorInputConfig,
-        gpuContext,
-        mouseAdapter,
-        editor,
-        sidePanel,
-        renderStateManager,
-        programManager,
-        textureManager,
-        idTexture,
-        sceneManager,
-        sceneTree
-    )
     val textureRenderer = SimpleTextureRenderer(
         config,
         gpuContext,

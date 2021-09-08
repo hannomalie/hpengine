@@ -1,6 +1,9 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfigImpl
+import de.hanno.hpengine.editor.selection.MouseAdapterImpl
+import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -14,7 +17,6 @@ import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.extension.entitySystem
-import de.hanno.hpengine.engine.extension.textureRendererModule
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.Window
@@ -64,7 +66,7 @@ class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFram
 
     val emptySidePanel = JPanel().apply {
         preferredSize = Dimension(fixedWidth, canvas.height)
-
+        add(ReloadableScrollPane(JPanel()), "wrap")
     }
     val sidePanel = object : JPanel() {
         override fun add(comp: Component): Component {
@@ -133,8 +135,35 @@ val editorModule = module {
         EditorEntitySystem(get())
     }
     single {
+        EditorInputConfigImpl()
+    } binds (arrayOf(EditorInputConfigImpl::class, EditorInputConfig::class))
+
+    single {
+        val editor: RibbonEditor = get()
+        MouseAdapterImpl(editor.canvas)
+    }
+    single {
+        val editor: RibbonEditor = get()
+        editor.sidePanel
+    }
+    single {
+        SelectionSystem(
+            config = get(),
+            editorInputConfig = get(),
+            gpuContext = get(),
+            mouseAdapter = get(),
+            editor = get(),
+            sidePanel = get(),
+            renderStateManager = get(),
+            programManager = get(),
+            textureManager = get(),
+            idTexture = get(),
+            sceneManager = get(),
+            sceneTree = get()
+        )
+    }
+    single {
         val finalOutput: FinalOutput = get()
-        val idTexture: IdTexture = get()
         EditorComponents(
             gpuContext = get(),
             config = get(),
@@ -146,11 +175,13 @@ val editorModule = module {
             renderStateManager = get(),
             sceneManager = get(),
             targetTexture = finalOutput.texture2D,
-            idTexture = idTexture,
-            editorInputConfig = EditorInputConfigImpl(),
-            sceneTree = get()
+            editorInputConfig = get(),
+            sceneTree = get(),
+            selectionSystem = get(),
+            mouseAdapter = get()
         )
     } binds (arrayOf(RenderSystem::class, Manager::class))
+
     single { EditorManager(get(), get()) } bind Manager::class
 }
 
