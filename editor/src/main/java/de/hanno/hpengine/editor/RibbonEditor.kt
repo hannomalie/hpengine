@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.input.EditorInputConfigImpl
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -7,15 +8,19 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
+import de.hanno.hpengine.engine.extension.entitySystem
 import de.hanno.hpengine.engine.extension.textureRendererModule
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.convert
@@ -98,7 +103,17 @@ fun verticalBoxOf(vararg comp: JComponent): Box {
         comp.forEach { add(it) }
     }
 }
+class EditorEntitySystem(val editorComponents: EditorComponents): SimpleEntitySystem(emptyList()) {
+    override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
+        super.onEntityAdded(scene, entities)
+        editorComponents.sceneTree.reload(this.entities)
+    }
 
+    override fun onComponentAdded(scene: Scene, component: de.hanno.hpengine.engine.component.Component) {
+        super.onComponentAdded(scene, component)
+        editorComponents.sceneTree.reload(this.entities)
+    }
+}
 val editorModule = module {
     single { AWTEditorWindow(get()) } bind Window::class
     single {
@@ -110,9 +125,31 @@ val editorModule = module {
         window.frame
     }
     single {
+        SwingUtils.invokeAndWait {
+            SceneTree(get(), get(), get(), get())
+        }
+    }
+    entitySystem {
+        EditorEntitySystem(get())
+    }
+    single {
         val finalOutput: FinalOutput = get()
         val idTexture: IdTexture = get()
-        EditorComponents(get(), get(), get(), get(), get(), get(), get(), get(), get(), finalOutput.texture2D, idTexture)
+        EditorComponents(
+            gpuContext = get(),
+            config = get(),
+            window = get(),
+            editor = get(),
+            programManager = get(),
+            textureManager = get(),
+            addResourceContext = get(),
+            renderStateManager = get(),
+            sceneManager = get(),
+            targetTexture = finalOutput.texture2D,
+            idTexture = idTexture,
+            editorInputConfig = EditorInputConfigImpl(),
+            sceneTree = get()
+        )
     } binds (arrayOf(RenderSystem::class, Manager::class))
     single { EditorManager(get(), get()) } bind Manager::class
 }

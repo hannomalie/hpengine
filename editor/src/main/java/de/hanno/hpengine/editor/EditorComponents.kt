@@ -115,8 +115,10 @@ class EditorComponents(
     val renderStateManager: RenderStateManager,
     val sceneManager: SceneManager,
     val targetTexture: Texture2D,
-    val idTexture: IdTexture
-) : RenderSystem, EditorInputConfig by EditorInputConfigImpl(), Manager {
+    val idTexture: IdTexture,
+    val editorInputConfig: EditorInputConfigImpl,
+    val sceneTree: SceneTree
+) : RenderSystem, EditorInputConfig by editorInputConfig, Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
         gpuContext,
@@ -181,12 +183,17 @@ class EditorComponents(
 
     val selectionSystem = SelectionSystem(
         config,
+        editorInputConfig,
         gpuContext,
-        this,
+        mouseAdapter,
+        editor,
+        sidePanel,
         renderStateManager,
         programManager,
         textureManager,
-        idTexture
+        idTexture,
+        sceneManager,
+        sceneTree
     )
     val textureRenderer = SimpleTextureRenderer(
         config,
@@ -196,7 +203,6 @@ class EditorComponents(
         window.frontBuffer
     )
 
-    lateinit var sceneTree: SceneTree
     private var sceneTreePane: ReloadableScrollPane? = null
     val aabbLines = mutableListOf<Vector3fc>()
     val lineVertices = renderStateManager.renderState.registerState {
@@ -210,20 +216,14 @@ class EditorComponents(
         renderStateManager.renderState.registerState { Transform().apply { identity() } }
 
     override fun onEntityAdded(entities: List<Entity>) {
-        if (!this::sceneTree.isInitialized) return
-        sceneTree.reload()
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
 
     override fun onComponentAdded(component: Component) {
-        if (!this::sceneTree.isInitialized) return
-        sceneTree.reload()
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
 
     override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
-        if (!this::sceneTree.isInitialized) return
-        recreateSceneTree(currentScene)
         ribbon.editorTasks.forEach { it.reloadContent() }
     }
 
@@ -492,14 +492,8 @@ class EditorComponents(
     }
 
     override fun beforeSetScene(nextScene: Scene) {
-
-        recreateSceneTree(nextScene)
-
-    }
-
-    fun recreateSceneTree(scene: Scene) {
         SwingUtils.invokeLater {
-            sceneTree = SceneTree(config, textureManager, addResourceContext, this, sceneManager).apply {
+            sceneTree.apply {
                 addDefaultMouseListener()
                 SwingUtils.invokeLater {
                     sceneTreePane = ReloadableScrollPane(this).apply {

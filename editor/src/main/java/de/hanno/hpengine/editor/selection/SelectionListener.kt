@@ -20,8 +20,6 @@ import javax.swing.tree.TreeSelectionModel
 class SelectionListener(internal var tree: JTree,
                         val editorComponents: EditorComponents) : TreeSelectionListener {
 
-    private val editor: RibbonEditor = editorComponents.editor
-
     init {
         tree.addTreeSelectionListener(this)
         tree.selectionModel.selectionMode = TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION

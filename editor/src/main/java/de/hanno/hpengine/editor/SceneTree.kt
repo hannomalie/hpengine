@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.entity.EntitySystem
+import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -31,23 +33,15 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-open class SceneTree(
+class SceneTree(
     val config: Config,
     val textureManager: TextureManager,
     val addResourceContext: AddResourceContext,
-    val editorComponents: EditorComponents,
     val sceneManager: SceneManager,
-    val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode(sceneManager.scene)
-) : JTree(rootNode) {
+    val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode()
+): JTree(rootNode) {
 
-    private val editor: RibbonEditor = editorComponents.editor
     private var selectionListener: SelectionListener? = null
-
-    init {
-        addResourceContext.launch {
-            reload()
-        }
-    }
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
         if (userObject == query) return this
@@ -68,8 +62,8 @@ open class SceneTree(
         selectionPath = null
     }
 
-    fun reload() {
-        addSceneObjects()
+    fun reload(entities: List<Entity>) {
+        addSceneObjects(entities)
         val model = model as DefaultTreeModel
 
         SwingUtilities.invokeLater {
@@ -80,16 +74,17 @@ open class SceneTree(
         }
     }
 
-    private fun addSceneObjects(): DefaultMutableTreeNode {
+    private fun addSceneObjects(entities: List<Entity>): DefaultMutableTreeNode {
         val top = rootNode
         top.removeAllChildren()
 
-        spanTree(top, sceneManager.scene.getEntities())
-        LOGGER.info("Added " + sceneManager.scene.getEntities().size)
+        spanTree(top, entities)
+        LOGGER.info("Added " + entities.size)
 
-        if (selectionListener == null) {
-            selectionListener = SelectionListener(this, editorComponents)
-        }
+//        TODO: Reimplmeent without dependency to editorComponents
+//        if (selectionListener == null) {
+//            selectionListener = SelectionListener(this, editorComponents)
+//        }
         return top
     }
 
@@ -111,9 +106,10 @@ open class SceneTree(
             val current = DefaultMutableTreeNode(entity)
             rootEntityMappings[entity.parent]!!.add(current)
         }
-        if (parent.isRoot) {
-            parent.add(DefaultMutableTreeNode(editorComponents.sphereHolder.sphereEntity))
-        }
+//        TODO: Reimplment without depending on editorComponents
+//        if (parent.isRoot) {
+//            parent.add(DefaultMutableTreeNode(editorComponents.sphereHolder.sphereEntity))
+//        }
     }
 
     private fun addComponentNode(current: DefaultMutableTreeNode, component: Component) {
@@ -144,7 +140,7 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
                         val modelComponentMenuItem = JMenuItem("ModelComponent").apply {
                             addActionListener {
                                 JFileChooser(config.gameDir.baseDir).apply {
-                                    if (showOpenDialog(editorComponents.editor) == JFileChooser.APPROVE_OPTION) {
+                                    if (showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                                         GlobalScope.launch {
                                             val baseDirPath =
                                                 config.gameDir.baseDir.canonicalPath.toString()
@@ -162,10 +158,9 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
                                                 config.directories.gameDir,
                                                 selection
                                             ).execute()
+
                                             addResourceContext.launch {
-                                                with(sceneManager.scene) {
-                                                    addAll(loadedModels.entities)
-                                                }
+                                                sceneManager.scene.addAll(loadedModels.entities)
                                             }
                                         }
                                     }

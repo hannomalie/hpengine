@@ -1,11 +1,10 @@
 package de.hanno.hpengine.engine.scene
 
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 
 class SceneManager(val addResourceContext: AddResourceContext): Manager {
-    private var _scene: Scene? = null
+    private var _scene: Scene? = null // TODO: Reflect this state somehow publicly or change SceneTree scope
     var scene: Scene
         get() {
             return _scene!!

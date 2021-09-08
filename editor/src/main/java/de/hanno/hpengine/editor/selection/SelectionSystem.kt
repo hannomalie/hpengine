@@ -1,6 +1,8 @@
 package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.RibbonEditor
+import de.hanno.hpengine.editor.SceneTree
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
@@ -14,6 +16,7 @@ import de.hanno.hpengine.editor.grids.PointLightGrid
 import de.hanno.hpengine.editor.grids.ReflectionProbeGrid
 import de.hanno.hpengine.editor.grids.SceneGrid
 import de.hanno.hpengine.editor.input.AxisConstraint
+import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.verticalBox
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -44,6 +47,7 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.scene.OceanWaterExtension
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneManager
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3fc
@@ -96,17 +100,19 @@ class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
 
 class SelectionSystem(
     val config: Config,
+    val editorInputConfig: EditorInputConfig,
     val gpuContext: GpuContext<OpenGl>,
-    val editorComponents: EditorComponents,
+    val mouseAdapter: MouseAdapterImpl,
+    val editor: RibbonEditor,
+    val sidePanel: JPanel,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
     val textureManager: TextureManager,
-    val idTexture: IdTexture
+    val idTexture: IdTexture,
+    val sceneManager: SceneManager,
+    val sceneTree: SceneTree
 ) : RenderSystem {
 
-    val mouseAdapter = editorComponents.mouseAdapter
-    val editor = editorComponents.editor
-    val sidePanel = editorComponents.editor.sidePanel
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
 
     var axisDragged: AxisConstraint = AxisConstraint.None
@@ -229,12 +235,12 @@ class SelectionSystem(
         entityIndexAsInt: Int,
         selection: Selection
     ) {
-        if(entityIndexAsInt >= editorComponents.sceneManager.scene.getEntities().size) {
+        if(entityIndexAsInt >= sceneManager.scene.getEntities().size) {
             println("You picked entity index with in value $entityIndexAsInt as, can't select that")
             return
         }
 
-        val pickedEntity = editorComponents.sceneManager.scene.getEntities()[entityIndexAsInt]
+        val pickedEntity = sceneManager.scene.getEntities()[entityIndexAsInt]
         val meshIndex = floatBuffer.get(3)
         val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
 
@@ -249,11 +255,11 @@ class SelectionSystem(
                         when {
                             selection.mesh == selectedMesh -> {
                                 unselect()
-                                editorComponents.sceneTree.unselect()
+                                sceneTree.unselect()
                             }
                             selectedMesh != null -> {
                                 val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                editorComponents.sceneTree.select(
+                                sceneTree.select(
                                     MeshSelection(
                                         modelComponent.entity,
                                         selectedMesh
@@ -265,21 +271,21 @@ class SelectionSystem(
                         }
                     }
                     else -> {
-                        when (editorComponents.selectionMode) {
+                        when (editorInputConfig.selectionMode) {
                             SelectionMode.Entity -> {
                                 if (selection.entity.name == pickedEntity.name) {
                                     unselect()
-                                    editorComponents.sceneTree.unselect()
+                                    sceneTree.unselect()
                                 } else {
                                     selectEntity(pickedEntity)
-                                    editorComponents.sceneTree.select(pickedEntity)
+                                    sceneTree.select(pickedEntity)
                                 }
                             }
                             SelectionMode.Mesh -> {
                                 val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
                                 if (selectedMesh != null) {
                                     val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                    editorComponents.sceneTree.select(
+                                    sceneTree.select(
                                         MeshSelection(
                                             modelComponent.entity,
                                             selectedMesh
@@ -292,16 +298,16 @@ class SelectionSystem(
                     }
                 }
             }
-            Selection.None -> when (editorComponents.selectionMode) {
+            Selection.None -> when (editorInputConfig.selectionMode) {
                 SelectionMode.Entity -> {
                     selectEntity(pickedEntity)
-                    editorComponents.sceneTree.select(pickedEntity)
+                    sceneTree.select(pickedEntity)
                 }
                 SelectionMode.Mesh -> {
                     if (modelComponent != null) {
                         val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
                         val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                        editorComponents.sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
+                        sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
                         selectMesh(pickedMesh)
                     } else Unit
                 }
@@ -338,7 +344,7 @@ class SelectionSystem(
         selection = pickedModel
         sidePanel.verticalBox(
             unselectButton,
-            ModelGrid(pickedModel.model, pickedModel.modelComponent, editorComponents.sceneManager.scene.get())
+            ModelGrid(pickedModel.model, pickedModel.modelComponent, sceneManager.scene.get())
         )
     }
 
@@ -346,7 +352,7 @@ class SelectionSystem(
         selection = pickedMesh
         sidePanel.verticalBox(
             unselectButton,
-            MeshGrid(pickedMesh.mesh, pickedMesh.entity, editorComponents.sceneManager.scene.get())
+            MeshGrid(pickedMesh.mesh, pickedMesh.entity, sceneManager.scene.get())
         )
     }
     fun selectReflectionProbe(pickedReflectionProbe: ReflectionProbeSelection) = SwingUtils.invokeLater {
@@ -369,7 +375,7 @@ class SelectionSystem(
         selection = GiVolumeSelection(giVolumeComponent)
         sidePanel.verticalBox(
                 unselectButton,
-                GiVolumeGrid(gpuContext, config, textureManager, giVolumeComponent, editorComponents.sceneManager)
+                GiVolumeGrid(gpuContext, config, textureManager, giVolumeComponent, sceneManager)
         )
     }
     fun selectOceanWater(oceanWaterComponent: OceanWaterExtension.OceanWater) = SwingUtils.invokeLater {
