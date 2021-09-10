@@ -3,7 +3,9 @@ package de.hanno.hpengine.editor
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.ModelComponentSelection
-import de.hanno.hpengine.editor.selection.SelectionListener
+import de.hanno.hpengine.editor.selection.Selection
+import de.hanno.hpengine.editor.selection.SelectionSystem
+import de.hanno.hpengine.editor.selection.SimpleEntitySelection
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
@@ -36,9 +38,9 @@ class SceneTree(
     val addResourceContext: AddResourceContext,
     val sceneManager: SceneManager,
     val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode()
-): JTree(rootNode) {
+) : JTree(rootNode) {
 
-    private var selectionListener: SelectionListener? = null
+    private var selectionListener: de.hanno.hpengine.editor.selection.SelectionListener? = null
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
         if (userObject == query) return this
@@ -50,8 +52,15 @@ class SceneTree(
 
     fun select(any: Any) = SwingUtils.invokeLater {
         getSelectionPath(any).let {
-            this@SceneTree.selectionPath = it
-            this@SceneTree.scrollPathToVisible(it)
+            selectionPath = it
+            scrollPathToVisible(it)
+        }
+    }
+
+    fun selectParent(nextSelection: Selection) = SwingUtils.invokeLater {
+        getSelectionPath(nextSelection)?.let {
+            this@SceneTree.selectionPath = it.parentPath
+            this@SceneTree.scrollPathToVisible(it.parentPath)
         }
     }
 
@@ -93,14 +102,14 @@ class SceneTree(
         val rootEntityMappings = HashMap<Entity, DefaultMutableTreeNode>()
 
         for (entity in rootEntities.filter { e -> !e.hasParent }) {
-            val current = DefaultMutableTreeNode(entity)
+            val current = DefaultMutableTreeNode(SimpleEntitySelection(entity))
             entity.components.forEach { component -> addComponentNode(current, component) }
             rootEntityMappings[entity] = current
             parent.add(current)
         }
 
         for (entity in rootEntities.filter { it.hasParent }) {
-            val current = DefaultMutableTreeNode(entity)
+            val current = DefaultMutableTreeNode(SimpleEntitySelection(entity))
             rootEntityMappings[entity.parent]!!.add(current)
         }
 //        TODO: Reimplment without depending on editorComponents
@@ -112,9 +121,6 @@ class SceneTree(
     private fun addComponentNode(current: DefaultMutableTreeNode, component: Component) {
         if (component is ModelComponent) {
             val componentNode = DefaultMutableTreeNode(ModelComponentSelection(component.entity, component))
-            current.add(componentNode)
-
-            current.add(DefaultMutableTreeNode(MaterialSelection(component.model.material)))
             for (mesh in component.meshes) {
                 componentNode.add(
                     DefaultMutableTreeNode(MeshSelection(component.entity, mesh)).apply {
@@ -122,13 +128,34 @@ class SceneTree(
                     }
                 )
             }
+            current.add(componentNode)
+            current.add(DefaultMutableTreeNode(MaterialSelection(component.model.material)))
         } else {
             current.add(DefaultMutableTreeNode(component))
         }
     }
 
-    companion object {
+    inner class SelectionListener(private val selectionSystem: SelectionSystem) : MouseAdapter() {
+        override fun mousePressed(mouseEvent: MouseEvent) {
+            setSelectionRow(getClosestRowForLocation(mouseEvent.x, mouseEvent.y))
+            val selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
 
+            selectedTreeElement ?: return
+
+            handleContextMenu(mouseEvent, selectedTreeElement)
+
+            if (selectedTreeElement !is Selection) return
+            handleClick(mouseEvent, selectedTreeElement)
+        }
+
+        private fun handleClick(mouseEvent: MouseEvent, selection: Selection) {
+            if (mouseEvent.button == 1) {
+                selectionSystem.selectOrUnselect(selection)
+            }
+        }
+    }
+
+    companion object {
         private val LOGGER = Logger.getLogger(SceneTree::class.java.name)
     }
 
@@ -149,11 +176,12 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
                                                 config.gameDir.baseDir.canonicalPath.toString()
                                             require(selectedFile.canonicalPath.startsWith(baseDirPath)) { "Can only load from within the game directory" }
 
-                                            val resultingPath = selectedFile.canonicalPath.replace(baseDirPath, "").let {
-                                                if(it.startsWith("/")) it.replaceFirst("/", "") else it
-                                            }.let {
-                                                if(it.startsWith("\\")) it.replaceFirst("\\", "") else it
-                                            }
+                                            val resultingPath =
+                                                selectedFile.canonicalPath.replace(baseDirPath, "").let {
+                                                    if (it.startsWith("/")) it.replaceFirst("/", "") else it
+                                                }.let {
+                                                    if (it.startsWith("\\")) it.replaceFirst("\\", "") else it
+                                                }
                                             val loadedModels = LoadModelCommand(
                                                 resultingPath,
                                                 "Model_${System.currentTimeMillis()}",
@@ -192,13 +220,6 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
     }
 }
 
-fun SceneTree.addDefaultMouseListener() {
-    addMouseListener(object : MouseAdapter() {
-        override fun mousePressed(mouseEvent: MouseEvent) {
-            setSelectionRow(getClosestRowForLocation(mouseEvent.x, mouseEvent.y))
-            val selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
-
-            handleContextMenu(mouseEvent, selectedTreeElement)
-        }
-    })
+fun SceneTree.addDefaultMouseListener(selectionSystem: SelectionSystem) {
+    addMouseListener(SelectionListener(selectionSystem))
 }

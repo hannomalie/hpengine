@@ -3,10 +3,11 @@ package de.hanno.hpengine.editor.tasks
 import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.doWithRefresh
+import de.hanno.hpengine.editor.setWithRefresh
 import de.hanno.hpengine.editor.grids.TextureGrid
 import de.hanno.hpengine.editor.selection.SelectionSystem
-import de.hanno.hpengine.editor.selection.addUnselectButton
+import de.hanno.hpengine.editor.selection.createUnselectButton
+import de.hanno.hpengine.editor.verticalBoxOf
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.model.texture.FileBasedCubeMap
@@ -38,12 +39,14 @@ object TextureTask {
                     val image = ImageIO.read(File(it.file.absolutePath))
                     Command.builder()
                         .setText(it.file.name)
-                        .setIconFactory { EditorComponents.Companion.getResizableIconFromImageSource(image) }
+                        .setIconFactory { EditorComponents.getResizableIconFromImageSource(image) }
                         .setAction { event ->
                             if (event.command.isToggleSelected) {
-                                editor.sidePanel.doWithRefresh {
-                                    addUnselectButton()
-                                    add(TextureGrid(gpuContext, it))
+                                editor.sidePanel.setWithRefresh {
+                                    verticalBoxOf(
+                                        createUnselectButton(),
+                                        TextureGrid(gpuContext, it)
+                                    )
                                 }
                             } else {
                                 selectionSystem.unselect()
@@ -54,12 +57,14 @@ object TextureTask {
                 } else if (it is FileBasedCubeMap) {
                     Command.builder()
                             .setText(it.file.name)
-                            .setIconFactory { EditorComponents.Companion.getResizableIconFromImageSource(it.bufferedImage) }
+                            .setIconFactory { EditorComponents.getResizableIconFromImageSource(it.bufferedImage) }
                             .setAction { event ->
                                 if (event.command.isToggleSelected) {
-                                    editor.sidePanel.doWithRefresh {
-                                        addUnselectButton()
-                                        add(TextureGrid(gpuContext, it))
+                                    editor.sidePanel.setWithRefresh {
+                                        verticalBoxOf(
+                                            createUnselectButton(),
+                                            TextureGrid(gpuContext, it)
+                                        )
                                     }
                                 } else {
                                     selectionSystem.unselect()

@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor.selection
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.SceneTree
 import de.hanno.hpengine.editor.SwingUtils
+import de.hanno.hpengine.editor.setWithRefresh
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
@@ -18,18 +19,14 @@ import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.verticalBox
+import de.hanno.hpengine.editor.verticalBoxOf
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
-import de.hanno.hpengine.engine.graphics.light.point.PointLight
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
@@ -38,11 +35,8 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.OceanWaterExtension
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import org.joml.Vector2f
 import org.joml.Vector3f
@@ -54,15 +48,13 @@ import org.lwjgl.opengl.GL45
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JPanel
 
-fun JPanel.addUnselectButton(additionalOnClick: () -> Unit = {}) {
-    add(JButton("Unselect").apply {
-        addActionListener {
-            removeAll()
-            additionalOnClick()
-        }
-    })
+fun createUnselectButton(): JButton = JButton("Unselect").apply {
+    addActionListener {
+        removeAll()
+    }
 }
 
 class MouseAdapterImpl(canvas: CustomGlCanvas): MouseAdapter() {
@@ -118,8 +110,8 @@ class SelectionSystem(
     var selection: Selection = Selection.None
 
     override fun render(result: DrawResult, renderState: RenderState) {
-        val selection = selection
-        if(axisDragged != AxisConstraint.None) return
+        val currentSelection = selection
+        if (axisDragged != AxisConstraint.None) return
 
         mouseAdapter.mouseClicked?.let { event ->
             floatBuffer.rewind()
@@ -144,13 +136,18 @@ class SelectionSystem(
             )
             val entityIndex = floatBuffer.get().toInt()
 
-            onClick(entityIndex, selection)
+            onClick(entityIndex)
         }
 
-        when(selection) {
+        when (currentSelection) {
             is SceneSelection -> {
                 gpuContext.disable(GlCap.DEPTH_TEST)
-                val linePoints = mutableListOf<Vector3fc>().apply { addAABBLines(selection.scene.aabb.min, selection.scene.aabb.max) }
+                val linePoints = mutableListOf<Vector3fc>().apply {
+                    addAABBLines(
+                        currentSelection.scene.aabb.min,
+                        currentSelection.scene.aabb.max
+                    )
+                }
                 drawLines(renderStateManager, programManager, lineVertices, linePoints, color = Vector3f(1f, 0f, 1f))
             }
             is EntitySelection -> {
@@ -228,89 +225,18 @@ class SelectionSystem(
     }
 
     private fun onClick(
-        entityIndexAsInt: Int,
-        selection: Selection
+        entityIndexAsInt: Int
     ) {
-        if(entityIndexAsInt >= sceneManager.scene.getEntities().size) {
+        if (entityIndexAsInt >= sceneManager.scene.getEntities().size) {
             println("You picked entity index with in value $entityIndexAsInt as, can't select that")
             return
         }
 
         val pickedEntity = sceneManager.scene.getEntities()[entityIndexAsInt]
-        val meshIndex = floatBuffer.get(3)
-        val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)
+        val meshIndex = floatBuffer.get(3).toInt()
+        val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)!!
 
-        when (selection) {
-            is EntitySelection -> {
-                when (selection) {
-                    is ModelSelection -> if (selection.model.path == modelComponent?.model?.path) unselect() else selectModel(
-                        selection
-                    )
-                    is MeshSelection -> {
-                        val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
-                        when {
-                            selection.mesh == selectedMesh -> {
-                                unselect()
-                                sceneTree.unselect()
-                            }
-                            selectedMesh != null -> {
-                                val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                sceneTree.select(
-                                    MeshSelection(
-                                        modelComponent.entity,
-                                        selectedMesh
-                                    )
-                                )
-                                selectMesh(pickedMesh)
-                            }
-                            else -> Unit
-                        }
-                    }
-                    else -> {
-                        when (editorInputConfig.selectionMode) {
-                            SelectionMode.Entity -> {
-                                if (selection.entity.name == pickedEntity.name) {
-                                    unselect()
-                                    sceneTree.unselect()
-                                } else {
-                                    selectEntity(pickedEntity)
-                                    sceneTree.select(pickedEntity)
-                                }
-                            }
-                            SelectionMode.Mesh -> {
-                                val selectedMesh = modelComponent?.meshes?.get(meshIndex.toInt())
-                                if (selectedMesh != null) {
-                                    val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                                    sceneTree.select(
-                                        MeshSelection(
-                                            modelComponent.entity,
-                                            selectedMesh
-                                        )
-                                    )
-                                    selectMesh(pickedMesh)
-                                } else Unit
-                            }
-                        }
-                    }
-                }
-            }
-            Selection.None -> when (editorInputConfig.selectionMode) {
-                SelectionMode.Entity -> {
-                    selectEntity(pickedEntity)
-                    sceneTree.select(pickedEntity)
-                }
-                SelectionMode.Mesh -> {
-                    if (modelComponent != null) {
-                        val selectedMesh = modelComponent.meshes[meshIndex.toInt()]
-                        val pickedMesh = MeshSelection(pickedEntity, selectedMesh)
-                        sceneTree.select(MeshSelection(modelComponent.entity, selectedMesh))
-                        selectMesh(pickedMesh)
-                    } else Unit
-                }
-            }
-            is Material -> selectMaterial(selection)
-            else -> Unit
-        }.let {}
+        selectOrUnselect(MeshSelection(pickedEntity, modelComponent.meshes[meshIndex]))
     }
 
     val unselectButton = SwingUtils.invokeAndWait {
@@ -319,67 +245,6 @@ class SelectionSystem(
                 unselect()
             }
         }
-    }
-    fun selectPointLight(pickedPointLight: PointLight) = SwingUtils.invokeLater {
-        selection = PointLightSelection(pickedPointLight)
-        sidePanel.verticalBox(
-            unselectButton,
-            PointLightGrid(pickedPointLight)
-        )
-    }
-
-    fun selectEntity(pickedEntity: Entity) = SwingUtils.invokeLater {
-        selection = EntitySelection(pickedEntity)
-        sidePanel.verticalBox(
-            unselectButton,
-            EntityGrid(pickedEntity)
-        )
-    }
-
-    fun selectModel(pickedModel: ModelSelection) = SwingUtils.invokeLater {
-        selection = pickedModel
-        sidePanel.verticalBox(
-            unselectButton,
-            ModelGrid(pickedModel.model, pickedModel.modelComponent, sceneManager.scene.get())
-        )
-    }
-
-    fun selectMesh(pickedMesh: MeshSelection) = SwingUtils.invokeLater {
-        selection = pickedMesh
-        sidePanel.verticalBox(
-            unselectButton,
-            MeshGrid(pickedMesh.mesh, pickedMesh.entity, sceneManager.scene.get())
-        )
-    }
-    fun selectReflectionProbe(pickedReflectionProbe: ReflectionProbeSelection) = SwingUtils.invokeLater {
-        selection = pickedReflectionProbe
-        sidePanel.verticalBox(
-            unselectButton,
-            ReflectionProbeGrid(pickedReflectionProbe.reflectionProbe)
-        )
-    }
-
-    fun selectMaterial(pickedMaterial: Material) = SwingUtils.invokeLater {
-        selection = MaterialSelection(pickedMaterial)
-        sidePanel.verticalBox(
-            unselectButton,
-            MaterialGrid(programManager, textureManager, pickedMaterial)
-        )
-    }
-
-    fun selectGiVolume(giVolumeComponent: GIVolumeComponent) = SwingUtils.invokeLater {
-        selection = GiVolumeSelection(giVolumeComponent)
-        sidePanel.verticalBox(
-                unselectButton,
-                GiVolumeGrid(gpuContext, config, textureManager, giVolumeComponent, sceneManager)
-        )
-    }
-    fun selectOceanWater(oceanWaterComponent: OceanWaterExtension.OceanWater) = SwingUtils.invokeLater {
-        selection = OceanWaterSelection(oceanWaterComponent)
-        sidePanel.verticalBox(
-                unselectButton,
-                OceanWaterGrid(oceanWaterComponent)
-        )
     }
 
     fun unselect() {
@@ -392,28 +257,76 @@ class SelectionSystem(
         }
     }
 
-    fun selectDirectionalLight(pickedDirectionalLight: DirectionalLight, scene: Scene) = SwingUtils.invokeLater {
-        selection = DirectionalLightSelection(pickedDirectionalLight)
-        sidePanel.verticalBox(
-            unselectButton,
-            DirectionalLightGrid(pickedDirectionalLight),
-            CameraGrid(pickedDirectionalLight, scene)
-        )
+
+    fun selectOrUnselect(nextSelection: Selection) {
+        if (selection == nextSelection) {
+            unselect()
+        } else {
+            selection = nextSelection
+            sceneTree.select(nextSelection)
+
+            when (nextSelection) {
+                is EntitySelection -> when (nextSelection) {
+                    is CameraSelection -> sidePanelBox { CameraGrid(nextSelection.camera, sceneManager.scene) }
+                    is DirectionalLightSelection -> sidePanel.verticalBox(
+                        unselectButton,
+                        DirectionalLightGrid(nextSelection.light),
+                        CameraGrid(nextSelection.light, sceneManager.scene)
+                    )
+                    is MeshSelection -> {
+                        when (editorInputConfig.selectionMode) {
+                            SelectionMode.Entity -> {
+                                sidePanelBox { EntityGrid(nextSelection.entity) }
+                                sceneTree.selectParent(nextSelection)
+                            }
+                            SelectionMode.Mesh -> {
+                                sidePanelBox { MeshGrid(nextSelection.mesh, nextSelection.entity, sceneManager.scene.get())  }
+                            }
+                        }
+                    }
+                    is ModelComponentSelection -> sidePanelBox {
+                        ModelGrid(
+                            nextSelection.modelComponent.model,
+                            nextSelection.modelComponent,
+                            sceneManager.scene.get()
+                        )
+                    }
+                    is ModelSelection -> sidePanelBox {
+                        ModelGrid(
+                            nextSelection.modelComponent.model,
+                            nextSelection.modelComponent,
+                            sceneManager.scene.get()
+                        )
+                    }
+                    is PointLightSelection -> sidePanelBox { PointLightGrid(nextSelection.light) }
+                    is SimpleEntitySelection -> sidePanelBox { EntityGrid(nextSelection.entity) }
+                }
+                is GiVolumeSelection -> sidePanelBox {
+                    GiVolumeGrid(
+                        gpuContext,
+                        config,
+                        textureManager,
+                        nextSelection.giVolumeComponent,
+                        sceneManager
+                    )
+                }
+                is MaterialSelection -> sidePanelBox {
+                    MaterialGrid(
+                        programManager,
+                        textureManager,
+                        nextSelection.material
+                    )
+                }
+                is OceanWaterSelection -> sidePanelBox { OceanWaterGrid(nextSelection.oceanWater) }
+                is ReflectionProbeSelection -> sidePanelBox { ReflectionProbeGrid(nextSelection.reflectionProbe) }
+                is SceneSelection -> sidePanelBox { SceneGrid(nextSelection.scene) }
+                Selection.None -> { }
+            }.let {}
+        }
     }
 
-    fun selectCamera(pickedCamera: Camera, scene: Scene) = SwingUtils.invokeLater {
-        selection = CameraSelection(pickedCamera)
-        sidePanel.verticalBox(
-            unselectButton,
-            CameraGrid(pickedCamera, scene)
-        )
-    }
-
-    fun selectScene(pickedScene: Scene) = SwingUtils.invokeLater {
-        selection = SceneSelection(pickedScene)
-        sidePanel.verticalBox(
-            unselectButton,
-            SceneGrid(pickedScene)
-        )
+    private fun sidePanelBox(componentFactory: () -> JComponent) = sidePanel.setWithRefresh {
+        verticalBoxOf(unselectButton, componentFactory())
     }
 }
+

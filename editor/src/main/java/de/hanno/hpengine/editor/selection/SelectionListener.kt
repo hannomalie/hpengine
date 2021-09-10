@@ -1,7 +1,6 @@
 package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.editor.EditorComponents
-import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -43,27 +42,6 @@ class SelectionListener(internal var tree: JTree,
             }
         }
 
-        editorComponents.selectionSystem.run {
-            when (val node = treeNode.userObject) {
-                is Entity -> unselectOr(node) { selectEntity(it) }
-                is MeshSelection -> unselectOr(node) { selectMesh(node) }
-                is ModelComponent -> unselectOr(node) { selectModel(ModelSelection(node.entity, node.entity.getComponent(ModelComponent::class.java)!!, node.model)) }
-                is PointLight -> unselectOr(node) { selectPointLight(node) }
-                is DirectionalLight -> unselectOr(node) { selectDirectionalLight(node, editorComponents.sceneManager.scene) }
-                is Camera -> unselectOr(node) { selectCamera(node, editorComponents.sceneManager.scene) }
-                is Scene -> unselectOr(node) { selectScene(node) }
-                is GIVolumeComponent -> unselectOr(node) { selectGiVolume(node) }
-                is OceanWaterExtension.OceanWater -> unselectOr(node) { selectOceanWater(node) }
-                is ReflectionProbe -> unselectOr(node) { selectReflectionProbe(ReflectionProbeSelection(node)) }
-            }
-        }
-    }
-
-    private fun <T> unselectOr(node: T, block: (T) -> Unit) {
-        if (node == editorComponents.selectionSystem.selection) {
-            editorComponents.selectionSystem.unselect()
-        } else {
-            block(node)
-        }
+        editorComponents.selectionSystem.selectOrUnselect(treeNode.userObject as Selection)
     }
 }

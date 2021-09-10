@@ -448,7 +448,9 @@ class EditorComponents(
     override fun beforeSetScene(nextScene: Scene) {
         SwingUtils.invokeLater {
             sceneTree.apply {
-                addDefaultMouseListener()
+                mouseListeners.filterIsInstance<SceneTree.SelectionListener>().forEach { removeMouseListener(it) }
+                addDefaultMouseListener(selectionSystem)
+
                 SwingUtils.invokeLater {
                     sceneTreePane = ReloadableScrollPane(this).apply {
                         preferredSize = Dimension(300, editor.sidePanel.height)

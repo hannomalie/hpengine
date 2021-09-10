@@ -21,7 +21,10 @@ data class SceneSelection(val scene: Scene): Selection()
 data class MaterialSelection(val material: Material): Selection() {
     override fun toString() = material.name
 }
-open class EntitySelection(val entity: Entity): Selection() {
+sealed class EntitySelection(val entity: Entity): Selection() {
+    override fun toString(): String = entity.name
+}
+data class SimpleEntitySelection(val _entity: Entity): EntitySelection(_entity){
     override fun toString(): String = entity.name
 }
 data class MeshSelection(private val _entity: Entity, val mesh: Mesh<*>): EntitySelection(_entity) {

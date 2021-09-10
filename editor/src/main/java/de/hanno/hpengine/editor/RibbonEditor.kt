@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
-import de.hanno.hpengine.engine.extension.IdTexture
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.extension.entitySystem
@@ -66,12 +65,13 @@ class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFram
 
     val emptySidePanel = JPanel().apply {
         preferredSize = Dimension(fixedWidth, canvas.height)
+        size = Dimension(fixedWidth, canvas.height)
         add(ReloadableScrollPane(JPanel()), "wrap")
     }
     val sidePanel = object : JPanel() {
         override fun add(comp: Component): Component {
 //            TODO: I am not able to set the size of the panel somehow
-//            comp.preferredSize = Dimension(fixedWidth, comp.height)
+            comp.preferredSize = Dimension(fixedWidth, comp.height)
             add(ReloadableScrollPane(comp), "wrap")
             return this
         }
@@ -86,24 +86,19 @@ class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFram
 
 val fixedWidth = 300
 
-fun JPanel.doWithRefresh(addContent: JPanel.() -> Unit) {
-    SwingUtils.invokeLater {
-        removeAll()
-        addContent()
-        revalidate()
-        repaint()
-    }
-}
-
-fun JPanel.verticalBox(vararg comp: JComponent) = doWithRefresh {
+fun JPanel.setWithRefresh(createComponent: () -> Component) = SwingUtils.invokeLater {
     removeAll()
-    add(verticalBoxOf(*comp))
+    add(ReloadableScrollPane(createComponent()), "wrap")
+    revalidate()
+    repaint()
 }
 
-fun verticalBoxOf(vararg comp: JComponent): Box {
-    return Box.createVerticalBox().apply {
-        comp.forEach { add(it) }
-    }
+fun JPanel.verticalBox(vararg comp: JComponent) = setWithRefresh {
+    verticalBoxOf(*comp)
+}
+
+fun verticalBoxOf(vararg comp: JComponent): Box = Box.createVerticalBox().apply {
+    comp.forEach { add(it) }
 }
 class EditorEntitySystem(val editorComponents: EditorComponents): SimpleEntitySystem(emptyList()) {
     override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
