@@ -14,11 +14,6 @@ import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
 import de.hanno.hpengine.editor.tasks.EditorRibbonTask
-import de.hanno.hpengine.editor.tasks.MaterialRibbonTask
-import de.hanno.hpengine.editor.tasks.SceneTask
-import de.hanno.hpengine.editor.tasks.TextureTask
-import de.hanno.hpengine.editor.tasks.TransformTask
-import de.hanno.hpengine.editor.tasks.ViewTask
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -60,6 +55,7 @@ import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.JRibbon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
+import org.pushingpixels.flamingo.api.ribbon.projection.RibbonApplicationMenuCommandButtonProjection
 import org.pushingpixels.neon.api.icon.ResizableIcon
 import org.pushingpixels.photon.api.icon.SvgBatikResizableIcon
 import java.awt.BorderLayout
@@ -72,6 +68,8 @@ val JRibbon.tasks: List<RibbonTask>
     get() = mutableListOf<RibbonTask>().apply {
         addAll((0 until taskCount).map { getTask(it) })
     }
+
+class OutputConfigHolder(var outputConfig: OutputConfig)
 
 class EditorComponents(
     val gpuContext: GpuContext<OpenGl>,
@@ -87,7 +85,10 @@ class EditorComponents(
     val editorInputConfig: EditorInputConfigImpl,
     val sceneTree: SceneTree,
     val selectionSystem: SelectionSystem,
-    val mouseAdapter: MouseAdapterImpl
+    val mouseAdapter: MouseAdapterImpl,
+    val outputConfigHolder: OutputConfigHolder,
+    val tasks: List<RibbonTask>,
+    val applicationMenu: ApplicationMenu
 ) : RenderSystem, EditorInputConfig by editorInputConfig, Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
@@ -103,10 +104,8 @@ class EditorComponents(
         Vector4f(0f)
     )
 
-    val onReload: (() -> Unit)?
-        get() = editor.onSceneReload
+    private var outPutConfig: OutputConfig by outputConfigHolder::outputConfig
 
-    private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     val sphereHolder = SphereHolder(
         config,
@@ -432,13 +431,9 @@ class EditorComponents(
             editor.canvas.addMouseListener(this)
         }
         SwingUtils.invokeLater {
-            ribbon.setApplicationMenuCommand(ApplicationMenu(sceneManager))
+            ribbon.setApplicationMenuCommand(applicationMenu.commandProjection)
 
-            addTask(ViewTask(gpuContext, this, ::outPutConfig, addResourceContext, selectionSystem))
-            addTask(SceneTask(sceneManager, this))
-            addTask(TransformTask(this, selectionSystem))
-            addTask(TextureTask(gpuContext, textureManager, editor, selectionSystem))
-            addTask(MaterialRibbonTask(addResourceContext, textureManager, programManager, sceneManager, editor, selectionSystem))
+            tasks.forEach { addTask(it) }
         }
         SwingUtils.invokeLater {
             TimingsFrame()

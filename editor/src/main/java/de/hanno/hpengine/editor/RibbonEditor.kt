@@ -1,9 +1,21 @@
 package de.hanno.hpengine.editor
 
+import de.hanno.hpengine.editor.appmenu.ApplicationMenu
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfigImpl
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
 import de.hanno.hpengine.editor.selection.SelectionSystem
+import de.hanno.hpengine.editor.tasks.EditorRibbonTask
+import de.hanno.hpengine.editor.tasks.MaterialRibbonBand
+import de.hanno.hpengine.editor.tasks.MaterialRibbonTask
+import de.hanno.hpengine.editor.tasks.SceneRibbonBands
+import de.hanno.hpengine.editor.tasks.SceneRibbonTask
+import de.hanno.hpengine.editor.tasks.TextureBand
+import de.hanno.hpengine.editor.tasks.TextureRibbonTask
+import de.hanno.hpengine.editor.tasks.TransformBands
+import de.hanno.hpengine.editor.tasks.TransformRibbonTask
+import de.hanno.hpengine.editor.tasks.ViewRibbonBands
+import de.hanno.hpengine.editor.tasks.ViewRibbonTask
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -31,10 +43,12 @@ import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
+import org.koin.core.scope.Scope
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
+import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -157,8 +171,11 @@ val editorModule = module {
             sceneTree = get()
         )
     }
+    single { OutputConfigHolder(OutputConfig.Default) }
+    single { ApplicationMenu(get()) }
     single {
         val finalOutput: FinalOutput = get()
+
         EditorComponents(
             gpuContext = get(),
             config = get(),
@@ -173,11 +190,35 @@ val editorModule = module {
             editorInputConfig = get(),
             sceneTree = get(),
             selectionSystem = get(),
-            mouseAdapter = get()
+            mouseAdapter = get(),
+            outputConfigHolder = get(),
+            tasks = getAll<RibbonTask>().distinct(),
+            applicationMenu = get()
         )
     } binds (arrayOf(RenderSystem::class, Manager::class))
 
     single { EditorManager(get(), get()) } bind Manager::class
+
+    single { MaterialRibbonBand(get(), get(), get(), get(), get(), get()) }
+    task { MaterialRibbonTask(get()) }
+
+    single { TextureBand(get(), get(), get(), get()) }
+    task { TextureRibbonTask(get()) }
+
+    single { TransformBands(get(), get()) }
+    task { TransformRibbonTask(get()) }
+
+    single { SceneRibbonBands(get(), get()) }
+    task { SceneRibbonTask(get()) }
+
+    single { ViewRibbonBands(get(), get(), get(), get(), get()) }
+    task { ViewRibbonTask(get()) }
+}
+
+inline fun <reified T: RibbonTask> Module.task(noinline block: Scope.() -> T) {
+    single {
+        SwingUtils.invokeAndWait { block() }
+    } binds (arrayOf(T::class, RibbonTask::class, EditorRibbonTask::class))
 }
 
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()) = Engine(
