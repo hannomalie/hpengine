@@ -105,6 +105,7 @@ class EditorComponents(
 
     val onReload: (() -> Unit)?
         get() = editor.onSceneReload
+
     private var outPutConfig: OutputConfig = OutputConfig.Default
     private val ribbon = editor.ribbon
     val sphereHolder = SphereHolder(
@@ -433,7 +434,7 @@ class EditorComponents(
         SwingUtils.invokeLater {
             ribbon.setApplicationMenuCommand(ApplicationMenu(sceneManager))
 
-            addTask(ViewTask(gpuContext, this, ::outPutConfig, addResourceContext))
+            addTask(ViewTask(gpuContext, this, ::outPutConfig, addResourceContext, selectionSystem))
             addTask(SceneTask(sceneManager, this))
             addTask(TransformTask(this, selectionSystem))
             addTask(TextureTask(gpuContext, textureManager, editor, selectionSystem))

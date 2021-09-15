@@ -5,6 +5,7 @@ import de.hanno.hpengine.editor.OutputConfig
 import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
+import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
@@ -14,11 +15,13 @@ import de.hanno.hpengine.engine.scene.AddResourceContext
 import org.pushingpixels.flamingo.api.common.CommandButtonPresentationState
 import org.pushingpixels.flamingo.api.common.RichTooltip
 import org.pushingpixels.flamingo.api.common.model.Command
+import org.pushingpixels.flamingo.api.common.model.CommandButtonPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandGroup
 import org.pushingpixels.flamingo.api.common.model.CommandStripPresentationModel
 import org.pushingpixels.flamingo.api.common.model.CommandToggleGroupModel
 import org.pushingpixels.flamingo.api.common.projection.CommandStripProjection
 import org.pushingpixels.flamingo.api.ribbon.JFlowRibbonBand
+import org.pushingpixels.flamingo.api.ribbon.JRibbonBand
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
 import org.pushingpixels.flamingo.api.ribbon.resize.CoreRibbonResizePolicies
 import org.pushingpixels.flamingo.api.ribbon.synapse.model.ComponentPresentationModel
@@ -33,7 +36,8 @@ object ViewTask {
         gpuContext: GpuContext<OpenGl>,
         inputConfig: EditorInputConfig,
         outputConfig: KMutableProperty0<OutputConfig>,
-        addResourceContext: AddResourceContext
+        addResourceContext: AddResourceContext,
+        selectionSystem: SelectionSystem
     ): RibbonTask {
 
         fun GpuContext<OpenGl>.retrieveRenderTargetTextures(): MutableList<OutputConfig> {
@@ -148,7 +152,25 @@ object ViewTask {
 
         }
 
-         return RibbonTask("Viewport", outputFlowBand, outputArrayIndexBand, selectionModeBand)
+        val unselectBand = JRibbonBand("Unselect", null).apply {
+            val command = Command.builder()
+                .setText("Unselect")
+                .setIconFactory { EditorComponents.getResizableIconFromSvgResource("dash-circle.svg") }
+                .setAction {
+                    selectionSystem.unselect()
+                }
+                .setActionRichTooltip(RichTooltip.builder()
+                    .setTitle("Unselect")
+                    .addDescriptionSection("Reloads the whole scene")
+                    .build())
+                .build()
+            addRibbonCommand(command.project(
+                CommandButtonPresentationModel.builder()
+                .setTextClickAction()
+                .build()), JRibbonBand.PresentationPriority.TOP)
+            resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
+        }
+         return RibbonTask("Viewport", outputFlowBand, outputArrayIndexBand, selectionModeBand, unselectBand)
     }
 
 }

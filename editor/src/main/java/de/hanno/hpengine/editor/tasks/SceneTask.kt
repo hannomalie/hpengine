@@ -40,19 +40,19 @@ object SceneTask {
         }
         val reloadBand = JRibbonBand("Scene", null).apply {
             val command = Command.builder()
-                    .setText("Reload")
-                    .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
-                    .setAction {
-                        editorComponents.onReload?.invoke()
-                    }
-                    .setActionRichTooltip(RichTooltip.builder()
-                            .setTitle("Scene")
-                            .addDescriptionSection("Reloads the whole scene")
-                            .build())
-                    .build()
+                .setText("Reload")
+                .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+                .setAction {
+                    editorComponents.onReload?.invoke()
+                }
+                .setActionRichTooltip(RichTooltip.builder()
+                    .setTitle("Scene")
+                    .addDescriptionSection("Reloads the whole scene")
+                    .build())
+                .build()
             addRibbonCommand(command.project(CommandButtonPresentationModel.builder()
-                    .setTextClickAction()
-                    .build()), JRibbonBand.PresentationPriority.TOP)
+                .setTextClickAction()
+                .build()), JRibbonBand.PresentationPriority.TOP)
             resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
         }
 

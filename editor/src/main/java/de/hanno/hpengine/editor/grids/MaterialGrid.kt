@@ -4,9 +4,9 @@ import com.bric.colorpicker.ColorPicker
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
@@ -16,6 +16,7 @@ import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import java.awt.Color
+import java.awt.Dimension
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
@@ -49,22 +50,28 @@ class MaterialGrid(val programManager: ProgramManager<OpenGl>,
         labeled("Name", JLabel(material.name))
         labeled("MaterialType", info::materialType.toComboBox(MaterialType.values()))
         labeled("TransparancyType", info::transparencyType.toComboBox(SimpleMaterial.TransparencyType.values()))
-        labeled("Ambient", info::ambient.toSliderInput(0f, 1f))
-        labeled("Metallic", info::metallic.toSliderInput(0f, 1f))
-        labeled("Roughness", info::roughness.toSliderInput(0f, 1f))
-        labeled("Transparency", info::transparency.toSliderInput(0f, 1f))
-        labeled("ParallaxBias", info::parallaxBias.toSliderInput(0f, 1f))
-        labeled("ParallaxScale", info::parallaxScale.toSliderInput(0f, 1f))
-        labeled("UV Scale X", info.uvScale::myX.toSliderInput(0f, 5f))
-        labeled("UV Scale y", info.uvScale::myY.toSliderInput(0f, 5f))
-        labeled("LOD Factor", info::lodFactor.toSliderInput(0f, 500f))
-        labeled("Use world XZ as UV", info::useWorldSpaceXZAsTexCoords.toCheckBox())
-        labeled("Heightmapping", ::useHeightMapping.toCheckBox())
+        topLabeled("Ambient", info::ambient.toSliderInput(0f, 1f))
+        topLabeled("Metallic", info::metallic.toSliderInput(0f, 1f))
+        topLabeled("Roughness", info::roughness.toSliderInput(0f, 1f))
+        topLabeled("Transparency", info::transparency.toSliderInput(0f, 1f))
+        topLabeled("ParallaxBias", info::parallaxBias.toSliderInput(0f, 1f))
+        topLabeled("ParallaxScale", info::parallaxScale.toSliderInput(0f, 1f))
+        topLabeled("UV Scale X", info.uvScale::myX.toSliderInput(0f, 5f))
+        topLabeled("UV Scale y", info.uvScale::myY.toSliderInput(0f, 5f))
+        topLabeled("LOD Factor", info::lodFactor.toSliderInput(0f, 500f))
+        add(info::useWorldSpaceXZAsTexCoords.toCheckBox(), "span 2")
+        add(::useHeightMapping.toCheckBox(), "span 2")
 
-        labeled("Diffuse", info::diffuse.toColorPickerInput())
-        labeled("Textures", info.toTextureComboBoxes(textureManager))
+        topLabeled("Diffuse", info::diffuse.toColorPickerInput())
+        topLabeled("Textuers", info.toTextureComboBoxes(textureManager))
 
     }
+}
+
+
+fun JComponent.topLabeled(label: String, component: JComponent) {
+    add(JLabel(label), "wrap")
+    add(component, "span 2")
 }
 sealed class TextureSelection(val key: String) {
     override fun toString() = key.takeLast(min(25, key.length))
@@ -158,6 +165,7 @@ fun <T : Enum<*>> KMutableProperty0<T>.toComboBox(values: Array<T>): JComboBox<T
 }
 
 fun KProperty0<Vector3f>.toColorPickerInput(): JComponent = ColorPicker(false, false).apply {
+    preferredSize = Dimension(200, 160)
     val initialValue = get()
     color = Color(
             (initialValue.x * 255f).toInt(),

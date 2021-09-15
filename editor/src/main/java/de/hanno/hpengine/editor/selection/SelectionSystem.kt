@@ -326,7 +326,7 @@ class SelectionSystem(
     }
 
     private fun sidePanelBox(componentFactory: () -> JComponent) = sidePanel.setWithRefresh {
-        verticalBoxOf(unselectButton, componentFactory())
+        verticalBoxOf(componentFactory())
     }
 }
 
