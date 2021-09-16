@@ -17,14 +17,13 @@ import javax.swing.JFrame
 
 class AWTEditorWindow(
     val config: ConfigImpl,
-    val executor: OpenGlExecutorImpl = OpenGlExecutorImpl()
+    val executor: OpenGlExecutorImpl,
+    val canvas: CustomGlCanvas
 ) : Window<OpenGl>, OpenGlExecutor by executor {
 
     override var handle: Long = 0
         private set
 
-
-    val canvas: CustomGlCanvas = CustomGlCanvas(config, executor)
 
     val frame: RibbonEditor = SwingUtils.invokeAndWait {
         JRibbonFrame.setDefaultLookAndFeelDecorated(true)

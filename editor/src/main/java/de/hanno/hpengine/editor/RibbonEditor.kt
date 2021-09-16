@@ -30,6 +30,7 @@ import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.extension.entitySystem
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.FinalOutput
+import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
@@ -127,7 +128,9 @@ class EditorEntitySystem(val editorComponents: EditorComponents): SimpleEntitySy
     }
 }
 val editorModule = module {
-    single { AWTEditorWindow(get()) } bind Window::class
+    single { OpenGlExecutorImpl() }
+    single { CustomGlCanvas(get(), get()) }
+    single { AWTEditorWindow(get(), get(), get()) } bind Window::class
     single {
         val window: Window<*> = get()
         window.frontBuffer
