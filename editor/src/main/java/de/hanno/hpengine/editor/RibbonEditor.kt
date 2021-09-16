@@ -41,6 +41,7 @@ import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.engine.scene.dsl.scene
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
+import org.joml.Vector3f
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.core.scope.Scope
@@ -173,6 +174,7 @@ val editorModule = module {
     }
     single { OutputConfigHolder(OutputConfig.Default) }
     single { ApplicationMenu(get()) }
+    single { Pivot(Vector3f()) }
     single {
         val finalOutput: FinalOutput = get()
 
@@ -193,7 +195,8 @@ val editorModule = module {
             mouseAdapter = get(),
             outputConfigHolder = get(),
             tasks = getAll<RibbonTask>().distinct(),
-            applicationMenu = get()
+            applicationMenu = get(),
+            pivot = get()
         )
     } binds (arrayOf(RenderSystem::class, Manager::class))
 

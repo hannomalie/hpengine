@@ -71,6 +71,8 @@ val JRibbon.tasks: List<RibbonTask>
 
 class OutputConfigHolder(var outputConfig: OutputConfig)
 
+data class Pivot(var position: Vector3f)
+
 class EditorComponents(
     val gpuContext: GpuContext<OpenGl>,
     val config: ConfigImpl,
@@ -88,7 +90,8 @@ class EditorComponents(
     val mouseAdapter: MouseAdapterImpl,
     val outputConfigHolder: OutputConfigHolder,
     val tasks: List<RibbonTask>,
-    val applicationMenu: ApplicationMenu
+    val applicationMenu: ApplicationMenu,
+    val pivot: Pivot,
 ) : RenderSystem, EditorInputConfig by editorInputConfig, Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
@@ -306,6 +309,9 @@ class EditorComponents(
         mouseAdapter.reset()
     }
 
+    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        pivot.position.set(sphereHolder.sphereEntity.transform.position)
+    }
     private fun drawTransformationArrows(state: RenderState) {
         data class Arrow(val scale: Vector3f, val color: Vector3f)
 
@@ -426,7 +432,7 @@ class EditorComponents(
     }
 
     init {
-        MouseInputProcessor(window, addResourceContext, selectionSystem::selection, this).apply {
+        MouseInputProcessor(window, addResourceContext, selectionSystem::selection, this, sceneManager, editorInputConfig, pivot).apply {
             editor.canvas.addMouseMotionListener(this)
             editor.canvas.addMouseListener(this)
         }
