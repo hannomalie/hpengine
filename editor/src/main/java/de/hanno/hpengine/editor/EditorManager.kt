@@ -1,6 +1,8 @@
 package de.hanno.hpengine.editor
 
 import de.hanno.hpengine.editor.input.KeyUpDownProperty
+import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.extension.CameraExtension.Companion.cameraEntity
@@ -8,8 +10,10 @@ import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import java.awt.event.KeyEvent
 
-class EditorManager(val addResourceContext: AddResourceContext, val editorComponents: EditorComponents) : Manager {
-    private val editor = editorComponents.editor
+class EditorManager(
+    val addResourceContext: AddResourceContext,
+    val editor: RibbonEditor
+) : Manager {
     private var wPressed by KeyUpDownProperty(editor, addResourceContext, KeyEvent.VK_W, withShift = true)
     private var sPressed by KeyUpDownProperty(editor, addResourceContext, KeyEvent.VK_S, withShift = true)
     private var aPressed by KeyUpDownProperty(editor, addResourceContext, KeyEvent.VK_A, withShift = true)
@@ -22,29 +26,42 @@ class EditorManager(val addResourceContext: AddResourceContext, val editorCompon
 
 //        if (!editor.canvas?.containsMouse) return
 
-        val turbo = if (this@EditorManager.shiftPressed) 3f else 1f
+        val turbo = if (shiftPressed) 3f else 1f
 
         val moveAmount = 100f * 0.1f * deltaSeconds * turbo
 
         val entity = scene.cameraEntity
 
-        if (this@EditorManager.wPressed) {
+        if (wPressed) {
             entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
         }
-        if (this@EditorManager.sPressed) {
+        if (sPressed) {
             entity.transform.translate(Vector3f(0f, 0f, moveAmount))
         }
-        if (this@EditorManager.aPressed) {
+        if (aPressed) {
             entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
         }
-        if (this@EditorManager.dPressed) {
+        if (dPressed) {
             entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
         }
-        if (this@EditorManager.qPressed) {
+        if (qPressed) {
             entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
         }
-        if (this@EditorManager.ePressed) {
+        if (ePressed) {
             entity.transform.translate(Vector3f(0f, moveAmount, 0f))
         }
     }
+
+    override fun onEntityAdded(entities: List<Entity>) {
+        editor.ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+
+    override fun onComponentAdded(component: Component) {
+        editor.ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+
+    override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
+        editor.ribbon.editorTasks.forEach { it.reloadContent() }
+    }
+
 }

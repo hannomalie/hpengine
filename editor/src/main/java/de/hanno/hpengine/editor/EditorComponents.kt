@@ -15,10 +15,8 @@ import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
 import de.hanno.hpengine.editor.tasks.EditorRibbonTask
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
@@ -55,7 +53,6 @@ import org.lwjgl.opengl.GL11
 import org.pushingpixels.flamingo.api.common.icon.ImageWrapperResizableIcon
 import org.pushingpixels.flamingo.api.ribbon.JRibbon
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
-import org.pushingpixels.flamingo.api.ribbon.projection.RibbonApplicationMenuCommandButtonProjection
 import org.pushingpixels.neon.api.icon.ResizableIcon
 import org.pushingpixels.photon.api.icon.SvgBatikResizableIcon
 import java.awt.BorderLayout
@@ -171,21 +168,6 @@ class EditorComponents(
     val lineVerticesCount = renderStateManager.renderState.registerState { IntStruct() }
     val selectionTransform =
         renderStateManager.renderState.registerState { Transform().apply { identity() } }
-
-    override fun onEntityAdded(entities: List<Entity>) {
-        ribbon.editorTasks.forEach { it.reloadContent() }
-    }
-
-    override fun onComponentAdded(component: Component) {
-        ribbon.editorTasks.forEach { it.reloadContent() }
-    }
-
-    override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
-        ribbon.editorTasks.forEach { it.reloadContent() }
-    }
-
-    private val JRibbon.editorTasks
-        get() = tasks.toList().filterIsInstance<EditorRibbonTask>()
 
     override fun extract(scene: Scene, renderState: RenderState) {
         aabbLines.apply {
@@ -312,6 +294,7 @@ class EditorComponents(
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         pivot.position.set(sphereHolder.sphereEntity.transform.position)
     }
+
     private fun drawTransformationArrows(state: RenderState) {
         data class Arrow(val scale: Vector3f, val color: Vector3f)
 
@@ -492,5 +475,9 @@ class EditorComponents(
         fun getResizableIconFromImageSource(image: Image): ResizableIcon {
             return ImageWrapperResizableIcon.getIcon(image, Dimension(24, 24))
         }
+
     }
 }
+
+val JRibbon.editorTasks
+    get() = tasks.toList().filterIsInstance<EditorRibbonTask>()
