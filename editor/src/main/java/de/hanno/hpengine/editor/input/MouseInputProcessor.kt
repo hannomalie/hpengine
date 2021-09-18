@@ -27,7 +27,6 @@ class MouseInputProcessor(
     val window: Window<OpenGl>,
     val addResourceContext: AddResourceContext,
     val selection: KProperty0<Selection>,
-    val editorComponents: EditorComponents,
     val sceneManager: SceneManager,
     val editorConfig: EditorInputConfig,
     val pivot: Pivot,

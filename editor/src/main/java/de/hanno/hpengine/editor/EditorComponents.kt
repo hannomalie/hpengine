@@ -157,7 +157,14 @@ class EditorComponents(
         window.frontBuffer
     )
 
-    private var sceneTreePane: ReloadableScrollPane? = null
+    private var sceneTreePane: ReloadableScrollPane? = SwingUtils.invokeAndWait {
+        ReloadableScrollPane(sceneTree).apply {
+            preferredSize = Dimension(300, editor.sidePanel.height)
+            border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
+            editor.add(this, BorderLayout.LINE_START)
+        }
+    }
+
     val aabbLines = mutableListOf<Vector3fc>()
     val lineVertices = renderStateManager.renderState.registerState {
         PersistentMappedStructBuffer(
@@ -415,7 +422,7 @@ class EditorComponents(
     }
 
     init {
-        MouseInputProcessor(window, addResourceContext, selectionSystem::selection, this, sceneManager, editorInputConfig, pivot).apply {
+        MouseInputProcessor(window, addResourceContext, selectionSystem::selection, sceneManager, editorInputConfig, pivot).apply {
             editor.canvas.addMouseMotionListener(this)
             editor.canvas.addMouseListener(this)
         }
@@ -433,17 +440,9 @@ class EditorComponents(
     override fun beforeSetScene(nextScene: Scene) {
         SwingUtils.invokeLater {
             sceneTree.apply {
+                reload(sceneManager.scene.getEntities())
                 mouseListeners.filterIsInstance<SceneTree.SelectionListener>().forEach { removeMouseListener(it) }
                 addDefaultMouseListener(selectionSystem)
-
-                SwingUtils.invokeLater {
-                    sceneTreePane = ReloadableScrollPane(this).apply {
-                        preferredSize = Dimension(300, editor.sidePanel.height)
-                        border = BorderFactory.createMatteBorder(0, 0, 0, 1, Color.BLACK)
-                        sceneTreePane?.let { editor.remove(it) }
-                        editor.add(this, BorderLayout.LINE_START)
-                    }
-                }
             }
         }
     }
