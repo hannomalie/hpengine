@@ -51,6 +51,8 @@ import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
 import org.pushingpixels.flamingo.api.ribbon.RibbonTask
+import org.pushingpixels.substance.api.SubstanceCortex
+import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -62,9 +64,13 @@ import javax.swing.JComponent
 import javax.swing.JFrame
 import javax.swing.JPanel
 
-class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFrame("HPEngine") {
+class RibbonEditor(
+    config: ConfigImpl,
+    executor: OpenGlExecutorImpl
+) : JRibbonFrame("HPEngine") {
     var onSceneReload: (() -> Unit)? = null
 
+    val canvas: CustomGlCanvas = CustomGlCanvas(config, executor)
     init {
         isFocusable = true
         focusTraversalKeysEnabled = false
@@ -77,6 +83,7 @@ class RibbonEditor(config: ConfigImpl, val canvas: CustomGlCanvas) : JRibbonFram
         }
         isVisible = true
         transferFocus()
+        canvas.init()
     }
 
     val emptySidePanel = JPanel().apply {
@@ -127,17 +134,25 @@ class EditorEntitySystem(val editorComponents: EditorComponents): SimpleEntitySy
         editorComponents.sceneTree.reload(this.entities)
     }
 }
-val editorModule = module {
+val editorWindowModule = module {
     single { OpenGlExecutorImpl() }
-    single { CustomGlCanvas(get(), get()) }
+    single {
+        SwingUtils.invokeAndWait {
+            JRibbonFrame.setDefaultLookAndFeelDecorated(true)
+            SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
+            RibbonEditor(get(), get())
+        }
+    }
     single { AWTEditorWindow(get(), get(), get()) } bind Window::class
+    single {
+        val editorWindow: AWTEditorWindow = get()
+        editorWindow.canvas
+    }
+}
+val editorModule = module {
     single {
         val window: Window<*> = get()
         window.frontBuffer
-    }
-    single {
-        val window: AWTEditorWindow = get()
-        window.frame
     }
     single {
         SwingUtils.invokeAndWait {
@@ -229,7 +244,7 @@ inline fun <reified T: RibbonTask> Module.task(noinline block: Scope.() -> T) {
 
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()) = Engine(
     startKoin {
-        modules(config.toModule(), editorModule, baseModule, deferredRendererModule)
+        modules(config.toModule(), editorWindowModule, editorModule, baseModule, deferredRendererModule)
     }
 )
 

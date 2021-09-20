@@ -425,8 +425,7 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
         Thread.currentThread().id
     }
 
-    override val coroutineContext
-        get() = dispatcher + Job()
+    override val coroutineContext = dispatcher + Job()
 
     inline val isOpenGLThread: Boolean
         get() = Thread.currentThread().isOpenGLThread

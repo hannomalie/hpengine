@@ -1,16 +1,17 @@
 package de.hanno.hpengine.editor.input
 
-import de.hanno.hpengine.editor.EditorComponents
 import de.hanno.hpengine.editor.Pivot
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.Selection
+import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
-import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.extension.CameraExtension
 import de.hanno.hpengine.engine.extension.CameraExtension.Companion.activeCamera
 import de.hanno.hpengine.engine.extension.CameraExtension.Companion.cameraEntity
+import de.hanno.hpengine.engine.graphics.CustomGlCanvas
+import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.graphics.renderer.extensions.xyz
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.SceneManager
 import org.joml.AxisAngle4f
 import org.joml.Matrix4f
@@ -24,9 +25,10 @@ import java.awt.event.MouseEvent
 import kotlin.reflect.KProperty0
 
 class MouseInputProcessor(
+    val canvas: CustomGlCanvas,
     val window: Window<OpenGl>,
     val addResourceContext: AddResourceContext,
-    val selection: KProperty0<Selection>,
+    val selectionSystem: SelectionSystem,
     val sceneManager: SceneManager,
     val editorConfig: EditorInputConfig,
     val pivot: Pivot,
@@ -38,6 +40,11 @@ class MouseInputProcessor(
     private var pitch = 0f
     private var yaw = 0f
 
+    init {
+        canvas.addMouseMotionListener(this)
+        canvas.addMouseListener(this)
+    }
+
     override fun mousePressed(e: MouseEvent) {
         lastX = e.x.toFloat()
         lastY = e.y.toFloat()
@@ -46,7 +53,7 @@ class MouseInputProcessor(
         entityOrNull?.transform?.transformation?.get(oldTransform)
     }
 
-    private fun getEntityOrNull() = (selection.call() as? EntitySelection)?.entity
+    private fun getEntityOrNull() = (selectionSystem.selection as? EntitySelection)?.entity
 
     override fun mouseReleased(e: MouseEvent) {
         val entityOrNull = getEntityOrNull()

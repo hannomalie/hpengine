@@ -18,22 +18,13 @@ import javax.swing.JFrame
 class AWTEditorWindow(
     val config: ConfigImpl,
     val executor: OpenGlExecutorImpl,
-    val canvas: CustomGlCanvas
+    val frame: RibbonEditor
 ) : Window<OpenGl>, OpenGlExecutor by executor {
 
     override var handle: Long = 0
         private set
 
-
-    val frame: RibbonEditor = SwingUtils.invokeAndWait {
-        JRibbonFrame.setDefaultLookAndFeelDecorated(true)
-        SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
-        RibbonEditor(config, canvas)
-    }
-
-    init {
-        canvas.init()
-    }
+    val canvas = frame.canvas
 
     override var title
         get() = frame.title

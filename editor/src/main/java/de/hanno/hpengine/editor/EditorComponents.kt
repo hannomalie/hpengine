@@ -422,10 +422,7 @@ class EditorComponents(
     }
 
     init {
-        MouseInputProcessor(window, addResourceContext, selectionSystem::selection, sceneManager, editorInputConfig, pivot).apply {
-            editor.canvas.addMouseMotionListener(this)
-            editor.canvas.addMouseListener(this)
-        }
+        MouseInputProcessor(editor.canvas, window, addResourceContext, selectionSystem, sceneManager, editorInputConfig, pivot)
         SwingUtils.invokeLater {
             ribbon.setApplicationMenuCommand(applicationMenu.commandProjection)
 
