@@ -1,5 +1,6 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.graphics
 
+import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.appmenu.ApplicationMenu
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.EditorInputConfig
@@ -8,12 +9,15 @@ import de.hanno.hpengine.editor.input.KeyLogger
 import de.hanno.hpengine.editor.input.MouseInputProcessor
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
+import de.hanno.hpengine.editor.scene.SceneTree
+import de.hanno.hpengine.editor.scene.addDefaultMouseListener
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
 import de.hanno.hpengine.editor.tasks.EditorRibbonTask
+import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -70,7 +74,7 @@ class OutputConfigHolder(var outputConfig: OutputConfig)
 
 data class Pivot(var position: Vector3f)
 
-class EditorComponents(
+class EditorRendersystem(
     val gpuContext: GpuContext<OpenGl>,
     val config: ConfigImpl,
     val window: Window<OpenGl>,

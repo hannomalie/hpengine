@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.graphics.EditorRendersystem
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.scene.SceneManager
@@ -23,7 +23,7 @@ class SceneRibbonBands(
     val entityBand = JRibbonBand("Entity", null).apply {
         val command = Command.builder()
             .setText("Create")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
             .setAction {
                 sceneManager.scene.addAll(
                     listOf(
@@ -54,7 +54,7 @@ class SceneRibbonBands(
     val reloadBand = JRibbonBand("Scene", null).apply {
         val command = Command.builder()
             .setText("Reload")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
             .setAction {
                 editor.onSceneReload?.invoke()
             }

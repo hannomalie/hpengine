@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor.appmenu
 
-import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.graphics.EditorRendersystem
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.dsl.SceneDescription
 import de.hanno.hpengine.engine.scene.dsl.convert
@@ -16,7 +16,7 @@ import org.pushingpixels.flamingo.api.ribbon.projection.RibbonApplicationMenuCom
 class ApplicationMenu(sceneManager: SceneManager) {
     val appMenuNew = Command.builder()
         .setText("New Scene")
-        .setIconFactory { EditorComponents.getResizableIconFromSvgResource("create_new_folder-24px.svg") }
+        .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("create_new_folder-24px.svg") }
         .setExtraText("Creates an empty scene")
         .setAction {
             GlobalScope.launch {

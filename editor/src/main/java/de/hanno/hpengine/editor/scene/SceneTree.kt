@@ -1,4 +1,4 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.scene
 
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MeshSelection
@@ -6,6 +6,7 @@ import de.hanno.hpengine.editor.selection.ModelComponentSelection
 import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.SimpleEntitySelection
+import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config

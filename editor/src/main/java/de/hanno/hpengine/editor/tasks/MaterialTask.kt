@@ -1,12 +1,12 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.graphics.EditorRendersystem
 import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.editor.SwingUtils
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.SelectionSystem
-import de.hanno.hpengine.editor.verticalBox
+import de.hanno.hpengine.editor.window.SwingUtils
+import de.hanno.hpengine.editor.window.verticalBox
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.model.material.MaterialManager
@@ -45,7 +45,7 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
 
     val addMaterialCommand = Command.builder()
         .setText("Create")
-        .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
+        .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
         .setAction {
             val fc = JFileChooser()
             val returnVal = fc.showOpenDialog(editor)
@@ -67,7 +67,7 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
 
 
     val materialCommands = emptyList<Command>()//retrieveMaterialCommands()
-    val contentModel = RibbonGalleryContentModel({ EditorComponents.getResizableIconFromSvgResource("add-24px.svg") },
+    val contentModel = RibbonGalleryContentModel({ EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") },
         listOf(CommandGroup("Available materials", materialCommands))
     )
     val stylesGalleryVisibleCommandCounts = mapOf(
@@ -88,7 +88,7 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
 
     val refreshMaterialsCommand = Command.builder()
         .setText("Refresh")
-        .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+        .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
         .setAction {
             updateMaterials()
         }
@@ -130,12 +130,12 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
                     val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
                     if (diffuseMap != null) {
                         val image = ImageIO.read(File(diffuseMap.file.absolutePath))
-                        EditorComponents.getResizableIconFromImageSource(image)
+                        EditorRendersystem.getResizableIconFromImageSource(image)
                     } else {
-                        EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
+                        EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg")
                     }
                 } else {
-                    EditorComponents.getResizableIconFromSvgResource("add-24px.svg")
+                    EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg")
                 }
 
 

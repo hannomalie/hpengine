@@ -1,8 +1,7 @@
 package de.hanno.hpengine.editor.input
 
-import de.hanno.hpengine.editor.Pivot
+import de.hanno.hpengine.editor.graphics.Pivot
 import de.hanno.hpengine.editor.selection.EntitySelection
-import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.extension.CameraExtension
@@ -22,7 +21,6 @@ import org.joml.Vector4f
 import org.koin.core.component.get
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import kotlin.reflect.KProperty0
 
 class MouseInputProcessor(
     val canvas: CustomGlCanvas,

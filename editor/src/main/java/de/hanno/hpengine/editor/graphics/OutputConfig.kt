@@ -1,7 +1,6 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.graphics
 
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
-import de.hanno.hpengine.engine.model.texture.Texture2D
 
 sealed class OutputConfig {
     object Default : OutputConfig() {

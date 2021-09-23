@@ -1,5 +1,7 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.experiments
 
+import de.hanno.hpengine.editor.EngineWithEditor
+import de.hanno.hpengine.editor.window.AWTEditorWindow
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.convert

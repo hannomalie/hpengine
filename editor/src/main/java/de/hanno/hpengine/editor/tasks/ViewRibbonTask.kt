@@ -1,12 +1,12 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.EditorComponents
-import de.hanno.hpengine.editor.OutputConfig
-import de.hanno.hpengine.editor.OutputConfigHolder
-import de.hanno.hpengine.editor.SwingUtils
+import de.hanno.hpengine.editor.graphics.EditorRendersystem
+import de.hanno.hpengine.editor.graphics.OutputConfig
+import de.hanno.hpengine.editor.graphics.OutputConfigHolder
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.selection.SelectionSystem
+import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
@@ -31,7 +31,6 @@ import org.pushingpixels.flamingo.api.ribbon.synapse.model.RibbonDefaultComboBox
 import org.pushingpixels.flamingo.api.ribbon.synapse.projection.RibbonComboBoxProjection
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
-import kotlin.reflect.KMutableProperty0
 
 class ViewRibbonTask(
     viewRibbonBands: ViewRibbonBands
@@ -147,7 +146,7 @@ class ViewRibbonBands(
                 .setToggle()
                 .setToggleSelected(inputConfig.selectionMode == it.first)
                 .setText(it.first.toString())
-                .setIconFactory { EditorComponents.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                 .inToggleGroup(selectionModeToggleGroup)
                 .setAction { event ->
                     if (it.second.get() == it.first) it.second.set(SelectionMode.Entity) else it.second.set(it.first)
@@ -158,7 +157,7 @@ class ViewRibbonBands(
 
         val refreshRenderTargetsCommand = Command.builder()
             .setText("Refresh")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
             .setAction {
                 SwingUtils.invokeLater {
                     outputFlowBandModel.removeAllElements()
@@ -186,7 +185,7 @@ class ViewRibbonBands(
     val unselectBand = JRibbonBand("Unselect", null).apply {
         val command = Command.builder()
             .setText("Unselect")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("dash-circle.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("dash-circle.svg") }
             .setAction {
                 selectionSystem.unselect()
             }

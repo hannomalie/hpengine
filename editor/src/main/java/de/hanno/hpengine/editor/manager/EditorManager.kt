@@ -1,5 +1,7 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.manager
 
+import de.hanno.hpengine.editor.RibbonEditor
+import de.hanno.hpengine.editor.graphics.editorTasks
 import de.hanno.hpengine.editor.input.KeyUpDownProperty
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity

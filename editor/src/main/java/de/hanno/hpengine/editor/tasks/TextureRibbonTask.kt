@@ -1,14 +1,13 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.EditorComponents
+import de.hanno.hpengine.editor.graphics.EditorRendersystem
 import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.setWithRefresh
 import de.hanno.hpengine.editor.grids.TextureGrid
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.createUnselectButton
-import de.hanno.hpengine.editor.verticalBoxOf
-import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.editor.window.SwingUtils
+import de.hanno.hpengine.editor.window.setWithRefresh
+import de.hanno.hpengine.editor.window.verticalBoxOf
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.model.texture.FileBasedCubeMap
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
@@ -43,7 +42,7 @@ class TextureBand(
                     val image = ImageIO.read(File(it.file.absolutePath))
                     Command.builder()
                         .setText(it.file.name)
-                        .setIconFactory { EditorComponents.getResizableIconFromImageSource(image) }
+                        .setIconFactory { EditorRendersystem.getResizableIconFromImageSource(image) }
                         .setAction { event ->
                             if (event.command.isToggleSelected) {
                                 editor.sidePanel.setWithRefresh {
@@ -61,7 +60,7 @@ class TextureBand(
                 } else if (it is FileBasedCubeMap) {
                     Command.builder()
                         .setText(it.file.name)
-                        .setIconFactory { EditorComponents.getResizableIconFromImageSource(it.bufferedImage) }
+                        .setIconFactory { EditorRendersystem.getResizableIconFromImageSource(it.bufferedImage) }
                         .setAction { event ->
                             if (event.command.isToggleSelected) {
                                 editor.sidePanel.setWithRefresh {
@@ -82,7 +81,7 @@ class TextureBand(
 
         val addTextureCommand = Command.builder()
             .setText("Add Texture")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
             .setAction {
                 val fc = JFileChooser()
                 val returnVal = fc.showOpenDialog(editor)
@@ -100,10 +99,10 @@ class TextureBand(
             .build()
         addRibbonCommand(addTextureCommand.project(CommandButtonPresentationModel.builder()
             .setTextClickAction()
-            .build()), JRibbonBand.PresentationPriority.TOP)
+            .build()), PresentationPriority.TOP)
         val addCubeMapCommand = Command.builder()
             .setText("Add CubeMap")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
             .setAction {
                 val fc = JFileChooser().apply {
                     isMultiSelectionEnabled = true
@@ -128,17 +127,17 @@ class TextureBand(
             .build()
         addRibbonCommand(addCubeMapCommand.project(CommandButtonPresentationModel.builder()
             .setTextClickAction()
-            .build()), JRibbonBand.PresentationPriority.TOP)
+            .build()), PresentationPriority.TOP)
 
 
         val textureCommands = retrieveTextureCommands()
-        val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { EditorComponents.getResizableIconFromSvgResource("add-24px.svg") },
+        val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") },
             listOf(CommandGroup("Available textures", textureCommands))
         )
         val stylesGalleryVisibleCommandCounts = mapOf(
             JRibbonBand.PresentationPriority.LOW to 1,
             JRibbonBand.PresentationPriority.MEDIUM to 2,
-            JRibbonBand.PresentationPriority.TOP to 3
+            PresentationPriority.TOP to 3
         )
 
         val galleryProjection = RibbonGalleryProjection(contentModel, RibbonGalleryPresentationModel.builder()
@@ -148,11 +147,11 @@ class TextureBand(
             .setCommandPresentationState(JRibbonBand.BIG_FIXED_LANDSCAPE)
             .setExpandKeyTip("L")
             .build())
-        addRibbonGallery(galleryProjection, JRibbonBand.PresentationPriority.TOP)
+        addRibbonGallery(galleryProjection, PresentationPriority.TOP)
 
         val refreshTexturesCommand = Command.builder()
             .setText("Refresh")
-            .setIconFactory { EditorComponents.getResizableIconFromSvgResource("refresh-24px.svg") }
+            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
             .setAction {
                 contentModel.getCommandGroupByTitle("Available textures").apply {
                     SwingUtils.invokeLater {
@@ -169,7 +168,7 @@ class TextureBand(
             .build()
         addRibbonCommand(refreshTexturesCommand.project(CommandButtonPresentationModel.builder()
             .setTextClickAction()
-            .build()), JRibbonBand.PresentationPriority.TOP)
+            .build()), PresentationPriority.TOP)
         resizePolicies = listOf(CoreRibbonResizePolicies.Mirror(this), CoreRibbonResizePolicies.Mid2Low(this))
     }
 }

@@ -1,19 +1,12 @@
-package de.hanno.hpengine.editor
+package de.hanno.hpengine.editor.window
 
+import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.graphics.CustomGlCanvas
 import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGlExecutor
 import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import kotlinx.coroutines.withContext
-import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
-import org.pushingpixels.substance.api.SubstanceCortex
-import org.pushingpixels.substance.api.skin.MarinerSkin
-import java.awt.Dimension
-import javax.swing.JFrame
 
 class AWTEditorWindow(
     val config: ConfigImpl,

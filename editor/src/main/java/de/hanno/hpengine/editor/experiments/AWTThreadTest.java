@@ -1,9 +1,7 @@
-package de.hanno.hpengine.editor;
+package de.hanno.hpengine.editor.experiments;
 
-import kotlinx.coroutines.GlobalScope;
 import org.lwjgl.opengl.awt.AWTGLCanvas;
 import org.lwjgl.opengl.awt.GLData;
-import org.pushingpixels.substance.api.SubstanceCortex;
 
 import javax.swing.*;
 import java.awt.*;

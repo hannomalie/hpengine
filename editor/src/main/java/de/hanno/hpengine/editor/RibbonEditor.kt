@@ -1,21 +1,9 @@
 package de.hanno.hpengine.editor
 
-import de.hanno.hpengine.editor.appmenu.ApplicationMenu
-import de.hanno.hpengine.editor.input.EditorInputConfig
-import de.hanno.hpengine.editor.input.EditorInputConfigImpl
-import de.hanno.hpengine.editor.selection.MouseAdapterImpl
-import de.hanno.hpengine.editor.selection.SelectionSystem
-import de.hanno.hpengine.editor.tasks.EditorRibbonTask
-import de.hanno.hpengine.editor.tasks.MaterialRibbonBand
-import de.hanno.hpengine.editor.tasks.MaterialRibbonTask
-import de.hanno.hpengine.editor.tasks.SceneRibbonBands
-import de.hanno.hpengine.editor.tasks.SceneRibbonTask
-import de.hanno.hpengine.editor.tasks.TextureBand
-import de.hanno.hpengine.editor.tasks.TextureRibbonTask
-import de.hanno.hpengine.editor.tasks.TransformBands
-import de.hanno.hpengine.editor.tasks.TransformRibbonTask
-import de.hanno.hpengine.editor.tasks.ViewRibbonBands
-import de.hanno.hpengine.editor.tasks.ViewRibbonTask
+import de.hanno.hpengine.editor.modules.editorModule
+import de.hanno.hpengine.editor.modules.editorWindowModule
+import de.hanno.hpengine.editor.window.AWTEditorWindow
+import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
@@ -23,18 +11,10 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
-import de.hanno.hpengine.engine.extension.entitySystem
 import de.hanno.hpengine.engine.graphics.CustomGlCanvas
-import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
-import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.convert
@@ -42,25 +22,17 @@ import de.hanno.hpengine.engine.scene.dsl.entity
 import de.hanno.hpengine.engine.scene.dsl.scene
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import net.miginfocom.swing.MigLayout
-import org.joml.Vector3f
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
-import org.koin.core.scope.Scope
 import org.koin.dsl.bind
-import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.pushingpixels.flamingo.api.ribbon.JRibbonFrame
-import org.pushingpixels.flamingo.api.ribbon.RibbonTask
-import org.pushingpixels.substance.api.SubstanceCortex
-import org.pushingpixels.substance.api.skin.MarinerSkin
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
 import java.io.File
 import javax.swing.BorderFactory
-import javax.swing.Box
-import javax.swing.JComponent
 import javax.swing.JFrame
 import javax.swing.JPanel
 
@@ -108,139 +80,6 @@ class RibbonEditor(
 }
 
 val fixedWidth = 300
-
-fun JPanel.setWithRefresh(createComponent: () -> Component) = SwingUtils.invokeLater {
-    removeAll()
-    add(ReloadableScrollPane(createComponent()), "wrap")
-    revalidate()
-    repaint()
-}
-
-fun JPanel.verticalBox(vararg comp: JComponent) = setWithRefresh {
-    verticalBoxOf(*comp)
-}
-
-fun verticalBoxOf(vararg comp: JComponent): Box = Box.createVerticalBox().apply {
-    comp.forEach { add(it) }
-}
-class EditorEntitySystem(val editorComponents: EditorComponents): SimpleEntitySystem(emptyList()) {
-    override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
-        super.onEntityAdded(scene, entities)
-        editorComponents.sceneTree.reload(this.entities)
-    }
-
-    override fun onComponentAdded(scene: Scene, component: de.hanno.hpengine.engine.component.Component) {
-        super.onComponentAdded(scene, component)
-        editorComponents.sceneTree.reload(this.entities)
-    }
-}
-val editorWindowModule = module {
-    single { OpenGlExecutorImpl() }
-    single {
-        SwingUtils.invokeAndWait {
-            JRibbonFrame.setDefaultLookAndFeelDecorated(true)
-            SubstanceCortex.GlobalScope.setSkin(MarinerSkin())
-            RibbonEditor(get(), get())
-        }
-    }
-    single { AWTEditorWindow(get(), get(), get()) } bind Window::class
-    single {
-        val editorWindow: AWTEditorWindow = get()
-        editorWindow.canvas
-    }
-}
-val editorModule = module {
-    single {
-        val window: Window<*> = get()
-        window.frontBuffer
-    }
-    single {
-        SwingUtils.invokeAndWait {
-            SceneTree(get(), get(), get(), get())
-        }
-    }
-    entitySystem {
-        EditorEntitySystem(get())
-    }
-    single {
-        EditorInputConfigImpl()
-    } binds (arrayOf(EditorInputConfigImpl::class, EditorInputConfig::class))
-
-    single {
-        val editor: RibbonEditor = get()
-        MouseAdapterImpl(editor.canvas)
-    }
-    single {
-        val editor: RibbonEditor = get()
-        editor.sidePanel
-    }
-    single {
-        SelectionSystem(
-            config = get(),
-            editorInputConfig = get(),
-            gpuContext = get(),
-            mouseAdapter = get(),
-            editor = get(),
-            sidePanel = get(),
-            renderStateManager = get(),
-            programManager = get(),
-            textureManager = get(),
-            idTexture = get(),
-            sceneManager = get(),
-            sceneTree = get()
-        )
-    }
-    single { OutputConfigHolder(OutputConfig.Default) }
-    single { ApplicationMenu(get()) }
-    single { Pivot(Vector3f()) }
-    single {
-        val finalOutput: FinalOutput = get()
-
-        EditorComponents(
-            gpuContext = get(),
-            config = get(),
-            window = get(),
-            editor = get(),
-            programManager = get(),
-            textureManager = get(),
-            addResourceContext = get(),
-            renderStateManager = get(),
-            sceneManager = get(),
-            targetTexture = finalOutput.texture2D,
-            editorInputConfig = get(),
-            sceneTree = get(),
-            selectionSystem = get(),
-            mouseAdapter = get(),
-            outputConfigHolder = get(),
-            tasks = getAll<RibbonTask>().distinct(),
-            applicationMenu = get(),
-            pivot = get()
-        )
-    } binds (arrayOf(RenderSystem::class, Manager::class))
-
-    single { EditorManager(get(), get()) } bind Manager::class
-
-    single { MaterialRibbonBand(get(), get(), get(), get(), get(), get()) }
-    task { MaterialRibbonTask(get()) }
-
-    single { TextureBand(get(), get(), get(), get()) }
-    task { TextureRibbonTask(get()) }
-
-    single { TransformBands(get(), get()) }
-    task { TransformRibbonTask(get()) }
-
-    single { SceneRibbonBands(get(), get()) }
-    task { SceneRibbonTask(get()) }
-
-    single { ViewRibbonBands(get(), get(), get(), get(), get()) }
-    task { ViewRibbonTask(get()) }
-}
-
-inline fun <reified T: RibbonTask> Module.task(noinline block: Scope.() -> T) {
-    single {
-        SwingUtils.invokeAndWait { block() }
-    } binds (arrayOf(T::class, RibbonTask::class, EditorRibbonTask::class))
-}
 
 fun EngineWithEditor(config: ConfigImpl = ConfigImpl()) = Engine(
     startKoin {

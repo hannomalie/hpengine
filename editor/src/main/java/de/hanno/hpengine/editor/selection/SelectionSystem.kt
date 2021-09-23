@@ -1,9 +1,6 @@
 package de.hanno.hpengine.editor.selection
 
 import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.editor.SceneTree
-import de.hanno.hpengine.editor.SwingUtils
-import de.hanno.hpengine.editor.setWithRefresh
 import de.hanno.hpengine.editor.grids.CameraGrid
 import de.hanno.hpengine.editor.grids.DirectionalLightGrid
 import de.hanno.hpengine.editor.grids.EntityGrid
@@ -18,8 +15,11 @@ import de.hanno.hpengine.editor.grids.SceneGrid
 import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
-import de.hanno.hpengine.editor.verticalBox
-import de.hanno.hpengine.editor.verticalBoxOf
+import de.hanno.hpengine.editor.scene.SceneTree
+import de.hanno.hpengine.editor.window.SwingUtils
+import de.hanno.hpengine.editor.window.setWithRefresh
+import de.hanno.hpengine.editor.window.verticalBox
+import de.hanno.hpengine.editor.window.verticalBoxOf
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
