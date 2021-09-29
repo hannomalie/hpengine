@@ -11,10 +11,8 @@ interface LineRenderer {
     fun MutableList<Vector3fc>.batchPointForLine(point: Vector3f)
     fun MutableList<Vector3fc>.batchLine(from: Vector3fc, to: Vector3fc)
 
-    @JvmDefault
     fun drawLines(program: Program<Uniforms>) = drawLines(linePoints, program, 2f)
     fun drawLines(linePoints: List<Vector3fc>, program: Program<Uniforms>, lineWidth: Float): Int
-    @JvmDefault
     fun drawAllLines(action: Consumer<Program<Uniforms>>) {
         drawAllLines(2f, action)
     }

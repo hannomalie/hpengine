@@ -11,13 +11,13 @@ import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.scene.Scene
 
 interface DeferredRenderExtension<TYPE : BackendType>: Updatable {
-    @JvmDefault fun renderFirstPass(backend: Backend<TYPE>, gpuContext: GpuContext<TYPE>, firstPassResult: FirstPassResult, renderState: RenderState) {}
-    @JvmDefault fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
-    @JvmDefault fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
-    @JvmDefault fun renderEditor(renderState: RenderState, result: DrawResult) {}
-    @JvmDefault fun extract(scene: Scene, renderState: RenderState) {}
-    @JvmDefault fun beforeSetScene(nextScene: Scene) {}
-    @JvmDefault fun afterSetScene(nextScene: Scene) {}
+    fun renderFirstPass(backend: Backend<TYPE>, gpuContext: GpuContext<TYPE>, firstPassResult: FirstPassResult, renderState: RenderState) {}
+    fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
+    fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
+    fun renderEditor(renderState: RenderState, result: DrawResult) {}
+    fun extract(scene: Scene, renderState: RenderState) {}
+    fun beforeSetScene(nextScene: Scene) {}
+    fun afterSetScene(nextScene: Scene) {}
 }
 
 open class CompoundExtension<TYPE : BackendType>(val extensions: List<DeferredRenderExtension<TYPE>>): DeferredRenderExtension<TYPE> {

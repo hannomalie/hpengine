@@ -18,8 +18,8 @@ allprojects {
     group = "de.hanno.hpengine"
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            freeCompilerArgs = listOf("-Xjvm-default=enable")
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
+            freeCompilerArgs = listOf("-Xjvm-default=all")
+            jvmTarget = "1.8"
         }
     }
 

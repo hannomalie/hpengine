@@ -4,7 +4,6 @@ import de.hanno.hpengine.editor.selection.MaterialSelection
 import de.hanno.hpengine.editor.selection.MeshSelection
 import de.hanno.hpengine.editor.selection.ModelComponentSelection
 import de.hanno.hpengine.editor.selection.Selection
-import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.selection.SimpleEntitySelection
 import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.component.Component
@@ -20,7 +19,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 import org.joml.Vector4f
-import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.logging.Logger
 import javax.swing.JFileChooser
@@ -40,8 +38,6 @@ class SceneTree(
     val sceneManager: SceneManager,
     val rootNode: DefaultMutableTreeNode = DefaultMutableTreeNode()
 ) : JTree(rootNode) {
-
-    private var selectionListener: de.hanno.hpengine.editor.selection.SelectionListener? = null
 
     private fun DefaultMutableTreeNode.findChild(query: Any): DefaultMutableTreeNode? {
         if (userObject == query) return this
@@ -88,10 +84,6 @@ class SceneTree(
         spanTree(top, entities)
         LOGGER.info("Added " + entities.size)
 
-//        TODO: Reimplmeent without dependency to editorComponents
-//        if (selectionListener == null) {
-//            selectionListener = SelectionListener(this, editorComponents)
-//        }
         return top
     }
 
@@ -136,28 +128,9 @@ class SceneTree(
         }
     }
 
-    inner class SelectionListener(private val selectionSystem: SelectionSystem) : MouseAdapter() {
-        override fun mousePressed(mouseEvent: MouseEvent) {
-            setSelectionRow(getClosestRowForLocation(mouseEvent.x, mouseEvent.y))
-            val selectedTreeElement = (lastSelectedPathComponent as DefaultMutableTreeNode).userObject
-
-            selectedTreeElement ?: return
-
-            handleContextMenu(mouseEvent, selectedTreeElement)
-
-            if (selectedTreeElement !is Selection) return
-            handleClick(mouseEvent, selectedTreeElement)
-        }
-
-        private fun handleClick(mouseEvent: MouseEvent, selection: Selection) {
-            if (mouseEvent.button == 1) {
-                selectionSystem.selectOrUnselect(selection)
-            }
-        }
-    }
-
     companion object {
         private val LOGGER = Logger.getLogger(SceneTree::class.java.name)
+
     }
 
 }
@@ -219,8 +192,4 @@ fun SceneTree.handleContextMenu(mouseEvent: MouseEvent, selection: Any) {
             }
         }
     }
-}
-
-fun SceneTree.addDefaultMouseListener(selectionSystem: SelectionSystem) {
-    addMouseListener(SelectionListener(selectionSystem))
 }

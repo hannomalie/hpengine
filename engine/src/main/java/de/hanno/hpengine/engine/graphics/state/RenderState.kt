@@ -2,9 +2,9 @@ package de.hanno.hpengine.engine.graphics.state
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
@@ -112,11 +112,11 @@ interface RenderSystem: Updatable {
         get() = null
     val requiresClearSharedRenderTarget: Boolean
         get() = false
-    @JvmDefault fun render(result: DrawResult, renderState: RenderState) { }
-    @JvmDefault fun renderEditor(result: DrawResult, renderState: RenderState) { }
-    @JvmDefault fun afterFrameFinished() { }
-    @JvmDefault fun extract(scene: Scene, renderState: RenderState) { }
-    @JvmDefault fun beforeSetScene(nextScene: Scene) { }
+    fun render(result: DrawResult, renderState: RenderState) { }
+    fun renderEditor(result: DrawResult, renderState: RenderState) { }
+    fun afterFrameFinished() { }
+    fun extract(scene: Scene, renderState: RenderState) { }
+    fun beforeSetScene(nextScene: Scene) { }
     fun afterSetScene(currentScene: Scene) {}
 }
 

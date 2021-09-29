@@ -16,6 +16,7 @@ import de.hanno.hpengine.editor.input.AxisConstraint
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.scene.SceneTree
+import de.hanno.hpengine.editor.scene.SelectionListener
 import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.editor.window.setWithRefresh
 import de.hanno.hpengine.editor.window.verticalBox
@@ -102,6 +103,8 @@ class SelectionSystem(
 ) : RenderSystem {
 
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
+
+    val selectionListener = SelectionListener(sceneTree, this)
 
     var axisDragged: AxisConstraint = AxisConstraint.None
 

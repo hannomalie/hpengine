@@ -10,7 +10,7 @@ import de.hanno.hpengine.editor.input.MouseInputProcessor
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.scene.SceneTree
-import de.hanno.hpengine.editor.scene.addDefaultMouseListener
+import de.hanno.hpengine.editor.scene.SelectionListener
 import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
 import de.hanno.hpengine.editor.selection.SelectionSystem
@@ -442,8 +442,7 @@ class EditorRendersystem(
         SwingUtils.invokeLater {
             sceneTree.apply {
                 reload(sceneManager.scene.getEntities())
-                mouseListeners.filterIsInstance<SceneTree.SelectionListener>().forEach { removeMouseListener(it) }
-                addDefaultMouseListener(selectionSystem)
+                mouseListeners.filterIsInstance<SelectionListener>().forEach { removeMouseListener(it) }
             }
         }
     }

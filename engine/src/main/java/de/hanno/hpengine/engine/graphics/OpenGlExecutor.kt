@@ -2,15 +2,18 @@ package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.graphics.renderer.GLU
-import de.hanno.hpengine.engine.graphics.renderer.constants.*
+import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
+import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
-import java.util.concurrent.Callable
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
 
@@ -132,10 +135,8 @@ interface GpuContext<T: BackendType>: OpenGlExecutor {
 
     fun isSupported(feature: GpuFeature): Boolean
 
-    @JvmDefault
     fun isSupported(vararg features: GpuFeature) = isSupported(features.toList())
 
-    @JvmDefault
     fun isSupported(features: List<GpuFeature>): SupportResult {
         features.filter { !isSupported(it) }.let { unsupportedFeatures ->
             return if(unsupportedFeatures.isEmpty()) {

@@ -5,25 +5,12 @@ import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SceneManager
 
 interface Manager: Updatable {
-    @JvmDefault
     fun clear() {}
-
-    @JvmDefault
     fun onEntityAdded(entities: List<Entity>) {}
-
-    @JvmDefault
     fun onComponentAdded(component: Component) {}
-
-    @JvmDefault
     fun extract(scene: Scene, renderState: RenderState) {}
-
-    @JvmDefault
     fun beforeSetScene(nextScene: Scene) { }
-
-    @JvmDefault
     fun afterSetScene(lastScene: Scene?, currentScene: Scene) { }
-
 }

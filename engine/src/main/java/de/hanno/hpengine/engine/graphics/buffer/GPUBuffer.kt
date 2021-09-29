@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.buffer
 
 import java.nio.ByteBuffer
-import java.nio.IntBuffer
 
 interface GPUBuffer {
 
@@ -18,7 +17,6 @@ interface GPUBuffer {
 
     fun unbind()
 
-    @JvmDefault
     fun putValues(vararg values: Float) {
         putValues(0, *values)
     }

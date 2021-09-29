@@ -52,10 +52,10 @@ class ModelGrid(val model: Model<*>, val modelComponent: ModelComponent, val mat
 
     fun KMutableProperty0<Material>.toComboBox(): JComboBox<Material> {
         return JComboBox(materialManager.materials.toTypedArray()).apply {
+            selectedItem = this@toComboBox.get()
             addActionListener {
                 this@toComboBox.set(this.selectedItem as Material)
             }
-            selectedItem = this@toComboBox.get()
         }
     }
 }

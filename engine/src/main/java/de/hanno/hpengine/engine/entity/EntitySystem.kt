@@ -3,10 +3,8 @@ package de.hanno.hpengine.engine.entity
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
-import kotlinx.coroutines.CoroutineScope
 
 interface EntitySystem {
-    @JvmDefault
     suspend fun update(scene: Scene, deltaSeconds: Float) {}
     fun gatherEntities(scene: Scene)
     fun onEntityAdded(scene: Scene, entities: List<Entity>) {

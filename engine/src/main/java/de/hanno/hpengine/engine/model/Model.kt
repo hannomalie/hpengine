@@ -52,6 +52,7 @@ sealed class Model<T>(val meshes: List<Mesh<T>>,
         get() = when(this) {
             is AnimatedModel -> false
             is StaticModel -> true
+            else -> throw IllegalStateException("compiler bug olé")
         }
     val isInvertTexCoordY: Boolean
         get() = true
