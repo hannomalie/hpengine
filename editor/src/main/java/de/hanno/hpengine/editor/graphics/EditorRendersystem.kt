@@ -438,7 +438,9 @@ class EditorRendersystem(
         }
     }
 
-    override fun beforeSetScene(nextScene: Scene) {
+    override fun beforeSetScene(nextScene: Scene) = super<RenderSystem>.beforeSetScene(nextScene)
+
+    override fun afterSetScene(nextScene: Scene) {
         SwingUtils.invokeLater {
             sceneTree.apply {
                 reload(sceneManager.scene.getEntities())
