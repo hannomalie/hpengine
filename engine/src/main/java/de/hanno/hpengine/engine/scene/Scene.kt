@@ -47,19 +47,19 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val aabb = AABB(Vector3f(), 50f)
 
     val componentSystems: List<ComponentSystem<*>>
-        get() = scope.getAll()
+        get() = scope.getAll<ComponentSystem<*>>().distinct()
 
     val managers: List<Manager>
-        get() = scope.getAll()
+        get() = scope.getAll<Manager>().distinct()
 
     val entitySystems: List<EntitySystem>
-        get() = scope.getAll()
+        get() = scope.getAll<EntitySystem>().distinct()
 
     val entityManager: EntityManager
         get() = scope.get()
 
     val extensions: List<Extension>
-        get() = scope.getAll()
+        get() = scope.getAll<Extension>().distinct()
 
     fun restoreWorldCamera() {
         get<CameraExtension>().run { activeCameraEntity = cameraEntity }

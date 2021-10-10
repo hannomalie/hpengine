@@ -127,6 +127,7 @@ fun <T: FirstPassUniforms> IndirectDrawDescription<T>.draw() {
             }!!
 
             vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, 0, commandCount, mode)
+            org.lwjgl.opengl.GL11.glFinish()
         }
     }
 }

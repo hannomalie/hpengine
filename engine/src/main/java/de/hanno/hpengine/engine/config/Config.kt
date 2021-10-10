@@ -166,7 +166,7 @@ interface IPerformanceConfig {
 
 data class PerformanceConfig(
         override var updateGiOnSceneChange: Boolean = false,
-        override var isIndirectRendering: Boolean = true,
+        override var isIndirectRendering: Boolean = false, // TODO: This causes flickering, investigate
         override var isVsync: Boolean = true
 ) : IPerformanceConfig
 

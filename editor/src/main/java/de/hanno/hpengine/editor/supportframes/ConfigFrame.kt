@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor.supportframes
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.grids.ConfigGrid
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.graphics.ConfigExtension
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -10,9 +11,13 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.WindowConstants
 
-class ConfigFrame(config: ConfigImpl, editor: RibbonEditor) : JFrame("Config") {
+class ConfigFrame(
+    config: ConfigImpl,
+    editor: RibbonEditor,
+    configExtensions: List<ConfigExtension>,
+) : JFrame("Config") {
     init {
-        val configPane = ReloadableScrollPane(ConfigGrid(config)).apply {
+        val configPane = ReloadableScrollPane(ConfigGrid(config, configExtensions)).apply {
             this.preferredSize = Dimension(editor.canvas.width, editor.canvas.height)
         }
         size = Dimension(500, 500)

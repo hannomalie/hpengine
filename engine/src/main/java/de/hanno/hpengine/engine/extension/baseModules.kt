@@ -18,11 +18,14 @@ import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
+import de.hanno.hpengine.engine.graphics.ConfigExtension
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.OpenGLContext
 import de.hanno.hpengine.engine.graphics.RenderManager
+import de.hanno.hpengine.engine.graphics.RenderSystemsConfigPanel
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.RenderSystemsConfig
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
@@ -30,6 +33,7 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSyste
 import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -88,6 +92,8 @@ import de.hanno.hpengine.engine.scene.dsl.MovableInputComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.SceneDescription
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.entity
+import de.hanno.hpengine.util.fps.CPSCounterExtension
+import de.hanno.hpengine.util.fps.FPSCounterSystem
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import org.koin.core.component.get
@@ -98,11 +104,12 @@ import org.koin.dsl.module
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
+import javax.swing.SwingUtilities
 
 data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
 
 val deferredRendererModule = module {
-    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), getAll()) }
+    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll()) }
     single {
         val config: Config = get()
         val gpuContext: GpuContext<OpenGl> = get()
@@ -120,6 +127,7 @@ val deferredRendererModule = module {
         val deferredRenderingBuffer: DeferredRenderingBuffer = get()
         FinalOutput(deferredRenderingBuffer.finalMap)
     }
+    single { DeferredRenderExtensionConfig(getAll()) }
 }
 val textureRendererModule = module {
     single {
@@ -167,10 +175,21 @@ val baseModule = module {
     manager { EntityManager() }
     entitySystem { ModelComponentEntitySystem(get(), get(), get(), get(), get()) }
 
+    extension { CPSCounterExtension() }
+    single {
+        val manager: CPSCounterExtension = get()
+        manager.fpsCounter
+    }
+    renderSystem { FPSCounterSystem() }
+    single {
+        val system: FPSCounterSystem = get()
+        system.fpsCounter
+    }
+
     addBackendModule()
     addCameraModule()
-    addSkyboxModule()
     addReflectionProbeModule()
+    addSkyboxModule()
     addPointLightModule()
     addGIModule()
     addOceanWaterModule()
@@ -253,12 +272,32 @@ fun Module.addBackendModule() {
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, Manager::class)
     single { Input(get(), get()) }
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
-    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), getAll()) } bind Manager::class
+    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) } bind Manager::class
+    single { RenderSystemsConfig(getAll()) }
     single {
         val gpuContext: GpuContext<OpenGl> = get()
         RenderStateManager { RenderState(gpuContext) }
     }
     single { SceneManager(get()) } bind Manager::class
+}
+
+// TODO: Don't duplicate, move to core
+object SwingUtils {
+    fun invokeLater(block: () -> Unit) = if(SwingUtilities.isEventDispatchThread()) {
+        block()
+    } else {
+        SwingUtilities.invokeLater(block)
+    }
+
+    fun <T> invokeAndWait(block: () -> T) = if(SwingUtilities.isEventDispatchThread()) {
+        block()
+    } else {
+        var result: T? = null
+        SwingUtilities.invokeAndWait {
+            result = block()
+        }
+        result!!
+    }
 }
 
 class GiVolumeComponentSystem: SimpleComponentSystem<GIVolumeComponent>(GIVolumeComponent::class.java)
@@ -286,9 +325,10 @@ class DirectionalLightDeferredRenderingExtension(
     gpuContext: GpuContext<OpenGl>,
     deferredRenderingBuffer: DeferredRenderingBuffer
 ): CompoundExtension<OpenGl>(
+    // TODO: Here's a problem, find out
     listOf(
         DirectionalLightShadowMapExtension(config, programManager, textureManager, gpuContext),
-        DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer)
+        DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer),
     )
 )
 

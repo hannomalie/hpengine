@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.graphics.EditorRendersystem
+import de.hanno.hpengine.editor.graphics.EditorRenderSystem
 import de.hanno.hpengine.editor.graphics.OutputConfig
 import de.hanno.hpengine.editor.graphics.OutputConfigHolder
 import de.hanno.hpengine.editor.input.EditorInputConfig
@@ -146,7 +146,7 @@ class ViewRibbonBands(
                 .setToggle()
                 .setToggleSelected(inputConfig.selectionMode == it.first)
                 .setText(it.first.toString())
-                .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                 .inToggleGroup(selectionModeToggleGroup)
                 .setAction { event ->
                     if (it.second.get() == it.first) it.second.set(SelectionMode.Entity) else it.second.set(it.first)
@@ -157,7 +157,7 @@ class ViewRibbonBands(
 
         val refreshRenderTargetsCommand = Command.builder()
             .setText("Refresh")
-            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
+            .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("refresh-24px.svg") }
             .setAction {
                 SwingUtils.invokeLater {
                     outputFlowBandModel.removeAllElements()
@@ -185,7 +185,7 @@ class ViewRibbonBands(
     val unselectBand = JRibbonBand("Unselect", null).apply {
         val command = Command.builder()
             .setText("Unselect")
-            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("dash-circle.svg") }
+            .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("dash-circle.svg") }
             .setAction {
                 selectionSystem.unselect()
             }

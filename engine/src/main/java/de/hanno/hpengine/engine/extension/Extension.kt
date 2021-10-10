@@ -11,51 +11,46 @@ import de.hanno.hpengine.engine.scene.dsl.SceneDescription
 import org.koin.core.definition.Definition
 import org.koin.core.instance.InstanceFactory
 import org.koin.core.module.Module
-import org.koin.dsl.ScopeDSL
 import org.koin.dsl.bind
+import org.koin.dsl.binds
 
 
 interface Extension {
     fun extract(scene: Scene, renderState: RenderState) { }
     fun SceneDescription.decorate() { }
+    suspend fun update(scene: Scene, deltaSeconds: Float) { }
 }
 
 inline fun <reified T: ComponentSystem<*>> Module.componentSystem(
     noinline definition: Definition<T>
 ) {
-    scope<Scene> { scoped(null, definition) bind ComponentSystem::class }
+    scope<Scene> { scoped(definition = definition) bind ComponentSystem::class }
 }
 inline fun <reified T: EntitySystem> Module.entitySystem(
     noinline definition: Definition<T>
 ){
-    scope<Scene> { scoped(null, definition) bind EntitySystem::class }
+    scope<Scene> { scoped(definition = definition) bind EntitySystem::class }
 }
 inline fun <reified T: Manager> Module.manager(
     noinline definition: Definition<T>
 ){
-    scope<Scene> { scoped(null, definition) bind Manager::class }
+    scope<Scene> { scoped(definition = definition) binds arrayOf(T::class, Manager::class) }
 }
 
 inline fun <reified T: DeferredRenderExtension<*>> Module.renderExtension(
-    createdAtStart: Boolean = false,
     noinline definition: Definition<T>
-): Pair<Module, InstanceFactory<*>> {
-    return single(null, createdAtStart, definition) bind DeferredRenderExtension::class
-}
+): Pair<Module, InstanceFactory<*>> = single(
+    definition = definition
+) binds arrayOf(T::class, DeferredRenderExtension::class)
+
 inline fun <reified T: RenderSystem> Module.renderSystem(
-    createdAtStart: Boolean = false,
     noinline definition: Definition<T>
-): Pair<Module, InstanceFactory<*>> {
-    return single(null, createdAtStart, definition) bind RenderSystem::class
-}
+): Pair<Module, InstanceFactory<*>> = single(
+    definition = definition
+) bind RenderSystem::class
+
 inline fun <reified T: Extension> Module.extension(
-    createdAtStart: Boolean = true,
     noinline definition: Definition<T>
-): Pair<Module, InstanceFactory<*>> {
-    return single(null, createdAtStart, definition) bind Extension::class
-}
-inline fun <reified T: RenderSystem> ScopeDSL.renderSystem(
-    noinline definition: Definition<T>
-): Pair<Module, InstanceFactory<*>> {
-    return scoped(null, definition) bind RenderSystem::class
-}
+): Pair<Module, InstanceFactory<*>> = single(
+    definition = definition
+) binds arrayOf(T::class, Extension::class)

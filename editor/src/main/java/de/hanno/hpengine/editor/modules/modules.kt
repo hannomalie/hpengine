@@ -1,35 +1,39 @@
 package de.hanno.hpengine.editor.modules
 
-import de.hanno.hpengine.editor.window.AWTEditorWindow
-import de.hanno.hpengine.editor.graphics.EditorRendersystem
-import de.hanno.hpengine.editor.scene.EditorEntitySystem
-import de.hanno.hpengine.editor.manager.EditorManager
+import de.hanno.hpengine.editor.RibbonEditor
+import de.hanno.hpengine.editor.appmenu.ApplicationMenu
+import de.hanno.hpengine.editor.graphics.EditorRenderSystem
 import de.hanno.hpengine.editor.graphics.OutputConfig
 import de.hanno.hpengine.editor.graphics.OutputConfigHolder
 import de.hanno.hpengine.editor.graphics.Pivot
-import de.hanno.hpengine.editor.RibbonEditor
-import de.hanno.hpengine.editor.appmenu.ApplicationMenu
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfigImpl
+import de.hanno.hpengine.editor.manager.EditorManager
+import de.hanno.hpengine.editor.scene.EditorEntitySystem
 import de.hanno.hpengine.editor.scene.SceneTree
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
 import de.hanno.hpengine.editor.selection.SelectionSystem
+import de.hanno.hpengine.editor.supportframes.ConfigFrame
+import de.hanno.hpengine.editor.supportframes.ProfilingRenderSystem
 import de.hanno.hpengine.editor.tasks.EditorRibbonTask
 import de.hanno.hpengine.editor.tasks.MaterialRibbonBand
-import de.hanno.hpengine.editor.tasks.MaterialRibbonTask
 import de.hanno.hpengine.editor.tasks.SceneRibbonBands
 import de.hanno.hpengine.editor.tasks.SceneRibbonTask
-import de.hanno.hpengine.editor.tasks.TextureBand
-import de.hanno.hpengine.editor.tasks.TextureRibbonTask
 import de.hanno.hpengine.editor.tasks.TransformBands
 import de.hanno.hpengine.editor.tasks.TransformRibbonTask
 import de.hanno.hpengine.editor.tasks.ViewRibbonBands
 import de.hanno.hpengine.editor.tasks.ViewRibbonTask
+import de.hanno.hpengine.editor.window.AWTEditorWindow
 import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.extension.entitySystem
+import de.hanno.hpengine.engine.extension.renderSystem
+import de.hanno.hpengine.engine.graphics.ConfigExtension
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
+import de.hanno.hpengine.engine.graphics.RenderSystemsConfig
+import de.hanno.hpengine.engine.graphics.RenderSystemsConfigPanel
 import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionsConfigPanel
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.Manager
 import org.joml.Vector3f
@@ -54,15 +58,15 @@ val editorWindowModule = module {
     }
     single { AWTEditorWindow(get(), get(), get()) } bind Window::class
     single {
+        val window: Window<*> = get()
+        window.frontBuffer
+    }
+    single {
         val editorWindow: AWTEditorWindow = get()
         editorWindow.canvas
     }
 }
 val editorModule = module {
-    single {
-        val window: Window<*> = get()
-        window.frontBuffer
-    }
     single {
         SwingUtils.invokeAndWait {
             SceneTree(get(), get(), get(), get())
@@ -73,7 +77,7 @@ val editorModule = module {
     }
     single {
         EditorInputConfigImpl()
-    } binds (arrayOf(EditorInputConfigImpl::class, EditorInputConfig::class))
+    } binds arrayOf(EditorInputConfigImpl::class, EditorInputConfig::class)
 
     single {
         val editor: RibbonEditor = get()
@@ -105,7 +109,7 @@ val editorModule = module {
     single {
         val finalOutput: FinalOutput = get()
 
-        EditorRendersystem(
+        EditorRenderSystem(
             gpuContext = get(),
             config = get(),
             window = get(),
@@ -123,17 +127,25 @@ val editorModule = module {
             outputConfigHolder = get(),
             tasks = getAll<RibbonTask>().distinct(),
             applicationMenu = get(),
-            pivot = get()
+            pivot = get(),
+            profilingRenderSystem = get(),
         )
-    } binds (arrayOf(RenderSystem::class, Manager::class))
+    } binds arrayOf(RenderSystem::class, Manager::class)
 
-    single { EditorManager(get(), get()) } bind Manager::class
+    single { SwingUtils.invokeAndWait { RenderSystemsConfigPanel(get()) } } bind ConfigExtension::class
+    single { SwingUtils.invokeAndWait { DeferredRenderExtensionsConfigPanel(get()) } } bind ConfigExtension::class
+    single { SwingUtils.invokeAndWait { ConfigFrame(get(), get(), getAll()) } }
 
-    single { MaterialRibbonBand(get(), get(), get(), get(), get(), get()) }
-    task { MaterialRibbonTask(get()) }
+    single { EditorManager(get(), get(), get()) } bind Manager::class
 
-    single { TextureBand(get(), get(), get(), get()) }
-    task { TextureRibbonTask(get()) }
+    renderSystem { ProfilingRenderSystem(get(), get(), get(), get(), get()) }
+
+//     TODO: figure out why this causes rendering to fail
+//    single { MaterialRibbonBand(get(), get(), get(), get(), get(), get()) }
+//    task { MaterialRibbonTask(get()) }
+//
+//    single { TextureBand(get(), get(), get(), get()) }
+//    task { TextureRibbonTask(get()) }
 
     single { TransformBands(get(), get()) }
     task { TransformRibbonTask(get()) }
@@ -148,5 +160,5 @@ val editorModule = module {
 inline fun <reified T: RibbonTask> Module.task(noinline block: Scope.() -> T) {
     single {
         SwingUtils.invokeAndWait { block() }
-    } binds (arrayOf(T::class, RibbonTask::class, EditorRibbonTask::class))
+    } binds arrayOf(T::class, RibbonTask::class, EditorRibbonTask::class)
 }

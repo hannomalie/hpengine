@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.graphics.GlfwWindow
@@ -17,6 +18,7 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.dsl.SceneDescription
 import de.hanno.hpengine.engine.scene.dsl.convert
+import de.hanno.hpengine.util.fps.CPSCounter
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import kotlinx.coroutines.GlobalScope
@@ -46,7 +48,7 @@ class Engine constructor(val application: KoinApplication) {
     private val renderManager = koin.get<RenderManager>()
     private val sceneManager = koin.get<SceneManager>()
 
-    val cpsCounter = FPSCounter()
+    val cpsCounter: CPSCounter = koin.get()
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread =
         { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
@@ -99,11 +101,11 @@ class Engine constructor(val application: KoinApplication) {
     suspend fun update(deltaSeconds: Float) = try {
         scene.currentCycle = updateCycle.get()
 
+        koin.getAll<Extension>().distinct().forEach { it.update(scene, deltaSeconds) }
         sceneManager.update(scene, deltaSeconds)
 
         window.invoke { input.update() }
         window.awaitEvents()
-        cpsCounter.update()
 
     } catch (e: Exception) {
         e.printStackTrace()

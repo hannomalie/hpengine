@@ -1,21 +1,37 @@
 package de.hanno.hpengine.util.fps
 
-class FPSCounter {
+import de.hanno.hpengine.engine.extension.Extension
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.scene.Scene
+
+class CPSCounterExtension(val fpsCounter: CPSCounter = CPSCounter()): Extension {
+    override suspend fun update(scene: Scene, deltaSeconds: Float) = fpsCounter.update()
+}
+class FPSCounterSystem(val fpsCounter: FPSCounter = FPSCounter()): RenderSystem {
+    override fun render(result: DrawResult, renderState: RenderState) {
+        fpsCounter.update()
+    }
+}
+
+class CPSCounter: FPSCounter()
+open class FPSCounter {
     val stack = longArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     var currentIndex = 0
 
     fun update() {
         push(nanoTime)
+
+        val diffInNanosForNFrames = last - longestAgo
+        msPerFrame = diffInNanosForNFrames / stack.size / (1000f * 1000f)
     }
 
     val fps: Float
         get() = 1000f / msPerFrame
 
-    val msPerFrame: Float
-        get() {
-            val diffInNanosForNFrames = last - longestAgo
-            return diffInNanosForNFrames / stack.size / (1000f * 1000f)
-        }
+    var msPerFrame = 0f
+        private set
 
     val deltaInS: Double
         get() {
@@ -39,7 +55,6 @@ class FPSCounter {
 
     val current: Long
         get() = stack[currentIndex]
-
 }
 
 private inline val nanoTime: Long

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.graphics.EditorRendersystem
+import de.hanno.hpengine.editor.graphics.EditorRenderSystem
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.grids.MaterialGrid
 import de.hanno.hpengine.editor.selection.MaterialSelection
@@ -45,7 +45,7 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
 
     val addMaterialCommand = Command.builder()
         .setText("Create")
-        .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
+        .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg") }
         .setAction {
             val fc = JFileChooser()
             val returnVal = fc.showOpenDialog(editor)
@@ -67,7 +67,7 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
 
 
     val materialCommands = emptyList<Command>()//retrieveMaterialCommands()
-    val contentModel = RibbonGalleryContentModel({ EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") },
+    val contentModel = RibbonGalleryContentModel({ EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg") },
         listOf(CommandGroup("Available materials", materialCommands))
     )
     val stylesGalleryVisibleCommandCounts = mapOf(
@@ -88,7 +88,7 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
 
     val refreshMaterialsCommand = Command.builder()
         .setText("Refresh")
-        .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
+        .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("refresh-24px.svg") }
         .setAction {
             updateMaterials()
         }
@@ -130,12 +130,12 @@ class MaterialRibbonBand(val addResourceContext: AddResourceContext,
                     val diffuseMap = material.materialInfo.maps[SimpleMaterial.MAP.DIFFUSE] as? FileBasedTexture2D
                     if (diffuseMap != null) {
                         val image = ImageIO.read(File(diffuseMap.file.absolutePath))
-                        EditorRendersystem.getResizableIconFromImageSource(image)
+                        EditorRenderSystem.getResizableIconFromImageSource(image)
                     } else {
-                        EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg")
+                        EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg")
                     }
                 } else {
-                    EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg")
+                    EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg")
                 }
 
 

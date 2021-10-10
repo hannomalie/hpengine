@@ -3,6 +3,7 @@ package de.hanno.hpengine.editor.manager
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.graphics.editorTasks
 import de.hanno.hpengine.editor.input.KeyUpDownProperty
+import de.hanno.hpengine.editor.supportframes.ConfigFrame
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.manager.Manager
@@ -14,7 +15,8 @@ import java.awt.event.KeyEvent
 
 class EditorManager(
     val addResourceContext: AddResourceContext,
-    val editor: RibbonEditor
+    val editor: RibbonEditor,
+    val configFrame: ConfigFrame // TODO: I need this to be injected somewhere, find a better place
 ) : Manager {
     private var wPressed by KeyUpDownProperty(editor, addResourceContext, KeyEvent.VK_W, withShift = true)
     private var sPressed by KeyUpDownProperty(editor, addResourceContext, KeyEvent.VK_S, withShift = true)

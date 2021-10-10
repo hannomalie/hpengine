@@ -1,7 +1,7 @@
 package de.hanno.hpengine.editor.tasks
 
 import de.hanno.hpengine.editor.input.AxisConstraint
-import de.hanno.hpengine.editor.graphics.EditorRendersystem
+import de.hanno.hpengine.editor.graphics.EditorRenderSystem
 import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.RotateAround
 import de.hanno.hpengine.editor.input.TransformMode
@@ -45,7 +45,7 @@ class TransformBands(
                 .setToggle()
                 .setText(it.first.toString())
                 .setToggleSelected(inputConfig.constraintAxis == it.first)
-                .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                 .inToggleGroup(transformAxisToggleGroup)
                 .setAction { event ->
                     if (it.second.get() == it.first) it.second.set(AxisConstraint.None) else it.second.set(it.first)
@@ -73,7 +73,7 @@ class TransformBands(
                 .setToggle()
                 .setToggleSelected(inputConfig.transformMode == it.first)
                 .setText(it.first.toString())
-                .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                 .inToggleGroup(transformModeToggleGroup)
                 .setAction { event ->
                     if (it.second.get() == it.first) it.second.set(TransformMode.None) else it.second.set(it.first)
@@ -101,7 +101,7 @@ class TransformBands(
                 .setToggle()
                 .setToggleSelected(inputConfig.transformSpace == it.first)
                 .setText(it.first.toString())
-                .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                 .inToggleGroup(transformSpaceToggleGroup)
                 .setAction { event ->
                     if (it.second.get() == it.first) it.second.set(TransformSpace.World) else it.second.set(it.first)
@@ -127,7 +127,7 @@ class TransformBands(
                 .setToggle()
                 .setToggleSelected(inputConfig.rotateAround == it.first)
                 .setText(it.first.toString())
-                .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
+                .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("3d_rotation-24px.svg") }
                 .inToggleGroup(rotateAroundToggleGroup)
                 .setAction { event ->
                     if (it.second.get() == it.first) it.second.set(RotateAround.Self) else it.second.set(it.first)
@@ -144,7 +144,7 @@ class TransformBands(
     val resetTransformationBand = JRibbonBand("Reset Transformation", null).apply {
         val command = Command.builder()
             .setText("Identity")
-            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
+            .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("refresh-24px.svg") }
             .setAction {
                 when(val selection = selectionSystem.selection) {
                     is EntitySelection -> selection.entity.transform.set(Transform())

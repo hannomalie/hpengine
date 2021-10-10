@@ -17,8 +17,42 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.delay
+import net.miginfocom.swing.MigLayout
+import org.lwjgl.opengl.GL11
+import javax.swing.BorderFactory
+import javax.swing.JCheckBox
+import javax.swing.JPanel
 
 data class FinalOutput(val texture2D: Texture2D)
+
+interface ConfigExtension {
+    val panel: JPanel
+}
+class RenderSystemsConfig(val renderSystems: List<RenderSystem>) {
+    private val renderSystemsEnabled = renderSystems.distinct().associateWith { true }.toMutableMap()
+    var RenderSystem.enabled: Boolean
+       get() = renderSystemsEnabled[this]!!
+        set(value) {
+            renderSystemsEnabled[this] = value
+        }
+}
+class RenderSystemsConfigPanel(val renderSystemsConfig: RenderSystemsConfig): ConfigExtension {
+    override val panel: JPanel = with(renderSystemsConfig) {
+        JPanel().apply {
+            border = BorderFactory.createTitledBorder("RenderSystems")
+            layout = MigLayout("wrap 1")
+
+            renderSystemsConfig.renderSystems.distinct().forEach { renderSystem ->
+                add(JCheckBox(renderSystem::class.simpleName).apply {
+                    isSelected = renderSystem.enabled
+                    addActionListener {
+                        renderSystem.enabled = !renderSystem.enabled
+                    }
+                })
+            }
+        }
+    }
+}
 
 class RenderManager(
     val config: Config,
@@ -28,8 +62,12 @@ class RenderManager(
     val programManager: ProgramManager<OpenGl>,
     val renderStateManager: RenderStateManager,
     val finalOutput: FinalOutput,
-    val renderSystems: List<RenderSystem>
+    val fpsCounter: FPSCounter,
+    val renderSystemsConfig: RenderSystemsConfig,
+    _renderSystems: List<RenderSystem>,
 ) : Manager {
+
+    val renderSystems: List<RenderSystem> = _renderSystems.distinct()
 
     private val textureRenderer = SimpleTextureRenderer(
         config,
@@ -41,7 +79,6 @@ class RenderManager(
 
     inline val renderState: TripleBuffer<RenderState>
         get() = renderStateManager.renderState
-    val fpsCounter = FPSCounter()
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(input)
 
@@ -59,6 +96,10 @@ class RenderManager(
                     renderState.startRead()
 
                     if (lastTimeSwapped) {
+                        val renderSystems = renderSystems.filter {
+                            renderSystemsConfig.run { it.enabled }
+                        }
+
                         profiled("Frame") {
                             recorder.add(renderState.currentReadState)
                             val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
@@ -128,8 +169,7 @@ class RenderManager(
     }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
-
-        this@RenderManager.renderSystems.forEach {
+        renderSystems.distinct().forEach {
             it.run { update(scene, deltaSeconds) }
         }
     }

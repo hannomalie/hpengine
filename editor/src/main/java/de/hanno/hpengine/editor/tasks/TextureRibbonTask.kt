@@ -1,6 +1,6 @@
 package de.hanno.hpengine.editor.tasks
 
-import de.hanno.hpengine.editor.graphics.EditorRendersystem
+import de.hanno.hpengine.editor.graphics.EditorRenderSystem
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.grids.TextureGrid
 import de.hanno.hpengine.editor.selection.SelectionSystem
@@ -42,7 +42,7 @@ class TextureBand(
                     val image = ImageIO.read(File(it.file.absolutePath))
                     Command.builder()
                         .setText(it.file.name)
-                        .setIconFactory { EditorRendersystem.getResizableIconFromImageSource(image) }
+                        .setIconFactory { EditorRenderSystem.getResizableIconFromImageSource(image) }
                         .setAction { event ->
                             if (event.command.isToggleSelected) {
                                 editor.sidePanel.setWithRefresh {
@@ -60,7 +60,7 @@ class TextureBand(
                 } else if (it is FileBasedCubeMap) {
                     Command.builder()
                         .setText(it.file.name)
-                        .setIconFactory { EditorRendersystem.getResizableIconFromImageSource(it.bufferedImage) }
+                        .setIconFactory { EditorRenderSystem.getResizableIconFromImageSource(it.bufferedImage) }
                         .setAction { event ->
                             if (event.command.isToggleSelected) {
                                 editor.sidePanel.setWithRefresh {
@@ -81,7 +81,7 @@ class TextureBand(
 
         val addTextureCommand = Command.builder()
             .setText("Add Texture")
-            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
+            .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg") }
             .setAction {
                 val fc = JFileChooser()
                 val returnVal = fc.showOpenDialog(editor)
@@ -102,7 +102,7 @@ class TextureBand(
             .build()), PresentationPriority.TOP)
         val addCubeMapCommand = Command.builder()
             .setText("Add CubeMap")
-            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") }
+            .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg") }
             .setAction {
                 val fc = JFileChooser().apply {
                     isMultiSelectionEnabled = true
@@ -131,7 +131,7 @@ class TextureBand(
 
 
         val textureCommands = retrieveTextureCommands()
-        val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { EditorRendersystem.getResizableIconFromSvgResource("add-24px.svg") },
+        val contentModel = RibbonGalleryContentModel(ResizableIcon.Factory { EditorRenderSystem.getResizableIconFromSvgResource("add-24px.svg") },
             listOf(CommandGroup("Available textures", textureCommands))
         )
         val stylesGalleryVisibleCommandCounts = mapOf(
@@ -151,7 +151,7 @@ class TextureBand(
 
         val refreshTexturesCommand = Command.builder()
             .setText("Refresh")
-            .setIconFactory { EditorRendersystem.getResizableIconFromSvgResource("refresh-24px.svg") }
+            .setIconFactory { EditorRenderSystem.getResizableIconFromSvgResource("refresh-24px.svg") }
             .setAction {
                 contentModel.getCommandGroupByTitle("Available textures").apply {
                     SwingUtils.invokeLater {

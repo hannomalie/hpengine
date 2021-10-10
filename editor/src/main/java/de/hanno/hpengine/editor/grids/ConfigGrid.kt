@@ -1,7 +1,9 @@
 package de.hanno.hpengine.editor.grids
 
+import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.config.Button
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.graphics.ConfigExtension
 import net.miginfocom.swing.MigLayout
 import javax.swing.BorderFactory
 import javax.swing.JButton
@@ -15,7 +17,7 @@ import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaType
 
-class ConfigGrid(val config: ConfigImpl): JPanel() {
+class ConfigGrid(val config: ConfigImpl, val panels: List<ConfigExtension>) : JPanel() {
     init {
         layout = MigLayout("wrap 1")
         getInputsPanelForObject(config.debug, "Debug")?.let { add(it) }
@@ -23,6 +25,8 @@ class ConfigGrid(val config: ConfigImpl): JPanel() {
         getInputsPanelForObject(config.performance, "Performance")?.let { add(it) }
         getInputsPanelForObject(config.quality, "Quality")?.let { add(it) }
         getInputsPanelForObject(config.profiling, "Profiling")?.let { add(it) }
+
+        panels.forEach { add(it.panel) }
     }
 
     private inline fun <reified T> getInputsPanelForObject(debugConfig: T, legend: String): JPanel? {
@@ -31,7 +35,7 @@ class ConfigGrid(val config: ConfigImpl): JPanel() {
             if (it.returnType.javaType == Boolean::class.java) {
                 when (it) {
                     is KMutableProperty1<*, *> -> {
-                        val element: JComponent? = if(it.findAnnotation<Button>() != null) {
+                        val element: JComponent? = if (it.findAnnotation<Button>() != null) {
                             (it as? KMutableProperty1<T, Boolean>)?.toButton(debugConfig)
                         } else {
                             (it as? KMutableProperty1<T, Boolean>)?.toCheckBox(debugConfig)
@@ -42,32 +46,36 @@ class ConfigGrid(val config: ConfigImpl): JPanel() {
                 }
             } else null
         }
-        return if(checkBoxes.isNotEmpty()) {
-            JPanel().apply {
-                layout = MigLayout("wrap 4")
-                border = BorderFactory.createTitledBorder(legend)
-                checkBoxes.forEach { this.add(it) }
+        return if (checkBoxes.isNotEmpty()) {
+            SwingUtils.invokeAndWait {
+                JPanel().apply {
+                    layout = MigLayout("wrap 4")
+                    border = BorderFactory.createTitledBorder(legend)
+                    checkBoxes.forEach { add(it) }
+                }
             }
         } else null
     }
 
-    private fun <R> KMutableProperty1<R, Boolean>.toCheckBox(receiver: R): JCheckBox {
-        return JCheckBox(name).apply {
+    private fun <R> KMutableProperty1<R, Boolean>.toCheckBox(receiver: R): JCheckBox = SwingUtils.invokeAndWait {
+        JCheckBox(name).apply {
             isSelected = this@toCheckBox.get(receiver)
             addActionListener {
                 this@toCheckBox.set(receiver, isSelected)
             }
         }
     }
-    private fun <R> KMutableProperty1<R, Boolean>.toButton(receiver: R): JButton {
-        return JButton(name).apply {
+
+    private fun <R> KMutableProperty1<R, Boolean>.toButton(receiver: R): JButton = SwingUtils.invokeAndWait {
+        JButton(name).apply {
             addActionListener {
                 this@toButton.set(receiver, true)
             }
         }
     }
-    private fun <R> KProperty1<R, Boolean>.toCheckBox(receiver: R): JCheckBox {
-        return JCheckBox(name).apply {
+
+    private fun <R> KProperty1<R, Boolean>.toCheckBox(receiver: R): JCheckBox = SwingUtils.invokeAndWait {
+        JCheckBox(name).apply {
             isSelected = this@toCheckBox.get(receiver)
             isEnabled = false
         }

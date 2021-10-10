@@ -28,6 +28,10 @@ import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
+import net.miginfocom.swing.MigLayout
+import javax.swing.BorderFactory
+import javax.swing.JCheckBox
+import javax.swing.JPanel
 
 class ExtensibleDeferredRenderer(
     val window: Window<OpenGl>,
@@ -35,8 +39,14 @@ class ExtensibleDeferredRenderer(
     val config: Config,
     val deferredRenderingBuffer: DeferredRenderingBuffer,
     val renderStateManager: RenderStateManager,
-    val extensions: List<DeferredRenderExtension<OpenGl>>
+    val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
+    extensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem, Backend<OpenGl> {
+    private val allExtensions: List<DeferredRenderExtension<OpenGl>> = extensions.distinct()
+    private val extensions: List<DeferredRenderExtension<OpenGl>>
+        get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }
+
+    override val sharedRenderTarget = deferredRenderingBuffer.gBuffer
 
     val combinePassExtension = CombinePassRenderExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
     val postProcessingExtension = PostProcessingExtension(config, backend.programManager, textureManager, backend.gpuContext, deferredRenderingBuffer)
@@ -55,14 +65,6 @@ class ExtensibleDeferredRenderer(
         null,
         Defines(Define.getDefine("ANIMATED", true)),
         AnimatedFirstPassUniforms(gpuContext)
-    )
-
-    val textureRenderer = SimpleTextureRenderer(
-        config,
-        gpuContext,
-        deferredRenderingBuffer.colorReflectivenessTexture,
-        programManager,
-        window.frontBuffer
     )
 
     private val useIndirectRendering
@@ -160,13 +162,17 @@ class ExtensibleDeferredRenderer(
     }
 
     override fun render(result: DrawResult, renderState: RenderState): Unit = profiled("DeferredRendering") {
+        actualRender(renderState, result)
+    }
+
+    private fun actualRender(renderState: RenderState, result: DrawResult) {
         gpuContext.depthMask = true
         deferredRenderingBuffer.use(gpuContext, true)
 
         profiled("FirstPass") {
 
             profiled("MainPipeline") {
-                if(useIndirectRendering) {
+                if (useIndirectRendering) {
                     renderState[indirectPipeline].draw(
                         renderState,
                         simpleColorProgramStatic,
@@ -199,12 +205,14 @@ class ExtensibleDeferredRenderer(
             deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, true)
             for (extension in extensions) {
                 profiled(extension.javaClass.simpleName) {
+                    deferredRenderingBuffer.lightAccumulationBuffer.use(gpuContext, false)
                     extension.renderSecondPassFullScreen(renderState, result.secondPassResult)
                 }
             }
         }
-        deferredRenderingBuffer.lightAccumulationBuffer.unUse()
+        window.frontBuffer.use(gpuContext, false)
         combinePassExtension.renderCombinePass(renderState)
+        deferredRenderingBuffer.use(gpuContext, false)
 
         runCatching {
             if (config.effects.isEnablePostprocessing) {
@@ -215,7 +223,7 @@ class ExtensibleDeferredRenderer(
                     postProcessingExtension.renderSecondPassFullScreen(renderState, result.secondPassResult)
                 }
             } else {
-//                textureRenderer.drawToQuad(deferredRenderingBuffer.finalBuffer, deferredRenderingBuffer.lightAccumulationMapOneId)
+    //                textureRenderer.drawToQuad(deferredRenderingBuffer.finalBuffer, deferredRenderingBuffer.lightAccumulationMapOneId)
             }
         }.onFailure {
             println("Not able to render texture")
@@ -228,5 +236,32 @@ class ExtensibleDeferredRenderer(
 
     override fun afterSetScene(currentScene: Scene) {
         extensions.forEach { it.afterSetScene(currentScene) }
+    }
+}
+
+class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension<*>>) {
+    private val renderSystemsEnabled = renderExtensions.distinct().associateWith { true }.toMutableMap()
+    var DeferredRenderExtension<*>.enabled: Boolean
+        get() = renderSystemsEnabled[this]!!
+        set(value) {
+            renderSystemsEnabled[this] = value
+        }
+}
+
+class DeferredRenderExtensionsConfigPanel(val renderSystemsConfig: DeferredRenderExtensionConfig) : ConfigExtension {
+    override val panel: JPanel = with(renderSystemsConfig) {
+        JPanel().apply {
+            border = BorderFactory.createTitledBorder("RenderSystems")
+            layout = MigLayout("wrap 1")
+
+            renderSystemsConfig.renderExtensions.forEach { renderExtension ->
+                add(JCheckBox(renderExtension::class.simpleName).apply {
+                    isSelected = renderExtension.enabled
+                    addActionListener {
+                        renderExtension.enabled = !renderExtension.enabled
+                    }
+                })
+            }
+        }
     }
 }

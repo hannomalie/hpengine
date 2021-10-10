@@ -15,14 +15,17 @@ import de.hanno.hpengine.editor.selection.EntitySelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
 import de.hanno.hpengine.editor.selection.SelectionSystem
 import de.hanno.hpengine.editor.supportframes.ConfigFrame
+import de.hanno.hpengine.editor.supportframes.ProfilingRenderSystem
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
 import de.hanno.hpengine.editor.tasks.EditorRibbonTask
 import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.graphics.ConfigExtension
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
+import de.hanno.hpengine.engine.graphics.RenderSystemsConfigPanel
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
@@ -74,7 +77,7 @@ class OutputConfigHolder(var outputConfig: OutputConfig)
 
 data class Pivot(var position: Vector3f)
 
-class EditorRendersystem(
+class EditorRenderSystem(
     val gpuContext: GpuContext<OpenGl>,
     val config: ConfigImpl,
     val window: Window<OpenGl>,
@@ -93,6 +96,7 @@ class EditorRendersystem(
     val tasks: List<RibbonTask>,
     val applicationMenu: ApplicationMenu,
     val pivot: Pivot,
+    val profilingRenderSystem: ProfilingRenderSystem,
 ) : RenderSystem, EditorInputConfig by editorInputConfig, Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
@@ -221,9 +225,9 @@ class EditorRendersystem(
         })
         drawTransformationArrows(renderState)
 
-        gpuContext.readBuffer(0)
-        selectionSystem.floatBuffer.rewind()
         if (mouseAdapter.mousePressStarted) {
+            gpuContext.readBuffer(0)
+            selectionSystem.floatBuffer.rewind()
             mouseAdapter.mousePressed?.let { event ->
                 run {
                     targetBuffer.use(gpuContext, false)
@@ -433,14 +437,13 @@ class EditorRendersystem(
             tasks.forEach { addTask(it) }
         }
         SwingUtils.invokeLater {
-            TimingsFrame()
-            ConfigFrame(config, editor)
+            TimingsFrame(profilingRenderSystem)
         }
     }
 
     override fun beforeSetScene(nextScene: Scene) = super<RenderSystem>.beforeSetScene(nextScene)
 
-    override fun afterSetScene(nextScene: Scene) {
+    override fun afterSetScene(currentScene: Scene) {
         SwingUtils.invokeLater {
             sceneTree.apply {
                 reload(sceneManager.scene.getEntities())
