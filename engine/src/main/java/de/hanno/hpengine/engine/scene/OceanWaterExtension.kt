@@ -49,12 +49,16 @@ object OceanWaterExtension {
                      var direction: Vector2f = Vector2f(0.25f, 1.0f),
                      var L: Int = 800) : Component
     class OceanWaterRenderState(var amplitude: Float = 2f,
-                                var intensity: Float = 26f,
+                                var intensity: Float = 0f,
                                 var timeFactor: Float = 1f,
                                 var direction: Vector2f = Vector2f(1.0f, 1.0f),
                                 var L: Int = 500,
                                 var albedo: Vector3f = Vector3f()
-    )
+    ) {
+        companion object {
+            val recommendedIntensity = 26f
+        }
+    }
 }
 
 class OceanWaterRenderSystem(
@@ -176,8 +180,9 @@ class OceanWaterRenderSystem(
     }
     private var seconds = 0.0f
     override fun render(result: DrawResult, renderState: RenderState) {
-
         val oceanWaterRenderState = renderState[oceanwaterRenderState]
+        if(oceanWaterRenderState.intensity == 0f) { return }
+
         seconds += oceanWaterRenderState.timeFactor * max(0.01f, renderState.deltaSeconds)
 
         h0kShader.use()
