@@ -1,6 +1,9 @@
 package de.hanno.hpengine.editor.graphics
 
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
+import struktgen.api.Strukt
+import java.nio.ByteBuffer
 
 sealed class OutputConfig {
     object Default : OutputConfig() {

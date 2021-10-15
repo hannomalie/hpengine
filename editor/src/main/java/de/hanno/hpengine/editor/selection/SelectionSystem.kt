@@ -239,7 +239,7 @@ class SelectionSystem(
         val meshIndex = floatBuffer.get(3).toInt()
         val modelComponent = pickedEntity.getComponent(ModelComponent::class.java)!!
 
-        selectOrUnselect(MeshSelection(pickedEntity, modelComponent.meshes[meshIndex]))
+        selectOrUnselect(MeshSelection(pickedEntity, modelComponent.meshes[meshIndex], modelComponent))
     }
 
     val unselectButton = SwingUtils.invokeAndWait {

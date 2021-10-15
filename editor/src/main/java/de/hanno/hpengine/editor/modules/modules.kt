@@ -129,6 +129,7 @@ val editorModule = module {
             applicationMenu = get(),
             pivot = get(),
             profilingRenderSystem = get(),
+            sharedDepthBuffer = get()
         )
     } binds arrayOf(RenderSystem::class, Manager::class)
 

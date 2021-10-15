@@ -7,14 +7,27 @@ import de.hanno.hpengine.editor.input.EditorInputConfig
 import de.hanno.hpengine.editor.input.EditorInputConfigImpl
 import de.hanno.hpengine.editor.input.KeyLogger
 import de.hanno.hpengine.editor.input.MouseInputProcessor
+import de.hanno.hpengine.editor.input.SelectionMode
 import de.hanno.hpengine.editor.input.TransformMode
 import de.hanno.hpengine.editor.input.TransformSpace
 import de.hanno.hpengine.editor.scene.SceneTree
 import de.hanno.hpengine.editor.scene.SelectionListener
+import de.hanno.hpengine.editor.selection.CameraSelection
+import de.hanno.hpengine.editor.selection.DirectionalLightSelection
 import de.hanno.hpengine.editor.selection.EntitySelection
+import de.hanno.hpengine.editor.selection.GiVolumeSelection
+import de.hanno.hpengine.editor.selection.MaterialSelection
+import de.hanno.hpengine.editor.selection.MeshSelection
+import de.hanno.hpengine.editor.selection.ModelComponentSelection
+import de.hanno.hpengine.editor.selection.ModelSelection
 import de.hanno.hpengine.editor.selection.MouseAdapterImpl
+import de.hanno.hpengine.editor.selection.OceanWaterSelection
+import de.hanno.hpengine.editor.selection.PointLightSelection
+import de.hanno.hpengine.editor.selection.ReflectionProbeSelection
+import de.hanno.hpengine.editor.selection.SceneSelection
+import de.hanno.hpengine.editor.selection.Selection
 import de.hanno.hpengine.editor.selection.SelectionSystem
-import de.hanno.hpengine.editor.supportframes.ConfigFrame
+import de.hanno.hpengine.editor.selection.SimpleEntitySelection
 import de.hanno.hpengine.editor.supportframes.ProfilingRenderSystem
 import de.hanno.hpengine.editor.supportframes.TimingsFrame
 import de.hanno.hpengine.editor.tasks.EditorRibbonTask
@@ -22,10 +35,9 @@ import de.hanno.hpengine.editor.window.SwingUtils
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.graphics.ConfigExtension
+import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
-import de.hanno.hpengine.engine.graphics.RenderSystemsConfigPanel
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
@@ -97,13 +109,14 @@ class EditorRenderSystem(
     val applicationMenu: ApplicationMenu,
     val pivot: Pivot,
     val profilingRenderSystem: ProfilingRenderSystem,
+    val sharedDepthBuffer: SharedDepthBuffer
 ) : RenderSystem, EditorInputConfig by editorInputConfig, Manager {
 
     val targetBuffer = de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget(
         gpuContext,
         FrameBuffer(
             gpuContext,
-            null
+            sharedDepthBuffer.depthBuffer
         ),
         targetTexture.dimension.width,
         targetTexture.dimension.height,
@@ -185,23 +198,73 @@ class EditorRenderSystem(
         renderStateManager.renderState.registerState { Transform().apply { identity() } }
 
     override fun extract(scene: Scene, renderState: RenderState) {
-        aabbLines.apply {
-            clear()
-            scene.getEntities().mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach { modelComponent ->
-                modelComponent.meshes.forEach {
-                    val boundingVolume = modelComponent.getBoundingVolume(modelComponent.entity.transform, it)
-                    addAABBLines(boundingVolume.min, boundingVolume.max)
-                }
-                modelComponent.entity.clusters.forEach { cluster ->
-                    val clusterVolume = cluster.boundingVolume
-                    addAABBLines(clusterVolume.min, clusterVolume.max)
+        fun batchAllModelBoundingBoxes() {
+            aabbLines.apply {
+                scene.getEntities().mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach { modelComponent ->
+                    modelComponent.meshes.forEach {
+                        val boundingVolume = modelComponent.getBoundingVolume(modelComponent.entity.transform, it)
+                        addAABBLines(boundingVolume.min, boundingVolume.max)
+                    }
+                    modelComponent.entity.clusters.forEach { cluster ->
+                        val clusterVolume = cluster.boundingVolume
+                        addAABBLines(clusterVolume.min, clusterVolume.max)
+                    }
                 }
             }
         }
-        renderState[lineVertices].putLinesPoints(aabbLines)
-        renderState[lineVerticesCount].value = aabbLines.size
-        when (val selection = selectionSystem.selection) {
-            is EntitySelection -> renderState[selectionTransform].set(selection.entity.transform)
+        fun batchAllBoundingBoxes() {
+            aabbLines.apply {
+                clear()
+                batchAllModelBoundingBoxes()
+            }
+            renderState[lineVertices].putLinesPoints(aabbLines)
+            renderState[lineVerticesCount].value = aabbLines.size
+            when (val selection = selectionSystem.selection) {
+                is EntitySelection -> renderState[selectionTransform].set(selection.entity.transform)
+            }
+        }
+
+        if(config.debug.isDrawBoundingVolumes) {
+            batchAllBoundingBoxes()
+        } else {
+            when(val selection = selectionSystem.selection) {
+                is EntitySelection -> {
+                    aabbLines.clear()
+
+                    if(selectionSystem.editorInputConfig.selectionMode == SelectionMode.Entity) {
+                        batchAllModelBoundingBoxes()
+                    } else {
+                        when(selection) {
+                            is MeshSelection -> {
+                                aabbLines.apply {
+                                    val boundingVolume = selection.modelComponent.getBoundingVolume(selection.entity.transform, selection.mesh)
+                                    addAABBLines(boundingVolume.min, boundingVolume.max)
+                                }
+                            }
+                            is ModelComponentSelection -> {
+                                aabbLines.apply {
+                                    val boundingVolume = selection.modelComponent.getBoundingVolume(selection.entity.transform)
+                                    addAABBLines(boundingVolume.min, boundingVolume.max)
+                                }
+                            }
+                            is ModelSelection -> {
+                                aabbLines.apply {
+                                    val boundingVolume = selection.modelComponent.getBoundingVolume(selection.entity.transform)
+                                    addAABBLines(boundingVolume.min, boundingVolume.max)
+                                }
+                            }
+                        }
+                    }
+                    renderState[lineVertices].putLinesPoints(aabbLines)
+                    renderState[lineVerticesCount].value = aabbLines.size
+                    renderState[selectionTransform].set(selection.entity.transform)
+                }
+                is CameraSelection, is DirectionalLightSelection, is PointLightSelection, is SimpleEntitySelection,
+                is GiVolumeSelection, is MaterialSelection, Selection.None, is OceanWaterSelection,
+                is ReflectionProbeSelection, is SceneSelection -> {
+
+                }
+            }
         }
     }
 
@@ -264,7 +327,7 @@ class EditorRenderSystem(
             }
         }
 
-        if (config.debug.isDrawBoundingVolumes) {
+        fun actualDraw() {
             targetBuffer.use(gpuContext, false)
             gpuContext.blend = false
             gpuContext.depthTest = true
@@ -276,6 +339,17 @@ class EditorRenderSystem(
                 verticesCount = renderState[lineVerticesCount].value,
                 color = Vector3f(1f, 0f, 0f)
             )
+        }
+        if (config.debug.isDrawBoundingVolumes) {
+            actualDraw()
+        }
+
+        when(selectionSystem.selection) {
+            is MeshSelection, is ModelComponentSelection, is ModelSelection -> actualDraw()
+
+            is CameraSelection, is DirectionalLightSelection, is PointLightSelection, is SimpleEntitySelection,
+            is GiVolumeSelection, is MaterialSelection, Selection.None, is OceanWaterSelection,
+            is ReflectionProbeSelection, is SceneSelection -> { }
         }
 
         when (val selection = outPutConfig) {

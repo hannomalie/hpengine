@@ -27,7 +27,7 @@ sealed class EntitySelection(val entity: Entity): Selection() {
 data class SimpleEntitySelection(val _entity: Entity): EntitySelection(_entity){
     override fun toString(): String = entity.name
 }
-data class MeshSelection(private val _entity: Entity, val mesh: Mesh<*>): EntitySelection(_entity) {
+data class MeshSelection(private val _entity: Entity, val mesh: Mesh<*>, val modelComponent: ModelComponent): EntitySelection(_entity) {
     override fun toString(): String = mesh.name
 }
 data class ModelSelection(private val _entity: Entity, val modelComponent: ModelComponent, val model: Model<*>): EntitySelection(_entity) {

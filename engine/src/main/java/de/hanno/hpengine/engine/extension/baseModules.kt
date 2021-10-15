@@ -107,16 +107,23 @@ import org.lwjgl.opengl.GL42
 import javax.swing.SwingUtilities
 
 data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
+data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
 
 val deferredRendererModule = module {
     renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll()) }
     single {
         val config: Config = get()
+        SharedDepthBuffer(DepthBuffer(get(), config.width, config.height))
+    }
+    single {
+        val config: Config = get()
         val gpuContext: GpuContext<OpenGl> = get()
+        val sharedDepthBuffer: SharedDepthBuffer = get()
         DeferredRenderingBuffer(
             gpuContext,
             config.width,
-            config.height
+            config.height,
+            sharedDepthBuffer.depthBuffer
         )
     }
     single {

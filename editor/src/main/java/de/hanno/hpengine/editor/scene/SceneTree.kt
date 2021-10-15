@@ -116,7 +116,7 @@ class SceneTree(
             val componentNode = DefaultMutableTreeNode(ModelComponentSelection(component.entity, component))
             for (mesh in component.meshes) {
                 componentNode.add(
-                    DefaultMutableTreeNode(MeshSelection(component.entity, mesh)).apply {
+                    DefaultMutableTreeNode(MeshSelection(component.entity, mesh, component)).apply {
                         add(DefaultMutableTreeNode(MaterialSelection(mesh.material)))
                     }
                 )

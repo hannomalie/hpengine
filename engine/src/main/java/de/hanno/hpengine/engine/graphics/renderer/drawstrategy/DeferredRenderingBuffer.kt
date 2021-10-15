@@ -19,9 +19,9 @@ import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL30
 
-class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height: Int) {
+class DeferredRenderingBuffer(gpuContext: GpuContext<OpenGl>, width: Int, height: Int,
+                              val depthBuffer: DepthBuffer<*>) {
 
-    val depthBuffer = DepthBuffer(gpuContext, width, height)
     val gBuffer = RenderTarget(
             gpuContext,
             FrameBuffer(gpuContext, depthBuffer),
