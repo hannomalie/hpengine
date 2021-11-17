@@ -19,7 +19,7 @@ import org.joml.FrustumIntersection
 open class DirectPipeline(
     private val config: Config,
     private val gpuContext: GpuContext<OpenGl>,
-    private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = RenderBatch::shouldBeSkipped
+    private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = RenderBatch::isCulledOrForwardRendered
 ) : Pipeline {
 
     private var verticesCount = 0
@@ -30,11 +30,12 @@ open class DirectPipeline(
     override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
 
     fun prepare(renderState: RenderState, camera: Camera) {
+        if(config.debug.freezeCulling) return
         verticesCount = 0
         entitiesCount = 0
 
-        filteredRenderBatchesStatic = renderState.renderBatchesStatic.filter { !it.shouldBeSkipped(camera) }
-        filteredRenderBatchesAnimated = renderState.renderBatchesAnimated.filter { !it.shouldBeSkipped(camera) }
+        filteredRenderBatchesStatic = renderState.renderBatchesStatic.filterNot { it.shouldBeSkipped(camera) || it.isCulledOrForwardRendered(camera) }
+        filteredRenderBatchesAnimated = renderState.renderBatchesAnimated.filterNot { it.shouldBeSkipped(camera) || it.isCulledOrForwardRendered(camera) }
     }
 
     override fun draw(renderState: RenderState,
@@ -101,7 +102,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
     }
 }
 
-fun RenderBatch.shouldBeSkipped(cullCam: Camera): Boolean {
+fun RenderBatch.isCulledOrForwardRendered(cullCam: Camera): Boolean {
     if(!isVisible) return true
     val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)
     val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE

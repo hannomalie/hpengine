@@ -85,7 +85,9 @@ fun EngineWithEditor(config: ConfigImpl = ConfigImpl()) = Engine(
     startKoin {
         modules(config.toModule(), editorWindowModule, editorModule, baseModule, deferredRendererModule)
     }
-)
+).apply {
+    application.koin.get<AWTEditorWindow>()
+}
 
 private fun ConfigImpl.toModule(): Module = module {
     single { this@toModule } bind Config::class

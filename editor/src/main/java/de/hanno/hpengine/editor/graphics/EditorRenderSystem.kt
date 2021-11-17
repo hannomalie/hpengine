@@ -41,6 +41,7 @@ import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.addAABBLines
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
@@ -331,6 +332,7 @@ class EditorRenderSystem(
             targetBuffer.use(gpuContext, false)
             gpuContext.blend = false
             gpuContext.depthTest = true
+            gpuContext.depthFunc = GlDepthFunc.LEQUAL
 
             drawLines(
                 renderStateManager = renderStateManager,

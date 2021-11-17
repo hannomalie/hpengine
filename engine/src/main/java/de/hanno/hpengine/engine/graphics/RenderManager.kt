@@ -18,7 +18,6 @@ import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import kotlinx.coroutines.delay
 import net.miginfocom.swing.MigLayout
-import org.lwjgl.opengl.GL11
 import javax.swing.BorderFactory
 import javax.swing.JCheckBox
 import javax.swing.JPanel
@@ -89,60 +88,54 @@ class RenderManager(
         renderState.swapStaging()
     }
     init {
-        var lastTimeSwapped = true
         launchEndlessRenderLoop { deltaSeconds ->
             gpuContext.invoke(block = {
                 try {
-                    renderState.startRead()
+                    val currentReadState = renderState.startRead()
 
-                    if (lastTimeSwapped) {
-                        val renderSystems = renderSystems.filter {
-                            renderSystemsConfig.run { it.enabled }
-                        }
-
-                        profiled("Frame") {
-                            recorder.add(renderState.currentReadState)
-                            val drawResult = renderState.currentReadState.latestDrawResult.apply { reset() }
-
-                            profiled("renderSystems") {
-                                renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
-
-                                    val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                    renderTarget?.use(gpuContext, clear)
-                                    renderSystems.forEachIndexed { index, renderSystem ->
-                                        renderSystem.render(drawResult, renderState.currentReadState)
-                                    }
-                                }
-
-                                if (config.debug.isEditorOverlay) {
-                                    renderSystems.forEach {
-                                        it.renderEditor(drawResult, renderState.currentReadState)
-                                    }
-                                }
-                            }
-
-                            window.frontBuffer.use(gpuContext, false)
-                            textureRenderer.drawToQuad(finalOutput.texture2D)
-
-                            profiled("finishFrame") {
-                                gpuContext.finishFrame(renderState.currentReadState)
-                                renderSystems.forEach {
-                                    it.afterFrameFinished()
-                                }
-                            }
-
-                            profiled("checkCommandSyncs") {
-                                gpuContext.checkCommandSyncs()
-                            }
-
-                            window.swapBuffers()
-                            fpsCounter.update()
-
-                        }
-                        GPUProfiler.dump()
-
+                    val renderSystems = renderSystems.filter {
+                        renderSystemsConfig.run { it.enabled }
                     }
-                    lastTimeSwapped = renderState.stopRead()
+
+                    profiled("Frame") {
+                        recorder.add(currentReadState)
+                        val drawResult = currentReadState.latestDrawResult.apply { reset() }
+
+                        profiled("renderSystems") {
+                            renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
+                                val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                renderTarget?.use(gpuContext, clear)
+                                renderSystems.forEach { renderSystem ->
+                                    renderSystem.render(drawResult, currentReadState)
+                                }
+                            }
+
+                            if (config.debug.isEditorOverlay) {
+                                renderSystems.forEach {
+                                    it.renderEditor(drawResult, currentReadState)
+                                }
+                            }
+                        }
+
+                        window.frontBuffer.use(gpuContext, false)
+                        textureRenderer.drawToQuad(finalOutput.texture2D)
+
+                        profiled("finishFrame") {
+                            gpuContext.finishFrame(currentReadState)
+                            renderSystems.forEach {
+                                it.afterFrameFinished()
+                            }
+                        }
+
+                        profiled("checkCommandSyncs") {
+                            gpuContext.checkCommandSyncs()
+                        }
+
+                        window.swapBuffers()
+                    }
+                    GPUProfiler.dump()
+
+                    renderState.stopRead()
 
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -154,18 +147,6 @@ class RenderManager(
                 delay(5)
 //            }
         }
-//        GlobalScope.launch {
-//            while(true) {
-//                gpuContext.invoke(block = {
-//                    runnable()
-//                })
-//                // https://bugs.openjdk.java.net/browse/JDK-4852178
-//                // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
-//                if(isUnix) {
-//                    delay(5)
-//                }
-//            }
-//        }
     }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {

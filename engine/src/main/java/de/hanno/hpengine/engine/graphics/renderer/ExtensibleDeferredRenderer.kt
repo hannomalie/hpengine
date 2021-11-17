@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import net.miginfocom.swing.MigLayout
+import org.lwjgl.opengl.GL11
 import javax.swing.BorderFactory
 import javax.swing.JCheckBox
 import javax.swing.JPanel
@@ -69,7 +70,9 @@ class ExtensibleDeferredRenderer(
 
     private val useIndirectRendering
         get() = config.performance.isIndirectRendering && gpuContext.isSupported(BindlessTextures)
-    private val shouldBeSkippedForDirectRendering: RenderBatch.(Camera) -> Boolean = { if (useIndirectRendering) !hasOwnProgram else false }
+    private val shouldBeSkippedForDirectRendering: RenderBatch.(Camera) -> Boolean = {
+        if (useIndirectRendering) !hasOwnProgram else false
+    }
 
     val pipeline: StateRef<DirectPipeline> = renderStateManager.renderState.registerState {
         object : DirectPipeline(config, gpuContext, shouldBeSkippedForDirectRendering) {
@@ -149,12 +152,16 @@ class ExtensibleDeferredRenderer(
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         val currentWriteState = renderStateManager.renderState.currentWriteState
 
-        currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
-        if(useIndirectRendering) {
-            currentWriteState.customState[indirectPipeline].prepare(currentWriteState, currentWriteState.camera)
-        }
+        preparePipelines(currentWriteState)
 
         extensions.forEach { it.update(scene, deltaSeconds) }
+    }
+
+    private fun preparePipelines(currentWriteState: RenderState) {
+        currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
+        if (useIndirectRendering) {
+            currentWriteState.customState[indirectPipeline].prepare(currentWriteState, currentWriteState.camera)
+        }
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {

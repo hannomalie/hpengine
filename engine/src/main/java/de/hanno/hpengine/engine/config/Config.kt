@@ -73,6 +73,7 @@ interface IDebugConfig {
     val directTextureOutputTextureIndex: Int
     val directTextureOutputArrayIndex: Int
     var isForceRevoxelization: Boolean
+    var freezeCulling: Boolean
 }
 
 interface IEffectsConfig {
@@ -141,7 +142,8 @@ data class DebugConfig(
     override var isLockUpdaterate: Boolean = true,
     override var directTextureOutputTextureIndex: Int = 0,
     override var directTextureOutputArrayIndex: Int = 0,
-    override @Button var isForceRevoxelization: Boolean = false
+    override @Button var isForceRevoxelization: Boolean = false,
+    override var freezeCulling: Boolean = false,
 ) : IDebugConfig
 
 data class EffectsConfig(

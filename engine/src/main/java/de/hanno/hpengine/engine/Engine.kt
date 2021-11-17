@@ -9,6 +9,9 @@ import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.graphics.GlfwWindow
+import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.OpenGLContext
+import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -26,6 +29,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.receiveOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.koin.core.KoinApplication
@@ -48,7 +52,6 @@ class Engine constructor(val application: KoinApplication) {
     private val renderManager = koin.get<RenderManager>()
     private val sceneManager = koin.get<SceneManager>()
 
-    val cpsCounter: CPSCounter = koin.get()
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread =
         { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
@@ -63,7 +66,7 @@ class Engine constructor(val application: KoinApplication) {
     val updateCycle = AtomicLong()
 
     init {
-        sceneManager.scene = SceneDescription("InitialScene").convert(koin.get(), koin.get())
+        sceneManager.scene = SceneDescription("InitialScene").convert(config = koin.get(), textureManager = koin.get())
         launchEndlessLoop { deltaSeconds ->
             try {
                 executeCommands()
@@ -88,10 +91,11 @@ class Engine constructor(val application: KoinApplication) {
     }
 
     private fun extract(deltaSeconds: Float): Long {
-        renderManager.renderState.currentWriteState.cycle = updateCycle.get()
-        renderManager.renderState.currentWriteState.time = System.currentTimeMillis()
+        val currentWriteState = renderManager.renderState.currentWriteState
+        currentWriteState.cycle = updateCycle.get()
+        currentWriteState.time = System.currentTimeMillis()
 
-        koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, renderManager.renderState.currentWriteState) }
+        koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, currentWriteState) }
 
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
 
@@ -110,10 +114,6 @@ class Engine constructor(val application: KoinApplication) {
     } catch (e: Exception) {
         e.printStackTrace()
     }
-
-
-    val firstpassProgramVertexSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
-    val firstpassProgramFragmentSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
 
     companion object {
 

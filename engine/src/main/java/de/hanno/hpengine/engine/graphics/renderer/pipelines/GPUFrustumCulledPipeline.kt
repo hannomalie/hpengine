@@ -83,8 +83,24 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config
         profiled("Actual draw entities") {
             val mode = if(config.debug.isDrawLines) RenderingMode.Lines else RenderingMode.Faces
 
-            val drawDescriptionStatic = IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera)
-            val drawDescriptionAnimated = IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera)
+            val drawDescriptionStatic = IndirectDrawDescription(
+                renderState,
+                programStatic,
+                commandOrganizationStatic,
+                renderState.vertexIndexBufferStatic,
+                this::beforeDrawStatic,
+                mode,
+                renderState.camera
+            )
+            val drawDescriptionAnimated = IndirectDrawDescription(
+                renderState,
+                programAnimated,
+                commandOrganizationAnimated,
+                renderState.vertexIndexBufferAnimated,
+                this::beforeDrawAnimated,
+                mode,
+                renderState.camera
+            )
 
             beforeDraw(drawDescriptionStatic, drawDescriptionAnimated)
 

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import DrawElementsIndirectCommandStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
@@ -15,7 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lin
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
-import de.hanno.struct.copyTo
+import org.lwjgl.opengl.GL11
 
 open class IndirectPipeline @JvmOverloads constructor(private val config: Config,
                                                       private val gpuContext: GpuContext<OpenGl>,
@@ -36,11 +37,12 @@ open class IndirectPipeline @JvmOverloads constructor(private val config: Config
     override fun prepare(renderState: RenderState) = prepare(renderState, renderState.camera)
 
     fun prepare(renderState: RenderState, camera: Camera) {
+        if(config.debug.freezeCulling) return
         verticesCount = 0
         entitiesCount = 0
 
         fun CommandOrganization.prepare(batches: List<RenderBatch>) {
-            filteredRenderBatches = batches.filterNot { it.shouldBeSkipped(camera) }.filterNot { it.hasOwnProgram }
+            filteredRenderBatches = batches.filterNot { it.isCulledOrForwardRendered(camera) }.filterNot { it.hasOwnProgram }
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
         }
@@ -56,8 +58,24 @@ open class IndirectPipeline @JvmOverloads constructor(private val config: Config
                       firstPassResult: FirstPassResult) = profiled("Actual draw entities") {
 
         val mode = if (config.debug.isDrawLines) Lines else Faces
-        IndirectDrawDescription(renderState, renderState.renderBatchesStatic, programStatic, commandOrganizationStatic, renderState.vertexIndexBufferStatic, this::beforeDrawStatic, mode, renderState.camera).draw()
-        IndirectDrawDescription(renderState, renderState.renderBatchesAnimated, programAnimated, commandOrganizationAnimated, renderState.vertexIndexBufferAnimated, this::beforeDrawAnimated, mode, renderState.camera).draw()
+        IndirectDrawDescription(
+            renderState,
+            programStatic,
+            commandOrganizationStatic,
+            renderState.vertexIndexBufferStatic,
+            this::beforeDrawStatic,
+            mode,
+            renderState.camera
+        ).draw()
+        IndirectDrawDescription(
+            renderState,
+            programAnimated,
+            commandOrganizationAnimated,
+            renderState.vertexIndexBufferAnimated,
+            this::beforeDrawAnimated,
+            mode,
+            renderState.camera
+        ).draw()
 
         firstPassResult.verticesDrawn += verticesCount
         firstPassResult.entitiesDrawn += entitiesCount
@@ -89,7 +107,9 @@ fun addCommands(renderBatches: List<RenderBatch>,
 
     val resultingCommandCount = renderBatches.sumBy{ it.instanceCount }
     entityOffsetBuffer.enlarge(resultingCommandCount)
-    commandBuffer.persistentMappedBuffer.enlarge(resultingCommandCount)
+    entityOffsetBuffer.buffer.rewind()
+    commandBuffer.persistentMappedBuffer.enlarge(resultingCommandCount * DrawElementsIndirectCommandStrukt.sizeInBytes)
+    commandBuffer.persistentMappedBuffer.buffer.rewind()
 
     commandBuffer.typedBuffer.byteBuffer.run {
         var index = 0
@@ -101,13 +121,13 @@ fun addCommands(renderBatches: List<RenderBatch>,
                     firstIndex.run { value = batch.drawElementsIndirectCommand.firstIndex }
                     baseVertex.run { value = batch.drawElementsIndirectCommand.baseVertex }
                     baseInstance.run { value = batch.drawElementsIndirectCommand.baseInstance }
-                    primCount.run { value = 1 }
                 }
                 entityOffsetBuffer[index].value = batch.entityBufferIndex + instanceIndex
                 index++
             }
         }
     }
+    commandBuffer.typedBuffer.byteBuffer.rewind()
 }
 
 fun <T: FirstPassUniforms> IndirectDrawDescription<T>.draw() {
@@ -126,8 +146,9 @@ fun <T: FirstPassUniforms> IndirectDrawDescription<T>.draw() {
                 is AnimatedFirstPassUniforms -> uniforms.joints = renderState.entitiesState.jointsBuffer
             }!!
 
+            GL11.glFinish()
             vertexIndexBuffer.multiDrawElementsIndirectCount(commandBuffer, drawCountBuffer, 0, commandCount, mode)
-            org.lwjgl.opengl.GL11.glFinish()
+            GL11.glFinish()
         }
     }
 }

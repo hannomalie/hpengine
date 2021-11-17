@@ -26,7 +26,7 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
     private var tempA: T? = null
     private var tempB: T? = null
 
-    protected fun swap(): Boolean = swapLock.withLock {
+    private fun swap(): Boolean = swapLock.withLock {
         stagingLock.withLock {
             if (!preventSwap(currentStagingState, currentReadState)) {
                 tempA = currentReadState
@@ -54,9 +54,14 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
         return StateRef(newIndex)
     }
 
-    fun startRead() = swapLock.lock()
+    fun startRead(): T {
+        swapLock.lock()
+        return currentReadState
+    }
 
-    fun stopRead(): Boolean = swap()
+    fun stopRead(): Boolean {
+        return swap()
+    }
 
     fun logState() {
         if (LOGGER.isLoggable(Level.FINER)) {

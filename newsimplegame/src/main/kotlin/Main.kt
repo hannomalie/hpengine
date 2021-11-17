@@ -1,9 +1,11 @@
 import de.hanno.hpengine.editor.EngineWithEditor
+import de.hanno.hpengine.editor.window.AWTEditorWindow
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import scenes.sponzaScene
 import java.io.File
 
 object GameEditor {
@@ -18,11 +20,11 @@ object GameEditor {
                 ),
                 debug = DebugConfig(isUseFileReloading = true)
         )
-        val (engine, editor) = EngineWithEditor(config)
+        val engine = EngineWithEditor(config)
 
-        editor.frame.onSceneReload = {
-            engine.scene = engine.oceanDemo
+        engine.application.koin.get<AWTEditorWindow>().apply {
+            frame.onSceneReload = {
+            }
         }
-        editor.frame.onSceneReload?.invoke()
     }
 }

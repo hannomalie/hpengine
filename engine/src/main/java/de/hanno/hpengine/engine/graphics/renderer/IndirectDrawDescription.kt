@@ -21,7 +21,6 @@ class DirectDrawDescription<T: FirstPassUniforms>(
 
 class IndirectDrawDescription<T: FirstPassUniforms>(
         val renderState: RenderState,
-        val renderBatches: List<RenderBatch>,
         val program: Program<T>,
         val commandOrganization: CommandOrganization,
         val vertexIndexBuffer: VertexIndexBuffer,
