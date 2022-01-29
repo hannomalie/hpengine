@@ -24,6 +24,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.model.texture.UploadState
+import de.hanno.hpengine.engine.scene.dsl.ComponentDescription
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector2f
 import org.joml.Vector3f

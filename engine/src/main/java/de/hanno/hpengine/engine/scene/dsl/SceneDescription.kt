@@ -13,13 +13,16 @@ import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.OceanWaterExtension
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABBData
+import org.joml.Matrix4f
 
 data class SceneDescription(val name: String, val entities: MutableList<EntityDescription> = mutableListOf())
 fun scene(name: String, block: SceneDescription.() -> Unit): SceneDescription = SceneDescription(name).apply(block)
 
 data class EntityDescription(val name: String, val components: MutableList<ComponentDescription> = mutableListOf()) {
+    var transform = Matrix4f()
     var contributesToGi: Boolean = true
 
     fun add(component: ComponentDescription) {
@@ -55,6 +58,7 @@ class DirectionalLightControllerComponentDescription: ComponentDescription
 class DirectionalLightDescription: ComponentDescription
 class MovableInputComponentDescription: ComponentDescription
 class CameraDescription: ComponentDescription
+class OceanWaterDescription: ComponentDescription
 
 fun SceneDescription.convert(config: Config, textureManager: TextureManager) = Scene(name).apply {
 
@@ -99,6 +103,7 @@ fun SceneDescription.convert(config: Config, textureManager: TextureManager) = S
                     is DirectionalLightDescription -> DirectionalLight(this)
                     is MovableInputComponentDescription -> MovableInputComponent(this)
                     is CameraDescription -> Camera(this)
+                    is OceanWaterDescription -> OceanWaterExtension.OceanWater(this)
                     else -> throw IllegalStateException("Cannot map component definition $componentDescription to a runtime type")
                 }
 

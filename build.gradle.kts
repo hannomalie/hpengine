@@ -41,18 +41,10 @@ allprojects {
             name = "java.net"
             setUrl("https://maven.java.net/content/repositories/public/")
         }
-//        maven {
-//            name = "my-bintray-repo"
-//            setUrl("https://dl.bintray.com/h-pernpeintner/maven-repo")
-//        }
         maven {
             name = "snapshots-repo"
             setUrl("https://oss.sonatype.org/content/repositories/snapshots")
         }
-//        maven {
-//            name = "kotlinx"
-//            setUrl("https://dl.bintray.com/kotlin/kotlinx")
-//        }
 
         maven {
             setUrl("https://oss.sonatype.org")
