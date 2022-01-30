@@ -32,6 +32,7 @@ interface Window<T : BackendType>: OpenGlExecutor {
     fun showWindow()
     fun hideWindow()
     fun pollEvents()
+    fun pollEventsInLoop()
     fun swapBuffers()
 
     fun awaitEvents()

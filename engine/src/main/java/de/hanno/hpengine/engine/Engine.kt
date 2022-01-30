@@ -9,9 +9,6 @@ import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
 import de.hanno.hpengine.engine.graphics.GlfwWindow
-import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.OpenGLContext
-import de.hanno.hpengine.engine.graphics.OpenGlExecutorImpl
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -21,17 +18,8 @@ import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.dsl.SceneDescription
 import de.hanno.hpengine.engine.scene.dsl.convert
-import de.hanno.hpengine.util.fps.CPSCounter
-import de.hanno.hpengine.util.fps.FPSCounter
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
@@ -78,7 +66,7 @@ class Engine constructor(val application: KoinApplication) {
                 e.printStackTrace()
             }
         }
-
+        window.pollEventsInLoop()
     }
 
 
@@ -109,7 +97,6 @@ class Engine constructor(val application: KoinApplication) {
         sceneManager.update(scene, deltaSeconds)
 
         window.invoke { input.update() }
-        window.awaitEvents()
 
     } catch (e: Exception) {
         e.printStackTrace()
@@ -124,7 +111,7 @@ class Engine constructor(val application: KoinApplication) {
                 single<Config> {
                     ConfigImpl(
                         directories = Directories(
-                            EngineDirectory(File(Directories.ENGINEDIR_NAME)),
+                            EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
                             GameDirectory(File(Directories.GAMEDIR_NAME), null)
                         )
                     )

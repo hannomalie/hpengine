@@ -12,6 +12,8 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.lwjgl.opengl.GL11
 import java.nio.IntBuffer
 import java.util.logging.Logger
@@ -22,6 +24,11 @@ interface OpenGlExecutor {
 
     suspend fun <T> execute(block: () -> T): T
     operator fun <T> invoke(block: () -> T): T
+    fun launch(block: () -> Unit) {
+        GlobalScope.launch {
+            execute(block)
+        }
+    }
 
 }
 interface GpuContext<T: BackendType>: OpenGlExecutor {

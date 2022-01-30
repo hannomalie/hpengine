@@ -4,12 +4,20 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
+import imgui.ImGui
+import imgui.gl3.ImGuiImplGl3
+import imgui.glfw.ImGuiImplGlfw
+import kotlinx.coroutines.*
+import org.jetbrains.kotlin.context.GlobalContext
 import org.joml.Vector4f
-import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.glfw.GLFWErrorCallbackI
+import org.lwjgl.glfw.GLFWFramebufferSizeCallback
+import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_FALSE
+import org.lwjgl.opengl.GL11.*
 import kotlin.system.exitProcess
 
 //     Don't make this a local field, we need a strong reference
@@ -28,7 +36,8 @@ class GlfwWindow @JvmOverloads constructor(
     override var vSync: Boolean = true,
     errorCallback: GLFWErrorCallbackI = printErrorCallback,
     closeCallback: GLFWWindowCloseCallbackI = exitOnCloseCallback,
-    val executor: OpenGlExecutor = OpenGlExecutorImpl()): Window<OpenGl>, OpenGlExecutor by executor {
+    val executor: OpenGlExecutor = OpenGlExecutorImpl()
+) : Window<OpenGl>, OpenGlExecutor by executor {
 
     override var title = title
         set(value) {
@@ -37,17 +46,14 @@ class GlfwWindow @JvmOverloads constructor(
         }
     override val frontBuffer: FrontBufferTarget
 
-    constructor(config: Config): this(config.width, config.height, "HPEngine", config.performance.isVsync)
-//     TODO: Avoid this somehow, move to update, but only when update is called before all the
-//    contexts and stuff, or the fresh window will get a message dialog that it doesnt respond
-    private val pollEventsThread = Thread({
-        while(true) {
-            pollEvents()
-            Thread.sleep(16)
-        }
-    }, "PollWindowEvents").apply { start() }
+    constructor(config: Config) : this(config.width, config.height, "HPEngine", config.performance.isVsync)
 
     override fun pollEvents() = glfwPollEvents()
+    override fun pollEventsInLoop() {
+        while(!glfwWindowShouldClose(handle)) {
+            pollEvents()
+        }
+    }
 
     // Don't remove this strong reference
     private var framebufferSizeCallback: GLFWFramebufferSizeCallback = object : GLFWFramebufferSizeCallback() {
@@ -55,12 +61,18 @@ class GlfwWindow @JvmOverloads constructor(
             try {
                 this@GlfwWindow.width = width
                 this@GlfwWindow.height = height
-            } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
         }
     }
 
     override val handle: Long
+    private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
+
+    private lateinit var ImGuiImplGlfw: ImGuiImplGlfw
+    private lateinit var ImGuiImplGl3: ImGuiImplGl3
 
     init {
         check(glfwInit()) { "Unable to initialize GLFW" }
@@ -77,31 +89,49 @@ class GlfwWindow @JvmOverloads constructor(
         }
         setCallbacks(framebufferSizeCallback, closeCallback)
 
-        executor.invoke {
+        // This has to happen on the main thread, or it will break, look at glfwShowWindow documentation
+        run {
             makeContextCurrent()
+            glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
+            glfwSwapInterval(if (vSync) 1 else 0)
+            glfwShowWindow(handle)
             GL.createCapabilities()
 
-            glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1)
-            glfwSwapInterval(if(vSync) 1 else 0)
-
+            ImGui.createContext()
+            ImGuiImplGlfw = ImGuiImplGlfw().apply {
+                init(handle, true)
+            }
+            ImGuiImplGl3 = ImGuiImplGl3().apply {
+                init(glslVersion)
+            }
+            // Don't remove that, or some operating systems won't make context current on another thread
+            glfwMakeContextCurrent(0)
         }
-        glfwShowWindow(handle)
+
+        executor.launch {
+            makeContextCurrent()
+            GL.createCapabilities()
+        }
 
         frontBuffer = createFrontBufferRenderTarget()
     }
 
     override fun setVSync(vSync: Boolean, gpuContext: GpuContext<OpenGl>) = invoke {
-        glfwSwapInterval(if(vSync) 1 else 0)
+        glfwSwapInterval(if (vSync) 1 else 0)
         this.vSync = vSync
     }
 
     override fun showWindow() = glfwShowWindow(handle)
     override fun hideWindow() = glfwHideWindow(handle)
 
-    private fun setCallbacks(framebufferSizeCallback: GLFWFramebufferSizeCallback, closeCallback: GLFWWindowCloseCallbackI) {
+    private fun setCallbacks(
+        framebufferSizeCallback: GLFWFramebufferSizeCallback,
+        closeCallback: GLFWWindowCloseCallbackI
+    ) {
         glfwSetFramebufferSizeCallback(handle, framebufferSizeCallback)
         glfwSetWindowCloseCallback(handle, closeCallback)
     }
+
     override fun getCursorPosition(mouseX: DoubleArray, mouseY: DoubleArray) = glfwGetCursorPos(handle, mouseX, mouseY)
     override fun getFrameBufferSize(width: IntArray, height: IntArray) = glfwGetFramebufferSize(handle, width, height)
     override fun getKey(keyCode: Int): Int = glfwGetKey(handle, keyCode)
@@ -115,7 +145,7 @@ class GlfwWindow @JvmOverloads constructor(
 }
 
 fun Window<*>.createFrontBufferRenderTarget(): FrontBufferTarget {
-    return object: FrontBufferTarget {
+    return object : FrontBufferTarget {
         override val frameBuffer = FrameBuffer.FrontBuffer
         override val name = "FrontBuffer"
         override val clear = Vector4f()

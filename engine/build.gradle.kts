@@ -88,6 +88,14 @@ dependencies {
     api("de.hanno.struktgen:api:1.0.0-SNAPSHOT")
     ksp("de.hanno.struktgen:processor:1.0.0-SNAPSHOT")
 
+
+    val imguiVersion = "1.86.1"
+
+    implementation("io.github.spair:imgui-java-binding:$imguiVersion")
+    implementation("io.github.spair:imgui-java-lwjgl3:$imguiVersion")
+    implementation("io.github.spair:imgui-java-natives-windows:$imguiVersion") // TODO Make OS aware
+
+
     val koinVersion= "3.1.1"
     api("io.insert-koin:koin-core:$koinVersion")
     testImplementation("io.insert-koin:koin-test:$koinVersion")
