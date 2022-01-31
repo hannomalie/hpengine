@@ -2,12 +2,14 @@ package de.hanno.hpengine.engine
 
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
+import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.extension.baseModule
 import de.hanno.hpengine.engine.extension.deferredRendererModule
+import de.hanno.hpengine.engine.extension.imGuiEditorModule
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
@@ -113,7 +115,8 @@ class Engine constructor(val application: KoinApplication) {
                         directories = Directories(
                             EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
                             GameDirectory(File(Directories.GAMEDIR_NAME), null)
-                        )
+                        ),
+                        debug = DebugConfig(isEditorOverlay = true)
                     )
                 }
             }
@@ -121,7 +124,7 @@ class Engine constructor(val application: KoinApplication) {
                 single { GlfwWindow(get()) } bind Window::class
             }
             val application = startKoin {
-                modules(configModule, windowModule, baseModule, deferredRendererModule)
+                modules(configModule, windowModule, baseModule, imGuiEditorModule)
             }
 
             val engine = Engine(application)

@@ -173,8 +173,8 @@ data class PerformanceConfig(
 ) : IPerformanceConfig
 
 data class ConfigImpl(override var directories: Directories = Directories(ENGINEDIR_NAME, GAMEDIR_NAME),
-                      override var width: Int = 1280,
-                      override var height: Int = 720,
+                      override var width: Int = 1920,
+                      override var height: Int = 1080,
                       override val quality: QualityConfig = QualityConfig(),
                       override val debug: DebugConfig = DebugConfig(),
                       override val effects: EffectsConfig = EffectsConfig(),

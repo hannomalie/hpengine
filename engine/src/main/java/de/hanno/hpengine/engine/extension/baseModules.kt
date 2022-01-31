@@ -18,14 +18,8 @@ import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
-import de.hanno.hpengine.engine.graphics.ConfigExtension
-import de.hanno.hpengine.engine.graphics.FinalOutput
-import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.OpenGLContext
-import de.hanno.hpengine.engine.graphics.RenderManager
-import de.hanno.hpengine.engine.graphics.RenderSystemsConfigPanel
-import de.hanno.hpengine.engine.graphics.RenderStateManager
-import de.hanno.hpengine.engine.graphics.RenderSystemsConfig
+import de.hanno.hpengine.engine.graphics.*
+import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
@@ -135,6 +129,34 @@ val deferredRendererModule = module {
         FinalOutput(deferredRenderingBuffer.finalMap)
     }
     single { DeferredRenderExtensionConfig(getAll()) }
+}
+
+val imGuiEditorModule = module {
+    single {
+        val config: Config = get()
+        val gpuContext: GpuContext<OpenGl> = get()
+        RenderTarget(
+            gpuContext,
+            FrameBuffer(gpuContext,
+                depthBuffer = DepthBuffer(gpuContext, config.width, config.height)
+            ),
+            name = "Final Image",
+            width = config.width,
+            height = config.height,
+            textures = listOf(
+                ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(gpuContext, config.width, config.height
+            )
+        )
+    }
+    single {
+        val renderTarget: RenderTarget2D = get()
+        FinalOutput(renderTarget.textures.first())
+    }
+    renderSystem {
+        val gpuContext: GpuContext<OpenGl> = get()
+        val renderTarget: RenderTarget2D = get()
+        ImGuiEditor(get(), gpuContext, renderTarget)
+    }
 }
 val textureRendererModule = module {
     single {

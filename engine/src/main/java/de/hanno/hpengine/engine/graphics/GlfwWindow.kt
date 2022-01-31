@@ -4,11 +4,6 @@ import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrontBufferTarget
-import imgui.ImGui
-import imgui.gl3.ImGuiImplGl3
-import imgui.glfw.ImGuiImplGlfw
-import kotlinx.coroutines.*
-import org.jetbrains.kotlin.context.GlobalContext
 import org.joml.Vector4f
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -17,15 +12,17 @@ import org.lwjgl.glfw.GLFWFramebufferSizeCallback
 import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL11.GL_FALSE
 import kotlin.system.exitProcess
 
-//     Don't make this a local field, we need a strong reference
-private val printErrorCallback = GLFWErrorCallbackI { error: Int, description: Long ->
+
+// Don't make this a local field, we need a strong reference
+private val printErrorCallback = GLFWErrorCallbackI { _: Int, _: Long ->
     GLFWErrorCallback.createPrint(System.err)
 }
 
-private val exitOnCloseCallback = GLFWWindowCloseCallbackI { l: Long ->
+// Don't make this a local field, we need a strong reference
+private val exitOnCloseCallback = GLFWWindowCloseCallbackI { _: Long ->
     exitProcess(0)
 }
 
@@ -50,7 +47,7 @@ class GlfwWindow @JvmOverloads constructor(
 
     override fun pollEvents() = glfwPollEvents()
     override fun pollEventsInLoop() {
-        while(!glfwWindowShouldClose(handle)) {
+        while (!glfwWindowShouldClose(handle)) {
             pollEvents()
         }
     }
@@ -69,10 +66,6 @@ class GlfwWindow @JvmOverloads constructor(
     }
 
     override val handle: Long
-    private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
-
-    private lateinit var ImGuiImplGlfw: ImGuiImplGlfw
-    private lateinit var ImGuiImplGl3: ImGuiImplGl3
 
     init {
         check(glfwInit()) { "Unable to initialize GLFW" }
@@ -97,13 +90,6 @@ class GlfwWindow @JvmOverloads constructor(
             glfwShowWindow(handle)
             GL.createCapabilities()
 
-            ImGui.createContext()
-            ImGuiImplGlfw = ImGuiImplGlfw().apply {
-                init(handle, true)
-            }
-            ImGuiImplGl3 = ImGuiImplGl3().apply {
-                init(glslVersion)
-            }
             // Don't remove that, or some operating systems won't make context current on another thread
             glfwMakeContextCurrent(0)
         }

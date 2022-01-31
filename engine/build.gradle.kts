@@ -95,6 +95,7 @@ dependencies {
     implementation("io.github.spair:imgui-java-lwjgl3:$imguiVersion")
     implementation("io.github.spair:imgui-java-natives-windows:$imguiVersion") // TODO Make OS aware
 
+    implementation("io.github.config4k:config4k:0.4.2")
 
     val koinVersion= "3.1.1"
     api("io.insert-koin:koin-core:$koinVersion")

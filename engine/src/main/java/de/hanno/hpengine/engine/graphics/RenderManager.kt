@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import imgui.ImGui
 import kotlinx.coroutines.delay
 import net.miginfocom.swing.MigLayout
 import javax.swing.BorderFactory
