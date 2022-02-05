@@ -124,7 +124,7 @@ class Engine constructor(val application: KoinApplication) {
                 single { GlfwWindow(get()) } bind Window::class
             }
             val application = startKoin {
-                modules(configModule, windowModule, baseModule, imGuiEditorModule)
+                modules(configModule, windowModule, baseModule, deferredRendererModule, imGuiEditorModule)
             }
 
             val engine = Engine(application)

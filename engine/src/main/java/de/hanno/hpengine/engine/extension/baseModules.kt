@@ -132,30 +132,10 @@ val deferredRendererModule = module {
 }
 
 val imGuiEditorModule = module {
-    single {
-        val config: Config = get()
-        val gpuContext: GpuContext<OpenGl> = get()
-        RenderTarget(
-            gpuContext,
-            FrameBuffer(gpuContext,
-                depthBuffer = DepthBuffer(gpuContext, config.width, config.height)
-            ),
-            name = "Final Image",
-            width = config.width,
-            height = config.height,
-            textures = listOf(
-                ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(gpuContext, config.width, config.height
-            )
-        )
-    }
-    single {
-        val renderTarget: RenderTarget2D = get()
-        FinalOutput(renderTarget.textures.first())
-    }
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
-        val renderTarget: RenderTarget2D = get()
-        ImGuiEditor(get(), gpuContext, renderTarget)
+        val finalOutput: FinalOutput = get()
+        ImGuiEditor(get(), gpuContext, finalOutput, get(), get())
     }
 }
 val textureRendererModule = module {

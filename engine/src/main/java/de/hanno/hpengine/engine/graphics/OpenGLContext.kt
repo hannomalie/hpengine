@@ -53,7 +53,7 @@ import javax.vecmath.Tuple4f
 import javax.vecmath.Vector2f
 import javax.vecmath.Vector4f
 
-class OpenGLContext private constructor(override val window: Window<OpenGl>, val debug: Boolean = true) : GpuContext<OpenGl>, OpenGlExecutor by window {
+class OpenGLContext private constructor(override val window: Window<OpenGl>, val debug: Boolean = false) : GpuContext<OpenGl>, OpenGlExecutor by window {
     private var commandSyncs: MutableList<OpenGlCommandSync> = ArrayList(10)
     private val capabilities = getCapabilities()
     private val debugProc = window.invoke { if (debug) GLUtil.setupDebugMessageCallback() else null }

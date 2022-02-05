@@ -1,4 +1,5 @@
 package de.hanno.hpengine.engine.graphics.imgui.dsl
+import imgui.type.ImBoolean
 import imgui.ImGui as IG
 
 object ImGui {
@@ -17,6 +18,22 @@ object Window {
         }
     }
 
+    fun text(text: String, onclick: () -> Unit = { }) {
+        imgui.ImGui.text(text)
+        if(imgui.ImGui.isItemClicked()) {
+            onclick()
+        }
+    }
+    fun checkBox(label: String, initial: Boolean, onChange: (Boolean) -> Unit = { }) {
+        val booleanValue = ImBoolean(initial)
+        if(imgui.ImGui.checkbox(label, booleanValue)) {
+            val currentValue = booleanValue.get()
+            if(initial != currentValue) {
+                onChange(currentValue)
+            }
+        }
+    }
+
     inline fun treeNode(label: String, block: TreeNode.() -> Unit) = treeNodeImpl(label, block)
 }
 
@@ -28,9 +45,12 @@ internal inline fun treeNodeImpl(label: String, block: TreeNode.() -> Unit) {
     }
 }
 object TreeNode {
-    fun text(text: String) {
+    inline fun text(text: String, onclick: () -> Unit = { }) {
         imgui.ImGui.indent()
         imgui.ImGui.text(text)
+        if(imgui.ImGui.isItemClicked()) {
+            onclick()
+        }
         imgui.ImGui.unindent()
     }
 

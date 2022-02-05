@@ -88,6 +88,11 @@ class RenderManager(
         extract(scene, renderState.currentWriteState)
         renderState.swapStaging()
     }
+
+    override fun beforeSetScene(nextScene: Scene) { renderSystems.forEach { it.beforeSetScene(nextScene) } }
+
+    override fun afterSetScene(lastScene: Scene?, currentScene: Scene) { renderSystems.forEach { it.afterSetScene(currentScene) } }
+
     init {
         launchEndlessRenderLoop { deltaSeconds ->
             gpuContext.invoke(block = {
@@ -109,6 +114,7 @@ class RenderManager(
                                 renderSystems.forEach { renderSystem ->
                                     renderSystem.render(drawResult, currentReadState)
                                 }
+
                             }
 
                             if (config.debug.isEditorOverlay) {

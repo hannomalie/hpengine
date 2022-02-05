@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.camera
 
 import de.hanno.hpengine.engine.component.BaseComponent
 import de.hanno.hpengine.engine.component.InputControllerComponent
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -14,6 +15,8 @@ import org.lwjgl.glfw.GLFW.*
 
 class MovableInputComponentComponentSystem: SimpleComponentSystem<MovableInputComponent>(MovableInputComponent::class.java) {
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        if(scene.get<Config>().debug.isEditorOverlay) return
+
         components.forEach {
             with(it) {
 
