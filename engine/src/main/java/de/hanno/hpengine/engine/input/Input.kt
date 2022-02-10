@@ -140,6 +140,12 @@ class Input(private val eventBus: EventBus,
     fun isKeyPressed(keyCode: Int): Boolean {
         return isKeyDown(gpuContext, keyCode)
     }
+    fun wasKeyPressedLastFrame(keyCode: Int): Boolean {
+        return keysPressedLastFrame.contains(keyCode)
+    }
+    fun wasKeyReleasedLastFrame(keyCode: Int): Boolean {
+        return !wasKeyPressedLastFrame(keyCode)
+    }
 
     fun isKeyReleased(keyCode: Int): Boolean {
         return keysReleased.contains(keyCode)

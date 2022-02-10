@@ -20,13 +20,13 @@ class MovableInputComponentComponentSystem: SimpleComponentSystem<MovableInputCo
         components.forEach {
             with(it) {
 
-                //                             linearVel.fma(deltaSeconds, linearAcc);
-                //                             // update angular velocity based on angular acceleration
-                //                             angularVel.fma(deltaSeconds, angularAcc);
-                //                             // update the rotation based on the angular velocity
-                //                             rotation.integrate(deltaSeconds, angularVel.x, angularVel.y, angularVel.z);
-                //                             // update position based on linear velocity
-                //                             position.fma(deltaSeconds, linearVel);
+//                             linearVel.fma(deltaSeconds, linearAcc);
+//                             // update angular velocity based on angular acceleration
+//                             angularVel.fma(deltaSeconds, angularAcc);
+//                             // update the rotation based on the angular velocity
+//                             rotation.integrate(deltaSeconds, angularVel.x, angularVel.y, angularVel.z);
+//                             // update position based on linear velocity
+//                             position.fma(deltaSeconds, linearVel);
 
                 var turbo = 1f
                 val input = scene.get<Input>()

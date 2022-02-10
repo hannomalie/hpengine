@@ -19,6 +19,8 @@ import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.*
+import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
+import de.hanno.hpengine.engine.graphics.imgui.EditorExtension
 import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
@@ -136,6 +138,12 @@ val imGuiEditorModule = module {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
         ImGuiEditor(get(), gpuContext, finalOutput, get(), get())
+    }
+    componentSystem {
+        EditorCameraInputSystem()
+    }
+    extension {
+        EditorExtension()
     }
 }
 val textureRendererModule = module {

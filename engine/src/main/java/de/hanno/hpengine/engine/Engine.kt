@@ -18,8 +18,7 @@ import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.dsl.SceneDescription
-import de.hanno.hpengine.engine.scene.dsl.convert
+import de.hanno.hpengine.engine.scene.dsl.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import org.koin.core.KoinApplication
@@ -109,16 +108,16 @@ class Engine constructor(val application: KoinApplication) {
         @JvmStatic
         fun main(args: Array<String>) {
 
+            val config = ConfigImpl(
+                directories = Directories(
+                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
+                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
+                ),
+                debug = DebugConfig(isEditorOverlay = true)
+            )
+
             val configModule = module {
-                single<Config> {
-                    ConfigImpl(
-                        directories = Directories(
-                            EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-                            GameDirectory(File(Directories.GAMEDIR_NAME), null)
-                        ),
-                        debug = DebugConfig(isEditorOverlay = true)
-                    )
-                }
+                single<Config> { config }
             }
             val windowModule = module {
                 single { GlfwWindow(get()) } bind Window::class

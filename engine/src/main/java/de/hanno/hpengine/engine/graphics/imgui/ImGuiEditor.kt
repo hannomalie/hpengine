@@ -6,20 +6,22 @@ import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.dsl.SceneDescription
-import de.hanno.hpengine.engine.scene.dsl.convert
+import de.hanno.hpengine.engine.scene.dsl.*
 import imgui.ImGui
-import imgui.flag.*
+import imgui.flag.ImGuiConfigFlags
+import imgui.flag.ImGuiDir
+import imgui.flag.ImGuiStyleVar
+import imgui.flag.ImGuiWindowFlags
 import imgui.flag.ImGuiWindowFlags.NoCollapse
 import imgui.flag.ImGuiWindowFlags.NoResize
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
-import imgui.type.ImBoolean
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
@@ -108,6 +110,23 @@ class ImGuiEditor(
                                     )
                                 }
                             }
+                            menuItem("Load Demo") {
+                                GlobalScope.launch {
+                                    sceneManager.scene = scene("Demo") {
+                                        entity("Box") {
+                                            add(
+                                                StaticModelComponentDescription(
+                                                    "assets/models/cube.obj",
+                                                    Directory.Engine,
+                                                )
+                                            )
+                                        }
+                                    }.convert(
+                                        sceneManager.scene.get(),
+                                        sceneManager.scene.get()
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -153,6 +172,7 @@ class ImGuiEditor(
                     }
                 }
             }
+            showGizmo()
 //            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()

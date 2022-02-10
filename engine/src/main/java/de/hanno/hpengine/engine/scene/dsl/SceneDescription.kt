@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.extension.Extension
+import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputComponent
+import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputComponentDescription
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponent
 import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
@@ -102,6 +104,7 @@ fun SceneDescription.convert(config: Config, textureManager: TextureManager) = S
                     is DirectionalLightControllerComponentDescription -> DirectionalLightControllerComponent(this)
                     is DirectionalLightDescription -> DirectionalLight(this)
                     is MovableInputComponentDescription -> MovableInputComponent(this)
+                    is EditorCameraInputComponentDescription -> EditorCameraInputComponent(this)
                     is CameraDescription -> Camera(this)
                     is OceanWaterDescription -> OceanWaterExtension.OceanWater(this)
                     else -> throw IllegalStateException("Cannot map component definition $componentDescription to a runtime type")
