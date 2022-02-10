@@ -4,48 +4,24 @@ import imgui.ImGui
 import imgui.extension.imguizmo.ImGuizmo
 import imgui.extension.imguizmo.flag.Mode
 import imgui.extension.imguizmo.flag.Operation
-import imgui.flag.ImGuiCond
 import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImFloat
 import org.lwjgl.glfw.GLFW.*
+import java.nio.FloatBuffer
 import java.util.*
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
-import kotlin.math.tan
 
 
 private const val CAM_DISTANCE = 8
-private const val CAM_Y_ANGLE = 165f / 180f * Math.PI.toFloat()
-private const val CAM_X_ANGLE = 32f / 180f * Math.PI.toFloat()
 private const val FLT_EPSILON = 1.19209290E-07f
 
-private val OBJECT_MATRICES = arrayOf(
-    floatArrayOf(
-        1f, 0f, 0f, 0f,
-        0f, 1f, 0f, 0f,
-        0f, 0f, 1f, 0f,
-        0f, 0f, 0f, 1f
-    ), floatArrayOf(
-        1f, 0f, 0f, 0f,
-        0f, 1f, 0f, 0f,
-        0f, 0f, 1f, 0f,
-        2f, 0f, 0f, 1f
-    ), floatArrayOf(
-        1f, 0f, 0f, 0f,
-        0f, 1f, 0f, 0f,
-        0f, 0f, 1f, 0f,
-        2f, 0f, 2f, 1f
-    ), floatArrayOf(
-        1f, 0f, 0f, 0f,
-        0f, 1f, 0f, 0f,
-        0f, 0f, 1f, 0f,
-        0f, 0f, 2f, 1f
-    )
+private val OBJECT_MATRIX = floatArrayOf(
+    1f, 0f, 0f, 0f,
+    0f, 1f, 0f, 0f,
+    0f, 0f, 1f, 0f,
+    0f, 0f, 0f, 1f
 )
-
 private val IDENTITY_MATRIX = floatArrayOf(
     1f, 0f, 0f, 0f,
     0f, 1f, 0f, 0f,
@@ -62,6 +38,12 @@ private val INPUT_CAMERA_VIEW = floatArrayOf(
     0f, 1f, 0f, 0f,
     0f, 0f, 1f, 0f,
     0f, 0f, 0f, 1f
+)
+private val INPUT_CAMERA_PROJECTION = floatArrayOf(
+    0f, 0f, 0f, 0f,
+    0f, 0f, 0f, 0f,
+    0f, 0f, 0f, 0f,
+    0f, 0f, 0f, 0f
 )
 
 private val INPUT_BOUNDS = floatArrayOf(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f)
@@ -81,20 +63,19 @@ private var currentMode = Mode.LOCAL
 private var currentGizmoOperation = 0
 
 private var boundSizingSnap = false
-private var firstFrame = true
 
-fun showGizmo() {
-    if (firstFrame) {
-        val eye = floatArrayOf(
-            (cos(CAM_Y_ANGLE.toDouble()) * cos(CAM_X_ANGLE.toDouble()) * CAM_DISTANCE).toFloat(),
-            (sin(CAM_X_ANGLE.toDouble()) * CAM_DISTANCE).toFloat(),
-            (sin(CAM_Y_ANGLE.toDouble()) * cos(CAM_X_ANGLE.toDouble()) * CAM_DISTANCE).toFloat()
-        )
-        val at = floatArrayOf(0f, 0f, 0f)
-        val up = floatArrayOf(0f, 1f, 0f)
-        lookAt(eye, at, up, INPUT_CAMERA_VIEW)
-        firstFrame = false
-    }
+fun showGizmo(
+    viewMatrixAsBuffer: FloatBuffer,
+    projectionMatrixAsBuffer: FloatBuffer,
+    entitySelection: SimpleEntitySelection?,
+    editorCameraInputSystem: EditorCameraInputSystem,
+    windowWidth: Float,
+    windowHeight: Float,
+    windowPositionX: Float,
+    windowPositionY: Float,
+) {
+    viewMatrixAsBuffer.get(INPUT_CAMERA_VIEW)
+    projectionMatrixAsBuffer.get(INPUT_CAMERA_PROJECTION)
 
     ImGui.text("Keybindings:")
     ImGui.text("T - Translate")
@@ -102,8 +83,8 @@ fun showGizmo() {
     ImGui.text("S - Scale")
     ImGui.separator()
 
-    val showImGuizmoWindow = ImBoolean()
     if (ImGuizmo.isUsing()) {
+        editorCameraInputSystem.cameraControlsEnabled = false
         ImGui.text("Using gizmo")
         if (ImGuizmo.isOver()) {
             ImGui.text("Over a gizmo")
@@ -116,13 +97,28 @@ fun showGizmo() {
             ImGui.text("Over scale gizmo")
         }
     } else {
+        editorCameraInputSystem.cameraControlsEnabled = true
         ImGui.text("Not using gizmo")
     }
 
-    editTransform(showImGuizmoWindow)
+    entitySelection?.let { editTransform(
+        it,
+        windowWidth,
+        windowHeight,
+        windowPositionX,
+        windowPositionY,
+    ) }
 }
 
-fun editTransform(showImGuizmoWindow: ImBoolean) {
+fun editTransform(
+    entitySelection: SimpleEntitySelection,
+    windowWidth: Float,
+    windowHeight: Float,
+    windowPositionX: Float,
+    windowPositionY: Float
+) {
+    entitySelection.entity.transform.get(OBJECT_MATRIX)
+
     if (ImGui.isKeyPressed(GLFW_KEY_T)) {
         currentGizmoOperation = Operation.TRANSLATE
     } else if (ImGui.isKeyPressed(GLFW_KEY_R)) {
@@ -135,7 +131,7 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
 
     if (ImGuizmo.isUsing()) {
         ImGuizmo.decomposeMatrixToComponents(
-            OBJECT_MATRICES[0],
+            OBJECT_MATRIX,
             INPUT_MATRIX_TRANSLATION,
             INPUT_MATRIX_ROTATION,
             INPUT_MATRIX_SCALE
@@ -148,7 +144,7 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
 
     if (ImGuizmo.isUsing()) {
         ImGuizmo.recomposeMatrixFromComponents(
-            OBJECT_MATRICES[0],
+            OBJECT_MATRIX,
             INPUT_MATRIX_TRANSLATION,
             INPUT_MATRIX_ROTATION,
             INPUT_MATRIX_SCALE
@@ -192,31 +188,27 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
         ImGui.inputFloat3("Snap", INPUT_BOUNDS_SNAP)
     }
 
-    ImGui.setNextWindowPos(ImGui.getMainViewport().posX + 100, ImGui.getMainViewport().posY + 100, ImGuiCond.Once)
-    ImGui.setNextWindowSize(800f, 400f, ImGuiCond.Once)
-    ImGui.begin("Gizmo", showImGuizmoWindow)
+    ImGui.setNextWindowPos(windowPositionX, windowPositionY)
+    ImGui.setNextWindowSize(windowWidth, windowHeight)
+    val windowFlags = 0 or ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoTitleBar
+    ImGui.begin("Gizmo", windowFlags)
     ImGui.beginChild("prevent_window_from_moving_by_drag", 0f, 0f, false, ImGuiWindowFlags.NoMove)
-
-    val aspect = ImGui.getWindowWidth() / ImGui.getWindowHeight()
-    val cameraProjection = perspective(27.0f, aspect, 0.1f, 100f)
 
     ImGuizmo.setOrthographic(false)
     ImGuizmo.setEnabled(true)
     ImGuizmo.setDrawList()
 
-    val windowWidth = ImGui.getWindowWidth()
-    val windowHeight = ImGui.getWindowHeight()
     ImGuizmo.setRect(ImGui.getWindowPosX(), ImGui.getWindowPosY(), windowWidth, windowHeight)
 
-    ImGuizmo.drawGrid(INPUT_CAMERA_VIEW, cameraProjection, IDENTITY_MATRIX, 100)
+    ImGuizmo.drawGrid(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, IDENTITY_MATRIX, 100)
     ImGuizmo.setId(0)
-    ImGuizmo.drawCubes(INPUT_CAMERA_VIEW, cameraProjection, OBJECT_MATRICES[0])
+//    ImGuizmo.drawCubes(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, OBJECT_MATRIX)
 
     if (USE_SNAP.get() && BOUNDING_SIZE.get() && boundSizingSnap) {
         ImGuizmo.manipulate(
             INPUT_CAMERA_VIEW,
-            cameraProjection,
-            OBJECT_MATRICES[0],
+            INPUT_CAMERA_PROJECTION,
+            OBJECT_MATRIX,
             currentGizmoOperation,
             currentMode,
             INPUT_SNAP_VALUE,
@@ -226,8 +218,8 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
     } else if (USE_SNAP.get() && BOUNDING_SIZE.get()) {
         ImGuizmo.manipulate(
             INPUT_CAMERA_VIEW,
-            cameraProjection,
-            OBJECT_MATRICES[0],
+            INPUT_CAMERA_PROJECTION,
+            OBJECT_MATRIX,
             currentGizmoOperation,
             currentMode,
             INPUT_SNAP_VALUE,
@@ -236,8 +228,8 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
     } else if (BOUNDING_SIZE.get() && boundSizingSnap) {
         ImGuizmo.manipulate(
             INPUT_CAMERA_VIEW,
-            cameraProjection,
-            OBJECT_MATRICES[0],
+            INPUT_CAMERA_PROJECTION,
+            OBJECT_MATRIX,
             currentGizmoOperation,
             currentMode,
             EMPTY,
@@ -247,8 +239,8 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
     } else if (BOUNDING_SIZE.get()) {
         ImGuizmo.manipulate(
             INPUT_CAMERA_VIEW,
-            cameraProjection,
-            OBJECT_MATRICES[0],
+            INPUT_CAMERA_PROJECTION,
+            OBJECT_MATRIX,
             currentGizmoOperation,
             currentMode,
             EMPTY,
@@ -257,14 +249,20 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
     } else if (USE_SNAP.get()) {
         ImGuizmo.manipulate(
             INPUT_CAMERA_VIEW,
-            cameraProjection,
-            OBJECT_MATRICES[0],
+            INPUT_CAMERA_PROJECTION,
+            OBJECT_MATRIX,
             currentGizmoOperation,
             currentMode,
             INPUT_SNAP_VALUE
         )
     } else {
-        ImGuizmo.manipulate(INPUT_CAMERA_VIEW, cameraProjection, OBJECT_MATRICES[0], currentGizmoOperation, currentMode)
+        ImGuizmo.manipulate(
+            INPUT_CAMERA_VIEW,
+            INPUT_CAMERA_PROJECTION,
+            OBJECT_MATRIX,
+            currentGizmoOperation,
+            currentMode
+        )
     }
 
     val viewManipulateRight = ImGui.getWindowPosX() + windowWidth
@@ -279,89 +277,6 @@ fun editTransform(showImGuizmoWindow: ImBoolean) {
 
     ImGui.endChild()
     ImGui.end()
-}
 
-fun perspective(fovY: Float, aspect: Float, near: Float, far: Float): FloatArray {
-    val ymax = near * tan(fovY * Math.PI / 180.0f).toFloat()
-    val xmax = ymax * aspect
-    return frustum(-xmax, xmax, -ymax, ymax, near, far)
-}
-
-fun frustum(left: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float): FloatArray {
-    val r = FloatArray(16)
-    val temp = 2.0f * near
-    val temp2 = right - left
-    val temp3 = top - bottom
-    val temp4 = far - near
-    r[0] = temp / temp2
-    r[1] = 0.0f
-    r[2] = 0.0f
-    r[3] = 0.0f
-    r[4] = 0.0f
-    r[5] = temp / temp3
-    r[6] = 0.0f
-    r[7] = 0.0f
-    r[8] = (right + left) / temp2
-    r[9] = (top + bottom) / temp3
-    r[10] = (-far - near) / temp4
-    r[11] = -1.0f
-    r[12] = 0.0f
-    r[13] = 0.0f
-    r[14] = (-temp * far) / temp4
-    r[15] = 0.0f
-    return r
-}
-
-private fun cross(a: FloatArray, b: FloatArray): FloatArray {
-    val r = FloatArray(3)
-    r[0] = a[1] * b[2] - a[2] * b[1]
-    r[1] = a[2] * b[0] - a[0] * b[2]
-    r[2] = a[0] * b[1] - a[1] * b[0]
-    return r
-}
-
-private fun dot(a: FloatArray, b: FloatArray): Float {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
-
-private fun normalize(a: FloatArray): FloatArray {
-    val r = FloatArray(3)
-    val il = (1.0f / (sqrt(dot(a, a)) + FLT_EPSILON)).toFloat()
-    r[0] = a[0] * il
-    r[1] = a[1] * il
-    r[2] = a[2] * il
-    return r
-}
-
-private fun lookAt(eye: FloatArray, at: FloatArray, up: FloatArray, m16: FloatArray) {
-    var tmp = FloatArray(3)
-    tmp[0] = eye[0] - at[0]
-    tmp[1] = eye[1] - at[1]
-    tmp[2] = eye[2] - at[2]
-
-    var y = normalize(up)
-    val z = normalize(tmp)
-
-    tmp = cross(y, z)
-    val x = normalize(tmp)
-
-    tmp = cross(z, x)
-    y = normalize(tmp)
-
-    m16[0] = x[0]
-    m16[1] = y[0]
-    m16[2] = z[0]
-    m16[3] = 0.0f
-    m16[4] = x[1]
-    m16[5] = y[1]
-    m16[6] = z[1]
-    m16[7] = 0.0f
-    m16[8] = x[2]
-    m16[9] = y[2]
-    m16[10] = z[2]
-    m16[11] = 0.0f
-    m16[12] = -dot(x, eye)
-    m16[13] = -dot(y, eye)
-    m16[14] = -dot(z, eye)
-    m16[15] = 1.0f
+    entitySelection.entity.transform.set(OBJECT_MATRIX)
 }

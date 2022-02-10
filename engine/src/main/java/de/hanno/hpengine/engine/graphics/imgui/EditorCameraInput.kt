@@ -57,7 +57,7 @@ class EditorCameraInputComponent(override val entity: Entity): BaseComponent(ent
 }
 
 class EditorCameraInputSystem: SimpleComponentSystem<EditorCameraInputComponent>(EditorCameraInputComponent::class.java) {
-    private var cameraControlsEnabled = false
+    var cameraControlsEnabled = false
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         val input = scene.get<Input>()
         if(input.wasKeyReleasedLastFrame(GLFW.GLFW_KEY_T) && input.isKeyPressed(GLFW.GLFW_KEY_T)) {

@@ -24,6 +24,7 @@ import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.component.get
 import org.lwjgl.glfw.GLFW
 
@@ -79,10 +80,30 @@ class ImGuiEditor(
         renderTarget.use(gpuContext, false)
         imGuiImplGlfw.newFrame()
         try {
-            val screenWidth = ImGui.getIO().displaySizeX
-            val screenHeight = ImGui.getIO().displaySizeY
+            val screenWidth = ImGui.getMainViewport().sizeX
+            val screenHeight = ImGui.getMainViewport().sizeY
+
+            val leftPanelYOffset = screenHeight * 0.015f
+            val leftPanelWidth = screenWidth * 0.1f
+            val rightPanelWidthPercentage = 0.2f
+            val rightPanelWidth = screenWidth * rightPanelWidthPercentage
+            val midPanelHeight = screenWidth - leftPanelYOffset
+            val midPanelWidth = screenWidth - leftPanelWidth - rightPanelWidth
 
             ImGui.newFrame()
+
+            scene?.also { scene ->
+                showGizmo(
+                    renderState.camera.viewMatrixAsBuffer,
+                    renderState.camera.projectionMatrixAsBuffer,
+                    selection as? SimpleEntitySelection,
+                    scene.componentSystems.firstIsInstance<EditorCameraInputSystem>(),
+                    midPanelWidth,
+                    midPanelHeight,
+                    leftPanelWidth,
+                    leftPanelYOffset,
+                )
+            }
 
             // https://github-wiki-see.page/m/JeffM2501/raylibExtras/wiki/Using-ImGui-Docking-Branch-with-rlImGui
             ImGui.setNextWindowPos(0f, 0f)
@@ -132,8 +153,8 @@ class ImGuiEditor(
                 }
             }
 
-            ImGui.setNextWindowPos(0f, screenHeight * 0.015f)
-            ImGui.setNextWindowSize(screenWidth * 0.1f, screenHeight)
+            ImGui.setNextWindowPos(0f, leftPanelYOffset)
+            ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
             de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
                 scene?.also { scene ->
                     window("Scene", NoCollapse or NoResize) {
@@ -157,9 +178,8 @@ class ImGuiEditor(
                 }
             }
 
-            val panelWidth = 0.2f
-            ImGui.setNextWindowPos(screenWidth * (1.0f - panelWidth), 0f)
-            ImGui.setNextWindowSize(screenWidth * panelWidth, screenHeight)
+            ImGui.setNextWindowPos(screenWidth * (1.0f - rightPanelWidthPercentage), 0f)
+            ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
             ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
             de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
                 when(val selection = selection) {
@@ -172,7 +192,6 @@ class ImGuiEditor(
                     }
                 }
             }
-            showGizmo()
 //            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
