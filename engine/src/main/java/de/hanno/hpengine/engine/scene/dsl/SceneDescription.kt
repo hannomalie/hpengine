@@ -105,7 +105,9 @@ fun SceneDescription.convert(config: Config, textureManager: TextureManager) = S
                     is DirectionalLightDescription -> DirectionalLight(this)
                     is MovableInputComponentDescription -> MovableInputComponent(this)
                     is EditorCameraInputComponentDescription -> EditorCameraInputComponent(this)
-                    is CameraDescription -> Camera(this)
+                    is CameraDescription -> Camera(this).apply {
+                        ratio = config.width.toFloat() / config.height.toFloat()
+                    }
                     is OceanWaterDescription -> OceanWaterExtension.OceanWater(this)
                     else -> throw IllegalStateException("Cannot map component definition $componentDescription to a runtime type")
                 }

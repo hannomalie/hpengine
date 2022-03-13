@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
+import de.hanno.hpengine.util.Util
 import imgui.ImGui
 import imgui.extension.imguizmo.ImGuizmo
 import imgui.extension.imguizmo.flag.Mode
@@ -39,7 +40,7 @@ private val INPUT_CAMERA_VIEW = floatArrayOf(
     0f, 0f, 1f, 0f,
     0f, 0f, 0f, 1f
 )
-private val INPUT_CAMERA_PROJECTION = floatArrayOf(
+private var INPUT_CAMERA_PROJECTION = floatArrayOf(
     0f, 0f, 0f, 0f,
     0f, 0f, 0f, 0f,
     0f, 0f, 0f, 0f,
@@ -67,14 +68,22 @@ private var boundSizingSnap = false
 fun showGizmo(
     viewMatrixAsBuffer: FloatBuffer,
     projectionMatrixAsBuffer: FloatBuffer,
+    fovY: Float,
+    near: Float,
+    far: Float,
     entitySelection: SimpleEntitySelection?,
     editorCameraInputSystem: EditorCameraInputSystem,
     windowWidth: Float,
     windowHeight: Float,
+    panelWidth: Float,
+    panelHeight: Float,
     windowPositionX: Float,
     windowPositionY: Float,
+    panelPositionX: Float,
+    panelPositionY: Float,
 ) {
     viewMatrixAsBuffer.get(INPUT_CAMERA_VIEW)
+//    Util.createPerspective(fovY, windowWidth / windowHeight, near, far).get(INPUT_CAMERA_PROJECTION)
     projectionMatrixAsBuffer.get(INPUT_CAMERA_PROJECTION)
 
     ImGui.text("Keybindings:")
@@ -101,13 +110,19 @@ fun showGizmo(
         ImGui.text("Not using gizmo")
     }
 
-    entitySelection?.let { editTransform(
-        it,
-        windowWidth,
-        windowHeight,
-        windowPositionX,
-        windowPositionY,
-    ) }
+    entitySelection?.let {
+        editTransform(
+            it,
+            windowWidth,
+            windowHeight,
+            windowPositionX,
+            windowPositionY,
+            panelWidth,
+            panelHeight,
+            panelPositionX,
+            panelPositionY,
+        )
+    }
 }
 
 fun editTransform(
@@ -115,8 +130,13 @@ fun editTransform(
     windowWidth: Float,
     windowHeight: Float,
     windowPositionX: Float,
-    windowPositionY: Float
+    windowPositionY: Float,
+    panelWidth: Float,
+    panelHeight: Float,
+    panelPositionX: Float,
+    panelPositionY: Float,
 ) {
+
     entitySelection.entity.transform.get(OBJECT_MATRIX)
 
     if (ImGui.isKeyPressed(GLFW_KEY_T)) {
@@ -188,8 +208,8 @@ fun editTransform(
         ImGui.inputFloat3("Snap", INPUT_BOUNDS_SNAP)
     }
 
-    ImGui.setNextWindowPos(windowPositionX, windowPositionY)
-    ImGui.setNextWindowSize(windowWidth, windowHeight)
+    ImGui.setNextWindowPos(panelPositionX, panelPositionY)
+    ImGui.setNextWindowSize(panelWidth, panelHeight)
     val windowFlags = 0 or ImGuiWindowFlags.NoBackground or ImGuiWindowFlags.NoTitleBar
     ImGui.begin("Gizmo", windowFlags)
     ImGui.beginChild("prevent_window_from_moving_by_drag", 0f, 0f, false, ImGuiWindowFlags.NoMove)
@@ -198,7 +218,7 @@ fun editTransform(
     ImGuizmo.setEnabled(true)
     ImGuizmo.setDrawList()
 
-    ImGuizmo.setRect(ImGui.getWindowPosX(), ImGui.getWindowPosY(), windowWidth, windowHeight)
+    ImGuizmo.setRect(windowPositionX, windowPositionY, windowWidth, windowHeight)
 
     ImGuizmo.drawGrid(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, IDENTITY_MATRIX, 100)
     ImGuizmo.setId(0)
@@ -265,8 +285,8 @@ fun editTransform(
         )
     }
 
-    val viewManipulateRight = ImGui.getWindowPosX() + windowWidth
-    val viewManipulateTop = ImGui.getWindowPosY()
+    val viewManipulateRight = panelPositionX + panelHeight
+    val viewManipulateTop = panelPositionY
     ImGuizmo.viewManipulate(
         INPUT_CAMERA_VIEW,
         CAM_DISTANCE.toFloat(),

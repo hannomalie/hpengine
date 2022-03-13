@@ -88,6 +88,7 @@ import de.hanno.hpengine.engine.scene.dsl.MovableInputComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.SceneDescription
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.entity
+import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.fps.CPSCounterExtension
 import de.hanno.hpengine.util.fps.FPSCounterSystem
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource

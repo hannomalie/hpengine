@@ -79,119 +79,48 @@ class ImGuiEditor(
 
         renderTarget.use(gpuContext, false)
         imGuiImplGlfw.newFrame()
+        ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
         try {
-            val screenWidth = ImGui.getMainViewport().sizeX
-            val screenHeight = ImGui.getMainViewport().sizeY
+            val screenWidth = ImGui.getIO().displaySizeX
+            val screenHeight = ImGui.getIO().displaySizeY
 
             val leftPanelYOffset = screenHeight * 0.015f
-            val leftPanelWidth = screenWidth * 0.1f
+            val leftPanelWidthPercentage = 0.1f
+            val leftPanelWidth = screenWidth * leftPanelWidthPercentage
+
             val rightPanelWidthPercentage = 0.2f
             val rightPanelWidth = screenWidth * rightPanelWidthPercentage
-            val midPanelHeight = screenWidth - leftPanelYOffset
+
+            val midPanelHeight = screenHeight - leftPanelYOffset
             val midPanelWidth = screenWidth - leftPanelWidth - rightPanelWidth
 
             ImGui.newFrame()
 
             scene?.also { scene ->
                 showGizmo(
-                    renderState.camera.viewMatrixAsBuffer,
-                    renderState.camera.projectionMatrixAsBuffer,
-                    selection as? SimpleEntitySelection,
-                    scene.componentSystems.firstIsInstance<EditorCameraInputSystem>(),
-                    midPanelWidth,
-                    midPanelHeight,
-                    leftPanelWidth,
-                    leftPanelYOffset,
+                    viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer,
+                    projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer,
+                    fovY = renderState.camera.fov,
+                    near = renderState.camera.near,
+                    far = renderState.camera.far,
+                    entitySelection = selection as? SimpleEntitySelection,
+                    editorCameraInputSystem = scene.componentSystems.firstIsInstance<EditorCameraInputSystem>(),
+                    windowWidth = screenWidth,
+                    windowHeight = screenHeight,
+                    windowPositionX = 0f,
+                    windowPositionY = 0f,
+                    panelWidth = midPanelWidth,
+                    panelHeight = midPanelHeight,
+                    panelPositionX = leftPanelWidth,
+                    panelPositionY = leftPanelYOffset,
                 )
             }
 
-            // https://github-wiki-see.page/m/JeffM2501/raylibExtras/wiki/Using-ImGui-Docking-Branch-with-rlImGui
-            ImGui.setNextWindowPos(0f, 0f)
-            ImGui.setNextWindowSize(screenWidth, screenHeight)
-            val windowFlags = ImGuiWindowFlags.NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
-                    ImGuiWindowFlags.NoNavFocus or  // so turn off everything that would make it act like a window
-                    ImGuiWindowFlags.NoDocking or
-                    ImGuiWindowFlags.NoTitleBar or
-                    NoResize or
-                    ImGuiWindowFlags.NoMove or
-                    NoCollapse or
-                    ImGuiWindowFlags.MenuBar or
-                    ImGuiWindowFlags.NoBackground
-            de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
-                ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
-                window("Main", windowFlags) {
-                    ImGui.popStyleVar()
-                    menuBar {
-                        menu("File") {
-                            menuItem("New Scene") {
-                                GlobalScope.launch {
-                                    sceneManager.scene = SceneDescription("Scene_${System.currentTimeMillis()}").convert(
-                                        sceneManager.scene.get(),
-                                        sceneManager.scene.get()
-                                    )
-                                }
-                            }
-                            menuItem("Load Demo") {
-                                GlobalScope.launch {
-                                    sceneManager.scene = scene("Demo") {
-                                        entity("Box") {
-                                            add(
-                                                StaticModelComponentDescription(
-                                                    "assets/models/cube.obj",
-                                                    Directory.Engine,
-                                                )
-                                            )
-                                        }
-                                    }.convert(
-                                        sceneManager.scene.get(),
-                                        sceneManager.scene.get()
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            menu(screenWidth, screenHeight)
 
-            ImGui.setNextWindowPos(0f, leftPanelYOffset)
-            ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
-            de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
-                scene?.also { scene ->
-                    window("Scene", NoCollapse or NoResize) {
-                        scene.getEntities().forEach { entity ->
-                            if(!entity.hasParent) {
-                                treeNode(entity.name) {
-                                    entity.children.forEach { child ->
-                                        treeNode(child.name) {
-                                            text("Entity") {
-                                                selectOrUnselect(SimpleEntitySelection(child))
-                                            }
-                                        }
-                                    }
-                                    text("Entity") {
-                                        selectOrUnselect(SimpleEntitySelection(entity))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
 
-            ImGui.setNextWindowPos(screenWidth * (1.0f - rightPanelWidthPercentage), 0f)
-            ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
-            ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
-            de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
-                when(val selection = selection) {
-                    is SimpleEntitySelection -> {
-                        window(selection.entity.name, NoCollapse or NoResize) {
-                            checkBox("Visible", selection.entity.visible) {
-                                selection.entity.visible = it
-                            }
-                        }
-                    }
-                }
-            }
+            rightPanel(screenWidth, rightPanelWidthPercentage, rightPanelWidth, screenHeight)
 //            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
@@ -203,6 +132,117 @@ class ImGuiEditor(
                 ImGui.updatePlatformWindows()
                 ImGui.renderPlatformWindowsDefault()
                 GLFW.glfwMakeContextCurrent(backupWindowHandle)
+            }
+        }
+    }
+
+    private fun menu(screenWidth: Float, screenHeight: Float) {
+        // https://github-wiki-see.page/m/JeffM2501/raylibExtras/wiki/Using-ImGui-Docking-Branch-with-rlImGui
+        ImGui.setNextWindowPos(0f, 0f)
+        ImGui.setNextWindowSize(screenWidth, screenHeight)
+        val windowFlags =
+            ImGuiWindowFlags.NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
+                    ImGuiWindowFlags.NoNavFocus or  // so turn off everything that would make it act like a window
+                    ImGuiWindowFlags.NoDocking or
+                    ImGuiWindowFlags.NoTitleBar or
+                    NoResize or
+                    ImGuiWindowFlags.NoMove or
+                    NoCollapse or
+                    ImGuiWindowFlags.MenuBar or
+                    ImGuiWindowFlags.NoBackground
+        de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
+            ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
+            window("Main", windowFlags) {
+                ImGui.popStyleVar()
+                menuBar {
+                    menu("File") {
+                        menuItem("New Scene") {
+                            GlobalScope.launch {
+                                sceneManager.scene = SceneDescription("Scene_${System.currentTimeMillis()}").convert(
+                                    sceneManager.scene.get(),
+                                    sceneManager.scene.get()
+                                )
+                            }
+                        }
+                        menuItem("Load Demo") {
+                            GlobalScope.launch {
+                                sceneManager.scene = scene("Demo") {
+                                    entity("Plane") {
+                                        transform.scale(20f)
+                                        add(
+                                            StaticModelComponentDescription(
+                                                "assets/models/plane.obj",
+                                                Directory.Engine,
+                                            )
+                                        )
+                                    }
+                                    entity("Box") {
+                                        add(
+                                            StaticModelComponentDescription(
+                                                "assets/models/cube.obj",
+                                                Directory.Engine,
+                                            )
+                                        )
+                                    }
+                                }.convert(
+                                    sceneManager.scene.get(),
+                                    sceneManager.scene.get()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun leftPanel(leftPanelYOffset: Float, leftPanelWidth: Float, screenHeight: Float) {
+        ImGui.setNextWindowPos(0f, leftPanelYOffset)
+        ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
+        de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
+            scene?.also { scene ->
+                window("Scene", NoCollapse or NoResize) {
+                    scene.getEntities().forEach { entity ->
+                        if (!entity.hasParent) {
+                            treeNode(entity.name) {
+                                entity.children.forEach { child ->
+                                    treeNode(child.name) {
+                                        text("Entity") {
+                                            selectOrUnselect(SimpleEntitySelection(child))
+                                        }
+                                    }
+                                }
+                                text("Entity") {
+                                    selectOrUnselect(SimpleEntitySelection(entity))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun rightPanel(
+        screenWidth: Float,
+        rightPanelWidthPercentage: Float,
+        rightPanelWidth: Float,
+        screenHeight: Float
+    ) {
+        ImGui.setNextWindowPos(screenWidth * (1.0f - rightPanelWidthPercentage), 0f)
+        ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
+        ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
+        de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
+            when (val selection = selection) {
+                is SimpleEntitySelection -> {
+                    window(selection.entity.name, NoCollapse or NoResize) {
+                        checkBox("Visible", selection.entity.visible) {
+                            selection.entity.visible = it
+                        }
+                        val position = selection.entity.transform.position
+                        text("x: ${position.x} y: ${position.y} z: ${position.z}")
+                    }
+                }
             }
         }
     }

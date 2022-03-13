@@ -154,7 +154,7 @@ void main(void) {
 	vec4 position_world = modelMatrix * positionModel;
 	//AFTER_POSITION
 
-	mat4 mvp = (viewProjectionMatrix * modelMatrix);
+	mat4 mvp = (projectionMatrix * viewMatrix * modelMatrix);
 
 	vec4 position_clip_last = (projectionMatrix * lastViewMatrix * position_world);
 
