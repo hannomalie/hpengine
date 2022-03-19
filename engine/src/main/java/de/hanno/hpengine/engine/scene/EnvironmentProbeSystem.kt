@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.scene
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
@@ -67,6 +68,7 @@ class EnvironmentProbeSystem(
     renderStateManager: RenderStateManager,
     val gpuContext: GpuContext<OpenGl>
 ) : SimpleComponentSystem<EnvironmentProbe>(EnvironmentProbe::class.java), RenderSystem {
+    override lateinit var world: World
     private val renderProbeCommandQueue = RenderProbeCommandQueue()
     val environmentMapsArray: CubeMapArray
     private val environmentMapsArray1: CubeMapArray

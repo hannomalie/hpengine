@@ -33,7 +33,7 @@ class ModelComponentEntitySystem(
     val entityManager: EntityManager,
     val gpuContext: GpuContext<OpenGl>,
     val config: Config,
-    entityBuffer: EntityBuffer
+    entityBuffer: EntityBuffer,
 ) : SimpleEntitySystem(listOf(ModelComponent::class.java)) {
 
     val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
@@ -230,20 +230,20 @@ class ModelComponentEntitySystem(
     }
 
     override fun extract(renderState: RenderState) {
-        cacheEntityIndices() // TODO: Move this to update step
-        renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
-        renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
+//        cacheEntityIndices() // TODO: Move this to update step
+//        renderState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
+//        renderState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
+//
+//        renderState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
+//        renderState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
+//        gpuJointsArray.byteBuffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
+//        gpuEntitiesArray.byteBuffer.copyTo(renderState.entitiesBuffer.buffer, true)
 
-        renderState.entitiesState.jointsBuffer.ensureCapacityInBytes(gpuJointsArray.byteBuffer.capacity())
-        renderState.entitiesState.entitiesBuffer.ensureCapacityInBytes(gpuEntitiesArray.byteBuffer.capacity())
-        gpuJointsArray.byteBuffer.copyTo(renderState.entitiesState.jointsBuffer.buffer, true)
-        gpuEntitiesArray.byteBuffer.copyTo(renderState.entitiesBuffer.buffer, true)
-
-        batchingSystem.extract(
-            renderState.camera, renderState, renderState.camera.getPosition(),
-            getComponents(ModelComponent::class.java), config.debug.isDrawLines,
-            allocations, entityIndices
-        )
+//        batchingSystem.extract(
+//            renderState.camera, renderState, renderState.camera.getPosition(),
+//            getComponents(ModelComponent::class.java), config.debug.isDrawLines,
+//            allocations, entityIndices
+//        )
     }
 
     fun cacheEntityIndices() {

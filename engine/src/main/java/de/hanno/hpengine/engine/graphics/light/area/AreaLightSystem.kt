@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.light.area
 import AreaLightStruktImpl.Companion.sizeInBytes
 import AreaLightStruktImpl.Companion.type
 import EntityStruktImpl.Companion.type
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
@@ -65,6 +66,7 @@ class AreaLightSystem(
     programManager: ProgramManager<OpenGl>,
     config: Config
 ) : SimpleEntitySystem(listOf(AreaLight::class.java)), RenderSystem {
+    override lateinit var world: World
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = TypedBuffer(BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes), AreaLightStrukt.type)

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.extension
 
+import com.artemis.World
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -182,6 +183,8 @@ val textureRendererModule = module {
         object: SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
             override val sharedRenderTarget = renderTarget
             override val requiresClearSharedRenderTarget = true
+            override lateinit var world: World
+
             override fun render(result: DrawResult, renderState: RenderState) {
                 gpuContext.clearColor(1f,0f,0f,1f)
                 drawToQuad(texture = texture)

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -27,7 +28,7 @@ open class SimpleTextureRenderer(
     var texture: Texture2D,
     private val programManager: ProgramManager<OpenGl>,
     private val frontBuffer: FrontBufferTarget) : RenderSystem {
-
+    override lateinit var world: World
 
     private val renderToQuadProgram: Program<Uniforms> = programManager.getProgram(
             FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),

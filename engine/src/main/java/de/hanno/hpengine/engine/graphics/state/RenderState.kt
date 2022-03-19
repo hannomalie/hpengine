@@ -1,5 +1,8 @@
 package de.hanno.hpengine.engine.graphics.state
 
+import com.artemis.Component
+import com.artemis.World
+import com.artemis.utils.Bag
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.EntityStrukt
@@ -20,6 +23,9 @@ import de.hanno.struct.copyFrom
 import org.joml.Vector3f
 
 class RenderState(private val gpuContext: GpuContext<*>) {
+    var entityIds: List<Int> = emptyList()
+    var componentExtracts: Map<Class<out Component>, List<Component>> = emptyMap()
+    var componentsForEntities: MutableMap<Int, Bag<Component>> = mutableMapOf()
     val customState = CustomStates()
 
     val latestDrawResult = DrawResult(FirstPassResult(), SecondPassResult())
@@ -91,6 +97,9 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         latestDrawResult.set(latestDrawResult)
         entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic)
         entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated)
+        componentExtracts = HashMap(source.componentExtracts)
+        componentsForEntities = HashMap(source.componentsForEntities)
+        entityIds = ArrayList(source.entityIds)
     }
     val gpuHasFinishedUsingIt
         get() = gpuCommandSync.isSignaled
@@ -106,12 +115,15 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     operator fun <T> get(stateRef: StateRef<T>) = customState[stateRef]
 
+    operator fun <T: Component> get(clazz: Class<T>): Bag<T> = componentExtracts[clazz] as Bag<T>
+
 }
 interface RenderSystem: Updatable {
     val sharedRenderTarget: RenderTarget<*>?
         get() = null
     val requiresClearSharedRenderTarget: Boolean
         get() = false
+    var world: World
     fun render(result: DrawResult, renderState: RenderState) { }
     fun renderEditor(result: DrawResult, renderState: RenderState) { }
     fun afterFrameFinished() { }

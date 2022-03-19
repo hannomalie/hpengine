@@ -6,13 +6,11 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.Scene
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 interface ComponentSystem<T : Component> {
     suspend fun update(scene: Scene, deltaSeconds: Float) {
         for(component in components) {
-            component.update(scene, deltaSeconds)
+            // TODO: Reimplement update logic
         }
     }
 
@@ -64,4 +62,5 @@ open class SimpleComponentSystem<T: Component>(override val componentClass: Clas
     override fun clear() {
         _components.clear()
     }
+
 }

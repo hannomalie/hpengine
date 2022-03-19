@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponent
 import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.OceanWaterExtension
@@ -39,19 +40,19 @@ interface ComponentDescription
 sealed class ModelComponentDescription: ComponentDescription {
     abstract val directory: Directory
     abstract val aabbData: AABBData?
-    abstract val material: SimpleMaterial?
+    abstract var material: Material?
 }
 data class StaticModelComponentDescription(
     val file: String,
     override val directory: Directory,
     override val aabbData: AABBData? = null,
-    override val material: SimpleMaterial? = null
+    override var material: Material? = null
 ): ModelComponentDescription()
 data class AnimatedModelComponentDescription(
     val file: String,
     override val directory: Directory,
     override val aabbData: AABBData? = null,
-    override val material: SimpleMaterial? = null
+    override var material: Material? = null
 ): ModelComponentDescription()
 enum class Directory { Game, Engine }
 

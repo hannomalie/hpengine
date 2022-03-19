@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.physics
 
+import com.artemis.World
 import com.bulletphysics.collision.broadphase.DbvtBroadphase
 import com.bulletphysics.collision.dispatch.CollisionDispatcher
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration
@@ -54,7 +55,7 @@ class PhysicsManager(
     val gpuContext: GpuContext<OpenGl>,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : Manager, RenderSystem {
-
+    override lateinit var world: World
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
     val linePoints = mutableListOf<Vector3fc>()
 

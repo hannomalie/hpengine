@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.extension
 
+import com.artemis.BaseSystem
 import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -24,6 +25,11 @@ interface Extension {
 inline fun <reified T: ComponentSystem<*>> Module.componentSystem(
     noinline definition: Definition<T>
 ) {
+    scope<Scene> { scoped(definition = definition) bind ComponentSystem::class }
+}
+inline fun <reified T> Module.baseComponentSystem(
+    noinline definition: Definition<T>
+) where T: ComponentSystem<*>, T: BaseSystem {
     scope<Scene> { scoped(definition = definition) bind ComponentSystem::class }
 }
 inline fun <reified T: EntitySystem> Module.entitySystem(

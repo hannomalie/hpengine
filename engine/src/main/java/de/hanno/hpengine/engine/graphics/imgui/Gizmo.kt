@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
-import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.engine.transform.Transform
 import imgui.ImGui
 import imgui.extension.imguizmo.ImGuizmo
 import imgui.extension.imguizmo.flag.Mode
@@ -71,7 +71,6 @@ fun showGizmo(
     fovY: Float,
     near: Float,
     far: Float,
-    entitySelection: SimpleEntitySelection?,
     editorCameraInputSystem: EditorCameraInputSystem,
     windowWidth: Float,
     windowHeight: Float,
@@ -81,6 +80,7 @@ fun showGizmo(
     windowPositionY: Float,
     panelPositionX: Float,
     panelPositionY: Float,
+    transform: Transform?,
 ) {
     viewMatrixAsBuffer.get(INPUT_CAMERA_VIEW)
 //    Util.createPerspective(fovY, windowWidth / windowHeight, near, far).get(INPUT_CAMERA_PROJECTION)
@@ -110,9 +110,8 @@ fun showGizmo(
         ImGui.text("Not using gizmo")
     }
 
-    entitySelection?.let {
+    transform?.let {
         editTransform(
-            it,
             windowWidth,
             windowHeight,
             windowPositionX,
@@ -121,12 +120,12 @@ fun showGizmo(
             panelHeight,
             panelPositionX,
             panelPositionY,
+            it,
         )
     }
 }
 
 fun editTransform(
-    entitySelection: SimpleEntitySelection,
     windowWidth: Float,
     windowHeight: Float,
     windowPositionX: Float,
@@ -135,9 +134,10 @@ fun editTransform(
     panelHeight: Float,
     panelPositionX: Float,
     panelPositionY: Float,
+    transform: Transform,
 ) {
 
-    entitySelection.entity.transform.get(OBJECT_MATRIX)
+    transform.get(OBJECT_MATRIX)
 
     if (ImGui.isKeyPressed(GLFW_KEY_T)) {
         currentGizmoOperation = Operation.TRANSLATE
@@ -298,5 +298,5 @@ fun editTransform(
     ImGui.endChild()
     ImGui.end()
 
-    entitySelection.entity.transform.set(OBJECT_MATRIX)
+    transform.set(OBJECT_MATRIX)
 }

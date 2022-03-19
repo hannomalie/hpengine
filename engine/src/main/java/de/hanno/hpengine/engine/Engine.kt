@@ -1,5 +1,14 @@
 package de.hanno.hpengine.engine
 
+import com.artemis.BaseEntitySystem
+import com.artemis.BaseSystem
+import com.artemis.World
+import com.artemis.WorldConfigurationBuilder
+import com.artemis.injection.WiredFieldResolver
+import com.artemis.managers.TagManager
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
+import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.config.DebugConfig
@@ -13,18 +22,29 @@ import de.hanno.hpengine.engine.extension.imGuiEditorModule
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
+import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystemNew
+import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
+import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.manager.ComponentSystem
+import de.hanno.hpengine.engine.model.EntityBuffer
+import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.dsl.*
+import de.hanno.hpengine.engine.transform.TransformSpatial
+import io.github.config4k.registerCustomType
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
+import net.mostlyoriginal.api.SingletonPlugin
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
@@ -40,6 +60,59 @@ class Engine constructor(val application: KoinApplication) {
     private val input = koin.get<Input>()
     private val renderManager = koin.get<RenderManager>()
     private val sceneManager = koin.get<SceneManager>()
+
+
+    val modelSystem = ModelSystem(
+        config,
+        application.koin.get(),
+        application.koin.get(),
+        MaterialManager(config, application.koin.get(), application.koin.get()),
+        EntityBuffer()
+    )
+    val componentExtractor = ComponentExtractor()
+    val worldConfigurationBuilder = WorldConfigurationBuilder().with(
+        TagManager(),
+        componentExtractor,
+        modelSystem,
+        CustomComponentSystem(),
+        SpatialComponentSystem(),
+        EditorCameraInputSystemNew(),
+    ).run {
+        with(*(koin.getAll<BaseSystem>().toTypedArray()))
+    }.run {
+        register(SingletonPlugin.SingletonFieldResolver())
+    }
+    val world = World(
+        worldConfigurationBuilder.build().register(
+            Kryo().apply {
+                isRegistrationRequired = false
+                instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
+            }
+        ).register(input)
+    ).apply {
+        renderManager.renderSystems.forEach { it.world = this }
+
+        process()
+
+        edit(create()).apply {
+            create(TransformComponent::class.java)
+            create(ModelComponent::class.java).apply {
+                modelComponentDescription = StaticModelComponentDescription("assets/models/cube.obj", Directory.Engine)
+            }
+            create(SpatialComponent::class.java)
+            create(NameComponent::class.java).apply {
+                name = "Cube"
+            }
+        }
+
+        edit(create()).apply {
+            create(TransformComponent::class.java)
+            getSystem(TagManager::class.java).register(primaryCamera, entityId)
+            create(NameComponent::class.java).apply {
+                name = "PrimaryCamera"
+            }
+        }
+    }
 
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread =
@@ -86,6 +159,9 @@ class Engine constructor(val application: KoinApplication) {
 
         koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, currentWriteState) }
 
+        modelSystem.extract(currentWriteState)
+        componentExtractor.extract(currentWriteState)
+
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
 
         return updateCycle.getAndIncrement()
@@ -130,29 +206,31 @@ class Engine constructor(val application: KoinApplication) {
         }
 
     }
-}
 
+    fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
+        var currentTimeNs = System.nanoTime()
+        val dtS = 1 / 60.0
 
-fun launchEndlessLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
-    var currentTimeNs = System.nanoTime()
-    val dtS = 1 / 60.0
+        while (true) {
+            val newTimeNs = System.nanoTime()
+            val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
+            var frameTimeS = frameTimeNs / 1000000000.0
+            currentTimeNs = newTimeNs
+            while (frameTimeS > 0.0) {
+                val deltaTime = min(frameTimeS, dtS)
+                val deltaSeconds = deltaTime.toFloat()
 
-    while (true) {
-        val newTimeNs = System.nanoTime()
-        val frameTimeNs = (newTimeNs - currentTimeNs).toDouble()
-        var frameTimeS = frameTimeNs / 1000000000.0
-        currentTimeNs = newTimeNs
-        while (frameTimeS > 0.0) {
-            val deltaTime = min(frameTimeS, dtS)
-            val deltaSeconds = deltaTime.toFloat()
+                actualUpdateStep(deltaSeconds)
+                world.delta = deltaTime.toFloat()
+                world.process()
 
-            actualUpdateStep(deltaSeconds)
-
-            frameTimeS -= deltaTime
-            yield()
+                frameTimeS -= deltaTime
+                yield()
+            }
         }
     }
 }
+
 
 fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
     var currentTimeNs = System.nanoTime()

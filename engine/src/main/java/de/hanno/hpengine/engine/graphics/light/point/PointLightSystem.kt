@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
@@ -23,7 +24,7 @@ class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClas
 class PointLightSystem(
     config: Config, programManager: ProgramManager<OpenGl>, gpuContext: GpuContext<OpenGl>
 ): SimpleEntitySystem(listOf(PointLight::class.java)), RenderSystem {
-
+    override lateinit var world: World
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
 
     var pointLightMovedInCycle: Long = 0

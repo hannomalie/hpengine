@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.extensions
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -392,7 +393,7 @@ private class SphereHolder(
     },
     val targetBuffer: RenderTarget2D
 ) : RenderSystem {
-
+    override lateinit var world: World
     val sphereEntity = Entity("[Editor] Pivot")
 
     val sphere = run {

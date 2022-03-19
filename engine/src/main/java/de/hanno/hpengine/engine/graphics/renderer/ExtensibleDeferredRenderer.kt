@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
@@ -43,6 +44,7 @@ class ExtensibleDeferredRenderer(
     val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     extensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem, Backend<OpenGl> {
+    override lateinit var world: World
     private val allExtensions: List<DeferredRenderExtension<OpenGl>> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension<OpenGl>>
         get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }

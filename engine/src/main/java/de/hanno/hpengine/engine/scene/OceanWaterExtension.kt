@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.scene
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
@@ -68,7 +69,7 @@ class OceanWaterRenderSystem(
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>
 ) : RenderSystem {
-
+    override lateinit var world: World
     private val N = 512
 
     private val dimension = TextureDimension2D(N, N)

@@ -1,8 +1,30 @@
 import org.gradle.internal.os.OperatingSystem
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("net.onedaybeard.artemis:artemis-odb-gradle-plugin:2.3.0")
+    }
+}
+
 plugins {
     kotlin("jvm")
     id("com.google.devtools.ksp") version "1.5.20-1.0.0-beta04"
+}
+
+plugins.apply("artemis")
+
+tasks.named("weave", net.onedaybeard.gradle.ArtemisWeavingTask::class) {
+    classesDirs = sourceSets.main.get().output.classesDirs
+    isEnableArtemisPlugin = true
+    isEnablePooledWeaving = true
+    isGenerateLinkMutators = true
+    isOptimizeEntitySystems = true
+}
+tasks.build {
+    finalizedBy(tasks.named("weave"))
 }
 
 kotlin.sourceSets {
@@ -99,6 +121,13 @@ dependencies {
 
     val koinVersion= "3.1.1"
     api("io.insert-koin:koin-core:$koinVersion")
+
+    api("net.onedaybeard.artemis:artemis-odb:2.3.0")
+    api("net.onedaybeard.artemis:artemis-odb-serializer-json:2.3.0")
+    api("net.mostlyoriginal.artemis-odb:contrib-plugin-singleton:2.5.0")
+
+    implementation("com.esotericsoftware:kryo:5.3.0")
+
     testImplementation("io.insert-koin:koin-test:$koinVersion")
 
     testImplementation("junit:junit:4.12")

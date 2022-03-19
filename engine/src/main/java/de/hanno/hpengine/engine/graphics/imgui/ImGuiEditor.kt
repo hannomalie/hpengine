@@ -1,6 +1,15 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
+import com.artemis.Component
+import com.artemis.ComponentMapper
+import com.artemis.World
+import com.artemis.managers.TagManager
+import com.artemis.utils.Bag
+import com.artemis.utils.reflect.ClassReflection.isAnnotationPresent
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.component.artemis.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.NameComponent
+import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GlfwWindow
@@ -24,7 +33,9 @@ import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import net.mostlyoriginal.api.Singleton
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.koin.core.component.get
 import org.lwjgl.glfw.GLFW
 
@@ -49,6 +60,12 @@ class ImGuiEditor(
     private fun selectOrUnselect(newSelection: Selection) {
         selection = if(selection == newSelection) null else newSelection
     }
+    private var selectionNew: SelectionNew? = null
+    private fun selectOrUnselectNew(newSelection: SelectionNew) {
+        selectionNew = if(selectionNew == newSelection) null else newSelection
+    }
+
+    override lateinit var world: World
 
     init {
         window {
@@ -97,28 +114,32 @@ class ImGuiEditor(
             ImGui.newFrame()
 
             scene?.also { scene ->
-                showGizmo(
-                    viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer,
-                    projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer,
-                    fovY = renderState.camera.fov,
-                    near = renderState.camera.near,
-                    far = renderState.camera.far,
-                    entitySelection = selection as? SimpleEntitySelection,
-                    editorCameraInputSystem = scene.componentSystems.firstIsInstance<EditorCameraInputSystem>(),
-                    windowWidth = screenWidth,
-                    windowHeight = screenHeight,
-                    windowPositionX = 0f,
-                    windowPositionY = 0f,
-                    panelWidth = midPanelWidth,
-                    panelHeight = midPanelHeight,
-                    panelPositionX = leftPanelWidth,
-                    panelPositionY = leftPanelYOffset,
-                )
+                (selectionNew as? EntitySelectionNew)?.let { entitySelection ->
+                    world.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
+                        showGizmo(
+                            viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer,
+                            projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer,
+                            fovY = renderState.camera.fov,
+                            near = renderState.camera.near,
+                            far = renderState.camera.far,
+                            editorCameraInputSystem = scene.componentSystems.firstIsInstance<EditorCameraInputSystem>(),
+                            windowWidth = screenWidth,
+                            windowHeight = screenHeight,
+                            panelWidth = midPanelWidth,
+                            panelHeight = midPanelHeight,
+                            windowPositionX = 0f,
+                            windowPositionY = 0f,
+                            panelPositionX = leftPanelWidth,
+                            panelPositionY = leftPanelYOffset,
+                            transform = it.transform,
+                        )
+                    }
+                }
             }
 
             menu(screenWidth, screenHeight)
 
-            leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
+            leftPanel(renderState, leftPanelYOffset, leftPanelWidth, screenHeight)
 
             rightPanel(screenWidth, rightPanelWidthPercentage, rightPanelWidth, screenHeight)
 //            ImGui.showDemoWindow(ImBoolean(true))
@@ -196,12 +217,32 @@ class ImGuiEditor(
         }
     }
 
-    private fun leftPanel(leftPanelYOffset: Float, leftPanelWidth: Float, screenHeight: Float) {
+    private fun leftPanel(renderState: RenderState, leftPanelYOffset: Float, leftPanelWidth: Float, screenHeight: Float) {
         ImGui.setNextWindowPos(0f, leftPanelYOffset)
         ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
             scene?.also { scene ->
                 window("Scene", NoCollapse or NoResize) {
+                    val componentsForEntity: Map<Int, Bag<Component>> = renderState.componentsForEntities
+                    componentsForEntity.forEach { (entityIndex, components) ->
+                        treeNode(
+                            components.firstIsInstanceOrNull<NameComponent>()?.name ?: (world.getSystem(TagManager::class.java).getTag(entityIndex) ?: "Entity $entityIndex")
+                        ) {
+                            text("Entity") {
+                                selectOrUnselectNew(SimpleEntitySelectionNew(entityIndex, components.data.filterNotNull()))
+                            }
+                            components.forEach { component ->
+                                text(component.javaClass.simpleName) {
+                                    when(component) {
+                                       is ModelComponent -> {
+                                           selectOrUnselectNew(ModelComponentSelectionNew(entityIndex, component))
+                                       }
+                                        is NameComponent -> selectOrUnselectNew(NameSelectionNew(entityIndex, component.name))
+                                    }
+                                }
+                            }
+                        }
+                    }
                     scene.getEntities().forEach { entity ->
                         if (!entity.hasParent) {
                             treeNode(entity.name) {
@@ -242,6 +283,32 @@ class ImGuiEditor(
                         val position = selection.entity.transform.position
                         text("x: ${position.x} y: ${position.y} z: ${position.z}")
                     }
+                }
+                else -> {
+                    when(val selectionNew = selectionNew) {
+                        is MeshSelectionNew -> { }
+                        is ModelComponentSelectionNew -> { }
+                        is ModelSelectionNew -> { }
+                        is NameSelectionNew -> window(selectionNew.entity.toString(), NoCollapse or NoResize) {
+                            text("Name: ${selectionNew.name}")
+                        }
+                        is SimpleEntitySelectionNew -> window(selectionNew.entity.toString(), NoCollapse or NoResize) {
+//                            checkBox("Visible", selection.entity.visible) {
+//                                selection.entity.visible = it
+//                            }
+                            selectionNew.components.firstIsInstanceOrNull<TransformComponent>()?.run {
+                                val position = transform.position
+                                text("x: ${position.x} y: ${position.y} z: ${position.z}")
+                            }
+                        }
+                        is GiVolumeSelectionNew -> { }
+                        is MaterialSelectionNew -> { }
+                        SelectionNew.None -> { }
+                        is OceanWaterSelectionNew -> { }
+                        is ReflectionProbeSelectionNew -> { }
+                        is SceneSelectionNew -> { }
+                        null -> { }
+                    }!!
                 }
             }
         }
