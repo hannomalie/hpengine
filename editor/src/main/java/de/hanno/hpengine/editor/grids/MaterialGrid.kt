@@ -37,12 +37,12 @@ class MaterialGrid(val programManager: ProgramManager<OpenGl>,
                    val material: Material) : JPanel() {
     private val info = material.materialInfo
 
-    private val heightMappingFirstpassProgram = programManager.heightMappingFirstPassProgram
+    private val heightMappingFirstpassProgramDescription = programManager.heightMappingFirstPassProgramDescription
 
     var useHeightMapping: Boolean
-        get() = info.program == heightMappingFirstpassProgram
+        get() = info.programDescription == heightMappingFirstpassProgramDescription
         set(value) {
-            info.program = if(value) heightMappingFirstpassProgram else null
+            info.programDescription = if(value) heightMappingFirstpassProgramDescription else null
         }
 
     init {

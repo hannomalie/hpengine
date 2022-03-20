@@ -24,7 +24,7 @@ class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClas
 class PointLightSystem(
     config: Config, programManager: ProgramManager<OpenGl>, gpuContext: GpuContext<OpenGl>
 ): SimpleEntitySystem(listOf(PointLight::class.java)), RenderSystem {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
 
     var pointLightMovedInCycle: Long = 0

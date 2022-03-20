@@ -66,7 +66,7 @@ class AreaLightSystem(
     programManager: ProgramManager<OpenGl>,
     config: Config
 ) : SimpleEntitySystem(listOf(AreaLight::class.java)), RenderSystem {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
     private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
     private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = TypedBuffer(BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes), AreaLightStrukt.type)

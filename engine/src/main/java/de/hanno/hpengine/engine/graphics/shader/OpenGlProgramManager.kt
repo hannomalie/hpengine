@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GpuBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
@@ -113,6 +114,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         )
     }
     override val heightMappingFirstPassProgram = getFirstPassHeightMappingProgram()
+    override val heightMappingFirstPassProgramDescription = getFirstPassHeightMappingProgramDescription()
 
     override fun getComputeProgram(codeSource: FileBasedCodeSource, defines: Defines, uniforms: Uniforms?): ComputeProgram {
         return gpuContext.invoke {
@@ -194,6 +196,16 @@ private fun ProgramManager<*>.getFirstPassHeightMappingProgram(): Program<FirstP
     defines = Defines(),
     uniforms = StaticFirstPassUniforms(gpuContext)
 )
+
+private fun ProgramManager<*>.getFirstPassHeightMappingProgramDescription() = ProgramDescription(
+    vertexShaderSource = vertexShaderSource,
+    tesselationControlShaderSource = tesselationControlShaderSource,
+    tesselationEvaluationShaderSource = tesselationEvaluationShaderSource,
+    geometryShaderSource = geometryShaderSource,
+    fragmentShaderSource = fragmentShaderSource,
+    defines = Defines(),
+)
+
 
 val vertexShaderSource = StringBasedCodeSource(
     "tesselation",

@@ -55,7 +55,7 @@ class PhysicsManager(
     val gpuContext: GpuContext<OpenGl>,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : Manager, RenderSystem {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
     val linePoints = mutableListOf<Vector3fc>()
 

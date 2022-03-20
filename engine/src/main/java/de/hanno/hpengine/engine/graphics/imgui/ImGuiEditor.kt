@@ -1,11 +1,9 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
 import com.artemis.Component
-import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
-import com.artemis.utils.reflect.ClassReflection.isAnnotationPresent
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.artemis.ModelComponent
 import de.hanno.hpengine.engine.component.artemis.NameComponent
@@ -33,7 +31,6 @@ import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import net.mostlyoriginal.api.Singleton
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.koin.core.component.get
@@ -65,7 +62,7 @@ class ImGuiEditor(
         selectionNew = if(selectionNew == newSelection) null else newSelection
     }
 
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
 
     init {
         window {
@@ -115,7 +112,7 @@ class ImGuiEditor(
 
             scene?.also { scene ->
                 (selectionNew as? EntitySelectionNew)?.let { entitySelection ->
-                    world.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
+                    artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
                         showGizmo(
                             viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer,
                             projectionMatrixAsBuffer = renderState.camera.projectionMatrixAsBuffer,
@@ -226,7 +223,7 @@ class ImGuiEditor(
                     val componentsForEntity: Map<Int, Bag<Component>> = renderState.componentsForEntities
                     componentsForEntity.forEach { (entityIndex, components) ->
                         treeNode(
-                            components.firstIsInstanceOrNull<NameComponent>()?.name ?: (world.getSystem(TagManager::class.java).getTag(entityIndex) ?: "Entity $entityIndex")
+                            components.firstIsInstanceOrNull<NameComponent>()?.name ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityIndex) ?: "Entity $entityIndex")
                         ) {
                             text("Entity") {
                                 selectOrUnselectNew(SimpleEntitySelectionNew(entityIndex, components.data.filterNotNull()))

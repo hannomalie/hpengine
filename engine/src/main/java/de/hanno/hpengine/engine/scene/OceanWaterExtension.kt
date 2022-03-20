@@ -69,7 +69,7 @@ class OceanWaterRenderSystem(
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>
 ) : RenderSystem {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
     private val N = 512
 
     private val dimension = TextureDimension2D(N, N)

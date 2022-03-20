@@ -5,8 +5,10 @@ import de.hanno.hpengine.engine.directory.Asset
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.manager.Manager
+import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.CodeSource
@@ -52,9 +54,22 @@ interface ProgramManager<BACKEND: BackendType> : Manager {
 
     val linesProgram: Program<LinesProgramUniforms>
     val heightMappingFirstPassProgram: Program<FirstPassUniforms>
+    val heightMappingFirstPassProgramDescription: ProgramDescription
     fun List<UniformDelegate<*>>.toUniformDeclaration(): String
     val Uniforms.shaderDeclarations: String
     fun CodeSource.toResultingShaderSource(defines: Defines): String
+    // TODO: Make capable of animated uniforms stuff
+    fun getFirstPassProgram(programDescription: ProgramDescription): Program<Uniforms> = programDescription.run {
+        getProgram(
+            vertexShaderSource,
+            fragmentShaderSource,
+            geometryShaderSource,
+            tesselationControlShaderSource,
+            tesselationEvaluationShaderSource,
+            defines ?: Defines(),
+            StaticFirstPassUniforms(gpuContext),
+        )
+    }
 }
 
 class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {

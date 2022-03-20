@@ -8,7 +8,6 @@ import com.artemis.BaseEntitySystem
 import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-import com.artemis.annotations.Transient
 import com.artemis.hackedOutComponents
 import com.artemis.utils.IntBag
 import de.hanno.hpengine.engine.BufferableMatrix4f
@@ -17,11 +16,15 @@ import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.*
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.engine.scene.BatchKey
@@ -42,6 +45,7 @@ class ModelComponent : Component() {
     lateinit var modelComponentDescription: ModelComponentDescription
 }
 
+// TODO: Extract model cache for entities with only modelcomponent
 @All(
     ModelComponent::class,
     TransformComponent::class,
@@ -51,6 +55,7 @@ class ModelSystem(
     val gpuContext: GpuContext<OpenGl>,
     val textureManager: TextureManager,
     val materialManager: MaterialManager,
+    val programManager: ProgramManager<*>,
     val entityBuffer: EntityBuffer,
 ) : BaseEntitySystem() {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
@@ -69,11 +74,33 @@ class ModelSystem(
     var gpuEntitiesArray = entityBuffer.underlying
     val entityIndices: MutableMap<ModelComponentDescription, Int> = mutableMapOf()
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
+    private val programCache = mutableMapOf<ProgramDescription, Program<FirstPassUniforms>>()
     private val staticModelLoader = StaticModelLoader()
 
     operator fun get(modelComponentDescription: ModelComponentDescription) = modelCache[modelComponentDescription]
 
     override fun inserted(entityId: Int) {
+        loadModelToCache(entityId)
+
+        cacheEntityIndices()
+        allocateVertexIndexBufferSpace() // TODO: Move this out of here so that it can be batch allocated below
+
+    }
+
+    override fun removed(entityId: Int) {
+        cacheEntityIndices()
+    }
+
+    override fun inserted(entities: IntBag) {
+        forEachEntity { entityId ->
+            loadModelToCache(entityId)
+        }
+
+        cacheEntityIndices()
+        allocateVertexIndexBufferSpace()
+    }
+
+    private fun loadModelToCache(entityId: Int) {
         val modelComponent = modelComponentMapper[entityId]
         val descr = modelComponent.modelComponentDescription
         val model = when (descr) {
@@ -97,20 +124,14 @@ class ModelSystem(
             modelComponent.modelComponentDescription.material ?: model.material
         modelCache[descr] = model
 
+        model.meshes.forEach { mesh ->
+            getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programDescription ->
+                programCache[programDescription] =
+                    programManager.getFirstPassProgram(programDescription) as Program<FirstPassUniforms>
+            }
+        }
+
         boundingVolumeComponentMapper.create(entityId).boundingVolume = model.boundingVolume
-
-        cacheEntityIndices()
-        allocateVertexIndexBufferSpace() // TODO: Move this out of here so that it can be batch allocated below
-
-    }
-
-    override fun removed(entityId: Int) {
-        cacheEntityIndices()
-    }
-
-    override fun inserted(entities: IntBag) {
-        super.inserted(entities)
-//        allocateVertexIndexBufferSpace() // TODO: Make this possible, remove call from inserted(int)
     }
 
     override fun processSystem() {
@@ -244,7 +265,7 @@ class ModelSystem(
         var index = 0
         while (s > i) {
             val current = modelComponentMapper[ids[i]]
-            entityIndices[current.modelComponentDescription] = index
+            entityIndices.put(current.modelComponentDescription, index)
 //            TODO: Reimplement instancing
             index += modelCache[current.modelComponentDescription]!!.meshes.size //* instances.count
             i++
@@ -408,6 +429,7 @@ class ModelSystem(
                     }
                     this.animated = !model.isStatic
                     materialInfo = mesh.material.materialInfo
+                    program = getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programCache[it]!! }
                     entityIndex = index //TODO: check if correct index, it got out of hand
                     entityName = mesh.name // TODO: use entity name component
                     contributesToGi = true//entity.contributesToGi TODO: reimplement
@@ -421,5 +443,38 @@ class ModelSystem(
                 }
             }
         }
+    }
+
+    private fun getProgramDescriptionOrNull(
+        mesh: Mesh<out Any?>,
+        model: Model<*>,
+        modelComponent: ModelComponent
+    ) = (
+            mesh.material.materialInfo.programDescription ?: (model.material.materialInfo.programDescription
+                ?: modelComponent.modelComponentDescription.material?.materialInfo?.programDescription)
+            )
+}
+
+fun <T> BaseEntitySystem.mapEntity(block: (Int) -> T): MutableList<T> {
+    val result = mutableListOf<T>()
+    val actives: IntBag = subscription.entities
+    val ids = actives.data
+    var i = 0
+    val s = actives.size()
+    while (s > i) {
+        result.add(block(ids[i]))
+        i++
+    }
+    return result
+}
+
+fun <T> BaseEntitySystem.forEachEntity(block: (Int) -> T) {
+    val actives: IntBag = subscription.entities
+    val ids = actives.data
+    var i = 0
+    val s = actives.size()
+    while (s > i) {
+        block(ids[i])
+        i++
     }
 }

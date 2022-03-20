@@ -14,7 +14,7 @@ class FPSCounterSystem(val fpsCounter: FPSCounter = FPSCounter()): RenderSystem 
     override fun render(result: DrawResult, renderState: RenderState) {
         fpsCounter.update()
     }
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
 }
 
 class CPSCounter: FPSCounter()

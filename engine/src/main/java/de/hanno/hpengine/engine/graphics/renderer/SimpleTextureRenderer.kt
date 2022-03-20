@@ -28,7 +28,7 @@ open class SimpleTextureRenderer(
     var texture: Texture2D,
     private val programManager: ProgramManager<OpenGl>,
     private val frontBuffer: FrontBufferTarget) : RenderSystem {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
 
     private val renderToQuadProgram: Program<Uniforms> = programManager.getProgram(
             FileBasedCodeSource(config.engineDir.resolve("shaders/passthrough_vertex.glsl")),

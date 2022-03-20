@@ -1,18 +1,24 @@
 package de.hanno.hpengine.engine.model.material
 
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.ENVIRONMENTMAP_TYPE
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
+import de.hanno.hpengine.engine.model.material.SimpleMaterial.*
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType.BINARY
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.util.ressources.CodeSource
 import org.joml.Vector2f
 import org.joml.Vector3f
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
+
+data class ProgramDescription(
+    val fragmentShaderSource: CodeSource,
+    val vertexShaderSource: CodeSource,
+    val tesselationControlShaderSource : CodeSource? = null,
+    val tesselationEvaluationShaderSource : CodeSource? = null,
+    val geometryShaderSource: CodeSource? = null,
+    val defines: Defines? = null,
+)
 
 data class MaterialInfo @JvmOverloads constructor(
     val diffuse: Vector3f = Vector3f(1f, 1f, 1f),
@@ -32,7 +38,7 @@ data class MaterialInfo @JvmOverloads constructor(
     val maps: MutableMap<MAP, Texture> = mutableMapOf(),
     var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
     var isShadowCasting: Boolean = true,
-    var program: Program<FirstPassUniforms>? = null
+    var programDescription: ProgramDescription? = null,
 ) {
 
     // TODO rename, remove "get"

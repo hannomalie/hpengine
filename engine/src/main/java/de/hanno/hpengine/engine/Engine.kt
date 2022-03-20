@@ -1,10 +1,8 @@
 package de.hanno.hpengine.engine
 
-import com.artemis.BaseEntitySystem
 import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfigurationBuilder
-import com.artemis.injection.WiredFieldResolver
 import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
@@ -15,31 +13,33 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.extension.Extension
-import de.hanno.hpengine.engine.extension.baseModule
-import de.hanno.hpengine.engine.extension.deferredRendererModule
-import de.hanno.hpengine.engine.extension.imGuiEditorModule
+import de.hanno.hpengine.engine.extension.*
 import de.hanno.hpengine.engine.graphics.GlfwWindow
+import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystemNew
-import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.EntityBuffer
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.ProgramDescription
+import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.dsl.*
-import de.hanno.hpengine.engine.transform.TransformSpatial
-import io.github.config4k.registerCustomType
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.util.ressources.enhanced
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
@@ -67,9 +67,11 @@ class Engine constructor(val application: KoinApplication) {
         application.koin.get(),
         application.koin.get(),
         MaterialManager(config, application.koin.get(), application.koin.get()),
-        EntityBuffer()
+        application.koin.get(),
+        EntityBuffer(),
     )
     val componentExtractor = ComponentExtractor()
+    val skyBoxSystem = SkyBoxSystem()
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         TagManager(),
         componentExtractor,
@@ -77,6 +79,7 @@ class Engine constructor(val application: KoinApplication) {
         CustomComponentSystem(),
         SpatialComponentSystem(),
         EditorCameraInputSystemNew(),
+        skyBoxSystem,
     ).run {
         with(*(koin.getAll<BaseSystem>().toTypedArray()))
     }.run {
@@ -90,7 +93,7 @@ class Engine constructor(val application: KoinApplication) {
             }
         ).register(input)
     ).apply {
-        renderManager.renderSystems.forEach { it.world = this }
+        renderManager.renderSystems.forEach { it.artemisWorld = this }
 
         process()
 
@@ -103,6 +106,42 @@ class Engine constructor(val application: KoinApplication) {
             create(NameComponent::class.java).apply {
                 name = "Cube"
             }
+        }
+
+        edit(create()).apply {
+            create(NameComponent::class.java).apply {
+                name = "SkyBox"
+            }
+            create(TransformComponent::class.java)
+            create(SkyBoxComponent::class.java)
+            create(ModelComponent::class.java).apply {
+                modelComponentDescription = StaticModelComponentDescription(
+                    "assets/models/skybox.obj",
+                    Directory.Engine,
+                    material = SimpleMaterial(
+                        name = "Skybox",
+                        materialInfo = MaterialInfo(
+                            materialType = SimpleMaterial.MaterialType.UNLIT,
+                            cullBackFaces = false,
+                            isShadowCasting = false,
+                            programDescription = ProgramDescription(
+                                vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
+                                fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource().enhanced {
+                                    replace(
+                                        "//END",
+                                        """
+                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
+                        """.trimIndent()
+                                    )
+                                }
+                            )
+                        )
+                    ).apply {
+                        materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, koin.get<TextureManager>().cubeMap)
+                    }
+                )
+            }
+
         }
 
         edit(create()).apply {
@@ -159,8 +198,9 @@ class Engine constructor(val application: KoinApplication) {
 
         koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, currentWriteState) }
 
-        modelSystem.extract(currentWriteState)
         componentExtractor.extract(currentWriteState)
+        modelSystem.extract(currentWriteState)
+        skyBoxSystem.extract(scene, currentWriteState)
 
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
 

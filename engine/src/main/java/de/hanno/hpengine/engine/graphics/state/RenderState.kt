@@ -123,7 +123,7 @@ interface RenderSystem: Updatable {
         get() = null
     val requiresClearSharedRenderTarget: Boolean
         get() = false
-    var world: World
+    var artemisWorld: World
     fun render(result: DrawResult, renderState: RenderState) { }
     fun renderEditor(result: DrawResult, renderState: RenderState) { }
     fun afterFrameFinished() { }

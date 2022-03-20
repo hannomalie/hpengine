@@ -44,7 +44,7 @@ class ExtensibleDeferredRenderer(
     val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     extensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem, Backend<OpenGl> {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
     private val allExtensions: List<DeferredRenderExtension<OpenGl>> = extensions.distinct()
     private val extensions: List<DeferredRenderExtension<OpenGl>>
         get() = deferredRenderExtensionConfig.run { allExtensions.filter { it.enabled } }

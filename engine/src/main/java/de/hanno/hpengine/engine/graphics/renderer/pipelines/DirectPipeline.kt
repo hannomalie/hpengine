@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lin
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import org.joml.FrustumIntersection
 
 open class DirectPipeline(
@@ -84,13 +85,14 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = PrimitiveType.Triangles)
     }
 
-    val batchesWithOwnProgram = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
+    val batchesWithOwnProgram: Map<MaterialInfo, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
 
-        val program = groupedBatches.key.program!!
-        program.use()
+        var program: Program<*>? = null // TODO: Assign this program in the loop below and use() only on change
         for(batch in groupedBatches.value) {
+            program = batch.program ?: this.program
+            program.use()
             beforeDraw(renderState, program as Program<T>, drawCam)
             gpuContext.cullFace = batch.materialInfo.cullBackFaces
             gpuContext.depthTest = batch.materialInfo.depthTest

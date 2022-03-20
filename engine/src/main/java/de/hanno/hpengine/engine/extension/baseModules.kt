@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.extension
 
-import com.artemis.World
+import com.artemis.*
+import com.artemis.annotations.All
+import com.artemis.managers.TagManager
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -13,6 +15,7 @@ import de.hanno.hpengine.engine.camera.MovableInputComponentComponentSystem
 import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.GIVolumeComponent
 import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
@@ -23,6 +26,7 @@ import de.hanno.hpengine.engine.graphics.*
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
 import de.hanno.hpengine.engine.graphics.imgui.EditorExtension
 import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
+import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
@@ -70,6 +74,7 @@ import de.hanno.hpengine.engine.model.ModelComponentEntitySystem
 import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -183,7 +188,7 @@ val textureRendererModule = module {
         object: SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
             override val sharedRenderTarget = renderTarget
             override val requiresClearSharedRenderTarget = true
-            override lateinit var world: World
+            override lateinit var artemisWorld: World
 
             override fun render(result: DrawResult, renderState: RenderState) {
                 gpuContext.clearColor(1f,0f,0f,1f)
@@ -445,7 +450,17 @@ class SkyboxExtension(
                             materialType = SimpleMaterial.MaterialType.UNLIT,
                             cullBackFaces = false,
                             isShadowCasting = false,
-                            program = simpleColorProgramStatic
+                            programDescription = ProgramDescription(
+                                vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
+                                fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource().enhanced {
+                                    replace(
+                                        "//END",
+                                        """
+                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
+                        """.trimIndent()
+                                    )
+                                }
+                            )
                         )
                     ).apply {
                         materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, textureManager.cubeMap)
@@ -496,7 +511,9 @@ class SkyboxExtension(
             gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
             gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
             gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
+            // TODO: Reimplement with artemis system extraction
+//            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
+            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
             // TODO: Add glbindimagetexture to openglcontext class
             GL42.glBindImageTexture(
                 4,
@@ -536,3 +553,31 @@ class SkyboxExtension(
 
 val Scene.skyBox: Entity?
     get() = getEntity("Skybox")
+
+class SkyBoxComponent: Component()
+@All(SkyBoxComponent::class)
+class SkyBoxSystem: BaseEntitySystem(), RenderSystem {
+    override lateinit var artemisWorld: World
+    lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
+    lateinit var tagManager: TagManager
+
+    override fun processSystem() {
+        if(!tagManager.isRegistered(primaryCamera)) return
+
+        val primaryCameraEntityId = tagManager.getEntityId(primaryCamera)
+
+        subscription.entities.data.firstOrNull()?.let { skyBoxEntityId ->
+            val transform = transformComponentMapper[skyBoxEntityId].transform
+            val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
+
+            val eyePosition = primaryCameraTransform.position
+            transform.identity().translate(eyePosition)
+            transform.scale(1000f)
+        }
+    }
+
+    override fun extract(scene: Scene, renderState: RenderState) {
+        // TODO: Extract cubemap here
+        super.extract(scene, renderState)
+    }
+}

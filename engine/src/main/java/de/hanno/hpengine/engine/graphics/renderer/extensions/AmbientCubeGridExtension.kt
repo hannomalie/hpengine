@@ -393,7 +393,7 @@ private class SphereHolder(
     },
     val targetBuffer: RenderTarget2D
 ) : RenderSystem {
-    override lateinit var world: World
+    override lateinit var artemisWorld: World
     val sphereEntity = Entity("[Editor] Pivot")
 
     val sphere = run {
