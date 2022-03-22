@@ -6,15 +6,20 @@ import com.artemis.ComponentMapper
 import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.engine.component.BaseComponent
+import de.hanno.hpengine.engine.component.artemis.CameraComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.extension.CameraExtension
+import de.hanno.hpengine.engine.extension.CameraExtension.Companion.activeCamera
 import de.hanno.hpengine.engine.extension.Extension
+import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.dsl.*
 import net.mostlyoriginal.api.Singleton
+import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.get
@@ -93,6 +98,8 @@ class EditorCameraInputComponentNew: Component() {
 class EditorCameraInputSystem: SimpleComponentSystem<EditorCameraInputComponent>(EditorCameraInputComponent::class.java) {
     var cameraControlsEnabled = false
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
+        return
+
         val input = scene.get<Input>()
         if(input.wasKeyReleasedLastFrame(GLFW.GLFW_KEY_T) && input.isKeyPressed(GLFW.GLFW_KEY_T)) {
             cameraControlsEnabled = !cameraControlsEnabled
@@ -157,6 +164,7 @@ class EditorCameraInputSystemNew: BaseSystem() {
 
     lateinit var editorCameraInputComponent: EditorCameraInputComponentNew
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
+    lateinit var cameraComponentMapper: ComponentMapper<CameraComponent>
     @Wire
     lateinit var input: Input
     lateinit var tagManager: TagManager
@@ -220,7 +228,18 @@ class EditorCameraInputSystemNew: BaseSystem() {
                     transform.translate(Vector3f(0f, moveAmount, 0f))
                 }
             }
-
         }
+    }
+    fun extract(renderState: RenderState) {
+        if(!tagManager.isRegistered(primaryCamera)) return
+
+        val entityId = tagManager.getEntity(primaryCamera)
+        val transform = transformComponentMapper[entityId].transform
+        val camera = cameraComponentMapper[entityId]
+        renderState.camera.entity.transform.set(transform)
+        renderState.camera.init(
+            camera.projectionMatrix, camera.near, camera.far, camera.fov, camera.ratio,
+            camera.exposure, camera.focalDepth, camera.focalLength, camera.fStop
+        )
     }
 }

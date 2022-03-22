@@ -5,10 +5,9 @@ import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.artemis.ModelComponent
-import de.hanno.hpengine.engine.component.artemis.NameComponent
-import de.hanno.hpengine.engine.component.artemis.TransformComponent
+import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -17,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.scene.dsl.*
@@ -29,6 +29,7 @@ import imgui.flag.ImGuiWindowFlags.NoCollapse
 import imgui.flag.ImGuiWindowFlags.NoResize
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
+import imgui.type.ImInt
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
@@ -42,12 +43,13 @@ class ImGuiEditor(
     private val finalOutput: FinalOutput,
     private val sceneManager: SceneManager,
     private val config: Config,
+    private val sharedDepthBuffer: SharedDepthBuffer,
 ) : RenderSystem {
     private var scene: Scene? = null
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
         gpuContext,
-        FrameBuffer(gpuContext, null),
+        FrameBuffer(gpuContext, sharedDepthBuffer.depthBuffer),
         name = "Final Image",
         width = finalOutput.texture2D.dimension.width,
         height = finalOutput.texture2D.dimension.height,
@@ -61,6 +63,10 @@ class ImGuiEditor(
     private fun selectOrUnselectNew(newSelection: SelectionNew) {
         selectionNew = if(selectionNew == newSelection) null else newSelection
     }
+
+    val output = ImInt(-1)
+    val renderTargetTextures: List<Texture> get() = gpuContext.registeredRenderTargets.flatMap { it.textures }
+    val currentOutputTexture: Texture get() = renderTargetTextures[output.get()]
 
     override lateinit var artemisWorld: World
 
@@ -129,16 +135,37 @@ class ImGuiEditor(
                             panelPositionX = leftPanelWidth,
                             panelPositionY = leftPanelYOffset,
                             transform = it.transform,
+                            viewMatrix = artemisWorld.getSystem(TagManager::class.java).getEntity(primaryCamera).getComponent(TransformComponent::class.java).transform
                         )
                     }
                 }
             }
 
+            if (output.get() != -1) {
+                val windowFlags =
+                    ImGuiWindowFlags.NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
+                            ImGuiWindowFlags.NoNavFocus or  // so turn off everything that would make it act like a window
+                            ImGuiWindowFlags.NoDocking or
+                            ImGuiWindowFlags.NoTitleBar or
+                            NoResize or
+                            ImGuiWindowFlags.NoMove or
+                            NoCollapse or
+                            ImGuiWindowFlags.NoBackground
+                de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
+                    ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
+                    window("Main", windowFlags) {
+                        ImGui.popStyleVar()
+
+                        ImGui.image(currentOutputTexture.id, screenWidth, screenHeight)
+                    }
+                }
+            }
             menu(screenWidth, screenHeight)
 
             leftPanel(renderState, leftPanelYOffset, leftPanelWidth, screenHeight)
 
             rightPanel(screenWidth, rightPanelWidthPercentage, rightPanelWidth, screenHeight)
+
 //            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
@@ -172,6 +199,7 @@ class ImGuiEditor(
             ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
             window("Main", windowFlags) {
                 ImGui.popStyleVar()
+
                 menuBar {
                     menu("File") {
                         menuItem("New Scene") {
@@ -290,9 +318,10 @@ class ImGuiEditor(
                             text("Name: ${selectionNew.name}")
                         }
                         is SimpleEntitySelectionNew -> window(selectionNew.entity.toString(), NoCollapse or NoResize) {
-//                            checkBox("Visible", selection.entity.visible) {
-//                                selection.entity.visible = it
-//                            }
+                            val system = artemisWorld.getSystem(InvisibleComponentSystem::class.java)
+                            checkBox("Visible", !system.invisibleComponentMapper.has(selectionNew.entity)) { visible ->
+                                system.invisibleComponentMapper.set(selectionNew.entity, !visible)
+                            }
                             selectionNew.components.firstIsInstanceOrNull<TransformComponent>()?.run {
                                 val position = transform.position
                                 text("x: ${position.x} y: ${position.y} z: ${position.z}")
@@ -304,7 +333,18 @@ class ImGuiEditor(
                         is OceanWaterSelectionNew -> { }
                         is ReflectionProbeSelectionNew -> { }
                         is SceneSelectionNew -> { }
-                        null -> { }
+                        null -> window("Select output", NoCollapse or NoResize) {
+                            var counter = 0
+
+                            ImGui.radioButton("Default", output, -1)
+                            gpuContext.registeredRenderTargets.forEach { target ->
+                                target.renderedTextures.forEachIndexed { textureIndex, texture ->
+                                    ImGui.radioButton(target.name + "[$textureIndex]", output, counter)
+                                    counter++
+                                }
+                            }
+                            text("Output: " + output.get())
+                        }
                     }!!
                 }
             }

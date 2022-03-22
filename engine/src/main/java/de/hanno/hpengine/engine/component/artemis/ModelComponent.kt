@@ -61,6 +61,7 @@ class ModelSystem(
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
+    lateinit var invisibleComponentMapper: ComponentMapper<InvisibleComponent>
 
     val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
     val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
@@ -372,16 +373,15 @@ class ModelSystem(
         currentWriteState.entitiesState.renderBatchesStatic.clear()
         currentWriteState.entitiesState.renderBatchesAnimated.clear()
 
-        val modelComponents = modelComponentMapper.hackedOutComponents
-        val transformComponents = transformComponentMapper.hackedOutComponents
+        var index = 0
+        forEachEntity { entityId ->
+            val modelComponent = modelComponentMapper[entityId]
+            val transform = transformComponentMapper[entityId].transform
+            val entityVisible = !invisibleComponentMapper.has(entityId)
 
-        for ((index, modelComponent) in modelComponents.withIndex()) {
-
-            val entityIndexOf = entityIndices[modelComponent.modelComponentDescription]
-                ?: continue // TODO: replace with double bang, when extraction and add/remove of entities is synced
+            val entityIndexOf = entityIndices[modelComponent.modelComponentDescription]!!
 
             val model: Model<*> = modelCache[modelComponent.modelComponentDescription]!!
-            val transform = transformComponents[index].transform
             val meshes = model.meshes
             for (meshIndex in meshes.indices) {
                 val mesh = meshes[meshIndex]
@@ -394,23 +394,17 @@ class ModelSystem(
                     intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 
 
-                val visibleForCamera =
-                    meshIsInFrustum// || entity.instanceCount > 1 // TODO: Better culling for instances
+                val visibleForCamera = meshIsInFrustum// || entity.instanceCount > 1 // TODO: Better culling for instances
                 val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
 
                 val batch =
-                    (currentWriteState.entitiesState.cash).computeIfAbsent(
-                        BatchKey(
-                            mesh,
-                            -1
-                        )
-                    ) { (_, _) -> RenderBatch() }
+                    (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh,-1)) { (_, _) -> RenderBatch() }
                 with(batch) {
                     entityBufferIndex = meshBufferIndex
                     this.movedInCycle = currentWriteState.cycle// entity.movedInCycle TODO: reimplement
                     this.isDrawLines = drawLines
                     this.cameraWorldPosition = cameraWorldPosition
-                    this.isVisible = true//entity.visible TODO: reimplement
+                    this.isVisible = entityVisible
                     this.isVisibleForCamera = visibleForCamera
                     update = Update.STATIC//entity.updateType TODO: reimplement
                     entityMinWorld.set(model.getBoundingVolume(mesh).min)//TODO: reimplement with transform
@@ -442,6 +436,7 @@ class ModelSystem(
                     currentWriteState.addAnimated(batch)
                 }
             }
+            index++
         }
     }
 

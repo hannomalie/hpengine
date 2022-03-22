@@ -9,6 +9,7 @@ import imgui.flag.ImGuiInputTextFlags
 import imgui.flag.ImGuiWindowFlags
 import imgui.type.ImBoolean
 import imgui.type.ImFloat
+import org.joml.Matrix4f
 import org.lwjgl.glfw.GLFW.*
 import java.nio.FloatBuffer
 import java.util.*
@@ -66,6 +67,7 @@ private var currentGizmoOperation = 0
 private var boundSizingSnap = false
 
 fun showGizmo(
+    viewMatrix: Matrix4f,
     viewMatrixAsBuffer: FloatBuffer,
     projectionMatrixAsBuffer: FloatBuffer,
     fovY: Float,
@@ -121,6 +123,7 @@ fun showGizmo(
             panelPositionX,
             panelPositionY,
             it,
+            viewMatrix,
         )
     }
 }
@@ -135,6 +138,7 @@ fun editTransform(
     panelPositionX: Float,
     panelPositionY: Float,
     transform: Transform,
+    viewMatrix: Matrix4f,
 ) {
 
     transform.get(OBJECT_MATRIX)
@@ -220,7 +224,7 @@ fun editTransform(
 
     ImGuizmo.setRect(windowPositionX, windowPositionY, windowWidth, windowHeight)
 
-    ImGuizmo.drawGrid(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, IDENTITY_MATRIX, 100)
+//    ImGuizmo.drawGrid(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, IDENTITY_MATRIX, 100)
     ImGuizmo.setId(0)
 //    ImGuizmo.drawCubes(INPUT_CAMERA_VIEW, INPUT_CAMERA_PROJECTION, OBJECT_MATRIX)
 
@@ -299,4 +303,5 @@ fun editTransform(
     ImGui.end()
 
     transform.set(OBJECT_MATRIX)
+//    viewMatrix.set(INPUT_CAMERA_VIEW).invert() TODO: This flickers because of multithreading
 }

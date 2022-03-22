@@ -1,8 +1,10 @@
 package de.hanno.hpengine.engine.component.artemis
 import com.artemis.*
 import com.artemis.annotations.All
+import com.artemis.annotations.Transient
 import com.artemis.annotations.Wire
 import com.artemis.utils.Bag
+import com.artemis.utils.reflect.ClassReflection.isAnnotationPresent
 import com.esotericsoftware.kryo.Kryo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 
@@ -17,7 +19,7 @@ class ComponentExtractor : BaseEntitySystem() {
     lateinit var kryo: Kryo
 
     public override fun initialize() {
-        componentSubclasses = componentManager.componentTypes.map { it.type }
+        componentSubclasses = componentManager.componentTypes.map { it.type }.filterNot { isAnnotationPresent(it, Transient::class.java) }
         componentMappers = componentSubclasses.associateWith {
             world.getMapper(it)
         }

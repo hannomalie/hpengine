@@ -144,7 +144,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, finalOutput, get(), get())
+        ImGuiEditor(get(), gpuContext, finalOutput, get(), get(), get())
     }
     componentSystem {
         EditorCameraInputSystem()
@@ -376,6 +376,7 @@ class CameraExtension : Extension {
     }
 
     override fun extract(scene: Scene, renderState: RenderState) {
+        return
         renderState.camera.init(scene.activeCamera)
     }
 

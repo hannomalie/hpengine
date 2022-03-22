@@ -72,14 +72,16 @@ class Engine constructor(val application: KoinApplication) {
     )
     val componentExtractor = ComponentExtractor()
     val skyBoxSystem = SkyBoxSystem()
+    val editorCameraInputSystemNew = EditorCameraInputSystemNew()
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         TagManager(),
         componentExtractor,
         modelSystem,
         CustomComponentSystem(),
         SpatialComponentSystem(),
-        EditorCameraInputSystemNew(),
+        editorCameraInputSystemNew,
         skyBoxSystem,
+        InvisibleComponentSystem(),
     ).run {
         with(*(koin.getAll<BaseSystem>().toTypedArray()))
     }.run {
@@ -150,6 +152,7 @@ class Engine constructor(val application: KoinApplication) {
             create(NameComponent::class.java).apply {
                 name = "PrimaryCamera"
             }
+            create(CameraComponent::class.java)
         }
     }
 
@@ -201,6 +204,7 @@ class Engine constructor(val application: KoinApplication) {
         componentExtractor.extract(currentWriteState)
         modelSystem.extract(currentWriteState)
         skyBoxSystem.extract(scene, currentWriteState)
+        editorCameraInputSystemNew.extract(currentWriteState)
 
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
 
