@@ -31,7 +31,7 @@ interface ConfigExtension {
 class RenderSystemsConfig(val renderSystems: List<RenderSystem>) {
     private val renderSystemsEnabled = renderSystems.distinct().associateWith { true }.toMutableMap()
     var RenderSystem.enabled: Boolean
-       get() = renderSystemsEnabled[this]!!
+       get() = renderSystemsEnabled[this] ?: true
         set(value) {
             renderSystemsEnabled[this] = value
         }
@@ -67,7 +67,8 @@ class RenderManager(
     _renderSystems: List<RenderSystem>,
 ) : Manager {
 
-    val renderSystems: List<RenderSystem> = _renderSystems.distinct()
+    // TODO: Make this read only again
+    var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
 
     private val textureRenderer = SimpleTextureRenderer(
         config,

@@ -68,7 +68,7 @@ class ModelSystem(
 
     val joints: MutableList<BufferableMatrix4f> = CopyOnWriteArrayList()
 
-    val allocations: MutableMap<ModelComponentDescription, ModelComponentEntitySystem.Allocation> = mutableMapOf()
+    val allocations: MutableMap<ModelComponentDescription, Allocation> = mutableMapOf()
 
     private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
@@ -283,7 +283,7 @@ class ModelSystem(
                     vertexIndexBuffer,
                     vertexIndexOffsets
                 )
-                ModelComponentEntitySystem.Allocation.Static(vertexIndexOffsetsForMeshes)
+                Allocation.Static(vertexIndexOffsetsForMeshes)
             } else {
                 val vertexIndexBuffer = vertexIndexBufferAnimated
                 val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
@@ -296,7 +296,7 @@ class ModelSystem(
                     .flatMap { frame -> frame.jointMatrices.toList() }
                 val jointsOffset = joints.size
                 joints.addAll(elements)
-                ModelComponentEntitySystem.Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
+                Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
             }
         }.mapKeys { it.key.modelComponentDescription }
 
@@ -366,7 +366,7 @@ class ModelSystem(
 
     fun extract(
         camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, drawLines: Boolean,
-        allocations: MutableMap<ModelComponentDescription, ModelComponentEntitySystem.Allocation>,
+        allocations: MutableMap<ModelComponentDescription, Allocation>,
         entityIndices: MutableMap<ModelComponentDescription, Int>
     ) {
 
@@ -449,6 +449,26 @@ class ModelSystem(
                 ?: modelComponent.modelComponentDescription.material?.materialInfo?.programDescription)
             )
 }
+
+
+sealed class Allocation(val forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) {
+    init {
+        require(forMeshes.isNotEmpty())
+    }
+
+    val indexOffset = forMeshes.first().indexOffset
+    val vertexOffset = forMeshes.first().vertexOffset
+
+    class Static(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) : Allocation(forMeshes)
+    class Animated(forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>, val jointsOffset: Int) :
+        Allocation(forMeshes)
+}
+
+val Allocation.baseJointIndex: Int
+    get() = when (this) {
+        is Allocation.Static -> 0
+        is Allocation.Animated -> jointsOffset
+    }
 
 fun <T> BaseEntitySystem.mapEntity(block: (Int) -> T): MutableList<T> {
     val result = mutableListOf<T>()

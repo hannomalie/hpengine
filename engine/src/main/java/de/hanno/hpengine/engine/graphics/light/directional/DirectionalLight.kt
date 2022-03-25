@@ -1,77 +1,73 @@
 package de.hanno.hpengine.engine.graphics.light.directional
 
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.InputControllerComponent
-import de.hanno.hpengine.engine.entity.Entity
+import com.artemis.BaseEntitySystem
+import com.artemis.ComponentMapper
+import com.artemis.annotations.All
+import de.hanno.hpengine.engine.component.artemis.DirectionalLightComponent
+import de.hanno.hpengine.engine.component.artemis.forEachEntity
+import de.hanno.hpengine.engine.entity.CycleSystem
+import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.scene.Scene
-import org.joml.AxisAngle4f
-import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.koin.core.component.get
 import org.lwjgl.glfw.GLFW
 
-data class DirectionalLight(val _entity: Entity) : Camera(_entity, 1f) {
-    private val castsShadows = false
-    var color = Vector3f(1f, 1f, 1f)
-    var scatterFactor = 1f
+@All(DirectionalLightComponent::class)
+class DirectionalLightSystem: BaseEntitySystem() {
+    lateinit var input: Input
+    lateinit var cycleSystem: CycleSystem
+    lateinit var  directionalLightComponentMapper: ComponentMapper<DirectionalLightComponent>
 
-    val direction: Vector3f
-        get() = _entity.transform.viewDirection
-
-    fun translate(offset: Vector3f?) {
-        _entity.transform.translate(offset)
-    }
-
-    init {
-        perspective = false
-        color = Vector3f(1f, 0.76f, 0.49f)
-        scatterFactor = 1f
-        width = 1500f
-        height = 1500f
-        far = (-5000).toFloat()
-        _entity.transform.translate(Vector3f(12f, 300f, 2f))
-        _entity.transform.rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
-    }
-}
-data class DirectionalLightControllerComponent(private val _entity: Entity): InputControllerComponent(_entity)
-
-class DirectionalLightControllerComponentSystem() : SimpleComponentSystem<DirectionalLightControllerComponent>(DirectionalLightControllerComponent::class.java) {
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        val moveAmount = 100 * deltaSeconds
+    override fun processSystem() {
+        val moveAmount = 100 * world.delta
         val degreesPerSecond = 45f
-        val rotateAmount = Math.toRadians(degreesPerSecond.toDouble()).toFloat() * deltaSeconds
+        val rotateAmount = Math.toRadians(degreesPerSecond.toDouble()).toFloat() * world.delta
 
-        val input = scene.get<Input>()
-
-        components.forEach { component ->
-            val entity = component.entity
+        forEachEntity {
+            val transform = directionalLightComponentMapper[it].transform
 
             if (input.isKeyPressed(GLFW.GLFW_KEY_UP)) {
-                entity.transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
+                transform.rotateAround(Vector3f(0f, 1f, 0f), rotateAmount, Vector3f())
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_DOWN)) {
-                entity.transform.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
+                transform.rotateAround(Vector3f(0f, 1f, 0f), -rotateAmount, Vector3f())
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_LEFT)) {
-                entity.transform.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
+                transform.rotateAround(Vector3f(1f, 0f, 0f), rotateAmount, Vector3f())
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) {
-                entity.transform.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
+                transform.rotateAround(Vector3f(1f, 0f, 0f), -rotateAmount, Vector3f())
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_8)) {
-                entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
+                transform.translate(Vector3f(0f, -moveAmount, 0f))
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_2)) {
-                entity.transform.translate(Vector3f(0f, moveAmount, 0f))
+                transform.translate(Vector3f(0f, moveAmount, 0f))
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_4)) {
-                entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
+                transform.translate(Vector3f(-moveAmount, 0f, 0f))
             }
             if (input.isKeyPressed(GLFW.GLFW_KEY_6)) {
-                entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
+                transform.translate(Vector3f(moveAmount, 0f, 0f))
             }
         }
+    }
+
+    fun extract(renderState: RenderState) {
+//        TODO: Reimplement
+//        renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+//
+//        renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+//        val light = getDirectionalLight() ?: return
+//
+//        with(light) {
+//            val directionalLightState = renderState.directionalLightState[0]
+//
+//            directionalLightState.color.set(color)
+//            directionalLightState.direction.set(direction)
+//            directionalLightState.scatterFactor = scatterFactor
+//            directionalLightState.viewMatrix.set(viewMatrix)
+//            directionalLightState.projectionMatrix.set(projectionMatrix)
+//            directionalLightState.viewProjectionMatrix.set(viewProjectionMatrix)
+//        }
     }
 }

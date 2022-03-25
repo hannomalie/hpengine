@@ -27,12 +27,10 @@ import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.instancing.instanceCount
-import de.hanno.hpengine.engine.model.ModelComponentEntitySystem
 import de.hanno.hpengine.engine.model.texture.CubeMapArray
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.Texture2D.TextureUploadInfo.Texture2DUploadInfo
 import de.hanno.hpengine.engine.model.texture.TextureDimension
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import org.joml.Vector3f
 import org.joml.Vector4f
@@ -43,8 +41,6 @@ import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
 import java.io.File
-import java.nio.FloatBuffer
-import kotlin.math.min
 
 interface PointLightShadowMapStrategy {
     fun renderPointLightShadowMaps(renderState: RenderState)
@@ -52,7 +48,6 @@ interface PointLightShadowMapStrategy {
 }
 
 class CubeShadowMapStrategy(
-    private val pointLightSystem: PointLightSystem,
     config: Config,
     val gpuContext: GpuContext<OpenGl>,
     programManager: ProgramManager<OpenGl>
@@ -89,72 +84,73 @@ class CubeShadowMapStrategy(
     }
 
     override fun renderPointLightShadowMaps(renderState: RenderState) {
-        val pointLights = pointLightSystem.getComponents(PointLight::class.java)
-        val gpuContext = gpuContext
-        val needToRedraw =
-            pointLightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointLightShadowMapsRenderedInCycle < renderState.pointLightMovedInCycle
-        if (!needToRedraw) {
-            return
-        }
-
-        profiled("PointLight shadowmaps") {
-
-            gpuContext.depthMask = true
-            gpuContext.enable(GlCap.DEPTH_TEST)
-            gpuContext.enable(GlCap.CULL_FACE)
-            cubemapArrayRenderTarget.use(gpuContext, true)
-//            gpuContext.clearDepthAndColorBuffer()
-            gpuContext.viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
-
-            for (i in 0 until min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
-
-                val light = pointLights[i]
-                pointCubeShadowPassProgram.use()
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
-                pointCubeShadowPassProgram.bindShaderStorageBuffer(
-                    7,
-                    renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray
-                )
-                pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
-                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
-                pointCubeShadowPassProgram.setUniform("lightIndex", i)
-                val viewProjectionMatrices =
-                    Util.getCubeViewProjectionMatricesForPosition(light.entity.transform.position)
-                val viewMatrices = arrayOfNulls<FloatBuffer>(6)
-                val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
-                for (floatBufferIndex in 0..5) {
-                    viewMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
-                    projectionMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
-
-                    viewProjectionMatrices.left[floatBufferIndex].get(viewMatrices[floatBufferIndex])
-                    viewProjectionMatrices.right[floatBufferIndex].get(projectionMatrices[floatBufferIndex])
-
-                    viewMatrices[floatBufferIndex]!!.rewind()
-                    projectionMatrices[floatBufferIndex]!!.rewind()
-                    pointCubeShadowPassProgram.setUniformAsMatrix4(
-                        "viewMatrices[$floatBufferIndex]",
-                        viewMatrices[floatBufferIndex]!!
-                    )
-                    pointCubeShadowPassProgram.setUniformAsMatrix4(
-                        "projectionMatrices[$floatBufferIndex]",
-                        projectionMatrices[floatBufferIndex]!!
-                    )
-                }
-
-                profiled("PointLight shadowmap entity rendering") {
-                    renderState.vertexIndexBufferStatic.indexBuffer.bind()
-                    for (batch in renderState.renderBatchesStatic.filter { it.materialInfo.isShadowCasting }) { // TODO: Better filtering which entity is in light radius
-                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
-                            batch,
-                            pointCubeShadowPassProgram,
-                            bindIndexBuffer = false
-                        )
-                    }
-                }
-            }
-        }
-        pointLightShadowMapsRenderedInCycle = renderState.cycle
+//        TODO: Reimplement properly
+//        val pointLights = renderState.componentExtracts[PointLightComponent::class.java] as List<PointLightComponent>
+//        val gpuContext = gpuContext
+//        val needToRedraw =
+//            pointLightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointLightShadowMapsRenderedInCycle < renderState.pointLightMovedInCycle
+//        if (!needToRedraw) {
+//            return
+//        }
+//
+//        profiled("PointLight shadowmaps") {
+//
+//            gpuContext.depthMask = true
+//            gpuContext.enable(GlCap.DEPTH_TEST)
+//            gpuContext.enable(GlCap.CULL_FACE)
+//            cubemapArrayRenderTarget.use(gpuContext, true)
+////            gpuContext.clearDepthAndColorBuffer()
+//            gpuContext.viewPort(0, 0, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION)
+//
+//            for (i in 0 until min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
+//
+//                val light = pointLights[i]
+//                pointCubeShadowPassProgram.use()
+//                pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.entitiesState.materialBuffer)
+//                pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+//                pointCubeShadowPassProgram.bindShaderStorageBuffer(
+//                    7,
+//                    renderState.entitiesState.vertexIndexBufferStatic.vertexStructArray
+//                )
+//                pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
+//                pointCubeShadowPassProgram.setUniform("pointLightRadius", light.radius)
+//                pointCubeShadowPassProgram.setUniform("lightIndex", i)
+//                val viewProjectionMatrices =
+//                    Util.getCubeViewProjectionMatricesForPosition(light.entity.transform.position)
+//                val viewMatrices = arrayOfNulls<FloatBuffer>(6)
+//                val projectionMatrices = arrayOfNulls<FloatBuffer>(6)
+//                for (floatBufferIndex in 0..5) {
+//                    viewMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
+//                    projectionMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16)
+//
+//                    viewProjectionMatrices.left[floatBufferIndex].get(viewMatrices[floatBufferIndex])
+//                    viewProjectionMatrices.right[floatBufferIndex].get(projectionMatrices[floatBufferIndex])
+//
+//                    viewMatrices[floatBufferIndex]!!.rewind()
+//                    projectionMatrices[floatBufferIndex]!!.rewind()
+//                    pointCubeShadowPassProgram.setUniformAsMatrix4(
+//                        "viewMatrices[$floatBufferIndex]",
+//                        viewMatrices[floatBufferIndex]!!
+//                    )
+//                    pointCubeShadowPassProgram.setUniformAsMatrix4(
+//                        "projectionMatrices[$floatBufferIndex]",
+//                        projectionMatrices[floatBufferIndex]!!
+//                    )
+//                }
+//
+//                profiled("PointLight shadowmap entity rendering") {
+//                    renderState.vertexIndexBufferStatic.indexBuffer.bind()
+//                    for (batch in renderState.renderBatchesStatic.filter { it.materialInfo.isShadowCasting }) { // TODO: Better filtering which entity is in light radius
+//                        renderState.vertexIndexBufferStatic.indexBuffer.draw(
+//                            batch,
+//                            pointCubeShadowPassProgram,
+//                            bindIndexBuffer = false
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//        pointLightShadowMapsRenderedInCycle = renderState.cycle
     }
 }
 
@@ -240,113 +236,114 @@ class DualParaboloidShadowMapStrategy(
 
     private val modelMatrixBuffer = BufferUtils.createFloatBuffer(16)
     override fun renderPointLightShadowMaps(renderState: RenderState) {
-        val entities: List<Entity> = TODO("Reimplement properly with extracted state etc.")//entityManager.getEntities()
-        val modelComponentEntitySystem: ModelComponentEntitySystem =
-            TODO("Reimplement properly with extracted state etc.")//modelComponentSystem
-
-        profiled("PointLight shadowmaps") {
-
-            gpuContext.depthMask = true
-            gpuContext.enable(GlCap.DEPTH_TEST)
-            gpuContext.disable(GlCap.CULL_FACE)
-            renderTarget.use(gpuContext, false)
-
-            val pointLights = pointLightSystem.getPointLights()
-
-            pointShadowPassProgram.use()
-            for (i in 0 until Math.min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
-                renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i)
-
-                gpuContext.clearDepthAndColorBuffer()
-                val light = pointLights[i]
-                pointShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
-                pointShadowPassProgram.setUniform("pointLightRadius", light.radius)
-                pointShadowPassProgram.setUniform("isBack", false)
-
-                for (e in entities) {
-                    e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-
-                        val allocation = modelComponentEntitySystem.allocations[modelComponent]!!
-                        pointShadowPassProgram.setUniformAsMatrix4(
-                            "modelMatrix",
-                            e.transform.transformation.get(modelMatrixBuffer)
-                        )
-                        pointShadowPassProgram.setUniform(
-                            "hasDiffuseMap",
-                            modelComponent.material.materialInfo.getHasDiffuseMap()
-                        )
-                        pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
-
-                        val command = DrawElementsIndirectCommand().apply {
-                            primCount = e.instanceCount
-                            count = allocation.indexOffset
-                            firstIndex = allocation.indexOffset
-                            baseVertex = allocation.vertexOffset
-                        }
-                        val batch = RenderBatch(
-                            entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
-                            isDrawLines = config.debug.isDrawLines,
-                            cameraWorldPosition = renderState.camera.getPosition(),
-                            isVisibleForCamera = true,
-                            update = e.updateType,
-                            entityMinWorld = Vector3f(e.boundingVolume.min),
-                            entityMaxWorld = Vector3f(e.boundingVolume.max),
-                            centerWorld = e.centerWorld,
-                            boundingSphereRadius = e.boundingSphereRadius,
-                            animated = false,
-                            materialInfo = modelComponent.material.materialInfo,
-                            entityIndex = e.index,
-                            meshIndex = 0,
-                            drawElementsIndirectCommand = command
-                        )
-
-                        renderState.vertexIndexBufferStatic.draw(batch, pointShadowPassProgram, true)
-                    }
-                }
-
-                pointShadowPassProgram.setUniform("isBack", true)
-                renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayBack, i)
-                gpuContext.clearDepthAndColorBuffer()
-                for (e in entities) {
-                    e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
-                        val allocation = modelComponentEntitySystem.allocations[modelComponent]!!
-
-                        pointShadowPassProgram.setUniformAsMatrix4(
-                            "modelMatrix",
-                            e.transform.transformation.get(modelMatrixBuffer)
-                        )
-                        pointShadowPassProgram.setUniform(
-                            "hasDiffuseMap",
-                            modelComponent.material.materialInfo.getHasDiffuseMap()
-                        )
-                        pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
-
-                        val command = DrawElementsIndirectCommand().apply {
-                            primCount = e.instanceCount
-                            count = allocation.indexOffset // what?
-                            firstIndex = allocation.indexOffset
-                            baseVertex = allocation.vertexOffset
-                        }
-                        val batch = RenderBatch(
-                            entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
-                            isDrawLines = config.debug.isDrawLines,
-                            cameraWorldPosition = renderState.camera.getPosition(),
-                            isVisibleForCamera = true,
-                            update = e.updateType,
-                            entityMinWorld = Vector3f(e.boundingVolume.min),
-                            entityMaxWorld = Vector3f(e.boundingVolume.max),
-                            centerWorld = e.centerWorld,
-                            boundingSphereRadius = e.boundingSphereRadius,
-                            animated = false,
-                            materialInfo = modelComponent.material.materialInfo,
-                            entityIndex = e.index,
-                            meshIndex = 0,
-                            drawElementsIndirectCommand = command
-                        )
-                        renderState.vertexIndexBufferStatic.draw(batch, pointShadowPassProgram)
-                    }
-                }
-            }
-        }
+        // TODO: Reimplement properly
+//        val entities: List<Entity> = TODO("Reimplement properly with extracted state etc.")//entityManager.getEntities()
+//        val modelComponentEntitySystem: ModelComponentEntitySystem =
+//            TODO("Reimplement properly with extracted state etc.")//modelComponentSystem
+//
+//        profiled("PointLight shadowmaps") {
+//
+//            gpuContext.depthMask = true
+//            gpuContext.enable(GlCap.DEPTH_TEST)
+//            gpuContext.disable(GlCap.CULL_FACE)
+//            renderTarget.use(gpuContext, false)
+//
+//            val pointLights = pointLightSystem.getPointLights()
+//
+//            pointShadowPassProgram.use()
+//            for (i in 0 until Math.min(MAX_POINTLIGHT_SHADOWMAPS, pointLights.size)) {
+//                renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i)
+//
+//                gpuContext.clearDepthAndColorBuffer()
+//                val light = pointLights[i]
+//                pointShadowPassProgram.setUniform("pointLightPositionWorld", light.entity.transform.position)
+//                pointShadowPassProgram.setUniform("pointLightRadius", light.radius)
+//                pointShadowPassProgram.setUniform("isBack", false)
+//
+//                for (e in entities) {
+//                    e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
+//
+//                        val allocation = modelComponentEntitySystem.allocations[modelComponent]!!
+//                        pointShadowPassProgram.setUniformAsMatrix4(
+//                            "modelMatrix",
+//                            e.transform.transformation.get(modelMatrixBuffer)
+//                        )
+//                        pointShadowPassProgram.setUniform(
+//                            "hasDiffuseMap",
+//                            modelComponent.material.materialInfo.getHasDiffuseMap()
+//                        )
+//                        pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
+//
+//                        val command = DrawElementsIndirectCommand().apply {
+//                            primCount = e.instanceCount
+//                            count = allocation.indexOffset
+//                            firstIndex = allocation.indexOffset
+//                            baseVertex = allocation.vertexOffset
+//                        }
+//                        val batch = RenderBatch(
+//                            entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
+//                            isDrawLines = config.debug.isDrawLines,
+//                            cameraWorldPosition = renderState.camera.getPosition(),
+//                            isVisibleForCamera = true,
+//                            update = e.updateType,
+//                            entityMinWorld = Vector3f(e.boundingVolume.min),
+//                            entityMaxWorld = Vector3f(e.boundingVolume.max),
+//                            centerWorld = e.centerWorld,
+//                            boundingSphereRadius = e.boundingSphereRadius,
+//                            animated = false,
+//                            materialInfo = modelComponent.material.materialInfo,
+//                            entityIndex = e.index,
+//                            meshIndex = 0,
+//                            drawElementsIndirectCommand = command
+//                        )
+//
+//                        renderState.vertexIndexBufferStatic.draw(batch, pointShadowPassProgram, true)
+//                    }
+//                }
+//
+//                pointShadowPassProgram.setUniform("isBack", true)
+//                renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayBack, i)
+//                gpuContext.clearDepthAndColorBuffer()
+//                for (e in entities) {
+//                    e.getComponentOption(ModelComponent::class.java).ifPresent { modelComponent ->
+//                        val allocation = modelComponentEntitySystem.allocations[modelComponent]!!
+//
+//                        pointShadowPassProgram.setUniformAsMatrix4(
+//                            "modelMatrix",
+//                            e.transform.transformation.get(modelMatrixBuffer)
+//                        )
+//                        pointShadowPassProgram.setUniform(
+//                            "hasDiffuseMap",
+//                            modelComponent.material.materialInfo.getHasDiffuseMap()
+//                        )
+//                        pointShadowPassProgram.setUniform("color", modelComponent.material.materialInfo.diffuse)
+//
+//                        val command = DrawElementsIndirectCommand().apply {
+//                            primCount = e.instanceCount
+//                            count = allocation.indexOffset // what?
+//                            firstIndex = allocation.indexOffset
+//                            baseVertex = allocation.vertexOffset
+//                        }
+//                        val batch = RenderBatch(
+//                            entityBufferIndex = 0,//TODO reimplement modelComponentSystem.entityIndices[modelComponent]!!,
+//                            isDrawLines = config.debug.isDrawLines,
+//                            cameraWorldPosition = renderState.camera.getPosition(),
+//                            isVisibleForCamera = true,
+//                            update = e.updateType,
+//                            entityMinWorld = Vector3f(e.boundingVolume.min),
+//                            entityMaxWorld = Vector3f(e.boundingVolume.max),
+//                            centerWorld = e.centerWorld,
+//                            boundingSphereRadius = e.boundingSphereRadius,
+//                            animated = false,
+//                            materialInfo = modelComponent.material.materialInfo,
+//                            entityIndex = e.index,
+//                            meshIndex = 0,
+//                            drawElementsIndirectCommand = command
+//                        )
+//                        renderState.vertexIndexBufferStatic.draw(batch, pointShadowPassProgram)
+//                    }
+//                }
+//            }
+//        }
     }
 }

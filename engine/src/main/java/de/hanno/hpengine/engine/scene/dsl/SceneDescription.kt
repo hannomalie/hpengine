@@ -6,17 +6,12 @@ import de.hanno.hpengine.engine.component.CustomComponent
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputComponent
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputComponentDescription
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLight
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponent
 import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.OceanWaterExtension
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABBData
 import org.joml.Matrix4f
@@ -57,20 +52,12 @@ data class AnimatedModelComponentDescription(
 enum class Directory { Game, Engine }
 
 data class CustomComponentDescription(val update: suspend (Scene, Entity, Float) -> Unit): ComponentDescription
-class DirectionalLightControllerComponentDescription: ComponentDescription
-class DirectionalLightDescription: ComponentDescription
 class MovableInputComponentDescription: ComponentDescription
 class CameraDescription: ComponentDescription
 class OceanWaterDescription: ComponentDescription
 
 fun SceneDescription.convert(config: Config, textureManager: TextureManager) = Scene(name).apply {
 
-    val extensions = scope.getAll<Extension>().distinct()
-    extensions.forEach {
-        it.run {
-            this@convert.decorate()
-        }
-    }
     addAll(entities.map {
         Entity(it.name).apply {
             this.contributesToGi = it.contributesToGi
@@ -102,14 +89,11 @@ fun SceneDescription.convert(config: Config, textureManager: TextureManager) = S
                         override val entity = this@apply
                         override suspend fun update(scene: Scene, deltaSeconds: Float) = componentDescription.update(scene, entity, deltaSeconds)
                     }
-                    is DirectionalLightControllerComponentDescription -> DirectionalLightControllerComponent(this)
-                    is DirectionalLightDescription -> DirectionalLight(this)
                     is MovableInputComponentDescription -> MovableInputComponent(this)
                     is EditorCameraInputComponentDescription -> EditorCameraInputComponent(this)
                     is CameraDescription -> Camera(this).apply {
                         ratio = config.width.toFloat() / config.height.toFloat()
                     }
-                    is OceanWaterDescription -> OceanWaterExtension.OceanWater(this)
                     else -> throw IllegalStateException("Cannot map component definition $componentDescription to a runtime type")
                 }
 

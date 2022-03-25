@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
@@ -59,7 +60,7 @@ class DirectionalLightShadowMapExtension(
 
     val shadowMapId = renderTarget.renderedTexture
 
-    override fun extract(scene: Scene, renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
         renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
         renderState.directionalLightState[0].shadowMapId = renderTarget.renderedTextures[0]
 

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.editor.graphics
 
+import com.artemis.World
 import de.hanno.hpengine.editor.RibbonEditor
 import de.hanno.hpengine.editor.appmenu.ApplicationMenu
 import de.hanno.hpengine.editor.input.AxisConstraint
@@ -198,7 +199,7 @@ class EditorRenderSystem(
     val selectionTransform =
         renderStateManager.renderState.registerState { Transform().apply { identity() } }
 
-    override fun extract(scene: Scene, renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
         fun batchAllModelBoundingBoxes() {
             aabbLines.apply {
                 scene.getEntities().mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach { modelComponent ->

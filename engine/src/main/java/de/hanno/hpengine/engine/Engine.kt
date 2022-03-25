@@ -13,16 +13,15 @@ import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
+import de.hanno.hpengine.engine.entity.CycleSystem
 import de.hanno.hpengine.engine.extension.*
 import de.hanno.hpengine.engine.graphics.GlfwWindow
-import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystemNew
 import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
-import de.hanno.hpengine.engine.graphics.shader.ProgramManager
+import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
+import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.EntityBuffer
@@ -64,15 +63,20 @@ class Engine constructor(val application: KoinApplication) {
 
     val modelSystem = ModelSystem(
         config,
-        application.koin.get(),
-        application.koin.get(),
-        MaterialManager(config, application.koin.get(), application.koin.get()),
-        application.koin.get(),
+        koin.get(),
+        koin.get(),
+        MaterialManager(config, koin.get(), koin.get()),
+        koin.get(),
         EntityBuffer(),
     )
     val componentExtractor = ComponentExtractor()
     val skyBoxSystem = SkyBoxSystem()
     val editorCameraInputSystemNew = EditorCameraInputSystemNew()
+    val cycleSystem = CycleSystem()
+    val directionalLightSystem = DirectionalLightSystem()
+    val pointLightSystem = PointLightSystem(config, koin.get(), koin.get()).apply {
+        renderManager.renderSystems.add(this)
+    }
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         TagManager(),
         componentExtractor,
@@ -82,6 +86,10 @@ class Engine constructor(val application: KoinApplication) {
         editorCameraInputSystemNew,
         skyBoxSystem,
         InvisibleComponentSystem(),
+        GiVolumeSystem(koin.get()),
+        cycleSystem,
+        directionalLightSystem,
+        pointLightSystem,
     ).run {
         with(*(koin.getAll<BaseSystem>().toTypedArray()))
     }.run {
@@ -199,12 +207,14 @@ class Engine constructor(val application: KoinApplication) {
         currentWriteState.cycle = updateCycle.get()
         currentWriteState.time = System.currentTimeMillis()
 
-        koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, currentWriteState) }
+        koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, currentWriteState, world) }
 
         componentExtractor.extract(currentWriteState)
         modelSystem.extract(currentWriteState)
-        skyBoxSystem.extract(scene, currentWriteState)
         editorCameraInputSystemNew.extract(currentWriteState)
+        cycleSystem.extract(currentWriteState)
+        directionalLightSystem.extract(currentWriteState)
+        pointLightSystem.extract(currentWriteState)
 
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
 
@@ -214,7 +224,6 @@ class Engine constructor(val application: KoinApplication) {
     suspend fun update(deltaSeconds: Float) = try {
         scene.currentCycle = updateCycle.get()
 
-        koin.getAll<Extension>().distinct().forEach { it.update(scene, deltaSeconds) }
         sceneManager.update(scene, deltaSeconds)
 
         window.invoke { input.update() }

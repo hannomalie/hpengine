@@ -1,8 +1,14 @@
 package de.hanno.hpengine.engine.graphics.light.point
 
+import com.artemis.BaseEntitySystem
+import com.artemis.ComponentMapper
 import com.artemis.World
+import com.artemis.annotations.All
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.artemis.PointLightComponent
+import de.hanno.hpengine.engine.component.artemis.TransformComponent
+import de.hanno.hpengine.engine.component.artemis.forEachEntity
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.SimpleEntitySystem
@@ -19,13 +25,16 @@ import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
 
-class PointLightComponentSystem: SimpleComponentSystem<PointLight>(componentClass = PointLight::class.java)
-
+// TODO: Autoadd Transform
+@All(PointLightComponent::class, TransformComponent::class)
 class PointLightSystem(
-    config: Config, programManager: ProgramManager<OpenGl>, gpuContext: GpuContext<OpenGl>
-): SimpleEntitySystem(listOf(PointLight::class.java)), RenderSystem {
+    config: Config, programManager: ProgramManager<OpenGl>,
+    gpuContext: GpuContext<OpenGl>
+): BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
+    lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
+    lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
     var pointLightMovedInCycle: Long = 0
     private val cameraEntity = Entity("PointLightSystemCameraDummy")
@@ -39,45 +48,8 @@ class PointLightSystem(
                 config
             )
         } else {
-            CubeShadowMapStrategy(this, config, gpuContext, programManager)
+            CubeShadowMapStrategy(config, gpuContext, programManager)
         }
-
-    private fun bufferLights() {
-        gpuPointLightArray = gpuPointLightArray.enlarge(getRequiredPointLightBufferSize())
-        val pointLights = getComponents(PointLight::class.java)
-        for((index, pointLight) in pointLights.withIndex()) {
-            val target = gpuPointLightArray.getAtIndex(index)
-            target.position.set(pointLight.entity.transform.position)
-            target.radius = pointLight.radius
-            target.color.set(pointLight.color)
-        }
-    }
-
-    fun getRequiredPointLightBufferSize() = getComponents(PointLight::class.java).sumBy { it.entity.instanceCount }
-
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        val pointLights = this@PointLightSystem.getComponents(PointLight::class.java)
-
-        for (i in 0 until pointLights.size) {
-            val pointLight = pointLights[i]
-            val pointLightHasMoved = scene.entityManager.run { pointLight.entity.hasMoved }
-            if (!pointLightHasMoved) {
-                continue
-            }
-            this@PointLightSystem.pointLightMovedInCycle = scene.currentCycle
-        }
-
-        val pointLightsIterator = pointLights.iterator()
-        while (pointLightsIterator.hasNext()) {
-            with(pointLightsIterator.next()) {
-                update(scene, deltaSeconds)
-            }
-        }
-
-        this@PointLightSystem.bufferLights()
-    }
-
-    fun getPointLights(): List<PointLight> = getComponents(PointLight::class.java)
 
     private var shadowMapsRenderedInCycle: Long = -1
 
@@ -92,15 +64,45 @@ class PointLightSystem(
         }
     }
 
-    override fun extract(renderState: RenderState) {
+    fun extract(renderState: RenderState) {
         renderState.pointLightMovedInCycle = pointLightMovedInCycle
 
-        renderState.lightState.pointLights = getPointLights()
         gpuPointLightArray.safeCopyTo(renderState.lightState.pointLightBuffer)
         renderState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
     }
 
     companion object {
         @JvmField val MAX_POINTLIGHT_SHADOWMAPS = 5
+    }
+
+    override fun processSystem() {
+        var pointLightCount = 0
+        forEachEntity { entityId ->
+            pointLightCount++
+        }
+        gpuPointLightArray = gpuPointLightArray.enlarge(pointLightCount)
+
+        var index = 0
+        forEachEntity { entityId ->
+            val transform = transformComponentMapper[entityId].transform
+            val pointLight = pointLightComponentMapper[entityId]
+
+            val target = gpuPointLightArray.getAtIndex(index)
+            target.position.set(transform.position)
+            target.radius = pointLight.radius
+            target.color.set(pointLight.color)
+            index++
+        }
+
+        // TODO: Reimplement
+//        for (i in 0 until pointLights.size) {
+//            val pointLight = pointLights[i]
+//            val pointLightHasMoved = scene.entityManager.run { pointLight.entity.hasMoved }
+//            if (!pointLightHasMoved) {
+//                continue
+//            }
+//            this@PointLightSystem.pointLightMovedInCycle = scene.currentCycle
+//        }
+
     }
 }

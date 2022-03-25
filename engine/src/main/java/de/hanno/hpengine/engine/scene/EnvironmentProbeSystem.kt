@@ -373,7 +373,7 @@ class EnvironmentProbeSystem(
     }
 
     val extractedProbes = renderStateManager.renderState.registerState { mutableListOf<EnvironmentProbe>() }
-    override fun extract(scene: Scene, renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
         renderState.environmentProbesState.environmapsArray0Id = getEnvironmentMapsArray(0).id
         renderState.environmentProbesState.environmapsArray3Id = getEnvironmentMapsArray(3).id
         renderState.environmentProbesState.activeProbeCount = probes.size

@@ -1,26 +1,54 @@
 package de.hanno.hpengine.engine.entity
 
+import com.artemis.BaseEntitySystem
+import com.artemis.annotations.All
 import de.hanno.hpengine.engine.container.EntityContainer
 import de.hanno.hpengine.engine.container.SimpleContainer
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.extension.CameraExtension
-import de.hanno.hpengine.engine.extension.CameraExtension.Companion.cameraEntity
-import de.hanno.hpengine.engine.model.EntityBuffer
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.isEqualTo
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.koin.core.component.get
-import java.util.WeakHashMap
+import java.util.*
 import java.util.logging.Logger
+import kotlin.collections.List
+import kotlin.collections.filter
+import kotlin.collections.indices
+import kotlin.collections.set
 
 private val movedInCycleExtensionState = ExtensionState<Entity, Long>(0L)
 var Entity.movedInCycle by movedInCycleExtensionState
 
 private val indexExtensionState = ExtensionState<Entity, Int>(0)
 var Entity.index by indexExtensionState
+
+@All
+class CycleSystem: BaseEntitySystem() {
+    var cycle = 0L
+    override fun processSystem() {
+        cycle += 1
+    }
+    // TODO: Implement this
+    var entityHasMoved = true
+    var staticEntityHasMoved = true
+    val entityMovedInCycle: Long get() = cycle
+    val staticEntityMovedInCycle: Long get() = cycle
+    private var entityAddedInCycle = 0L
+    private var componentAddedInCycle = 0L
+
+    override fun inserted(entityId: Int) {
+        entityAddedInCycle = cycle
+        componentAddedInCycle = cycle
+    }
+    fun extract(renderState: RenderState) {
+        renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
+        renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
+        renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
+        renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
+    }
+}
 
 class EntityManager : Manager {
 
@@ -72,7 +100,8 @@ class EntityManager : Manager {
                 LOGGER.warning(e.message)
             }
         }
-        val predicate: (Entity) -> Boolean = { !scene.get<CameraExtension>().run { scene.cameraEntity == it } }
+        // TODO: Implement this caching in CycleSystem
+        val predicate: (Entity) -> Boolean = { true }//{ !scene.get<CameraExtension>().run { scene.cameraEntity == it } }
         for (entity in entityContainer.entities.filter(predicate)) {
             transformCache.putIfAbsent(entity, Matrix4f(entity.transform))
 

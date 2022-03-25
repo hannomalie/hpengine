@@ -1,20 +1,25 @@
 package de.hanno.hpengine.util.fps
 
+import com.artemis.BaseSystem
 import com.artemis.World
-import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.scene.Scene
 
-class CPSCounterExtension(val fpsCounter: CPSCounter = CPSCounter()): Extension {
-    override suspend fun update(scene: Scene, deltaSeconds: Float) = fpsCounter.update()
-}
 class FPSCounterSystem(val fpsCounter: FPSCounter = FPSCounter()): RenderSystem {
     override fun render(result: DrawResult, renderState: RenderState) {
         fpsCounter.update()
     }
     override lateinit var artemisWorld: World
+}
+
+
+class CPSCounterSystem: BaseSystem() {
+    val fpsCounter: CPSCounter = CPSCounter()
+
+    override fun processSystem() {
+        fpsCounter.update()
+    }
 }
 
 class CPSCounter: FPSCounter()

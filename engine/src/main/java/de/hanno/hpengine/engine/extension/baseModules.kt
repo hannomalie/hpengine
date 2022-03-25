@@ -1,20 +1,20 @@
 package de.hanno.hpengine.engine.extension
 
-import com.artemis.*
+import com.artemis.BaseEntitySystem
+import com.artemis.Component
+import com.artemis.ComponentMapper
+import com.artemis.World
 import com.artemis.annotations.All
 import com.artemis.managers.TagManager
 import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.CameraComponentSystem
 import de.hanno.hpengine.engine.camera.CameraRenderExtension
 import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.camera.MovableInputComponentComponentSystem
 import de.hanno.hpengine.engine.component.CustomComponentSystem
-import de.hanno.hpengine.engine.component.GIVolumeComponent
-import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
@@ -24,43 +24,23 @@ import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.*
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
-import de.hanno.hpengine.engine.graphics.imgui.EditorExtension
 import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightControllerComponentSystem
-import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
-import de.hanno.hpengine.engine.graphics.light.point.PointLightComponentSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.AOScatteringExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.BvHPointLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.DirectionalLightSecondPassExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.ForwardRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeComponentSystem
-import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeManager
-import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toTextures
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
+import de.hanno.hpengine.engine.graphics.renderer.extensions.*
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -68,46 +48,25 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.EntityBuffer
-import de.hanno.hpengine.engine.model.ModelComponentEntitySystem
 import de.hanno.hpengine.engine.model.ModelComponentSystem
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.material.ProgramDescription
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
-import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.OceanWaterComponenSystem
-import de.hanno.hpengine.engine.scene.OceanWaterEntitySystem
-import de.hanno.hpengine.engine.scene.OceanWaterRenderSystem
-import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SceneManager
-import de.hanno.hpengine.engine.scene.dsl.CameraDescription
-import de.hanno.hpengine.engine.scene.dsl.CustomComponentDescription
-import de.hanno.hpengine.engine.scene.dsl.DirectionalLightControllerComponentDescription
-import de.hanno.hpengine.engine.scene.dsl.DirectionalLightDescription
-import de.hanno.hpengine.engine.scene.dsl.Directory
-import de.hanno.hpengine.engine.scene.dsl.MovableInputComponentDescription
-import de.hanno.hpengine.engine.scene.dsl.SceneDescription
-import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.engine.scene.dsl.entity
-import de.hanno.hpengine.util.Util
-import de.hanno.hpengine.util.fps.CPSCounterExtension
+import de.hanno.hpengine.engine.scene.*
 import de.hanno.hpengine.util.fps.FPSCounterSystem
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.util.ressources.enhanced
-import org.koin.core.component.get
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
-import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL42
 import javax.swing.SwingUtilities
+import kotlin.collections.first
+import kotlin.collections.firstOrNull
+import kotlin.collections.listOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
 
 data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
 data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
@@ -148,9 +107,6 @@ val imGuiEditorModule = module {
     }
     componentSystem {
         EditorCameraInputSystem()
-    }
-    extension {
-        EditorExtension()
     }
 }
 val textureRendererModule = module {
@@ -199,13 +155,7 @@ val textureRendererModule = module {
 }
 val baseModule = module {
     manager { EntityManager() }
-    entitySystem { ModelComponentEntitySystem(get(), get(), get(), get(), get()) }
 
-    extension { CPSCounterExtension() }
-    single {
-        val manager: CPSCounterExtension = get()
-        manager.fpsCounter
-    }
     renderSystem { FPSCounterSystem() }
     single {
         val system: FPSCounterSystem = get()
@@ -244,30 +194,19 @@ val baseModule = module {
 }
 
 fun Module.addGIModule() {
-    extension { GiVolumeExtension() }
     renderExtension { VoxelConeTracingExtension(get(), get(), get(), get(), get(), get()) }
-    componentSystem { GiVolumeComponentSystem() }
 }
 
 fun Module.addPointLightModule() {
     renderExtension { BvHPointLightSecondPassExtension(get(), get(), get(), get(), get()) }
-    componentSystem { PointLightComponentSystem() }
-    scope<Scene> {
-        scoped { PointLightSystem(get(), get(), get()) } binds (arrayOf(EntitySystem::class, RenderSystem::class))
-    }
 }
 
 fun Module.addDirectionalLightModule() {
-    extension { DirectionalLightExtension() }
     renderExtension { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) }
-    componentSystem { DirectionalLightControllerComponentSystem() }
-    entitySystem { DirectionalLightSystem() }
 }
 
 fun Module.addOceanWaterModule() {
     renderSystem { OceanWaterRenderSystem(get(), get(), get(), get()) }
-    componentSystem { OceanWaterComponenSystem() }
-    entitySystem { OceanWaterEntitySystem(get()) }
 }
 
 fun Module.addReflectionProbeModule() {
@@ -277,15 +216,12 @@ fun Module.addReflectionProbeModule() {
 }
 
 fun Module.addCameraModule() {
-    extension { CameraExtension() }
     renderExtension { CameraRenderExtension(get(), get(), get(), get()) }
-    componentSystem { CameraComponentSystem(get(), get(), get(), get()) }
 }
 
 fun Module.addSkyboxModule() {
-    extension { SkyboxExtension(get(), get(), get(), get()) }
     renderExtension {
-        SkyboxExtension.SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
+        SkyboxRenderExtension(get(), get(), get(), get(), get(), get())
     }
 }
 
@@ -326,22 +262,18 @@ object SwingUtils {
     }
 }
 
-class GiVolumeComponentSystem: SimpleComponentSystem<GIVolumeComponent>(GIVolumeComponent::class.java)
-class GiVolumeExtension : Extension {
-    // TODO: Migrate to SceneDescription.decorate
-//    override fun Scene.decorate() {
-//        entity("GlobalGiGrid") {
-//            addComponent(GIVolumeComponent(this, get<TextureManager>().createGIVolumeGrids(), Vector3f(100f)))
-//            customComponent { scene, _ ->
-//                boundingVolume.setLocalAABB(scene.aabb.min, scene.aabb.max)
-//            }
-//        }
-//        // TODO: Global grid makes sense maybe, but this one shouldn't live here forever, but I use it for testing purposes
-//        entity("SecondGiGrid") {
-//            transform.translation(Vector3f(0f, 0f, 50f))
-//            addComponent(GIVolumeComponent(this, get<TextureManager>().createGIVolumeGrids(), Vector3f(30f)))
-//        }
-//    }
+@All(GiVolumeComponent::class)
+class GiVolumeSystem(
+    val textureManager: TextureManager,
+): BaseEntitySystem() {
+    private val grids = mutableMapOf<Int, VoxelConeTracingExtension.GIVolumeGrids>()
+    override fun inserted(entityId: Int) {
+        grids[entityId] = textureManager.createGIVolumeGrids()
+    }
+    override fun removed(entityId: Int) {
+        grids.remove(entityId)
+    }
+    override fun processSystem() { }
 }
 
 class DirectionalLightDeferredRenderingExtension(
@@ -358,207 +290,12 @@ class DirectionalLightDeferredRenderingExtension(
     )
 )
 
-class DirectionalLightExtension : Extension {
-    override fun SceneDescription.decorate() {
-        entity("DirectionalLight") {
-            add(DirectionalLightControllerComponentDescription())
-            add(DirectionalLightDescription())
-        }
-    }
-}
-
-class CameraExtension : Extension {
-    override fun SceneDescription.decorate() {
-        entity(cameraEntityName) {
-            add(MovableInputComponentDescription())
-            add(CameraDescription())
-        }
-    }
-
-    override fun extract(scene: Scene, renderState: RenderState) {
-        return
-        renderState.camera.init(scene.activeCamera)
-    }
-
-    var _activeCameraEntity: Entity? = null
-    var Scene.activeCameraEntity: Entity
-        get() = _activeCameraEntity ?: cameraEntity
-        set(value) { _activeCameraEntity = value }
-
-    companion object {
-        val cameraEntityName = "MainCamera"
-        val Scene.cameraEntity: Entity
-            get() = getEntity(cameraEntityName)!!
-
-        val Scene.activeCameraEntity: Entity
-            get() = get<CameraExtension>().run { this@activeCameraEntity.activeCameraEntity }
-
-        val Scene.activeCamera: Camera
-            get() = get<CameraExtension>().run { this@activeCamera.activeCameraEntity }.getComponent(Camera::class.java)!!
-
-        val Scene.camera
-            get() = cameraEntity.getComponent(Camera::class.java)!!
-
-    }
-}
-
-class SkyboxExtension(
-    val config: Config,
-    programManager: ProgramManager<OpenGl>,
-    gpuContext: GpuContext<OpenGl>,
-    val textureManager: TextureManager
-) : Extension {
-    private val firstpassProgramVertexSource =
-        config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource()
-    private val firstpassProgramFragmentSource =
-        config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource()
-
-    private val simpleColorProgramStatic = programManager.getProgram(
-        firstpassProgramVertexSource,
-        firstpassProgramFragmentSource.enhanced {
-            replace(
-                "//END",
-                """
-                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
-                        """.trimIndent()
-            )
-        }, StaticFirstPassUniforms(gpuContext) as FirstPassUniforms
-    )
-
-    init {
-        gpuContext.bindTexture(
-            6,
-            GlTextureTarget.TEXTURE_CUBE_MAP,
-            textureManager.cubeMap.id
-        )
-    }
-
-    override fun extract(scene: Scene, renderState: RenderState) {
-        renderState.skyBoxMaterialIndex =
-            scene.getEntity("Skybox")?.getComponent(ModelComponent::class.java)?.material?.materialIndex ?: -1
-    }
-
-    override fun SceneDescription.decorate() {
-        entity("Skybox") {
-            contributesToGi = false
-            add(
-                StaticModelComponentDescription(
-                    "assets/models/skybox.obj",
-                    Directory.Engine,
-                    material = SimpleMaterial(
-                        name = "Skybox",
-                        materialInfo = MaterialInfo(
-                            materialType = SimpleMaterial.MaterialType.UNLIT,
-                            cullBackFaces = false,
-                            isShadowCasting = false,
-                            programDescription = ProgramDescription(
-                                vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
-                                fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource().enhanced {
-                                    replace(
-                                        "//END",
-                                        """
-                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
-                        """.trimIndent()
-                                    )
-                                }
-                            )
-                        )
-                    ).apply {
-                        materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, textureManager.cubeMap)
-                    }
-                )
-            )
-            add(
-                CustomComponentDescription { scene, entity, _ ->
-                    val eyePosition = scene.get<CameraExtension>().run { scene.activeCameraEntity.transform.position }
-                    entity.transform.identity().translate(eyePosition)
-                    entity.transform.scale(1000f)
-                }
-            )
-        }
-    }
-
-    class SkyboxRenderExtension(
-        val config: Config,
-        val gpuContext: GpuContext<OpenGl>,
-        val deferredRenderingBuffer: DeferredRenderingBuffer,
-        val programManager: ProgramManager<OpenGl>,
-        val textureManager: TextureManager,
-        val renderStateManager: RenderStateManager
-    ) : DeferredRenderExtension<OpenGl> {
-
-        private val secondPassReflectionProgram = programManager.getComputeProgram(
-            config.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
-        )
-        val skyBoxTexture = renderStateManager.renderState.registerState {
-            IntStruct().apply {
-                value = textureManager.cubeMap.id
-            }
-        }
-
-        override fun extract(scene: Scene, renderState: RenderState) {
-            scene.skyBox?.let {
-                it.getComponent(ModelComponent::class.java)?.model?.material?.materialInfo?.maps?.get(SimpleMaterial.MAP.ENVIRONMENT)
-                    ?.let {
-                        renderState[skyBoxTexture].value = it.id
-                    }
-            }
-        }
-
-        override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-            gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.positionMap)
-            gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.normalMap)
-            gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
-            gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
-            gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
-            gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
-            // TODO: Reimplement with artemis system extraction
-//            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
-            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-            // TODO: Add glbindimagetexture to openglcontext class
-            GL42.glBindImageTexture(
-                4,
-                deferredRenderingBuffer.reflectionBuffer.renderedTextures[0],
-                0,
-                false,
-                0,
-                GL15.GL_READ_WRITE,
-                GL30.GL_RGBA16F
-            )
-            GL42.glBindImageTexture(
-                7,
-                deferredRenderingBuffer.reflectionBuffer.renderedTextures[1],
-                0,
-                false,
-                0,
-                GL15.GL_READ_WRITE,
-                GL30.GL_RGBA16F
-            )
-            secondPassReflectionProgram.use()
-            secondPassReflectionProgram.setUniform("screenWidth", config.width.toFloat())
-            secondPassReflectionProgram.setUniform("screenHeight", config.height.toFloat())
-            secondPassReflectionProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-            secondPassReflectionProgram.setUniformAsMatrix4(
-                "projectionMatrix",
-                renderState.camera.projectionMatrixAsBuffer
-            )
-            secondPassReflectionProgram.bindShaderStorageBuffer(1, renderState.materialBuffer)
-            secondPassReflectionProgram.dispatchCompute(
-                config.width / 16,
-                config.height / 16,
-                1
-            )
-        }
-    }
-}
-
 val Scene.skyBox: Entity?
     get() = getEntity("Skybox")
 
 class SkyBoxComponent: Component()
 @All(SkyBoxComponent::class)
-class SkyBoxSystem: BaseEntitySystem(), RenderSystem {
-    override lateinit var artemisWorld: World
+class SkyBoxSystem: BaseEntitySystem() {
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var tagManager: TagManager
 
@@ -575,10 +312,5 @@ class SkyBoxSystem: BaseEntitySystem(), RenderSystem {
             transform.identity().translate(eyePosition)
             transform.scale(1000f)
         }
-    }
-
-    override fun extract(scene: Scene, renderState: RenderState) {
-        // TODO: Extract cubemap here
-        super.extract(scene, renderState)
     }
 }

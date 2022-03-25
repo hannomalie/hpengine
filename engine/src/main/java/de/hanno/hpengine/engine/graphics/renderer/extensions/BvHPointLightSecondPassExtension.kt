@@ -173,16 +173,17 @@ class BvHPointLightSecondPassExtension(
         }
         // TODO: Move this to update
         if(bvhReconstructedInCycle < renderState.pointLightMovedInCycle) {
-            bvhReconstructedInCycle = renderState.cycle
-            val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->
-                BvhNode.Leaf(Vector4f().apply {
-                    set(light.entity.transform.position)
-                    w = light.radius
-                }, index)
-            }.toMutableList()
-            tree = leafNodes.toTree().apply {
-                putToBuffer()
-            }
+//             TODO: Reimplement this
+//            bvhReconstructedInCycle = renderState.cycle
+//            val leafNodes = renderState.lightState.pointLights.mapIndexed { index, light ->
+//                BvhNode.Leaf(Vector4f().apply {
+//                    set(light.entity.transform.position)
+//                    w = light.radius
+//                }, index)
+//            }.toMutableList()
+//            tree = leafNodes.toTree().apply {
+//                putToBuffer()
+//            }
         }
 
         profiled("Seconds pass PointLights BVH") {

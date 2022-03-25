@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.GIVolumeComponent
@@ -398,7 +399,7 @@ class VoxelConeTracingExtension(
         gpuContext.depthTest = true
     }
 
-    override fun extract(scene: Scene, renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
         extract(renderState, scene.componentSystems.filterIsInstance<GIVolumeComponent>())
     }
     fun extract(renderState: RenderState, list: List<GIVolumeComponent>) {

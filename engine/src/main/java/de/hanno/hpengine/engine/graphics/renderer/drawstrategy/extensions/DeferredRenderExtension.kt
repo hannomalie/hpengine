@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.BackendType
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -15,7 +16,7 @@ interface DeferredRenderExtension<TYPE : BackendType>: Updatable {
     fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     fun renderEditor(renderState: RenderState, result: DrawResult) {}
-    fun extract(scene: Scene, renderState: RenderState) {}
+    fun extract(scene: Scene, renderState: RenderState, world: World) {}
     fun beforeSetScene(nextScene: Scene) {}
     fun afterSetScene(nextScene: Scene) {}
 }
@@ -33,8 +34,8 @@ open class CompoundExtension<TYPE : BackendType>(val extensions: List<DeferredRe
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
         extensions.forEach { it.renderEditor(renderState, result) }
     }
-    override fun extract(scene: Scene, renderState: RenderState) {
-        extensions.forEach { it.extract(scene, renderState) }
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
+        extensions.forEach { it.extract(scene, renderState, world) }
     }
 
     override suspend fun update(scene: Scene, deltaSeconds: Float) {

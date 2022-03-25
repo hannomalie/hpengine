@@ -30,7 +30,6 @@ import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import net.miginfocom.swing.MigLayout
-import org.lwjgl.opengl.GL11
 import javax.swing.BorderFactory
 import javax.swing.JCheckBox
 import javax.swing.JPanel
@@ -166,8 +165,8 @@ class ExtensibleDeferredRenderer(
         }
     }
 
-    override fun extract(scene: Scene, renderState: RenderState) {
-        extensions.forEach { it.extract(scene, renderState) }
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
+        extensions.forEach { it.extract(scene, renderState, world) }
     }
 
     override fun render(result: DrawResult, renderState: RenderState): Unit = profiled("DeferredRendering") {

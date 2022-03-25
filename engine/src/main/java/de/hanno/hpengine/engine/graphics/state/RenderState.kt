@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
 import de.hanno.hpengine.engine.scene.Scene
@@ -127,7 +128,7 @@ interface RenderSystem: Updatable {
     fun render(result: DrawResult, renderState: RenderState) { }
     fun renderEditor(result: DrawResult, renderState: RenderState) { }
     fun afterFrameFinished() { }
-    fun extract(scene: Scene, renderState: RenderState) { }
+    fun extract(scene: Scene, renderState: RenderState, world: World) { }
     fun beforeSetScene(nextScene: Scene) { }
     fun afterSetScene(currentScene: Scene) {}
 }

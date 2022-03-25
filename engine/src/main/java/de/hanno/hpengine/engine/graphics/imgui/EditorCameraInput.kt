@@ -9,39 +9,18 @@ import de.hanno.hpengine.engine.component.BaseComponent
 import de.hanno.hpengine.engine.component.artemis.CameraComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.extension.CameraExtension
-import de.hanno.hpengine.engine.extension.CameraExtension.Companion.activeCamera
-import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.dsl.*
 import net.mostlyoriginal.api.Singleton
-import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.koin.core.component.get
 import org.lwjgl.glfw.GLFW
 
 
-class EditorExtension: Extension {
-    override fun SceneDescription.decorate() {
-        entity("EditorCamera") {
-            add(EditorCameraInputComponentDescription())
-            add(CameraDescription())
-        }
-    }
-
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        scene.getEntity("EditorCamera")?.let {
-            scene.getKoin().get<CameraExtension>().run {
-                scene.activeCameraEntity = it
-            }
-        }
-    }
-}
 class EditorCameraInputComponentDescription: ComponentDescription
 class EditorCameraInputComponent(override val entity: Entity): BaseComponent(entity) {
     var rotationDelta = 10f

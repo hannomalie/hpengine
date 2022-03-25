@@ -184,7 +184,7 @@ class PhysicsManager(
 
     }
 
-    override fun extract(scene: Scene, renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
         super<Manager>.extract(scene, renderState)
     }
 

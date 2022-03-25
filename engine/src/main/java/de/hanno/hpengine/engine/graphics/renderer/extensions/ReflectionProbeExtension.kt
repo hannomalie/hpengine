@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.extensions
 
+import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
@@ -125,7 +126,7 @@ class ReflectionProbeRenderExtension(
     private var renderCounter = 0
     private val probesPerFrame = 1
 
-    override fun extract(scene: Scene, renderState: RenderState) {
+    override fun extract(scene: Scene, renderState: RenderState, world: World) {
         val componentSystem = scene.get<ReflectionProbeComponentSystem>()
         val componentCount = componentSystem.components.size
         val targetState = renderState[reflectionProbeRenderState]

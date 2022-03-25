@@ -4,13 +4,10 @@ import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.entity.EntitySystem
-import de.hanno.hpengine.engine.extension.CameraExtension
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.extension.CameraExtension.Companion.cameraEntity
-import de.hanno.hpengine.engine.extension.Extension
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.calculateAABB
 import org.joml.Vector3f
@@ -58,16 +55,12 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val entityManager: EntityManager
         get() = scope.get()
 
-    val extensions: List<Extension>
-        get() = scope.getAll<Extension>().distinct()
-
     fun restoreWorldCamera() {
-        get<CameraExtension>().run { activeCameraEntity = cameraEntity }
+//        get<CameraExtension>().run { activeCameraEntity = cameraEntity }
     }
 
     init {
         entitySystems.forEach { it.gatherEntities(this) }
-//        extensions.forEach { it.run { decorate() } }
 
         componentSystems.forEach {
             it.onEntityAdded(getEntities())
@@ -78,9 +71,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         currentWriteState.sceneMin.set(aabb.min)
         currentWriteState.sceneMax.set(aabb.max)
 
-        for (extension in extensions) {
-            extension.extract(this, currentWriteState)
-        }
         for (system in componentSystems) {
             system.extract(currentWriteState)
         }

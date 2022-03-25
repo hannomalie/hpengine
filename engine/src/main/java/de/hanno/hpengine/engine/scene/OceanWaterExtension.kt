@@ -2,11 +2,8 @@ package de.hanno.hpengine.engine.scene
 
 import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.OceanWaterComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -19,49 +16,17 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureDimension2D
-import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.model.texture.UploadState
-import de.hanno.hpengine.engine.scene.dsl.ComponentDescription
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.koin.core.component.get
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL14
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL30
-import org.lwjgl.opengl.GL42
+import org.lwjgl.opengl.*
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.random.Random
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
-
-class OceanWaterComponenSystem: SimpleComponentSystem<OceanWaterExtension.OceanWater>(OceanWaterExtension.OceanWater::class.java)
-object OceanWaterExtension {
-    class OceanWater(override val entity: Entity,
-                     var amplitude: Float = 2f,
-                     var windspeed: Float = 26f,
-                     var timeFactor: Float = 1f,
-                     var direction: Vector2f = Vector2f(0.25f, 1.0f),
-                     var L: Int = 800) : Component
-    class OceanWaterRenderState(var amplitude: Float = 2f,
-                                var intensity: Float = 0f,
-                                var timeFactor: Float = 1f,
-                                var direction: Vector2f = Vector2f(1.0f, 1.0f),
-                                var L: Int = 500,
-                                var albedo: Vector3f = Vector3f()
-    ) {
-        companion object {
-            val recommendedIntensity = 26f
-        }
-    }
-}
 
 class OceanWaterRenderSystem(
     val config: Config,
@@ -148,7 +113,6 @@ class OceanWaterRenderSystem(
     private val inversionShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/inversion_compute.glsl").toCodeSource())
     private val mergeDisplacementMapsShader = programManager.getComputeProgram(config.EngineAsset("shaders/ocean/merge_displacement_maps_compute.glsl").toCodeSource())
 
-    val oceanwaterRenderState = renderStateManager.renderState.registerState { OceanWaterExtension.OceanWaterRenderState() }
     init {
         gpuContext {
             twiddleIndicesShader.use()
@@ -168,24 +132,13 @@ class OceanWaterRenderSystem(
         }
     }
 
-    override fun extract(scene: Scene, renderState: RenderState) {
-        val componentSystem = scene.get<OceanWaterComponenSystem>()
-        val target = renderState[oceanwaterRenderState]
-        componentSystem.components.firstOrNull()?.let {
-            target.intensity = it.windspeed
-            target.timeFactor = it.timeFactor
-            target.amplitude = it.amplitude
-            target.direction.set(it.direction)
-            target.L = it.L
-            target.albedo.set(it.entity.getComponent(ModelComponent::class.java)!!.model.material.materialInfo.diffuse)
-        }
-    }
     private var seconds = 0.0f
     override fun render(result: DrawResult, renderState: RenderState) {
-        val oceanWaterRenderState = renderState[oceanwaterRenderState]
-        if(oceanWaterRenderState.intensity == 0f) { return }
+        val components = renderState.componentExtracts[OceanWaterComponent::class.java] ?: return
+        val oceanWaterComponent = components.first() as OceanWaterComponent
+        if(oceanWaterComponent.windspeed == 0f) { return }
 
-        seconds += oceanWaterRenderState.timeFactor * max(0.01f, renderState.deltaSeconds)
+        seconds += oceanWaterComponent.timeFactor * max(0.01f, renderState.deltaSeconds)
 
         h0kShader.use()
         GL42.glBindImageTexture(0, h0kMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, h0kMap.internalFormat)
@@ -195,16 +148,16 @@ class OceanWaterRenderSystem(
         gpuContext.bindTexture(4, random2)
         gpuContext.bindTexture(5, random3)
         h0kShader.setUniform("N", N)
-        h0kShader.setUniform("L", oceanWaterRenderState.L)
-        h0kShader.setUniform("amplitude", oceanWaterRenderState.amplitude)
-        h0kShader.setUniform("windspeed", oceanWaterRenderState.intensity)
-        h0kShader.setUniform("direction", oceanWaterRenderState.direction)
+        h0kShader.setUniform("L", oceanWaterComponent.L)
+        h0kShader.setUniform("amplitude", oceanWaterComponent.amplitude)
+        h0kShader.setUniform("windspeed", oceanWaterComponent.windspeed)
+        h0kShader.setUniform("direction", oceanWaterComponent.direction)
         h0kShader.dispatchCompute(N/16,N/16,1)
 
         hktShader.use()
         hktShader.setUniform("t", seconds)
         hktShader.setUniform("N", N)
-        hktShader.setUniform("L", oceanWaterRenderState.L)
+        hktShader.setUniform("L", oceanWaterComponent.L)
         GL42.glBindImageTexture(0, tildeHktDyMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, tildeHktDyMap.internalFormat)
         GL42.glBindImageTexture(1, tildeHktDxMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, tildeHktDxMap.internalFormat)
         GL42.glBindImageTexture(2, tildeHktDzMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, tildeHktDzMap.internalFormat)
@@ -252,14 +205,14 @@ class OceanWaterRenderSystem(
             GL42.glBindImageTexture(2, tildeMap.id, 0, false, 0, GL15.GL_READ_ONLY, tildeMap.internalFormat)
             inversionShader.setUniform("pingpong", pingpong)
             inversionShader.setUniform("N", N)
-            inversionShader.setUniform("L", oceanWaterRenderState.L)
+            inversionShader.setUniform("L", oceanWaterComponent.L)
             inversionShader.dispatchCompute(N/16,N/16,1)
         }
 
         mergeDisplacementMapsShader.use()
-        mergeDisplacementMapsShader.setUniform("diffuseColor", renderState[oceanwaterRenderState].albedo)
+        mergeDisplacementMapsShader.setUniform("diffuseColor", oceanWaterComponent.albedo)
         mergeDisplacementMapsShader.setUniform("N", N)
-        mergeDisplacementMapsShader.setUniform("L", oceanWaterRenderState.L)
+        mergeDisplacementMapsShader.setUniform("L", oceanWaterComponent.L)
         mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         GL42.glBindImageTexture(0, displacementMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, displacementMap.internalFormat)
         gpuContext.bindTexture(1, displacementMapX)
@@ -312,35 +265,3 @@ class OceanWaterRenderSystem(
         return bitReversedIndices
     }
 }
-
-class OceanWaterEntitySystem(val oceanWaterRenderSystem: OceanWaterRenderSystem) : SimpleEntitySystem(listOf(OceanWaterExtension.OceanWater::class.java)) {
-        override fun onComponentAdded(scene: Scene, component: Component) {
-            super.onComponentAdded(scene, component)
-            adjustOceanMaterial(scene)
-        }
-
-        override fun onEntityAdded(scene: Scene, entities: List<Entity>) {
-            super.onEntityAdded(scene, entities)
-            adjustOceanMaterial(scene)
-        }
-
-        private fun adjustOceanMaterial(scene: Scene) {
-            components.firstOrNull()?.let {
-                it as OceanWaterExtension.OceanWater
-                it.entity.getComponent(ModelComponent::class.java)!!.model.material.materialInfo.apply {
-                    lodFactor = 100.0f
-                    roughness = 0.0f
-                    metallic = 1.0f
-                    diffuse.set(0f, 0.1f, 1f)
-                    ambient = 0.05f
-                    parallaxBias = 0.0f
-                    put(SimpleMaterial.MAP.DISPLACEMENT, oceanWaterRenderSystem.displacementMap)
-                    put(SimpleMaterial.MAP.NORMAL, oceanWaterRenderSystem.normalMap)
-                    put(SimpleMaterial.MAP.DIFFUSE, oceanWaterRenderSystem.albedoMap)
-                    put(SimpleMaterial.MAP.ROUGHNESS, oceanWaterRenderSystem.roughnessMap)
-                    put(SimpleMaterial.MAP.ENVIRONMENT, scene.get<TextureManager>().cubeMap)
-                    put(SimpleMaterial.MAP.DIFFUSE, oceanWaterRenderSystem.displacementMap)
-                }
-            }
-        }
-    }
