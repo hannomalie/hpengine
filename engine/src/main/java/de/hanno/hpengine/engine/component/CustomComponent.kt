@@ -22,5 +22,3 @@ interface CustomComponent: Component {
         }
     }
 }
-
-class CustomComponentSystem : SimpleComponentSystem<CustomComponent>(CustomComponent::class.java)

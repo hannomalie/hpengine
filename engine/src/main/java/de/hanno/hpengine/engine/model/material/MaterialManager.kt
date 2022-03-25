@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
@@ -76,7 +75,8 @@ class MaterialManager(
 
     override fun beforeSetScene(nextScene: Scene) {
         clear()
-        registerMaterials(nextScene.get<ModelComponentSystem>().components.flatMap { it.materials })
+//        TODO: Reimplement or remove carefully
+//        registerMaterials(nextScene.get<ModelComponentSystem>().components.flatMap { it.materials })
     }
 
     override fun onEntityAdded(entities: List<Entity>) {

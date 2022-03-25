@@ -66,18 +66,10 @@ dependencies {
     implementation(kotlin("compiler-embeddable"))
 
     implementation(project("engine"))
-    implementation(project("editor"))
 }
 
 application {
     mainClassName = "de.hanno.hpengine.engine.Engine"
-}
-val editorStartScript by tasks.registering(CreateStartScripts::class) {
-    description = "Creates editor start script"
-    classpath = tasks.startScripts.get().classpath
-    outputDir = tasks.startScripts.get().outputDir
-    mainClassName = "de.hanno.hpengine.editor.RibbonEditor"
-    applicationName = "editor"
 }
 application.applicationDistribution.into("bin/hp") {
     from("./hp")
@@ -85,9 +77,5 @@ application.applicationDistribution.into("bin/hp") {
 }
 application.applicationDistribution.into("bin/game") {
     from("./simplegame/game")
-    include("**/*")
-}
-application.applicationDistribution.into("bin") {
-    from(editorStartScript)
     include("**/*")
 }

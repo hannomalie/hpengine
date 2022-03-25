@@ -1,15 +1,7 @@
 package de.hanno.hpengine.engine.scene.dsl
 
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.MovableInputComponent
-import de.hanno.hpengine.engine.component.CustomComponent
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputComponent
-import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputComponentDescription
-import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
-import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Scene
@@ -52,8 +44,6 @@ data class AnimatedModelComponentDescription(
 enum class Directory { Game, Engine }
 
 data class CustomComponentDescription(val update: suspend (Scene, Entity, Float) -> Unit): ComponentDescription
-class MovableInputComponentDescription: ComponentDescription
-class CameraDescription: ComponentDescription
 class OceanWaterDescription: ComponentDescription
 
 fun SceneDescription.convert(config: Config, textureManager: TextureManager) = Scene(name).apply {
@@ -61,44 +51,6 @@ fun SceneDescription.convert(config: Config, textureManager: TextureManager) = S
     addAll(entities.map {
         Entity(it.name).apply {
             this.contributesToGi = it.contributesToGi
-            it.components.forEach { componentDescription ->
-                val component = when(componentDescription) {
-                    is ModelComponentDescription -> {
-                        val dir = when(componentDescription.directory) {
-                            Directory.Game -> config.gameDir
-                            Directory.Engine -> config.engineDir
-                        }
-                        val model = when(componentDescription) {
-                            is AnimatedModelComponentDescription -> AnimatedModelLoader().load(
-                                componentDescription.file,
-                                textureManager,
-                                dir
-                            )
-                            is StaticModelComponentDescription -> StaticModelLoader().load(
-                                componentDescription.file,
-                                textureManager,
-                                dir
-                            )
-                        }
-                        ModelComponent(this, model).apply {
-                            componentDescription.aabbData?.let { spatial.boundingVolume.localAABB = it }
-                            componentDescription.material?.let { this@apply.material = it }
-                        }
-                    }
-                    is CustomComponentDescription -> object: CustomComponent {
-                        override val entity = this@apply
-                        override suspend fun update(scene: Scene, deltaSeconds: Float) = componentDescription.update(scene, entity, deltaSeconds)
-                    }
-                    is MovableInputComponentDescription -> MovableInputComponent(this)
-                    is EditorCameraInputComponentDescription -> EditorCameraInputComponent(this)
-                    is CameraDescription -> Camera(this).apply {
-                        ratio = config.width.toFloat() / config.height.toFloat()
-                    }
-                    else -> throw IllegalStateException("Cannot map component definition $componentDescription to a runtime type")
-                }
-
-                addComponent(component)
-            }
         }
     })
 }

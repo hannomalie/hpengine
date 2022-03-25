@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.instancing
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.manager.ComponentSystem
 import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.Cluster
 import de.hanno.hpengine.engine.model.Instance
@@ -119,21 +118,6 @@ class ClustersComponent(override val entity: Entity): Component {
     }
 
 }
-
-class ClustersComponentSystem : ComponentSystem<ClustersComponent> {
-    override val componentClass: Class<ClustersComponent> = ClustersComponent::class.java
-    private val _components = mutableListOf<ClustersComponent>()
-    val instances = mutableListOf<Instance>()
-
-
-    override val components get() = _components
-
-    override fun addComponent(component: ClustersComponent) {
-        _components.add(component)
-        instances.addAll(component.getInstances())
-    }
-}
-
 
 val Entity.instances: List<Instance>
     get() = this.getComponent(ClustersComponent::class.java)?.getInstances() ?: emptyList()

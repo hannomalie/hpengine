@@ -11,8 +11,6 @@ import struktgen.typed
 
 class EntityBuffer(val underlying: TypedBuffer<EntityStrukt> = BufferUtils.createByteBuffer(EntityStrukt.type.sizeInBytes).typed(EntityStrukt.type))
 
-class ModelComponentSystem : SimpleComponentSystem<ModelComponent>(ModelComponent::class.java)
-
 fun <T> TypedBuffer<T>.enlarge(size: Int, copyContent: Boolean = true, rewindBuffers: Boolean = true) = enlargeToBytes(size * struktType.sizeInBytes, copyContent, rewindBuffers)
 
 fun <T> TypedBuffer<T>.enlargeToBytes(sizeInBytes: Int, copyContent: Boolean = true, rewindBuffers: Boolean = true) = if(byteBuffer.capacity() < sizeInBytes) {

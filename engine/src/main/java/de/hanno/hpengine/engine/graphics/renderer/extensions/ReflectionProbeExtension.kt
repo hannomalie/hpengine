@@ -4,6 +4,7 @@ import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.Component
+import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.BindlessTextures
@@ -55,7 +56,8 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import java.nio.FloatBuffer
 
-class ReflectionProbe(val extents: Vector3f = Vector3f(100f), override val entity: Entity) : Component {
+class ReflectionProbe(val extents: Vector3f = Vector3f(100f)) : com.artemis.Component() {
+    val transformComponent = TransformComponent()
     val halfExtents: Vector3f
         get() = Vector3f(extents).mul(0.5f)
 }
@@ -74,7 +76,6 @@ class ReflectionProbeManager(val config: Config) : Manager {
     }
 }
 
-class ReflectionProbeComponentSystem : SimpleComponentSystem<ReflectionProbe>(ReflectionProbe::class.java)
 class ReflectionProbeRenderState(val gpuContext: GpuContext<OpenGl>, val renderStateManager: RenderStateManager) {
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
@@ -127,8 +128,8 @@ class ReflectionProbeRenderExtension(
     private val probesPerFrame = 1
 
     override fun extract(scene: Scene, renderState: RenderState, world: World) {
-        val componentSystem = scene.get<ReflectionProbeComponentSystem>()
-        val componentCount = componentSystem.components.size
+        val components = (renderState.componentExtracts[ReflectionProbe::class.java] as List<ReflectionProbe>?) ?: return
+        val componentCount = components.size
         val targetState = renderState[reflectionProbeRenderState]
 
         targetState.reRenderProbesInCycle = if (config.debug.reRenderProbes) renderState.cycle else 0L
@@ -137,10 +138,10 @@ class ReflectionProbeRenderExtension(
         probeMinMaxStructBuffer.resize(componentCount * 2)
         val probePositions = targetState.probePositions
         probePositions.clear()
-        componentSystem.components.forEachIndexed { index, probe ->
-            probeMinMaxStructBuffer[2 * index].set(Vector3f(probe.entity.transform.position).sub(probe.halfExtents))
-            probeMinMaxStructBuffer[2 * index + 1].set(Vector3f(probe.entity.transform.position).add(probe.halfExtents))
-            probePositions.add(Vector3f(probe.entity.transform.position))
+        components.forEachIndexed { index, probe ->
+            probeMinMaxStructBuffer[2 * index].set(Vector3f(probe.transformComponent.transform.position).sub(probe.halfExtents))
+            probeMinMaxStructBuffer[2 * index + 1].set(Vector3f(probe.transformComponent.transform.position).add(probe.halfExtents))
+            probePositions.add(Vector3f(probe.transformComponent.transform.position))
         }
 
     }

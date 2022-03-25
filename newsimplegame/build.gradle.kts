@@ -27,7 +27,6 @@ application {
 
 dependencies {
     implementation(project(":engine"))
-    implementation(project(":editor"))
 }
 
 val bundleLinux by tasks.registering {

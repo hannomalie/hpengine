@@ -17,39 +17,3 @@ interface EntitySystem {
     fun clear()
     fun extract(renderState: RenderState) {}
 }
-
-abstract class SimpleEntitySystem(val componentClasses: List<Class<out Component>>) : EntitySystem {
-
-    protected val entities = mutableListOf<Entity>()
-    protected val components = mutableListOf<Component>()
-
-    override fun gatherEntities(scene: Scene) {
-        entities.clear()
-        if(componentClasses.isEmpty()) {
-            entities.addAll(scene.getEntities())
-        } else {
-            entities.addAll(scene.getEntities().filter { it.hasComponents(componentClasses) })
-        }
-        gatherComponents()
-    }
-
-    fun gatherComponents() {
-        components.clear()
-        if(componentClasses.isEmpty()) {
-            for (entity in entities) {
-                components.addAll(entity.getComponents(componentClasses))
-            }
-        } else {
-            for (clazz in componentClasses) {
-                components.addAll(entities.flatMap { entity ->  entity.getComponents(clazz) })
-            }
-        }
-    }
-
-    fun <T: Component> getComponents(type: Class<T>): List<T> = components.filterIsInstance(type)
-
-    override fun clear() {
-        components.clear()
-        entities.clear()
-    }
-}

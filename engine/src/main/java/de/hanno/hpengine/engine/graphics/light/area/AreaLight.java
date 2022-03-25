@@ -23,8 +23,8 @@ public class AreaLight implements Component, Bufferable {
 	public Camera camera;
 	public static float DEFAULT_RANGE = 1f;
 	private Vector3f color;
-	private Entity entity;
 	private Vector3f scale;
+	private Entity entity;
 
 	public AreaLight(Entity entity, Vector3f color, Vector3f scale) {
 		this.entity = entity;

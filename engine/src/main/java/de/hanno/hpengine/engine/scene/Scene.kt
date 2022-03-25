@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.scene
 import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
-import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -49,9 +48,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     val managers: List<Manager>
         get() = scope.getAll<Manager>().distinct()
 
-    val entitySystems: List<EntitySystem>
-        get() = scope.getAll<EntitySystem>().distinct()
-
     val entityManager: EntityManager
         get() = scope.get()
 
@@ -60,8 +56,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     }
 
     init {
-        entitySystems.forEach { it.gatherEntities(this) }
-
         componentSystems.forEach {
             it.onEntityAdded(getEntities())
         }
@@ -72,9 +66,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
         currentWriteState.sceneMax.set(aabb.max)
 
         for (system in componentSystems) {
-            system.extract(currentWriteState)
-        }
-        for (system in entitySystems) {
             system.extract(currentWriteState)
         }
         for (manager in managers) {
@@ -91,7 +82,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     fun addAll(entities: List<Entity>) = get<AddResourceContext>().launch {
         entityManager.add(entities)
 
-        entitySystems.forEach { it.onEntityAdded(this@Scene, entities) }
         componentSystems.forEach { it.onEntityAdded(entities) }
         managers.forEach { it.onEntityAdded(entities) }
 
@@ -104,7 +94,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
 
         componentSystems.forEach { it.onComponentAdded(component) }
         managers.forEach { it.onComponentAdded(component) }
-        entitySystems.forEach { it.onComponentAdded(this@Scene, component) }
 
         entityManager.componentAddedInCycle = currentCycle
     }
@@ -115,7 +104,6 @@ class Scene @JvmOverloads constructor(val name: String = "new-scene-" + System.c
     override suspend fun update(scene: Scene, deltaSeconds: Float) {
         managers.filterNot { it is SceneManager }.forEach { it.update(scene, deltaSeconds) }
         componentSystems.forEach { it.update(scene, deltaSeconds) }
-        entitySystems.forEach { it.update(scene, deltaSeconds) }
     }
 
     fun addComponent(selection: Entity, component: Component) {

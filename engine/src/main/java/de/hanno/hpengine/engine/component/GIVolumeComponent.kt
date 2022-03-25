@@ -2,9 +2,7 @@ package de.hanno.hpengine.engine.component
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
-import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.TextureDimension3D
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
@@ -15,10 +13,6 @@ import org.joml.Vector3f
 
 class GIVolumeComponent(override val entity: Entity,
                         var giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids) : Component {
-
-    constructor(entity: Entity, giVolumeGrids: VoxelConeTracingExtension.GIVolumeGrids, extents: Vector3f): this(entity, giVolumeGrids) {
-        spatial.boundingVolume.setLocalAABB(Vector3f(extents).mul(-0.5f), Vector3f(extents).mul(0.5f))
-    }
 
     val spatial = TransformSpatial(entity.transform, AABB(Vector3f(-1f), Vector3f(1f)))
 

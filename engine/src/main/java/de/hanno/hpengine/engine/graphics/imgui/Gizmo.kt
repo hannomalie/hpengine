@@ -95,7 +95,7 @@ fun showGizmo(
     ImGui.separator()
 
     if (ImGuizmo.isUsing()) {
-        editorCameraInputSystem.cameraControlsEnabled = false
+        editorCameraInputSystem.editorCameraInputComponent.cameraControlsEnabled = false
         ImGui.text("Using gizmo")
         if (ImGuizmo.isOver()) {
             ImGui.text("Over a gizmo")
@@ -108,7 +108,7 @@ fun showGizmo(
             ImGui.text("Over scale gizmo")
         }
     } else {
-        editorCameraInputSystem.cameraControlsEnabled = true
+        editorCameraInputSystem.editorCameraInputComponent.cameraControlsEnabled = true
         ImGui.text("Not using gizmo")
     }
 

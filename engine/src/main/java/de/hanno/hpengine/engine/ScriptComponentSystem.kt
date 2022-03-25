@@ -1,19 +1,28 @@
 package de.hanno.hpengine.engine
 
+import com.artemis.BaseEntitySystem
+import com.artemis.ComponentMapper
+import com.artemis.annotations.All
 import de.hanno.hpengine.engine.component.ScriptComponent
+import de.hanno.hpengine.engine.component.artemis.KotlinComponent
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
 
-class ScriptComponentSystem : SimpleComponentSystem<ScriptComponent>(ScriptComponent::class.java) {
+@All(KotlinComponent::class)
+class ScriptComponentSystem : BaseEntitySystem(){
 
-    override fun addComponent(component: ScriptComponent) = with(component) {
-        val codeSource = codeSource
+    lateinit var kotlinComponentComponentMapper: ComponentMapper<KotlinComponent>
+    override fun processSystem() {
+        TODO("Not yet implemented")
+    }
+
+    override fun inserted(entityId: Int) {
+        val codeSource = kotlinComponentComponentMapper[entityId].codeSource
         if (codeSource is FileBasedCodeSource) {
             FileMonitor.addOnFileChangeListener(codeSource.file) {
-                component.reload()
+                codeSource.reload()
             }
         }
-        super.addComponent(component)
     }
 }

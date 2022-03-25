@@ -6,30 +6,22 @@ import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
 import com.artemis.managers.TagManager
-import de.hanno.hpengine.engine.ScriptComponentSystem
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.CameraRenderExtension
-import de.hanno.hpengine.engine.camera.InputComponentSystem
 import de.hanno.hpengine.engine.camera.MovableInputComponentComponentSystem
-import de.hanno.hpengine.engine.component.CustomComponentSystem
 import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.entity.EntityManager
-import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.*
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
 import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
-import de.hanno.hpengine.engine.graphics.light.area.AreaLightComponentSystem
-import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
-import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
-import de.hanno.hpengine.engine.graphics.light.tube.TubeLightComponentSystem
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -44,12 +36,9 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.instancing.ClustersComponentSystem
 import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.EntityBuffer
-import de.hanno.hpengine.engine.model.ModelComponentSystem
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -104,9 +93,6 @@ val imGuiEditorModule = module {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
         ImGuiEditor(get(), gpuContext, finalOutput, get(), get(), get())
-    }
-    componentSystem {
-        EditorCameraInputSystem()
     }
 }
 val textureRendererModule = module {
@@ -180,17 +166,8 @@ val baseModule = module {
     manager { PhysicsManager(get(), get(), get(), get()) }
 
     scope<Scene> {
-        scoped { AreaLightSystem(get(), get(), get(), get()) } binds arrayOf(EntitySystem::class, RenderSystem::class)
         scoped { EntityBuffer() }
     }
-    componentSystem { AreaLightComponentSystem() }
-    componentSystem { ModelComponentSystem() }
-    componentSystem { TubeLightComponentSystem() }
-    componentSystem { CustomComponentSystem() }
-    componentSystem { ScriptComponentSystem() }
-    componentSystem { ClustersComponentSystem() }
-    componentSystem { InputComponentSystem() }
-    componentSystem { MovableInputComponentComponentSystem() }
 }
 
 fun Module.addGIModule() {
@@ -211,7 +188,6 @@ fun Module.addOceanWaterModule() {
 
 fun Module.addReflectionProbeModule() {
     renderExtension { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) }
-    componentSystem { ReflectionProbeComponentSystem() }
     manager { ReflectionProbeManager(get()) }
 }
 
@@ -283,7 +259,6 @@ class DirectionalLightDeferredRenderingExtension(
     gpuContext: GpuContext<OpenGl>,
     deferredRenderingBuffer: DeferredRenderingBuffer
 ): CompoundExtension<OpenGl>(
-    // TODO: Here's a problem, find out
     listOf(
         DirectionalLightShadowMapExtension(config, programManager, textureManager, gpuContext),
         DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer),

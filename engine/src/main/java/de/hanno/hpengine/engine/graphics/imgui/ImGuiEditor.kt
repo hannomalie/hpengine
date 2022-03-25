@@ -125,7 +125,7 @@ class ImGuiEditor(
                             fovY = renderState.camera.fov,
                             near = renderState.camera.near,
                             far = renderState.camera.far,
-                            editorCameraInputSystem = scene.componentSystems.firstIsInstance<EditorCameraInputSystem>(),
+                            editorCameraInputSystem = artemisWorld.getSystem(EditorCameraInputSystem::class.java),
                             windowWidth = screenWidth,
                             windowHeight = screenHeight,
                             panelWidth = midPanelWidth,

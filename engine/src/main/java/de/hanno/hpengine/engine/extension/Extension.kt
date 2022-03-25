@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.extension
 
-import de.hanno.hpengine.engine.entity.EntitySystem
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.manager.ComponentSystem
@@ -13,17 +12,6 @@ import org.koin.dsl.bind
 import org.koin.dsl.binds
 
 
-inline fun <reified T: ComponentSystem<*>> Module.componentSystem(
-    noinline definition: Definition<T>
-) {
-    scope<Scene> { scoped(definition = definition) bind ComponentSystem::class }
-}
-
-inline fun <reified T: EntitySystem> Module.entitySystem(
-    noinline definition: Definition<T>
-){
-    scope<Scene> { scoped(definition = definition) bind EntitySystem::class }
-}
 inline fun <reified T: Manager> Module.manager(
     noinline definition: Definition<T>
 ){

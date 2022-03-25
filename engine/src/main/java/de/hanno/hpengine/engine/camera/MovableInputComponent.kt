@@ -1,24 +1,34 @@
 package de.hanno.hpengine.engine.camera
 
-import de.hanno.hpengine.engine.component.BaseComponent
-import de.hanno.hpengine.engine.component.InputControllerComponent
+import com.artemis.BaseEntitySystem
+import com.artemis.Component
+import com.artemis.ComponentMapper
+import com.artemis.annotations.All
+import de.hanno.hpengine.engine.component.artemis.TransformComponent
+import de.hanno.hpengine.engine.component.artemis.forEachEntity
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.manager.ComponentSystem
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
-import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import org.koin.core.component.get
 import org.lwjgl.glfw.GLFW.*
 
-class MovableInputComponentComponentSystem: SimpleComponentSystem<MovableInputComponent>(MovableInputComponent::class.java) {
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        if(scene.get<Config>().debug.isEditorOverlay) return
+@All(MovableInputComponent::class, TransformComponent::class)
+class MovableInputComponentComponentSystem: BaseEntitySystem() {
+    lateinit var input: Input
+    lateinit var config: Config
 
-        components.forEach {
-            with(it) {
+    lateinit var movableInputComponentComponentMapper: ComponentMapper<MovableInputComponent>
+    lateinit var transformComponentComponentMapper: ComponentMapper<TransformComponent>
+
+    override fun processSystem() {
+        if(config.debug.isEditorOverlay) return
+        val deltaSeconds = world.delta
+
+        forEachEntity { entityId ->
+            val inputComponent = movableInputComponentComponentMapper[entityId]
+            val transform = transformComponentComponentMapper[entityId].transform
+
+            with(inputComponent) {
 
 //                             linearVel.fma(deltaSeconds, linearAcc);
 //                             // update angular velocity based on angular acceleration
@@ -29,7 +39,6 @@ class MovableInputComponentComponentSystem: SimpleComponentSystem<MovableInputCo
 //                             position.fma(deltaSeconds, linearVel);
 
                 var turbo = 1f
-                val input = scene.get<Input>()
 
                 if (input.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
                     turbo = 3f
@@ -48,31 +57,31 @@ class MovableInputComponentComponentSystem: SimpleComponentSystem<MovableInputCo
                     yaw += yawAmount.toFloat()
                     pitch += pitchAmount.toFloat()
 
-                    val oldTranslation = entity.transform.getTranslation(Vector3f())
-                    entity.transform.setTranslation(Vector3f(0f,0f,0f))
-                    entity.transform.rotateLocalY((-yawAmount).toFloat())
-                    entity.transform.rotateX(pitchAmount.toFloat())
-                    entity.transform.translateLocal(oldTranslation)
+                    val oldTranslation = transform.getTranslation(Vector3f())
+                    transform.setTranslation(Vector3f(0f,0f,0f))
+                    transform.rotateLocalY((-yawAmount).toFloat())
+                    transform.rotateX(pitchAmount.toFloat())
+                    transform.translateLocal(oldTranslation)
                 }
 
                 val moveAmount = turbo * posDelta * deltaSeconds * cameraSpeed
                 if (input.isKeyPressed(GLFW_KEY_W)) {
-                    entity.transform.translate(Vector3f(0f, 0f, -moveAmount))
+                    transform.translate(Vector3f(0f, 0f, -moveAmount))
                 }
                 if (input.isKeyPressed(GLFW_KEY_S)) {
-                    entity.transform.translate(Vector3f(0f, 0f, moveAmount))
+                    transform.translate(Vector3f(0f, 0f, moveAmount))
                 }
                 if (input.isKeyPressed(GLFW_KEY_A)) {
-                    entity.transform.translate(Vector3f(-moveAmount, 0f, 0f))
+                    transform.translate(Vector3f(-moveAmount, 0f, 0f))
                 }
                 if (input.isKeyPressed(GLFW_KEY_D)) {
-                    entity.transform.translate(Vector3f(moveAmount, 0f, 0f))
+                    transform.translate(Vector3f(moveAmount, 0f, 0f))
                 }
                 if (input.isKeyPressed(GLFW_KEY_Q)) {
-                    entity.transform.translate(Vector3f(0f, -moveAmount, 0f))
+                    transform.translate(Vector3f(0f, -moveAmount, 0f))
                 }
                 if (input.isKeyPressed(GLFW_KEY_E)) {
-                    entity.transform.translate(Vector3f(0f, moveAmount, 0f))
+                    transform.translate(Vector3f(0f, moveAmount, 0f))
                 }
 
             }
@@ -80,8 +89,7 @@ class MovableInputComponentComponentSystem: SimpleComponentSystem<MovableInputCo
     }
 }
 
-data class MovableInputComponent(val _entity: Entity) : BaseComponent(_entity) {
-
+class MovableInputComponent : Component(){
     var rotationDelta = 10f
     var scaleDelta = 0.1f
     var posDelta = 100f
@@ -106,16 +114,4 @@ data class MovableInputComponent(val _entity: Entity) : BaseComponent(_entity) {
 //    TODO: Make this adjustable through editor
     val cameraSpeed: Float = 1.0f
 
-}
-
-class InputComponentSystem() : ComponentSystem<InputControllerComponent> {
-    override val componentClass: Class<InputControllerComponent> = InputControllerComponent::class.java
-    private val _components = mutableListOf<InputControllerComponent>()
-    override val components: List<InputControllerComponent>
-        get() = _components
-
-    override fun addComponent(component: InputControllerComponent) {
-        _components.add(component)
-    }
-    override fun clear() = _components.clear()
 }

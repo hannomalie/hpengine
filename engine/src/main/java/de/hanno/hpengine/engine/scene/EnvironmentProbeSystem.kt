@@ -51,16 +51,6 @@ import java.nio.FloatBuffer
 import java.util.Random
 import java.util.stream.Collectors
 
-class EnvironmentProbeRenderExtension(): DeferredRenderExtension<OpenGl> {
-    override fun renderFirstPass(
-        backend: Backend<OpenGl>,
-        gpuContext: GpuContext<OpenGl>,
-        firstPassResult: FirstPassResult,
-        renderState: RenderState
-    ) {
-
-    }
-}
 class EnvironmentProbeSystem(
     val programManager: ProgramManager<OpenGl>,
     val config: Config,

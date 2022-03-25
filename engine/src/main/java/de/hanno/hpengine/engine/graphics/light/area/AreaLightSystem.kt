@@ -3,16 +3,17 @@ package de.hanno.hpengine.engine.graphics.light.area
 import AreaLightStruktImpl.Companion.sizeInBytes
 import AreaLightStruktImpl.Companion.type
 import EntityStruktImpl.Companion.type
+import com.artemis.BaseEntitySystem
+import com.artemis.ComponentMapper
 import com.artemis.World
+import com.artemis.annotations.All
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.artemis.AreaLightComponent
+import de.hanno.hpengine.engine.component.artemis.TransformComponent
+import de.hanno.hpengine.engine.component.artemis.forEachEntity
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.SimpleEntitySystem
 import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuContext
-import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer
 import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
@@ -37,17 +38,13 @@ import de.hanno.hpengine.engine.graphics.shader.safePut
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.instancing.instanceCount
 import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.enlarge
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.struct.StructArray
-import de.hanno.struct.enlarge
+import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
@@ -56,23 +53,19 @@ import org.lwjgl.opengl.GL30
 import struktgen.TypedBuffer
 import java.nio.FloatBuffer
 import java.util.ArrayList
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedBuffer as NewPersistentMappedBuffer
 
-class AreaLightComponentSystem: SimpleComponentSystem<AreaLight>(componentClass = AreaLight::class.java)
-
+// TODO: Implement autoadd for transform
+@All(AreaLightComponent::class, TransformComponent::class)
 class AreaLightSystem(
-    window: Window<OpenGl>,
     val gpuContext: GpuContext<OpenGl>,
     programManager: ProgramManager<OpenGl>,
     config: Config
-) : SimpleEntitySystem(listOf(AreaLight::class.java)), RenderSystem {
+) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
-    private val cameraEntity: Entity = Entity("AreaLightComponentSystem")
-    private val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
     private var gpuAreaLightArray = TypedBuffer(BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes), AreaLightStrukt.type)
 
-    val lightBuffer: PersistentMappedBuffer =
-        window.invoke { PersistentMappedBuffer(gpuContext, 1000) }
+
+    lateinit var areaLightComponentComponentMapper: ComponentMapper<AreaLightComponent>
 
     private val mapRenderTarget = CubeMapRenderTarget(
         gpuContext, RenderTarget(
@@ -134,7 +127,7 @@ class AreaLightSystem(
     }
 
     fun renderAreaLightShadowMaps(renderState: RenderState) {
-        val areaLights = getComponents(AreaLight::class.java)
+        val areaLights = (renderState.componentExtracts[AreaLightComponent::class.java] as List<AreaLightComponent>?)?: return
         if(areaLights.isEmpty()) return
 
         profiled("Arealight shadowmaps") {
@@ -153,8 +146,12 @@ class AreaLightSystem(
 
                 areaShadowPassProgram.useAndBind { uniforms ->
                     uniforms.entitiesBuffer = renderState.entitiesBuffer
-                    uniforms.viewMatrix.safePut(light.camera.viewMatrixAsBuffer)
-                    uniforms.projectionMatrix.safePut(light.camera.projectionMatrixAsBuffer)
+                    // TODO: Move buffer creation somewhere else or eliminate
+                    val buffer = BufferUtils.createFloatBuffer(16)
+                    light.transform.transform.invert(Matrix4f()).get(buffer)
+                    uniforms.viewMatrix.safePut(buffer)
+                    light.camera.projectionMatrix.get(buffer)
+                    uniforms.projectionMatrix.safePut(buffer)
                 }
 
                 for (e in renderState.renderBatchesStatic) {
@@ -164,29 +161,21 @@ class AreaLightSystem(
         }
     }
 
-    fun getDepthMapForAreaLight(light: AreaLight): Int {
-        return getDepthMapForAreaLight(getAreaLights(), areaLightDepthMaps, light)
-    }
+    override fun processSystem() {
+        var areaLightCount = 0
+        forEachEntity { areaLightCount++ }
 
-    fun getCameraForAreaLight(light: AreaLight): Camera {
-        return light.camera
-    }
-    fun getShadowMatrixForAreaLight(light: AreaLight): FloatBuffer {
-        return light.camera.viewProjectionMatrixAsBuffer
-    }
-
-
-    fun getAreaLights() = getComponents(AreaLight::class.java)
-
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
 //        TODO: Resize with instance count
-        this@AreaLightSystem.gpuAreaLightArray = gpuAreaLightArray.enlarge(getRequiredAreaLightBufferSize() * AreaLight.getBytesPerInstance())
+        this@AreaLightSystem.gpuAreaLightArray = gpuAreaLightArray.enlarge(areaLightCount * AreaLight.getBytesPerInstance())
         val byteBuffer = gpuAreaLightArray.byteBuffer
         byteBuffer.rewind()
         byteBuffer.run {
-            for((index, areaLight) in getComponents(AreaLight::class.java).withIndex()) {
+            var index = 0
+            forEachEntity { entityId ->
+                val areaLight = areaLightComponentComponentMapper[entityId]
+
                 gpuAreaLightArray[index].run {
-                    trafo.set(byteBuffer, areaLight.entity.transform)
+                    trafo.set(byteBuffer, areaLight.transform.transform)
                     color.set(byteBuffer, areaLight.color)
                     dummy0.run { value = -1 }
                     widthHeightRange.run { x = areaLight.width }
@@ -194,40 +183,31 @@ class AreaLightSystem(
                     widthHeightRange.run { z = areaLight.range }
                     dummy1.run { value = -1 }
                 }
+                index++
             }
         }
 
         gpuAreaLightArray
     }
-    private fun getRequiredAreaLightBufferSize() =
-            getComponents(AreaLight::class.java).sumBy { it.entity.instanceCount }
-
 
     override fun render(result: DrawResult, renderState: RenderState) {
         renderAreaLightShadowMaps(renderState)
     }
 
-    override fun extract(renderState: RenderState) {
+    fun extract(renderState: RenderState) {
 //        TODO: Use this stuff instead of uniforms, take a look at DrawUtils.java
 //        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredAreaLightBufferSize()
 //        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
 //        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
 
-        renderState.lightState.areaLights = getAreaLights()
         renderState.lightState.areaLightDepthMaps = areaLightDepthMaps
     }
 
     companion object {
         @JvmField val MAX_AREALIGHT_SHADOWMAPS = 2
         @JvmField val AREALIGHT_SHADOWMAP_RESOLUTION = 512
-
-        fun getDepthMapForAreaLight(areaLights: List<AreaLight>, depthMaps: List<Int>, light: AreaLight): Int {
-            val index = areaLights.indexOf(light)
-            return if (index >= MAX_AREALIGHT_SHADOWMAPS) {
-                -1
-            } else depthMaps[index]
-        }
     }
+
 }
 
 class AreaShadowPassUniforms(gpuContext: GpuContext<*>): Uniforms() {

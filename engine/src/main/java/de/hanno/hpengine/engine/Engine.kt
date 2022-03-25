@@ -18,8 +18,9 @@ import de.hanno.hpengine.engine.extension.*
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
-import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystemNew
+import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
 import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
+import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
@@ -71,10 +72,13 @@ class Engine constructor(val application: KoinApplication) {
     )
     val componentExtractor = ComponentExtractor()
     val skyBoxSystem = SkyBoxSystem()
-    val editorCameraInputSystemNew = EditorCameraInputSystemNew()
+    val editorCameraInputSystemNew = EditorCameraInputSystem()
     val cycleSystem = CycleSystem()
     val directionalLightSystem = DirectionalLightSystem()
     val pointLightSystem = PointLightSystem(config, koin.get(), koin.get()).apply {
+        renderManager.renderSystems.add(this)
+    }
+    val areaLightSystem = AreaLightSystem(koin.get(), koin.get(), config).apply {
         renderManager.renderSystems.add(this)
     }
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
@@ -90,6 +94,7 @@ class Engine constructor(val application: KoinApplication) {
         cycleSystem,
         directionalLightSystem,
         pointLightSystem,
+        areaLightSystem,
     ).run {
         with(*(koin.getAll<BaseSystem>().toTypedArray()))
     }.run {
@@ -215,6 +220,7 @@ class Engine constructor(val application: KoinApplication) {
         cycleSystem.extract(currentWriteState)
         directionalLightSystem.extract(currentWriteState)
         pointLightSystem.extract(currentWriteState)
+        areaLightSystem.extract(currentWriteState)
 
         renderManager.finishCycle(sceneManager.scene, deltaSeconds)
 
