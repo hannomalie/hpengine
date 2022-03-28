@@ -10,13 +10,13 @@ import de.hanno.hpengine.engine.component.artemis.PointLightComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.component.artemis.forEachEntity
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
 import de.hanno.struct.enlarge
@@ -33,8 +33,7 @@ class PointLightSystem(
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
     var pointLightMovedInCycle: Long = 0
-    private val cameraEntity = Entity("PointLightSystemCameraDummy")
-    val camera = Camera(cameraEntity, Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
+    val camera = Camera(Transform(), Util.createPerspective(90f, 1f, 1f, 500f), 1f, 500f, 90f, 1f)
 
     val shadowMapStrategy = if (config.quality.isUseDpsm) {
             DualParaboloidShadowMapStrategy(

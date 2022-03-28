@@ -3,9 +3,7 @@ package de.hanno.hpengine.engine
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
-import de.hanno.hpengine.engine.component.ScriptComponent
 import de.hanno.hpengine.engine.component.artemis.KotlinComponent
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileMonitor
 

@@ -10,16 +10,12 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.CameraRenderExtension
-import de.hanno.hpengine.engine.camera.MovableInputComponentComponentSystem
 import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.EntityManager
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.*
-import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
 import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
@@ -37,13 +33,10 @@ import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.model.EntityBuffer
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.physics.PhysicsManager
-import de.hanno.hpengine.engine.scene.*
+import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.scene.OceanWaterRenderSystem
 import de.hanno.hpengine.util.fps.FPSCounterSystem
 import org.koin.core.module.Module
 import org.koin.dsl.bind
@@ -51,10 +44,6 @@ import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.lwjgl.opengl.GL30
 import javax.swing.SwingUtilities
-import kotlin.collections.first
-import kotlin.collections.firstOrNull
-import kotlin.collections.listOf
-import kotlin.collections.mutableMapOf
 import kotlin.collections.set
 
 data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
@@ -92,7 +81,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, finalOutput, get(), get(), get())
+        ImGuiEditor(get(), gpuContext, finalOutput, get(), get())
     }
 }
 val textureRendererModule = module {
@@ -140,13 +129,14 @@ val textureRendererModule = module {
     }
 }
 val baseModule = module {
-    manager { EntityManager() }
-
     renderSystem { FPSCounterSystem() }
     single {
         val system: FPSCounterSystem = get()
         system.fpsCounter
     }
+    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) }
+    single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, OpenGlProgramManager::class)
+    single { TextureManager(get(), get(), get()) }
 
     addBackendModule()
     addCameraModule()
@@ -161,13 +151,6 @@ val baseModule = module {
     renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }
 //    TODO: Fails because of shader code errors
 //    renderExtension { EvaluateProbeRenderExtension(get(), get(), get(), get(), get()) }
-
-    manager { MaterialManager(get(), get(), get()) }
-    manager { PhysicsManager(get(), get(), get(), get()) }
-
-    scope<Scene> {
-        scoped { EntityBuffer() }
-    }
 }
 
 fun Module.addGIModule() {
@@ -188,7 +171,6 @@ fun Module.addOceanWaterModule() {
 
 fun Module.addReflectionProbeModule() {
     renderExtension { ReflectionProbeRenderExtension(get(), get(), get(), get(), get(), get()) }
-    manager { ReflectionProbeManager(get()) }
 }
 
 fun Module.addCameraModule() {
@@ -205,18 +187,14 @@ fun Module.addBackendModule() {
     single { AddResourceContext() }
     single { MBassadorEventBus() } bind EventBus::class
 
-    single { TextureManager(get(), get(), get(), get()) } bind Manager::class
     single { OpenGLContext.invoke(get()) } bind GpuContext::class
-    single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, Manager::class)
     single { Input(get(), get()) }
     single { OpenGlBackend(get(), get(), get(), get(), get(), get()) } bind Backend::class
-    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) } bind Manager::class
     single { RenderSystemsConfig(getAll()) }
     single {
         val gpuContext: GpuContext<OpenGl> = get()
         RenderStateManager { RenderState(gpuContext) }
     }
-    single { SceneManager(get()) } bind Manager::class
 }
 
 // TODO: Don't duplicate, move to core
@@ -264,9 +242,6 @@ class DirectionalLightDeferredRenderingExtension(
         DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer),
     )
 )
-
-val Scene.skyBox: Entity?
-    get() = getEntity("Skybox")
 
 class SkyBoxComponent: Component()
 @All(SkyBoxComponent::class)

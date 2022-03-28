@@ -27,7 +27,6 @@ import de.hanno.hpengine.engine.graphics.state.StateRef
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import net.miginfocom.swing.MigLayout
 import javax.swing.BorderFactory
@@ -150,12 +149,12 @@ class ExtensibleDeferredRenderer(
     override val addResourceContext: AddResourceContext
         get() = backend.addResourceContext
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+    override fun update(deltaSeconds: Float) {
         val currentWriteState = renderStateManager.renderState.currentWriteState
 
         preparePipelines(currentWriteState)
 
-        extensions.forEach { it.update(scene, deltaSeconds) }
+        extensions.forEach { it.update(deltaSeconds) }
     }
 
     private fun preparePipelines(currentWriteState: RenderState) {
@@ -165,8 +164,8 @@ class ExtensibleDeferredRenderer(
         }
     }
 
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
-        extensions.forEach { it.extract(scene, renderState, world) }
+    override fun extract(renderState: RenderState, world: World) {
+        extensions.forEach { it.extract(renderState, world) }
     }
 
     override fun render(result: DrawResult, renderState: RenderState): Unit = profiled("DeferredRendering") {
@@ -242,9 +241,6 @@ class ExtensibleDeferredRenderer(
         extensions.forEach { it.renderEditor(renderState, result) }
     }
 
-    override fun afterSetScene(currentScene: Scene) {
-        extensions.forEach { it.afterSetScene(currentScene) }
-    }
 }
 
 class DeferredRenderExtensionConfig(val renderExtensions: List<DeferredRenderExtension<*>>) {

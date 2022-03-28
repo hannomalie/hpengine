@@ -1,54 +1,27 @@
 package de.hanno.hpengine.engine.graphics.renderer.extensions
 
-import com.artemis.World
-import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.component.allocateForComponent
-import de.hanno.hpengine.engine.component.putToBuffer
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
-import de.hanno.hpengine.engine.entity.index
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.profiled
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMaps
-import de.hanno.hpengine.engine.graphics.shader.Program
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
-import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.model.texture.mipmapCount
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer
-import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.struct.copyTo
@@ -56,138 +29,12 @@ import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL11.GL_FLOAT
-import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.glEnable
+import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL14
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS
 import org.lwjgl.opengl.GL45
 import java.nio.FloatBuffer
-
-class AmbientCubeGridExtension(
-    programManager: ProgramManager<OpenGl>,
-    val config: Config,
-    val gpuContext: GpuContext<OpenGl>,
-    textureManager: TextureManager,
-    val deferredRenderingBuffer: DeferredRenderingBuffer
-) : DeferredRenderExtension<OpenGl> {
-
-    private val environmentProbeSphereHolder = SphereHolder(
-        config,
-        textureManager,
-        gpuContext,
-        programManager,
-        programManager.run {
-            getProgram(
-                config.EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
-                config.EngineAsset("shaders/environmentprobe_color_fragment.glsl").toCodeSource()
-            )
-        },
-        deferredRenderingBuffer.finalBuffer
-    )
-
-    val sphereProgram: Program<Uniforms> = config.run {
-        programManager.getProgram(
-            EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
-            EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource()
-        )
-    }
-
-    private var renderedInCycle: Long = -1
-    val probeRenderer = ProbeRenderer(gpuContext, config, programManager, textureManager)
-    val evaluateProbeProgram = programManager.getProgram(
-        config.engineDir.resolve("shaders/passthrough_vertex.glsl").toCodeSource(),
-        config.engineDir.resolve("shaders/evaluate_probe.glsl").toCodeSource(),
-        Uniforms.Empty
-    )
-
-    private var renderCounter = 0
-    private val probesPerFrame = 12.apply {
-        require(probeRenderer.probeCount % this == 0) { "probecount has to be devidable by probesperframe" }
-    }
-
-    override fun renderFirstPass(
-        backend: Backend<OpenGl>,
-        gpuContext: GpuContext<OpenGl>,
-        firstPassResult: FirstPassResult,
-        renderState: RenderState
-    ) {
-        val entityAdded = renderState.entitiesState.entityAddedInCycle > renderedInCycle
-        val needsRerender = config.debug.reRenderProbes || entityAdded
-        if (needsRerender) {
-            renderCounter = 0
-            config.debug.reRenderProbes = false
-            renderedInCycle = renderState.cycle
-        }
-        if (renderCounter < probeRenderer.probeCount - probesPerFrame) {
-            probeRenderer.renderProbes(renderState, renderCounter, probesPerFrame)
-            renderCounter += probesPerFrame
-        }
-    }
-
-    override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {
-
-        val gBuffer = deferredRenderingBuffer
-        val gpuContext = gpuContext
-        gpuContext.disable(GlCap.DEPTH_TEST)
-        evaluateProbeProgram.use()
-
-        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, gBuffer.positionMap)
-        gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.normalMap)
-        gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
-        gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, gBuffer.motionMap)
-        gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
-        renderState.lightState.pointLightShadowMapStrategy.bindTextures()
-
-        evaluateProbeProgram.setUniform("eyePosition", renderState.camera.getPosition())
-        evaluateProbeProgram.setUniform("screenWidth", config.width.toFloat())
-        evaluateProbeProgram.setUniform("screenHeight", config.height.toFloat())
-        evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-        evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
-        evaluateProbeProgram.setUniform("time", renderState.time.toInt())
-        evaluateProbeProgram.setUniform("probeDimensions", probeRenderer.probeDimensions)
-        val sceneCenter =
-            Vector3f(probeRenderer.sceneMin).add(Vector3f(probeRenderer.sceneMax).sub(probeRenderer.sceneMin).mul(0.5f))
-        evaluateProbeProgram.setUniform("sceneCenter", sceneCenter)
-        evaluateProbeProgram.setUniform("sceneMin", probeRenderer.sceneMin)
-        evaluateProbeProgram.setUniform("probesPerDimension", probeRenderer.probesPerDimensionFloat)
-
-        evaluateProbeProgram.setUniform("probeCount", probeRenderer.probeCount)
-        evaluateProbeProgram.bindShaderStorageBuffer(4, probeRenderer.probePositionsStructBuffer)
-        evaluateProbeProgram.bindShaderStorageBuffer(5, probeRenderer.probeAmbientCubeValues)
-        gpuContext.fullscreenBuffer.draw()
-
-    }
-
-    override fun renderEditor(renderState: RenderState, result: DrawResult) {
-        if (config.debug.visualizeProbes) {
-            gpuContext.depthMask = true
-            gpuContext.disable(GlCap.BLEND)
-            environmentProbeSphereHolder.render(renderState) {
-
-                probeRenderer.probePositions.withIndex().forEach { (probeIndex, position) ->
-                    val transformation = Transform().translate(position)
-                    sphereProgram.setUniform(
-                        "pointLightPositionWorld",
-                        probeRenderer.probePositions[probeIndex]
-                    )
-                    sphereProgram.setUniform("probeIndex", probeIndex)
-                    sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-                    sphereProgram.setUniform("probeDimensions", probeRenderer.probeDimensions)
-                    sphereProgram.bindShaderStorageBuffer(4, probeRenderer.probePositionsStructBuffer)
-                    sphereProgram.bindShaderStorageBuffer(5, probeRenderer.probeAmbientCubeValues)
-
-                    sphereVertexIndexBuffer.indexBuffer.draw(
-                        sphereRenderBatch,
-                        sphereProgram,
-                        bindIndexBuffer = false
-                    )
-                }
-            }
-        }
-    }
-}
 
 class ProbeRenderer(
     val gpuContext: GpuContext<OpenGl>,
@@ -376,110 +223,5 @@ class ProbeRenderer(
                 }
             }
         }
-    }
-}
-
-// TODO: Move the same class from editor module to main module and remove this one
-private class SphereHolder(
-    val config: Config,
-    val textureManager: TextureManager,
-    val gpuContext: GpuContext<OpenGl>,
-    val programManager: ProgramManager<OpenGl>,
-    val sphereProgram: Program<Uniforms> = config.run {
-        programManager.getProgram(
-            EngineAsset("shaders/mvp_vertex.glsl").toCodeSource(),
-            EngineAsset("shaders/simple_color_fragment.glsl").toCodeSource()
-        )
-    },
-    val targetBuffer: RenderTarget2D
-) : RenderSystem {
-    override lateinit var artemisWorld: World
-    val sphereEntity = Entity("[Editor] Pivot")
-
-    val sphere = run {
-        StaticModelLoader().load("assets/models/sphere.obj", textureManager, config.directories.engineDir)
-    }
-
-    val sphereModelComponent = ModelComponent(sphereEntity, sphere, MaterialManager.createDefaultMaterial(config, textureManager)).apply {
-        sphereEntity.addComponent(this)
-    }
-    val sphereVertexIndexBuffer = VertexIndexBuffer(gpuContext, 10)
-
-    val vertexIndexOffsets = sphereVertexIndexBuffer.allocateForComponent(sphereModelComponent).apply {
-        sphereModelComponent.putToBuffer(sphereVertexIndexBuffer, this)
-    }
-    val sphereCommand = DrawElementsIndirectCommand().apply {
-        count = sphere.indices.size
-        primCount = 1
-        firstIndex = vertexIndexOffsets.indexOffset
-        baseVertex = vertexIndexOffsets.vertexOffset
-        baseInstance = 0
-    }
-    val sphereRenderBatch = RenderBatch(
-        entityBufferIndex = 0,
-        isDrawLines = false,
-        cameraWorldPosition = Vector3f(0f, 0f, 0f),
-        drawElementsIndirectCommand = sphereCommand,
-        isVisibleForCamera = true,
-        update = Update.DYNAMIC,
-        entityMinWorld = Vector3f(0f, 0f, 0f),
-        entityMaxWorld = Vector3f(0f, 0f, 0f),
-        centerWorld = Vector3f(),
-        boundingSphereRadius = 1000f,
-        animated = false,
-        materialInfo = sphereModelComponent.material.materialInfo,
-        entityIndex = sphereEntity.index,
-        meshIndex = 0
-    )
-
-    val transformBuffer = BufferUtils.createFloatBuffer(16).apply {
-        Transform().get(this)
-    }
-
-    override fun render(result: DrawResult, renderState: RenderState) {
-        render(renderState, sphereEntity.transform.position, Vector3f(0f, 0f, 1f))
-    }
-
-    fun render(
-        state: RenderState, spherePosition: Vector3f,
-        color: Vector3f, useDepthTest: Boolean = true,
-        beforeDraw: (Program<Uniforms>.() -> Unit)? = null
-    ) {
-
-        val scaling = (0.1f * sphereEntity.transform.position.distance(state.camera.getPosition())).coerceIn(0.5f, 1f)
-        val transformation = Transform().scale(scaling).translate(spherePosition)
-        if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
-        targetBuffer.use(gpuContext, false)
-        sphereProgram.use()
-        sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-        sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-        sphereProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-        sphereProgram.setUniform("diffuseColor", color)
-        sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
-        if (beforeDraw != null) {
-            sphereProgram.beforeDraw()
-        }
-
-        sphereVertexIndexBuffer.indexBuffer.draw(sphereRenderBatch, sphereProgram)
-
-    }
-
-    fun render(
-        state: RenderState, useDepthTest: Boolean = true,
-        draw: (SphereHolder.(RenderState) -> Unit)
-    ) {
-
-        val transformation = Transform()
-        if (useDepthTest) gpuContext.enable(GlCap.DEPTH_TEST) else gpuContext.disable(GlCap.DEPTH_TEST)
-        gpuContext.cullFace = false
-        targetBuffer.use(gpuContext, false)
-        sphereProgram.use()
-        sphereProgram.setUniformAsMatrix4("modelMatrix", transformation.get(transformBuffer))
-        sphereProgram.setUniformAsMatrix4("viewMatrix", state.camera.viewMatrixAsBuffer)
-        sphereProgram.setUniformAsMatrix4("projectionMatrix", state.camera.projectionMatrixAsBuffer)
-        sphereProgram.setUniform("diffuseColor", Vector3f(1f, 0f, 0f))
-        sphereProgram.bindShaderStorageBuffer(7, sphereVertexIndexBuffer.vertexStructArray)
-
-        draw(state)
     }
 }

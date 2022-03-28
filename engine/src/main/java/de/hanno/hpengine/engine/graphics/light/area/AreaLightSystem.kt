@@ -38,7 +38,6 @@ import de.hanno.hpengine.engine.graphics.shader.safePut
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.enlarge
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
@@ -166,7 +165,7 @@ class AreaLightSystem(
         forEachEntity { areaLightCount++ }
 
 //        TODO: Resize with instance count
-        this@AreaLightSystem.gpuAreaLightArray = gpuAreaLightArray.enlarge(areaLightCount * AreaLight.getBytesPerInstance())
+        this@AreaLightSystem.gpuAreaLightArray = gpuAreaLightArray.enlarge(areaLightCount * AreaLightStrukt.sizeInBytes)
         val byteBuffer = gpuAreaLightArray.byteBuffer
         byteBuffer.rewind()
         byteBuffer.run {

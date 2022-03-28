@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics
 
+import com.artemis.BaseSystem
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
@@ -11,12 +12,9 @@ import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.launchEndlessRenderLoop
-import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.Texture2D
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import imgui.ImGui
 import kotlinx.coroutines.delay
 import net.miginfocom.swing.MigLayout
 import javax.swing.BorderFactory
@@ -65,7 +63,7 @@ class RenderManager(
     val fpsCounter: FPSCounter,
     val renderSystemsConfig: RenderSystemsConfig,
     _renderSystems: List<RenderSystem>,
-) : Manager {
+) : BaseSystem() {
 
     // TODO: Make this read only again
     var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
@@ -83,16 +81,10 @@ class RenderManager(
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(input)
 
-    fun finishCycle(scene: Scene, deltaSeconds: Float) {
+    fun finishCycle(deltaSeconds: Float) {
         renderState.currentWriteState.deltaSeconds = deltaSeconds
-        scene.extract(renderState.currentWriteState)
-        extract(scene, renderState.currentWriteState)
         renderState.swapStaging()
     }
-
-    override fun beforeSetScene(nextScene: Scene) { renderSystems.forEach { it.beforeSetScene(nextScene) } }
-
-    override fun afterSetScene(lastScene: Scene?, currentScene: Scene) { renderSystems.forEach { it.afterSetScene(currentScene) } }
 
     init {
         launchEndlessRenderLoop { deltaSeconds ->
@@ -157,15 +149,15 @@ class RenderManager(
         }
     }
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        renderSystems.distinct().forEach {
-            it.run { update(scene, deltaSeconds) }
-        }
-    }
-
     fun getCurrentFPS() = fpsCounter.fps
 
     fun getMsPerFrame() = fpsCounter.msPerFrame
+
+    override fun processSystem() {
+        renderSystems.distinct().forEach {
+            it.update(world.delta)
+        }
+    }
 
 }
 

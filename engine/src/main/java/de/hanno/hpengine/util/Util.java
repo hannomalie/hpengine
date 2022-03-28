@@ -1,7 +1,5 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.entity.Entity;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.*;
@@ -452,53 +450,53 @@ public class Util {
 	}
 
 	public static TypedTuple<Matrix4f[], Matrix4f[]> getCubeViewProjectionMatricesForPosition(Vector3f position) {
-		Camera camera = new Camera(new Entity());
+		Camera camera = new Camera(new Transform());
 		camera.setProjectionMatrix(Util.createPerspective(90, 1, 0.1f, 250f));
 		Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
 		Matrix4f[] resultViewMatrices = new Matrix4f[6];
 		Matrix4f[] resultProjectionMatrices = new Matrix4f[6];
 
-		camera.getEntity().getTransform().rotation(new Quaternionf().identity());
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 1f, 0f), 90);
-		camera.getEntity().getTransform().translateLocal(position);
+		camera.getTransform().rotation(new Quaternionf().identity());
+		camera.getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
+		camera.getTransform().rotate(new Vector3f(0f, 1f, 0f), 90);
+		camera.getTransform().translateLocal(position);
 		resultViewMatrices[0] = new Matrix4f(camera.getViewMatrix());
 		resultProjectionMatrices[0] = new Matrix4f(projectionMatrix);
 
-		camera.getEntity().getTransform().rotation(new Quaternionf().identity());
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 1f, 0f), -90);
-		camera.getEntity().getTransform().translateLocal(position);
+		camera.getTransform().rotation(new Quaternionf().identity());
+		camera.getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
+		camera.getTransform().rotate(new Vector3f(0f, 1f, 0f), -90);
+		camera.getTransform().translateLocal(position);
 		resultViewMatrices[1] = new Matrix4f(camera.getViewMatrix());
 		resultProjectionMatrices[1] = new Matrix4f(projectionMatrix);
 
-		camera.getEntity().getTransform().rotation(new Quaternionf().identity());
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
-		camera.getEntity().getTransform().rotate(new Vector3f(1f, 0f, 0f), 90);
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 1f, 0f), 180);
-		camera.getEntity().getTransform().translateLocal(position);
+		camera.getTransform().rotation(new Quaternionf().identity());
+		camera.getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
+		camera.getTransform().rotate(new Vector3f(1f, 0f, 0f), 90);
+		camera.getTransform().rotate(new Vector3f(0f, 1f, 0f), 180);
+		camera.getTransform().translateLocal(position);
 		resultViewMatrices[2] = new Matrix4f(camera.getViewMatrix());
 		resultProjectionMatrices[2] = new Matrix4f(projectionMatrix);
 
-		camera.getEntity().getTransform().rotation(new Quaternionf().identity());
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
-		camera.getEntity().getTransform().rotate(new Vector3f(1f, 0f, 0f), -90);
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 1f, 0f), 180);
-		camera.getEntity().getTransform().translateLocal(position);
+		camera.getTransform().rotation(new Quaternionf().identity());
+		camera.getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
+		camera.getTransform().rotate(new Vector3f(1f, 0f, 0f), -90);
+		camera.getTransform().rotate(new Vector3f(0f, 1f, 0f), 180);
+		camera.getTransform().translateLocal(position);
 		resultViewMatrices[3] = new Matrix4f(camera.getViewMatrix());
 		resultProjectionMatrices[3] = new Matrix4f(projectionMatrix);
 
-		camera.getEntity().getTransform().rotation(new Quaternionf().identity());
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 1f, 0f), -180);
-		camera.getEntity().getTransform().translateLocal(position);
+		camera.getTransform().rotation(new Quaternionf().identity());
+		camera.getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
+		camera.getTransform().rotate(new Vector3f(0f, 1f, 0f), -180);
+		camera.getTransform().translateLocal(position);
 		resultViewMatrices[4] = new Matrix4f(camera.getViewMatrix());
 		resultProjectionMatrices[4] = new Matrix4f(projectionMatrix);
 
-		camera.getEntity().getTransform().rotation(new Quaternionf().identity());
-		camera.getEntity().getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
-		camera.getEntity().getTransform().translateLocal(position);
+		camera.getTransform().rotation(new Quaternionf().identity());
+		camera.getTransform().rotate(new Vector3f(0f, 0f, 1f), 180);
+		camera.getTransform().translateLocal(position);
 		resultViewMatrices[5] = new Matrix4f(camera.getViewMatrix());
 		resultProjectionMatrices[5] = new Matrix4f(projectionMatrix);
 

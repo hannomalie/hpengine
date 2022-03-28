@@ -1,9 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import EntityStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.profiled
@@ -34,12 +35,7 @@ import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import org.lwjgl.opengl.ARBClearTexture
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL31
-import org.lwjgl.opengl.GL42
-import org.lwjgl.opengl.GL43
+import org.lwjgl.opengl.*
 
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config: Config,
                                                               private val gpuContext: GpuContext<OpenGl>,
@@ -201,7 +197,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config
             with(commandOrganization) {
                 val instanceCount = primitiveCount
                 visibilityBuffers.resize(instanceCount)
-                commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * ModelComponent.bytesPerInstance
+                commandOrganization.entitiesBuffersCompacted.sizeInBytes = instanceCount * EntityStrukt.sizeInBytes
                 val entitiesCountersToUse = entitiesCounters
                 entitiesCountersToUse.resize(commandCount)
                 with(appendProgram) {
@@ -287,7 +283,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val config
             val camera = cullCam
             setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
             setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
-            setUniform("camPosition", camera.entity.transform.position)
+            setUniform("camPosition", camera.transform.position)
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
             gpuContext.bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, Pipeline.HIGHZ_FORMAT)

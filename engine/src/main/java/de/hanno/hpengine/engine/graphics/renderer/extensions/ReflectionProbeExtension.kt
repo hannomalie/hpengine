@@ -1,12 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer.extensions
 
+import com.artemis.BaseEntitySystem
 import com.artemis.World
+import com.artemis.annotations.All
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.Component
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.BindlessTextures
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
@@ -17,37 +17,25 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.setTextureUniforms
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.toCubeMapArrays
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.manager.Manager
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.model.texture.createView
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc
-import org.koin.core.component.get
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.glEnable
@@ -62,16 +50,10 @@ class ReflectionProbe(val extents: Vector3f = Vector3f(100f)) : com.artemis.Comp
         get() = Vector3f(extents).mul(0.5f)
 }
 
-class ReflectionProbeManager(val config: Config) : Manager {
-    override fun afterSetScene(lastScene: Scene?, currentScene: Scene) {
-        config.debug.reRenderProbes = true
-    }
-
-    override fun onEntityAdded(entities: List<Entity>) {
-        config.debug.reRenderProbes = true
-    }
-
-    override fun onComponentAdded(component: Component) {
+@All(ReflectionProbe::class)
+class ReflectionProbeManager(val config: Config) : BaseEntitySystem() {
+    override fun processSystem() { }
+    override fun inserted(entityId: Int) {
         config.debug.reRenderProbes = true
     }
 }
@@ -127,7 +109,7 @@ class ReflectionProbeRenderExtension(
     private var renderCounter = 0
     private val probesPerFrame = 1
 
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
+    override fun extract(renderState: RenderState, world: World) {
         val components = (renderState.componentExtracts[ReflectionProbe::class.java] as List<ReflectionProbe>?) ?: return
         val componentCount = components.size
         val targetState = renderState[reflectionProbeRenderState]

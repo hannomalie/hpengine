@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.scene.HpVector4f
 import de.hanno.hpengine.engine.transform.Transform
@@ -16,7 +15,7 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.lwjgl.BufferUtils
 
-interface ProgramManager<BACKEND: BackendType> : Manager {
+interface ProgramManager<BACKEND: BackendType> {
     val gpuContext: GpuContext<BACKEND>
 
     fun update(deltaSeconds: Float)

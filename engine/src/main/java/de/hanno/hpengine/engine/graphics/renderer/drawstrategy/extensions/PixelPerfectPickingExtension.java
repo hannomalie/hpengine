@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.backend.Backend;
 import de.hanno.hpengine.engine.backend.OpenGl;
-import de.hanno.hpengine.engine.event.MeshSelectedEvent;
 import de.hanno.hpengine.engine.graphics.GpuContext;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
@@ -40,7 +39,7 @@ public class PixelPerfectPickingExtension implements DeferredRenderExtension<Ope
                 int meshIndexComponentIndex = 3; // alpha component
                 int entityIndex = (int) floatBuffer.get(entityIndexComponentIndex);
                 int meshIndex = (int) floatBuffer.get(meshIndexComponentIndex);
-                backend.getEventBus().post(new MeshSelectedEvent(entityIndex, meshIndex));
+                System.out.println("Clicked mesh $meshIndex");
             } catch (Exception e) {
                 e.printStackTrace();
             }

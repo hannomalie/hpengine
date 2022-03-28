@@ -1,22 +1,16 @@
 package de.hanno.hpengine.engine.camera
 
-import de.hanno.hpengine.engine.component.Component
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.shader.safePut
-import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.log.ConsoleLogger
 import de.hanno.hpengine.util.Util
-import org.joml.AxisAngle4f
-import org.joml.Matrix4f
-import org.joml.Quaternionf
-import org.joml.Vector3f
-import org.joml.Vector4f
+import org.joml.*
 import org.lwjgl.BufferUtils
 import java.nio.FloatBuffer
 
 open class Camera @JvmOverloads constructor(
-        override val entity: Entity,
-        ratio: Float = 1280f/720f): Component {
+        val transform: Transform,
+        ratio: Float = 1280f/720f) {
 
     var exposure = 5f
     var focalDepth = Defaults.focalDepth
@@ -35,7 +29,7 @@ open class Camera @JvmOverloads constructor(
 
     var viewMatrix = Matrix4f()
         get() {
-            return entity.transform.transformation.invert(field)
+            return transform.transformation.invert(field)
         }
     var projectionMatrix = Matrix4f()
     var viewProjectionMatrix = Matrix4f()
@@ -94,29 +88,23 @@ open class Camera @JvmOverloads constructor(
         init(Util.createPerspective(45f, ratio, this.near, this.far), this.near, this.far, 60f, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
     }
 
-    constructor(entity: Entity, near: Float, far: Float, fov: Float, ratio: Float): this(entity) {
+    constructor(transform: Transform, near: Float, far: Float, fov: Float, ratio: Float): this(transform) {
         init(Util.createPerspective(fov, ratio, near, far), near, far, fov, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
     }
 
-    constructor(entity: Entity, camera: Camera): this(entity) {
+    constructor(transform: Transform, camera: Camera): this(transform) {
         init(camera)
     }
 
-    constructor(entity: Entity, projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float): this(entity) {
+    constructor(transform: Transform, projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float): this(transform) {
         init(projectionMatrix, near, far, fov, ratio, 5f, Defaults.focalDepth, Defaults.focalLength, Defaults.fStop)
     }
 
     fun init(camera: Camera) {
-        entity.transform.set(camera.entity.transform)
+        transform.set(camera.transform)
         init(camera.projectionMatrix, camera.near, camera.far,
                 camera.fov, camera.ratio, camera.exposure,
                 camera.focalDepth, camera.focalLength, camera.fStop)
-
-        if (camera.entity.hasParent) {
-            val formerParent = camera.entity.parent
-            entity.removeParent()
-            entity.parent = formerParent
-        }
     }
 
     fun init(projectionMatrix: Matrix4f, near: Float, far: Float, fov: Float, ratio: Float,
@@ -138,16 +126,14 @@ open class Camera @JvmOverloads constructor(
         storeMatrices()
     }
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        this@Camera.saveViewMatrixAsLastViewMatrix()
-        this@Camera.projectionMatrix.mul(this@Camera.viewMatrix, this@Camera.viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
-        this@Camera.frustum.frustumIntersection.set(this@Camera.viewProjectionMatrix)
+    fun update(deltaSeconds: Float) {
+        saveViewMatrixAsLastViewMatrix()
+        projectionMatrix.mul(viewMatrix, viewProjectionMatrix) // TODO: Should move into the block below, but it's currently broken
+        frustum.frustumIntersection.set(viewProjectionMatrix)
 //        TODO: Fix this, doesn't work
 //        if (entity.hasMoved())
-        this@Camera.run {
-            this.transform()
-            this.storeMatrices()
-        }
+        transform()
+        storeMatrices()
     }
 
     private fun storeMatrices() {
@@ -185,15 +171,15 @@ open class Camera @JvmOverloads constructor(
     }
 
 
-    fun getViewDirection() = entity.transform.viewDirection
-    fun getRightDirection() = entity.transform.rightDirection
-    fun getUpDirection() = entity.transform.upDirection
-    fun rotation(quaternion: Quaternionf) = entity.transform.rotation(quaternion)
-    fun rotate(axisAngle4f: AxisAngle4f) = entity.transform.rotate(axisAngle4f)
-    fun getTranslation(dest: Vector3f) = entity.transform.getTranslation(dest)
-    fun translateLocal(offset: Vector3f) = entity.transform.translateLocal(offset)
-    fun setTranslation(translation: Vector3f) = entity.transform.setTranslation(translation)
-    fun getPosition() = entity.transform.position
+    fun getViewDirection() = transform.viewDirection
+    fun getRightDirection() = transform.rightDirection
+    fun getUpDirection() = transform.upDirection
+    fun rotation(quaternion: Quaternionf) = transform.rotation(quaternion)
+    fun rotate(axisAngle4f: AxisAngle4f) = transform.rotate(axisAngle4f)
+    fun getTranslation(dest: Vector3f) = transform.getTranslation(dest)
+    fun translateLocal(offset: Vector3f) = transform.translateLocal(offset)
+    fun setTranslation(translation: Vector3f) = transform.setTranslation(translation)
+    fun getPosition() = transform.position
 
 
     fun getTranslationRotationBuffer(): FloatBuffer {

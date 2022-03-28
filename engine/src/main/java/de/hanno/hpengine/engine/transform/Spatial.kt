@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine.transform
 
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.scene.Scene
-import kotlinx.coroutines.CoroutineScope
+import de.hanno.hpengine.engine.model.AnimatedModel
+import de.hanno.hpengine.engine.model.StaticModel
 import org.joml.Vector3f
 import java.io.Serializable
 
@@ -14,10 +13,11 @@ inline val SimpleSpatial.boundingSphereRadius: Float
 open class TransformSpatial(val transform: Transform, _boundingVolume: AABB) : SimpleSpatial(_boundingVolume) {
     inline val center: Vector3f
         get() = boundingVolume.center
-
 }
-open class StaticTransformSpatial(transform: Transform, val modelComponent: ModelComponent) : TransformSpatial(transform, AABB(modelComponent.boundingVolume.localAABB)) {
-    override suspend fun update(scene:Scene, deltaSeconds: Float) = boundingVolume.recalculate(transform)
+class StaticTransformSpatial(transform: Transform, val model: StaticModel) : TransformSpatial(transform, AABB(model.boundingVolume.localAABB)) {
+    override fun update(deltaSeconds: Float) = boundingVolume.recalculate(transform)
 }
 // TODO: Is this still needed?
-open class AnimatedTransformSpatial(transform: Transform, modelComponent: ModelComponent) : StaticTransformSpatial(transform, modelComponent)
+class AnimatedTransformSpatial(transform: Transform, model: AnimatedModel) : TransformSpatial(transform, AABB(model.boundingVolume.localAABB)) {
+    override fun update(deltaSeconds: Float) = boundingVolume.recalculate(transform)
+}

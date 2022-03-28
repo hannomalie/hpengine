@@ -4,7 +4,6 @@ import com.artemis.Component
 import com.artemis.World
 import com.artemis.utils.Bag
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.EntityStrukt
 import de.hanno.hpengine.engine.graphics.GpuCommandSync
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -15,11 +14,10 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
-import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.struct.copyFrom
 import org.joml.Vector3f
 
@@ -43,7 +41,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     var skyBoxMaterialIndex = -1
 
-    var camera = Camera(Entity("RenderStateCameraEntity"), 1280f/720f)
+    var camera = Camera(Transform(), 1280f/720f)
     var pointLightMovedInCycle: Long = 0
     var directionalLightHasMovedInCycle: Long = 0
     var sceneMin = Vector3f()
@@ -77,8 +75,6 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         directionalLightState[0].copyFrom(source.directionalLightState[0])
         lightState.pointLights = source.lightState.pointLights
         lightState.pointLightBuffer = source.lightState.pointLightBuffer
-        lightState.areaLights = source.lightState.areaLights
-        lightState.tubeLights = source.lightState.tubeLights
         lightState.pointLightShadowMapStrategy = source.lightState.pointLightShadowMapStrategy
         lightState.areaLightDepthMaps = source.lightState.areaLightDepthMaps
         entitiesState.entityMovedInCycle = source.entitiesState.entityMovedInCycle
@@ -128,9 +124,7 @@ interface RenderSystem: Updatable {
     fun render(result: DrawResult, renderState: RenderState) { }
     fun renderEditor(result: DrawResult, renderState: RenderState) { }
     fun afterFrameFinished() { }
-    fun extract(scene: Scene, renderState: RenderState, world: World) { }
-    fun beforeSetScene(nextScene: Scene) { }
-    fun afterSetScene(currentScene: Scene) {}
+    fun extract(renderState: RenderState, world: World) { }
 }
 
 class CustomStates {

@@ -1,25 +1,24 @@
 package de.hanno.hpengine.engine.model
 
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.lifecycle.Updatable
 import de.hanno.hpengine.engine.model.animation.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.transform.TransformSpatial
 import de.hanno.hpengine.util.Parentable
-import kotlinx.coroutines.CoroutineScope
-import java.util.ArrayList
 
 class Instance
-    @JvmOverloads constructor(val entity: Entity,
-                              val transform: Transform = Transform(),
+    @JvmOverloads constructor(val transform: Transform = Transform(),
                               var materials: List<Material> = listOf(),
                               val animationController: AnimationController? = null,
-                              val spatial: TransformSpatial = TransformSpatial(transform, entity.getComponent(ModelComponent::class.java)?.spatial?.boundingVolume ?: AABB()))
+                              val _boundingVolume: AABB = AABB(),
+                              val spatial: TransformSpatial = TransformSpatial(
+                                  transform,
+                                  _boundingVolume
+                              )
+    )
     : Parentable<Instance>, Updatable, Spatial by spatial {
 
     override val children = ArrayList<Instance>()
@@ -41,9 +40,9 @@ class Instance
         children.remove(child)
     }
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
+    override fun update(deltaSeconds: Float) {
         animationController?.update(deltaSeconds)
-        spatial.update(scene, deltaSeconds)
+        spatial.update(deltaSeconds)
     }
 
 }

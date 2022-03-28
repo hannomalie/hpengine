@@ -2,12 +2,14 @@ package de.hanno.hpengine.engine.graphics.renderer.environmentsampler
 
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.component.artemis.CameraComponent
+import de.hanno.hpengine.engine.component.artemis.EnvironmentProbeComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.GpuContext.Companion.exitOnGLError
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer.Companion.invoke
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer.Companion.invoke
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
@@ -18,13 +20,14 @@ import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.EnvironmentProbe
-import de.hanno.hpengine.engine.scene.EnvironmentProbeSystem
 import de.hanno.hpengine.engine.transform.Spatial.Companion.isInFrustum
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f
 import org.joml.Quaternionf
@@ -35,13 +38,13 @@ import org.lwjgl.opengl.GL43
 import java.nio.FloatBuffer
 import java.util.HashSet
 
-class EnvironmentSampler(val entity: Entity,
-                         probe: EnvironmentProbe,
+class EnvironmentSampler(val transform: Transform,
+                         probe: EnvironmentProbeComponent,
                          width: Int, height: Int, probeIndex: Int,
-                         private val environmentProbeSystem: EnvironmentProbeSystem,
                          programManager: ProgramManager<OpenGl>,
                          config: Config,
-                         textureManager: TextureManager) {
+                         textureManager: TextureManager,
+                         cubeMapArrayRenderTarget: CubeMapArrayRenderTarget) {
     val cubeMapProgram: Program<Uniforms>
     private val cubeMapLightingProgram: Program<Uniforms>
     private val depthPrePassProgram: Program<Uniforms>
@@ -54,7 +57,7 @@ class EnvironmentSampler(val entity: Entity,
 
     var sidesDrawn: MutableSet<Int> = HashSet()
 
-    val probe: EnvironmentProbe
+    val probe: EnvironmentProbeComponent
     val fullscreenBuffer: VertexBuffer
     val cubeMapView: Int
     val cubeMapView1: Int
@@ -114,56 +117,56 @@ class EnvironmentSampler(val entity: Entity,
     }
 
 
-    fun rotateForIndex(i: Int, camera: Entity) {
+    fun rotateForIndex(i: Int, transform: Transform, camera: CameraComponent) {
         val deltaNear = 0.0f
         val deltaFar = 100.0f
         val halfSizeX = probe.size.x / 2
         val halfSizeY = probe.size.y / 2
         val halfSizeZ = probe.size.z / 2
-        val position = camera.transform.position
+        val position = transform.position
         when (i) {
             0 -> {
-                camera.transform.rotation(Quaternionf().identity())
-                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-90.0).toFloat()))
+                transform.rotation(Quaternionf().identity())
+                transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-90.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
-                probe.camera.far = halfSizeX * deltaFar
+                camera.far = halfSizeX * deltaFar
             }
             1 -> {
-                camera.transform.rotation(Quaternionf().identity())
-                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(90.0).toFloat()))
+                transform.rotation(Quaternionf().identity())
+                transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(90.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
-                probe.camera.far = halfSizeX * deltaFar
+                camera.far = halfSizeX * deltaFar
             }
             2 -> {
-                camera.transform.rotation(Quaternionf().identity())
-                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.transform.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(90.0).toFloat()))
-                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(180.0).toFloat()))
+                transform.rotation(Quaternionf().identity())
+                transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                transform.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(90.0).toFloat()))
+                transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(180.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
-                probe.camera.far = halfSizeY * deltaFar
+                camera.far = halfSizeY * deltaFar
             }
             3 -> {
-                camera.transform.rotation(Quaternionf().identity())
-                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.transform.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(-90.0).toFloat()))
+                transform.rotation(Quaternionf().identity())
+                transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                transform.rotate(AxisAngle4f(1f, 0f, 0f, Math.toRadians(-90.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
-                probe.camera.far = halfSizeY * deltaFar
+                camera.far = halfSizeY * deltaFar
             }
             4 -> {
-                camera.transform.rotation(Quaternionf().identity())
-                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
-                camera.transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-180.0).toFloat()))
+                transform.rotation(Quaternionf().identity())
+                transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                transform.rotate(AxisAngle4f(0f, 1f, 0f, Math.toRadians(-180.0).toFloat()))
                 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
-                probe.camera.far = halfSizeZ * deltaFar
+                camera.far = halfSizeZ * deltaFar
             }
             5 -> {
-                camera.transform.rotation(Quaternionf().identity())
-                camera.transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
+                transform.rotation(Quaternionf().identity())
+                transform.rotate(AxisAngle4f(0f, 0f, 1f, Math.toRadians(180.0).toFloat()))
                 //			de.hanno.hpengine.camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
-                probe.camera.far = halfSizeZ * deltaFar
+                camera.far = halfSizeZ * deltaFar
             }
             else -> {
             }
@@ -174,14 +177,13 @@ class EnvironmentSampler(val entity: Entity,
         gpuContext = programManager.gpuContext
         this.config = config
         this.textureManager = textureManager
-        val camera = Camera(entity, near = 0.1f, far = 5000f, fov = 90f, ratio = 1f)
-        entity.addComponent(camera)
+        val camera = Camera(transform, near = 0.1f, far = 5000f, fov = 90f, ratio = 1f)
         camera.width = width.toFloat()
         camera.width = height.toFloat()
         this.camera = camera
         this.probe = probe
         val cubeMapCamInitialOrientation = Quaternionf().identity()
-        entity.transform.rotate(cubeMapCamInitialOrientation)
+        transform.rotate(cubeMapCamInitialOrientation)
 
         cubeMapProgram = config.run { programManager.getProgram(
             EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
@@ -235,7 +237,7 @@ class EnvironmentSampler(val entity: Entity,
                 EngineAsset("shaders/frst_pass_fragment.glsl").toCodeSource()
             )
         }
-        val cubeMapArrayRenderTarget = environmentProbeSystem.cubeMapArrayRenderTarget
+        val cubeMapArrayRenderTarget = cubeMapArrayRenderTarget
         cubeMapView = GL11.glGenTextures()
         cubeMapView1 = GL11.glGenTextures()
         cubeMapView2 = GL11.glGenTextures()
@@ -252,14 +254,14 @@ class EnvironmentSampler(val entity: Entity,
             GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).id, cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat, 0, 1, 6 * probeIndex + z, 1)
             GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).id, diffuseInternalFormat, 0, 1, 6 * probeIndex + z, 1)
         }
-        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).id, cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat, 0, EnvironmentProbeSystem.CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
-        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).id, cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat, 0, EnvironmentProbeSystem.CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
-        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).id, cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat, 0, EnvironmentProbeSystem.CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
+        GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).id, cubeMapArrayRenderTarget.getCubeMapArray(0).internalFormat, 0, CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
+        GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).id, cubeMapArrayRenderTarget.getCubeMapArray(1).internalFormat, 0, CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
+        GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).id, cubeMapArrayRenderTarget.getCubeMapArray(2).internalFormat, 0, CUBEMAP_MIPMAP_COUNT, 6 * probeIndex, 6)
         renderTarget = invoke(
                 gpuContext,
-                invoke(gpuContext, invoke(gpuContext, EnvironmentProbeSystem.RESOLUTION, EnvironmentProbeSystem.RESOLUTION)),
-                EnvironmentProbeSystem.RESOLUTION, EnvironmentProbeSystem.RESOLUTION,
-                listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(gpuContext, EnvironmentProbeSystem.RESOLUTION, EnvironmentProbeSystem.RESOLUTION),
+                invoke(gpuContext, invoke(gpuContext, RESOLUTION, RESOLUTION)),
+                RESOLUTION, RESOLUTION,
+                listOf(ColorAttachmentDefinition("Environment Diffuse", diffuseInternalFormat)).toTextures(gpuContext, RESOLUTION, RESOLUTION),
                 "Environment Sampler"
         )
         fullscreenBuffer = QuadVertexBuffer(gpuContext, true)
@@ -267,3 +269,6 @@ class EnvironmentSampler(val entity: Entity,
         exitOnGLError("EnvironmentSampler constructor")
     }
 }
+
+private val RESOLUTION = 512
+private val CUBEMAP_MIPMAP_COUNT = Util.calculateMipMapCount(RESOLUTION)

@@ -1,17 +1,11 @@
 package de.hanno.hpengine.engine.transform
 
 import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.component.ModelComponent
-import de.hanno.hpengine.engine.entity.Entity
+import de.hanno.hpengine.engine.component.artemis.SpatialComponent
 import de.hanno.hpengine.engine.model.Instance
 import de.hanno.hpengine.engine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.util.isEqualTo
-import org.joml.Matrix4f
-import org.joml.Vector3f
-import org.joml.Vector3fc
-import org.joml.Vector4f
-import org.joml.Vector4fc
-import java.util.ArrayList
+import org.joml.*
 
 inline val Vector3fc.x
     get() = x()
@@ -268,7 +262,7 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
         result.add(Vector3f(max.x, max.y, max.z - extents.z))
         return result
     }
-    fun getPointsAsArray(): FloatArray? {
+    fun getPointsAsArray(): FloatArray {
         val points: List<Vector3fc> = getPoints()
         val pointsForLineDrawing: MutableList<Vector3fc> = ArrayList()
         pointsForLineDrawing.add(points[0])
@@ -311,12 +305,12 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
 }
 
-fun List<Entity>.calculateAABB(): AABBData {
+fun List<SpatialComponent>.calculateAABB(): AABBData {
     val minResult = Vector3f(absoluteMaximum)
     val maxResult = Vector3f(absoluteMinimum)
-    mapNotNull { it.getComponent(ModelComponent::class.java) }.forEach {
-        minResult.min(it.boundingVolume.min)
-        maxResult.max(it.boundingVolume.max)
+    forEach {
+        minResult.min(it.spatial.boundingVolume.min)
+        maxResult.max(it.spatial.boundingVolume.max)
     }
     return AABBData(minResult, maxResult)
 }

@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine.model
 
 import EntityStruktImpl.Companion.type
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.graphics.EntityStrukt
-import de.hanno.hpengine.engine.manager.SimpleComponentSystem
 import de.hanno.struct.copyTo
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer

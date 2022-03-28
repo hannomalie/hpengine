@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions
 import com.artemis.World
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.GIVolumeComponent
+import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
@@ -42,7 +42,6 @@ import de.hanno.hpengine.engine.model.Update
 import de.hanno.hpengine.engine.model.texture.Texture3D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.engine.vertexbuffer.draw
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
@@ -149,10 +148,8 @@ class VoxelConeTracingExtension(
     private var sceneInitiallyDrawn = false
     private var voxelizeDynamicEntites = false
 
-    override fun afterSetScene(nextScene: Scene) {
-        sceneInitiallyDrawn = false
-        entityVoxelizedInCycle.clear()
-    }
+    private var gridCache = mutableMapOf<Integer, GIVolumeGrids>()
+
     override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) = profiled("VCT first pass") {
         val directionalLightMoved = renderState.directionalLightHasMovedInCycle > litInCycle
         val pointlightMoved = renderState.pointLightMovedInCycle > litInCycle
@@ -317,7 +314,7 @@ class VoxelConeTracingExtension(
         GL11.glColorMask(true, true, true, true)
     }
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) = this@VoxelConeTracingExtension.pipeline.prepare(this@VoxelConeTracingExtension.renderStateManager.renderState.currentWriteState)
+    override fun update(deltaSeconds: Float) = pipeline.prepare(renderStateManager.renderState.currentWriteState)
 
     private fun mipmapGrid(textureId: Int, renderState: RenderState) = profiled("grid mipmap") {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS)
@@ -376,7 +373,7 @@ class VoxelConeTracingExtension(
                 voxelConeTraceProgram.use()
                 val camTranslation = Vector3f()
                 voxelConeTraceProgram.setUniform("voxelGridIndex", voxelGridIndex)
-                voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.entity.transform.getTranslation(camTranslation))
+                voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.transform.getTranslation(camTranslation))
                 voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
                 voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
                 voxelConeTraceProgram.bindShaderStorageBuffer(0, deferredRenderingBuffer.exposureBuffer)
@@ -399,10 +396,13 @@ class VoxelConeTracingExtension(
         gpuContext.depthTest = true
     }
 
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
-        extract(renderState, scene.componentSystems.filterIsInstance<GIVolumeComponent>())
+    override fun extract(renderState: RenderState, world: World) {
+        extract(renderState)
     }
-    fun extract(renderState: RenderState, list: List<GIVolumeComponent>) {
+    fun extract(renderState: RenderState) {
+        val list = (
+            renderState.componentExtracts[GiVolumeComponent::class.java] ?: emptyList<GiVolumeComponent>()
+        ) as List<GiVolumeComponent>
         if(list.isEmpty()) return
 
         val targetSize = list.size
@@ -410,19 +410,20 @@ class VoxelConeTracingExtension(
         for (index in renderState[voxelGrids].indices) {
             val target = renderState[voxelGrids][index]
             val source = list[index]
-            val giVolumeGrids = source.giVolumeGrids
-            target.grid = giVolumeGrids.grid.id
-            target.gridHandle = giVolumeGrids.grid.handle
-            target.indexGrid = giVolumeGrids.indexGrid.id
-            target.indexGridHandle = giVolumeGrids.indexGrid.handle
-            target.albedoGrid = giVolumeGrids.albedoGrid.id
-            target.albedoGridHandle = giVolumeGrids.albedoGrid.handle
-            target.normalGrid = giVolumeGrids.normalGrid.id
-            target.normalGridHandle = giVolumeGrids.normalGrid.handle
-            target.gridSize = source.giVolumeGrids.gridSize
-            target.position.set(source.entity.transform.position)
-            target.scale = source.scale
-            target.projectionMatrix.set(source.orthoCam.projectionMatrix)
+//             TODO: Use volume grid cache somehow
+//            val giVolumeGrids = source.giVolumeGrids
+//            target.grid = giVolumeGrids.grid.id
+//            target.gridHandle = giVolumeGrids.grid.handle
+//            target.indexGrid = giVolumeGrids.indexGrid.id
+//            target.indexGridHandle = giVolumeGrids.indexGrid.handle
+//            target.albedoGrid = giVolumeGrids.albedoGrid.id
+//            target.albedoGridHandle = giVolumeGrids.albedoGrid.handle
+//            target.normalGrid = giVolumeGrids.normalGrid.id
+//            target.normalGridHandle = giVolumeGrids.normalGrid.handle
+//            target.gridSize = source.giVolumeGrids.gridSize
+//            target.position.set(source.entity.transform.position)
+//            target.scale = source.scale
+//            target.projectionMatrix.set(source.orthoCam.projectionMatrix)
         }
     }
 

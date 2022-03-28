@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.shader
 
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.vertexbuffer.DataChannels
@@ -13,7 +12,6 @@ import de.hanno.hpengine.util.ressources.Reloadable
 import de.hanno.hpengine.util.ressources.WrappedCodeSource
 import net.engio.mbassy.listener.Handler
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL20.GL_LINK_STATUS
 import org.lwjgl.opengl.GL20.GL_VALIDATE_STATUS
 import org.lwjgl.opengl.GL20.glAttachShader
@@ -122,12 +120,6 @@ class Program<T : Uniforms> constructor(
     fun delete() {
         glUseProgram(0)
         glDeleteProgram(id)
-    }
-
-    @Subscribe
-    @Handler
-    fun handle(e: GlobalDefineChangedEvent) {
-        reload()
     }
 
     init {

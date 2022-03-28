@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.physics
 
+import com.artemis.BaseEntitySystem
 import com.artemis.World
+import com.artemis.annotations.All
 import com.bulletphysics.collision.broadphase.DbvtBroadphase
 import com.bulletphysics.collision.dispatch.CollisionDispatcher
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration
@@ -18,9 +20,8 @@ import com.bulletphysics.linearmath.DefaultMotionState
 import com.bulletphysics.linearmath.IDebugDraw
 import com.bulletphysics.linearmath.Transform
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.PhysicsComponent
+import de.hanno.hpengine.engine.component.artemis.PhysicsComponent
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
 import de.hanno.hpengine.engine.graphics.renderer.addLine
@@ -30,17 +31,11 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
-import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.threads.TimeStepThread
-import de.hanno.hpengine.engine.transform.x
-import de.hanno.hpengine.engine.transform.y
-import de.hanno.hpengine.engine.transform.z
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.commandqueue.FutureCallable
 import org.joml.Vector3fc
-import java.util.ArrayList
 import java.util.concurrent.CompletableFuture
 import java.util.function.Supplier
 import java.util.logging.Logger
@@ -48,13 +43,14 @@ import javax.vecmath.Matrix4f
 import javax.vecmath.Quat4f
 import javax.vecmath.Vector3f
 
+@All(PhysicsComponent::class)
 class PhysicsManager(
     private val config: Config,
     val renderStateManager: RenderStateManager,
     val programManager: ProgramManager<OpenGl>,
     val gpuContext: GpuContext<OpenGl>,
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
-) : Manager, RenderSystem {
+) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
     private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { HpVector4f() })
     val linePoints = mutableListOf<Vector3fc>()
@@ -81,63 +77,35 @@ class PhysicsManager(
         }.start()
     }
 
-    override fun beforeSetScene(nextScene: Scene) = clearWorld()
-
-    @JvmOverloads
-    fun addBallPhysicsComponent(owner: Entity, radius: Float = 1f, mass: Float = 10f): PhysicsComponent {
+    fun createBallPhysicsComponent(radius: Float = 1f, mass: Float = 10f): PhysicsComponent {
         val sphereShape = SphereShape(radius)
         val inertia = Vector3f()
         sphereShape.calculateLocalInertia(mass, inertia)
-        return addPhysicsComponent(MeshShapeInfo(Supplier { sphereShape }, owner, mass, inertia))
+        MeshShapeInfo({ sphereShape }, mass, inertia)
+        return PhysicsComponent()
     }
 
-    fun addBoxPhysicsComponent(entity: Entity): PhysicsComponent {
-        return addBallPhysicsComponent(entity, 10f)
+    fun createBoxPhysicsComponent(entity: Int): PhysicsComponent {
+        return createBallPhysicsComponent(10f)
     }
 
-    fun addBoxPhysicsComponent(owner: Entity, mass: Float): PhysicsComponent {
-        val (min, max) = owner.boundingVolume
-        val halfExtends = Vector3f(max.x - min.x, max.y - min.y, max.z - min.z)
-        halfExtends.scale(0.5f)
-        return addBoxPhysicsComponent(owner, halfExtends, mass)
+    fun createBoxPhysicsComponent(owner: Int, mass: Float, halfExtends: Vector3f): PhysicsComponent {
+        return createBoxPhysicsComponent(halfExtends, mass)
     }
 
-    fun addBoxPhysicsComponent(owner: Entity, halfExtends: Float, mass: Float): PhysicsComponent {
-        return addBoxPhysicsComponent(owner, Vector3f(halfExtends, halfExtends, halfExtends), mass)
+    fun createBoxPhysicsComponent(owner: Int, halfExtends: Float, mass: Float): PhysicsComponent {
+        return createBoxPhysicsComponent(Vector3f(halfExtends, halfExtends, halfExtends), mass)
     }
 
-    fun addBoxPhysicsComponent(owner: Entity, halfExtends: Vector3f, mass: Float): PhysicsComponent {
+    fun createBoxPhysicsComponent(halfExtends: Vector3f, mass: Float): PhysicsComponent {
         val boxShape = BoxShape(halfExtends)
         val inertia = Vector3f()
         boxShape.calculateLocalInertia(1f, inertia)
-        return addPhysicsComponent(MeshShapeInfo(Supplier { boxShape }, owner, mass, inertia))
+        MeshShapeInfo({ boxShape }, mass, inertia)
+        return PhysicsComponent()
     }
 
-    fun addHullPhysicsComponent(owner: Entity, mass: Float): PhysicsComponent {
-        throw IllegalStateException("Currently not implemented!")
-        //		ObjectArrayList<Vector3f> list = new ObjectArrayList<>();
-        //		ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
-        //
-        //		float[] vertices = modelComponent.getPositions();
-        //		for (int i = 0; i < vertices.length; i += 3) {
-        //			list.add(new Vector3f(vertices[i], vertices[i+1], vertices[i+2]));
-        //		}
-        //
-        //		CollisionShape shape = new ConvexHullShape(list);
-        //		Vector3f inertia = new Vector3f();
-        //		shape.calculateLocalInertia(1f, inertia);
-        //		return addPhysicsComponent(new MeshShapeInfo( () -> shape, owner, mass, inertia));
-    }
-
-    fun addMeshPhysicsComponent(owner: Entity, mass: Float): PhysicsComponent {
-        val inertia = Vector3f()
-        val collisionShapeSupplier = Supplier { supplyCollisionShape(owner, mass, inertia) }
-
-        val info = MeshShapeInfo(collisionShapeSupplier, owner, mass, inertia)
-        return addPhysicsComponent(info)
-    }
-
-    fun supplyCollisionShape(owner: Entity, mass: Float, inertia: Vector3f): CollisionShape {
+    fun supplyCollisionShape(mass: Float, inertia: Vector3f): CollisionShape {
         throw IllegalStateException("Currently not implemented!")
         //        ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
         //        if(modelComponent == null || !modelComponent.isInitialized()) {
@@ -176,18 +144,6 @@ class PhysicsManager(
         dynamicsWorld!!.debugDrawWorld()
     }
 
-    override fun clear() {
-
-    }
-
-    override fun onEntityAdded(entities: List<Entity>) {
-
-    }
-
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
-        super<Manager>.extract(scene, renderState)
-    }
-
     override fun render(result: DrawResult, renderState: RenderState) {
         if (config.debug.isDrawLines) {
             debugDrawWorld()
@@ -195,11 +151,7 @@ class PhysicsManager(
         }
     }
 
-    class MeshShapeInfo(var shapeSupplier: Supplier<CollisionShape>, var owner: Entity, var mass: Float, var inertia: Vector3f)
-
-    fun addPhysicsComponent(info: MeshShapeInfo): PhysicsComponent {
-        return PhysicsComponent(info.owner, info, this)
-    }
+    class MeshShapeInfo(var shapeSupplier: Supplier<CollisionShape>, var mass: Float, var inertia: Vector3f)
 
 
     private fun setupBullet(gravity: Vector3f) {
@@ -294,4 +246,6 @@ class PhysicsManager(
             }
         })
     }
+
+    override fun processSystem() { }
 }

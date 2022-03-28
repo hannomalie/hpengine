@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.texture
 
+import com.artemis.BaseSystem
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.AbstractDirectory
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -15,10 +16,8 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.engine.model.texture.DDSConverter.getFullPathAsDDS
-import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.threads.TimeStepThread
 import de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne
 import de.hanno.hpengine.util.commandqueue.CommandQueue
@@ -74,7 +73,7 @@ import javax.imageio.ImageIO
 class TextureManager(val config: Config,
                      programManager: OpenGlProgramManager,
                      val gpuContext: OpenGLContext,
-                     val singleThreadContext: AddResourceContext) : Manager {
+) : BaseSystem() {
     val commandQueue = CommandQueue(Executors.newFixedThreadPool(TEXTURE_FACTORY_THREAD_COUNT))
 
     val engineDir = config.directories.engineDir
@@ -576,5 +575,7 @@ class TextureManager(val config: Config,
                 ComponentColorModel.OPAQUE,
                 DataBuffer.TYPE_BYTE)
     }
+
+    override fun processSystem() { }
 
 }

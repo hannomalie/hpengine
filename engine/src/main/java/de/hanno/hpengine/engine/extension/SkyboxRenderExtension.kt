@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.extension
 
 import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
@@ -13,9 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.Deferr
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.Scene
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
@@ -46,13 +43,9 @@ class SkyboxRenderExtension(
         }
     }
 
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
-        scene.skyBox?.let {
-            it.getComponent(ModelComponent::class.java)?.model?.material?.materialInfo?.maps?.get(SimpleMaterial.MAP.ENVIRONMENT)
-                ?.let {
-                    renderState[skyBoxTexture].value = it.id
-                }
-        }
+    override fun extract(renderState: RenderState, world: World) {
+//         TODO: Reimplement
+//        renderState[skyBoxTexture].value = it.id
     }
 
     override fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {

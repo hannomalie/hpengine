@@ -122,7 +122,7 @@ class AnimatedModel(
             }
         }
 
-    fun update(deltaSeconds: Float) {
+    override fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)
     }
 

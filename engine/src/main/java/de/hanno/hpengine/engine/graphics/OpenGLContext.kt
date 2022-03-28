@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.backend.OpenGl
-import de.hanno.hpengine.engine.component.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.ModelComponent
 import de.hanno.hpengine.engine.graphics.renderer.GLU
 import de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode
 import de.hanno.hpengine.engine.graphics.renderer.constants.CullMode
@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
+import de.hanno.hpengine.engine.vertexbuffer.DataChannels
 import de.hanno.hpengine.engine.vertexbuffer.QuadVertexBuffer
 import de.hanno.hpengine.engine.vertexbuffer.VertexBuffer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -46,7 +47,7 @@ import org.lwjgl.opengl.NVXGPUMemoryInfo
 import java.lang.Integer.max
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
-import java.util.ArrayList
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 import javax.vecmath.Tuple4f
@@ -60,7 +61,7 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
     private lateinit var dummyVertexIndexBuffer: VertexIndexBuffer
 
     init {
-        val dummyVertexBuffer = VertexBuffer(this, ModelComponent.DEFAULTCHANNELS, floatArrayOf(0f,0f,0f,0f))
+        val dummyVertexBuffer = VertexBuffer(this, DEFAULTCHANNELS, floatArrayOf(0f,0f,0f,0f))
         window.invoke {
             enable(GlCap.DEPTH_TEST)
             enable(GlCap.CULL_FACE)
@@ -466,3 +467,22 @@ class OpenGlExecutorImpl(val dispatcher: CoroutineDispatcher = Executors.newSing
     }
 
 }
+
+var DEFAULTCHANNELS = EnumSet.of(
+    DataChannels.POSITION3,
+    DataChannels.TEXCOORD,
+    DataChannels.NORMAL)
+var DEFAULTANIMATEDCHANNELS = EnumSet.of(
+    DataChannels.POSITION3,
+    DataChannels.TEXCOORD,
+    DataChannels.NORMAL,
+    DataChannels.WEIGHTS,
+    DataChannels.JOINT_INDICES)
+var DEPTHCHANNELS = EnumSet.of(
+    DataChannels.POSITION3,
+    DataChannels.NORMAL
+)
+var SHADOWCHANNELS = EnumSet.of(
+    DataChannels.POSITION3)
+var POSITIONCHANNEL = EnumSet.of(
+    DataChannels.POSITION3)

@@ -23,6 +23,8 @@ import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
+import de.hanno.hpengine.engine.graphics.renderer.extensions.ReflectionProbeManager
+import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.EntityBuffer
@@ -31,9 +33,9 @@ import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.Scene
-import de.hanno.hpengine.engine.scene.SceneManager
+import de.hanno.hpengine.engine.scene.WorldAABB
 import de.hanno.hpengine.engine.scene.dsl.*
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
@@ -59,9 +61,8 @@ class Engine constructor(val application: KoinApplication) {
     private val window = koin.get<Window<*>>()
     private val input = koin.get<Input>()
     private val renderManager = koin.get<RenderManager>()
-    private val sceneManager = koin.get<SceneManager>()
 
-
+    val worldAABB = WorldAABB()
     val modelSystem = ModelSystem(
         config,
         koin.get(),
@@ -81,6 +82,9 @@ class Engine constructor(val application: KoinApplication) {
     val areaLightSystem = AreaLightSystem(koin.get(), koin.get(), config).apply {
         renderManager.renderSystems.add(this)
     }
+    val materialManager = MaterialManager(config, koin.get(), koin.get())
+    private val openGlProgramManager: OpenGlProgramManager = koin.get()
+    val textureManager: TextureManager = koin.get()
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         TagManager(),
         componentExtractor,
@@ -95,18 +99,28 @@ class Engine constructor(val application: KoinApplication) {
         directionalLightSystem,
         pointLightSystem,
         areaLightSystem,
+        materialManager,
+        textureManager,
+        PhysicsManager(config, koin.get(), koin.get(), koin.get()),
+        openGlProgramManager,
+        renderManager,
+        ReflectionProbeManager(config),
+        KotlinComponentSystem(),
     ).run {
         with(*(koin.getAll<BaseSystem>().toTypedArray()))
     }.run {
         register(SingletonPlugin.SingletonFieldResolver())
     }
     val world = World(
-        worldConfigurationBuilder.build().register(
-            Kryo().apply {
-                isRegistrationRequired = false
-                instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
-            }
-        ).register(input)
+        worldConfigurationBuilder.build()
+            .register(
+                Kryo().apply {
+                    isRegistrationRequired = false
+                    instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
+                }
+            )
+            .register(input)
+            .register(EntityBuffer())
     ).apply {
         renderManager.renderSystems.forEach { it.artemisWorld = this }
 
@@ -140,8 +154,10 @@ class Engine constructor(val application: KoinApplication) {
                             cullBackFaces = false,
                             isShadowCasting = false,
                             programDescription = ProgramDescription(
-                                vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl").toCodeSource(),
-                                fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl").toCodeSource().enhanced {
+                                vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
+                                    .toCodeSource(),
+                                fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
+                                    .toCodeSource().enhanced {
                                     replace(
                                         "//END",
                                         """
@@ -174,16 +190,9 @@ class Engine constructor(val application: KoinApplication) {
         { Thread(it).apply { name = "UpdateThread${updateThreadCounter++}" } }
     private val updateScopeDispatcher = Executors.newFixedThreadPool(8, updateThreadNamer).asCoroutineDispatcher()
 
-    var scene: Scene
-        get() = sceneManager.scene
-        set(value) {
-            sceneManager.scene = value
-        }
-
     val updateCycle = AtomicLong()
 
     init {
-        sceneManager.scene = SceneDescription("InitialScene").convert(config = koin.get(), textureManager = koin.get())
         launchEndlessLoop { deltaSeconds ->
             try {
                 executeCommands()
@@ -212,9 +221,11 @@ class Engine constructor(val application: KoinApplication) {
         currentWriteState.cycle = updateCycle.get()
         currentWriteState.time = System.currentTimeMillis()
 
-        koin.getAll<RenderSystem>().distinct().forEach { it.extract(scene, currentWriteState, world) }
+        koin.getAll<RenderSystem>().distinct().forEach { it.extract(currentWriteState, world) }
 
         componentExtractor.extract(currentWriteState)
+        worldAABB.extract(currentWriteState)
+        materialManager.extract(currentWriteState)
         modelSystem.extract(currentWriteState)
         editorCameraInputSystemNew.extract(currentWriteState)
         cycleSystem.extract(currentWriteState)
@@ -222,18 +233,13 @@ class Engine constructor(val application: KoinApplication) {
         pointLightSystem.extract(currentWriteState)
         areaLightSystem.extract(currentWriteState)
 
-        renderManager.finishCycle(sceneManager.scene, deltaSeconds)
+        renderManager.finishCycle(deltaSeconds)
 
         return updateCycle.getAndIncrement()
     }
 
     suspend fun update(deltaSeconds: Float) = try {
-        scene.currentCycle = updateCycle.get()
-
-        sceneManager.update(scene, deltaSeconds)
-
         window.invoke { input.update() }
-
     } catch (e: Exception) {
         e.printStackTrace()
     }

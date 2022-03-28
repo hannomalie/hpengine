@@ -120,7 +120,7 @@ class EditorCameraInputSystem: BaseSystem() {
         val entityId = tagManager.getEntity(primaryCamera)
         val transform = transformComponentMapper[entityId].transform
         val camera = cameraComponentMapper[entityId]
-        renderState.camera.entity.transform.set(transform)
+        renderState.camera.transform.set(transform)
         renderState.camera.init(
             camera.projectionMatrix, camera.near, camera.far, camera.fov, camera.ratio,
             camera.exposure, camera.focalDepth, camera.focalLength, camera.fStop

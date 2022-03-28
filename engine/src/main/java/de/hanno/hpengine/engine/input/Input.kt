@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.input
 
 import com.carrotsearch.hppc.IntArrayList
-import de.hanno.hpengine.engine.event.ClickEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.GpuContext
 
@@ -57,14 +56,7 @@ class Input(private val eventBus: EventBus,
 
     private fun updateKeyboard() {
 
-        if (isMouseClicked(0)) {
-            if (!MOUSE_LEFT_PRESSED_LAST_FRAME) {
-                eventBus.post(ClickEvent())
-            }
-            MOUSE_LEFT_PRESSED_LAST_FRAME = true
-        } else {
-            MOUSE_LEFT_PRESSED_LAST_FRAME = false
-        }
+        MOUSE_LEFT_PRESSED_LAST_FRAME = isMouseClicked(0)
         run {
             if (pickingClick == 0 && isKeyDown(gpuContext, GLFW_KEY_LEFT_CONTROL)) {
                 if (isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {

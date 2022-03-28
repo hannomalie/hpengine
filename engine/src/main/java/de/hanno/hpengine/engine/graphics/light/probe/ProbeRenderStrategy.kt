@@ -280,7 +280,7 @@ class EvaluateProbeRenderExtension(
         val camTranslation = Vector3f()
         evaluateProbeProgram.setUniform(
             "eyePosition",
-            renderState.camera.entity.transform.getTranslation(camTranslation)
+            renderState.camera.transform.getTranslation(camTranslation)
         )
         evaluateProbeProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         evaluateProbeProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)

@@ -1,27 +1,29 @@
 package de.hanno.hpengine.engine.model.material
 
 import MaterialStruktImpl.Companion.type
-import de.hanno.hpengine.engine.component.ModelComponent
+import com.artemis.BaseEntitySystem
+import com.artemis.ComponentMapper
+import com.artemis.annotations.All
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.manager.Manager
 import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
-import org.koin.core.component.get
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import java.nio.ByteBuffer
+import de.hanno.hpengine.engine.component.artemis.ModelComponent as NewModelComponent
 
+@All(NewModelComponent::class)
 class MaterialManager(
     val config: Config,
     val textureManager: TextureManager,
     val singleThreadContext: AddResourceContext
-) : Manager {
+) : BaseEntitySystem() {
+
+    lateinit var modelComponentComponentMapper: ComponentMapper<NewModelComponent>
 
     val materials: MutableList<Material> = mutableListOf()
 
@@ -73,14 +75,11 @@ class MaterialManager(
         registerMaterial(this)
     }
 
-    override fun beforeSetScene(nextScene: Scene) {
-        clear()
-//        TODO: Reimplement or remove carefully
-//        registerMaterials(nextScene.get<ModelComponentSystem>().components.flatMap { it.materials })
-    }
-
-    override fun onEntityAdded(entities: List<Entity>) {
-        registerMaterials(entities.mapNotNull { it.getComponent(ModelComponent::class.java) }.flatMap { it.materials }.distinct())
+    override fun inserted(entityId: Int) {
+        val modelComponent = modelComponentComponentMapper[entityId]
+        modelComponent.modelComponentDescription.material?.let {
+            registerMaterial(it)
+        }
     }
     fun registerMaterial(material: Material) = singleThreadContext.launch {
 //        This happens often, I have to reconsider that somehow
@@ -100,7 +99,7 @@ class MaterialManager(
         }
     }
 
-    override fun extract(scene: Scene, renderState: RenderState) {
+    fun extract(renderState: RenderState) {
 //        TODO: Remove most of this
         renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
@@ -150,6 +149,8 @@ class MaterialManager(
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, config.engineDir))
         }
     }
+
+    override fun processSystem() { }
 }
 
 val TypedBuffer<MaterialStrukt>.size: Int

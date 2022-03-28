@@ -9,16 +9,13 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.lifecycle.Updatable
-import de.hanno.hpengine.engine.scene.Scene
 
 interface DeferredRenderExtension<TYPE : BackendType>: Updatable {
     fun renderFirstPass(backend: Backend<TYPE>, gpuContext: GpuContext<TYPE>, firstPassResult: FirstPassResult, renderState: RenderState) {}
     fun renderSecondPassFullScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     fun renderSecondPassHalfScreen(renderState: RenderState, secondPassResult: SecondPassResult) {}
     fun renderEditor(renderState: RenderState, result: DrawResult) {}
-    fun extract(scene: Scene, renderState: RenderState, world: World) {}
-    fun beforeSetScene(nextScene: Scene) {}
-    fun afterSetScene(nextScene: Scene) {}
+    fun extract(renderState: RenderState, world: World) {}
 }
 
 open class CompoundExtension<TYPE : BackendType>(val extensions: List<DeferredRenderExtension<TYPE>>): DeferredRenderExtension<TYPE> {
@@ -34,12 +31,12 @@ open class CompoundExtension<TYPE : BackendType>(val extensions: List<DeferredRe
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
         extensions.forEach { it.renderEditor(renderState, result) }
     }
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
-        extensions.forEach { it.extract(scene, renderState, world) }
+    override fun extract(renderState: RenderState, world: World) {
+        extensions.forEach { it.extract(renderState, world) }
     }
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        extensions.forEach { it.update(scene, deltaSeconds) }
+    override fun update(deltaSeconds: Float) {
+        extensions.forEach { it.update(deltaSeconds) }
     }
     companion object {
         operator fun <TYPE : BackendType> invoke(vararg extension: DeferredRenderExtension<TYPE>) = CompoundExtension(extension.toList())

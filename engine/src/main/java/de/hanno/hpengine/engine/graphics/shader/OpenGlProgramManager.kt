@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.shader
 
+import com.artemis.BaseSystem
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -57,7 +58,7 @@ open class Uniforms {
 
 class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                            private val eventBus: EventBus,
-                           val config: Config) : ProgramManager<OpenGl> {
+                           val config: Config) : BaseSystem(), ProgramManager<OpenGl> {
 
     override fun List<UniformDelegate<*>>.toUniformDeclaration() = joinToString("\n") {
         when (it) {
@@ -185,6 +186,8 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                 ShaderDefine.getGlobalDefinesString(config) +
                 Shader.replaceIncludes(config.directories.engineDir, source, 0).left
     }
+
+    override fun processSystem() { }
 }
 
 private fun ProgramManager<*>.getFirstPassHeightMappingProgram(): Program<FirstPassUniforms> = getProgram(

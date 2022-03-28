@@ -28,7 +28,7 @@ class OpenGlBackend(override val eventBus: EventBus,
             val eventBus = MBassadorEventBus()
             val gpuContext = OpenGLContext.invoke(window)
             val programManager = OpenGlProgramManager(gpuContext, eventBus, config)
-            val textureManager = TextureManager(config, programManager, gpuContext, singleThreadContext)
+            val textureManager = TextureManager(config, programManager, gpuContext)
             val input = Input(eventBus, gpuContext)
 
             return OpenGlBackend(eventBus, gpuContext, programManager, textureManager, input, singleThreadContext)

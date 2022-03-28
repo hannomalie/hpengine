@@ -2,18 +2,15 @@ package de.hanno.hpengine.engine.model
 
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.lifecycle.Updatable
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.AABBData
 import de.hanno.hpengine.engine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.StaticTransformSpatial
-import kotlinx.coroutines.CoroutineScope
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 import java.util.ArrayList
 import kotlin.math.max
-import kotlin.math.pow
 
 
 class Cluster : ArrayList<Instance>(), Updatable {
@@ -24,13 +21,11 @@ class Cluster : ArrayList<Instance>(), Updatable {
     var updatedInCycle = -1L
         internal set
 
-    override suspend fun update(scene: Scene, deltaSeconds: Float) {
-        for (i in 0 until this@Cluster.size) {
-            this@Cluster.get(i).run {
-                update(scene, deltaSeconds)
-            }
+    override fun update(deltaSeconds: Float) {
+        for (i in 0 until size) {
+            this[i].update(deltaSeconds)
         }
-        this@Cluster.recalculate(scene.currentCycle)
+        recalculate()
     }
 
     override fun add(element: Instance): Boolean {
@@ -57,11 +52,10 @@ class Cluster : ArrayList<Instance>(), Updatable {
         boundingVolume.localAABB = getSurroundingAABB()
     }
 
-    private fun recalculate(currentCycle: Long) {
+    private fun recalculate() {
         if(allStaticInstances) return
 
         boundingVolume.localAABB = getSurroundingAABB()
-        updatedInCycle = currentCycle
     }
 
     fun instanceCountToDraw(camera: Camera): Int {

@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.component.artemis.CameraComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.RenderStateManager
-import de.hanno.hpengine.engine.graphics.renderer.addLine
 import de.hanno.hpengine.engine.graphics.renderer.drawLines
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -17,10 +16,8 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStru
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.scene.HpVector4f
-import de.hanno.hpengine.engine.scene.Scene
 import org.joml.Vector3f
 import org.joml.Vector3fc
-import org.koin.core.component.get
 
 class CameraRenderExtension(
     val config: Config,
@@ -43,7 +40,7 @@ class CameraRenderExtension(
         }
     }
 
-    override fun extract(scene: Scene, renderState: RenderState, world: World) {
+    override fun extract(renderState: RenderState, world: World) {
         if (config.debug.isDrawCameras) {
             renderState[frustumLines].apply {
                 clear()

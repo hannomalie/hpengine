@@ -1,10 +1,6 @@
 package de.hanno.hpengine.engine.scene.dsl
 
-import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.entity.Entity
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.transform.AABBData
 import org.joml.Matrix4f
 
@@ -43,14 +39,5 @@ data class AnimatedModelComponentDescription(
 ): ModelComponentDescription()
 enum class Directory { Game, Engine }
 
-data class CustomComponentDescription(val update: suspend (Scene, Entity, Float) -> Unit): ComponentDescription
+data class CustomComponentDescription(val update: (Float) -> Unit): ComponentDescription
 class OceanWaterDescription: ComponentDescription
-
-fun SceneDescription.convert(config: Config, textureManager: TextureManager) = Scene(name).apply {
-
-    addAll(entities.map {
-        Entity(it.name).apply {
-            this.contributesToGi = it.contributesToGi
-        }
-    })
-}
