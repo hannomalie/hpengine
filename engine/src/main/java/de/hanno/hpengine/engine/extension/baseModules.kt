@@ -81,7 +81,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, finalOutput, get(), get())
+        ImGuiEditor(get(), gpuContext, finalOutput, get(), get(), get(), getAll())
     }
 }
 val textureRendererModule = module {
@@ -254,13 +254,15 @@ class SkyBoxSystem: BaseEntitySystem() {
 
         val primaryCameraEntityId = tagManager.getEntityId(primaryCamera)
 
-        subscription.entities.data.firstOrNull()?.let { skyBoxEntityId ->
-            val transform = transformComponentMapper[skyBoxEntityId].transform
-            val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
+        if(subscription.entities.size() > 0) {
+            subscription.entities.data.first().let { skyBoxEntityId ->
+                val transform = transformComponentMapper[skyBoxEntityId].transform
+                val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
 
-            val eyePosition = primaryCameraTransform.position
-            transform.identity().translate(eyePosition)
-            transform.scale(1000f)
+                val eyePosition = primaryCameraTransform.position
+                transform.identity().translate(eyePosition)
+                transform.scale(1000f)
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine
 
+import com.artemis.Aspect
 import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfigurationBuilder
@@ -45,6 +46,7 @@ import net.mostlyoriginal.api.SingletonPlugin
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.File
@@ -53,10 +55,10 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
 
-class Engine constructor(val application: KoinApplication) {
+class Engine(val application: KoinApplication) {
 
     private val koin = application.koin
-    private val config = koin.get<Config>()
+    private val config = koin.get<ConfigImpl>()
     private val addResourceContext = koin.get<AddResourceContext>()
     private val window = koin.get<Window<*>>()
     private val input = koin.get<Input>()
@@ -126,63 +128,7 @@ class Engine constructor(val application: KoinApplication) {
 
         process()
 
-        edit(create()).apply {
-            create(TransformComponent::class.java)
-            create(ModelComponent::class.java).apply {
-                modelComponentDescription = StaticModelComponentDescription("assets/models/cube.obj", Directory.Engine)
-            }
-            create(SpatialComponent::class.java)
-            create(NameComponent::class.java).apply {
-                name = "Cube"
-            }
-        }
-
-        edit(create()).apply {
-            create(NameComponent::class.java).apply {
-                name = "SkyBox"
-            }
-            create(TransformComponent::class.java)
-            create(SkyBoxComponent::class.java)
-            create(ModelComponent::class.java).apply {
-                modelComponentDescription = StaticModelComponentDescription(
-                    "assets/models/skybox.obj",
-                    Directory.Engine,
-                    material = SimpleMaterial(
-                        name = "Skybox",
-                        materialInfo = MaterialInfo(
-                            materialType = SimpleMaterial.MaterialType.UNLIT,
-                            cullBackFaces = false,
-                            isShadowCasting = false,
-                            programDescription = ProgramDescription(
-                                vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
-                                    .toCodeSource(),
-                                fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
-                                    .toCodeSource().enhanced {
-                                    replace(
-                                        "//END",
-                                        """
-                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
-                        """.trimIndent()
-                                    )
-                                }
-                            )
-                        )
-                    ).apply {
-                        materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, koin.get<TextureManager>().cubeMap)
-                    }
-                )
-            }
-
-        }
-
-        edit(create()).apply {
-            create(TransformComponent::class.java)
-            getSystem(TagManager::class.java).register(primaryCamera, entityId)
-            create(NameComponent::class.java).apply {
-                name = "PrimaryCamera"
-            }
-            create(CameraComponent::class.java)
-        }
+        loadDemoScene(config)
     }
 
     private var updateThreadCounter = 0
@@ -258,7 +204,7 @@ class Engine constructor(val application: KoinApplication) {
             )
 
             val configModule = module {
-                single<Config> { config }
+                single { config } binds arrayOf(Config::class, ConfigImpl::class)
             }
             val windowModule = module {
                 single { GlfwWindow(get()) } bind Window::class
@@ -296,7 +242,6 @@ class Engine constructor(val application: KoinApplication) {
     }
 }
 
-
 fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = GlobalScope.launch {
     var currentTimeNs = System.nanoTime()
     val dtS = 1 / 60.0
@@ -310,5 +255,79 @@ fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = Gl
         val deltaSeconds = deltaTime.toFloat()
 
         actualUpdateStep(deltaSeconds)
+    }
+}
+
+fun World.clear() {
+    val entities = aspectSubscriptionManager[Aspect.all()]
+        .entities
+
+    val ids = entities.data
+    var i = 0
+    val s = entities.size()
+    while (s > i) {
+        delete(ids[i])
+        i++
+    }
+}
+fun World.loadDemoScene(config: ConfigImpl) {
+    clear()
+
+    edit(create()).apply {
+        create(TransformComponent::class.java)
+        create(ModelComponent::class.java).apply {
+            modelComponentDescription = StaticModelComponentDescription("assets/models/cube.obj", Directory.Engine)
+        }
+        create(SpatialComponent::class.java)
+        create(NameComponent::class.java).apply {
+            name = "Cube"
+        }
+    }
+
+    edit(create()).apply {
+        create(NameComponent::class.java).apply {
+            name = "SkyBox"
+        }
+        create(TransformComponent::class.java)
+        create(SkyBoxComponent::class.java)
+        create(ModelComponent::class.java).apply {
+            modelComponentDescription = StaticModelComponentDescription(
+                "assets/models/skybox.obj",
+                Directory.Engine,
+                material = SimpleMaterial(
+                    name = "Skybox",
+                    materialInfo = MaterialInfo(
+                        materialType = SimpleMaterial.MaterialType.UNLIT,
+                        cullBackFaces = false,
+                        isShadowCasting = false,
+                        programDescription = ProgramDescription(
+                            vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
+                                .toCodeSource(),
+                            fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
+                                .toCodeSource().enhanced {
+                                    replace(
+                                        "//END",
+                                        """
+                                out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
+                            """.trimIndent()
+                                    )
+                                }
+                        )
+                    )
+                ).apply {
+                    materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
+                }
+            )
+        }
+
+    }
+
+    edit(create()).apply {
+        create(TransformComponent::class.java)
+        getSystem(TagManager::class.java).register(primaryCamera, entityId)
+        create(NameComponent::class.java).apply {
+            name = "PrimaryCamera"
+        }
+        create(CameraComponent::class.java)
     }
 }

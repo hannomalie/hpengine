@@ -4,11 +4,8 @@ import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.sizeInBytes
 import Matrix4fStruktImpl.Companion.type
 import VertexStruktPackedImpl.Companion.sizeInBytes
-import com.artemis.BaseEntitySystem
-import com.artemis.Component
-import com.artemis.ComponentMapper
+import com.artemis.*
 import com.artemis.annotations.All
-import com.artemis.hackedOutComponents
 import com.artemis.utils.IntBag
 import de.hanno.hpengine.engine.BufferableMatrix4f
 import de.hanno.hpengine.engine.backend.OpenGl
@@ -93,7 +90,7 @@ class ModelSystem(
     }
 
     override fun inserted(entities: IntBag) {
-        forEachEntity { entityId ->
+        entities.forEach { entityId ->
             loadModelToCache(entityId)
         }
 
@@ -275,30 +272,31 @@ class ModelSystem(
 
     fun allocateVertexIndexBufferSpace() {
         val allocations = modelComponentMapper.hackedOutComponents.associateWith { c ->
-            val model = modelCache[c.modelComponentDescription]!!
-            if (model.isStatic) {
-                val vertexIndexBuffer = vertexIndexBufferStatic
-                val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(
-                    vertexIndexBuffer,
-                    vertexIndexOffsets
-                )
-                Allocation.Static(vertexIndexOffsetsForMeshes)
-            } else {
-                val vertexIndexBuffer = vertexIndexBufferAnimated
-                val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
-                val vertexIndexOffsetsForMeshes = c.putToBuffer(
-                    vertexIndexBuffer,
-                    vertexIndexOffsets
-                )
+            modelCache[c.modelComponentDescription]?.let { model ->
+                if (model.isStatic) {
+                    val vertexIndexBuffer = vertexIndexBufferStatic
+                    val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
+                    val vertexIndexOffsetsForMeshes = c.putToBuffer(
+                        vertexIndexBuffer,
+                        vertexIndexOffsets
+                    )
+                    Allocation.Static(vertexIndexOffsetsForMeshes)
+                } else {
+                    val vertexIndexBuffer = vertexIndexBufferAnimated
+                    val vertexIndexOffsets = vertexIndexBuffer.allocateForComponent(c)
+                    val vertexIndexOffsetsForMeshes = c.putToBuffer(
+                        vertexIndexBuffer,
+                        vertexIndexOffsets
+                    )
 
-                val elements = (model as AnimatedModel).animation.frames
-                    .flatMap { frame -> frame.jointMatrices.toList() }
-                val jointsOffset = joints.size
-                joints.addAll(elements)
-                Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
+                    val elements = (model as AnimatedModel).animation.frames
+                        .flatMap { frame -> frame.jointMatrices.toList() }
+                    val jointsOffset = joints.size
+                    joints.addAll(elements)
+                    Allocation.Animated(vertexIndexOffsetsForMeshes, jointsOffset)
+                }
             }
-        }.mapKeys { it.key.modelComponentDescription }
+        }.mapKeys { it.key.modelComponentDescription }.filter { it.value != null } as Map<ModelComponentDescription, Allocation>
 
         this.allocations.putAll(allocations)
     }
@@ -483,11 +481,14 @@ fun <T> BaseEntitySystem.mapEntity(block: (Int) -> T): MutableList<T> {
     return result
 }
 
-fun <T> BaseEntitySystem.forEachEntity(block: (Int) -> T) {
-    val actives: IntBag = subscription.entities
-    val ids = actives.data
+inline fun <T> BaseEntitySystem.forEachEntity(block: (Int) -> T) {
+    subscription.entities.forEach(block)
+}
+
+inline fun <T> IntBag.forEach(block: (Int) -> T) {
+    val ids = data
     var i = 0
-    val s = actives.size()
+    val s = size()
     while (s > i) {
         block(ids[i])
         i++

@@ -5,28 +5,29 @@ import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.clear
 import de.hanno.hpengine.engine.component.artemis.InvisibleComponentSystem
 import de.hanno.hpengine.engine.component.artemis.ModelComponent
 import de.hanno.hpengine.engine.component.artemis.NameComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.loadDemoScene
 import de.hanno.hpengine.engine.model.texture.Texture
 import imgui.ImGui
-import imgui.flag.ImGuiConfigFlags
-import imgui.flag.ImGuiDir
-import imgui.flag.ImGuiStyleVar
-import imgui.flag.ImGuiWindowFlags
-import imgui.flag.ImGuiWindowFlags.NoCollapse
-import imgui.flag.ImGuiWindowFlags.NoResize
+import imgui.flag.*
+import imgui.flag.ImGuiWindowFlags.*
 import imgui.gl3.ImGuiImplGl3
 import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
@@ -37,8 +38,10 @@ class ImGuiEditor(
     private val window: GlfwWindow,
     private val gpuContext: GpuContext<OpenGl>,
     private val finalOutput: FinalOutput,
-    private val config: Config,
+    private val config: ConfigImpl,
     private val sharedDepthBuffer: SharedDepthBuffer,
+    private val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
+    private val renderExtensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
@@ -188,11 +191,10 @@ class ImGuiEditor(
                 menuBar {
                     menu("File") {
                         menuItem("New Scene") {
-//                            TODO: Implement like this?
-//                            artemisWorld.delteAll()
+                            artemisWorld.clear()
                         }
                         menuItem("Load Demo") {
-//                            TODO: Reimplement a demo scene
+                            artemisWorld.loadDemoScene(config)
                         }
                     }
                 }
@@ -239,41 +241,66 @@ class ImGuiEditor(
         ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
         ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
-            when(val selectionNew = selectionNew) {
-                is MeshSelectionNew -> { }
-                is ModelComponentSelectionNew -> { }
-                is ModelSelectionNew -> { }
-                is NameSelectionNew -> window(selectionNew.entity.toString(), NoCollapse or NoResize) {
-                    text("Name: ${selectionNew.name}")
-                }
-                is SimpleEntitySelectionNew -> window(selectionNew.entity.toString(), NoCollapse or NoResize) {
-                    val system = artemisWorld.getSystem(InvisibleComponentSystem::class.java)
-                    checkBox("Visible", !system.invisibleComponentMapper.has(selectionNew.entity)) { visible ->
-                        system.invisibleComponentMapper.set(selectionNew.entity, !visible)
-                    }
-                    selectionNew.components.firstIsInstanceOrNull<TransformComponent>()?.run {
-                        val position = transform.position
-                        text("x: ${position.x} y: ${position.y} z: ${position.z}")
-                    }
-                }
-                is GiVolumeSelectionNew -> { }
-                is MaterialSelectionNew -> { }
-                SelectionNew.None -> { }
-                is OceanWaterSelectionNew -> { }
-                is ReflectionProbeSelectionNew -> { }
-                null -> window("Select output", NoCollapse or NoResize) {
-                    var counter = 0
+            window("Right panel", NoCollapse or NoResize or NoTitleBar) {
+                tabBar("Foo") {
 
-                    ImGui.radioButton("Default", output, -1)
-                    gpuContext.registeredRenderTargets.forEach { target ->
-                        target.renderedTextures.forEachIndexed { textureIndex, texture ->
-                            ImGui.radioButton(target.name + "[$textureIndex]", output, counter)
-                            counter++
+                    when(val selectionNew = selectionNew) {
+                        is MeshSelectionNew -> { tab("Entity") { } }
+                        is ModelComponentSelectionNew -> { tab("Entity") { } }
+                        is ModelSelectionNew -> { tab("Entity") { } }
+                        is NameSelectionNew -> { tab("Entity") { } }
+                        is SimpleEntitySelectionNew -> tab("Entity") {
+                            val system = artemisWorld.getSystem(InvisibleComponentSystem::class.java)
+                            selectionNew.components.firstIsInstanceOrNull<NameComponent>()?.run {
+                                text("Name: $name")
+                            }
+                            checkBox("Visible", !system.invisibleComponentMapper.has(selectionNew.entity)) { visible ->
+                                system.invisibleComponentMapper.set(selectionNew.entity, !visible)
+                            }
+                            selectionNew.components.firstIsInstanceOrNull<TransformComponent>()?.run {
+                                val position = transform.position
+                                val positionArray = floatArrayOf(position.x, position.y, position.z)
+                                ImGui.inputFloat3("Position", positionArray, "%.3f", ImGuiInputTextFlags.ReadOnly)
+                            }
+                        }
+                        is GiVolumeSelectionNew -> { tab("Entity") { } }
+                        is MaterialSelectionNew -> { tab("Entity") { } }
+                        SelectionNew.None -> { tab("Entity") { } }
+                        is OceanWaterSelectionNew -> { tab("Entity") { } }
+                        is ReflectionProbeSelectionNew -> { tab("Entity") { } }
+                        null -> { tab("Entity") { } }
+                    }!!
+
+                    tab("Output") {
+                        var counter = 0
+                        text("Select output")
+                        ImGui.radioButton("Default", output, -1)
+                        gpuContext.registeredRenderTargets.forEach { target ->
+                            target.renderedTextures.forEachIndexed { textureIndex, texture ->
+                                ImGui.radioButton(target.name + "[$textureIndex]", output, counter)
+                                counter++
+                            }
                         }
                     }
-                    text("Output: " + output.get())
+                    tab("RenderExtensions") {
+                        deferredRenderExtensionConfig.run {
+                            renderExtensions.forEach {
+                                if(ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
+                                    it.enabled = !it.enabled
+                                }
+                            }
+                        }
+                    }
+                    tab("Config") {
+                        if(ImGui.checkbox("Draw lines", config.debug.isDrawLines)) {
+                            config.debug.isDrawLines = !config.debug.isDrawLines
+                        }
+                        if(ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
+                            config.debug.isEditorOverlay = !config.debug.isEditorOverlay
+                        }
+                    }
                 }
-            }!!
+            }
         }
     }
 }

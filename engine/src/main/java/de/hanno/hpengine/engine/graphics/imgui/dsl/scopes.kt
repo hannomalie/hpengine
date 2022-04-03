@@ -33,6 +33,12 @@ object Window {
             }
         }
     }
+    fun tabBar(label: String, content: TabBar.() -> Unit = { }) {
+        if(imgui.ImGui.beginTabBar(label)) {
+            TabBar.content()
+            imgui.ImGui.endTabBar()
+        }
+    }
 
     inline fun treeNode(label: String, block: TreeNode.() -> Unit) = treeNodeImpl(label, block)
 }
@@ -68,6 +74,14 @@ object Menu {
     inline fun menuItem(label: String, onClick: () -> Unit) {
         if(IG.menuItem(label)) {
             onClick()
+        }
+    }
+}
+object TabBar {
+    inline fun tab(label: String, content: () -> Unit) {
+        if(imgui.ImGui.beginTabItem(label)) {
+            content()
+            imgui.ImGui.endTabItem()
         }
     }
 }
