@@ -82,7 +82,7 @@ fun showGizmo(
     windowPositionY: Float,
     panelPositionX: Float,
     panelPositionY: Float,
-    transform: Transform?,
+    transform: Transform,
 ) {
     viewMatrixAsBuffer.get(INPUT_CAMERA_VIEW)
 //    Util.createPerspective(fovY, windowWidth / windowHeight, near, far).get(INPUT_CAMERA_PROJECTION)
@@ -112,20 +112,18 @@ fun showGizmo(
         ImGui.text("Not using gizmo")
     }
 
-    transform?.let {
-        editTransform(
-            windowWidth,
-            windowHeight,
-            windowPositionX,
-            windowPositionY,
-            panelWidth,
-            panelHeight,
-            panelPositionX,
-            panelPositionY,
-            it,
-            viewMatrix,
-        )
-    }
+    editTransform(
+        windowWidth,
+        windowHeight,
+        windowPositionX,
+        windowPositionY,
+        panelWidth,
+        panelHeight,
+        panelPositionX,
+        panelPositionY,
+        transform,
+        viewMatrix,
+    )
 }
 
 fun editTransform(

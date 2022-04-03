@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.component.artemis.InvisibleComponentSystem
 import de.hanno.hpengine.engine.component.artemis.ModelComponent
 import de.hanno.hpengine.engine.component.artemis.NameComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
-import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.FinalOutput
@@ -52,9 +51,9 @@ class ImGuiEditor(
         height = finalOutput.texture2D.dimension.height,
         textures = listOf(finalOutput.texture2D)
     )
-    private var selectionNew: SelectionNew? = null
-    private fun selectOrUnselectNew(newSelection: SelectionNew) {
-        selectionNew = if(selectionNew == newSelection) null else newSelection
+    private var selection: Selection? = null
+    private fun selectOrUnselect(newSelection: Selection) {
+        selection = if (selection == newSelection) null else newSelection
     }
 
     val output = ImInt(-1)
@@ -85,7 +84,7 @@ class ImGuiEditor(
     }
 
     override fun renderEditor(result: DrawResult, renderState: RenderState) {
-        if(!config.debug.isEditorOverlay)  return
+        if (!config.debug.isEditorOverlay) return
 
         renderTarget.use(gpuContext, false)
         imGuiImplGlfw.newFrame()
@@ -106,7 +105,7 @@ class ImGuiEditor(
 
             ImGui.newFrame()
 
-            (selectionNew as? EntitySelectionNew)?.let { entitySelection ->
+            (selection as? EntitySelection)?.let { entitySelection ->
                 artemisWorld.getEntity(entitySelection.entity).getComponent(TransformComponent::class.java)?.let {
                     showGizmo(
                         viewMatrixAsBuffer = renderState.camera.viewMatrixAsBuffer,
@@ -124,21 +123,22 @@ class ImGuiEditor(
                         panelPositionX = leftPanelWidth,
                         panelPositionY = leftPanelYOffset,
                         transform = it.transform,
-                        viewMatrix = artemisWorld.getSystem(TagManager::class.java).getEntity(primaryCamera).getComponent(TransformComponent::class.java).transform
+                        viewMatrix = artemisWorld.getSystem(TagManager::class.java).getEntity(primaryCamera)
+                            .getComponent(TransformComponent::class.java).transform
                     )
                 }
             }
 
             if (output.get() != -1) {
                 val windowFlags =
-                    ImGuiWindowFlags.NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
-                            ImGuiWindowFlags.NoNavFocus or  // so turn off everything that would make it act like a window
-                            ImGuiWindowFlags.NoDocking or
-                            ImGuiWindowFlags.NoTitleBar or
+                    NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
+                            NoNavFocus or  // so turn off everything that would make it act like a window
+                            NoDocking or
+                            NoTitleBar or
                             NoResize or
-                            ImGuiWindowFlags.NoMove or
+                            NoMove or
                             NoCollapse or
-                            ImGuiWindowFlags.NoBackground
+                            NoBackground
                 de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
                     ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
                     window("Main", windowFlags) {
@@ -160,7 +160,7 @@ class ImGuiEditor(
         } finally {
             ImGui.render()
             imGuiImplGl3.renderDrawData(ImGui.getDrawData())
-            if(ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+            if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
                 val backupWindowHandle = GLFW.glfwGetCurrentContext()
                 ImGui.updatePlatformWindows()
                 ImGui.renderPlatformWindowsDefault()
@@ -174,15 +174,15 @@ class ImGuiEditor(
         ImGui.setNextWindowPos(0f, 0f)
         ImGui.setNextWindowSize(screenWidth, screenHeight)
         val windowFlags =
-            ImGuiWindowFlags.NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
-                    ImGuiWindowFlags.NoNavFocus or  // so turn off everything that would make it act like a window
-                    ImGuiWindowFlags.NoDocking or
-                    ImGuiWindowFlags.NoTitleBar or
+            NoBringToFrontOnFocus or  // we just want to use this window as a host for the menubar and docking
+                    NoNavFocus or  // so turn off everything that would make it act like a window
+                    NoDocking or
+                    NoTitleBar or
                     NoResize or
-                    ImGuiWindowFlags.NoMove or
+                    NoMove or
                     NoCollapse or
-                    ImGuiWindowFlags.MenuBar or
-                    ImGuiWindowFlags.NoBackground
+                    MenuBar or
+                    NoBackground
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
             ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0f, 0f)
             window("Main", windowFlags) {
@@ -202,7 +202,12 @@ class ImGuiEditor(
         }
     }
 
-    private fun leftPanel(renderState: RenderState, leftPanelYOffset: Float, leftPanelWidth: Float, screenHeight: Float) {
+    private fun leftPanel(
+        renderState: RenderState,
+        leftPanelYOffset: Float,
+        leftPanelWidth: Float,
+        screenHeight: Float
+    ) {
         ImGui.setNextWindowPos(0f, leftPanelYOffset)
         ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
@@ -210,18 +215,25 @@ class ImGuiEditor(
                 val componentsForEntity: Map<Int, Bag<Component>> = renderState.componentsForEntities
                 componentsForEntity.forEach { (entityIndex, components) ->
                     treeNode(
-                        components.firstIsInstanceOrNull<NameComponent>()?.name ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityIndex) ?: "Entity $entityIndex")
+                        components.firstIsInstanceOrNull<NameComponent>()?.name
+                            ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityIndex)
+                                ?: "Entity $entityIndex")
                     ) {
                         text("Entity") {
-                            selectOrUnselectNew(SimpleEntitySelectionNew(entityIndex, components.data.filterNotNull()))
+                            selectOrUnselect(SimpleEntitySelection(entityIndex, components.data.filterNotNull()))
                         }
                         components.forEach { component ->
                             text(component.javaClass.simpleName) {
-                                when(component) {
-                                   is ModelComponent -> {
-                                       selectOrUnselectNew(ModelComponentSelectionNew(entityIndex, component))
-                                   }
-                                    is NameComponent -> selectOrUnselectNew(NameSelectionNew(entityIndex, component.name))
+                                when (component) {
+                                    is ModelComponent -> {
+                                        selectOrUnselect(ModelComponentSelection(entityIndex, component))
+                                    }
+                                    is NameComponent -> selectOrUnselect(
+                                        NameSelection(
+                                            entityIndex,
+                                            component.name
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -244,12 +256,20 @@ class ImGuiEditor(
             window("Right panel", NoCollapse or NoResize or NoTitleBar) {
                 tabBar("Foo") {
 
-                    when(val selectionNew = selectionNew) {
-                        is MeshSelectionNew -> { tab("Entity") { } }
-                        is ModelComponentSelectionNew -> { tab("Entity") { } }
-                        is ModelSelectionNew -> { tab("Entity") { } }
-                        is NameSelectionNew -> { tab("Entity") { } }
-                        is SimpleEntitySelectionNew -> tab("Entity") {
+                    when (val selectionNew = selection) {
+                        is MeshSelection -> {
+                            tab("Entity") { }
+                        }
+                        is ModelComponentSelection -> {
+                            tab("Entity") { }
+                        }
+                        is ModelSelection -> {
+                            tab("Entity") { }
+                        }
+                        is NameSelection -> {
+                            tab("Entity") { }
+                        }
+                        is SimpleEntitySelection -> tab("Entity") {
                             val system = artemisWorld.getSystem(InvisibleComponentSystem::class.java)
                             selectionNew.components.firstIsInstanceOrNull<NameComponent>()?.run {
                                 text("Name: $name")
@@ -263,12 +283,24 @@ class ImGuiEditor(
                                 ImGui.inputFloat3("Position", positionArray, "%.3f", ImGuiInputTextFlags.ReadOnly)
                             }
                         }
-                        is GiVolumeSelectionNew -> { tab("Entity") { } }
-                        is MaterialSelectionNew -> { tab("Entity") { } }
-                        SelectionNew.None -> { tab("Entity") { } }
-                        is OceanWaterSelectionNew -> { tab("Entity") { } }
-                        is ReflectionProbeSelectionNew -> { tab("Entity") { } }
-                        null -> { tab("Entity") { } }
+                        is GiVolumeSelection -> {
+                            tab("Entity") { }
+                        }
+                        is MaterialSelection -> {
+                            tab("Entity") { }
+                        }
+                        Selection.None -> {
+                            tab("Entity") { }
+                        }
+                        is OceanWaterSelection -> {
+                            tab("Entity") { }
+                        }
+                        is ReflectionProbeSelection -> {
+                            tab("Entity") { }
+                        }
+                        null -> {
+                            tab("Entity") { }
+                        }
                     }!!
 
                     tab("Output") {
@@ -285,17 +317,17 @@ class ImGuiEditor(
                     tab("RenderExtensions") {
                         deferredRenderExtensionConfig.run {
                             renderExtensions.forEach {
-                                if(ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
+                                if (ImGui.checkbox(it.javaClass.simpleName, it.enabled)) {
                                     it.enabled = !it.enabled
                                 }
                             }
                         }
                     }
                     tab("Config") {
-                        if(ImGui.checkbox("Draw lines", config.debug.isDrawLines)) {
+                        if (ImGui.checkbox("Draw lines", config.debug.isDrawLines)) {
                             config.debug.isDrawLines = !config.debug.isDrawLines
                         }
-                        if(ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
+                        if (ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
                             config.debug.isEditorOverlay = !config.debug.isEditorOverlay
                         }
                     }

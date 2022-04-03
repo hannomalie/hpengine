@@ -11,34 +11,34 @@ import de.hanno.hpengine.engine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.component.artemis.ModelComponent as ModelComponentArtemis
 
-sealed class SelectionNew {
-    object None: SelectionNew()
+sealed class Selection {
+    object None: Selection()
 }
 
-data class MaterialSelectionNew(val material: Material): SelectionNew() {
+data class MaterialSelection(val material: Material): Selection() {
     override fun toString() = material.name
 }
-sealed class EntitySelectionNew(val entity: Int): SelectionNew() {
+sealed class EntitySelection(val entity: Int): Selection() {
     override fun toString(): String = entity.toString()
 }
-data class SimpleEntitySelectionNew(val _entity: Int, val components: List<Component>): EntitySelectionNew(_entity){
+data class SimpleEntitySelection(val _entity: Int, val components: List<Component>): EntitySelection(_entity){
     override fun toString(): String = entity.toString()
 }
-data class NameSelectionNew(private val _entity: Int, val name: String): EntitySelectionNew(_entity) {
+data class NameSelection(private val _entity: Int, val name: String): EntitySelection(_entity) {
     override fun toString(): String = name
 }
-data class MeshSelectionNew(private val _entity: Int, val mesh: Mesh<*>, val modelComponent: ModelComponentArtemis): EntitySelectionNew(_entity) {
+data class MeshSelection(private val _entity: Int, val mesh: Mesh<*>, val modelComponent: ModelComponentArtemis): EntitySelection(_entity) {
     override fun toString(): String = mesh.name
 }
-data class ModelSelectionNew(private val _entity: Int, val modelComponent: ModelComponentArtemis, val model: Model<*>): EntitySelectionNew(_entity) {
+data class ModelSelection(private val _entity: Int, val modelComponent: ModelComponentArtemis, val model: Model<*>): EntitySelection(_entity) {
     override fun toString(): String = model.file.name
 }
-data class ModelComponentSelectionNew(private val _entity: Int, val modelComponent: ModelComponentArtemis): EntitySelectionNew(_entity) {
+data class ModelComponentSelection(private val _entity: Int, val modelComponent: ModelComponentArtemis): EntitySelection(_entity) {
     override fun toString(): String = when(val description = modelComponent.modelComponentDescription) {
         is AnimatedModelComponentDescription -> "[" + description.directory.name + "]" + description.file
         is StaticModelComponentDescription -> "[" + description.directory.name + "]" + description.file
     }
 }
-data class GiVolumeSelectionNew(val giVolumeComponent: GiVolumeComponent): SelectionNew()
-data class OceanWaterSelectionNew(val oceanWater: OceanWaterComponent): SelectionNew()
-data class ReflectionProbeSelectionNew(val reflectionProbe: ReflectionProbe): SelectionNew()
+data class GiVolumeSelection(val giVolumeComponent: GiVolumeComponent): Selection()
+data class OceanWaterSelection(val oceanWater: OceanWaterComponent): Selection()
+data class ReflectionProbeSelection(val reflectionProbe: ReflectionProbe): Selection()
