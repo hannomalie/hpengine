@@ -1,16 +1,13 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.component.ModelComponent.Companion.modelComponent
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.model.material.MaterialInfo
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
-import de.hanno.hpengine.engine.scene.OceanWaterExtension
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.OceanWaterDescription
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.entity
-import de.hanno.hpengine.engine.scene.scene
 import de.hanno.hpengine.engine.transform.AABBData
 import org.joml.Vector3f
 
@@ -26,7 +23,7 @@ val Engine.oceanDemo
                         Vector3f(-60f, -10f, -35f),
                         Vector3f(60f, 130f, 50f)
                     ),
-                    material = SimpleMaterial(
+                    material = Material(
                         "ocean",
                         MaterialInfo().apply {
                             program = application.koin.get<ProgramManager<*>>().heightMappingFirstPassProgram

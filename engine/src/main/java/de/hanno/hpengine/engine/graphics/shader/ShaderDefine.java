@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP;
+import de.hanno.hpengine.engine.model.material.Material.MAP;
 
 import java.util.EnumSet;
 

@@ -9,8 +9,6 @@ import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.animation.Node
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
-import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AnimatedVertex
@@ -194,14 +192,14 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
                 ambient = max(max(ambient.x, ambient.y), ambient.z),
                 diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.DIFFUSE, retrieveTexture(Assimp.aiTextureType_DIFFUSE))
+        materialInfo.putIfNotNull(Material.MAP.DIFFUSE, retrieveTexture(Assimp.aiTextureType_DIFFUSE))
         val normalOrHeightMap = retrieveTexture(Assimp.aiTextureType_NORMALS) ?: retrieveTexture(Assimp.aiTextureType_HEIGHT)
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, normalOrHeightMap)
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
+        materialInfo.putIfNotNull(Material.MAP.NORMAL, normalOrHeightMap)
+        materialInfo.putIfNotNull(Material.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
 
-        return SimpleMaterial(name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) }, materialInfo)
+        return Material(name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) }, materialInfo)
     }
-    private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
+    private fun MaterialInfo.putIfNotNull(map: Material.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)
     }
     private fun AIMesh.processMesh(materials: List<Material>, bones: MutableList<Bone>): AnimatedMesh {
@@ -216,7 +214,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
         } else {
-            SimpleMaterial(mName().dataString() + "_material", MaterialInfo())
+            Material(mName().dataString() + "_material", MaterialInfo())
         }
         val vertices = positions.indices.map {
             AnimatedVertex(positions[it],

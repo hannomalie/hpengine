@@ -22,10 +22,9 @@ import de.hanno.hpengine.engine.graphics.shader.Uniforms
 import de.hanno.hpengine.engine.graphics.shader.Vec3
 import de.hanno.hpengine.engine.graphics.shader.useAndBind
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.math.Matrix4f
 import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.material.MaterialStrukt
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.scene.AnimatedVertexStruktPacked
 import de.hanno.hpengine.engine.scene.VertexStruktPacked
@@ -100,8 +99,8 @@ fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera:
     }
 }
 
-fun Program<*>.setTextureUniforms(maps: Map<SimpleMaterial.MAP, Texture>) {
-    for (mapEnumEntry in SimpleMaterial.MAP.values()) {
+fun Program<*>.setTextureUniforms(maps: Map<Material.MAP, Texture>) {
+    for (mapEnumEntry in Material.MAP.values()) {
 
         if (maps.contains(mapEnumEntry)) {
             val map = maps[mapEnumEntry]!!

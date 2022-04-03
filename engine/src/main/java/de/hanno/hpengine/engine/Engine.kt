@@ -32,7 +32,7 @@ import de.hanno.hpengine.engine.model.EntityBuffer
 import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.ProgramDescription
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
@@ -294,10 +294,10 @@ fun World.loadDemoScene(config: ConfigImpl) {
             modelComponentDescription = StaticModelComponentDescription(
                 "assets/models/skybox.obj",
                 Directory.Engine,
-                material = SimpleMaterial(
+                material = Material(
                     name = "Skybox",
                     materialInfo = MaterialInfo(
-                        materialType = SimpleMaterial.MaterialType.UNLIT,
+                        materialType = Material.MaterialType.UNLIT,
                         cullBackFaces = false,
                         isShadowCasting = false,
                         programDescription = ProgramDescription(
@@ -315,7 +315,7 @@ fun World.loadDemoScene(config: ConfigImpl) {
                         )
                     )
                 ).apply {
-                    materialInfo.put(SimpleMaterial.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
+                    materialInfo.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
                 }
             )
         }

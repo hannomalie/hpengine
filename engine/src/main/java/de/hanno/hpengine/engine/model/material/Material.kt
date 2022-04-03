@@ -2,30 +2,16 @@ package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.log.ConsoleLogger
-import java.lang.Double.BYTES
-import java.lang.Float
 
-interface Material {
-    val name: String
-    var materialIndex: Int
-    val materialInfo: MaterialInfo
-
-    fun put(map: SimpleMaterial.MAP, texture: Texture) {
-        materialInfo.put(map, texture)
-    }
-    fun remove(map: SimpleMaterial.MAP) {
-        materialInfo.remove(map)
-    }
-}
-
-data class SimpleMaterial(override val name: String,
-                     override var materialInfo: MaterialInfo): Material {
+data class Material(
+    val name: String,
+    var materialInfo: MaterialInfo
+) {
 
     init {
         require(name.isNotEmpty()) { "Name may not empty for material! $materialInfo" }
     }
-    override var materialIndex = -1
+    var materialIndex = -1
 
     enum class MaterialType {
         DEFAULT,
@@ -47,7 +33,7 @@ data class SimpleMaterial(override val name: String,
         ENVIRONMENT("environmentMap", 6),
         ROUGHNESS("roughnessMap", 7);
 
-        val uniformKey: String = "has" + shaderVariableName[0].toUpperCase() + shaderVariableName.substring(1)
+        val uniformKey: String = "has" + shaderVariableName[0].uppercaseChar() + shaderVariableName.substring(1)
     }
 
     enum class ENVIRONMENTMAP_TYPE {
@@ -58,7 +44,7 @@ data class SimpleMaterial(override val name: String,
     override fun toString(): String = name
 
     override fun equals(other: Any?): Boolean {
-        if (other == null || other !is SimpleMaterial) {
+        if (other == null || other !is Material) {
             return false
         }
 
@@ -66,14 +52,17 @@ data class SimpleMaterial(override val name: String,
     }
 
     override fun hashCode(): Int = name.hashCode()
+    fun put(map: MAP, texture: Texture) {
+        materialInfo.put(map, texture)
+    }
+
+    fun remove(map: MAP) {
+        materialInfo.remove(map)
+    }
 
     companion object {
 
-        const val bytesPerObject = 10 * Float.BYTES + 6 * Integer.BYTES + 6 * BYTES + 2 * Integer.BYTES
-
         var MIPMAP_DEFAULT = true
-
-        private val LOGGER = ConsoleLogger.getLogger()
 
         val directory: String
             get() = Directories.ENGINEDIR_NAME + "/assets/materials/"

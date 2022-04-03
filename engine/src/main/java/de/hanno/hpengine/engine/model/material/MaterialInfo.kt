@@ -1,9 +1,9 @@
 package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.*
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.MaterialType.DEFAULT
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.TransparencyType.BINARY
+import de.hanno.hpengine.engine.model.material.Material.*
+import de.hanno.hpengine.engine.model.material.Material.MaterialType.DEFAULT
+import de.hanno.hpengine.engine.model.material.Material.TransparencyType.BINARY
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.util.ressources.CodeSource
 import org.joml.Vector2f

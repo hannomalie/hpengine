@@ -2,7 +2,7 @@ package scenes
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.model.material.MaterialInfo
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
@@ -31,12 +31,12 @@ val Engine.lotsOfCubesScene
                         Vector3f(-60f, -10f, -35f),
                         Vector3f(60f, 130f, 50f)
                     ),
-                    material = SimpleMaterial(
+                    material = Material(
                         "grass",
                         materialInfo = MaterialInfo(
-                            materialType = SimpleMaterial.MaterialType.FOLIAGE,
+                            materialType = Material.MaterialType.FOLIAGE,
                             maps = mutableMapOf(
-                                SimpleMaterial.MAP.DIFFUSE to
+                                Material.MAP.DIFFUSE to
                                         application.koin.get<TextureManager>()
                                             .getTexture("assets/textures/grass.png", true)
                             )

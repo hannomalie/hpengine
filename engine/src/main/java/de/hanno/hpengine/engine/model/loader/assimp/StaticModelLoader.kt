@@ -6,8 +6,6 @@ import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialInfo
-import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.material.SimpleMaterial
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Vertex
@@ -68,7 +66,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         return StaticModel(resourcesDir.resolve(file), meshes)
     }
 
-    private fun AIMaterial.processMaterial(texturesDir: String, resourcesDir: AbstractDirectory, textureManager: TextureManager): SimpleMaterial {
+    private fun AIMaterial.processMaterial(texturesDir: String, resourcesDir: AbstractDirectory, textureManager: TextureManager): Material {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
                 Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
@@ -97,17 +95,17 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
             ambient = max(max(ambient.x, ambient.y), ambient.z),
             diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.DIFFUSE, retrieveTexture(aiTextureType_DIFFUSE))
+        materialInfo.putIfNotNull(Material.MAP.DIFFUSE, retrieveTexture(aiTextureType_DIFFUSE))
         // super odd, but assimp seems to interpret normal maps as type height map O.O
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.NORMAL, retrieveTexture(aiTextureType_NORMALS) ?: retrieveTexture(aiTextureType_HEIGHT))
+        materialInfo.putIfNotNull(Material.MAP.NORMAL, retrieveTexture(aiTextureType_NORMALS) ?: retrieveTexture(aiTextureType_HEIGHT))
 
         // TODO: I can't do ?: retrieveTexture(aiTextureType_HEIGHT) because the height map is most often given, but contains normals....
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.HEIGHT, retrieveTexture(aiTextureType_DISPLACEMENT))
-        materialInfo.putIfNotNull(SimpleMaterial.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
+        materialInfo.putIfNotNull(Material.MAP.HEIGHT, retrieveTexture(aiTextureType_DISPLACEMENT))
+        materialInfo.putIfNotNull(Material.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
 
-        return SimpleMaterial(name.dataString(), materialInfo)
+        return Material(name.dataString(), materialInfo)
     }
-    private fun MaterialInfo.putIfNotNull(map: SimpleMaterial.MAP, texture: Texture?) {
+    private fun MaterialInfo.putIfNotNull(map: Material.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)
     }
     private fun AIMesh.processMesh(materials: List<Material>): StaticMesh {
@@ -119,7 +117,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
         } else {
-            SimpleMaterial(mName().dataString() + "_material", MaterialInfo())
+            Material(mName().dataString() + "_material", MaterialInfo())
         }
         val vertices = positions.indices.map {
             Vertex(positions[it], texCoords[it], normals[it])

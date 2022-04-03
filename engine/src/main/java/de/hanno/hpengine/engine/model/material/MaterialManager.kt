@@ -1,12 +1,13 @@
 package de.hanno.hpengine.engine.model.material
 
+import MaterialStruktImpl.Companion.sizeInBytes
 import MaterialStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.material.SimpleMaterial.MAP
+import de.hanno.hpengine.engine.model.material.Material.MAP
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.struct.copyTo
@@ -71,7 +72,7 @@ class MaterialManager(
 
     fun getMaterial(name: String): Material? = materials.firstOrNull { it.name == name }
 
-    fun registerMaterial(name: String, materialInfo: MaterialInfo): SimpleMaterial = SimpleMaterial(name, materialInfo).apply {
+    fun registerMaterial(name: String, materialInfo: MaterialInfo): Material = Material(name, materialInfo).apply {
         registerMaterial(this)
     }
 
@@ -101,7 +102,7 @@ class MaterialManager(
 
     fun extract(renderState: RenderState) {
 //        TODO: Remove most of this
-        renderState.entitiesState.materialBuffer.ensureCapacityInBytes(SimpleMaterial.bytesPerObject * materials.size)
+        renderState.entitiesState.materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
         renderState.entitiesState.materialBuffer.buffer.rewind()
         materialsBuffer = materialsBuffer.resize(materials.size)
 
@@ -142,8 +143,8 @@ class MaterialManager(
 
 
     companion object {
-        fun createDefaultMaterial(config: Config, textureManager: TextureManager): SimpleMaterial {
-            return SimpleMaterial("default", createDefaultMaterialInfo(config, textureManager))
+        fun createDefaultMaterial(config: Config, textureManager: TextureManager): Material {
+            return Material("default", createDefaultMaterialInfo(config, textureManager))
         }
         fun createDefaultMaterialInfo(config: Config, textureManager: TextureManager) = MaterialInfo(diffuse = Vector3f(1f, 0f, 0f)).apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, config.engineDir))
