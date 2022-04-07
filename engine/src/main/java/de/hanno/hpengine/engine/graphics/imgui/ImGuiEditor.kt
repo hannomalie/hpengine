@@ -6,10 +6,7 @@ import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.clear
-import de.hanno.hpengine.engine.component.artemis.InvisibleComponentSystem
-import de.hanno.hpengine.engine.component.artemis.ModelComponent
-import de.hanno.hpengine.engine.component.artemis.NameComponent
-import de.hanno.hpengine.engine.component.artemis.TransformComponent
+import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.FinalOutput
@@ -23,7 +20,11 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.loadDemoScene
+import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.Texture2D
+import de.hanno.hpengine.engine.model.texture.TextureManager
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
@@ -256,12 +257,56 @@ class ImGuiEditor(
             window("Right panel", NoCollapse or NoResize or NoTitleBar) {
                 tabBar("Foo") {
 
-                    when (val selectionNew = selection) {
+                    when (val selection = selection) {
                         is MeshSelection -> {
                             tab("Entity") { }
                         }
                         is ModelComponentSelection -> {
-                            tab("Entity") { }
+                            tab("Entity") {
+                                artemisWorld.getSystem(ModelSystem::class.java)[selection.modelComponent.modelComponentDescription]?.let {
+                                    val material = it.material
+                                    val materialInfo = material.materialInfo
+
+                                    text(material.name)
+                                    val colors = floatArrayOf(
+                                        materialInfo.diffuse.x,
+                                        materialInfo.diffuse.y,
+                                        materialInfo.diffuse.z
+                                    )
+                                    if(ImGui.colorPicker3("Albedo", colors)) {
+                                        materialInfo.diffuse.x = colors[0]
+                                        materialInfo.diffuse.y = colors[1]
+                                        materialInfo.diffuse.z = colors[2]
+                                    }
+                                    ImGui.text("Textures")
+                                    val all2DTextures = artemisWorld.getSystem(TextureManager::class.java).textures.filterValues { it is FileBasedTexture2D }
+                                    val all2DTexturesNames = all2DTextures.keys.toTypedArray()
+
+                                    Material.MAP.values().forEach { type ->
+                                        materialInfo.maps[type].let { currentTexture ->
+                                            val currentIndex = all2DTextures.values.indexOf(currentTexture)
+
+                                            val previewValue = if(currentTexture != null) all2DTexturesNames[currentIndex] else "None"
+                                            if(ImGui.beginCombo(type.name, previewValue)) {
+                                                if(ImGui.selectable("None", currentTexture == null)) {
+                                                    materialInfo.maps.remove(type)
+                                                }
+                                                all2DTextures.forEach { (name, texture) ->
+                                                    val selected = currentTexture == texture
+                                                    if(ImGui.selectable(name, selected)) {
+                                                        materialInfo.maps[type] = texture
+                                                    }
+                                                    if(selected) {
+                                                        ImGui.setItemDefaultFocus()
+                                                    }
+                                                }
+
+                                                ImGui.endCombo()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         is ModelSelection -> {
                             tab("Entity") { }
@@ -271,13 +316,13 @@ class ImGuiEditor(
                         }
                         is SimpleEntitySelection -> tab("Entity") {
                             val system = artemisWorld.getSystem(InvisibleComponentSystem::class.java)
-                            selectionNew.components.firstIsInstanceOrNull<NameComponent>()?.run {
+                            selection.components.firstIsInstanceOrNull<NameComponent>()?.run {
                                 text("Name: $name")
                             }
-                            checkBox("Visible", !system.invisibleComponentMapper.has(selectionNew.entity)) { visible ->
-                                system.invisibleComponentMapper.set(selectionNew.entity, !visible)
+                            checkBox("Visible", !system.invisibleComponentMapper.has(selection.entity)) { visible ->
+                                system.invisibleComponentMapper.set(selection.entity, !visible)
                             }
-                            selectionNew.components.firstIsInstanceOrNull<TransformComponent>()?.run {
+                            selection.components.firstIsInstanceOrNull<TransformComponent>()?.run {
                                 val position = transform.position
                                 val positionArray = floatArrayOf(position.x, position.y, position.z)
                                 ImGui.inputFloat3("Position", positionArray, "%.3f", ImGuiInputTextFlags.ReadOnly)
@@ -287,7 +332,22 @@ class ImGuiEditor(
                             tab("Entity") { }
                         }
                         is MaterialSelection -> {
-                            tab("Entity") { }
+                            tab("Entity") {
+                                val material = selection.material
+                                val materialInfo = material.materialInfo
+
+                                text(material.name)
+                                val colors = floatArrayOf(
+                                    materialInfo.diffuse.x,
+                                    materialInfo.diffuse.y,
+                                    materialInfo.diffuse.z
+                                )
+                                if(ImGui.colorPicker3("Albedo", colors)) {
+                                    materialInfo.diffuse.x = colors[0]
+                                    materialInfo.diffuse.y = colors[1]
+                                    materialInfo.diffuse.z = colors[2]
+                                }
+                            }
                         }
                         Selection.None -> {
                             tab("Entity") { }
