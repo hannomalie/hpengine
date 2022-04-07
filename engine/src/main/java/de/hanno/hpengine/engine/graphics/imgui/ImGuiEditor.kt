@@ -25,6 +25,7 @@ import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
+import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import imgui.ImGui
 import imgui.flag.*
@@ -44,6 +45,7 @@ class ImGuiEditor(
     private val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     private val renderExtensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem {
+    private val initialOutput = finalOutput.texture2D
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
         gpuContext,
@@ -89,6 +91,15 @@ class ImGuiEditor(
         if (!config.debug.isEditorOverlay) return
 
         renderTarget.use(gpuContext, false)
+        if(output.get() > 0) {
+            (currentOutputTexture as? Texture2D)?.let {
+                renderTarget.setTargetTexture(it.id, 0)
+                finalOutput.texture2D = it
+            }
+        } else {
+            renderTarget.setTargetTexture(initialOutput.id, 0)
+            finalOutput.texture2D = initialOutput
+        }
         imGuiImplGlfw.newFrame()
         ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
         try {
@@ -325,7 +336,11 @@ class ImGuiEditor(
                         ImGui.radioButton("Default", output, -1)
                         gpuContext.registeredRenderTargets.forEach { target ->
                             target.renderedTextures.forEachIndexed { textureIndex, texture ->
-                                ImGui.radioButton(target.name + "[$textureIndex]", output, counter)
+                                if(ImGui.radioButton(target.name + "[$textureIndex]", output, counter)) {
+                                    (currentOutputTexture as? Texture2D)?.let {
+                                        finalOutput.texture2D = it
+                                    }
+                                }
                                 counter++
                             }
                         }

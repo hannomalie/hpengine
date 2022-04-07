@@ -21,7 +21,7 @@ import javax.swing.BorderFactory
 import javax.swing.JCheckBox
 import javax.swing.JPanel
 
-data class FinalOutput(val texture2D: Texture2D)
+data class FinalOutput(var texture2D: Texture2D)
 
 interface ConfigExtension {
     val panel: JPanel
