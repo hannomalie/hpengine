@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode.Lin
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.actuallyDraw
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.state.RenderState
-import de.hanno.hpengine.engine.model.material.MaterialInfo
+import de.hanno.hpengine.engine.model.material.Material
 import org.joml.FrustumIntersection
 
 open class DirectPipeline(
@@ -85,7 +85,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = PrimitiveType.Triangles)
     }
 
-    val batchesWithOwnProgram: Map<MaterialInfo, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
+    val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
 

@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.component.artemis.CameraComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.system.Extractor
 import net.mostlyoriginal.api.Singleton
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -44,7 +45,7 @@ class EditorCameraInputComponent: Component() {
 }
 
 const val primaryCamera = "PRIMARY_CAMERA"
-class EditorCameraInputSystem: BaseSystem() {
+class EditorCameraInputSystem: BaseSystem(), Extractor {
 
     lateinit var editorCameraInputComponent: EditorCameraInputComponent
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
@@ -114,14 +115,14 @@ class EditorCameraInputSystem: BaseSystem() {
             }
         }
     }
-    fun extract(renderState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
         if(!tagManager.isRegistered(primaryCamera)) return
 
         val entityId = tagManager.getEntity(primaryCamera)
         val transform = transformComponentMapper[entityId].transform
         val camera = cameraComponentMapper[entityId]
-        renderState.camera.transform.set(transform)
-        renderState.camera.init(
+        currentWriteState.camera.transform.set(transform)
+        currentWriteState.camera.init(
             camera.projectionMatrix, camera.near, camera.far, camera.fov, camera.ratio,
             camera.exposure, camera.focalDepth, camera.focalLength, camera.fStop
         )

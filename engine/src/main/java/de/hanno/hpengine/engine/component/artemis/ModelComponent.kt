@@ -31,6 +31,7 @@ import de.hanno.hpengine.engine.scene.dsl.AnimatedModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.ModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
+import de.hanno.hpengine.engine.system.Extractor
 import de.hanno.struct.copyTo
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
@@ -54,7 +55,7 @@ class ModelSystem(
     val materialManager: MaterialManager,
     val programManager: ProgramManager<*>,
     val entityBuffer: EntityBuffer,
-) : BaseEntitySystem() {
+) : BaseEntitySystem(), Extractor {
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
@@ -346,7 +347,7 @@ class ModelSystem(
         }
     }
 
-    fun extract(currentWriteState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
         cacheEntityIndices() // TODO: Move this to update step
         currentWriteState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         currentWriteState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
@@ -420,7 +421,7 @@ class ModelSystem(
                             allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].vertexOffset
                     }
                     this.animated = !model.isStatic
-                    materialInfo = mesh.material.materialInfo
+                    materialInfo = mesh.material
                     program = getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programCache[it]!! }
                     entityIndex = index //TODO: check if correct index, it got out of hand
                     entityName = mesh.name // TODO: use entity name component
@@ -443,8 +444,8 @@ class ModelSystem(
         model: Model<*>,
         modelComponent: ModelComponent
     ) = (
-            mesh.material.materialInfo.programDescription ?: (model.material.materialInfo.programDescription
-                ?: modelComponent.modelComponentDescription.material?.materialInfo?.programDescription)
+            mesh.material.programDescription ?: (model.material.programDescription
+                ?: modelComponent.modelComponentDescription.material?.let { it }?.programDescription)
             )
 }
 

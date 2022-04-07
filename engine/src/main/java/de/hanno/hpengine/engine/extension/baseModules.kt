@@ -255,7 +255,7 @@ class SkyBoxSystem: BaseEntitySystem() {
         val primaryCameraEntityId = tagManager.getEntityId(primaryCamera)
 
         if(subscription.entities.size() > 0) {
-            subscription.entities.data.first().let { skyBoxEntityId ->
+            subscription.entities.data.firstOrNull()?.let { skyBoxEntityId ->
                 val transform = transformComponentMapper[skyBoxEntityId].transform
                 val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
 

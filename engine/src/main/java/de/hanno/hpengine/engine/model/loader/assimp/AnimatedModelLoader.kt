@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.model.animation.Animation
 import de.hanno.hpengine.engine.model.Mesh
 import de.hanno.hpengine.engine.model.animation.Node
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AnimatedVertex
@@ -45,7 +44,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
             require(File(this).exists()) { "File doesn't exist: $this" }
         }
         val aiScene = Assimp.aiImportFile(path, flags)
-                ?: throw IllegalStateException("Cannot load model $file")
+            ?: throw IllegalStateException("Cannot load model $file")
         val numMaterials: Int = aiScene.mNumMaterials()
         val aiMaterials: PointerBuffer? = aiScene.mMaterials()
         val materials = (0 until numMaterials).map { i ->
@@ -71,8 +70,11 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
 
         return AnimatedModel(resourcesDir.resolve(file), meshes, animations)
     }
-    private fun AIScene.processAnimations(boneList: List<Bone>, rootNode: Node,
-                                          rootTransformation: Matrix4f): Map<String, Animation> {
+
+    private fun AIScene.processAnimations(
+        boneList: List<Bone>, rootNode: Node,
+        rootTransformation: Matrix4f
+    ): Map<String, Animation> {
         val animations: MutableMap<String, Animation> = HashMap()
         // Process all animations
         val numAnimations = mNumAnimations()
@@ -90,10 +92,10 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
             }
             val frames: List<AnimatedFrame> = buildAnimationFrames(boneList, rootNode, rootTransformation)
             val animation = Animation(aiAnimation.mName().dataString().takeUnless { it.isBlank() }
-                    ?: "Default",
-                    frames,
-                    aiAnimation.mDuration().toFloat(),
-                    aiAnimation.mTicksPerSecond().toFloat())
+                ?: "Default",
+                frames,
+                aiAnimation.mDuration().toFloat(),
+                aiAnimation.mTicksPerSecond().toFloat())
             animations[animation.name] = animation
         }
         return animations
@@ -159,6 +161,7 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         }
         return node
     }
+
     private fun AIMaterial.processMaterial(
         texturesDir: String,
         resourcesDir: AbstractDirectory,
@@ -166,7 +169,18 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
     ): Material {
         fun AIMaterial.retrieveTexture(textureIdentifier: Int): Texture? {
             AIString.calloc().use { path ->
-                Assimp.aiGetMaterialTexture(this, textureIdentifier, 0, path, null as IntBuffer?, null, null, null, null, null)
+                Assimp.aiGetMaterialTexture(
+                    this,
+                    textureIdentifier,
+                    0,
+                    path,
+                    null as IntBuffer?,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                )
                 val textPath = path.dataString()
                 return if (textPath.isNotEmpty()) {
                     textureManager.getTexture("$texturesDir/$textPath", directory = resourcesDir)
@@ -179,7 +193,8 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
 
         val colour = AIColor4D.create()
         var ambient = Vector4f()
-        var result: Int = Assimp.aiGetMaterialColor(this, Assimp.AI_MATKEY_COLOR_EMISSIVE, Assimp.aiTextureType_NONE, 0, colour)
+        var result: Int =
+            Assimp.aiGetMaterialColor(this, Assimp.AI_MATKEY_COLOR_EMISSIVE, Assimp.aiTextureType_NONE, 0, colour)
         if (result == 0) {
             ambient = Vector4f(colour.r(), colour.g(), colour.b(), colour.a())
         }
@@ -188,20 +203,24 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         if (result == 0) {
             diffuse = Vector4f(colour.r(), colour.g(), colour.b(), colour.a())
         }
-        val materialInfo = MaterialInfo(
-                ambient = max(max(ambient.x, ambient.y), ambient.z),
-                diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
+        val material = Material(
+            name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) },
+            ambient = max(max(ambient.x, ambient.y), ambient.z),
+            diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
-        materialInfo.putIfNotNull(Material.MAP.DIFFUSE, retrieveTexture(Assimp.aiTextureType_DIFFUSE))
-        val normalOrHeightMap = retrieveTexture(Assimp.aiTextureType_NORMALS) ?: retrieveTexture(Assimp.aiTextureType_HEIGHT)
-        materialInfo.putIfNotNull(Material.MAP.NORMAL, normalOrHeightMap)
-        materialInfo.putIfNotNull(Material.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
+        material.putIfNotNull(Material.MAP.DIFFUSE, retrieveTexture(Assimp.aiTextureType_DIFFUSE))
+        val normalOrHeightMap =
+            retrieveTexture(Assimp.aiTextureType_NORMALS) ?: retrieveTexture(Assimp.aiTextureType_HEIGHT)
+        material.putIfNotNull(Material.MAP.NORMAL, normalOrHeightMap)
+        material.putIfNotNull(Material.MAP.SPECULAR, retrieveTexture(Assimp.aiTextureType_SPECULAR))
 
-        return Material(name.dataString().ifEmpty { System.currentTimeMillis().toString().reversed().substring(0, 5) }, materialInfo)
+        return material
     }
-    private fun MaterialInfo.putIfNotNull(map: Material.MAP, texture: Texture?) {
-        if(texture != null) put(map, texture)
+
+    private fun Material.putIfNotNull(map: Material.MAP, texture: Texture?) {
+        if (texture != null) put(map, texture)
     }
+
     private fun AIMesh.processMesh(materials: List<Material>, bones: MutableList<Bone>): AnimatedMesh {
 
         val positions = retrievePositions()
@@ -214,28 +233,29 @@ class AnimatedModelLoader(val flags: Int = defaultFlagsAnimated) {
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
         } else {
-            Material(mName().dataString() + "_material", MaterialInfo())
+            Material(mName().dataString() + "_material")
         }
         val vertices = positions.indices.map {
             AnimatedVertex(positions[it],
-                    texCoords[it],
-                    runCatching { normals[it] }.getOrElse { Vector3f(0f, 1f, 0f) },
-                    Vector4f(weights[4 * it + 0], weights[4 * it + 1], weights[4 * it + 2], weights[4 * it + 3]),
-                    Vector4i(boneIds[4 * it + 0], boneIds[4 * it + 1], boneIds[4 * it + 2], boneIds[4 * it + 3])
+                texCoords[it],
+                runCatching { normals[it] }.getOrElse { Vector3f(0f, 1f, 0f) },
+                Vector4f(weights[4 * it + 0], weights[4 * it + 1], weights[4 * it + 2], weights[4 * it + 3]),
+                Vector4i(boneIds[4 * it + 0], boneIds[4 * it + 1], boneIds[4 * it + 2], boneIds[4 * it + 3])
             )
         }
         return AnimatedMesh(
-                mName().dataString(),
-                vertices,
-                indices,
-                aabb,
-                material
+            mName().dataString(),
+            vertices,
+            indices,
+            aabb,
+            material
         )
     }
 }
 
 class Bone(val id: Int, val name: String, val offsetMatrix: Matrix4f)
 class VertexWeight(val boneId: Int, val vertexId: Int, val weight: Float)
+
 fun AIMesh.retrieveBonesAndWeights(boneList: MutableList<Bone>): Pair<MutableList<Int>, MutableList<Float>> {
     val boneIds = mutableListOf<Int>()
     val weights = mutableListOf<Float>()

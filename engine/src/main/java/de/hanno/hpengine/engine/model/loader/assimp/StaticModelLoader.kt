@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.model.IndexedFace
 import de.hanno.hpengine.engine.model.StaticMesh
 import de.hanno.hpengine.engine.model.StaticModel
 import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.Vertex
@@ -91,21 +90,22 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         if (result == 0) {
             diffuse = Vector4f(colour.r(), colour.g(), colour.b(), colour.a())
         }
-        val materialInfo = MaterialInfo(
+        val material = Material(
+            name.dataString(),
             ambient = max(max(ambient.x, ambient.y), ambient.z),
             diffuse = Vector3f(diffuse.x, diffuse.y, diffuse.z)
         )
-        materialInfo.putIfNotNull(Material.MAP.DIFFUSE, retrieveTexture(aiTextureType_DIFFUSE))
+        material.putIfNotNull(Material.MAP.DIFFUSE, retrieveTexture(aiTextureType_DIFFUSE))
         // super odd, but assimp seems to interpret normal maps as type height map O.O
-        materialInfo.putIfNotNull(Material.MAP.NORMAL, retrieveTexture(aiTextureType_NORMALS) ?: retrieveTexture(aiTextureType_HEIGHT))
+        material.putIfNotNull(Material.MAP.NORMAL, retrieveTexture(aiTextureType_NORMALS) ?: retrieveTexture(aiTextureType_HEIGHT))
 
         // TODO: I can't do ?: retrieveTexture(aiTextureType_HEIGHT) because the height map is most often given, but contains normals....
-        materialInfo.putIfNotNull(Material.MAP.HEIGHT, retrieveTexture(aiTextureType_DISPLACEMENT))
-        materialInfo.putIfNotNull(Material.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
+        material.putIfNotNull(Material.MAP.HEIGHT, retrieveTexture(aiTextureType_DISPLACEMENT))
+        material.putIfNotNull(Material.MAP.SPECULAR, retrieveTexture(aiTextureType_SPECULAR))
 
-        return Material(name.dataString(), materialInfo)
+        return material
     }
-    private fun MaterialInfo.putIfNotNull(map: Material.MAP, texture: Texture?) {
+    private fun Material.putIfNotNull(map: Material.MAP, texture: Texture?) {
         if(texture != null) put(map, texture)
     }
     private fun AIMesh.processMesh(materials: List<Material>): StaticMesh {
@@ -117,7 +117,7 @@ class StaticModelLoader(val flags: Int = defaultFlagsStatic) {
         val material = if (materialIdx >= 0 && materialIdx < materials.size) {
             materials[materialIdx]
         } else {
-            Material(mName().dataString() + "_material", MaterialInfo())
+            Material(mName().dataString() + "_material")
         }
         val vertices = positions.indices.map {
             Vertex(positions[it], texCoords[it], normals[it])

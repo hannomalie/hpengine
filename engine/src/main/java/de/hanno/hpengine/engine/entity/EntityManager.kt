@@ -3,9 +3,10 @@ package de.hanno.hpengine.engine.entity
 import com.artemis.BaseEntitySystem
 import com.artemis.annotations.All
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.system.Extractor
 
 @All
-class CycleSystem: BaseEntitySystem() {
+class CycleSystem: BaseEntitySystem(), Extractor {
     var cycle = 0L
     override fun processSystem() {
         cycle += 1
@@ -22,10 +23,10 @@ class CycleSystem: BaseEntitySystem() {
         entityAddedInCycle = cycle
         componentAddedInCycle = cycle
     }
-    fun extract(renderState: RenderState) {
-        renderState.entitiesState.entityMovedInCycle = entityMovedInCycle
-        renderState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
-        renderState.entitiesState.entityAddedInCycle = entityAddedInCycle
-        renderState.entitiesState.componentAddedInCycle = componentAddedInCycle
+    override fun extract(currentWriteState: RenderState) {
+        currentWriteState.entitiesState.entityMovedInCycle = entityMovedInCycle
+        currentWriteState.entitiesState.staticEntityMovedInCycle = staticEntityMovedInCycle
+        currentWriteState.entitiesState.entityAddedInCycle = entityAddedInCycle
+        currentWriteState.entitiesState.componentAddedInCycle = componentAddedInCycle
     }
 }

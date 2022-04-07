@@ -29,7 +29,6 @@ import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.EntityBuffer
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.model.material.Material
@@ -38,6 +37,8 @@ import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.WorldAABB
 import de.hanno.hpengine.engine.scene.dsl.*
+import de.hanno.hpengine.engine.system.Clearable
+import de.hanno.hpengine.engine.system.Extractor
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import kotlinx.coroutines.*
@@ -64,55 +65,51 @@ class Engine(val application: KoinApplication) {
     private val input = koin.get<Input>()
     private val renderManager = koin.get<RenderManager>()
 
-    val worldAABB = WorldAABB()
-    val modelSystem = ModelSystem(
-        config,
-        koin.get(),
-        koin.get(),
-        MaterialManager(config, koin.get(), koin.get()),
-        koin.get(),
-        EntityBuffer(),
-    )
-    val componentExtractor = ComponentExtractor()
-    val skyBoxSystem = SkyBoxSystem()
-    val editorCameraInputSystemNew = EditorCameraInputSystem()
-    val cycleSystem = CycleSystem()
-    val directionalLightSystem = DirectionalLightSystem()
-    val pointLightSystem = PointLightSystem(config, koin.get(), koin.get()).apply {
-        renderManager.renderSystems.add(this)
-    }
-    val areaLightSystem = AreaLightSystem(koin.get(), koin.get(), config).apply {
-        renderManager.renderSystems.add(this)
-    }
-    val materialManager = MaterialManager(config, koin.get(), koin.get())
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
-    val textureManager: TextureManager = koin.get()
-    val worldConfigurationBuilder = WorldConfigurationBuilder().with(
+    private val textureManager: TextureManager = koin.get()
+    val systems = listOf(
+        WorldAABB(),
+        renderManager,
+        ModelSystem(
+            config,
+            koin.get(),
+            koin.get(),
+            MaterialManager(config, koin.get(), koin.get()),
+            koin.get(),
+            EntityBuffer(),
+        ),
+        ComponentExtractor(),
+        SkyBoxSystem(),
+        EditorCameraInputSystem(),
+        CycleSystem(),
+        DirectionalLightSystem(),
+        PointLightSystem(config, koin.get(), koin.get()).apply {
+            renderManager.renderSystems.add(this)
+        },
+        AreaLightSystem(koin.get(), koin.get(), config).apply {
+            renderManager.renderSystems.add(this)
+        },
+        MaterialManager(config, koin.get(), koin.get()),
+        openGlProgramManager,
+        textureManager,
         TagManager(),
-        componentExtractor,
-        modelSystem,
         CustomComponentSystem(),
         SpatialComponentSystem(),
-        editorCameraInputSystemNew,
-        skyBoxSystem,
         InvisibleComponentSystem(),
         GiVolumeSystem(koin.get()),
-        cycleSystem,
-        directionalLightSystem,
-        pointLightSystem,
-        areaLightSystem,
-        materialManager,
-        textureManager,
         PhysicsManager(config, koin.get(), koin.get(), koin.get()),
-        openGlProgramManager,
-        renderManager,
         ReflectionProbeManager(config),
         KotlinComponentSystem(),
+    ) + koin.getAll<BaseSystem>()
+
+    val extractors = systems.filterIsInstance<Extractor>()
+
+    val worldConfigurationBuilder = WorldConfigurationBuilder().with(
+        *(systems.distinct().toTypedArray())
     ).run {
-        with(*(koin.getAll<BaseSystem>().toTypedArray()))
-    }.run {
         register(SingletonPlugin.SingletonFieldResolver())
     }
+
     val world = World(
         worldConfigurationBuilder.build()
             .register(
@@ -169,15 +166,7 @@ class Engine(val application: KoinApplication) {
 
         koin.getAll<RenderSystem>().distinct().forEach { it.extract(currentWriteState, world) }
 
-        componentExtractor.extract(currentWriteState)
-        worldAABB.extract(currentWriteState)
-        materialManager.extract(currentWriteState)
-        modelSystem.extract(currentWriteState)
-        editorCameraInputSystemNew.extract(currentWriteState)
-        cycleSystem.extract(currentWriteState)
-        directionalLightSystem.extract(currentWriteState)
-        pointLightSystem.extract(currentWriteState)
-        areaLightSystem.extract(currentWriteState)
+        extractors.forEach { it.extract(currentWriteState) }
 
         renderManager.finishCycle(deltaSeconds)
 
@@ -269,6 +258,8 @@ fun World.clear() {
         delete(ids[i])
         i++
     }
+
+    systems.filterIsInstance<Clearable>().forEach { it.clear() }
 }
 fun World.loadDemoScene(config: ConfigImpl) {
     clear()
@@ -296,26 +287,24 @@ fun World.loadDemoScene(config: ConfigImpl) {
                 Directory.Engine,
                 material = Material(
                     name = "Skybox",
-                    materialInfo = MaterialInfo(
-                        materialType = Material.MaterialType.UNLIT,
-                        cullBackFaces = false,
-                        isShadowCasting = false,
-                        programDescription = ProgramDescription(
-                            vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
-                                .toCodeSource(),
-                            fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
-                                .toCodeSource().enhanced {
-                                    replace(
-                                        "//END",
-                                        """
-                                out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
-                            """.trimIndent()
-                                    )
-                                }
-                        )
+                    materialType = Material.MaterialType.UNLIT,
+                    cullBackFaces = false,
+                    isShadowCasting = false,
+                    programDescription = ProgramDescription(
+                        vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
+                            .toCodeSource(),
+                        fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
+                            .toCodeSource().enhanced {
+                                replace(
+                                    "//END",
+                                    """
+                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
+                        """.trimIndent()
+                                )
+                            }
                     )
                 ).apply {
-                    materialInfo.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
+                    this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
                 }
             )
         }

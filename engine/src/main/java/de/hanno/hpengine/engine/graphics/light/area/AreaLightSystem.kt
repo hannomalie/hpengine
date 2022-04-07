@@ -41,6 +41,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.model.enlarge
 import de.hanno.hpengine.engine.model.texture.CubeMap
 import de.hanno.hpengine.engine.model.texture.TextureDimension
+import de.hanno.hpengine.engine.system.Extractor
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Matrix4f
@@ -59,7 +60,7 @@ class AreaLightSystem(
     val gpuContext: GpuContext<OpenGl>,
     programManager: ProgramManager<OpenGl>,
     config: Config
-) : BaseEntitySystem(), RenderSystem {
+) : BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
     private var gpuAreaLightArray = TypedBuffer(BufferUtils.createByteBuffer(AreaLightStrukt.sizeInBytes), AreaLightStrukt.type)
 
@@ -193,13 +194,13 @@ class AreaLightSystem(
         renderAreaLightShadowMaps(renderState)
     }
 
-    fun extract(renderState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
 //        TODO: Use this stuff instead of uniforms, take a look at DrawUtils.java
 //        currentWriteState.entitiesState.jointsBuffer.sizeInBytes = getRequiredAreaLightBufferSize()
 //        gpuAreaLightArray.shrink(currentWriteState.entitiesState.jointsBuffer.buffer.capacity())
 //        gpuAreaLightArray.copyTo(currentWriteState.entitiesState.jointsBuffer.buffer)
 
-        renderState.lightState.areaLightDepthMaps = areaLightDepthMaps
+        currentWriteState.lightState.areaLightDepthMaps = areaLightDepthMaps
     }
 
     companion object {

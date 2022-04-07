@@ -2,14 +2,33 @@ package de.hanno.hpengine.engine.model.material
 
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.model.texture.Texture
+import org.joml.Vector2f
+import org.joml.Vector3f
 
 data class Material(
     val name: String,
-    var materialInfo: MaterialInfo
+    val diffuse: Vector3f = Vector3f(1f, 1f, 1f),
+    var roughness: Float = 0.95f,
+    var metallic: Float = 0f,
+    var ambient: Float = 0f,
+    var transparency: Float = 0f,
+    var parallaxScale: Float = 0.04f,
+    var parallaxBias: Float = 0.02f,
+    var uvScale: Vector2f = Vector2f(1.0f, 1.0f),
+    var lodFactor: Float = 100f,
+    var useWorldSpaceXZAsTexCoords: Boolean = false,
+    var materialType: MaterialType = MaterialType.DEFAULT,
+    var transparencyType: TransparencyType = TransparencyType.BINARY,
+    var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
+    var depthTest: Boolean = true,
+    val maps: MutableMap<MAP, Texture> = mutableMapOf(),
+    var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,
+    var isShadowCasting: Boolean = true,
+    var programDescription: ProgramDescription? = null,
 ) {
 
     init {
-        require(name.isNotEmpty()) { "Name may not empty for material! $materialInfo" }
+        require(name.isNotEmpty()) { "Name may not empty for material! $this" }
     }
     var materialIndex = -1
 
@@ -53,11 +72,11 @@ data class Material(
 
     override fun hashCode(): Int = name.hashCode()
     fun put(map: MAP, texture: Texture) {
-        materialInfo.put(map, texture)
+        maps[map] = texture
     }
 
     fun remove(map: MAP) {
-        materialInfo.remove(map)
+        maps.remove(map)
     }
 
     companion object {

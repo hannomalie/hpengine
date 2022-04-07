@@ -7,9 +7,10 @@ import com.artemis.utils.Bag
 import com.artemis.utils.reflect.ClassReflection.isAnnotationPresent
 import com.esotericsoftware.kryo.Kryo
 import de.hanno.hpengine.engine.graphics.state.RenderState
+import de.hanno.hpengine.engine.system.Extractor
 
 @All
-class ComponentExtractor : BaseEntitySystem() {
+class ComponentExtractor : BaseEntitySystem(), Extractor {
     private lateinit var componentSubclasses: List<Class<out Component>>
     private lateinit var componentMappers: Map<Class<out Component>, ComponentMapper<out Component>>
 
@@ -25,7 +26,7 @@ class ComponentExtractor : BaseEntitySystem() {
         }
     }
 
-    fun extract(currentWriteState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
         currentWriteState.componentExtracts = componentSubclasses.associateWith { clazz ->
             val componentMapper = componentMappers[clazz]!!
             kryo.copy(componentMapper.hackedOutComponents)

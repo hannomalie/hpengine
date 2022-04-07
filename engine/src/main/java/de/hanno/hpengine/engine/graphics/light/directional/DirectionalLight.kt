@@ -8,11 +8,12 @@ import de.hanno.hpengine.engine.component.artemis.forEachEntity
 import de.hanno.hpengine.engine.entity.CycleSystem
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.system.Extractor
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 
 @All(DirectionalLightComponent::class)
-class DirectionalLightSystem: BaseEntitySystem() {
+class DirectionalLightSystem: BaseEntitySystem(), Extractor {
     lateinit var input: Input
     lateinit var cycleSystem: CycleSystem
     lateinit var  directionalLightComponentMapper: ComponentMapper<DirectionalLightComponent>
@@ -52,15 +53,15 @@ class DirectionalLightSystem: BaseEntitySystem() {
         }
     }
 
-    fun extract(renderState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
 //        TODO: Reimplement
-//        renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+//        currentWriteState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
 //
-//        renderState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
+//        currentWriteState.directionalLightHasMovedInCycle = this.directionalLightMovedInCycle
 //        val light = getDirectionalLight() ?: return
 //
 //        with(light) {
-//            val directionalLightState = renderState.directionalLightState[0]
+//            val directionalLightState = currentWriteState.directionalLightState[0]
 //
 //            directionalLightState.color.set(color)
 //            directionalLightState.direction.set(direction)

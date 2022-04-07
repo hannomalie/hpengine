@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirect
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.model.Update
-import de.hanno.hpengine.engine.model.material.MaterialInfo
+import de.hanno.hpengine.engine.model.material.Material
 import org.joml.Vector3f
 import java.util.ArrayList
 
@@ -26,7 +26,7 @@ class RenderBatch(
     var centerWorld: Vector3f = Vector3f(),
     var animated : Boolean = false,
     var boundingSphereRadius: Float = 0.0f,
-    var materialInfo: MaterialInfo = MaterialInfo(),
+    var materialInfo: Material = Material("default"),
     var program: Program<FirstPassUniforms>? = null,
     var entityBufferIndex: Int = 0,
     var contributesToGi: Boolean = true) {

@@ -10,6 +10,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.Material.MAP
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
+import de.hanno.hpengine.engine.system.Clearable
+import de.hanno.hpengine.engine.system.Extractor
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils
@@ -22,7 +24,7 @@ class MaterialManager(
     val config: Config,
     val textureManager: TextureManager,
     val singleThreadContext: AddResourceContext
-) : BaseEntitySystem() {
+) : BaseEntitySystem(), Clearable, Extractor {
 
     lateinit var modelComponentComponentMapper: ComponentMapper<NewModelComponent>
 
@@ -34,36 +36,36 @@ class MaterialManager(
 
     fun initDefaultMaterials() {
 
-        registerMaterial("stone", MaterialInfo().apply {
+        registerMaterial(Material("stone").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
             put(MAP.HEIGHT, textureManager.getTexture("assets/textures/stone_height.png", directory = engineDir))
         })
 
-        registerMaterial("stone2", MaterialInfo().apply {
+        registerMaterial(Material("stone2").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
         })
 
-        registerMaterial("brick", MaterialInfo().apply {
+        registerMaterial(Material("brick").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/brick.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/brick_normal.png", directory = engineDir))
             put(MAP.HEIGHT, textureManager.getTexture("assets/textures/brick_height.png", directory = engineDir))
         })
 
-        registerMaterial("wood", MaterialInfo().apply {
+        registerMaterial(Material("wood").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/wood_diffuse.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/wood_normal.png", directory = engineDir))
         })
 
-        registerMaterial("stoneWet", MaterialInfo().apply {
+        registerMaterial(Material("stoneWet").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/stone_diffuse.png", true, engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/stone_normal.png", directory = engineDir))
             put(MAP.REFLECTION, textureManager.getTexture("assets/textures/stone_reflection.png", directory = engineDir))
         })
-        registerMaterial("mirror", MaterialInfo(diffuse = Vector3f(1f, 1f, 1f), metallic = 1f))
+        registerMaterial(Material("mirror", diffuse = Vector3f(1f, 1f, 1f), metallic = 1f))
 
-        registerMaterial("stoneWet", MaterialInfo().apply {
+        registerMaterial(Material("stoneWet").apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/bricks_parallax.dds", true, engineDir))
             put(MAP.HEIGHT, textureManager.getTexture("assets/textures/bricks_parallax_height.dds", directory = engineDir))
             put(MAP.NORMAL, textureManager.getTexture("assets/textures/bricks_parallax_normal.dds", directory = engineDir))
@@ -71,10 +73,6 @@ class MaterialManager(
     }
 
     fun getMaterial(name: String): Material? = materials.firstOrNull { it.name == name }
-
-    fun registerMaterial(name: String, materialInfo: MaterialInfo): Material = Material(name, materialInfo).apply {
-        registerMaterial(this)
-    }
 
     override fun inserted(entityId: Int) {
         val modelComponent = modelComponentComponentMapper[entityId]
@@ -86,13 +84,8 @@ class MaterialManager(
 //        This happens often, I have to reconsider that somehow
 //        require(materials.none { material.name == it.name }) { "Material with name ${material.name} already registered!" }
 
-        if(!this.materials.contains(material)) {
-            material.materialIndex = materials.size
-            materials.add(material)
-        } else {
-            material.materialIndex = materials.indexOf(material)
-            material.materialInfo = materials[material.materialIndex].materialInfo
-        }
+        material.materialIndex = materials.size
+        materials.add(material)
     }
     fun registerMaterials(materials: List<Material>) = singleThreadContext.launch {
         materials.distinct().forEach { material ->
@@ -103,10 +96,10 @@ class MaterialManager(
         }
     }
 
-    fun extract(renderState: RenderState) {
+    override fun extract(currentWriteState: RenderState) {
 //        TODO: Remove most of this
-        renderState.entitiesState.materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
-        renderState.entitiesState.materialBuffer.buffer.rewind()
+        currentWriteState.entitiesState.materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
+        currentWriteState.entitiesState.materialBuffer.buffer.rewind()
         materialsBuffer = materialsBuffer.resize(materials.size)
 
         materialsBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
@@ -114,47 +107,47 @@ class MaterialManager(
 
             it.run {
                 diffuse.run {
-                    x = material.materialInfo.diffuse.x
-                    y = material.materialInfo.diffuse.y
-                    z = material.materialInfo.diffuse.z
+                    x = material.diffuse.x
+                    y = material.diffuse.y
+                    z = material.diffuse.z
                 }
-                metallic = material.materialInfo.metallic
-                roughness = material.materialInfo.roughness
-                ambient = material.materialInfo.ambient
-                parallaxBias = material.materialInfo.parallaxBias
-                parallaxScale = material.materialInfo.parallaxScale
-                transparency = material.materialInfo.transparency
-                materialType = material.materialInfo.materialType
-                lodFactor = material.materialInfo.lodFactor
-                useWorldSpaceXZAsTexCoords = if(material.materialInfo.useWorldSpaceXZAsTexCoords) 1 else 0
-                environmentMapId = material.materialInfo.maps[MAP.ENVIRONMENT]?.id ?: 0
-                diffuseMapHandle = material.materialInfo.maps[MAP.DIFFUSE]?.handle ?: 0
-                normalMapHandle = material.materialInfo.maps[MAP.NORMAL]?.handle ?: 0
-                specularMapHandle = material.materialInfo.maps[MAP.SPECULAR]?.handle ?: 0
-                heightMapHandle = material.materialInfo.maps[MAP.HEIGHT]?.handle ?: 0
-                displacementMapHandle = material.materialInfo.maps[MAP.DISPLACEMENT]?.handle ?: 0
-                roughnessMapHandle = material.materialInfo.maps[MAP.ROUGHNESS]?.handle ?: 0
+                metallic = material.metallic
+                roughness = material.roughness
+                ambient = material.ambient
+                parallaxBias = material.parallaxBias
+                parallaxScale = material.parallaxScale
+                transparency = material.transparency
+                materialType = material.materialType
+                lodFactor = material.lodFactor
+                useWorldSpaceXZAsTexCoords = if (material.useWorldSpaceXZAsTexCoords) 1 else 0
+                environmentMapId = material.maps[MAP.ENVIRONMENT]?.id ?: 0
+                diffuseMapHandle = material.maps[MAP.DIFFUSE]?.handle ?: 0
+                normalMapHandle = material.maps[MAP.NORMAL]?.handle ?: 0
+                specularMapHandle = material.maps[MAP.SPECULAR]?.handle ?: 0
+                heightMapHandle = material.maps[MAP.HEIGHT]?.handle ?: 0
+                displacementMapHandle = material.maps[MAP.DISPLACEMENT]?.handle ?: 0
+                roughnessMapHandle = material.maps[MAP.ROUGHNESS]?.handle ?: 0
                 uvScale.run {
-                    x = material.materialInfo.uvScale.x
-                    y = material.materialInfo.uvScale.y
+                    x = material.uvScale.x
+                    y = material.uvScale.y
                 }
             }
         }
-        renderState.entitiesState.materialBuffer.resize(materialsBuffer.size)
-        materialsBuffer.byteBuffer.copyTo(renderState.entitiesState.materialBuffer.buffer, true)
+        currentWriteState.entitiesState.materialBuffer.resize(materialsBuffer.size)
+        materialsBuffer.byteBuffer.copyTo(currentWriteState.entitiesState.materialBuffer.buffer, true)
     }
 
 
     companion object {
-        fun createDefaultMaterial(config: Config, textureManager: TextureManager): Material {
-            return Material("default", createDefaultMaterialInfo(config, textureManager))
-        }
-        fun createDefaultMaterialInfo(config: Config, textureManager: TextureManager) = MaterialInfo(diffuse = Vector3f(1f, 0f, 0f)).apply {
+        fun createDefaultMaterial(config: Config, textureManager: TextureManager) = Material("default", diffuse = Vector3f(1f, 0f, 0f)).apply {
             put(MAP.DIFFUSE, textureManager.getTexture("assets/textures/default/default.dds", true, config.engineDir))
         }
     }
 
     override fun processSystem() { }
+    override fun clear() {
+        materials.clear()
+    }
 }
 
 val TypedBuffer<MaterialStrukt>.size: Int

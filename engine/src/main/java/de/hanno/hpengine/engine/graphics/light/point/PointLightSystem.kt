@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
+import de.hanno.hpengine.engine.system.Extractor
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.Util
 import de.hanno.struct.StructArray
@@ -26,7 +27,7 @@ import de.hanno.struct.enlarge
 class PointLightSystem(
     config: Config, programManager: ProgramManager<OpenGl>,
     gpuContext: GpuContext<OpenGl>
-): BaseEntitySystem(), RenderSystem {
+): BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
     private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
@@ -59,11 +60,11 @@ class PointLightSystem(
         }
     }
 
-    fun extract(renderState: RenderState) {
-        renderState.pointLightMovedInCycle = pointLightMovedInCycle
+    override fun extract(currentWriteState: RenderState) {
+        currentWriteState.pointLightMovedInCycle = pointLightMovedInCycle
 
-        gpuPointLightArray.safeCopyTo(renderState.lightState.pointLightBuffer)
-        renderState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
+        gpuPointLightArray.safeCopyTo(currentWriteState.lightState.pointLightBuffer)
+        currentWriteState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
     }
 
     companion object {
