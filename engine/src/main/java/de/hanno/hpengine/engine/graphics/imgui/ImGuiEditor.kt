@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.FinalOutput
 import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
@@ -21,9 +22,9 @@ import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.loadDemoScene
 import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
-import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import imgui.ImGui
 import imgui.flag.*
@@ -265,46 +266,7 @@ class ImGuiEditor(
                             tab("Entity") {
                                 artemisWorld.getSystem(ModelSystem::class.java)[selection.modelComponent.modelComponentDescription]?.let {
                                     val material = it.material
-                                    val materialInfo = material.materialInfo
-
-                                    text(material.name)
-                                    val colors = floatArrayOf(
-                                        materialInfo.diffuse.x,
-                                        materialInfo.diffuse.y,
-                                        materialInfo.diffuse.z
-                                    )
-                                    if(ImGui.colorPicker3("Albedo", colors)) {
-                                        materialInfo.diffuse.x = colors[0]
-                                        materialInfo.diffuse.y = colors[1]
-                                        materialInfo.diffuse.z = colors[2]
-                                    }
-                                    ImGui.text("Textures")
-                                    val all2DTextures = artemisWorld.getSystem(TextureManager::class.java).textures.filterValues { it is FileBasedTexture2D }
-                                    val all2DTexturesNames = all2DTextures.keys.toTypedArray()
-
-                                    Material.MAP.values().forEach { type ->
-                                        materialInfo.maps[type].let { currentTexture ->
-                                            val currentIndex = all2DTextures.values.indexOf(currentTexture)
-
-                                            val previewValue = if(currentTexture != null) all2DTexturesNames[currentIndex] else "None"
-                                            if(ImGui.beginCombo(type.name, previewValue)) {
-                                                if(ImGui.selectable("None", currentTexture == null)) {
-                                                    materialInfo.maps.remove(type)
-                                                }
-                                                all2DTextures.forEach { (name, texture) ->
-                                                    val selected = currentTexture == texture
-                                                    if(ImGui.selectable(name, selected)) {
-                                                        materialInfo.maps[type] = texture
-                                                    }
-                                                    if(selected) {
-                                                        ImGui.setItemDefaultFocus()
-                                                    }
-                                                }
-
-                                                ImGui.endCombo()
-                                            }
-                                        }
-                                    }
+                                    materialGrid(material)
                                 }
                             }
                         }
@@ -391,6 +353,126 @@ class ImGuiEditor(
                             config.debug.isEditorOverlay = !config.debug.isEditorOverlay
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private fun Window.materialGrid(material: Material) {
+        val materialInfo = material.materialInfo
+
+        text(material.name)
+        val colors = floatArrayOf(
+            materialInfo.diffuse.x,
+            materialInfo.diffuse.y,
+            materialInfo.diffuse.z
+        )
+        if (ImGui.colorPicker3("Albedo", colors)) {
+            materialInfo.diffuse.x = colors[0]
+            materialInfo.diffuse.y = colors[1]
+            materialInfo.diffuse.z = colors[2]
+        }
+        floatInput("Roughness", materialInfo.roughness) { floatArray -> materialInfo.roughness = floatArray[0] }
+        floatInput("Metallic", materialInfo.metallic) { floatArray -> materialInfo.metallic = floatArray[0] }
+        floatInput("Ambient", materialInfo.ambient) { floatArray -> materialInfo.ambient = floatArray[0] }
+        floatInput("Transparency", materialInfo.transparency) { floatArray -> materialInfo.transparency = floatArray[0] }
+        floatInput("ParallaxScale", materialInfo.parallaxScale) { floatArray -> materialInfo.parallaxScale = floatArray[0] }
+        floatInput("ParallaxBias", materialInfo.parallaxBias) { floatArray -> materialInfo.parallaxBias = floatArray[0] }
+        float2Input("UVScale", materialInfo.uvScale.x, materialInfo.uvScale.y, 0.01f, 100f) { floatArray ->
+            materialInfo.uvScale.x = floatArray[0]
+            materialInfo.uvScale.y = floatArray[1]
+        }
+        floatInput("LODFactor", materialInfo.lodFactor) { floatArray -> materialInfo.lodFactor = floatArray[0] }
+        if(ImGui.checkbox("WorldSpaceTexCoords", materialInfo.useWorldSpaceXZAsTexCoords)) {
+            materialInfo.useWorldSpaceXZAsTexCoords = ! materialInfo.useWorldSpaceXZAsTexCoords
+        }
+        if (ImGui.beginCombo("Type", materialInfo.materialType.toString())) {
+            Material.MaterialType.values().forEach { type ->
+                val selected = materialInfo.materialType == type
+                if (ImGui.selectable(type.toString(), selected)) {
+                    materialInfo.materialType = type
+                }
+                if (selected) {
+                    ImGui.setItemDefaultFocus()
+                }
+            }
+            ImGui.endCombo()
+        }
+        if (ImGui.beginCombo("TransparencyType", materialInfo.transparencyType.toString())) {
+            Material.TransparencyType.values().forEach { type ->
+                val selected = materialInfo.transparencyType == type
+                if (ImGui.selectable(type.toString(), selected)) {
+                    materialInfo.transparencyType = type
+                }
+                if (selected) {
+                    ImGui.setItemDefaultFocus()
+                }
+            }
+            ImGui.endCombo()
+        }
+        if(ImGui.checkbox("BackFaceCulling", materialInfo.cullBackFaces)) {
+            materialInfo.cullBackFaces = ! materialInfo.cullBackFaces
+        }
+        if(ImGui.checkbox("DepthTest", materialInfo.depthTest)) {
+            materialInfo.depthTest = ! materialInfo.depthTest
+        }
+        if (ImGui.beginCombo("EnvironmentMapType", materialInfo.environmentMapType.toString())) {
+            Material.ENVIRONMENTMAP_TYPE.values().forEach { type ->
+                val selected = materialInfo.environmentMapType == type
+                if (ImGui.selectable(type.toString(), selected)) {
+                    materialInfo.environmentMapType = type
+                }
+                if (selected) {
+                    ImGui.setItemDefaultFocus()
+                }
+            }
+            ImGui.endCombo()
+        }
+        if(ImGui.checkbox("CastShadows", materialInfo.isShadowCasting)) {
+            materialInfo.isShadowCasting = ! materialInfo.isShadowCasting
+        }
+        textureSelection(materialInfo)
+    }
+
+    private fun floatInput(label: String, initial: Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
+        val floatArray = floatArrayOf(initial)
+        if (ImGui.sliderFloat(label, floatArray, min, max)) {
+            onChange(floatArray)
+        }
+    }
+    private fun float2Input(label: String, initial0: Float, initial1:Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
+        val floatArray = floatArrayOf(initial0, initial1)
+        if (ImGui.sliderFloat(label, floatArray, min, max)) {
+            onChange(floatArray)
+        }
+    }
+
+    private fun textureSelection(materialInfo: MaterialInfo) {
+        ImGui.text("Textures")
+        val all2DTextures =
+            artemisWorld.getSystem(TextureManager::class.java).textures.filterValues { it is FileBasedTexture2D }
+        val all2DTexturesNames = all2DTextures.keys.toTypedArray()
+
+        Material.MAP.values().forEach { type ->
+            materialInfo.maps[type].let { currentTexture ->
+                val currentIndex = all2DTextures.values.indexOf(currentTexture)
+
+                val previewValue = if (currentTexture != null) all2DTexturesNames[currentIndex] else "None"
+                if (ImGui.beginCombo(type.name, previewValue)) {
+                    if (ImGui.selectable("None", currentTexture == null)) {
+                        materialInfo.maps.remove(type)
+                    }
+                    all2DTextures.forEach { (name, texture) ->
+                        val selected = currentTexture == texture
+                        if (ImGui.selectable(name, selected)) {
+                            materialInfo.maps[type] = texture
+                        }
+                        if (selected) {
+                            ImGui.setItemDefaultFocus()
+                        }
+                    }
+
+                    ImGui.endCombo()
                 }
             }
         }

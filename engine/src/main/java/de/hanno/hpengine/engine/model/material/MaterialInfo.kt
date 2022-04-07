@@ -41,16 +41,6 @@ data class MaterialInfo @JvmOverloads constructor(
     var programDescription: ProgramDescription? = null,
 ) {
 
-    // TODO rename, remove "get"
-    fun getHasSpecularMap() = maps.containsKey(MAP.SPECULAR)
-    fun getHasNormalMap() = maps.containsKey(MAP.NORMAL)
-    fun getHasDiffuseMap() = maps.containsKey(MAP.DIFFUSE)
-    fun getHasHeightMap() = maps.containsKey(MAP.HEIGHT)
-    fun getHasDisplacentMap() = maps.containsKey(MAP.DISPLACEMENT)
-    fun getHasRoughnessMap() = maps.containsKey(MAP.ROUGHNESS)
-
-    val textureLess = maps.isEmpty()
-
     fun put(map: MAP, texture: Texture) {
         maps[map] = texture
     }
