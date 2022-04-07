@@ -89,6 +89,9 @@ class MaterialManager(
         if(!this.materials.contains(material)) {
             material.materialIndex = materials.size
             materials.add(material)
+        } else {
+            material.materialIndex = materials.indexOf(material)
+            material.materialInfo = materials[material.materialIndex].materialInfo
         }
     }
     fun registerMaterials(materials: List<Material>) = singleThreadContext.launch {

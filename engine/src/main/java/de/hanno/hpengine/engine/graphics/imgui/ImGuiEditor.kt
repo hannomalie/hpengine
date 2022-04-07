@@ -295,20 +295,7 @@ class ImGuiEditor(
                         }
                         is MaterialSelection -> {
                             tab("Entity") {
-                                val material = selection.material
-                                val materialInfo = material.materialInfo
-
-                                text(material.name)
-                                val colors = floatArrayOf(
-                                    materialInfo.diffuse.x,
-                                    materialInfo.diffuse.y,
-                                    materialInfo.diffuse.z
-                                )
-                                if(ImGui.colorPicker3("Albedo", colors)) {
-                                    materialInfo.diffuse.x = colors[0]
-                                    materialInfo.diffuse.y = colors[1]
-                                    materialInfo.diffuse.z = colors[2]
-                                }
+                                materialGrid(selection.material)
                             }
                         }
                         Selection.None -> {
@@ -378,9 +365,11 @@ class ImGuiEditor(
         floatInput("Transparency", materialInfo.transparency) { floatArray -> materialInfo.transparency = floatArray[0] }
         floatInput("ParallaxScale", materialInfo.parallaxScale) { floatArray -> materialInfo.parallaxScale = floatArray[0] }
         floatInput("ParallaxBias", materialInfo.parallaxBias) { floatArray -> materialInfo.parallaxBias = floatArray[0] }
-        float2Input("UVScale", materialInfo.uvScale.x, materialInfo.uvScale.y, 0.01f, 100f) { floatArray ->
+        floatInput("UVScaleX", materialInfo.uvScale.x, 0.01f, 10f) { floatArray ->
             materialInfo.uvScale.x = floatArray[0]
-            materialInfo.uvScale.y = floatArray[1]
+        }
+        floatInput("UVScaleY", materialInfo.uvScale.y, 0.01f, 10f) { floatArray ->
+            materialInfo.uvScale.y = floatArray[0]
         }
         floatInput("LODFactor", materialInfo.lodFactor) { floatArray -> materialInfo.lodFactor = floatArray[0] }
         if(ImGui.checkbox("WorldSpaceTexCoords", materialInfo.useWorldSpaceXZAsTexCoords)) {
