@@ -39,11 +39,15 @@ import de.hanno.hpengine.engine.scene.WorldAABB
 import de.hanno.hpengine.engine.scene.dsl.*
 import de.hanno.hpengine.engine.system.Clearable
 import de.hanno.hpengine.engine.system.Extractor
+import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.util.ressources.enhanced
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
+import org.joml.AxisAngle4f
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
@@ -186,7 +190,8 @@ class Engine(val application: KoinApplication) {
 
             val config = ConfigImpl(
                 directories = Directories(
-                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
+                    EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
+//                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
                     GameDirectory(File(Directories.GAMEDIR_NAME), null)
                 ),
                 debug = DebugConfig(isEditorOverlay = true)
@@ -272,6 +277,19 @@ fun World.loadDemoScene(config: ConfigImpl) {
         create(SpatialComponent::class.java)
         create(NameComponent::class.java).apply {
             name = "Cube"
+        }
+    }
+    edit(create()).apply {
+        create(NameComponent::class.java).apply {
+            name = "DirectionalLight"
+        }
+
+        create(DirectionalLightComponent::class.java).apply { }
+        create(TransformComponent::class.java).apply {
+            transform = Transform().apply {
+                translate(Vector3f(12f, 300f, 2f))
+                rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
+            }
         }
     }
 

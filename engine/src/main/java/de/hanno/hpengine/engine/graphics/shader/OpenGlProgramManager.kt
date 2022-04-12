@@ -167,10 +167,11 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         if(config.debug.isUseFileReloading) {
             programsCache.forEach { program ->
                 program.shaders.forEach { shader ->
-                    if (shader.source is StringBasedCodeSource || shader.source is WrappedCodeSource || shader.source is ReloadableCodeSource) {
+                    if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource || shader.source is ReloadableCodeSource) {
                         programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
                         if (shader.source.hasChanged(programsSourceCache[shader]!!)) {
                             program.reload()
+                            println("Reloaded ${program.name}")
                             programsSourceCache[shader] = shader.source.source.hashCode()
                         }
                     }
@@ -187,7 +188,9 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
                 Shader.replaceIncludes(config.directories.engineDir, source, 0).left
     }
 
-    override fun processSystem() { }
+    override fun processSystem() {
+        update(world.delta)
+    }
 }
 
 private fun ProgramManager<*>.getFirstPassHeightMappingProgram(): Program<FirstPassUniforms> = getProgram(
@@ -337,7 +340,7 @@ val tesselationControlShaderSource = StringBasedCodeSource(
         """.trimIndent()
 )
 
-val tesselationEvaluationShaderSource = object: ReloadableCodeSource {
+val tesselationEvaluationShaderSource = object: CodeSource {
     override val name: String = "tesselation"
     override val source: String
         get() = """

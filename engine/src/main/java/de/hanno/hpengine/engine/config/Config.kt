@@ -138,7 +138,7 @@ data class DebugConfig(
     override var isPrintPipelineDebugOutput: Boolean = false,
     override var isUseComputeShaderDrawCommandAppend: Boolean = false,
     override var isDebugVoxels: Boolean = false,
-    override var isUseFileReloading: Boolean = false,
+    override var isUseFileReloading: Boolean = true,
     override var isLockUpdaterate: Boolean = true,
     override var directTextureOutputTextureIndex: Int = 0,
     override var directTextureOutputArrayIndex: Int = 0,

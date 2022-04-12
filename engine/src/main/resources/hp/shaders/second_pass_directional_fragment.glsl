@@ -139,7 +139,7 @@ void main(void) {
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
 	vec3 lightDirectionView = (viewMatrix * vec4(-directionalLight.direction, 0)).xyz;
-	vec3 finalColor;
+	vec3 finalColor = vec3(1);
 
 	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 	Material material = materials[materialIndex];
@@ -170,9 +170,8 @@ void main(void) {
 	} else if(materialType == UNLIT) {
 	    finalColor = color;
 	} else {
-		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
+		finalColor = clamp(cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor), 0, 1);
     	finalColor *= visibility;
-
 	}
 
 	out_DiffuseSpecular.rgb = 4 * finalColor; // TODO: Extract value 4 as global HDR scaler
@@ -185,7 +184,7 @@ void main(void) {
 //	out_DiffuseSpecular = vec4(100*textureLod(directionalLightShadowMap, st, 0).rgb, 1);
 
 //	out_DiffuseSpecular = vec4(st, 0f,1f);
-//	out_DiffuseSpecular = vec4(positionView,1);
+//	out_DiffuseSpecular = vec4(lightDirectionView,1);
 	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
 	//out_DiffuseSpecular.rgb = vec3(positionShadow.xyz);
 }
