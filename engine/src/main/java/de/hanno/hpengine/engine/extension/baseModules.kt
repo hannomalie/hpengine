@@ -23,7 +23,6 @@ import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.CompoundExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.createGIVolumeGrids
@@ -162,7 +161,8 @@ fun Module.addPointLightModule() {
 }
 
 fun Module.addDirectionalLightModule() {
-    renderExtension { DirectionalLightDeferredRenderingExtension(get(), get(), get(), get(), get()) }
+    renderExtension { DirectionalLightShadowMapExtension(get(), get(), get(), get()) }
+    renderExtension { DirectionalLightSecondPassExtension(get(), get(), get(), get(), get()) }
 }
 
 fun Module.addOceanWaterModule() {
@@ -229,19 +229,6 @@ class GiVolumeSystem(
     }
     override fun processSystem() { }
 }
-
-class DirectionalLightDeferredRenderingExtension(
-    config: Config,
-    programManager: ProgramManager<OpenGl>,
-    textureManager: TextureManager,
-    gpuContext: GpuContext<OpenGl>,
-    deferredRenderingBuffer: DeferredRenderingBuffer
-): CompoundExtension<OpenGl>(
-    listOf(
-        DirectionalLightShadowMapExtension(config, programManager, textureManager, gpuContext),
-        DirectionalLightSecondPassExtension(config, programManager, textureManager, gpuContext, deferredRenderingBuffer),
-    )
-)
 
 class SkyBoxComponent: Component()
 @All(SkyBoxComponent::class)

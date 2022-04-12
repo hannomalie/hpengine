@@ -119,8 +119,13 @@ class ModelSystem(
             }
         }
 
-        modelComponent.modelComponentDescription.material =
-            modelComponent.modelComponentDescription.material ?: model.material
+        val descriptionMaterial = modelComponent.modelComponentDescription.material
+        if(descriptionMaterial == null) {
+            modelComponent.modelComponentDescription.material = model.material
+        } else {
+            model.material = descriptionMaterial
+        }
+
         modelCache[descr] = model
 
         model.meshes.forEach { mesh ->
@@ -162,7 +167,7 @@ class ModelSystem(
                 for ((targetMeshIndex, mesh) in meshes.withIndex()) {
                     val targetMaterialIndex = materials.indexOf(mesh.material)
                     currentEntity.run {
-                        materialIndex = 0//targetMaterialIndex TODO: Reimplement
+                        materialIndex = targetMaterialIndex
                         update = Update.STATIC.asDouble.toInt()//entity.updateType.asDouble.toInt() TODO: Reimplement
                         meshBufferIndex = entityBufferIndex + targetMeshIndex
                         meshIndex = targetMeshIndex

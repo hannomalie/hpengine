@@ -173,6 +173,13 @@ class ExtensibleDeferredRenderer(
     }
 
     private fun actualRender(renderState: RenderState, result: DrawResult) {
+
+        for (extension in extensions) {
+            profiled(extension.javaClass.simpleName) {
+                extension.renderZeroPass(renderState)
+            }
+        }
+
         gpuContext.depthMask = true
         deferredRenderingBuffer.use(gpuContext, true)
 

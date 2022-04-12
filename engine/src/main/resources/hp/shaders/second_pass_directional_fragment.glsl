@@ -184,7 +184,8 @@ void main(void) {
 
 //	out_DiffuseSpecular = vec4(100*textureLod(directionalLightShadowMap, st, 0).rgb, 1);
 
-	//out_DiffuseSpecular = vec4(color,1);
+//	out_DiffuseSpecular = vec4(st, 0f,1f);
+//	out_DiffuseSpecular = vec4(positionView,1);
 	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
 	//out_DiffuseSpecular.rgb = vec3(positionShadow.xyz);
 }

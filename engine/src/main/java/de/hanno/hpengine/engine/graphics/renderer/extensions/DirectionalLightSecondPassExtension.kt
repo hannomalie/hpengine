@@ -42,12 +42,13 @@ class DirectionalLightSecondPassExtension(
             gpuContext.blend = true
             gpuContext.blendEquation = BlendMode.FUNC_ADD
             gpuContext.blendFunc(BlendMode.Factor.ONE, BlendMode.Factor.ONE)
-            GL32.glFramebufferTexture(
-                GL30.GL_FRAMEBUFFER,
-                GL30.GL_DEPTH_ATTACHMENT,
-                deferredRenderingBuffer.depthBufferTexture,
-                0
-            )
+//             TODO: Do i need this?
+//            GL32.glFramebufferTexture(
+//                GL30.GL_FRAMEBUFFER,
+//                GL30.GL_DEPTH_ATTACHMENT,
+//                deferredRenderingBuffer.depthBufferTexture,
+//                0
+//            )
             gpuContext.clearColor(0f, 0f, 0f, 0f)
             gpuContext.clearColorBuffer()
 
@@ -58,7 +59,7 @@ class DirectionalLightSecondPassExtension(
                 gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
                 gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
                 gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
-//                gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap) // TODO: This causes garbage to be rendered, find out why
+                gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
                 if (!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(
                         8,

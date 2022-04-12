@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -474,7 +475,7 @@ class ImGuiEditor(
             material.maps[type].let { currentTexture ->
                 val currentIndex = all2DTextures.values.indexOf(currentTexture)
                 val is2DTexture = currentIndex > -1
-                if(is2DTexture) {
+                if(is2DTexture || currentTexture == null) {
                     val previewValue = if (currentTexture != null) all2DTexturesNames[currentIndex] else "None"
                     if (ImGui.beginCombo(type.name, previewValue)) {
                         if (ImGui.selectable("None", currentTexture == null)) {

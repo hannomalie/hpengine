@@ -63,7 +63,7 @@ class DirectionalLightShadowMapExtension(
         renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
         renderState.directionalLightState[0].shadowMapId = renderTarget.renderedTextures[0]
     }
-    override fun renderFirstPass(backend: Backend<OpenGl>, gpuContext: GpuContext<OpenGl>, firstPassResult: FirstPassResult, renderState: RenderState) {
+    override fun renderZeroPass(renderState: RenderState) {
         profiled("Directional shadowmap") {
             val needsRerender =  forceRerender ||
                     renderedInCycle < renderState.directionalLightHasMovedInCycle ||
@@ -72,12 +72,12 @@ class DirectionalLightShadowMapExtension(
                     renderState.entitiesState.renderBatchesAnimated.isNotEmpty()
 
             if (needsRerender) {
-                drawShadowMap(renderState, firstPassResult)
+                drawShadowMap(renderState)
             }
         }
     }
 
-    private fun drawShadowMap(renderState: RenderState, firstPassResult: FirstPassResult) {
+    private fun drawShadowMap(renderState: RenderState) {
         gpuContext.disable(BLEND)
         gpuContext.depthMask = true
         gpuContext.enable(DEPTH_TEST)
@@ -103,7 +103,6 @@ class DirectionalLightShadowMapExtension(
             }
         }
         textureManager.generateMipMaps(TEXTURE_2D, shadowMapId)
-        firstPassResult.directionalLightShadowMapWasRendered = true
 
         renderedInCycle = renderState.cycle
         forceRerender = false
