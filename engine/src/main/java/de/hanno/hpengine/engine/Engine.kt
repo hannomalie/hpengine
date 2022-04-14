@@ -123,7 +123,6 @@ class Engine(val application: KoinApplication) {
                 }
             )
             .register(input)
-            .register(EntityBuffer())
     ).apply {
         renderManager.renderSystems.forEach { it.artemisWorld = this }
 
@@ -192,7 +191,8 @@ class Engine(val application: KoinApplication) {
                 directories = Directories(
                     EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
 //                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
-                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
+//                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
+                    GameDirectory(File("C:\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game"), null)
                 ),
                 debug = DebugConfig(isEditorOverlay = true)
             )
@@ -266,6 +266,24 @@ fun World.clear() {
 
     systems.filterIsInstance<Clearable>().forEach { it.clear() }
 }
+
+fun World.loadSponzaScene(config: ConfigImpl) {
+    clear()
+
+    edit(create()).apply {
+        create(TransformComponent::class.java)
+        create(ModelComponent::class.java).apply {
+            modelComponentDescription = StaticModelComponentDescription("assets/models/sponza.obj", Directory.Game)
+        }
+        create(SpatialComponent::class.java)
+        create(NameComponent::class.java).apply {
+            name = "Sponza"
+        }
+    }
+    addDirectionalLight()
+    addSkyBox(config)
+    addPrimaryCamera()
+}
 fun World.loadDemoScene(config: ConfigImpl) {
     clear()
 
@@ -279,6 +297,12 @@ fun World.loadDemoScene(config: ConfigImpl) {
             name = "Cube"
         }
     }
+    addDirectionalLight()
+    addSkyBox(config)
+    addPrimaryCamera()
+}
+
+private fun World.addDirectionalLight() {
     edit(create()).apply {
         create(NameComponent::class.java).apply {
             name = "DirectionalLight"
@@ -292,7 +316,20 @@ fun World.loadDemoScene(config: ConfigImpl) {
             }
         }
     }
+}
 
+fun World.addPrimaryCamera() {
+    edit(create()).apply {
+        create(TransformComponent::class.java)
+        getSystem(TagManager::class.java).register(primaryCamera, entityId)
+        create(NameComponent::class.java).apply {
+            name = "PrimaryCamera"
+        }
+        create(CameraComponent::class.java)
+    }
+}
+
+fun World.addSkyBox(config: ConfigImpl) {
     edit(create()).apply {
         create(NameComponent::class.java).apply {
             name = "SkyBox"
@@ -326,15 +363,5 @@ fun World.loadDemoScene(config: ConfigImpl) {
                 }
             )
         }
-
-    }
-
-    edit(create()).apply {
-        create(TransformComponent::class.java)
-        getSystem(TagManager::class.java).register(primaryCamera, entityId)
-        create(NameComponent::class.java).apply {
-            name = "PrimaryCamera"
-        }
-        create(CameraComponent::class.java)
     }
 }

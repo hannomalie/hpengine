@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.loadDemoScene
+import de.hanno.hpengine.engine.loadSponzaScene
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
@@ -210,6 +211,9 @@ class ImGuiEditor(
                         menuItem("Load Demo") {
                             artemisWorld.loadDemoScene(config)
                         }
+                        menuItem("Load Sponza") {
+                            artemisWorld.loadSponzaScene(config)
+                        }
                     }
                 }
             }
@@ -284,6 +288,9 @@ class ImGuiEditor(
                         is ModelComponentSelection -> {
                             tab("Entity") {
                                 artemisWorld.getSystem(ModelSystem::class.java)[selection.modelComponent.modelComponentDescription]?.let {
+                                    if (ImGui.checkbox("Invert Y Texture Coord", it.isInvertTexCoordY)) {
+                                        it.isInvertTexCoordY = !it.isInvertTexCoordY
+                                    }
                                     val material = it.material
                                     materialGrid(material)
                                 }

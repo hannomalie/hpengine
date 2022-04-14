@@ -129,6 +129,7 @@ class ModelSystem(
         modelCache[descr] = model
 
         model.meshes.forEach { mesh ->
+            materialManager.registerMaterial(mesh.material)
             getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programDescription ->
                 programCache[programDescription] =
                     programManager.getFirstPassProgram(programDescription) as Program<FirstPassUniforms>
@@ -174,7 +175,7 @@ class ModelSystem(
                         baseVertex = allocation.forMeshes[targetMeshIndex].vertexOffset
                         baseJointIndex = allocation.baseJointIndex
                         animationFrame0 = 0//modelComponent.animationFrame0 TODO: Reimplement
-                        isInvertedTexCoordY = 0//if (modelComponent.isInvertTexCoordY) 1 else 0 TODO: Reimplement
+                        isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                         val boundingVolume = model.getBoundingVolume(transform, mesh)
                         dummy4 = allocation.indexOffset
                         setTrafoAndBoundingVolume(transform.transformation, boundingVolume)
@@ -246,7 +247,8 @@ class ModelSystem(
     private val requiredEntityBufferSize: Int
         get() {
             // TODO: Reimplement instancing
-            return subscription.entities.size() //* instances.count
+            return mapEntity { modelCache[modelComponentMapper[it].modelComponentDescription]?.meshes?.size ?: 0 }.sum()
+            // * instances.count
         }
 
     private fun updateGpuJointsArray() {
@@ -417,14 +419,12 @@ class ModelSystem(
                     meshMaxWorld.set(max1)
                     centerWorld = meshCenter
                     this.boundingSphereRadius = boundingSphereRadius
-                    with(drawElementsIndirectCommand) {
-                        this.primCount = 1
-                        this.count = model.meshIndexCounts[meshIndex]
-                        this.firstIndex =
-                            allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].indexOffset
-                        this.baseVertex =
-                            allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].vertexOffset
-                    }
+                    drawElementsIndirectCommand.primCount = 1
+                    drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
+                    drawElementsIndirectCommand.firstIndex =
+                        allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].indexOffset
+                    drawElementsIndirectCommand.baseVertex =
+                        allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].vertexOffset
                     this.animated = !model.isStatic
                     materialInfo = mesh.material
                     program = getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programCache[it]!! }
