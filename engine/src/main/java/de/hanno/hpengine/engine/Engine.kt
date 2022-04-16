@@ -10,17 +10,14 @@ import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.config.DebugConfig
 import de.hanno.hpengine.engine.directory.Directories
 import de.hanno.hpengine.engine.directory.EngineDirectory
 import de.hanno.hpengine.engine.directory.GameDirectory
 import de.hanno.hpengine.engine.entity.CycleSystem
 import de.hanno.hpengine.engine.extension.*
-import de.hanno.hpengine.engine.graphics.GlfwWindow
 import de.hanno.hpengine.engine.graphics.RenderManager
 import de.hanno.hpengine.engine.graphics.Window
 import de.hanno.hpengine.engine.graphics.imgui.EditorCameraInputSystem
-import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.engine.graphics.light.area.AreaLightSystem
 import de.hanno.hpengine.engine.graphics.light.directional.DirectionalLightSystem
 import de.hanno.hpengine.engine.graphics.light.point.PointLightSystem
@@ -30,8 +27,6 @@ import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.EntityBuffer
 import de.hanno.hpengine.engine.model.material.MaterialManager
-import de.hanno.hpengine.engine.model.material.ProgramDescription
-import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.physics.PhysicsManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
@@ -39,18 +34,10 @@ import de.hanno.hpengine.engine.scene.WorldAABB
 import de.hanno.hpengine.engine.scene.dsl.*
 import de.hanno.hpengine.engine.system.Clearable
 import de.hanno.hpengine.engine.system.Extractor
-import de.hanno.hpengine.engine.transform.Transform
-import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
-import de.hanno.hpengine.util.ressources.enhanced
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
-import org.joml.AxisAngle4f
-import org.joml.Quaternionf
-import org.joml.Vector3f
-import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
-import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.objenesis.strategy.StdInstantiatorStrategy
@@ -60,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
 
-class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemoScene(config) }) {
+class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemoScene() }) {
     private val configModule = module {
         single { config } binds arrayOf(Config::class, ConfigImpl::class)
     }
@@ -109,9 +96,11 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
         PhysicsManager(config, koin.get(), koin.get(), koin.get()),
         ReflectionProbeManager(config),
         KotlinComponentSystem(),
+        CameraSystem(),
     ) + koin.getAll<BaseSystem>()
 
     val extractors = systems.filterIsInstance<Extractor>()
+    val worldPopulators = systems.filterIsInstance<WorldPopulator>()
 
     val worldConfigurationBuilder = WorldConfigurationBuilder().with(
         *(systems.distinct().toTypedArray())
@@ -128,6 +117,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
                 }
             )
             .register(input)
+            .register(config)
     ).apply {
         renderManager.renderSystems.forEach { it.artemisWorld = this }
 
@@ -247,6 +237,15 @@ fun launchEndlessRenderLoop(actualUpdateStep: suspend (Float) -> Unit): Job = Gl
     }
 }
 
+interface WorldPopulator {
+    fun World.populate()
+}
+
+fun World.loadScene(block: World.() -> Unit) {
+    clear()
+    block()
+}
+
 fun World.clear() {
     val entities = aspectSubscriptionManager[Aspect.all()]
         .entities
@@ -260,11 +259,12 @@ fun World.clear() {
     }
 
     systems.filterIsInstance<Clearable>().forEach { it.clear() }
+    systems.filterIsInstance<WorldPopulator>().forEach {
+        it.run { populate() }
+    }
 }
 
-fun World.loadDemoScene(config: ConfigImpl) {
-    clear()
-
+fun World.loadDemoScene() = loadScene {
     edit(create()).apply {
         create(TransformComponent::class.java)
         create(ModelComponent::class.java).apply {
@@ -273,73 +273,6 @@ fun World.loadDemoScene(config: ConfigImpl) {
         create(SpatialComponent::class.java)
         create(NameComponent::class.java).apply {
             name = "Cube"
-        }
-    }
-    addDirectionalLight()
-    addSkyBox(config)
-    addPrimaryCamera()
-}
-
-fun World.addDirectionalLight() {
-    edit(create()).apply {
-        create(NameComponent::class.java).apply {
-            name = "DirectionalLight"
-        }
-
-        create(DirectionalLightComponent::class.java).apply { }
-        create(TransformComponent::class.java).apply {
-            transform = Transform().apply {
-                translate(Vector3f(12f, 300f, 2f))
-                rotateAroundLocal(Quaternionf(AxisAngle4f(Math.toRadians(100.0).toFloat(), 1f, 0f, 0f)), 0f, 0f, 0f)
-            }
-        }
-    }
-}
-
-fun World.addPrimaryCamera() {
-    edit(create()).apply {
-        create(TransformComponent::class.java)
-        getSystem(TagManager::class.java).register(primaryCamera, entityId)
-        create(NameComponent::class.java).apply {
-            name = "PrimaryCamera"
-        }
-        create(CameraComponent::class.java)
-    }
-}
-
-fun World.addSkyBox(config: Config) {
-    edit(create()).apply {
-        create(NameComponent::class.java).apply {
-            name = "SkyBox"
-        }
-        create(TransformComponent::class.java)
-        create(SkyBoxComponent::class.java)
-        create(ModelComponent::class.java).apply {
-            modelComponentDescription = StaticModelComponentDescription(
-                "assets/models/skybox.obj",
-                Directory.Engine,
-                material = Material(
-                    name = "Skybox",
-                    materialType = Material.MaterialType.UNLIT,
-                    cullBackFaces = false,
-                    isShadowCasting = false,
-                    programDescription = ProgramDescription(
-                        vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
-                            .toCodeSource(),
-                        fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
-                            .toCodeSource().enhanced {
-                                replace(
-                                    "//END",
-                                    """
-                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
-                        """.trimIndent()
-                                )
-                            }
-                    )
-                ).apply {
-                    this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
-                }
-            )
         }
     }
 }

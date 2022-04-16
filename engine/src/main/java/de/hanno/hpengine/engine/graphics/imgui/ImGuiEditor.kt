@@ -207,7 +207,7 @@ class ImGuiEditor(
                             artemisWorld.clear()
                         }
                         menuItem("Load Demo") {
-                            artemisWorld.loadDemoScene(config)
+                            artemisWorld.loadDemoScene()
                         }
                     }
                 }

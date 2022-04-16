@@ -5,14 +5,19 @@ import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.World
 import com.artemis.annotations.All
+import com.artemis.annotations.Wire
 import com.artemis.managers.TagManager
+import de.hanno.hpengine.engine.WorldPopulator
 import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.CameraRenderExtension
 import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
+import de.hanno.hpengine.engine.component.artemis.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.NameComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.event.bus.MBassadorEventBus
 import de.hanno.hpengine.engine.graphics.*
@@ -32,16 +37,23 @@ import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.input.Input
+import de.hanno.hpengine.engine.model.material.Material
+import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.engine.scene.OceanWaterRenderSystem
+import de.hanno.hpengine.engine.scene.dsl.Directory
+import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.util.fps.FPSCounterSystem
+import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSource
+import de.hanno.hpengine.util.ressources.enhanced
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.lwjgl.opengl.GL30
+import javax.inject.Inject
 import javax.swing.SwingUtilities
 import kotlin.collections.set
 
@@ -234,9 +246,11 @@ class GiVolumeSystem(
 
 class SkyBoxComponent: Component()
 @All(SkyBoxComponent::class)
-class SkyBoxSystem: BaseEntitySystem() {
+class SkyBoxSystem: BaseEntitySystem(), WorldPopulator {
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var tagManager: TagManager
+    @Wire
+    lateinit var config: ConfigImpl
 
     override fun processSystem() {
         if(!tagManager.isRegistered(primaryCamera)) return
@@ -252,6 +266,47 @@ class SkyBoxSystem: BaseEntitySystem() {
                 transform.identity().translate(eyePosition)
                 transform.scale(1000f)
             }
+        }
+    }
+
+    override fun World.populate() {
+        addSkyBox(config)
+    }
+}
+
+fun World.addSkyBox(config: Config) {
+    edit(create()).apply {
+        create(NameComponent::class.java).apply {
+            name = "SkyBox"
+        }
+        create(TransformComponent::class.java)
+        create(SkyBoxComponent::class.java)
+        create(ModelComponent::class.java).apply {
+            modelComponentDescription = StaticModelComponentDescription(
+                "assets/models/skybox.obj",
+                Directory.Engine,
+                material = Material(
+                    name = "Skybox",
+                    materialType = Material.MaterialType.UNLIT,
+                    cullBackFaces = false,
+                    isShadowCasting = false,
+                    programDescription = ProgramDescription(
+                        vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
+                            .toCodeSource(),
+                        fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
+                            .toCodeSource().enhanced {
+                                replace(
+                                    "//END",
+                                    """
+                            out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
+                        """.trimIndent()
+                                )
+                            }
+                    )
+                ).apply {
+                    this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
+                }
+            )
         }
     }
 }

@@ -25,24 +25,19 @@ fun main() {
     )
 
     Engine(config) {
-        loadSponzaScene()
+        world.loadScene {
+            edit(create()).apply {
+                create(TransformComponent::class.java)
+                create(ModelComponent::class.java).apply {
+                    modelComponentDescription =
+                        StaticModelComponentDescription("assets/models/sponza.obj", Directory.Game)
+                }
+                create(SpatialComponent::class.java)
+                create(NameComponent::class.java).apply {
+                    name = "Sponza"
+                }
+            }
+        }
     }
 }
 
-fun Engine.loadSponzaScene() = world.run {
-    clear()
-
-    edit(create()).apply {
-        create(TransformComponent::class.java)
-        create(ModelComponent::class.java).apply {
-            modelComponentDescription = StaticModelComponentDescription("assets/models/sponza.obj", Directory.Game)
-        }
-        create(SpatialComponent::class.java)
-        create(NameComponent::class.java).apply {
-            name = "Sponza"
-        }
-    }
-    addDirectionalLight()
-    addSkyBox(config)
-    addPrimaryCamera()
-}

@@ -1,7 +1,12 @@
 package de.hanno.hpengine.engine.component.artemis
 
+import com.artemis.BaseSystem
 import com.artemis.Component
+import com.artemis.World
+import com.artemis.managers.TagManager
+import de.hanno.hpengine.engine.WorldPopulator
 import de.hanno.hpengine.engine.camera.Camera
+import de.hanno.hpengine.engine.graphics.imgui.primaryCamera
 import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 
@@ -70,5 +75,23 @@ class CameraComponent: Component() {
         } else {
             Util.createOrthogonal(-width / 2, width / 2, height / 2, -height / 2, -far / 2, far / 2)
         }
+    }
+}
+
+class CameraSystem: BaseSystem(), WorldPopulator {
+    override fun processSystem() { }
+    override fun World.populate() {
+        addPrimaryCamera()
+    }
+}
+
+fun World.addPrimaryCamera() {
+    edit(create()).apply {
+        create(TransformComponent::class.java)
+        getSystem(TagManager::class.java).register(primaryCamera, entityId)
+        create(NameComponent::class.java).apply {
+            name = "PrimaryCamera"
+        }
+        create(CameraComponent::class.java)
     }
 }
