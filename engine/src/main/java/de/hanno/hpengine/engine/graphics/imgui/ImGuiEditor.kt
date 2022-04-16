@@ -16,13 +16,11 @@ import de.hanno.hpengine.engine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.graphics.state.RenderSystem
 import de.hanno.hpengine.engine.loadDemoScene
-import de.hanno.hpengine.engine.loadSponzaScene
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
@@ -210,9 +208,6 @@ class ImGuiEditor(
                         }
                         menuItem("Load Demo") {
                             artemisWorld.loadDemoScene(config)
-                        }
-                        menuItem("Load Sponza") {
-                            artemisWorld.loadSponzaScene(config)
                         }
                     }
                 }

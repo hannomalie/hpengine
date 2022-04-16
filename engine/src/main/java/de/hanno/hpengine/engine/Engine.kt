@@ -60,10 +60,15 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
 
-class Engine(val application: KoinApplication) {
-
+class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemoScene(config) }) {
+    private val configModule = module {
+        single { config } binds arrayOf(Config::class, ConfigImpl::class)
+    }
+    val application = startKoin {
+        modules(configModule, baseModule, deferredRendererModule, imGuiEditorModule)
+    }
     private val koin = application.koin
-    private val config = koin.get<ConfigImpl>()
+    val config = koin.get<Config>()
     private val addResourceContext = koin.get<AddResourceContext>()
     private val window = koin.get<Window<*>>()
     private val input = koin.get<Input>()
@@ -127,9 +132,8 @@ class Engine(val application: KoinApplication) {
         renderManager.renderSystems.forEach { it.artemisWorld = this }
 
         process()
-
-        loadDemoScene(config)
     }
+
 
     private var updateThreadCounter = 0
     private val updateThreadNamer: (Runnable) -> Thread =
@@ -139,6 +143,8 @@ class Engine(val application: KoinApplication) {
     val updateCycle = AtomicLong()
 
     init {
+        afterInit()
+
         launchEndlessLoop { deltaSeconds ->
             try {
                 executeCommands()
@@ -189,25 +195,14 @@ class Engine(val application: KoinApplication) {
 
             val config = ConfigImpl(
                 directories = Directories(
-                    EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
 //                    EngineDirectory(File("C:\\Users\\Tenter\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
+                    EngineDirectory(File("C:\\workspace\\hpengine\\engine\\src\\main\\resources\\hp")),
 //                    GameDirectory(File(Directories.GAMEDIR_NAME), null)
                     GameDirectory(File("C:\\workspace\\hpengine\\newsimplegame\\src\\main\\resources\\game"), null)
                 ),
-                debug = DebugConfig(isEditorOverlay = true)
             )
 
-            val configModule = module {
-                single { config } binds arrayOf(Config::class, ConfigImpl::class)
-            }
-            val windowModule = module {
-                single { GlfwWindow(get()) } bind Window::class
-            }
-            val application = startKoin {
-                modules(configModule, windowModule, baseModule, deferredRendererModule, imGuiEditorModule)
-            }
-
-            val engine = Engine(application)
+            val engine = Engine(config)
         }
 
     }
@@ -267,23 +262,6 @@ fun World.clear() {
     systems.filterIsInstance<Clearable>().forEach { it.clear() }
 }
 
-fun World.loadSponzaScene(config: ConfigImpl) {
-    clear()
-
-    edit(create()).apply {
-        create(TransformComponent::class.java)
-        create(ModelComponent::class.java).apply {
-            modelComponentDescription = StaticModelComponentDescription("assets/models/sponza.obj", Directory.Game)
-        }
-        create(SpatialComponent::class.java)
-        create(NameComponent::class.java).apply {
-            name = "Sponza"
-        }
-    }
-    addDirectionalLight()
-    addSkyBox(config)
-    addPrimaryCamera()
-}
 fun World.loadDemoScene(config: ConfigImpl) {
     clear()
 
@@ -302,7 +280,7 @@ fun World.loadDemoScene(config: ConfigImpl) {
     addPrimaryCamera()
 }
 
-private fun World.addDirectionalLight() {
+fun World.addDirectionalLight() {
     edit(create()).apply {
         create(NameComponent::class.java).apply {
             name = "DirectionalLight"
@@ -329,7 +307,7 @@ fun World.addPrimaryCamera() {
     }
 }
 
-fun World.addSkyBox(config: ConfigImpl) {
+fun World.addSkyBox(config: Config) {
     edit(create()).apply {
         create(NameComponent::class.java).apply {
             name = "SkyBox"

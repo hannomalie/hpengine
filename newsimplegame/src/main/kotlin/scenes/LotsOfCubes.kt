@@ -1,7 +1,6 @@
 package scenes
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.dsl.Directory
@@ -33,13 +32,11 @@ val Engine.lotsOfCubesScene
                     ),
                     material = Material(
                         "grass",
-                        materialInfo = MaterialInfo(
-                            materialType = Material.MaterialType.FOLIAGE,
-                            maps = mutableMapOf(
-                                Material.MAP.DIFFUSE to
-                                        application.koin.get<TextureManager>()
-                                            .getTexture("assets/textures/grass.png", true)
-                            )
+                        materialType = Material.MaterialType.FOLIAGE,
+                        maps = mutableMapOf(
+                            Material.MAP.DIFFUSE to
+                                    application.koin.get<TextureManager>()
+                                        .getTexture("assets/textures/grass.png", true)
                         )
                     )
                 )

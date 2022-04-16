@@ -2,7 +2,6 @@ package scenes
 
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
-import de.hanno.hpengine.engine.model.material.MaterialInfo
 import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.OceanWaterDescription
@@ -25,14 +24,12 @@ val Engine.oceanDemo
                     ),
                     material = Material(
                         "ocean",
-                        MaterialInfo().apply {
-                            program = application.koin.get<ProgramManager<*>>().heightMappingFirstPassProgram
-                            diffuse.set(0f, 0f, 1f)
-                            metallic = 0.8f
-                            roughness = 0.7f
-                            parallaxScale = 0.3f
-                            parallaxBias = 0.3f
-                        }
+                        programDescription = application.koin.get<ProgramManager<*>>().heightMappingFirstPassProgramDescription,
+                        diffuse = Vector3f(0f, 0f, 1f),
+                        metallic = 0.8f,
+                        roughness = 0.7f,
+                        parallaxScale = 0.3f,
+                        parallaxBias = 0.3f,
                     )
                 )
             )

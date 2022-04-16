@@ -137,6 +137,8 @@ val baseModule = module {
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, OpenGlProgramManager::class)
     single { TextureManager(get(), get(), get()) }
 
+    single { GlfwWindow(get()) } bind Window::class
+
     addBackendModule()
     addCameraModule()
     addReflectionProbeModule()
