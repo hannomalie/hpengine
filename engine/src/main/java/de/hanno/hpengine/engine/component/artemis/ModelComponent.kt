@@ -19,6 +19,7 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.*
+import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.ProgramDescription
@@ -75,6 +76,7 @@ class ModelSystem(
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
     private val programCache = mutableMapOf<ProgramDescription, Program<FirstPassUniforms>>()
     private val staticModelLoader = StaticModelLoader()
+    private val animatedModelLoader = AnimatedModelLoader()
 
     operator fun get(modelComponentDescription: ModelComponentDescription) = modelCache[modelComponentDescription]
 
@@ -102,15 +104,19 @@ class ModelSystem(
     private fun loadModelToCache(entityId: Int) {
         val modelComponent = modelComponentMapper[entityId]
         val descr = modelComponent.modelComponentDescription
+        val dir = when (descr.directory) {
+            Directory.Game -> config.gameDir
+            Directory.Engine -> config.engineDir
+        }
         val model = when (descr) {
-            is AnimatedModelComponentDescription -> TODO()
+            is AnimatedModelComponentDescription -> {
+                animatedModelLoader.load(
+                    descr.file,
+                    textureManager,
+                    dir
+                )
+            }
             is StaticModelComponentDescription -> {
-
-                val dir = when (descr.directory) {
-                    Directory.Game -> config.gameDir
-                    Directory.Engine -> config.engineDir
-                }
-
                 staticModelLoader.load(
                     descr.file,
                     textureManager,
@@ -154,6 +160,12 @@ class ModelSystem(
             val entityId = ids[i]
             val modelComponent = modelComponentMapper[entityId]
             val model = modelCache[modelComponent.modelComponentDescription]!!
+            when(model) {
+                is AnimatedModel -> model.animations.values.forEach {
+                    it.update(world.delta)
+                }
+                is StaticModel -> {  }
+            }
             val transformComponent = transformComponentMapper[entityId]
             val transform = transformComponent.transform
 
@@ -164,6 +176,10 @@ class ModelSystem(
             var currentEntity = gpuEntitiesArray[counter]
             val entityBufferIndex = entityId
 
+            val animationFrame = when(model) {
+                is AnimatedModel -> model.animation.currentFrame
+                is StaticModel -> 0
+            }
             gpuEntitiesArray.byteBuffer.run {
                 for ((targetMeshIndex, mesh) in meshes.withIndex()) {
                     val targetMaterialIndex = materials.indexOf(mesh.material)
@@ -174,7 +190,7 @@ class ModelSystem(
                         meshIndex = targetMeshIndex
                         baseVertex = allocation.forMeshes[targetMeshIndex].vertexOffset
                         baseJointIndex = allocation.baseJointIndex
-                        animationFrame0 = 0//modelComponent.animationFrame0 TODO: Reimplement
+                        animationFrame0 = animationFrame
                         isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                         val boundingVolume = model.getBoundingVolume(transform, mesh)
                         dummy4 = allocation.indexOffset

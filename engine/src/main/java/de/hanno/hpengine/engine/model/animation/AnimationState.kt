@@ -1,7 +1,5 @@
 package de.hanno.hpengine.engine.model.animation
 
-import de.hanno.hpengine.engine.model.animation.AnimatedFrame
-
 class Animation(val name: String,
                 val frames: List<AnimatedFrame>,
                 val duration: Float,

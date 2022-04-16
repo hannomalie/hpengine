@@ -102,25 +102,25 @@ class AnimatedModel(
     val animation = animations.entries.first().value // TOOD: Use all animations
     val animationController = AnimationController(animation)
 
-    override val verticesPacked =
-        TypedBuffer(BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),
-            AnimatedVertexStruktPacked.type).apply {
-            byteBuffer.run {
-                var counter = 0
-                for (mesh in meshes) {
-                    for (vertex in mesh.vertices) {
-                        this@apply[counter].run {
-                            position.run { set(vertex.position) }
-                            texCoord.run { set(vertex.texCoord) }
-                            normal.run { set(vertex.normal) }
-                            weights.run { set(vertex.weights) }
-                            jointIndices.run { set(vertex.jointIndices) }
-                        }
-                        counter++
+    override val verticesPacked = TypedBuffer(
+        BufferUtils.createByteBuffer(meshes.sumBy { it.vertices.size } * AnimatedVertexStruktPacked.sizeInBytes),
+        AnimatedVertexStruktPacked.type).apply {
+        byteBuffer.run {
+            var counter = 0
+            for (mesh in meshes) {
+                for (vertex in mesh.vertices) {
+                    this@apply[counter].run {
+                        position.run { set(vertex.position) }
+                        texCoord.run { set(vertex.texCoord) }
+                        normal.run { set(vertex.normal) }
+                        weights.run { set(vertex.weights) }
+                        jointIndices.run { set(vertex.jointIndices) }
                     }
+                    counter++
                 }
             }
         }
+    }
 
     override fun update(deltaSeconds: Float) {
         animationController.update(deltaSeconds)

@@ -34,6 +34,7 @@ import de.hanno.hpengine.engine.scene.WorldAABB
 import de.hanno.hpengine.engine.scene.dsl.*
 import de.hanno.hpengine.engine.system.Clearable
 import de.hanno.hpengine.engine.system.Extractor
+import de.hanno.hpengine.engine.transform.AABBData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
@@ -265,14 +266,40 @@ fun World.clear() {
 }
 
 fun World.loadDemoScene() = loadScene {
+    addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
+
+}
+fun World.addStaticModelEntity(
+    name: String,
+    path: String,
+    directory: Directory = Directory.Game,
+) {
     edit(create()).apply {
         create(TransformComponent::class.java)
         create(ModelComponent::class.java).apply {
-            modelComponentDescription = StaticModelComponentDescription("assets/models/cube.obj", Directory.Engine)
+            modelComponentDescription = StaticModelComponentDescription(path, directory)
         }
         create(SpatialComponent::class.java)
         create(NameComponent::class.java).apply {
-            name = "Cube"
+            this.name = name
+        }
+    }
+}
+
+fun World.addAnimatedModelEntity(
+    name: String,
+    path: String,
+    aabbData: AABBData,
+    directory: Directory = Directory.Game
+) {
+    edit(create()).apply {
+        create(TransformComponent::class.java)
+        create(ModelComponent::class.java).apply {
+            modelComponentDescription = AnimatedModelComponentDescription(path, directory, aabbData = aabbData)
+        }
+        create(SpatialComponent::class.java)
+        create(NameComponent::class.java).apply {
+            this.name = name
         }
     }
 }
