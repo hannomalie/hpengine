@@ -3,8 +3,8 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (binding = 0, rgba32f) readonly uniform image2D twiddlesIndices;
-layout (binding = 1, rgba32f) uniform image2D pingpong0;
-layout (binding = 2, rgba32f) uniform image2D pingpong1;
+layout (binding = 1, rgba32f) uniform image2D tildeMap;
+layout (binding = 2, rgba32f) uniform image2D pingPongMap;
 
 uniform int stage;
 uniform int pingpong;
@@ -41,8 +41,8 @@ void horizontalButterflies()
     if(pingpong == 0)
     {
         vec4 data = imageLoad(twiddlesIndices, ivec2(stage, x.x)).rgba;
-        vec2 p_ = imageLoad(pingpong0, ivec2(data.z, x.y)).rg;
-        vec2 q_ = imageLoad(pingpong0, ivec2(data.w, x.y)).rg;
+        vec2 p_ = imageLoad(tildeMap, ivec2(data.z, x.y)).rg;
+        vec2 q_ = imageLoad(tildeMap, ivec2(data.w, x.y)).rg;
         vec2 w_ = vec2(data.x, data.y);
 
         complex p = complex(p_.x,p_.y);
@@ -52,14 +52,14 @@ void horizontalButterflies()
         //Butterfly operation
         H = add(p,mul(w,q));
 
-        imageStore(pingpong1, x, vec4(H.real, H.im, 0, 1));
-        // imageStore(pingpong1, x, vec4(p_,0,1)); // debug
+        imageStore(pingPongMap, x, vec4(H.real, H.im, 0, 1));
+        // imageStore(pingPongMap, x, vec4(p_,0,1)); // debug
     }
     else if(pingpong == 1)
     {
         vec4 data = imageLoad(twiddlesIndices, ivec2(stage, x.x)).rgba;
-        vec2 p_ = imageLoad(pingpong1, ivec2(data.z, x.y)).rg;
-        vec2 q_ = imageLoad(pingpong1, ivec2(data.w, x.y)).rg;
+        vec2 p_ = imageLoad(pingPongMap, ivec2(data.z, x.y)).rg;
+        vec2 q_ = imageLoad(pingPongMap, ivec2(data.w, x.y)).rg;
         vec2 w_ = vec2(data.x, data.y);
 
         complex p = complex(p_.x,p_.y);
@@ -69,8 +69,8 @@ void horizontalButterflies()
         //Butterfly operation
         H = add(p,mul(w,q));
 
-        imageStore(pingpong0, x, vec4(H.real, H.im, 0, 1));
-        // imageStore(pingpong0, x, vec4(p_,0,1)); // debug
+        imageStore(tildeMap, x, vec4(H.real, H.im, 0, 1));
+        // imageStore(tildeMap, x, vec4(p_,0,1)); // debug
     }
 }
 
@@ -82,8 +82,8 @@ void verticalButterflies()
     vec4 data = imageLoad(twiddlesIndices, ivec2(stage, x.y)).rgba;
     if(pingpong == 0)
     {
-        vec2 p_ = imageLoad(pingpong0, ivec2(x.x, data.z)).rg;
-        vec2 q_ = imageLoad(pingpong0, ivec2(x.x, data.w)).rg;
+        vec2 p_ = imageLoad(tildeMap, ivec2(x.x, data.z)).rg;
+        vec2 q_ = imageLoad(tildeMap, ivec2(x.x, data.w)).rg;
         vec2 w_ = vec2(data.x, data.y);
 
         complex p = complex(p_.x,p_.y);
@@ -93,13 +93,13 @@ void verticalButterflies()
         //Butterfly operation
         H = add(p,mul(w,q));
 
-        imageStore(pingpong1, x, vec4(H.real, H.im, 0, 1));
-        // imageStore(pingpong1, x, vec4(p_,0,1)); // debug
+        imageStore(pingPongMap, x, vec4(H.real, H.im, 0, 1));
+        // imageStore(pingPongMap, x, vec4(p_,0,1)); // debug
     }
     else if(pingpong == 1)
     {
-        vec2 p_ = imageLoad(pingpong1, ivec2(x.x, data.z)).rg;
-        vec2 q_ = imageLoad(pingpong1, ivec2(x.x, data.w)).rg;
+        vec2 p_ = imageLoad(pingPongMap, ivec2(x.x, data.z)).rg;
+        vec2 q_ = imageLoad(pingPongMap, ivec2(x.x, data.w)).rg;
         vec2 w_ = vec2(data.x, data.y);
 
         complex p = complex(p_.x,p_.y);
@@ -109,8 +109,8 @@ void verticalButterflies()
         //Butterfly operation
         H = add(p,mul(w,q));
 
-        imageStore(pingpong0, x, vec4(H.real, H.im, 0, 1));
-        // imageStore(pingpong0, x, vec4(p_,0,1)); // debug
+        imageStore(tildeMap, x, vec4(H.real, H.im, 0, 1));
+        // imageStore(tildeMap, x, vec4(p_,0,1)); // debug
     }
 }
 

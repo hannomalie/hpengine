@@ -181,7 +181,9 @@ fun Program<*>.createFileListeners() {
     val sources = listOfNotNull(
         fragmentShader?.source,
         vertexShader.source,
-        geometryShader?.source
+        geometryShader?.source,
+        tesselationControlShader?.source,
+        tesselationEvaluationShader?.source,
     )
     val fileBasedSources = sources.filterIsInstance<FileBasedCodeSource>() + sources.filterIsInstance<WrappedCodeSource>().map { it.underlying }
 

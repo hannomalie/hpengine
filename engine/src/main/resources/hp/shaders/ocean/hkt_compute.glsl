@@ -40,23 +40,38 @@ complex conj(complex c)
 
     return c_conj;
 }
-
+vec2 c_exp(float x){
+    return vec2(cos(x), sin(x));
+}
+vec2 c_conj(vec2 a){
+    return vec2(a.x, -a.y);
+}
+//Complex arithmetic.
+vec2 c_mul(vec2 a, vec2 b){
+    return vec2(a.x * b.x - a.y * b.y, a.y * b.x + a.x * b.y);
+}
 void main(void)
 {
-    vec2 x = ivec2(gl_GlobalInvocationID.xy);
+//    vec2 x = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 x = ivec2(gl_GlobalInvocationID.xy);
 
-    vec2 k = vec2(2.0 * M_PI * x.x/L, 2.0 * M_PI * x.y/L);
+    vec2 k = 2.0 * M_PI * x/vec2(L);
 
     float magnitude = length(k);
-    if (magnitude < 0.0001) magnitude = 0.0001;
+    float epsilon = 0.00001;
+    if (magnitude < epsilon) magnitude = epsilon;
 
     float w = sqrt(9.81 * magnitude);
 
-    complex fourier_amp = complex(imageLoad(tilde_h0k, ivec2(gl_GlobalInvocationID.xy)).r,
-    imageLoad(tilde_h0k, ivec2(gl_GlobalInvocationID.xy)).g);
+    complex fourier_amp = complex(
+        imageLoad(tilde_h0k, ivec2(gl_GlobalInvocationID.xy)).r,
+        imageLoad(tilde_h0k, ivec2(gl_GlobalInvocationID.xy)).g
+    );
 
-    complex fourier_amp_conj   = conj(complex(imageLoad(tilde_h0minusk, ivec2(gl_GlobalInvocationID.xy)).r,
-    imageLoad(tilde_h0minusk, ivec2(gl_GlobalInvocationID.xy)).g));
+    complex fourier_amp_conj   = conj(complex(
+        imageLoad(tilde_h0minusk, ivec2(gl_GlobalInvocationID.xy)).r,
+        imageLoad(tilde_h0minusk, ivec2(gl_GlobalInvocationID.xy)).g
+    ));
 
     float cosinus = cos(w*t);
     float sinus   = sin(w*t);
@@ -66,7 +81,7 @@ void main(void)
     complex exp_iwt_inv = complex(cosinus, -sinus);
 
     // dy
-    complex h_k_t_dy = add(mul(fourier_amp, exp_iwt), (mul(fourier_amp_conj, exp_iwt_inv)));
+    complex h_k_t_dy = add(mul(fourier_amp, exp_iwt), mul(fourier_amp_conj, exp_iwt_inv));
 
     // dx
     complex dx = complex(0.0,-k.x/magnitude);
@@ -76,7 +91,18 @@ void main(void)
     complex dy = complex(0.0,-k.y/magnitude);
     complex h_k_t_dz = mul(dy, h_k_t_dy);
 
-    imageStore(tilde_hkt_dy, ivec2(gl_GlobalInvocationID.xy), vec4(h_k_t_dy.real, h_k_t_dy.im, 0, 1));
     imageStore(tilde_hkt_dx, ivec2(gl_GlobalInvocationID.xy), vec4(h_k_t_dx.real, h_k_t_dx.im, 0, 1));
+    imageStore(tilde_hkt_dy, ivec2(gl_GlobalInvocationID.xy), vec4(h_k_t_dy.real, h_k_t_dy.im, 0, 1));
     imageStore(tilde_hkt_dz, ivec2(gl_GlobalInvocationID.xy), vec4(h_k_t_dz.real, h_k_t_dz.im, 0, 1));
+
+    int SIZE = N;
+    int SIDE = L;
+//    k = (2.0 * M_PI * ((x-1.5) - SIZE/2.0)) / SIDE;
+    float dispersion = sqrt(9.81 * length(k)) * t;
+    vec2 h0k = imageLoad(tilde_h0k, ivec2(gl_GlobalInvocationID.xy)).xy;
+    vec2 h0minusk = imageLoad(tilde_h0minusk, ivec2(gl_GlobalInvocationID.xy)).xy;
+    vec2 hkt = c_mul(h0k, c_exp(dispersion)) + c_conj(c_mul(h0minusk, c_exp(-dispersion)));
+    imageStore(tilde_hkt_dx, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1));
+    imageStore(tilde_hkt_dy, ivec2(gl_GlobalInvocationID.xy), vec4(hkt, 0, 1));
+    imageStore(tilde_hkt_dz, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1));
 }

@@ -9,9 +9,12 @@ layout (binding = 5, rgba32f) uniform writeonly image2D albedo;
 layout (binding = 6, rgba32f) uniform writeonly image2D roughness;
 layout (binding = 7) uniform sampler2D debug;
 
-uniform int N = 256;
+uniform int N = 512;
 uniform mat4 viewMatrix;
 uniform vec3 diffuseColor = vec3(0.05,0.2,0.8);
+uniform float scaleX = 1.0f;
+uniform float scaleY = 1.0f;
+uniform float scaleZ = 1.0f;
 
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
@@ -25,16 +28,22 @@ void main(void)
 {
     vec3 V = (viewMatrix * vec4(0,0,-1,0)).xyz;
     ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uvTextureSpace = vec2(uv)/float(N);
-    float x = textureLod(displacementX, uvTextureSpace, 0).x;
-    float y = textureLod(displacementY, uvTextureSpace, 0).x;
-    float z = textureLod(displacementZ, uvTextureSpace, 0).x;
+    ivec2 workGroup = ivec2(gl_WorkGroupID);
+    ivec2 workGroupSize = ivec2(gl_WorkGroupSize.xy);
+    ivec2 localIndex = ivec2(gl_LocalInvocationID.xy);
+    vec2 st = vec2(uv) / vec2(N);
+    vec2 uvTextureSpace = st;
+    float x = scaleX * textureLod(displacementX, uvTextureSpace, 0).x;
+    float y = scaleY * textureLod(displacementY, uvTextureSpace, 0).x;
+    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.5, 0).x;
+    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.25, 0).x;
+    float z = scaleZ * textureLod(displacementZ, uvTextureSpace, 0).x;
     imageStore(displacement, uv, vec4(x, y, z, 1));
 
-    float s01 = 100*textureLod(displacementY, vec2(uv + off.xy)/float(N), 0).x;
-    float s21 = 100*textureLod(displacementY, vec2(uv + off.zy)/float(N), 0).x;
-    float s10 = 100*textureLod(displacementY, vec2(uv + off.yx)/float(N), 0).x;
-    float s12 = 100*textureLod(displacementY, vec2(uv + off.yz)/float(N), 0).x;
+    float s01 = scaleY * textureLod(displacementY, vec2(uv + off.xy)/float(N), 0).x;
+    float s21 = scaleY * textureLod(displacementY, vec2(uv + off.zy)/float(N), 0).x;
+    float s10 = scaleY * textureLod(displacementY, vec2(uv + off.yx)/float(N), 0).x;
+    float s12 = scaleY * textureLod(displacementY, vec2(uv + off.yz)/float(N), 0).x;
     vec3 va = normalize(vec3(size.x,s21-s01, size.y));
     vec3 vb = normalize(vec3(size.y,s12-s10, -size.x));
     vec4 bump = vec4( cross(va,vb), 1 );
@@ -63,11 +72,11 @@ void main(void)
     // This is rather "arbitrary", but looks pretty good in practice.
     float color_mod = 1.0 + 3.0 * smoothstep(1.2, 1.8, turbulence);
 
-    //    imageStore(albedo, uv, 0.25*(albedoResult * vec4(color_mod,color_mod,color_mod,0)));
-    //    imageStore(roughness, uv, vec4(1-j));
-    imageStore(albedo, uv, vec4(diffuseColor,0));
-    imageStore(roughness, uv, vec4(1));
+        imageStore(albedo, uv, vec4(color_mod,color_mod,color_mod,1));
+        imageStore(roughness, uv, vec4(clamp(1-j, 0, 1)));
+//    imageStore(albedo, uv, vec4(diffuseColor, 1));
+//    imageStore(roughness, uv, vec4(1));
 
     //    imageStore(albedo, uv, vec4(textureLod(debug, uvTextureSpace, 0).r));
-    //    imageStore(albedo, uv, vec4(uvTextureSpace, 0, 0));
+//        imageStore(albedo, uv, vec4(uvTextureSpace, 0, 0));
 }

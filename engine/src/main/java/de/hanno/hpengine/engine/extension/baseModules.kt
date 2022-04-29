@@ -53,7 +53,6 @@ import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.lwjgl.opengl.GL30
-import javax.inject.Inject
 import javax.swing.SwingUtilities
 import kotlin.collections.set
 
@@ -92,7 +91,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, finalOutput, get(), get(), get(), getAll())
+        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), getAll())
     }
 }
 val textureRendererModule = module {
@@ -180,7 +179,7 @@ fun Module.addDirectionalLightModule() {
 }
 
 fun Module.addOceanWaterModule() {
-    renderSystem { OceanWaterRenderSystem(get(), get(), get(), get()) }
+    renderSystem { OceanWaterRenderSystem(get(), get(), get(), get(), get()) }
 }
 
 fun Module.addReflectionProbeModule() {

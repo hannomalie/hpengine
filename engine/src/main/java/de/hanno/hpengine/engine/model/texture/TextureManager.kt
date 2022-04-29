@@ -81,6 +81,7 @@ class TextureManager(
 
     /** The table of textures that have been loaded in this loader  */
     var textures: MutableMap<String, Texture> = LinkedHashMap()
+    val texturesForDebugOutput: MutableMap<String, Texture> = LinkedHashMap()
 
     init {
 //    	loadAllAvailableTextures();
@@ -748,6 +749,10 @@ class TextureManager(
             ComponentColorModel.OPAQUE,
             DataBuffer.TYPE_BYTE
         )
+    }
+
+    fun registerTextureForDebugOutput(name: String, texture: Texture2D) {
+        texturesForDebugOutput[name] = texture
     }
 
     override fun processSystem() {}

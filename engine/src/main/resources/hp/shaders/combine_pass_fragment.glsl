@@ -1,14 +1,14 @@
 
 layout(binding=0) uniform sampler2D diffuseMap; // diffuse, metallic 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
-layout(binding=2) uniform sampler2D reflection; // ao, reflectedColor
+layout(binding=2) uniform sampler2D reflectionMap; // ao, reflectedColor
 layout(binding=3) uniform sampler2D motionMap; // motionVec, probeIndices
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform sampler2D forwardRenderedMap;
 layout(binding=7) uniform sampler2D forwardRenderedRevealageMap;
 layout(binding=8) uniform sampler2D environment; // reflection
-layout(binding=9) uniform sampler2D refractedMap;
+layout(binding=9) uniform sampler2D environmentReflection;
 layout(binding=11) uniform sampler2D aoScattering;
 layout(binding=13) uniform sampler3D grid;
 layout(binding=14) uniform samplerCube environmentMap;
@@ -386,7 +386,7 @@ void main(void) {
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0) + textureLod(indirectHalfScreen, st, 0);
-	vec4 reflection = textureLod(reflection, st, 0);
+	vec4 reflection = textureLod(environmentReflection, st, 0);
 	lightDiffuseSpecular.rgb += specularColor.rgb * reflection.rgb;
 
 	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
@@ -400,11 +400,11 @@ void main(void) {
 	vec4 AOscattering = textureLod(aoScattering, st, 3);
 	vec3 scattering = textureLod(aoScattering, st, 2).gba;//AOscattering.gba;
 
-	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
+//	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
-	environmentLightAO.rgb += refracted.rgb;
+//	environmentLightAO.rgb += refracted.rgb;
 	vec3 environmentLight = environmentLightAO.rgb;
 //	environmentLight += vec3(0.25f) * color.rgb;
 	float ao = AOscattering.r;
@@ -415,7 +415,7 @@ void main(void) {
 		ambientTerm *= clamp(ao,0,1);
 	}
 
-	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
+	vec4 lit = roughness * vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 //	vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 //	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);

@@ -89,7 +89,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
 
-        var program: Program<*>? = null // TODO: Assign this program in the loop below and use() only on change
+        var program: Program<*> // TODO: Assign this program in the loop below and use() only on change
         for(batch in groupedBatches.value) {
             program = batch.program ?: this.program
             program.use()

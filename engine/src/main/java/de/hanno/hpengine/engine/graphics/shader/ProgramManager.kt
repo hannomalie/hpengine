@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader
 
 import de.hanno.hpengine.engine.backend.BackendType
+import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.directory.Asset
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.FirstPassUniforms
@@ -16,6 +17,7 @@ import de.hanno.hpengine.util.ressources.FileBasedCodeSource.Companion.toCodeSou
 import org.lwjgl.BufferUtils
 
 interface ProgramManager<BACKEND: BackendType> {
+    val config: Config
     val gpuContext: GpuContext<BACKEND>
 
     fun update(deltaSeconds: Float)

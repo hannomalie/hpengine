@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.component.artemis
 import com.artemis.Component
 import org.joml.Vector2f
 import org.joml.Vector3f
+import java.lang.Math.pow
+import kotlin.math.pow
 
 class OceanWaterComponent: Component() {
     var amplitude: Float = 2f
@@ -10,7 +12,14 @@ class OceanWaterComponent: Component() {
     var timeFactor: Float = 1f
     var direction: Vector2f = Vector2f(0.25f, 1.0f)
     var albedo: Vector3f = Vector3f(0f, 0.1f, 1f)
-    var L: Int = 800
+    var choppy: Boolean = false
+    var scaleX = 1f
+    var scaleY = 1f
+    var scaleZ = 1f
+    var mapsSet = false // this prevents oceanwaterextension from assigning maps every time extraction is done
+
+    val L: Int
+        get() = (windspeed.pow(2.0f) /9.81f).toInt()
 
     companion object {
         val recommendedIntensity = 26f

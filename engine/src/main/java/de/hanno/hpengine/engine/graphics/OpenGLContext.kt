@@ -381,6 +381,13 @@ class OpenGLContext private constructor(override val window: Window<OpenGl>, val
             put(0f)
             rewind()
         }
+        val RED_BUFFER: FloatBuffer = BufferUtils.createFloatBuffer(4).apply {
+            put(1f)
+            put(0f)
+            put(0f)
+            put(1f)
+            rewind()
+        }
 
         private var openGLContextSingleton: OpenGLContext? = null
 

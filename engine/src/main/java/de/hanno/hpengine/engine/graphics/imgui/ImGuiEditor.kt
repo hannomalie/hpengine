@@ -39,6 +39,7 @@ import org.lwjgl.glfw.GLFW
 class ImGuiEditor(
     private val window: GlfwWindow,
     private val gpuContext: GpuContext<OpenGl>,
+    private val textureManager: TextureManager,
     private val finalOutput: FinalOutput,
     private val config: ConfigImpl,
     private val sharedDepthBuffer: SharedDepthBuffer,
@@ -61,7 +62,7 @@ class ImGuiEditor(
     }
 
     val output = ImInt(-1)
-    val renderTargetTextures: List<Texture> get() = gpuContext.registeredRenderTargets.flatMap { it.textures }
+    val renderTargetTextures: List<Texture> get() = gpuContext.registeredRenderTargets.flatMap { it.textures } + textureManager.texturesForDebugOutput.values
     val currentOutputTexture: Texture get() = renderTargetTextures[output.get()]
 
     override lateinit var artemisWorld: World
@@ -247,6 +248,7 @@ class ImGuiEditor(
                                             component.name
                                         )
                                     )
+                                    is OceanWaterComponent -> selectOrUnselect(OceanWaterSelection(component))
                                 }
                             }
                         }
@@ -277,6 +279,9 @@ class ImGuiEditor(
                 tabBar("Foo") {
 
                     when (val selection = selection) {
+                        null -> {
+                            tab("Entity") { }
+                        }
                         is MeshSelection -> {
                             tab("Entity") { }
                         }
@@ -323,12 +328,42 @@ class ImGuiEditor(
                             tab("Entity") { }
                         }
                         is OceanWaterSelection -> {
-                            tab("Entity") { }
+                            tab("Entity") {
+                                val oceanWater = selection.oceanWater
+                                val colors = floatArrayOf(
+                                    oceanWater.albedo.x,
+                                    oceanWater.albedo.y,
+                                    oceanWater.albedo.z
+                                )
+                                if (ImGui.colorPicker3("Albedo", colors)) {
+                                    oceanWater.albedo.x = colors[0]
+                                    oceanWater.albedo.y = colors[1]
+                                    oceanWater.albedo.z = colors[2]
+                                }
+                                floatInput("Amplitude", oceanWater.amplitude, min = 0.1f, max = 5f) { floatArray ->
+                                    oceanWater.amplitude = floatArray[0]
+                                }
+                                floatInput("Windspeed", oceanWater.windspeed, min = 0.0f, max = 250f) { floatArray ->
+                                    oceanWater.windspeed = floatArray[0]
+                                }
+                                float2Input("Direction", oceanWater.direction.x, oceanWater.direction.y, min = 0.0f, max = 1.0f) { floatArray ->
+                                    oceanWater.direction.x = floatArray[0]
+                                    oceanWater.direction.y = floatArray[1]
+                                }
+                                float3Input("Scale", oceanWater.scaleX, oceanWater.scaleY, oceanWater.scaleZ, min = 0.0f, max = 10.0f) { floatArray ->
+                                    oceanWater.scaleX = floatArray[0]
+                                    oceanWater.scaleY = floatArray[1]
+                                    oceanWater.scaleZ = floatArray[2]
+                                }
+                                checkBox("Choppy", oceanWater.choppy) { boolean ->
+                                    oceanWater.choppy = boolean
+                                }
+                                floatInput("Time Factor", oceanWater.timeFactor, min = 0.0f, max = 10f) { floatArray ->
+                                    oceanWater.timeFactor = floatArray[0]
+                                }
+                            }
                         }
                         is ReflectionProbeSelection -> {
-                            tab("Entity") { }
-                        }
-                        null -> {
                             tab("Entity") { }
                         }
                     }!!
@@ -346,6 +381,14 @@ class ImGuiEditor(
                                 }
                                 counter++
                             }
+                        }
+                        textureManager.texturesForDebugOutput.forEach { (name, texture) ->
+                            if(ImGui.radioButton(name, output, counter)) {
+                                (currentOutputTexture as? Texture2D)?.let {
+                                    finalOutput.texture2D = it
+                                }
+                            }
+                            counter++
                         }
                     }
                     tab("RenderExtensions") {
@@ -371,46 +414,44 @@ class ImGuiEditor(
     }
 
     private fun Window.materialGrid(material: Material) {
-        val materialInfo = material
-
         text(material.name)
         val colors = floatArrayOf(
-            materialInfo.diffuse.x,
-            materialInfo.diffuse.y,
-            materialInfo.diffuse.z
+            material.diffuse.x,
+            material.diffuse.y,
+            material.diffuse.z
         )
         if (ImGui.colorPicker3("Albedo", colors)) {
-            materialInfo.diffuse.x = colors[0]
-            materialInfo.diffuse.y = colors[1]
-            materialInfo.diffuse.z = colors[2]
+            material.diffuse.x = colors[0]
+            material.diffuse.y = colors[1]
+            material.diffuse.z = colors[2]
         }
-        floatInput("Roughness", materialInfo.roughness) { floatArray -> materialInfo.roughness = floatArray[0] }
-        floatInput("Metallic", materialInfo.metallic) { floatArray -> materialInfo.metallic = floatArray[0] }
-        floatInput("Ambient", materialInfo.ambient) { floatArray -> materialInfo.ambient = floatArray[0] }
-        floatInput("Transparency", materialInfo.transparency) { floatArray ->
-            materialInfo.transparency = floatArray[0]
+        floatInput("Roughness", material.roughness) { floatArray -> material.roughness = floatArray[0] }
+        floatInput("Metallic", material.metallic) { floatArray -> material.metallic = floatArray[0] }
+        floatInput("Ambient", material.ambient) { floatArray -> material.ambient = floatArray[0] }
+        floatInput("Transparency", material.transparency) { floatArray ->
+            material.transparency = floatArray[0]
         }
-        floatInput("ParallaxScale", materialInfo.parallaxScale) { floatArray ->
-            materialInfo.parallaxScale = floatArray[0]
+        floatInput("ParallaxScale", material.parallaxScale) { floatArray ->
+            material.parallaxScale = floatArray[0]
         }
-        floatInput("ParallaxBias", materialInfo.parallaxBias) { floatArray ->
-            materialInfo.parallaxBias = floatArray[0]
+        floatInput("ParallaxBias", material.parallaxBias) { floatArray ->
+            material.parallaxBias = floatArray[0]
         }
-        floatInput("UVScaleX", materialInfo.uvScale.x, 0.01f, 10f) { floatArray ->
-            materialInfo.uvScale.x = floatArray[0]
+        floatInput("UVScaleX", material.uvScale.x, 0.01f, 10f) { floatArray ->
+            material.uvScale.x = floatArray[0]
         }
-        floatInput("UVScaleY", materialInfo.uvScale.y, 0.01f, 10f) { floatArray ->
-            materialInfo.uvScale.y = floatArray[0]
+        floatInput("UVScaleY", material.uvScale.y, 0.01f, 10f) { floatArray ->
+            material.uvScale.y = floatArray[0]
         }
-        floatInput("LODFactor", materialInfo.lodFactor) { floatArray -> materialInfo.lodFactor = floatArray[0] }
-        if (ImGui.checkbox("WorldSpaceTexCoords", materialInfo.useWorldSpaceXZAsTexCoords)) {
-            materialInfo.useWorldSpaceXZAsTexCoords = !materialInfo.useWorldSpaceXZAsTexCoords
+        floatInput("LODFactor", material.lodFactor, 1f, 100f) { floatArray -> material.lodFactor = floatArray[0] }
+        if (ImGui.checkbox("WorldSpaceTexCoords", material.useWorldSpaceXZAsTexCoords)) {
+            material.useWorldSpaceXZAsTexCoords = !material.useWorldSpaceXZAsTexCoords
         }
-        if (ImGui.beginCombo("Type", materialInfo.materialType.toString())) {
+        if (ImGui.beginCombo("Type", material.materialType.toString())) {
             Material.MaterialType.values().forEach { type ->
-                val selected = materialInfo.materialType == type
+                val selected = material.materialType == type
                 if (ImGui.selectable(type.toString(), selected)) {
-                    materialInfo.materialType = type
+                    material.materialType = type
                 }
                 if (selected) {
                     ImGui.setItemDefaultFocus()
@@ -418,11 +459,11 @@ class ImGuiEditor(
             }
             ImGui.endCombo()
         }
-        if (ImGui.beginCombo("TransparencyType", materialInfo.transparencyType.toString())) {
+        if (ImGui.beginCombo("TransparencyType", material.transparencyType.toString())) {
             Material.TransparencyType.values().forEach { type ->
-                val selected = materialInfo.transparencyType == type
+                val selected = material.transparencyType == type
                 if (ImGui.selectable(type.toString(), selected)) {
-                    materialInfo.transparencyType = type
+                    material.transparencyType = type
                 }
                 if (selected) {
                     ImGui.setItemDefaultFocus()
@@ -430,17 +471,17 @@ class ImGuiEditor(
             }
             ImGui.endCombo()
         }
-        if (ImGui.checkbox("BackFaceCulling", materialInfo.cullBackFaces)) {
-            materialInfo.cullBackFaces = !materialInfo.cullBackFaces
+        if (ImGui.checkbox("BackFaceCulling", material.cullBackFaces)) {
+            material.cullBackFaces = !material.cullBackFaces
         }
-        if (ImGui.checkbox("DepthTest", materialInfo.depthTest)) {
-            materialInfo.depthTest = !materialInfo.depthTest
+        if (ImGui.checkbox("DepthTest", material.depthTest)) {
+            material.depthTest = !material.depthTest
         }
-        if (ImGui.beginCombo("EnvironmentMapType", materialInfo.environmentMapType.toString())) {
+        if (ImGui.beginCombo("EnvironmentMapType", material.environmentMapType.toString())) {
             Material.ENVIRONMENTMAP_TYPE.values().forEach { type ->
-                val selected = materialInfo.environmentMapType == type
+                val selected = material.environmentMapType == type
                 if (ImGui.selectable(type.toString(), selected)) {
-                    materialInfo.environmentMapType = type
+                    material.environmentMapType = type
                 }
                 if (selected) {
                     ImGui.setItemDefaultFocus()
@@ -448,10 +489,10 @@ class ImGuiEditor(
             }
             ImGui.endCombo()
         }
-        if (ImGui.checkbox("CastShadows", materialInfo.isShadowCasting)) {
-            materialInfo.isShadowCasting = !materialInfo.isShadowCasting
+        if (ImGui.checkbox("CastShadows", material.isShadowCasting)) {
+            material.isShadowCasting = !material.isShadowCasting
         }
-        textureSelection(materialInfo)
+        textureSelection(material)
     }
 
     private fun floatInput(label: String, initial: Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
@@ -462,39 +503,54 @@ class ImGuiEditor(
     }
     private fun float2Input(label: String, initial0: Float, initial1:Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
         val floatArray = floatArrayOf(initial0, initial1)
-        if (ImGui.sliderFloat(label, floatArray, min, max)) {
+        if (ImGui.sliderFloat2(label, floatArray, min, max)) {
             onChange(floatArray)
+        }
+    }
+    private fun float3Input(label: String, initial0: Float, initial1:Float, initial2:Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
+        val floatArray = floatArrayOf(initial0, initial1, initial2)
+        if (ImGui.sliderFloat3(label, floatArray, min, max)) {
+            onChange(floatArray)
+        }
+    }
+    private fun intInput(label: String, initial: Int, min: Int = 0, max: Int = 100, onChange: (IntArray) -> Unit) {
+        val intArray = intArrayOf(initial)
+        if (ImGui.sliderInt(label, intArray, min, max)) {
+            onChange(intArray)
         }
     }
 
     private fun textureSelection(material: Material) {
         ImGui.text("Textures")
-        val all2DTextures =
-            artemisWorld.getSystem(TextureManager::class.java).textures.filterValues { it is FileBasedTexture2D }
+        val all2DTextures = artemisWorld.getSystem(TextureManager::class.java)
+            .textures.filterValues { it is FileBasedTexture2D } + textureManager.texturesForDebugOutput
+
         val all2DTexturesNames = all2DTextures.keys.toTypedArray()
 
         Material.MAP.values().forEach { type ->
             material.maps[type].let { currentTexture ->
                 val currentIndex = all2DTextures.values.indexOf(currentTexture)
                 val is2DTexture = currentIndex > -1
-                if(is2DTexture || currentTexture == null) {
-                    val previewValue = if (currentTexture != null) all2DTexturesNames[currentIndex] else "None"
-                    if (ImGui.beginCombo(type.name, previewValue)) {
-                        if (ImGui.selectable("None", currentTexture == null)) {
-                            material.maps.remove(type)
-                        }
-                        all2DTextures.forEach { (name, texture) ->
-                            val selected = currentTexture == texture
-                            if (ImGui.selectable(name, selected)) {
-                                material.maps[type] = texture
-                            }
-                            if (selected) {
-                                ImGui.setItemDefaultFocus()
-                            }
-                        }
-
-                        ImGui.endCombo()
+                val previewValue = when {
+                    is2DTexture -> all2DTexturesNames[currentIndex]
+                    currentTexture != null -> "Other"
+                    else -> "None"
+                }
+                if (ImGui.beginCombo(type.name, previewValue)) {
+                    if (ImGui.selectable("None", currentTexture == null)) {
+                        material.maps.remove(type)
                     }
+                    all2DTextures.forEach { (name, texture) ->
+                        val selected = currentTexture == texture
+                        if (ImGui.selectable(name, selected)) {
+                            material.maps[type] = texture
+                        }
+                        if (selected) {
+                            ImGui.setItemDefaultFocus()
+                        }
+                    }
+
+                    ImGui.endCombo()
                 }
             }
         }
