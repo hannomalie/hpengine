@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.scene
 import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.component.artemis.ModelComponent
+import de.hanno.hpengine.engine.component.artemis.OceanSurfaceComponent
 import de.hanno.hpengine.engine.component.artemis.OceanWaterComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.GpuContext
@@ -173,18 +174,18 @@ class OceanWaterRenderSystem(
         textureManager.registerTextureForDebugOutput("[Ocean Water] Twiddle Indices", twiddleIndicesMap)
     }
     override fun extract(renderState: RenderState, world: World) {
-        val oceanWaterEntities = renderState.componentsForEntities.filter { it.value.any { it is OceanWaterComponent } }
+        val oceanWaterEntities = renderState.componentsForEntities.filter { it.value.any { it is OceanSurfaceComponent } }
         if(oceanWaterEntities.isNotEmpty()) {
             val components = oceanWaterEntities.entries.first().value
             val modelComponent = components.firstIsInstance<ModelComponent>()
-            val oceanWaterComponent = components.firstIsInstance<OceanWaterComponent>()
-            if(!oceanWaterComponent.mapsSet) {
+            val oceanSurfaceComponent = components.firstIsInstance<OceanSurfaceComponent>()
+            if(!oceanSurfaceComponent.mapsSet) {
                 modelComponent.modelComponentDescription.material?.let {
 //                    it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
                     it.maps.putIfAbsent(Material.MAP.DISPLACEMENT, displacementMap)
                     it.maps.putIfAbsent(Material.MAP.NORMAL, normalMap)
                 }
-                oceanWaterComponent.mapsSet = true
+                oceanSurfaceComponent.mapsSet = true
             }
         }
     }

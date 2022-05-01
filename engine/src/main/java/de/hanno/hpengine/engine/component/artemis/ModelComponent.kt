@@ -72,7 +72,7 @@ class ModelSystem(
     private var gpuJointsArray = BufferUtils.createByteBuffer(Matrix4fStrukt.sizeInBytes).typed(Matrix4fStrukt.type)
 
     var gpuEntitiesArray = entityBuffer.underlying
-    val entityIndices: MutableMap<ModelComponentDescription, Int> = mutableMapOf()
+    private val entityIndices: MutableMap<ModelComponent, Int> = mutableMapOf()
     private val modelCache = mutableMapOf<ModelComponentDescription, Model<*>>()
     private val programCache = mutableMapOf<ProgramDescription, Program<FirstPassUniforms>>()
     private val staticModelLoader = StaticModelLoader()
@@ -287,7 +287,7 @@ class ModelSystem(
         var index = 0
         while (s > i) {
             val current = modelComponentMapper[ids[i]]
-            entityIndices.put(current.modelComponentDescription, index)
+            entityIndices[current] = index
 //            TODO: Reimplement instancing
             index += modelCache[current.modelComponentDescription]!!.meshes.size //* instances.count
             i++
@@ -389,7 +389,7 @@ class ModelSystem(
     fun extract(
         camera: Camera, currentWriteState: RenderState, cameraWorldPosition: Vector3f, drawLines: Boolean,
         allocations: MutableMap<ModelComponentDescription, Allocation>,
-        entityIndices: MutableMap<ModelComponentDescription, Int>
+        entityIndices: MutableMap<ModelComponent, Int>
     ) {
 
         currentWriteState.entitiesState.renderBatchesStatic.clear()
@@ -401,7 +401,7 @@ class ModelSystem(
             val transform = transformComponentMapper[entityId].transform
             val entityVisible = !invisibleComponentMapper.has(entityId)
 
-            val entityIndexOf = entityIndices[modelComponent.modelComponentDescription]!!
+            val entityIndexOf = entityIndices[modelComponent]!!
 
             val model: Model<*> = modelCache[modelComponent.modelComponentDescription]!!
             val meshes = model.meshes
@@ -420,7 +420,7 @@ class ModelSystem(
                 val meshBufferIndex = entityIndexOf + meshIndex //* entity.instanceCount
 
                 val batch =
-                    (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh,-1)) { (_, _) -> RenderBatch() }
+                    (currentWriteState.entitiesState.cash).computeIfAbsent(BatchKey(mesh, entityIndexOf, -1)) { (_, _) -> RenderBatch() }
                 with(batch) {
                     entityBufferIndex = meshBufferIndex
                     this.movedInCycle = currentWriteState.cycle// entity.movedInCycle TODO: reimplement
@@ -444,7 +444,7 @@ class ModelSystem(
                     this.animated = !model.isStatic
                     materialInfo = mesh.material
                     program = getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programCache[it]!! }
-                    entityIndex = index //TODO: check if correct index, it got out of hand
+                    entityIndex = entityIndexOf //TODO: check if correct index, it got out of hand
                     entityName = mesh.name // TODO: use entity name component
                     contributesToGi = true//entity.contributesToGi TODO: reimplement
                     this.meshIndex = meshIndex

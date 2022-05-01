@@ -16,7 +16,6 @@ class OceanWaterComponent: Component() {
     var scaleX = 1f
     var scaleY = 1f
     var scaleZ = 1f
-    var mapsSet = false // this prevents oceanwaterextension from assigning maps every time extraction is done
 
     val L: Int
         get() = (windspeed.pow(2.0f) /9.81f).toInt()
@@ -24,6 +23,9 @@ class OceanWaterComponent: Component() {
     companion object {
         val recommendedIntensity = 26f
     }
+}
+class OceanSurfaceComponent: Component() {
+    var mapsSet = false // this prevents oceanwaterextension from assigning maps every time extraction is done
 }
 
 // TODO: Implement oceanwater material as component

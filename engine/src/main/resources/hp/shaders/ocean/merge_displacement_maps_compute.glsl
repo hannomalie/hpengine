@@ -35,8 +35,8 @@ void main(void)
     vec2 uvTextureSpace = st;
     float x = scaleX * textureLod(displacementX, uvTextureSpace, 0).x;
     float y = scaleY * textureLod(displacementY, uvTextureSpace, 0).x;
-    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.5, 0).x;
-    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.25, 0).x;
+//    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.5, 0).x;
+//    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.25, 0).x;
     float z = scaleZ * textureLod(displacementZ, uvTextureSpace, 0).x;
     imageStore(displacement, uv, vec4(x, y, z, 1));
 
