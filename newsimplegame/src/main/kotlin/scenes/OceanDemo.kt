@@ -35,7 +35,7 @@ fun main() {
             edit(create()).apply {
                 create(OceanWaterComponent::class.java).apply {
                     windspeed = 130f
-                    scaleY = 1.2f
+                    waveHeight = 1.2f
                     timeFactor = 8f
                 }
                 create(NameComponent::class.java).apply {

@@ -102,7 +102,7 @@ void main(void)
     vec2 h0k = imageLoad(tilde_h0k, ivec2(gl_GlobalInvocationID.xy)).xy;
     vec2 h0minusk = imageLoad(tilde_h0minusk, ivec2(gl_GlobalInvocationID.xy)).xy;
     vec2 hkt = c_mul(h0k, c_exp(dispersion)) + c_conj(c_mul(h0minusk, c_exp(-dispersion)));
-    imageStore(tilde_hkt_dx, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1));
-    imageStore(tilde_hkt_dy, ivec2(gl_GlobalInvocationID.xy), vec4(hkt, 0, 1));
-    imageStore(tilde_hkt_dz, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1));
+//    imageStore(tilde_hkt_dx, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1));
+//    imageStore(tilde_hkt_dy, ivec2(gl_GlobalInvocationID.xy), vec4(hkt, 0, 1));
+//    imageStore(tilde_hkt_dz, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1));
 }

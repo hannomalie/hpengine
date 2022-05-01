@@ -358,8 +358,8 @@ void main(void) {
   	st.t = gl_FragCoord.y / screenHeight;
   	
   	vec4 positionRoughness = textureLod(positionMap, st, 0);
-  	float roughness = positionRoughness.w;
-  	float glossiness = (1-roughness);
+  	float glossiness = positionRoughness.w;
+  	float roughness = (1-glossiness);
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec4 normalAmbient = textureLod(normalMap,st, 0);
@@ -379,15 +379,13 @@ void main(void) {
   	colorMetallic.xyz = pow(colorMetallic.xyz, inverseGamma);
   	
   	float metallic = colorMetallic.a;
-  	
-	const float metalSpecularBoost = 1.0f;
-  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), metalSpecularBoost * colorMetallic.rgb, metallic);
-  	const float metalBias = 0.0f;
-  	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
+
+  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), colorMetallic.rgb, metallic);
+  	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic, 0, 1));
   	
 	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0) + textureLod(indirectHalfScreen, st, 0);
 	vec4 reflection = textureLod(environmentReflection, st, 0);
-	lightDiffuseSpecular.rgb += specularColor.rgb * reflection.rgb;
+	lightDiffuseSpecular.rgb += specularColor.rgb * reflection.rgb * roughness;
 
 	float revealage = textureLod(forwardRenderedRevealageMap, st, 0).r;
 	float additiveness = textureLod(forwardRenderedRevealageMap, st, 0).a;

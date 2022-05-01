@@ -29,6 +29,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import kotlin.math.ln
 import kotlin.math.max
+import kotlin.random.Random
 
 private val defaultTextureFilterConfig = TextureFilterConfig(MinFilter.LINEAR, MagFilter.LINEAR)
 
@@ -181,7 +182,7 @@ class OceanWaterRenderSystem(
             val oceanSurfaceComponent = components.firstIsInstance<OceanSurfaceComponent>()
             if(!oceanSurfaceComponent.mapsSet) {
                 modelComponent.modelComponentDescription.material?.let {
-//                    it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
+                    it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
                     it.maps.putIfAbsent(Material.MAP.DISPLACEMENT, displacementMap)
                     it.maps.putIfAbsent(Material.MAP.NORMAL, normalMap)
                 }
@@ -224,13 +225,13 @@ class OceanWaterRenderSystem(
         GL42.glBindImageTexture(4, h0MinuskMap.id, 0, false, 0, GL15.GL_READ_ONLY, h0MinuskMap.internalFormat)
         hktShader.dispatchCompute(N/16,N/16,1)
 
-        GL42.glBindImageTexture(0, twiddleIndicesMap.id, 0, false, 0, GL15.GL_READ_ONLY, twiddleIndicesMap.internalFormat)
         for(helper in if(oceanWaterComponent.choppy) tildeMapHelpersChoppy else tildeMapHelpers) {
             var pingpong = 0
             butterflyShader.use()
             val pingPongMap = helper.pingPongMap
             val tildeMap = helper.tildeMap
             val displacementMap = helper.displacementMap
+            GL42.glBindImageTexture(0, twiddleIndicesMap.id, 0, false, 0, GL15.GL_READ_ONLY, twiddleIndicesMap.internalFormat)
             GL42.glBindImageTexture(1, tildeMap.id, 0, false, 0, GL15.GL_READ_WRITE, tildeMap.internalFormat)
             GL42.glBindImageTexture(2, pingPongMap.id, 0, false, 0, GL15.GL_READ_WRITE, pingPongMap.internalFormat)
 
@@ -268,8 +269,8 @@ class OceanWaterRenderSystem(
         mergeDisplacementMapsShader.setUniform("diffuseColor", oceanWaterComponent.albedo)
         mergeDisplacementMapsShader.setUniform("N", N)
         mergeDisplacementMapsShader.setUniform("L", oceanWaterComponent.L)
-        mergeDisplacementMapsShader.setUniform("scaleX", oceanWaterComponent.scaleX)
-        mergeDisplacementMapsShader.setUniform("scaleY", oceanWaterComponent.scaleY)
+        mergeDisplacementMapsShader.setUniform("choppiness", oceanWaterComponent.choppiness)
+        mergeDisplacementMapsShader.setUniform("waveHeight", oceanWaterComponent.waveHeight)
         mergeDisplacementMapsShader.setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
         GL42.glBindImageTexture(0, displacementMap.id, 0, false, 0, GL15.GL_WRITE_ONLY, displacementMap.internalFormat)
         gpuContext.bindTexture(1, displacementMapX)

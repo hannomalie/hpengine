@@ -12,9 +12,8 @@ layout (binding = 7) uniform sampler2D debug;
 uniform int N = 512;
 uniform mat4 viewMatrix;
 uniform vec3 diffuseColor = vec3(0.05,0.2,0.8);
-uniform float scaleX = 1.0f;
-uniform float scaleY = 1.0f;
-uniform float scaleZ = 1.0f;
+uniform float choppiness = 1.0f;
+uniform float waveHeight = 1.0f;
 
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
@@ -33,17 +32,15 @@ void main(void)
     ivec2 localIndex = ivec2(gl_LocalInvocationID.xy);
     vec2 st = vec2(uv) / vec2(N);
     vec2 uvTextureSpace = st;
-    float x = scaleX * textureLod(displacementX, uvTextureSpace, 0).x;
-    float y = scaleY * textureLod(displacementY, uvTextureSpace, 0).x;
-//    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.5, 0).x;
-//    y += 0.1f*textureLod(displacementY, uvTextureSpace*0.25, 0).x;
-    float z = scaleZ * textureLod(displacementZ, uvTextureSpace, 0).x;
-    imageStore(displacement, uv, vec4(x, y, z, 1));
+    vec3 resultingDisplacement = waveHeight * textureLod(displacementY, uvTextureSpace, 0).xyz;
+    resultingDisplacement += choppiness * textureLod(displacementX, uvTextureSpace, 0).xyz;
+    resultingDisplacement += choppiness * textureLod(displacementZ, uvTextureSpace, 0).xyz;
+    imageStore(displacement, uv, vec4(resultingDisplacement, 1));
 
-    float s01 = scaleY * textureLod(displacementY, vec2(uv + off.xy)/float(N), 0).x;
-    float s21 = scaleY * textureLod(displacementY, vec2(uv + off.zy)/float(N), 0).x;
-    float s10 = scaleY * textureLod(displacementY, vec2(uv + off.yx)/float(N), 0).x;
-    float s12 = scaleY * textureLod(displacementY, vec2(uv + off.yz)/float(N), 0).x;
+    float s01 = waveHeight * textureLod(displacementY, vec2(uv + off.xy)/float(N), 0).x;
+    float s21 = waveHeight * textureLod(displacementY, vec2(uv + off.zy)/float(N), 0).x;
+    float s10 = waveHeight * textureLod(displacementY, vec2(uv + off.yx)/float(N), 0).x;
+    float s12 = waveHeight * textureLod(displacementY, vec2(uv + off.yz)/float(N), 0).x;
     vec3 va = normalize(vec3(size.x,s21-s01, size.y));
     vec3 vb = normalize(vec3(size.y,s12-s10, -size.x));
     vec4 bump = vec4( cross(va,vb), 1 );
@@ -53,7 +50,6 @@ void main(void)
 
     //https://arm-software.github.io/opengl-es-sdk-for-android/ocean_f_f_t.html
     #define LAMBDA 1.2
-    const float scale = 50.0f;
     float aX = textureLodOffset(displacementX, uvTextureSpace, 0.0, ivec2(+1, 0)).x;
     float aY = textureLodOffset(displacementY, uvTextureSpace, 0.0, ivec2(+1, 0)).x;
     float bX = textureLodOffset(displacementX, uvTextureSpace, 0.0, ivec2(-1, 0)).x;
@@ -66,14 +62,18 @@ void main(void)
 
     vec2 dDdx = 0.5 * LAMBDA * (vec2(aX, aY) - vec2(bX, bY));
     vec2 dDdy = 0.5 * LAMBDA * (vec2(cX, cY) - vec2(dX, dY));
+    const float scale = 15.0f;
     float j = jacobian(dDdx * scale, dDdy * scale);
+    float resultingRoughness = clamp(1-j, 0f, 1f);
 
-    float turbulence = max(2.0 - j + dot(abs(bump.xz), vec2(1.2)), 0.0);
+    float turbulence = 0.25f*max(2.0 - j + dot(abs(bump.xz), vec2(1.2)), 0.0);
     // This is rather "arbitrary", but looks pretty good in practice.
-    float color_mod = 1.0 + 3.0 * smoothstep(1.2, 1.8, turbulence);
+    //    vec3 color_mod = vec3(3.0 * smoothstep(1.2, 1.8, turbulence));
+    vec3 color_mod = vec3(mix(diffuseColor.rgb*0.5, vec3(diffuseColor*1.1), turbulence));
+    color_mod += 0.2f*vec3(resultingRoughness);
 
-        imageStore(albedo, uv, vec4(color_mod,color_mod,color_mod,1));
-        imageStore(roughness, uv, vec4(clamp(1-j, 0, 1)));
+        imageStore(albedo, uv, vec4(color_mod, resultingRoughness));
+        imageStore(roughness, uv, vec4(resultingRoughness));
 //    imageStore(albedo, uv, vec4(diffuseColor, 1));
 //    imageStore(roughness, uv, vec4(1));
 

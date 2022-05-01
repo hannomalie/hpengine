@@ -350,13 +350,14 @@ class ImGuiEditor(
                                     oceanWater.direction.x = floatArray[0]
                                     oceanWater.direction.y = floatArray[1]
                                 }
-                                float3Input("Scale", oceanWater.scaleX, oceanWater.scaleY, oceanWater.scaleZ, min = 0.0f, max = 10.0f) { floatArray ->
-                                    oceanWater.scaleX = floatArray[0]
-                                    oceanWater.scaleY = floatArray[1]
-                                    oceanWater.scaleZ = floatArray[2]
+                                floatInput("Wave Height", oceanWater.waveHeight, min = 0.0f, max = 10.0f) { floatArray ->
+                                    oceanWater.waveHeight = floatArray[0]
                                 }
                                 checkBox("Choppy", oceanWater.choppy) { boolean ->
                                     oceanWater.choppy = boolean
+                                }
+                                floatInput("Choppiness", oceanWater.choppiness, min = 0.0f, max = 1.0f) { floatArray ->
+                                    oceanWater.choppiness = floatArray[0]
                                 }
                                 floatInput("Time Factor", oceanWater.timeFactor, min = 0.0f, max = 10f) { floatArray ->
                                     oceanWater.timeFactor = floatArray[0]
