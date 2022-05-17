@@ -17,24 +17,24 @@ typealias HpVector3f = de.hanno.hpengine.engine.math.Vector3f
 typealias HpVector4f = de.hanno.hpengine.engine.math.Vector4f
 
 interface VertexStruktPacked : Strukt {
-    val ByteBuffer.position: Vector4fStrukt
-    val ByteBuffer.texCoord: Vector4fStrukt
-    val ByteBuffer.normal: Vector4fStrukt
-    val ByteBuffer.dummy: Vector4fStrukt
+    context(ByteBuffer) val position: Vector4fStrukt
+    context(ByteBuffer) val texCoord: Vector4fStrukt
+    context(ByteBuffer) val normal: Vector4fStrukt
+    context(ByteBuffer) val dummy: Vector4fStrukt
 
     companion object
 }
 
 interface AnimatedVertexStruktPacked : Strukt {
-    val ByteBuffer.position: Vector4fStrukt
-    val ByteBuffer.texCoord: Vector4fStrukt
-    val ByteBuffer.normal: Vector4fStrukt
-    val ByteBuffer.weights: Vector4fStrukt
+    context(ByteBuffer) val position: Vector4fStrukt
+    context(ByteBuffer) val texCoord: Vector4fStrukt
+    context(ByteBuffer) val normal: Vector4fStrukt
+    context(ByteBuffer) val weights: Vector4fStrukt
 
-    val ByteBuffer.jointIndices: Vector4iStrukt
-    val ByteBuffer.dummy: Vector4fStrukt
-    val ByteBuffer.dummy1: Vector4fStrukt
-    val ByteBuffer.dummy2: Vector4fStrukt
+    context(ByteBuffer) val jointIndices: Vector4iStrukt
+    context(ByteBuffer) val dummy: Vector4fStrukt
+    context(ByteBuffer) val dummy1: Vector4fStrukt
+    context(ByteBuffer) val dummy2: Vector4fStrukt
 
     companion object
 }

@@ -122,110 +122,117 @@ class Matrix4f : Struct() {
     }
 }
 interface Vector2fStrukt : Strukt {
-    var ByteBuffer.x: Float
-    var ByteBuffer.y: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
 
-    fun ByteBuffer.set(target: org.joml.Vector3fc) {
+    context(ByteBuffer)
+    fun set(target: org.joml.Vector3fc) {
         this.x = target.x
         this.y = target.y
     }
 
-    fun ByteBuffer.set(target: Vector4fc) {
+    context(ByteBuffer)
+    fun set(target: Vector4fc) {
         this.x = target.x
         this.y = target.y
     }
 
-    fun ByteBuffer.toJoml(): org.joml.Vector2f = org.joml.Vector2f(x, y)
+    context(ByteBuffer)
+    fun toJoml(): org.joml.Vector2f = org.joml.Vector2f(x, y)
     companion object
 }
 interface Vector3fStrukt : Strukt {
-    var ByteBuffer.x: Float
-    var ByteBuffer.y: Float
-    var ByteBuffer.z: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
+    context(ByteBuffer) var z: Float
 
-    fun set(byteBuffer: ByteBuffer, target: org.joml.Vector3fc) = byteBuffer.run {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
+    context(ByteBuffer)
+    fun set(target: org.joml.Vector3fc) {
+        x = target.x
+        y = target.y
+        z = target.z
     }
 
-    fun set(byteBuffer: ByteBuffer, target: Vector4fc) = byteBuffer.run {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
+    context(ByteBuffer)
+    fun set(target: Vector4fc) {
+        x = target.x
+        y = target.y
+        z = target.z
     }
 
-    fun ByteBuffer.toJoml(): org.joml.Vector3f = org.joml.Vector3f(x, y, z)
+    context(ByteBuffer)
+    fun toJoml(): org.joml.Vector3f = org.joml.Vector3f(x, y, z)
     companion object
 }
 
 interface Vector4fStrukt : Strukt {
-    var ByteBuffer.x: Float
-    var ByteBuffer.y: Float
-    var ByteBuffer.z: Float
-    var ByteBuffer.w: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
+    context(ByteBuffer) var z: Float
+    context(ByteBuffer) var w: Float
 
-    fun ByteBuffer.set(target: Vector4fc) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-        this.w = target.w
+    context(ByteBuffer) fun set(target: Vector4fc) {
+        x = target.x
+        y = target.y
+        z = target.z
+        w = target.w
     }
-    fun ByteBuffer.set(target: org.joml.Vector3fc) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-        this.w = 1.0f
+    context(ByteBuffer) fun set(target: org.joml.Vector3fc) {
+        x = target.x
+        y = target.y
+        z = target.z
+        w = 1.0f
     }
-    fun ByteBuffer.set(target: org.joml.Vector2fc) {
-        this.x = target.x()
-        this.y = target.y()
+    context(ByteBuffer) fun set(target: org.joml.Vector2fc) {
+        x = target.x()
+        y = target.y()
     }
     companion object
 }
 interface Vector4iStrukt : Strukt {
-    var ByteBuffer.x: Int
-    var ByteBuffer.y: Int
-    var ByteBuffer.z: Int
-    var ByteBuffer.w: Int
+    context(ByteBuffer) var x: Int
+    context(ByteBuffer) var y: Int
+    context(ByteBuffer) var z: Int
+    context(ByteBuffer) var w: Int
 
-    fun ByteBuffer.set(target: Vector4ic) {
-        this.x = target.x()
-        this.y = target.y()
-        this.z = target.z()
-        this.w = target.w()
+    context(ByteBuffer) fun set(target: Vector4ic) {
+        x = target.x()
+        y = target.y()
+        z = target.z()
+        w = target.w()
     }
-    fun ByteBuffer.set(target: org.joml.Vector3ic) {
-        this.x = target.x()
-        this.y = target.y()
-        this.z = target.z()
-        this.w = 1
+    context(ByteBuffer) fun set(target: org.joml.Vector3ic) {
+        x = target.x()
+        y = target.y()
+        z = target.z()
+        w = 1
     }
-    fun ByteBuffer.set(target: org.joml.Vector2ic) {
-        this.x = target.x()
-        this.y = target.y()
+    context(ByteBuffer) fun set(target: org.joml.Vector2ic) {
+        x = target.x()
+        y = target.y()
     }
     companion object
 }
 interface Matrix4fStrukt: Strukt {
-    var ByteBuffer.m00: Float
-    var ByteBuffer.m01: Float
-    var ByteBuffer.m02: Float
-    var ByteBuffer.m03: Float
-    var ByteBuffer.m10: Float
-    var ByteBuffer.m11: Float
-    var ByteBuffer.m12: Float
-    var ByteBuffer.m13: Float
-    var ByteBuffer.m20: Float
-    var ByteBuffer.m21: Float
-    var ByteBuffer.m22: Float
-    var ByteBuffer.m23: Float
-    var ByteBuffer.m30: Float
-    var ByteBuffer.m31: Float
-    var ByteBuffer.m32: Float
-    var ByteBuffer.m33: Float
+    context(ByteBuffer) var m00: Float
+    context(ByteBuffer) var m01: Float
+    context(ByteBuffer) var m02: Float
+    context(ByteBuffer) var m03: Float
+    context(ByteBuffer) var m10: Float
+    context(ByteBuffer) var m11: Float
+    context(ByteBuffer) var m12: Float
+    context(ByteBuffer) var m13: Float
+    context(ByteBuffer) var m20: Float
+    context(ByteBuffer) var m21: Float
+    context(ByteBuffer) var m22: Float
+    context(ByteBuffer) var m23: Float
+    context(ByteBuffer) var m30: Float
+    context(ByteBuffer) var m31: Float
+    context(ByteBuffer) var m32: Float
+    context(ByteBuffer) var m33: Float
 
-    fun set(buffer: ByteBuffer, target: org.joml.Matrix4fc) = buffer.run {
+    context(ByteBuffer)
+    fun set(target: org.joml.Matrix4fc) {
         m00 = target.m00()
         m01 = target.m01()
         m02 = target.m02()
@@ -244,7 +251,8 @@ interface Matrix4fStrukt: Strukt {
         m33 = target.m33()
     }
 
-    fun set(buffer: ByteBuffer, target: BufferableMatrix4f) = buffer.run {
+    context(ByteBuffer)
+    fun set(target: BufferableMatrix4f) {
         m00 = target.m00()
         m01 = target.m01()
         m02 = target.m02()

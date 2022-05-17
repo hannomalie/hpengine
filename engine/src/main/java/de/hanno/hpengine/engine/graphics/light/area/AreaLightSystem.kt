@@ -175,13 +175,13 @@ class AreaLightSystem(
                 val areaLight = areaLightComponentComponentMapper[entityId]
 
                 gpuAreaLightArray[index].run {
-                    trafo.set(byteBuffer, areaLight.transform.transform)
-                    color.set(byteBuffer, areaLight.color)
-                    dummy0.run { value = -1 }
-                    widthHeightRange.run { x = areaLight.width }
-                    widthHeightRange.run { y = areaLight.height }
-                    widthHeightRange.run { z = areaLight.range }
-                    dummy1.run { value = -1 }
+                    trafo.set(areaLight.transform.transform)
+                    color.set(areaLight.color)
+                    dummy0.value = -1
+                    widthHeightRange.x = areaLight.width
+                    widthHeightRange.y = areaLight.height
+                    widthHeightRange.z = areaLight.range
+                    dummy1.value = -1
                 }
                 index++
             }

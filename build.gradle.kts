@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.5.20"
+    kotlin("jvm") version "1.6.21"
     application
 }
 version = "1.0.0-SNAPSHOT"
@@ -18,7 +18,7 @@ allprojects {
     group = "de.hanno.hpengine"
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            freeCompilerArgs = listOf("-Xjvm-default=all")
+            freeCompilerArgs = listOf("-Xjvm-default=all", "-Xcontext-receivers")
             jvmTarget = "1.8"
         }
     }

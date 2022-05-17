@@ -1,4 +1,5 @@
 import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
@@ -11,7 +12,7 @@ buildscript {
 
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp") version "1.5.20-1.0.0-beta04"
+    id("com.google.devtools.ksp") version "1.6.21-1.0.5"
 }
 
 plugins.apply("artemis")
@@ -136,5 +137,11 @@ dependencies {
 kotlin {
     sourceSets["main"].apply {
         kotlin.srcDir("build/generated/ksp/main/kotlin/")
+    }
+}
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs = listOf("-Xjvm-default=all", "-Xcontext-receivers")
+        jvmTarget = "1.8"
     }
 }

@@ -7,10 +7,10 @@ import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
 interface AreaLightStrukt : Strukt {
-    val ByteBuffer.trafo: Matrix4fStrukt
-    val ByteBuffer.color: Vector3fStrukt
-    val ByteBuffer.dummy0: IntStrukt
-    val ByteBuffer.widthHeightRange: Vector3fStrukt
-    val ByteBuffer.dummy1: IntStrukt
+    context(ByteBuffer) val trafo: Matrix4fStrukt
+    context(ByteBuffer) val color: Vector3fStrukt
+    context(ByteBuffer) val dummy0: IntStrukt
+    context(ByteBuffer) val widthHeightRange: Vector3fStrukt
+    context(ByteBuffer) val dummy1: IntStrukt
     companion object
 }

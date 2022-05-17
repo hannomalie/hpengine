@@ -17,16 +17,16 @@ import org.joml.Vector3f
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import java.nio.ByteBuffer
-import de.hanno.hpengine.engine.component.artemis.ModelComponent as NewModelComponent
+import de.hanno.hpengine.engine.component.artemis.ModelComponent
 
-@All(NewModelComponent::class)
+@All(ModelComponent::class)
 class MaterialManager(
     val config: Config,
     val textureManager: TextureManager,
     val singleThreadContext: AddResourceContext
 ) : BaseEntitySystem(), Clearable, Extractor {
 
-    lateinit var modelComponentComponentMapper: ComponentMapper<NewModelComponent>
+    lateinit var modelComponentComponentMapper: ComponentMapper<ModelComponent>
 
     val materials: MutableList<Material> = mutableListOf()
 
@@ -86,14 +86,6 @@ class MaterialManager(
 
         material.materialIndex = materials.size
         materials.add(material)
-    }
-    fun registerMaterials(materials: List<Material>) = singleThreadContext.launch {
-        materials.distinct().forEach { material ->
-            if(!this.materials.contains(material)) {
-                material.materialIndex = this.materials.size
-                this.materials.add(material)
-            }
-        }
     }
 
     override fun extract(currentWriteState: RenderState) {

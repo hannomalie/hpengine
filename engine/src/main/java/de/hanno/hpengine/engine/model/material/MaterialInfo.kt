@@ -21,45 +21,45 @@ data class ProgramDescription(
 )
 
 interface Vector2fStrukt : Strukt {
-    var ByteBuffer.x: Float
-    var ByteBuffer.y: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
 
     companion object
 }
 
 interface Vector3fStrukt : Strukt {
-    var ByteBuffer.x: Float
-    var ByteBuffer.y: Float
-    var ByteBuffer.z: Float
+    context(ByteBuffer) var x: Float
+    context(ByteBuffer) var y: Float
+    context(ByteBuffer) var z: Float
 
     companion object
 }
 
 interface MaterialStrukt : Strukt {
-    val ByteBuffer.diffuse: Vector3fStrukt
-    var ByteBuffer.metallic: Float
+    context(ByteBuffer) val diffuse: Vector3fStrukt
+    context(ByteBuffer) var metallic: Float
 
-    var ByteBuffer.roughness: Float
-    var ByteBuffer.ambient: Float
-    var ByteBuffer.parallaxBias: Float
-    var ByteBuffer.parallaxScale: Float
+    context(ByteBuffer) var roughness: Float
+    context(ByteBuffer) var ambient: Float
+    context(ByteBuffer) var parallaxBias: Float
+    context(ByteBuffer) var parallaxScale: Float
 
-    var ByteBuffer.transparency: Float
-    var ByteBuffer.materialType: MaterialType
-    var ByteBuffer.transparencyType: TransparencyType
-    var ByteBuffer.environmentMapId: Int
+    context(ByteBuffer) var transparency: Float
+    context(ByteBuffer) var materialType: MaterialType
+    context(ByteBuffer) var transparencyType: TransparencyType
+    context(ByteBuffer) var environmentMapId: Int
 
-    var ByteBuffer.diffuseMapHandle: Long
-    var ByteBuffer.normalMapHandle: Long
-    var ByteBuffer.specularMapHandle: Long
-    var ByteBuffer.heightMapHandle: Long
+    context(ByteBuffer) var diffuseMapHandle: Long
+    context(ByteBuffer) var normalMapHandle: Long
+    context(ByteBuffer) var specularMapHandle: Long
+    context(ByteBuffer) var heightMapHandle: Long
 
-    var ByteBuffer.displacementMapHandle: Long
-    var ByteBuffer.roughnessMapHandle: Long
+    context(ByteBuffer) var displacementMapHandle: Long
+    context(ByteBuffer) var roughnessMapHandle: Long
 
-    val ByteBuffer.uvScale: Vector2fStrukt
-    var ByteBuffer.lodFactor: Float
-    var ByteBuffer.useWorldSpaceXZAsTexCoords: Int
+    context(ByteBuffer) val uvScale: Vector2fStrukt
+    context(ByteBuffer) var lodFactor: Float
+    context(ByteBuffer) var useWorldSpaceXZAsTexCoords: Int
 
     companion object
 }

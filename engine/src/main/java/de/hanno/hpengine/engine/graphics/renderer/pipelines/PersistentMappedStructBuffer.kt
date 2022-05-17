@@ -277,7 +277,7 @@ class IntStruct : Struct() {
     override fun toString() = "$value"
 }
 interface IntStrukt: Strukt {
-    var ByteBuffer.value: Int
+    context(ByteBuffer) var value: Int
     companion object
 }
 

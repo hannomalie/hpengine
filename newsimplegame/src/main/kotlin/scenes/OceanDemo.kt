@@ -31,7 +31,6 @@ fun main() {
 
     Engine(config) {
         world.loadScene {
-            addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
             edit(create()).apply {
                 create(OceanWaterComponent::class.java).apply {
                     windspeed = 130f

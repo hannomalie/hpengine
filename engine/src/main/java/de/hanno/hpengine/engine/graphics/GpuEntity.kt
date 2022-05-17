@@ -17,40 +17,41 @@ enum class BoundingVolumeType(val value: Float) {
 }
 
 interface EntityStrukt : Strukt {
-    val ByteBuffer.trafo: Matrix4fStrukt
-    var ByteBuffer.selected: Boolean
-    var ByteBuffer.materialIndex: Int
-    var ByteBuffer.update: Int
-    var ByteBuffer.meshBufferIndex: Int
-    var ByteBuffer.entityIndex: Int
-    var ByteBuffer.meshIndex: Int
-    var ByteBuffer.baseVertex: Int
-    var ByteBuffer.baseJointIndex: Int
-    var ByteBuffer.animationFrame0: Int
-    val ByteBuffer.animationFrame1: Int
-    val ByteBuffer.animationFrame2: Int
-    val ByteBuffer.animationFrame3: Int
-    var ByteBuffer.isInvertedTexCoordY: Int
-    val ByteBuffer.dummy0: Int
-    val ByteBuffer.dummy1: Int
-    val ByteBuffer.dummy2: Int
-    val ByteBuffer.min: Vector3fStrukt
-    var ByteBuffer.boundingVolumeType: BoundingVolumeType
-    val ByteBuffer.max: Vector3fStrukt
-    var ByteBuffer.dummy4: Int
+    context(ByteBuffer) val trafo: Matrix4fStrukt
+    context(ByteBuffer) var selected: Boolean
+    context(ByteBuffer) var materialIndex: Int
+    context(ByteBuffer) var update: Int
+    context(ByteBuffer) var meshBufferIndex: Int
+    context(ByteBuffer) var entityIndex: Int
+    context(ByteBuffer) var meshIndex: Int
+    context(ByteBuffer) var baseVertex: Int
+    context(ByteBuffer) var baseJointIndex: Int
+    context(ByteBuffer) var animationFrame0: Int
+    context(ByteBuffer) val animationFrame1: Int
+    context(ByteBuffer) val animationFrame2: Int
+    context(ByteBuffer) val animationFrame3: Int
+    context(ByteBuffer) var isInvertedTexCoordY: Int
+    context(ByteBuffer) val dummy0: Int
+    context(ByteBuffer) val dummy1: Int
+    context(ByteBuffer) val dummy2: Int
+    context(ByteBuffer) val min: Vector3fStrukt
+    context(ByteBuffer) var boundingVolumeType: BoundingVolumeType
+    context(ByteBuffer) val max: Vector3fStrukt
+    context(ByteBuffer) var dummy4: Int
 
+    context(ByteBuffer)
     fun ByteBuffer.setTrafoAndBoundingVolume(source: Matrix4fc, boundingVolume: BoundingVolume) {
-        trafo.set(this, source)
+        trafo.set(source)
         when(boundingVolume) {
             is AABB -> {
                 boundingVolumeType = BoundingVolumeType.AABB
-                min.set(this, boundingVolume.min)
-                max.set(this, boundingVolume.max)
+                min.set(boundingVolume.min)
+                max.set(boundingVolume.max)
             }
             is BoundingSphere -> {
                 boundingVolumeType = BoundingVolumeType.Sphere
-                min.set(this, boundingVolume.positionRadius)
-                max.set(this, boundingVolume.positionRadius)
+                min.set(boundingVolume.positionRadius)
+                max.set(boundingVolume.positionRadius)
             }
         }.let { }
     }

@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine
 
-import com.artemis.Aspect
-import com.artemis.BaseSystem
-import com.artemis.World
-import com.artemis.WorldConfigurationBuilder
+import com.artemis.*
+import com.artemis.link.EntityLinkManager
 import com.artemis.managers.TagManager
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
@@ -65,6 +63,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
     private val textureManager: TextureManager = koin.get()
     val systems = listOf(
+        EntityLinkManager(),
         WorldAABB(),
         renderManager,
         ModelSystem(
@@ -273,8 +272,8 @@ fun World.addStaticModelEntity(
     name: String,
     path: String,
     directory: Directory = Directory.Game,
-) {
-    edit(create()).apply {
+): EntityEdit {
+    return edit(create()).apply {
         create(TransformComponent::class.java)
         create(ModelComponent::class.java).apply {
             modelComponentDescription = StaticModelComponentDescription(path, directory)

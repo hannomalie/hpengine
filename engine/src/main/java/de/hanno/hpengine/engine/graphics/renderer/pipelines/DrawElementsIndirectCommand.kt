@@ -12,11 +12,11 @@ data class DrawElementsIndirectCommand(
 )
 
 interface DrawElementsIndirectCommandStrukt : Strukt {
-    val ByteBuffer.count: IntStrukt
-    val ByteBuffer.primCount: IntStrukt
-    val ByteBuffer.firstIndex: IntStrukt
-    val ByteBuffer.baseVertex: IntStrukt
-    val ByteBuffer.baseInstance: IntStrukt
+    context(ByteBuffer) val count: IntStrukt
+    context(ByteBuffer) val primCount: IntStrukt
+    context(ByteBuffer) val firstIndex: IntStrukt
+    context(ByteBuffer) val baseVertex: IntStrukt
+    context(ByteBuffer) val baseInstance: IntStrukt
 
     companion object
 }
