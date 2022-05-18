@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.scene
 
 import com.artemis.World
 import de.hanno.hpengine.engine.backend.OpenGl
+import de.hanno.hpengine.engine.component.artemis.MaterialComponent
 import de.hanno.hpengine.engine.component.artemis.ModelComponent
 import de.hanno.hpengine.engine.component.artemis.OceanSurfaceComponent
 import de.hanno.hpengine.engine.component.artemis.OceanWaterComponent
@@ -178,10 +179,10 @@ class OceanWaterRenderSystem(
         val oceanWaterEntities = renderState.componentsForEntities.filter { it.value.any { it is OceanSurfaceComponent } }
         if(oceanWaterEntities.isNotEmpty()) {
             val components = oceanWaterEntities.entries.first().value
-            val modelComponent = components.firstIsInstance<ModelComponent>()
+            val materialComponent = components.firstIsInstance<MaterialComponent>()
             val oceanSurfaceComponent = components.firstIsInstance<OceanSurfaceComponent>()
             if(!oceanSurfaceComponent.mapsSet) {
-                modelComponent.modelComponentDescription.material?.let {
+                materialComponent.material.let {
                     it.maps.putIfAbsent(Material.MAP.DIFFUSE, albedoMap)
                     it.maps.putIfAbsent(Material.MAP.DISPLACEMENT, displacementMap)
                     it.maps.putIfAbsent(Material.MAP.NORMAL, normalMap)

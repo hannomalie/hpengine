@@ -69,17 +69,19 @@ private fun World.addOceanSurface(programManager: ProgramManager<*>, translation
 //                    Vector3f(-60f, -10f, -35f),
 //                    Vector3f(60f, 130f, 50f)
 //                ),
-                material = Material(
-                    "ocean",
-                    programDescription = programManager.heightMappingFirstPassProgramDescription,
-                    diffuse = Vector3f(0.05f, 0.05f, 0.4f),
-                    metallic = 0.95f,
-                    roughness = 0.001f,
-                    parallaxScale = 1f,
-                    parallaxBias = 0.0f,
-                    useWorldSpaceXZAsTexCoords = true,
-                    uvScale = Vector2f(0.05f)
-                )
+            )
+        }
+        create(MaterialComponent::class.java).apply {
+            material = Material(
+                "ocean",
+                programDescription = programManager.heightMappingFirstPassProgramDescription,
+                diffuse = Vector3f(0.05f, 0.05f, 0.4f),
+                metallic = 0.95f,
+                roughness = 0.001f,
+                parallaxScale = 1f,
+                parallaxBias = 0.0f,
+                useWorldSpaceXZAsTexCoords = true,
+                uvScale = Vector2f(0.05f)
             )
         }
         create(SpatialComponent::class.java)

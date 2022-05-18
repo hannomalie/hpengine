@@ -23,19 +23,16 @@ interface ComponentDescription
 sealed class ModelComponentDescription: ComponentDescription {
     abstract val directory: Directory
     abstract val aabbData: AABBData?
-    abstract var material: Material?
 }
 data class StaticModelComponentDescription(
     val file: String,
     override val directory: Directory,
     override val aabbData: AABBData? = null,
-    override var material: Material? = null
 ): ModelComponentDescription()
 data class AnimatedModelComponentDescription(
     val file: String,
     override val directory: Directory,
     override val aabbData: AABBData? = null,
-    override var material: Material? = null
 ): ModelComponentDescription()
 enum class Directory { Game, Engine }
 

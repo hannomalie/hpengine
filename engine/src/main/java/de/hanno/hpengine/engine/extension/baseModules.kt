@@ -12,10 +12,7 @@ import de.hanno.hpengine.engine.backend.Backend
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.backend.OpenGlBackend
 import de.hanno.hpengine.engine.camera.CameraRenderExtension
-import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
-import de.hanno.hpengine.engine.component.artemis.ModelComponent
-import de.hanno.hpengine.engine.component.artemis.NameComponent
-import de.hanno.hpengine.engine.component.artemis.TransformComponent
+import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -284,28 +281,30 @@ fun World.addSkyBox(config: Config) {
             modelComponentDescription = StaticModelComponentDescription(
                 "assets/models/skybox.obj",
                 Directory.Engine,
-                material = Material(
-                    name = "Skybox",
-                    materialType = Material.MaterialType.UNLIT,
-                    cullBackFaces = false,
-                    isShadowCasting = false,
-                    programDescription = ProgramDescription(
-                        vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
-                            .toCodeSource(),
-                        fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
-                            .toCodeSource().enhanced {
-                                replace(
-                                    "//END",
-                                    """
+            )
+        }
+        create(MaterialComponent::class.java).apply {
+            material = Material(
+                name = "Skybox",
+                materialType = Material.MaterialType.UNLIT,
+                cullBackFaces = false,
+                isShadowCasting = false,
+                programDescription = ProgramDescription(
+                    vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
+                        .toCodeSource(),
+                    fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
+                        .toCodeSource().enhanced {
+                            replace(
+                                "//END",
+                                """
                             out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
                         """.trimIndent()
-                                )
-                            }
-                    )
-                ).apply {
-                    this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
-                }
-            )
+                            )
+                        }
+                )
+            ).apply {
+                this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)
+            }
         }
     }
 }

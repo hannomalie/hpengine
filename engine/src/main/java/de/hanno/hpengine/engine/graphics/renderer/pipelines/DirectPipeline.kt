@@ -79,13 +79,13 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
     beforeDraw(renderState, program, drawCam)
     vertexIndexBuffer.indexBuffer.bind()
     for (batch in renderBatches.filter { !it.hasOwnProgram }) {
-        gpuContext.cullFace = batch.materialInfo.cullBackFaces
-        gpuContext.depthTest = batch.materialInfo.depthTest
-        program.setTextureUniforms(batch.materialInfo.maps)
+        gpuContext.cullFace = batch.material.cullBackFaces
+        gpuContext.depthTest = batch.material.depthTest
+        program.setTextureUniforms(batch.material.maps)
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = PrimitiveType.Triangles)
     }
 
-    val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.materialInfo }
+    val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
 
@@ -94,9 +94,9 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
             program = batch.program ?: this.program
             program.use()
             beforeDraw(renderState, program as Program<T>, drawCam)
-            gpuContext.cullFace = batch.materialInfo.cullBackFaces
-            gpuContext.depthTest = batch.materialInfo.depthTest
-            program.setTextureUniforms(batch.materialInfo.maps)
+            gpuContext.cullFace = batch.material.cullBackFaces
+            gpuContext.depthTest = batch.material.depthTest
+            program.setTextureUniforms(batch.material.maps)
             val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
 
             vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = primitiveType)
@@ -112,6 +112,6 @@ fun RenderBatch.isCulledOrForwardRendered(cullCam: Camera): Boolean {
     val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.primCount > 1 // TODO: Better culling for instances
 
     val culled = !visibleForCamera
-    val isForward = materialInfo.transparencyType.needsForwardRendering
+    val isForward = material.transparencyType.needsForwardRendering
     return culled || isForward
 }

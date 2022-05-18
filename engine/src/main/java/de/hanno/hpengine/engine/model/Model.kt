@@ -19,8 +19,7 @@ fun <T: Struct> de.hanno.struct.StructArray<T>.copyTo(target: de.hanno.struct.St
     buffer.copyTo(target.buffer, rewindBuffers, slidingWindow.sizeInBytes * offset)
 }
 
-sealed class Model<T>(val meshes: List<Mesh<T>>,
-                      material: Material) : SimpleSpatial(), Spatial {
+sealed class Model<T>(val meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
 
     val meshIndexCounts = meshes.map { it.indexBufferValues.size }
     val meshIndexSum = meshIndexCounts.sum()
@@ -36,11 +35,12 @@ sealed class Model<T>(val meshes: List<Mesh<T>>,
         }
     }
 
-    var material: Material = material
-        set(value) {
-            meshes.forEach { it.material = value }
-            field = value
-        }
+    fun setMaterial(value: Material) {
+        meshes.forEach { it.material = value }
+    }
+
+    val materials: List<Material> get() = meshes.map { it.material }
+
     abstract val file: File
     abstract val path: String
     abstract val verticesPacked: TypedBuffer<out Strukt>

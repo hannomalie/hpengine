@@ -242,6 +242,9 @@ class ImGuiEditor(
                                     is ModelComponent -> {
                                         selectOrUnselect(ModelComponentSelection(entityIndex, component))
                                     }
+                                    is MaterialComponent -> {
+                                        selectOrUnselect(MaterialSelection(component.material))
+                                    }
                                     is NameComponent -> selectOrUnselect(
                                         NameSelection(
                                             entityIndex,
@@ -255,7 +258,7 @@ class ImGuiEditor(
                     }
                 }
                 treeNode("Materials") {
-                    artemisWorld.getSystem(MaterialManager::class.java)?.materials?.forEach { material ->
+                    artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }?.forEach { material ->
                         text(material.name) {
                             selectOrUnselect(MaterialSelection(material))
                         }
@@ -291,7 +294,7 @@ class ImGuiEditor(
                                     if (ImGui.checkbox("Invert Y Texture Coord", it.isInvertTexCoordY)) {
                                         it.isInvertTexCoordY = !it.isInvertTexCoordY
                                     }
-                                    val material = it.material
+                                    val material = it.meshes.first().material
                                     materialGrid(material)
                                 }
                             }

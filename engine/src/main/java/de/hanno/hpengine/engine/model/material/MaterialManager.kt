@@ -4,7 +4,8 @@ import MaterialStruktImpl.Companion.sizeInBytes
 import MaterialStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
-import com.artemis.annotations.All
+import com.artemis.annotations.One
+import de.hanno.hpengine.engine.component.artemis.MaterialComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.material.Material.MAP
@@ -19,14 +20,18 @@ import struktgen.TypedBuffer
 import java.nio.ByteBuffer
 import de.hanno.hpengine.engine.component.artemis.ModelComponent
 
-@All(ModelComponent::class)
+@One(
+    ModelComponent::class,
+    MaterialComponent::class,
+)
 class MaterialManager(
     val config: Config,
     val textureManager: TextureManager,
     val singleThreadContext: AddResourceContext
 ) : BaseEntitySystem(), Clearable, Extractor {
 
-    lateinit var modelComponentComponentMapper: ComponentMapper<ModelComponent>
+    lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
+    lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 
     val materials: MutableList<Material> = mutableListOf()
 
@@ -75,9 +80,9 @@ class MaterialManager(
     fun getMaterial(name: String): Material? = materials.firstOrNull { it.name == name }
 
     override fun inserted(entityId: Int) {
-        val modelComponent = modelComponentComponentMapper[entityId]
-        modelComponent.modelComponentDescription.material?.let {
-            registerMaterial(it)
+        val materialComponentOrNull = materialComponentMapper[entityId]
+        materialComponentOrNull?.let {
+            registerMaterial(it.material)
         }
     }
     fun registerMaterial(material: Material) = singleThreadContext.launch {

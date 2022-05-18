@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model
 
 import VertexStruktPackedImpl.Companion.sizeInBytes
 import VertexStruktPackedImpl.Companion.type
-import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexStruktPacked
 import de.hanno.hpengine.engine.transform.AABB
@@ -11,9 +10,10 @@ import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import java.io.File
 
-class StaticModel(override val file: File,
-                  meshes: List<StaticMesh>,
-                  material: Material = meshes.first().material) : Model<Vertex>(meshes, material) {
+class StaticModel(
+    override val file: File,
+    meshes: List<StaticMesh>
+) : Model<Vertex>(meshes) {
 
     override val path: String = file.absolutePath
     override val boundingVolume: AABB = calculateBoundingVolume()

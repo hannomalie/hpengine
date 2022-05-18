@@ -65,8 +65,8 @@ class ForwardRenderExtension(
         }
 
         renderState.vertexIndexBufferStatic.indexBuffer.bind()
-        for (batch in renderState.renderBatchesStatic.filter { it.materialInfo.transparencyType.needsForwardRendering }) {
-            programStatic.setTextureUniforms(batch.materialInfo.maps)
+        for (batch in renderState.renderBatchesStatic.filter { it.material.transparencyType.needsForwardRendering }) {
+            programStatic.setTextureUniforms(batch.material.maps)
             val currentVerticesCount = renderState.vertexIndexBufferStatic.indexBuffer.draw(batch, programStatic, bindIndexBuffer = false)
         }
         gpuContext.disable(GlCap.BLEND)

@@ -26,13 +26,13 @@ class RenderBatch(
     var centerWorld: Vector3f = Vector3f(),
     var animated : Boolean = false,
     var boundingSphereRadius: Float = 0.0f,
-    var materialInfo: Material = Material("default"),
+    var material: Material = Material("default"),
     var program: Program<FirstPassUniforms>? = null,
     var entityBufferIndex: Int = 0,
     var contributesToGi: Boolean = true) {
 
     val isShadowCasting: Boolean
-        get() = materialInfo.isShadowCasting
+        get() = material.isShadowCasting
 
     val instanceCount: Int
         get() = drawElementsIndirectCommand.primCount

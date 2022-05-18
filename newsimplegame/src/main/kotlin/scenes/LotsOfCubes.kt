@@ -30,15 +30,16 @@ val Engine.lotsOfCubesScene
                         Vector3f(-60f, -10f, -35f),
                         Vector3f(60f, 130f, 50f)
                     ),
-                    material = Material(
-                        "grass",
-                        materialType = Material.MaterialType.FOLIAGE,
-                        maps = mutableMapOf(
-                            Material.MAP.DIFFUSE to
-                                    application.koin.get<TextureManager>()
-                                        .getTexture("assets/textures/grass.png", true)
-                        )
-                    )
+//                    TODO: Reimplement
+//                    material = Material(
+//                        "grass",
+//                        materialType = Material.MaterialType.FOLIAGE,
+//                        maps = mutableMapOf(
+//                            Material.MAP.DIFFUSE to
+//                                    application.koin.get<TextureManager>()
+//                                        .getTexture("assets/textures/grass.png", true)
+//                        )
+//                    )
                 )
             )
         }

@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.math.Matrix4fStrukt
 import de.hanno.hpengine.engine.model.*
 import de.hanno.hpengine.engine.model.loader.assimp.AnimatedModelLoader
 import de.hanno.hpengine.engine.model.loader.assimp.StaticModelLoader
+import de.hanno.hpengine.engine.model.material.Material
 import de.hanno.hpengine.engine.model.material.MaterialManager
 import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.model.texture.TextureManager
@@ -49,10 +50,12 @@ fun <T: Component> ComponentMapper<T>.getOrNull(entityId: Int?): T? = when (enti
 class ModelComponent : Component() {
     lateinit var modelComponentDescription: ModelComponentDescription
 }
+class MaterialComponent: Component() {
+    lateinit var material: Material
+}
 
 @One(
     ModelComponent::class,
-    TransformComponent::class,
     InstanceComponent::class,
 )
 class ModelSystem(
@@ -68,6 +71,7 @@ class ModelSystem(
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
     lateinit var invisibleComponentMapper: ComponentMapper<InvisibleComponent>
     lateinit var instanceComponentMapper: ComponentMapper<InstanceComponent>
+    lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 
     val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
     val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
@@ -111,6 +115,7 @@ class ModelSystem(
     private fun loadModelToCache(entityId: Int) {
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
+        val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
         if(instanceComponent == null && modelComponentOrNull == null) return
 
         val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
@@ -136,18 +141,12 @@ class ModelSystem(
             }
         }
 
-        val descriptionMaterial = modelComponent.modelComponentDescription.material
-        if(descriptionMaterial == null) {
-            modelComponent.modelComponentDescription.material = model.material
-        } else {
-            model.material = descriptionMaterial
-        }
-
         modelCache[descr] = model
 
         model.meshes.forEach { mesh ->
-            materialManager.registerMaterial(mesh.material)
-            getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programDescription ->
+            val meshMaterial = materialComponentOrNull?.material ?: mesh.material
+            materialManager.registerMaterial(meshMaterial)
+            meshMaterial.programDescription?.let { programDescription ->
                 programCache[programDescription] =
                     programManager.getFirstPassProgram(programDescription) as Program<FirstPassUniforms>
             }
@@ -172,6 +171,7 @@ class ModelSystem(
             val instanceComponent = instanceComponentMapper.getOrNull(entityId)
             val modelComponent = modelComponentMapper.getOrNull(entityId) ?: modelComponentMapper.getOrNull(instanceComponent?.targetEntity)
             val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent?.targetEntity)
+            val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
 
             if(modelComponent != null) {
                 val model = modelCache[modelComponent.modelComponentDescription]!!
@@ -196,7 +196,8 @@ class ModelSystem(
                 }
                 gpuEntitiesArray.byteBuffer.run {
                     for ((targetMeshIndex, mesh) in meshes.withIndex()) {
-                        val targetMaterialIndex = materials.indexOf(mesh.material)
+                        val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
+                        val targetMaterialIndex = materials.indexOf(meshMaterial)
                         currentEntity.run {
                             materialIndex = targetMaterialIndex
                             update = Update.STATIC.asDouble.toInt()//entity.updateType.asDouble.toInt() TODO: Reimplement
@@ -430,6 +431,7 @@ class ModelSystem(
             val instanceComponent = instanceComponentMapper.getOrNull(entityId)
             val modelComponent = modelComponentMapper.getOrNull(entityId) ?: modelComponentMapper.getOrNull(instanceComponent?.targetEntity)
             val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent?.targetEntity)
+            val materialComponentOrNull = materialComponentMapper.getOrNull(entityId) ?: materialComponentMapper.getOrNull(instanceComponent?.targetEntity)
 
             if (modelComponent != null) {
                 val transform = transformComponent!!.transform
@@ -476,8 +478,9 @@ class ModelSystem(
                         drawElementsIndirectCommand.baseVertex =
                             allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].vertexOffset
                         this.animated = !model.isStatic
-                        materialInfo = mesh.material
-                        program = getProgramDescriptionOrNull(mesh, model, modelComponent)?.let { programCache[it]!! }
+                        val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
+                        material = meshMaterial
+                        program = meshMaterial.programDescription?.let { programCache[it]!! }
                         entityIndex = entityIndexOf //TODO: check if correct index, it got out of hand
                         entityName = mesh.name // TODO: use entity name component
                         contributesToGi = true//entity.contributesToGi TODO: reimplement
@@ -494,17 +497,15 @@ class ModelSystem(
             index++
         }
     }
-
-    private fun getProgramDescriptionOrNull(
-        mesh: Mesh<out Any?>,
-        model: Model<*>,
-        modelComponent: ModelComponent
-    ) = (
-            mesh.material.programDescription ?: (model.material.programDescription
-                ?: modelComponent.modelComponentDescription.material?.let { it }?.programDescription)
-            )
 }
 
+fun Model<*>.resolveMaterial(
+    materialComponentOrNull: MaterialComponent?
+): Material = materialComponentOrNull?.material ?: materials.first()
+
+fun Model<*>.resolveMaterial(
+    materialOrNull: Material?
+): Material = materialOrNull ?: materials.first()
 
 sealed class Allocation(val forMeshes: List<VertexIndexBuffer.VertexIndexOffsets>) {
     init {

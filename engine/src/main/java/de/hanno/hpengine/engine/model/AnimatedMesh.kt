@@ -87,9 +87,8 @@ class AnimatedMesh(
 class AnimatedModel(
     override val file: File,
     meshes: List<AnimatedMesh>,
-    val animations: Map<String, Animation>,
-    material: Material = meshes.first().material
-) : Model<AnimatedVertex>(meshes, material) {
+    val animations: Map<String, Animation>
+) : Model<AnimatedVertex>(meshes) {
     override val bytesPerVertex = AnimatedVertexStruktPacked.sizeInBytes
     override val path = file.absolutePath
 

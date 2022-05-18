@@ -200,7 +200,7 @@ class ProbeRenderer(
 
                 profiled("Probe entity rendering") {
                     for (batch in renderState.renderBatchesStatic) {
-                        pointCubeShadowPassProgram.setTextureUniforms(batch.materialInfo.maps)
+                        pointCubeShadowPassProgram.setTextureUniforms(batch.material.maps)
                         renderState.vertexIndexBufferStatic.indexBuffer.draw(
                             batch,
                             pointCubeShadowPassProgram
