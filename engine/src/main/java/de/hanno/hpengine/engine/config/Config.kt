@@ -57,6 +57,8 @@ interface IDebugConfig {
     var visualizeProbes: Boolean
     var drawBvhInnerNodes: Boolean
     var isEditorOverlay: Boolean
+    val isUseCpuFrustumCulling: Boolean
+    val isUseGpuFrustumCulling: Boolean
     val isUseGpuOcclusionCulling: Boolean
     val isDrawLines: Boolean
     val isDrawBoundingVolumes: Boolean
@@ -74,6 +76,7 @@ interface IDebugConfig {
     val directTextureOutputArrayIndex: Int
     var isForceRevoxelization: Boolean
     var freezeCulling: Boolean
+    var forceSingleThreadedRendering: Boolean
 }
 
 interface IEffectsConfig {
@@ -127,6 +130,8 @@ data class DebugConfig(
     override var visualizeProbes: Boolean = false,
     override var drawBvhInnerNodes: Boolean = false,
     override var isEditorOverlay: Boolean = true,
+    override var isUseCpuFrustumCulling: Boolean = true,
+    override var isUseGpuFrustumCulling: Boolean = true,
     override var isUseGpuOcclusionCulling: Boolean = false,
     override var isDrawLines: Boolean = false,
     override var isDrawBoundingVolumes: Boolean = false,
@@ -144,6 +149,7 @@ data class DebugConfig(
     override var directTextureOutputArrayIndex: Int = 0,
     override @Button var isForceRevoxelization: Boolean = false,
     override var freezeCulling: Boolean = false,
+    override var forceSingleThreadedRendering: Boolean = false,
 ) : IDebugConfig
 
 data class EffectsConfig(

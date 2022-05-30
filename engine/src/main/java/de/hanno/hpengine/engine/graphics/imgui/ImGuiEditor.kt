@@ -9,13 +9,13 @@ import de.hanno.hpengine.engine.clear
 import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.extension.SharedDepthBuffer
-import de.hanno.hpengine.engine.graphics.FinalOutput
-import de.hanno.hpengine.engine.graphics.GlfwWindow
-import de.hanno.hpengine.engine.graphics.GpuContext
+import de.hanno.hpengine.engine.graphics.*
 import de.hanno.hpengine.engine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
+import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledPipeline
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -35,18 +35,19 @@ import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.lwjgl.glfw.GLFW
+import org.lwjgl.opengl.GL11
 
 class ImGuiEditor(
     private val window: GlfwWindow,
     private val gpuContext: GpuContext<OpenGl>,
     private val textureManager: TextureManager,
     private val finalOutput: FinalOutput,
+    private val debugOutput: DebugOutput,
     private val config: ConfigImpl,
     private val sharedDepthBuffer: SharedDepthBuffer,
     private val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     private val renderExtensions: List<DeferredRenderExtension<OpenGl>>
 ) : RenderSystem {
-    private val initialOutput = finalOutput.texture2D
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
         gpuContext,
@@ -92,15 +93,6 @@ class ImGuiEditor(
         if (!config.debug.isEditorOverlay) return
 
         renderTarget.use(gpuContext, false)
-        if(output.get() > 0) {
-            (currentOutputTexture as? Texture2D)?.let {
-                renderTarget.setTargetTexture(it.id, 0)
-                finalOutput.texture2D = it
-            }
-        } else {
-            renderTarget.setTargetTexture(initialOutput.id, 0)
-            finalOutput.texture2D = initialOutput
-        }
         imGuiImplGlfw.newFrame()
         ImGui.getIO().setDisplaySize(renderTarget.width.toFloat(), renderTarget.height.toFloat())
         try {
@@ -158,7 +150,7 @@ class ImGuiEditor(
                     window("Main", windowFlags) {
                         ImGui.popStyleVar()
 
-                        ImGui.image(currentOutputTexture.id, screenWidth, screenHeight)
+                        ImGui.image(finalOutput.texture2D.id, screenWidth, screenHeight)
                     }
                 }
             }
@@ -251,6 +243,12 @@ class ImGuiEditor(
                                             component.name
                                         )
                                     )
+                                    is TransformComponent -> selectOrUnselect(
+                                        TransformSelection(
+                                            entityIndex,
+                                            component
+                                        )
+                                    )
                                     is OceanWaterComponent -> selectOrUnselect(OceanWaterSelection(component))
                                 }
                             }
@@ -258,11 +256,12 @@ class ImGuiEditor(
                     }
                 }
                 treeNode("Materials") {
-                    artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }?.forEach { material ->
-                        text(material.name) {
-                            selectOrUnselect(MaterialSelection(material))
+                    artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }
+                        ?.forEach { material ->
+                            text(material.name) {
+                                selectOrUnselect(MaterialSelection(material))
+                            }
                         }
-                    }
                 }
             }
         }
@@ -349,11 +348,22 @@ class ImGuiEditor(
                                 floatInput("Windspeed", oceanWater.windspeed, min = 0.0f, max = 250f) { floatArray ->
                                     oceanWater.windspeed = floatArray[0]
                                 }
-                                float2Input("Direction", oceanWater.direction.x, oceanWater.direction.y, min = 0.0f, max = 1.0f) { floatArray ->
+                                float2Input(
+                                    "Direction",
+                                    oceanWater.direction.x,
+                                    oceanWater.direction.y,
+                                    min = 0.0f,
+                                    max = 1.0f
+                                ) { floatArray ->
                                     oceanWater.direction.x = floatArray[0]
                                     oceanWater.direction.y = floatArray[1]
                                 }
-                                floatInput("Wave Height", oceanWater.waveHeight, min = 0.0f, max = 10.0f) { floatArray ->
+                                floatInput(
+                                    "Wave Height",
+                                    oceanWater.waveHeight,
+                                    min = 0.0f,
+                                    max = 10.0f
+                                ) { floatArray ->
                                     oceanWater.waveHeight = floatArray[0]
                                 }
                                 checkBox("Choppy", oceanWater.choppy) { boolean ->
@@ -370,26 +380,46 @@ class ImGuiEditor(
                         is ReflectionProbeSelection -> {
                             tab("Entity") { }
                         }
+                        is TransformSelection -> tab("Entity") {
+                            if(ImGui.button("Reset transform")) {
+                                selection.transform.transform.identity()
+                            } else Unit
+                        }
                     }!!
 
                     tab("Output") {
+
+                        if (ImGui.beginCombo("Mipmap Level", debugOutput.mipmapLevel.toString())) {
+                            repeat(10) {
+                                val selected = debugOutput.mipmapLevel == it
+                                if (ImGui.selectable(it.toString(), selected)) {
+                                    debugOutput.mipmapLevel = it
+                                }
+                                if (selected) {
+                                    ImGui.setItemDefaultFocus()
+                                }
+                            }
+                            ImGui.endCombo()
+                        }
                         var counter = 0
                         text("Select output")
-                        ImGui.radioButton("Default", output, -1)
+                        if(ImGui.radioButton("Default", output, -1)) {
+                            debugOutput.texture2D = null
+                        }
                         gpuContext.registeredRenderTargets.forEach { target ->
                             target.renderedTextures.forEachIndexed { textureIndex, texture ->
-                                if(ImGui.radioButton(target.name + "[$textureIndex]", output, counter)) {
+                                if (ImGui.radioButton(target.name + "[$textureIndex]", output, counter)) {
                                     (currentOutputTexture as? Texture2D)?.let {
-                                        finalOutput.texture2D = it
+                                        debugOutput.texture2D = it
                                     }
                                 }
                                 counter++
                             }
                         }
                         textureManager.texturesForDebugOutput.forEach { (name, texture) ->
-                            if(ImGui.radioButton(name, output, counter)) {
+                            if (ImGui.radioButton(name, output, counter)) {
                                 (currentOutputTexture as? Texture2D)?.let {
-                                    finalOutput.texture2D = it
+                                    debugOutput.texture2D = it
                                 }
                             }
                             counter++
@@ -408,9 +438,78 @@ class ImGuiEditor(
                         if (ImGui.checkbox("Draw lines", config.debug.isDrawLines)) {
                             config.debug.isDrawLines = !config.debug.isDrawLines
                         }
+                        if (ImGui.checkbox("Draw indirect", config.performance.isIndirectRendering)) {
+                            config.performance.isIndirectRendering = !config.performance.isIndirectRendering
+                        }
+                        if (ImGui.checkbox(
+                                "Force singlethreaded rendering",
+                                config.debug.forceSingleThreadedRendering
+                            )
+                        ) {
+                            config.debug.forceSingleThreadedRendering = !config.debug.forceSingleThreadedRendering
+                        }
+                        if (ImGui.checkbox("Use cpu frustum culling", config.debug.isUseCpuFrustumCulling)) {
+                            config.debug.isUseCpuFrustumCulling = !config.debug.isUseCpuFrustumCulling
+                        }
+                        if (ImGui.checkbox("Use gpu frustum culling", config.debug.isUseGpuFrustumCulling)) {
+                            config.debug.isUseGpuFrustumCulling = !config.debug.isUseGpuFrustumCulling
+                        }
+                        if (ImGui.checkbox("Use gpu occlusion culling", config.debug.isUseGpuOcclusionCulling)) {
+                            config.debug.isUseGpuOcclusionCulling = !config.debug.isUseGpuOcclusionCulling
+                        }
+                        if (ImGui.button("Freeze culling")) {
+                            config.debug.freezeCulling = !config.debug.freezeCulling
+                        }
+                        if (ImGui.checkbox("Print pipeline output", config.debug.isPrintPipelineDebugOutput)) {
+                            config.debug.isPrintPipelineDebugOutput = !config.debug.isPrintPipelineDebugOutput
+                        }
                         if (ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
                             config.debug.isEditorOverlay = !config.debug.isEditorOverlay
                         }
+                    }
+                    tab("Render") {
+                        val renderManager = artemisWorld.getSystem(RenderManager::class.java)!!
+                        val renderMode = renderManager.renderMode
+                        if (ImGui.button("Use ${if (renderMode is RenderMode.Normal) "Single Step" else "Normal"}")) {
+                            renderManager.renderMode = when (renderMode) {
+                                RenderMode.Normal -> RenderMode.SingleFrame()
+                                is RenderMode.SingleFrame -> RenderMode.Normal
+                            }
+                        }
+                        if (renderMode is RenderMode.SingleFrame) {
+                            if (ImGui.button("Step")) {
+                                renderMode.frameRequested.getAndSet(true)
+                            }
+                        }
+
+                        renderManager.renderSystems
+                            .firstIsInstanceOrNull<ExtensibleDeferredRenderer>()?.apply {
+                                val currentReadState = renderStateManager.renderState.currentReadState
+                                var counter = 0
+                                when (val indirectPipeline = currentReadState[indirectPipeline]) {
+                                    is GPUCulledPipeline -> {
+                                        GL11.glFinish()
+                                        val commandOrganization = indirectPipeline.commandOrganizationStatic
+                                        val batchCount = commandOrganization.filteredRenderBatches.size
+                                        ImGui.text("Input batches: $batchCount")
+                                        val drawCount = commandOrganization.drawCountsCompacted.buffer.getInt(0)
+                                        ImGui.text("Draw commands: $drawCount")
+                                        commandOrganization.commandBuffer.typedBuffer.forEach(batchCount) {
+                                            if(counter < drawCount) {
+                                                val entityOffset = commandOrganization.entityOffsetBuffersCulled[counter].value
+                                                ImGui.text("$entityOffset - ")
+                                                ImGui.sameLine()
+                                                ImGui.text(it.print())
+                                            } else {
+                                                ImGui.text("_ - ")
+                                                ImGui.sameLine()
+                                                ImGui.text(it.print())
+                                            }
+                                            counter++
+                                        }
+                                    }
+                                }
+                            }
                     }
                 }
             }
@@ -499,24 +598,48 @@ class ImGuiEditor(
         textureSelection(material)
     }
 
-    private fun floatInput(label: String, initial: Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
+    private fun floatInput(
+        label: String,
+        initial: Float,
+        min: Float = 0.001f,
+        max: Float = 1.0f,
+        onChange: (FloatArray) -> Unit
+    ) {
         val floatArray = floatArrayOf(initial)
         if (ImGui.sliderFloat(label, floatArray, min, max)) {
             onChange(floatArray)
         }
     }
-    private fun float2Input(label: String, initial0: Float, initial1:Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
+
+    private fun float2Input(
+        label: String,
+        initial0: Float,
+        initial1: Float,
+        min: Float = 0.001f,
+        max: Float = 1.0f,
+        onChange: (FloatArray) -> Unit
+    ) {
         val floatArray = floatArrayOf(initial0, initial1)
         if (ImGui.sliderFloat2(label, floatArray, min, max)) {
             onChange(floatArray)
         }
     }
-    private fun float3Input(label: String, initial0: Float, initial1:Float, initial2:Float, min: Float = 0.001f, max: Float = 1.0f, onChange: (FloatArray) -> Unit) {
+
+    private fun float3Input(
+        label: String,
+        initial0: Float,
+        initial1: Float,
+        initial2: Float,
+        min: Float = 0.001f,
+        max: Float = 1.0f,
+        onChange: (FloatArray) -> Unit
+    ) {
         val floatArray = floatArrayOf(initial0, initial1, initial2)
         if (ImGui.sliderFloat3(label, floatArray, min, max)) {
             onChange(floatArray)
         }
     }
+
     private fun intInput(label: String, initial: Int, min: Int = 0, max: Int = 100, onChange: (IntArray) -> Unit) {
         val intArray = intArrayOf(initial)
         if (ImGui.sliderInt(label, intArray, min, max)) {

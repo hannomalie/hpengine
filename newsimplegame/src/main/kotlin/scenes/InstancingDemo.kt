@@ -27,20 +27,9 @@ fun main() {
 
     Engine(config) {
         world.loadScene {
+//            val bpcem = addStaticModelEntity("BPCEM", "assets/models/bpcem_playground.obj", Directory.Game)
             val cube = addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
 
-            edit(create()).apply {
-                create(TransformComponent::class.java)
-                create(ModelComponent::class.java).apply {
-                    modelComponentDescription = StaticModelComponentDescription("assets/models/bpcem_playground.obj", Directory.Game)
-                }
-                create(NameComponent::class.java).apply {
-                    this.name = "Instance0"
-                }
-                create(InstanceComponent::class.java).apply {
-                    targetEntity = cube.entityId
-                }
-            }
             edit(create()).apply {
                 create(TransformComponent::class.java).apply {
                     transform.transformation.translation(Vector3f(20f, 0f, 0f))

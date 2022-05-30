@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics
 import com.artemis.BaseSystem
 import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.config.Config
+import de.hanno.hpengine.engine.graphics.imgui.ImGuiEditor
 import de.hanno.hpengine.engine.graphics.renderer.SimpleTextureRenderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -15,13 +16,15 @@ import de.hanno.hpengine.engine.launchEndlessRenderLoop
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
-import kotlinx.coroutines.delay
 import net.miginfocom.swing.MigLayout
+import org.lwjgl.opengl.GL11
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.BorderFactory
 import javax.swing.JCheckBox
 import javax.swing.JPanel
 
-data class FinalOutput(var texture2D: Texture2D)
+data class FinalOutput(var texture2D: Texture2D, var mipmapLevel: Int = 0)
+data class DebugOutput(var texture2D: Texture2D? = null, var mipmapLevel: Int = 0)
 
 interface ConfigExtension {
     val panel: JPanel
@@ -60,11 +63,13 @@ class RenderManager(
     val programManager: ProgramManager<OpenGl>,
     val renderStateManager: RenderStateManager,
     val finalOutput: FinalOutput,
+    val debugOutput: DebugOutput,
     val fpsCounter: FPSCounter,
     val renderSystemsConfig: RenderSystemsConfig,
     _renderSystems: List<RenderSystem>,
 ) : BaseSystem() {
 
+    var renderMode: RenderMode = RenderMode.Normal
     // TODO: Make this read only again
     var renderSystems: MutableList<RenderSystem> = _renderSystems.distinct().toMutableList()
 
@@ -86,74 +91,104 @@ class RenderManager(
         renderState.swapStaging()
     }
 
+    internal val rendering = AtomicBoolean(false)
     init {
         launchEndlessRenderLoop { deltaSeconds ->
             gpuContext.invoke(block = {
+                rendering.getAndSet(true)
+//                val stateBeforeRendering = renderState.currentStateIndices
                 try {
-                    val currentReadState = renderState.startRead()
+                    renderState.readLocked { currentReadState ->
 
-                    val renderSystems = renderSystems.filter {
-                        renderSystemsConfig.run { it.enabled }
-                    }
-
-                    profiled("Frame") {
-                        recorder.add(currentReadState)
-                        val drawResult = currentReadState.latestDrawResult.apply { reset() }
-
-                        profiled("renderSystems") {
-                            renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
-                                val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
-                                renderTarget?.use(gpuContext, clear)
-                                renderSystems.forEach { renderSystem ->
-                                    renderSystem.render(drawResult, currentReadState)
+                        val renderSystems = when(val renderMode = renderMode) {
+                            RenderMode.Normal -> {
+                                renderSystems.filter {
+                                    renderSystemsConfig.run { it.enabled }
                                 }
+                            }
+                            is RenderMode.SingleFrame -> {
+                                if(renderMode.frameRequested.get()) {
+                                    renderSystems.filter {
+                                        renderSystemsConfig.run { it.enabled }
+                                    }
+                                } else {
+                                    renderSystems.filterIsInstance<ImGuiEditor>()
+                                }.apply {
+                                    renderMode.frameRequested.getAndSet(false)
+                                }
+                            }
+                        }
 
+                        profiled("Frame") {
+                            recorder.add(currentReadState)
+                            val drawResult = currentReadState.latestDrawResult.apply { reset() }
+
+                            fun renderSystems() {
+                                profiled("renderSystems") {
+                                    renderSystems.groupBy { it.sharedRenderTarget }.forEach { (renderTarget, renderSystems) ->
+                                        val clear = renderSystems.any { it.requiresClearSharedRenderTarget }
+                                        renderTarget?.use(gpuContext, clear)
+                                        renderSystems.forEach { renderSystem ->
+                                            renderSystem.render(drawResult, currentReadState)
+                                        }
+
+                                    }
+
+                                    if (config.debug.isEditorOverlay) {
+                                        renderSystems.forEach {
+                                            it.renderEditor(drawResult, currentReadState)
+                                        }
+                                    }
+                                }
                             }
 
-                            if (config.debug.isEditorOverlay) {
+                            renderSystems()
+
+                            window.frontBuffer.use(gpuContext, false)
+                            textureRenderer.drawToQuad(finalOutput.texture2D, mipMapLevel = finalOutput.mipmapLevel)
+                            debugOutput.texture2D?.let { debugOutputTexture ->
+                                textureRenderer.drawToQuad(
+                                    debugOutputTexture,
+                                    buffer = gpuContext.debugBuffer,
+                                    mipMapLevel = debugOutput.mipmapLevel
+                                )
+                            }
+
+                            profiled("finishFrame") {
+                                gpuContext.finishFrame(currentReadState)
                                 renderSystems.forEach {
-                                    it.renderEditor(drawResult, currentReadState)
+                                    it.afterFrameFinished()
                                 }
                             }
-                        }
 
-                        window.frontBuffer.use(gpuContext, false)
-                        textureRenderer.drawToQuad(finalOutput.texture2D)
-
-                        profiled("finishFrame") {
-                            gpuContext.finishFrame(currentReadState)
-                            renderSystems.forEach {
-                                it.afterFrameFinished()
+                            profiled("checkCommandSyncs") {
+                                gpuContext.checkCommandSyncs()
                             }
-                        }
 
-                        profiled("checkCommandSyncs") {
-                            gpuContext.checkCommandSyncs()
+                            window.swapBuffers()
+                            GL11.glFinish()
                         }
+                        GPUProfiler.dump()
 
-                        window.swapBuffers()
+//                        val stateAfterRendering = renderState.currentStateIndices
+//                        if(stateBeforeRendering.first != stateAfterRendering.first) {
+//                            println("Read state changed during rendering: $stateBeforeRendering -> $stateAfterRendering")
+//                        }
                     }
-                    GPUProfiler.dump()
-
-                    renderState.stopRead()
 
                 } catch (e: Exception) {
                     e.printStackTrace()
+                } finally {
+                    rendering.getAndSet(false)
                 }
             })
-            // https://bugs.openjdk.java.net/browse/JDK-4852178
-            // TODO: Remove this delay if possible anyhow, this is just so that the editor is not that unresponsive because of canvas locking
-//            if(isUnix) {
-                delay(5)
-//            }
         }
     }
 
-    fun getCurrentFPS() = fpsCounter.fps
-
-    fun getMsPerFrame() = fpsCounter.msPerFrame
-
     override fun processSystem() {
+        while(config.debug.forceSingleThreadedRendering && rendering.get()) {
+            Thread.onSpinWait()
+        }
         renderSystems.distinct().forEach {
             it.update(world.delta)
         }

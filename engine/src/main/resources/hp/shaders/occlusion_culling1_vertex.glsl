@@ -1,6 +1,6 @@
 //include(globals_structs.glsl)
 layout(binding = 0) uniform sampler2D highZ;
-layout(binding = 1, r32f) uniform image2D targetImage;
+layout(binding = 1, rgba8) uniform image2D targetImage;
 
 layout(std430, binding=1) buffer _entityCounts {
 	coherent int entityCounts[2000];
@@ -48,6 +48,9 @@ uniform int maxDrawCommands = 0;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform vec3 camPosition;
+
+uniform bool useFrustumCulling = true;
+uniform bool useOcclusionCulling = true;
 
 bool pointInBox(vec3 p, vec3 min, vec3 max) {
     return all(lessThanEqual(p, max)) && all(greaterThanEqual(p, min));
@@ -287,24 +290,17 @@ void main(){
         Entity entity = entities[offset+invocationIndex];
         mat4 mvp = projectionMatrix*viewMatrix*entity.modelMatrix;
 
-//        bool inFrustum = in_frustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
+//        bool inFrustum = in_frustum(viewProjectionMatrix, entity.min, entity.max);
 
-        vec3 span = (entity.max.xyz - entity.min.xyz);
-//        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, 0.5 * span.x));
+        vec3 span = (entity.max - entity.min);
+//        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min + 0.5 * span, 0.5 * span.x));
 
-//        bool inFrustum = boxInFrustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
-//        bool inFrustum = (testPoint(viewProjectionMatrix, entity.min.xyz) && testPoint(viewProjectionMatrix, entity.max.xyz));
-
-        vec4[2] boundingRect;
-        vec4[2] minMaxView;
-        minMaxView[0] = viewMatrix*entity.min;
-        minMaxView[1] = viewMatrix*entity.max;
-//        bool inFrustum = (testPoint(viewProjectionMatrix, minMaxView[0].xyz) && testPoint(viewProjectionMatrix, minMaxView[1].xyz));
-
+//        bool inFrustum = boxInFrustum(viewProjectionMatrix, entity.min, entity.max);
+//        bool inFrustum = (testPoint(viewProjectionMatrix, entity.min) && testPoint(viewProjectionMatrix, entity.max));
 
         bool inFrustum = (
-                        in_frustumXXX(viewProjectionMatrix, entity.max.xyz)
-                        || in_frustumXXX(viewProjectionMatrix, entity.min.xyz)
+                        in_frustumXXX(viewProjectionMatrix, entity.max)
+                        || in_frustumXXX(viewProjectionMatrix, entity.min)
                         || in_frustumXXX(viewProjectionMatrix, vec3(entity.min.xy, entity.max.z))
                         || in_frustumXXX(viewProjectionMatrix, vec3(entity.min.x, entity.max.y, entity.max.z))
                         || in_frustumXXX(viewProjectionMatrix, vec3(entity.max.x, entity.min.y, entity.max.z))
@@ -316,16 +312,16 @@ void main(){
 
 
 
-        boundingRect[0] = (projectionMatrix*minMaxView[0]);
-        boundingRect[1] = (projectionMatrix*minMaxView[1]);
-        boundingRect[0].xyz /= max(boundingRect[0].w, 0.00001);
-        boundingRect[1].xyz /= max(boundingRect[1].w, 0.00001);
-
+        vec4[2] boundingRect;
+        boundingRect[0] = (viewProjectionMatrix * vec4(entity.min, 1f));
+        boundingRect[1] = (viewProjectionMatrix * vec4(entity.max, 1f));
+        boundingRect[0].xyz /= boundingRect[0].w;
+        boundingRect[1].xyz /= boundingRect[1].w;
         boundingRect[0].xy = boundingRect[0].xy * 0.5 + 0.5;
         boundingRect[1].xy = boundingRect[1].xy * 0.5 + 0.5;
 
-        float ViewSizeX = (boundingRect[1].x-boundingRect[0].x) * (1280/2.0);
-        float ViewSizeY = (boundingRect[1].y-boundingRect[0].y) * (720/2.0);
+        float ViewSizeX = (boundingRect[1].x-boundingRect[0].x) * (1920/2.0);
+        float ViewSizeY = (boundingRect[1].y-boundingRect[0].y) * (1080/2.0);
         float LOD = ceil( log2( max( ViewSizeX, ViewSizeY ) / 2.0 ) );
 //        float LOD = ceil( log2( max( ViewSizeX, ViewSizeY ) ) );
 
@@ -341,23 +337,20 @@ void main(){
         bool maxOccluded = boundingRect[1].z > maxDepthSample + bias;
         bool allOccluded = minOccluded && maxOccluded;
 
-//                vec4 color = allOccluded ? vec4(0,1,0,0) : vec4(1,0,0,0);
-//                ivec2 texCoordsMin = ivec2(vec2(1280/2, 720/2)*boundingRect[0].xy);
-//                ivec2 texCoordsMax = ivec2(vec2(1280/2, 720/2)*boundingRect[1].xy);
-//	    imageStore(targetImage, texCoordsMin, color);//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).r)));
-//	    imageStore(targetImage, texCoordsMax, color);
-
         bool isVisible = true;
 
-#ifdef FRUSTUM_CULLING
-        isVisible = isVisible && inFrustum;
-#endif
+        if(useFrustumCulling) {
+            isVisible = isVisible && inFrustum;
+        }
+        if(useOcclusionCulling) {
+            isVisible = isVisible && !allOccluded;
+        }
 
-#ifdef OCCLUSION_CULLING
-        isVisible = isVisible && !allOccluded;
-#endif
-
-isVisible = true;
+//        vec4 color = allOccluded ? vec4(1,0,0,0) : vec4(0,1,0,0);
+//        ivec2 texCoordsMin = ivec2(vec2(imageSize(targetImage)) * boundingRect[0].xy);
+//        ivec2 texCoordsMax = ivec2(vec2(imageSize(targetImage)) * boundingRect[1].xy);
+//        imageStore(targetImage, ivec2(texCoordsMin), minOccluded ? vec4(1,0,0,0) : vec4(0,1,0,0));//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).r)));
+//        imageStore(targetImage, ivec2(texCoordsMax), maxOccluded ? vec4(1,0,0,0) : vec4(0,1,0,0));
 
         visibility[instancesBaseOffset+invocationIndex] = isVisible ? 1 : 0;
         if(isVisible) {

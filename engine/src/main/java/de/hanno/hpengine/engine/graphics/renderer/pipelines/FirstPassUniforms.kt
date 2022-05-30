@@ -65,7 +65,12 @@ open class AnimatedFirstPassUniforms(gpuContext: GpuContext<*>): FirstPassUnifor
     var vertices by SSBO("VertexAnimatedPacked", 7, PersistentMappedBuffer(AnimatedVertexStruktPacked.sizeInBytes, gpuContext).typed(AnimatedVertexStruktPacked.type))
 }
 
-fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera: Camera = renderState.camera, config: Config) {
+fun Program<out FirstPassUniforms>.setUniforms(
+    renderState: RenderState,
+    camera: Camera = renderState.camera,
+    config: Config,
+    indirect: Boolean
+) {
 
     val viewMatrixAsBuffer = camera.viewMatrixAsBuffer
     val projectionMatrixAsBuffer = camera.projectionMatrixAsBuffer
@@ -75,6 +80,7 @@ fun Program<out FirstPassUniforms>.setUniforms(renderState: RenderState, camera:
         uniforms.apply {
             materials = renderState.materialBuffer
             entities = renderState.entitiesBuffer
+            this.indirect = indirect
             when(this) {
                 is StaticFirstPassUniforms -> vertices = renderState.vertexIndexBufferStatic.vertexStructArray
                 is AnimatedFirstPassUniforms -> {

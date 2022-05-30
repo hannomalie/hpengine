@@ -4,7 +4,7 @@ uniform mat4 lastViewMatrix;
 uniform mat4 viewProjectionMatrix;
 uniform mat4 lightMatrix;
 
-uniform int indirect = 1;
+uniform int indirect = 0;
 uniform int entityIndex = 0;
 uniform vec3 eyePosition;
 uniform int time = 0;
@@ -68,8 +68,12 @@ out VertexShaderOutput vertexShaderOutput;
 
 void main(void) {
 
-    int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
-    if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
+    int entityBufferIndex = 0;
+	if(indirect == 0) {
+		entityBufferIndex = entityIndex + gl_InstanceID;
+	} else {
+		entityBufferIndex = entityOffsets[gl_DrawIDARB] + gl_InstanceID;
+	}
 
     Entity entity = entities[entityBufferIndex];
 

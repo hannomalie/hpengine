@@ -69,8 +69,10 @@ struct Entity {
     int b;
     int c;
 
-    vec4 min;
-    vec4 max;
+    vec3 min;
+    int boundingVolumeType;
+    vec3 max;
+    int d;
 };
 
 struct DrawCommand {

@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommandStrukt
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import org.lwjgl.opengl.ARBIndirectParameters.*
@@ -52,7 +51,7 @@ fun IndexBuffer.drawLinesInstancedBaseVertex(
 ): Int {
     return drawLinesInstancedBaseVertex(
         command.count,
-        command.primCount,
+        command.instanceCount,
         command.firstIndex,
         command.baseVertex,
         bindIndexBuffer,
@@ -99,7 +98,7 @@ fun IndexBuffer.drawInstancedBaseVertex(
 ): Int {
     return drawInstancedBaseVertex(
         command.count,
-        command.primCount,
+        command.instanceCount,
         command.firstIndex,
         command.baseVertex,
         bindIndexBuffer,
@@ -109,7 +108,7 @@ fun IndexBuffer.drawInstancedBaseVertex(
 }
 
 fun drawInstancedBaseVertex(command: DrawElementsIndirectCommand): Int {
-    return drawInstancedBaseVertex(command.count, command.primCount, command.firstIndex, command.baseVertex)
+    return drawInstancedBaseVertex(command.count, command.instanceCount, command.firstIndex, command.baseVertex)
 }
 
 fun IndexBuffer.drawPatchesInstancedBaseVertex(
@@ -120,7 +119,7 @@ fun IndexBuffer.drawPatchesInstancedBaseVertex(
 ): Int {
     return drawPatchesInstancedBaseVertex(
         command.count,
-        command.primCount,
+        command.instanceCount,
         command.firstIndex,
         command.baseVertex,
         bindIndexBuffer,
@@ -306,7 +305,8 @@ fun VertexIndexBuffer.drawLinesInstancedIndirectBaseVertex(
 fun drawLinesInstancedIndirectBaseVertex(
     indexBuffer: IndexBuffer,
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
-    primitiveCount: Int, mode: RenderingMode
+    primitiveCount: Int,
+    mode: RenderingMode
 ) {
     indexBuffer.bind()
     commandBuffer.persistentMappedBuffer.bind()

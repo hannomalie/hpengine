@@ -1,20 +1,20 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy
 
+import de.hanno.hpengine.engine.backend.OpenGl
 import de.hanno.hpengine.engine.graphics.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline
 import de.hanno.hpengine.engine.graphics.shader.ComputeProgram
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.vertexbuffer.IndexBuffer
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util
 import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.engine.vertexbuffer.drawInstancedBaseVertex
-import de.hanno.hpengine.engine.vertexbuffer.drawLinesInstancedBaseVertex
-import de.hanno.hpengine.engine.vertexbuffer.drawPatchesInstancedBaseVertex
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget2D
+import de.hanno.hpengine.engine.vertexbuffer.*
 import org.jetbrains.kotlin.util.profile
 import org.lwjgl.opengl.GL40.GL_PATCHES
 import org.lwjgl.opengl.GL42.GL_LINES
@@ -78,6 +78,7 @@ fun renderHighZMap(gpuContext: GpuContext<*>, baseDepthTexture: Int, baseWidth: 
                 gpuContext.bindTexture(0, TEXTURE_2D, highZTexture)
             }
             gpuContext.bindImageTexture(1, highZTexture, mipmapTarget, false, 0, GL15.GL_READ_WRITE, Pipeline.HIGHZ_FORMAT)
+            gpuContext.bindTexture(2, TEXTURE_2D, baseDepthTexture)
             val num_groups_x = Math.max(1, (currentWidth + 7) / 8)
             val num_groups_y = Math.max(1, (currentHeight + 7) / 8)
             highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1)

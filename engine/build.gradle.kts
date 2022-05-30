@@ -91,7 +91,7 @@ dependencies {
     api("commons-io:commons-io:2.4")
     api("de.ruedigermoeller:fst:2.33")
     api("com.carrotsearch:hppc:0.7.2")
-    api("de.hanno.compiler:java-compiler:1.4")
+//    api("de.hanno.compiler:java-compiler:1.4")
     api("commons-beanutils:commons-beanutils:1.9.3")
     api("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.1")
     api("de.hanno.structs:structs:1.0.1-SNAPSHOT")

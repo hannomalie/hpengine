@@ -19,7 +19,7 @@ data class Material(
     var useWorldSpaceXZAsTexCoords: Boolean = false,
     var materialType: MaterialType = MaterialType.DEFAULT,
     var transparencyType: TransparencyType = TransparencyType.BINARY,
-    var cullBackFaces: Boolean = materialType == MaterialType.FOLIAGE,
+    var cullBackFaces: Boolean = materialType != MaterialType.FOLIAGE,
     var depthTest: Boolean = true,
     val maps: MutableMap<MAP, Texture> = mutableMapOf(),
     var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,

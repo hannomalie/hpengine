@@ -20,6 +20,7 @@ import org.joml.FrustumIntersection
 open class DirectPipeline(
     private val config: Config,
     private val gpuContext: GpuContext<OpenGl>,
+    private val useBackFaceCulling: Boolean = true,
     private val shouldBeSkipped: RenderBatch.(Camera) -> Boolean = RenderBatch::isCulledOrForwardRendered
 ) : Pipeline {
 
@@ -68,9 +69,10 @@ open class DirectPipeline(
         renderState: RenderState, program: Program<out FirstPassUniforms>,
         renderCam: Camera
     ) {
-        gpuContext.cullFace = !config.debug.isDrawLines
+        gpuContext.cullFace = useBackFaceCulling || !config.debug.isDrawLines
         program.use()
-        program.setUniforms(renderState, renderCam, config)
+        program.setUniforms(renderState, renderCam, config, false)
+        program.uniforms.indirect = false
     }
 
 }
@@ -82,6 +84,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         gpuContext.cullFace = batch.material.cullBackFaces
         gpuContext.depthTest = batch.material.depthTest
         program.setTextureUniforms(batch.material.maps)
+        program.uniforms.entityIndex = batch.entityBufferIndex
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = PrimitiveType.Triangles)
     }
 
@@ -89,11 +92,12 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
     vertexIndexBuffer.indexBuffer.bind()
     for (groupedBatches in batchesWithOwnProgram) {
 
-        var program: Program<*> // TODO: Assign this program in the loop below and use() only on change
+        var program: Program<T> // TODO: Assign this program in the loop below and use() only on change
         for(batch in groupedBatches.value) {
-            program = batch.program ?: this.program
+            program = (batch.program ?: this.program) as Program<T>
             program.use()
-            beforeDraw(renderState, program as Program<T>, drawCam)
+            program.uniforms.entityIndex = batch.entityBufferIndex
+            beforeDraw(renderState, program, drawCam)
             gpuContext.cullFace = batch.material.cullBackFaces
             gpuContext.depthTest = batch.material.depthTest
             program.setTextureUniforms(batch.material.maps)
@@ -109,9 +113,13 @@ fun RenderBatch.isCulledOrForwardRendered(cullCam: Camera): Boolean {
     val intersectAABB = cullCam.frustum.frustumIntersection.intersectAab(meshMinWorld, meshMaxWorld)
     val meshIsInFrustum = intersectAABB == FrustumIntersection.INTERSECT || intersectAABB == FrustumIntersection.INSIDE
 
-    val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.primCount > 1 // TODO: Better culling for instances
+    val visibleForCamera = meshIsInFrustum || drawElementsIndirectCommand.instanceCount > 1 // TODO: Better culling for instances
 
     val culled = !visibleForCamera
     val isForward = material.transparencyType.needsForwardRendering
     return culled || isForward
+}
+fun RenderBatch.isForwardRendered(): Boolean {
+    val isForward = material.transparencyType.needsForwardRendering
+    return isForward || !isVisible
 }

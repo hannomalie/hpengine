@@ -75,12 +75,13 @@ val deferredRendererModule = module {
     }
     single {
         val deferredRenderingBuffer: DeferredRenderingBuffer = get()
-        IdTexture(deferredRenderingBuffer.idMap)
+        IdTexture(deferredRenderingBuffer.depthAndIndicesMap)
     }
     single {
         val deferredRenderingBuffer: DeferredRenderingBuffer = get()
         FinalOutput(deferredRenderingBuffer.finalMap)
     }
+    single { DebugOutput(null, 0) }
     single { DeferredRenderExtensionConfig(getAll()) }
 }
 
@@ -88,7 +89,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), getAll())
+        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll())
     }
 }
 val textureRendererModule = module {
@@ -141,7 +142,7 @@ val baseModule = module {
         val system: FPSCounterSystem = get()
         system.fpsCounter
     }
-    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) }
+    single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) }
     single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, OpenGlProgramManager::class)
     single { TextureManager(get(), get(), get()) }
 

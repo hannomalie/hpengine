@@ -48,18 +48,20 @@ open class SimpleTextureRenderer(
         texture: Int = finalImage,
         buffer: VertexBuffer = gpuContext.fullscreenBuffer,
         program: Program<Uniforms> = renderToQuadProgram,
-        factorForDebugRendering: Float = 1f
+        factorForDebugRendering: Float = 1f,
+        mipMapLevel: Int = 0,
     ) {
-        draw(texture, buffer, program, factorForDebugRendering)
+        draw(texture, buffer, program, factorForDebugRendering, mipMapLevel)
     }
 
     fun drawToQuad(
         texture: Texture2D,
         buffer: VertexBuffer = gpuContext.fullscreenBuffer,
         program: Program<Uniforms> = renderToQuadProgram,
-        factorForDebugRendering: Float = 1f
+        factorForDebugRendering: Float = 1f,
+        mipMapLevel: Int = 0,
     ) {
-        drawToQuad(texture.id, buffer, program, factorForDebugRendering)
+        drawToQuad(texture.id, buffer, program, factorForDebugRendering, mipMapLevel)
     }
 
     fun renderCubeMapDebug(renderTarget: FrontBufferTarget = frontBuffer,
@@ -93,13 +95,15 @@ open class SimpleTextureRenderer(
         texture: Int,
         buffer: VertexBuffer = gpuContext.fullscreenBuffer,
         program: Program<Uniforms>,
-        factorForDebugRendering: Float = 1f
+        factorForDebugRendering: Float = 1f,
+        mipMapLevel: Int = 0,
     ) {
 
         gpuContext.disable(GlCap.BLEND)
 
         program.use()
         program.setUniform("factorForDebugRendering", factorForDebugRendering)
+        program.setUniform("mipMapLevel", mipMapLevel)
 
         gpuContext.disable(GlCap.DEPTH_TEST)
 

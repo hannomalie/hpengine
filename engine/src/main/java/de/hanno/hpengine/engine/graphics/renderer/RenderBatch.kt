@@ -35,7 +35,7 @@ class RenderBatch(
         get() = material.isShadowCasting
 
     val instanceCount: Int
-        get() = drawElementsIndirectCommand.primCount
+        get() = drawElementsIndirectCommand.instanceCount
 
     val vertexCount: Int
         get() = drawElementsIndirectCommand.count / 3

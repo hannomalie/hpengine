@@ -79,10 +79,10 @@ void main(){
                 Entity entity = entities[offset+i];
 
                 vec4[2] boundingRect;
-                boundingRect[0] = (projectionMatrix*viewMatrix*entity.min);
+                boundingRect[0] = (projectionMatrix*viewMatrix * vec4(entity.min, 1f));
                 boundingRect[0].xyz /= boundingRect[0].w;
                 boundingRect[0].xy = boundingRect[0].xy * 0.5 + 0.5;
-                boundingRect[1] = (projectionMatrix*viewMatrix*entity.max);
+                boundingRect[1] = (projectionMatrix*viewMatrix * vec4(entity.max, 1f));
                 boundingRect[1].xyz /= boundingRect[1].w;
                 boundingRect[1].xy = boundingRect[1].xy * 0.5 + 0.5;
 

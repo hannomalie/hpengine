@@ -38,11 +38,11 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
     }
 
     fun swapStaging() {
-        stagingLock.lock()
-        tempB = currentStagingState
-        currentStagingState = currentWriteState
-        currentWriteState = tempB!!
-        stagingLock.unlock()
+        stagingLock.withLock {
+            tempB = currentStagingState
+            currentStagingState = currentWriteState
+            currentWriteState = tempB!!
+        }
     }
 
     private var customStateCounter = 0
@@ -54,28 +54,30 @@ class TripleBuffer<T : RenderState> constructor(private val instanceA: T,
         return StateRef(newIndex)
     }
 
-    fun startRead(): T {
-        swapLock.lock()
-        return currentReadState
-    }
-
-    fun stopRead(): Boolean {
-        return swap()
+    fun readLocked(block: (T) -> Unit) = swapLock.withLock {
+        block(currentReadState)
+        swap()
     }
 
     fun logState() {
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.fine("Read  " + if (currentReadState === instanceA) 0 else if (currentReadState === instanceB) 1 else 2)
-            LOGGER.fine("Stage " + if (currentStagingState === instanceA) 0 else if (currentStagingState === instanceB) 1 else 2)
-            LOGGER.fine("Write " + if (currentWriteState === instanceA) 0 else if (currentWriteState === instanceB) 1 else 2)
+            LOGGER.fine("Read  $currentReadStateIndex")
+            LOGGER.fine("Stage $currentStagingStateIndex")
+            LOGGER.fine("Write $currentWriteStateIndex")
         }
     }
 
     fun printState() {
-        println("Read  " + (if (currentReadState === instanceA) 0 else if (currentReadState === instanceB) 1 else 2) + " with cycle " + currentReadState.cycle)
-        println("Stage " + (if (currentStagingState === instanceA) 0 else if (currentStagingState === instanceB) 1 else 2) + " with cycle " + currentStagingState.cycle)
-        println("Write " + (if (currentWriteState === instanceA) 0 else if (currentWriteState === instanceB) 1 else 2) + " with cycle " + currentWriteState.cycle)
+        println("""Read  $currentReadStateIndex with cycle ${currentReadState.cycle}""")
+        println("""Stage $currentStagingStateIndex with cycle ${currentStagingState.cycle}""")
+        println("""Write $currentWriteStateIndex with cycle ${currentWriteState.cycle}""")
     }
+
+    val currentReadStateIndex get() = if (currentReadState === instanceA) 0 else if (currentReadState === instanceB) 1 else 2
+    val currentStagingStateIndex get() = if (currentStagingState === instanceA) 0 else if (currentStagingState === instanceB) 1 else 2
+    val currentWriteStateIndex get() = if (currentWriteState === instanceA) 0 else if (currentWriteState === instanceB) 1 else 2
+
+    val currentStateIndices get() = Triple(currentReadStateIndex, currentStagingStateIndex, currentWriteStateIndex)
 
     companion object {
         private val LOGGER = Logger.getLogger(TripleBuffer::class.java.name)

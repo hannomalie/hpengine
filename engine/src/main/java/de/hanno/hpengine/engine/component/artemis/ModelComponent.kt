@@ -471,7 +471,7 @@ class ModelSystem(
                         meshMaxWorld.set(max1)
                         centerWorld = meshCenter
                         this.boundingSphereRadius = boundingSphereRadius
-                        drawElementsIndirectCommand.primCount = 1
+                        drawElementsIndirectCommand.instanceCount = 1
                         drawElementsIndirectCommand.count = model.meshIndexCounts[meshIndex]
                         drawElementsIndirectCommand.firstIndex =
                             allocations[modelComponent.modelComponentDescription]!!.forMeshes[meshIndex].indexOffset

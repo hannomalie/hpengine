@@ -394,9 +394,15 @@ data class Texture2D(override val dimension: TextureDimension2D,
             return buffer
         }
 
-        operator fun invoke(gpuContext: GpuContext<OpenGl>, info: Texture2DUploadInfo, textureFilterConfig: TextureFilterConfig = TextureFilterConfig(), internalFormat: Int = if (info.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT): Texture2D {
+        operator fun invoke(
+            gpuContext: GpuContext<OpenGl>,
+            info: Texture2DUploadInfo,
+            textureFilterConfig: TextureFilterConfig = TextureFilterConfig(),
+            internalFormat: Int = if (info.srgba) EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT else EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
+            wrapMode: Int = GL12.GL_REPEAT
+        ): Texture2D {
             return gpuContext.invoke {
-                val (textureId, internalFormat, handle) = allocateTexture(gpuContext, info, GlTextureTarget.TEXTURE_2D, TextureFilterConfig(), internalFormat, GL12.GL_REPEAT)
+                val (textureId, internalFormat, handle) = allocateTexture(gpuContext, info, GlTextureTarget.TEXTURE_2D, textureFilterConfig, internalFormat, wrapMode)
                 if(gpuContext.isSupported(BindlessTextures)) ARBBindlessTexture.glMakeTextureHandleResidentARB(handle)
                 Texture2D(dimension = info.dimension,
                     id = textureId,
@@ -404,7 +410,7 @@ data class Texture2D(override val dimension: TextureDimension2D,
                     textureFilterConfig = textureFilterConfig,
                     internalFormat = internalFormat,
                     handle = handle,
-                    wrapMode = GL12.GL_CLAMP_TO_EDGE,
+                    wrapMode = wrapMode,
                     uploadState = UploadState.NOT_UPLOADED).apply {
                         CompletableFuture.supplyAsync {
                             upload(gpuContext, info, internalFormat)

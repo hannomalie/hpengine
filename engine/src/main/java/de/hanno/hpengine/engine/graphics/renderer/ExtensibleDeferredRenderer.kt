@@ -13,10 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.CombinePassRenderExtension
 import de.hanno.hpengine.engine.graphics.renderer.extensions.PostProcessingExtension
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.AnimatedFirstPassUniforms
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.DirectPipeline
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.IndirectPipeline
-import de.hanno.hpengine.engine.graphics.renderer.pipelines.StaticFirstPassUniforms
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.graphics.shader.define.Define
@@ -75,7 +72,7 @@ class ExtensibleDeferredRenderer(
     }
 
     val pipeline: StateRef<DirectPipeline> = renderStateManager.renderState.registerState {
-        object : DirectPipeline(config, gpuContext, shouldBeSkippedForDirectRendering) {
+        object : DirectPipeline(config, gpuContext, true, shouldBeSkippedForDirectRendering) {
             override fun beforeDrawAnimated(
                 renderState: RenderState,
                 program: Program<AnimatedFirstPassUniforms>,
@@ -105,8 +102,8 @@ class ExtensibleDeferredRenderer(
             }
         }
     }
-    val indirectPipeline: StateRef<IndirectPipeline> = renderStateManager.renderState.registerState {
-        object : IndirectPipeline(config, gpuContext) {
+    val indirectPipeline: StateRef<GPUCulledPipeline> = renderStateManager.renderState.registerState {
+        object : GPUCulledPipeline(config, gpuContext, programManager, textureManager, deferredRenderingBuffer) {
             override fun beforeDrawAnimated(
                 renderState: RenderState,
                 program: Program<AnimatedFirstPassUniforms>,
@@ -160,7 +157,7 @@ class ExtensibleDeferredRenderer(
     private fun preparePipelines(currentWriteState: RenderState) {
         currentWriteState.customState[pipeline].prepare(currentWriteState, currentWriteState.camera)
         if (useIndirectRendering) {
-            currentWriteState.customState[indirectPipeline].prepare(currentWriteState, currentWriteState.camera)
+            currentWriteState.customState[indirectPipeline].prepare(currentWriteState)
         }
     }
 
@@ -178,6 +175,10 @@ class ExtensibleDeferredRenderer(
             profiled(extension.javaClass.simpleName) {
                 extension.renderZeroPass(renderState)
             }
+        }
+
+        if (useIndirectRendering) {
+            renderState[indirectPipeline].copyDepthTexture()
         }
 
         gpuContext.depthMask = true
@@ -224,6 +225,7 @@ class ExtensibleDeferredRenderer(
                 }
             }
         }
+
         window.frontBuffer.use(gpuContext, false)
         combinePassExtension.renderCombinePass(renderState)
         deferredRenderingBuffer.use(gpuContext, false)

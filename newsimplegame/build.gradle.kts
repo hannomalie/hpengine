@@ -22,9 +22,8 @@ plugins {
 group = "de.hanno.hpengine"
 
 application {
-    mainClassName = "Game"
+    mainClassName = "scenes.InstancingDemoKt"
 }
-
 dependencies {
     implementation(project(":engine"))
 }

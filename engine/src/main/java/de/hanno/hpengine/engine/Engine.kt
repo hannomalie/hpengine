@@ -42,6 +42,7 @@ import org.koin.dsl.module
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
 
@@ -132,11 +133,16 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
 
     val updateCycle = AtomicLong()
 
+    private val updating = AtomicBoolean(false)
     init {
         afterInit()
 
         launchEndlessLoop { deltaSeconds ->
             try {
+                updating.getAndSet(true)
+                require(renderManager.renderState.currentWriteState.gpuHasFinishedUsingIt) {
+                    "GPU hasn't finished reading renderstate"
+                }
                 executeCommands()
                 withContext(updateScopeDispatcher) {
                     update(deltaSeconds)
@@ -144,6 +150,8 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
                 extract(deltaSeconds)
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                updating.getAndSet(false)
             }
         }
         window.pollEventsInLoop()

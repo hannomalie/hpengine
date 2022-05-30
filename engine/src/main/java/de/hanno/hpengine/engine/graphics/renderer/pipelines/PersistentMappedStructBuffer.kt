@@ -20,6 +20,7 @@ import struktgen.api.Strukt
 import struktgen.api.StruktType
 import java.nio.ByteBuffer
 import kotlin.math.max
+import kotlin.math.min
 
 interface Buffer {
     val buffer: ByteBuffer
@@ -157,7 +158,7 @@ class PersistentMappedStructBuffer<T : Struct>(
 
     private fun copyOldBufferTo(byteBuffer: ByteBuffer) {
         if (::buffer.isInitialized) {
-            val array = ByteArray(buffer.capacity())
+            val array = ByteArray(min(byteBuffer.capacity(), buffer.capacity()))
             buffer.rewind()
             buffer.get(array)
 //            byteBuffer.put(buffer)
@@ -166,6 +167,32 @@ class PersistentMappedStructBuffer<T : Struct>(
         }
     }
 
+    @Synchronized
+    fun setCapacityInBytes(requestedCapacity: Int) {
+        var capacityInBytes = requestedCapacity
+        if (capacityInBytes <= 0) {
+            capacityInBytes = 10
+        }
+
+        if (::buffer.isInitialized) {
+            val needsResize = buffer.capacity() != capacityInBytes
+            if (needsResize) {
+                gpuContext.invoke {
+                    val (newId, newBuffer) = createBuffer(capacityInBytes)
+                    val oldId = this.id
+                    GL15.glDeleteBuffers(oldId)
+                    this.buffer = newBuffer
+                    this.slidingWindow = createSlidingWindow()
+                    this.id = newId
+                }
+            }
+        } else {
+            val (id, newBuffer) = createBuffer(capacityInBytes)
+            this.buffer = newBuffer
+            this.slidingWindow = createSlidingWindow()
+            this.id = id
+        }
+    }
     @Synchronized
     fun ensureCapacityInBytes(requestedCapacity: Int) {
         var capacityInBytes = requestedCapacity

@@ -162,6 +162,7 @@ void main(void) {
 	out_normalAmbient = vec4(PN_view, material.ambient);
 	out_motionDepthTransparency = vec4(motionVec,depth,material.transparency);
 	out_depthAndIndices = vec4(float(entity.entityIndexWithoutMeshIndex), depth, entity.materialIndex, float(entity.meshIndex));
+//	out_depthAndIndices = vec4(0f, depth, 0f, 0f);
 
 //	This is for reusability, remove this somewhen with a better
 //	mechanism for color output channel options
