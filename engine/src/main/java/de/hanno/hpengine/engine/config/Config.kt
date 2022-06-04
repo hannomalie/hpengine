@@ -132,7 +132,7 @@ data class DebugConfig(
     override var isEditorOverlay: Boolean = true,
     override var isUseCpuFrustumCulling: Boolean = true,
     override var isUseGpuFrustumCulling: Boolean = true,
-    override var isUseGpuOcclusionCulling: Boolean = false,
+    override var isUseGpuOcclusionCulling: Boolean = true,
     override var isDrawLines: Boolean = false,
     override var isDrawBoundingVolumes: Boolean = false,
     override var isDrawPointLightShadowMaps: Boolean = false,

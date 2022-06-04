@@ -5,9 +5,6 @@ layout(binding = 1, rgba8) uniform image2D targetImage;
 layout(std430, binding=1) buffer _entityCounts {
 	coherent int entityCounts[2000];
 };
-layout(std430, binding=2) buffer _drawCount{
-	int drawCount;
-};
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
@@ -20,22 +17,8 @@ layout(std430, binding=5) buffer _drawCommandsSource {
 	DrawCommand drawCommandsSource[1000];
 };
 
-layout(std430, binding=7) buffer _drawCommandsTarget {
-	DrawCommand drawCommandsTarget[1000];
-};
-
-layout(std430, binding=8) buffer _offsetsTarget {
-	int offsetsTarget[1000];
-};
-
 layout(std430, binding=9) buffer _visibility {
 	int visibility[1000];
-};
-layout(std430, binding=10) buffer _entitiesCompacted {
-	Entity entitiesCompacted[2000];
-};
-layout(std430, binding=11) buffer _entitiesCompactedCounter {
-	int entitiesCompactedCounter;
 };
 layout(std430, binding=12) buffer _bufferOffsets {
 	int bufferOffsets[2000];
@@ -272,9 +255,6 @@ void main(){
 
         //////// RESET BUFFER STATE
         if(invocationIndex == 0) {
-            if(commandIndex == 0) {
-                entitiesCompactedCounter = 0;
-            }
             entityCounts[commandIndex] = 0;
             currentCompactedPointers[commandIndex] = 0;
             bufferOffsets[commandIndex] = 0;

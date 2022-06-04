@@ -108,7 +108,6 @@ fun addCommands(
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
     entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>
 ) {
-
     val resultingCommandCount = renderBatches.size
     entityOffsetBuffer.enlarge(resultingCommandCount)
     entityOffsetBuffer.buffer.rewind()

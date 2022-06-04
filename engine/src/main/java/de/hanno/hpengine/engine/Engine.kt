@@ -36,6 +36,7 @@ import de.hanno.hpengine.engine.transform.AABBData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.receiveOrNull
 import net.mostlyoriginal.api.SingletonPlugin
+import org.joml.Vector3f
 import org.koin.core.context.startKoin
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -63,18 +64,20 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
 
     private val openGlProgramManager: OpenGlProgramManager = koin.get()
     private val textureManager: TextureManager = koin.get()
+    val modelSystem = ModelSystem(
+        config,
+        koin.get(),
+        koin.get(),
+        MaterialManager(config, koin.get(), koin.get()),
+        koin.get(),
+        EntityBuffer(),
+    )
+    val entityLinkManager = EntityLinkManager()
     val systems = listOf(
-        EntityLinkManager(),
+        entityLinkManager,
         WorldAABB(),
         renderManager,
-        ModelSystem(
-            config,
-            koin.get(),
-            koin.get(),
-            MaterialManager(config, koin.get(), koin.get()),
-            koin.get(),
-            EntityBuffer(),
-        ),
+        modelSystem,
         ComponentExtractor(),
         SkyBoxSystem(),
         EditorCameraInputSystem(),
@@ -121,7 +124,9 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
             .register(config)
     ).apply {
         renderManager.renderSystems.forEach { it.artemisWorld = this }
-
+        getSystem(EntityLinkManager::class.java).apply {
+            register(InstanceComponent::class.java, modelSystem)
+        }
         process()
     }
 
@@ -280,16 +285,17 @@ fun World.addStaticModelEntity(
     name: String,
     path: String,
     directory: Directory = Directory.Game,
-): EntityEdit {
-    return edit(create()).apply {
-        create(TransformComponent::class.java)
-        create(ModelComponent::class.java).apply {
-            modelComponentDescription = StaticModelComponentDescription(path, directory)
-        }
-        create(SpatialComponent::class.java)
-        create(NameComponent::class.java).apply {
-            this.name = name
-        }
+    translation: Vector3f = Vector3f(),
+): EntityEdit = edit(create()).apply {
+    create(TransformComponent::class.java).apply {
+        transform.translation(translation)
+    }
+    create(ModelComponent::class.java).apply {
+        modelComponentDescription = StaticModelComponentDescription(path, directory)
+    }
+    create(SpatialComponent::class.java)
+    create(NameComponent::class.java).apply {
+        this.name = name
     }
 }
 

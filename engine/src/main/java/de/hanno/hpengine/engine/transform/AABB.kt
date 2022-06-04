@@ -314,6 +314,16 @@ fun List<SpatialComponent>.calculateAABB(): AABBData {
     }
     return AABBData(minResult, maxResult)
 }
+@JvmName("calculateAABBForAABBs")
+fun List<AABB>.calculateAABB(): AABBData {
+    val minResult = Vector3f(absoluteMaximum)
+    val maxResult = Vector3f(absoluteMinimum)
+    forEach {
+        minResult.min(it.min)
+        maxResult.max(it.max)
+    }
+    return AABBData(minResult, maxResult)
+}
 
 fun AABB.isInFrustum(camera: Camera): Boolean {
     val centerWorld = Vector3f()

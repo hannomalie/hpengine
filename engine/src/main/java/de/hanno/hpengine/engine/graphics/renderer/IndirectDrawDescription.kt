@@ -36,8 +36,8 @@ class IndirectCulledDrawDescription<T : FirstPassUniforms>(
     val program: Program<T>,
     val commandOrganization: CommandOrganizationGpuCulled,
     val vertexIndexBuffer: VertexIndexBuffer,
-    val beforeDraw: (RenderState, Program<T>, Camera) -> Unit,
     val mode: RenderingMode,
     val drawCam: Camera,
-    val cullCam: Camera = drawCam
+    val cullCam: Camera = drawCam,
+    val beforeDraw: (RenderState, Program<T>, Camera) -> Unit
 )

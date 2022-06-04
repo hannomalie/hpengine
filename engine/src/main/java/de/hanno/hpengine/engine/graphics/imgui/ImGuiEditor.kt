@@ -494,9 +494,9 @@ class ImGuiEditor(
                                         ImGui.text("Input batches: $batchCount")
                                         val drawCount = commandOrganization.drawCountsCompacted.buffer.getInt(0)
                                         ImGui.text("Draw commands: $drawCount")
-                                        commandOrganization.commandBuffer.typedBuffer.forEach(batchCount) {
+                                        commandOrganization.commandsCompacted.typedBuffer.forEach(batchCount) {
                                             if(counter < drawCount) {
-                                                val entityOffset = commandOrganization.entityOffsetBuffersCulled[counter].value
+                                                val entityOffset = commandOrganization.offsetsCompacted[counter].value
                                                 ImGui.text("$entityOffset - ")
                                                 ImGui.sameLine()
                                                 ImGui.text(it.print())

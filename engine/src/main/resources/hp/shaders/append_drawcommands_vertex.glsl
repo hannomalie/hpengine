@@ -1,6 +1,6 @@
 //include(globals_structs.glsl)
-layout(std430, binding=1) buffer _entityCounts {
-	int entityCounts[2000];
+layout(std430, binding=1) buffer _instanceCountForCommand {
+	int instanceCountForCommand[2000];
 };
 layout(std430, binding=2) buffer _drawCount{
 	int drawCount;
@@ -53,15 +53,15 @@ void main()
     int visibilityBufferOffset = 0;
     for(int i = 0; i < commandIndex; i++) {
         visibilityBufferOffset += drawCommandsSource[i].instanceCount;
-        if(entityCounts[i] > 0) {
+        if(instanceCountForCommand[i] > 0) {
             targetCommandIndex++;
         }
     }
 
     if(instanceIndex == 0) {
-        int noOfVisibleInstances = entityCounts[commandIndex];
+        int noOfVisibleInstances = instanceCountForCommand[commandIndex];
         if(noOfVisibleInstances > 0) {
-            atomicAdd(entitiesCompactedCounter, entityCounts[commandIndex]);
+            atomicAdd(entitiesCompactedCounter, instanceCountForCommand[commandIndex]);
             atomicAdd(drawCount, 1);
             sourceCommand.instanceCount = noOfVisibleInstances;
             drawCommandsTarget[targetCommandIndex] = sourceCommand;
@@ -73,7 +73,7 @@ void main()
     {
         int compactedBufferOffset = 0;
         for(int i = 0; i < commandIndex; i++) {
-            compactedBufferOffset += entityCounts[i];
+            compactedBufferOffset += instanceCountForCommand[i];
         }
 
         uint entityBufferSource = offsetsSource[commandIndex] + instanceIndex;
@@ -85,7 +85,5 @@ void main()
         if(instanceIndex == 0) {
             offsetsTarget[targetCommandIndex] = compactedBufferOffset;
         }
-//        DEBUG
-//        commandEntityOffsets[commandIndex] = compactedBufferOffset;
     }
 }

@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import org.joml.Vector3f
 import java.io.File
+import kotlin.random.Random
 
 fun main() {
 
@@ -27,35 +28,66 @@ fun main() {
 
     Engine(config) {
         world.loadScene {
-//            val bpcem = addStaticModelEntity("BPCEM", "assets/models/bpcem_playground.obj", Directory.Game)
             val cube = addStaticModelEntity("Cube", "assets/models/cube.obj", Directory.Engine)
+            val sphere = addStaticModelEntity("Sphere", "assets/models/sphere.obj", Directory.Engine, Vector3f(0f, 0f, -20f))
 
             edit(create()).apply {
                 create(TransformComponent::class.java).apply {
-                    transform.transformation.translation(Vector3f(20f, 0f, 0f))
+                    transform.transformation.translation(Vector3f(-20f, 0f, 0f))
                 }
                 create(NameComponent::class.java).apply {
-                    this.name = "Instance1"
+                    this.name = "Instance0"
                 }
                 create(InstanceComponent::class.java).apply {
                     targetEntity = cube.entityId
                 }
             }
-            edit(create()).apply {
-                create(TransformComponent::class.java).apply {
-                    transform.transformation.translation(Vector3f(20f, 0f, 20f))
+            val random = Random
+            val times = 10
+            val timesSquared = times*times
+            repeat(times) { x ->
+                repeat(times) { z ->
+                    val instanceIdentifier = times * x + z + 1
+                    edit(create()).apply {
+                        create(TransformComponent::class.java).apply {
+                            transform.transformation.translation(Vector3f(20f * x, 0f, 20f * z))
+                        }
+                        create(NameComponent::class.java).apply {
+                            this.name = "CubeInstance$instanceIdentifier"
+                        }
+                        create(InstanceComponent::class.java).apply {
+                            targetEntity = cube.entityId
+                        }
+                        create(MaterialComponent::class.java).apply {
+                            material = Material("CubeColor$instanceIdentifier").apply {
+                                diffuse.x = random.nextFloat()
+                                diffuse.y = random.nextFloat()
+                                diffuse.z = random.nextFloat()
+                            }
+                        }
+                    }
                 }
-                create(NameComponent::class.java).apply {
-                    this.name = "Instance2"
-                }
-                create(InstanceComponent::class.java).apply {
-                    targetEntity = cube.entityId
-                }
-                create(MaterialComponent::class.java).apply {
-                    material = Material("green").apply {
-                        diffuse.x = 0.0f
-                        diffuse.y = 1.0f
-                        diffuse.z = 0.0f
+            }
+            repeat(times) { x ->
+                repeat(times) { z ->
+                    val instanceIdentifier = times * x + z + 1
+                    edit(create()).apply {
+                        create(TransformComponent::class.java).apply {
+                            transform.transformation.translation(Vector3f(20f * x, 50f, 20f * z))
+                        }
+                        create(NameComponent::class.java).apply {
+                            this.name = "SphereInstance$instanceIdentifier"
+                        }
+                        create(InstanceComponent::class.java).apply {
+                            targetEntity = sphere.entityId
+                        }
+                        create(MaterialComponent::class.java).apply {
+                            material = Material("SphereColor$instanceIdentifier").apply {
+                                diffuse.x = random.nextFloat()
+                                diffuse.y = random.nextFloat()
+                                diffuse.z = random.nextFloat()
+                            }
+                        }
                     }
                 }
             }
