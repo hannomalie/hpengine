@@ -54,8 +54,16 @@ fun <T: Component> ComponentMapper<T>.getOrNull(entityId: Int?): T? = when (enti
 class ModelComponent : Component() {
     lateinit var modelComponentDescription: ModelComponentDescription
 }
+class ModelCacheComponent : Component() {
+    lateinit var model: Model<*>
+    lateinit var allocation: Allocation
+}
+
 class MaterialComponent: Component() {
     lateinit var material: Material
+}
+class InstancesComponent: Component() {
+    val instances = mutableListOf<Int>()
 }
 
 @One(
@@ -73,9 +81,11 @@ class ModelSystem(
     lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var boundingVolumeComponentMapper: ComponentMapper<BoundingVolumeComponent>
+    lateinit var modelCacheComponentMapper: ComponentMapper<ModelCacheComponent>
     lateinit var invisibleComponentMapper: ComponentMapper<InvisibleComponent>
     lateinit var instanceComponentMapper: ComponentMapper<InstanceComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
+    lateinit var instancesComponentMapper: ComponentMapper<InstancesComponent>
 
     val vertexIndexBufferStatic = VertexIndexBuffer(gpuContext, 10)
     val vertexIndexBufferAnimated = VertexIndexBuffer(gpuContext, 10)
@@ -101,6 +111,15 @@ class ModelSystem(
         cacheEntityIndices()
         allocateVertexIndexBufferSpace() // TODO: Move this out of here so that it can be batch allocated below
 
+        modelCacheComponentMapper.getOrNull(entityId)?.apply {
+            val instanceComponent = instanceComponentMapper.getOrNull(entityId)
+            val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
+
+            val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
+            val descr = modelComponent.modelComponentDescription
+            this.allocation = allocations[descr]!!
+        }
+
     }
 
     override fun removed(entityId: Int) {
@@ -114,6 +133,16 @@ class ModelSystem(
 
         cacheEntityIndices()
         allocateVertexIndexBufferSpace()
+        entities.forEach { entityId ->
+            modelCacheComponentMapper.getOrNull(entityId)?.apply {
+                val instanceComponent = instanceComponentMapper.getOrNull(entityId)
+                val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
+
+                val modelComponent = modelComponentOrNull ?: modelComponentMapper[instanceComponent!!.targetEntity]
+                val descr = modelComponent.modelComponentDescription
+                this.allocation = allocations[descr]!!
+            }
+        }
     }
 
     private fun loadModelToCache(entityId: Int) {
@@ -128,35 +157,38 @@ class ModelSystem(
             Directory.Game -> config.gameDir
             Directory.Engine -> config.engineDir
         }
-        val model = when (descr) {
-            is AnimatedModelComponentDescription -> {
-                animatedModelLoader.load(
-                    descr.file,
-                    textureManager,
-                    dir
-                )
-            }
-            is StaticModelComponentDescription -> {
-                staticModelLoader.load(
-                    descr.file,
-                    textureManager,
-                    dir
-                )
-            }
-        }
-
-        modelCache[descr] = model
-
-        model.meshes.forEach { mesh ->
-            val meshMaterial = materialComponentOrNull?.material ?: mesh.material
-            materialManager.registerMaterial(meshMaterial)
-            meshMaterial.programDescription?.let { programDescription ->
-                programCache[programDescription] =
-                    programManager.getFirstPassProgram(programDescription) as Program<FirstPassUniforms>
+        val model = modelCache.computeIfAbsent(descr) {
+            when (descr) {
+                is AnimatedModelComponentDescription -> {
+                    animatedModelLoader.load(
+                        descr.file,
+                        textureManager,
+                        dir
+                    )
+                }
+                is StaticModelComponentDescription -> {
+                    staticModelLoader.load(
+                        descr.file,
+                        textureManager,
+                        dir
+                    )
+                }
+            }.apply {
+                meshes.forEach { mesh ->
+                    val meshMaterial = materialComponentOrNull?.material ?: mesh.material
+                    materialManager.registerMaterial(meshMaterial)
+                    meshMaterial.programDescription?.let { programDescription ->
+                        programCache[programDescription] =
+                            programManager.getFirstPassProgram(programDescription) as Program<FirstPassUniforms>
+                    }
+                }
             }
         }
 
         boundingVolumeComponentMapper.create(entityId).boundingVolume = model.boundingVolume
+        modelCacheComponentMapper.create(entityId).apply {
+            this.model = model
+        }
     }
 
     override fun processSystem() {
@@ -164,19 +196,21 @@ class ModelSystem(
         updateGpuJointsArray()
 
         var entityBufferIndex = 0
-        val materials = materialManager.materials
 
         forEachEntity { parentEntityId ->
             val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
 
-            val entityIds = listOf(parentEntityId) + (entityLinks[parentEntityId] ?: emptyList())
+            val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
+            val entityIds = listOf(parentEntityId) + instances
+
             entityIds.forEach { entityId ->
                 val instanceComponent = instanceComponentMapper.getOrNull(entityId)
                 val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent?.targetEntity)
                 val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
 
                 if(modelComponent != null) {
-                    val model = modelCache[modelComponent.modelComponentDescription]!!
+                    val modelCacheComponent = modelCacheComponentMapper.getOrNull(entityId) ?: modelCacheComponentMapper[parentEntityId]
+                    val model = modelCacheComponent.model
                     when(model) {
                         is AnimatedModel -> model.animations.values.forEach {
                             it.update(world.delta)
@@ -185,9 +219,9 @@ class ModelSystem(
                     }
                     val transform = transformComponent!!.transform
 
-                    val allocation = allocations[modelComponent.modelComponentDescription]!!
+                    val allocation = modelCacheComponent.allocation//allocations[modelComponent.modelComponentDescription]!!
 
-                    val meshes = modelCache[modelComponent.modelComponentDescription]!!.meshes
+                    val meshes = model.meshes
 
 
                     val animationFrame = when(model) {
@@ -199,7 +233,7 @@ class ModelSystem(
                             val currentEntity = gpuEntitiesArray[entityBufferIndex]
 
                             val meshMaterial = materialComponentOrNull?.material ?: mesh.material // TODO: Think about override per mesh instead of all at once
-                            val targetMaterialIndex = materials.indexOf(meshMaterial)
+                            val targetMaterialIndex = meshMaterial.materialIndex//materials.indexOf(meshMaterial)
                             currentEntity.run {
                                 materialIndex = targetMaterialIndex
                                 update = Update.STATIC.asDouble.toInt()//entity.updateType.asDouble.toInt() TODO: Reimplement
@@ -226,10 +260,13 @@ class ModelSystem(
     }
 
     private val requiredEntityBufferSize: Int
-        get() = mapEntity { entityId ->
-            val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
+        get() = mapEntity { parentEntityId ->
+            val modelComponentOrNull = modelComponentMapper.getOrNull(parentEntityId)
             if(modelComponentOrNull != null) {
-                val entityIds = listOf(entityId) + (entityLinks[entityId] ?: emptyList())
+
+                val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
+                val entityIds = listOf(parentEntityId) + instances
+
                 val instanceCount = entityIds.size
                 instanceCount * (modelCache[modelComponentOrNull.modelComponentDescription]?.meshes?.size ?: 0)
             } else 0
@@ -246,11 +283,13 @@ class ModelSystem(
     fun cacheEntityIndices() {
         entityIndices.clear()
         var instanceIndex = 0
-        forEachEntity { entityId ->
-            val modelComponent = modelComponentMapper.get(entityId)
-            entityIndices[entityId] = instanceIndex
+        forEachEntity { parentEntityId ->
+            val modelComponent = modelComponentMapper.get(parentEntityId)
+            entityIndices[parentEntityId] = instanceIndex
 
-            val entityIds = listOf(entityId) + (entityLinks[entityId] ?: emptyList())
+            val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
+            val entityIds = listOf(parentEntityId) + instances
+
             val instanceCount = entityIds.size
             val meshCount = modelCache[modelComponent.modelComponentDescription]!!.meshes.size
 
@@ -361,7 +400,8 @@ class ModelSystem(
 
         var batchIndex = 0
         forEachEntity { parentEntityId ->
-            val entityIds = listOf(parentEntityId) + (entityLinks[parentEntityId] ?: emptyList())
+            val instances = instancesComponentMapper.getOrNull(parentEntityId)?.instances ?: emptyList()
+            val entityIds = listOf(parentEntityId) + instances
             val instanceCount = entityIds.size
 
             val modelComponent = modelComponentMapper.getOrNull(parentEntityId)
@@ -434,21 +474,22 @@ class ModelSystem(
         }
     }
 
-    private val entityLinks = mutableMapOf<Int, MutableList<Int>>()
     override fun onLinkEstablished(sourceId: Int, targetId: Int) {
-        entityLinks.computeIfAbsent(targetId) { mutableListOf() }.add(sourceId)
+        instancesComponentMapper.create(targetId).apply {
+            instances.add(sourceId)
+        }
     }
 
     override fun onLinkKilled(sourceId: Int, targetId: Int) {
-        entityLinks[targetId]!!.remove(sourceId)
+        instancesComponentMapper.getOrNull(targetId)?.instances?.remove(sourceId)
     }
 
     override fun onTargetDead(sourceId: Int, deadTargetId: Int) {
-        entityLinks[deadTargetId]!!.remove(sourceId)
+        instancesComponentMapper.getOrNull(deadTargetId)?.instances?.remove(sourceId)
     }
 
     override fun onTargetChanged(sourceId: Int, targetId: Int, oldTargetId: Int) {
-        entityLinks[oldTargetId]!!.remove(sourceId)
+        instancesComponentMapper[oldTargetId].instances.remove(sourceId)
         onLinkEstablished(sourceId, targetId)
     }
 }

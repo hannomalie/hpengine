@@ -377,26 +377,24 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                         result
                     }
                     Util.printIntBuffer(visibilities.buffer.asIntBuffer(), visibilityCount, 1)
-                    println("Entity instance counts")
+                    println("Instance counts per command")
                     Util.printIntBuffer(instanceCountForCommand.buffer.asIntBuffer(), commandCount, 1)
-                    println("DrawCountsCompactedBuffer")
+                    println("DrawCounts compacted")
                     println(drawCountsCompacted.buffer.getInt(0))
-                    println("Entities compacted counter")
+                    println("Number of visible instances")
                     println(instanceCount)
-                    println("Offsets culled")
-                    Util.printIntBuffer(offsetsCompacted.buffer.asIntBuffer(), instanceCount, 1)
-                    println("CurrentCompactedPointers")
-                    Util.printIntBuffer(currentCompactedPointers.buffer.asIntBuffer(), instanceCount, 1)
-                    println("CommandOffsets")
-                    Util.printIntBuffer(commandOffsets.buffer.asIntBuffer(), instanceCount, 1)
-                    if(commandCount > 0) {
-                        println("Commands input")
-                        Util.printIntBuffer(commands.buffer.asIntBuffer(), 5, commandCount)
-                        println("Commands compacted")
-                        Util.printIntBuffer(commandsCompacted.buffer.asIntBuffer(), 5, commandCount)
-                        println("Entities compacted")
-                        entitiesCompacted.typedBuffer.forEach(min(instanceCount, 10)) { println(it.print()) }
-                    }
+                    println("Current compacted Pointers")
+                    Util.printIntBuffer(currentCompactedPointers.buffer.asIntBuffer(), commandCount, 1)
+                    println("Command offsets")
+                    Util.printIntBuffer(commandOffsets.buffer.asIntBuffer(), commandCount, 1)
+                    println("Command offsets culled")
+                    Util.printIntBuffer(offsetsCompacted.buffer.asIntBuffer(), commandCount, 1)
+                    println("Commands input")
+                    Util.printIntBuffer(commands.buffer.asIntBuffer(), 5, commandCount)
+                    println("Commands compacted")
+                    Util.printIntBuffer(commandsCompacted.buffer.asIntBuffer(), 5, commandCount)
+                    println("Entities compacted")
+                    entitiesCompacted.typedBuffer.forEach(min(instanceCount, 10)) { println(it.print()) }
                 }
             }
 

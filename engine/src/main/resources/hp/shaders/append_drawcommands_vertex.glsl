@@ -61,7 +61,7 @@ void main()
     if(instanceIndex == 0) {
         int noOfVisibleInstances = instanceCountForCommand[commandIndex];
         if(noOfVisibleInstances > 0) {
-            atomicAdd(entitiesCompactedCounter, instanceCountForCommand[commandIndex]);
+            atomicAdd(entitiesCompactedCounter, noOfVisibleInstances);
             atomicAdd(drawCount, 1);
             sourceCommand.instanceCount = noOfVisibleInstances;
             drawCommandsTarget[targetCommandIndex] = sourceCommand;
@@ -78,12 +78,21 @@ void main()
 
         uint entityBufferSource = offsetsSource[commandIndex] + instanceIndex;
         uint compactedPointer = atomicAdd(currentCompactedPointers[commandIndex], 1);
+
+//        // TODO: Why doesn't it work with the atomically added result from above? ... hm ... now it works?
+//        compactedPointer = 0;
+//        for(int i = 0; i < instanceIndex; i++) {
+//            bool neighbourIsVisible = visibility[visibilityBufferOffset + i] == 1;
+//            if(neighbourIsVisible) compactedPointer++;
+//        }
+
         uint compactedEntityBufferIndex = compactedBufferOffset + compactedPointer;
 
         entitiesCompacted[compactedEntityBufferIndex] = entities[entityBufferSource];
 
-        if(instanceIndex == 0) {
+//        TODO: Why causes this flickering?
+//        if(instanceIndex == 0) {
             offsetsTarget[targetCommandIndex] = compactedBufferOffset;
-        }
+//        }
     }
 }

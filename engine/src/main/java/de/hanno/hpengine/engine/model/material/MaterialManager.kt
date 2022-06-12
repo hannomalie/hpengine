@@ -97,9 +97,10 @@ class MaterialManager(
 //        TODO: Remove most of this
         currentWriteState.entitiesState.materialBuffer.ensureCapacityInBytes(MaterialStrukt.sizeInBytes * materials.size)
         currentWriteState.entitiesState.materialBuffer.buffer.rewind()
-        materialsBuffer = materialsBuffer.resize(materials.size)
+        materialsBuffer = materialsBuffer.resize(sizeInBytes = materials.size * MaterialStrukt.sizeInBytes)
+        currentWriteState.entitiesState.materialBuffer.resize(materialsBuffer.size)
 
-        materialsBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
+        currentWriteState.entitiesState.materialBuffer.typedBuffer.forEachIndexed(untilIndex = materials.size) { index, it ->
             val material = materials[index]
 
             it.run {
@@ -130,8 +131,7 @@ class MaterialManager(
                 }
             }
         }
-        currentWriteState.entitiesState.materialBuffer.resize(materialsBuffer.size)
-        materialsBuffer.byteBuffer.copyTo(currentWriteState.entitiesState.materialBuffer.buffer, true)
+//        materialsBuffer.byteBuffer.copyTo(currentWriteState.entitiesState.materialBuffer.buffer, true)
     }
 
 
@@ -147,11 +147,8 @@ class MaterialManager(
     }
 }
 
-val TypedBuffer<MaterialStrukt>.size: Int
-    get() = byteBuffer.capacity() / struktType.sizeInBytes
-
-private fun TypedBuffer<MaterialStrukt>.resize(size: Int): TypedBuffer<MaterialStrukt> = this.let {
-    val resized = it.byteBuffer.resize(size)
+private fun TypedBuffer<MaterialStrukt>.resize(sizeInBytes: Int): TypedBuffer<MaterialStrukt> = this.let {
+    val resized = it.byteBuffer.resize(sizeInBytes)
     if (resized != it) TypedBuffer(resized, MaterialStrukt.type) else it
 }
 

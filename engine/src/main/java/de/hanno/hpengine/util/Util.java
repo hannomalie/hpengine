@@ -378,6 +378,11 @@ public class Util {
 	}
 
 	public static String printIntBuffer(IntBuffer buffer, int columns, int rows) {
+		String asString = toString(buffer, columns, rows);
+		System.out.println(asString);
+		return asString;
+	}
+	public static String toString(IntBuffer buffer, int columns, int rows) {
 		buffer.rewind();
 		StringBuilder builder = new StringBuilder();
 		int columnCounter = 1;
@@ -392,9 +397,7 @@ public class Util {
 			columnCounter++;
 		}
 		buffer.rewind();
-		String result = builder.toString();
-		System.out.println(result);
-		return result;
+		return builder.toString();
 	}
 
 	public static float[] getArray(FloatBuffer values) {

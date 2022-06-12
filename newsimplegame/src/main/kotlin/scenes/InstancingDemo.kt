@@ -43,7 +43,7 @@ fun main() {
                 }
             }
             val random = Random
-            val times = 10
+            val times = 100
             val timesSquared = times*times
             repeat(times) { x ->
                 repeat(times) { z ->

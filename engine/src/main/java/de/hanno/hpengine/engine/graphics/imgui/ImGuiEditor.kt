@@ -27,6 +27,7 @@ import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.util.Util
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
@@ -491,11 +492,29 @@ class ImGuiEditor(
                                         GL11.glFinish()
                                         val commandOrganization = indirectPipeline.commandOrganizationStatic
                                         val batchCount = commandOrganization.filteredRenderBatches.size
-                                        ImGui.text("Input batches: $batchCount")
-                                        val drawCount = commandOrganization.drawCountsCompacted.buffer.getInt(0)
-                                        ImGui.text("Draw commands: $drawCount")
+                                        val commandCount = commandOrganization.drawCountsCompacted.buffer.getInt(0)
+                                        val visibilityCount = if(commandCount == 0) {
+                                            0
+                                        } else {
+                                            var result = 0
+                                            indirectPipeline.commandOrganizationStatic.commandsCompacted.typedBuffer.forEach(commandCount) {
+                                                result += it.instanceCount
+                                            }
+                                            result
+                                        }
+                                        ImGui.text("Visible instances: $visibilityCount")
+
+                                        val commandOffsetsCulled = Util.toString(
+                                            indirectPipeline.commandOrganizationStatic.offsetsCompacted.buffer.asIntBuffer(),
+                                            commandCount,
+                                            1
+                                        ).take(15)
+                                        ImGui.text("Command offsets culled: $commandOffsetsCulled")
+
+                                        ImGui.text("Draw commands: $batchCount")
+                                        ImGui.text("Draw commands compacted: $commandCount")
                                         commandOrganization.commandsCompacted.typedBuffer.forEach(batchCount) {
-                                            if(counter < drawCount) {
+                                            if(counter < commandCount) {
                                                 val entityOffset = commandOrganization.offsetsCompacted[counter].value
                                                 ImGui.text("$entityOffset - ")
                                                 ImGui.sameLine()
