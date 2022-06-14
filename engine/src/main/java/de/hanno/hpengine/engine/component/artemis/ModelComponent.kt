@@ -38,6 +38,7 @@ import de.hanno.hpengine.engine.scene.dsl.Directory
 import de.hanno.hpengine.engine.scene.dsl.ModelComponentDescription
 import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
 import de.hanno.hpengine.engine.system.Extractor
+import de.hanno.hpengine.engine.transform.*
 import de.hanno.struct.copyTo
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
@@ -57,6 +58,7 @@ class ModelComponent : Component() {
 class ModelCacheComponent : Component() {
     lateinit var model: Model<*>
     lateinit var allocation: Allocation
+    lateinit var meshSpatials: List<SimpleSpatial>
 }
 
 class MaterialComponent: Component() {
@@ -147,6 +149,7 @@ class ModelSystem(
 
     private fun loadModelToCache(entityId: Int) {
         val instanceComponent = instanceComponentMapper.getOrNull(entityId)
+        val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper[instanceComponent!!.targetEntity]
         val modelComponentOrNull = modelComponentMapper.getOrNull(entityId)
         val materialComponentOrNull = materialComponentMapper.getOrNull(entityId)
         if(instanceComponent == null && modelComponentOrNull == null) return
@@ -188,6 +191,14 @@ class ModelSystem(
         boundingVolumeComponentMapper.create(entityId).boundingVolume = model.boundingVolume
         modelCacheComponentMapper.create(entityId).apply {
             this.model = model
+            this.meshSpatials = model.meshes.map {
+                val origin = it.spatial.boundingVolume
+//                StaticTransformSpatial(
+                TransformSpatial(
+                    transformComponent.transform,
+                    AABB(origin.localMin, origin.localMax),
+                )
+            }
         }
     }
 
@@ -227,6 +238,7 @@ class ModelSystem(
                     val animationFrame = when(model) {
                         is AnimatedModel -> model.animation.currentFrame
                         is StaticModel -> 0
+                        else -> throw IllegalStateException() // Hello compiler bug
                     }
                     gpuEntitiesArray.byteBuffer.run {
                         for ((targetMeshIndex, mesh) in meshes.withIndex()) {
@@ -244,7 +256,7 @@ class ModelSystem(
                                 animationFrame0 = animationFrame
                                 isInvertedTexCoordY = if (model.isInvertTexCoordY) 1 else 0
                                 dummy4 = allocation.indexOffset
-                                val boundingVolume = model.getBoundingVolume(transform, mesh)
+                                val boundingVolume = modelCacheComponent.meshSpatials[targetMeshIndex].getBoundingVolume(transform)
                                 setTrafoAndBoundingVolume(transform.transformation, boundingVolume)
                             }
                             entityBufferIndex++

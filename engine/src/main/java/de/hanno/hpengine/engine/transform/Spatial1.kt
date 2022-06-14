@@ -18,6 +18,9 @@ interface Spatial : Updatable {
         boundingVolume.recalculate(transform)
         return boundingVolume
     }
+    fun recalculate(transform: Matrix4f) {
+        boundingVolume.recalculate(transform)
+    }
 
     fun getBoundingSphereRadius(transform: Matrix4f): Float {
         boundingVolume.recalculate(transform)

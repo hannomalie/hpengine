@@ -23,7 +23,7 @@ import org.joml.Vector3f
 
 class RenderState(private val gpuContext: GpuContext<*>) {
     var entityIds: List<Int> = emptyList()
-    var componentExtracts: Map<Class<out Component>, List<Component>> = emptyMap()
+    var componentExtracts: MutableMap<Class<out Component>, List<Component>> = mutableMapOf()
     var componentsForEntities: MutableMap<Int, Bag<Component>> = mutableMapOf()
     val customState = CustomStates()
 

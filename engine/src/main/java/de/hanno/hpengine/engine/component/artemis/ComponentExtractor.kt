@@ -8,6 +8,9 @@ import com.artemis.utils.reflect.ClassReflection.isAnnotationPresent
 import com.esotericsoftware.kryo.Kryo
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.system.Extractor
+import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.full.declaredMembers
+import kotlin.reflect.full.memberProperties
 
 @All
 class ComponentExtractor : BaseEntitySystem(), Extractor {
@@ -27,9 +30,29 @@ class ComponentExtractor : BaseEntitySystem(), Extractor {
     }
 
     override fun extract(currentWriteState: RenderState) {
-        currentWriteState.componentExtracts = componentSubclasses.associateWith { clazz ->
+        return // This works but is simply too costly
+        componentSubclasses.associateWith { clazz ->
             val componentMapper = componentMappers[clazz]!!
-            kryo.copy(componentMapper.hackedOutComponents)
+
+            val currentComponents = mapEntity {
+                componentMapper.get(it)
+            }.filterNotNull()
+
+            val currentExtractedComponents = currentWriteState.componentExtracts[clazz]
+            if(currentExtractedComponents == null || currentExtractedComponents.size < currentComponents.size) {
+                currentWriteState.componentExtracts[clazz] = componentMapper.hackedOutComponents.map {
+                    clazz.cast(clazz.constructors[0].newInstance())
+                }
+            }
+
+            currentWriteState.componentExtracts[clazz]!!.let { extract ->
+                currentComponents.forEachIndexed { index, source ->
+                    val target = extract[index]
+                    source::class.memberProperties.filterIsInstance<KMutableProperty1<Any, Any>>().forEach { property ->
+                        property.set(target, property.get(source))
+                    }
+                }
+            }
         }
 
         currentWriteState.componentsForEntities.clear()

@@ -157,10 +157,6 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
             lastUsedTransformationMatrix = null
         }
 
-    fun setLocalAABB(min: Vector3fc, max: Vector3fc) {
-        localAABB = AABBData(min, max)
-    }
-
     var worldAABB = AABBData()
         private set
 
@@ -172,11 +168,15 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
 
     var localMin: Vector3fc
         get() = localAABB.min
-        set(value) = setLocalAABB(value, localMax)
+        set(value) {
+            localAABB = AABBData(value, localMax)
+        }
 
     var localMax: Vector3fc
         get() = localAABB.max
-        set(value) = setLocalAABB(localMin, value)
+        set(value) {
+            localAABB = AABBData(localMin, value)
+        }
 
     inline val extents: Vector3f
         get() = worldAABB.extents
@@ -264,31 +264,32 @@ class AABB(localMin: Vector3fc = Vector3f(absoluteMaximum), localMax: Vector3fc 
     }
     fun getPointsAsArray(): FloatArray {
         val points: List<Vector3fc> = getPoints()
-        val pointsForLineDrawing: MutableList<Vector3fc> = ArrayList()
-        pointsForLineDrawing.add(points[0])
-        pointsForLineDrawing.add(points[1])
-        pointsForLineDrawing.add(points[1])
-        pointsForLineDrawing.add(points[2])
-        pointsForLineDrawing.add(points[2])
-        pointsForLineDrawing.add(points[3])
-        pointsForLineDrawing.add(points[3])
-        pointsForLineDrawing.add(points[0])
-        pointsForLineDrawing.add(points[4])
-        pointsForLineDrawing.add(points[5])
-        pointsForLineDrawing.add(points[5])
-        pointsForLineDrawing.add(points[6])
-        pointsForLineDrawing.add(points[6])
-        pointsForLineDrawing.add(points[7])
-        pointsForLineDrawing.add(points[7])
-        pointsForLineDrawing.add(points[4])
-        pointsForLineDrawing.add(points[0])
-        pointsForLineDrawing.add(points[6])
-        pointsForLineDrawing.add(points[1])
-        pointsForLineDrawing.add(points[7])
-        pointsForLineDrawing.add(points[2])
-        pointsForLineDrawing.add(points[4])
-        pointsForLineDrawing.add(points[3])
-        pointsForLineDrawing.add(points[5])
+        val pointsForLineDrawing: MutableList<Vector3fc> = ArrayList<Vector3fc>().apply {
+            add(points[0])
+            add(points[1])
+            add(points[1])
+            add(points[2])
+            add(points[2])
+            add(points[3])
+            add(points[3])
+            add(points[0])
+            add(points[4])
+            add(points[5])
+            add(points[5])
+            add(points[6])
+            add(points[6])
+            add(points[7])
+            add(points[7])
+            add(points[4])
+            add(points[0])
+            add(points[6])
+            add(points[1])
+            add(points[7])
+            add(points[2])
+            add(points[4])
+            add(points[3])
+            add(points[5])
+        }
         val dest = FloatArray(3 * pointsForLineDrawing.size)
         for (i in pointsForLineDrawing.indices) {
             dest[3 * i] = pointsForLineDrawing[i].x

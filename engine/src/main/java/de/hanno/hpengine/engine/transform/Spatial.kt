@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.transform
 
-import de.hanno.hpengine.engine.model.AnimatedModel
 import de.hanno.hpengine.engine.model.StaticModel
+import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.Serializable
 
@@ -14,10 +14,14 @@ open class TransformSpatial(val transform: Transform, _boundingVolume: AABB) : S
     inline val center: Vector3f
         get() = boundingVolume.center
 }
-class StaticTransformSpatial(transform: Transform, val model: StaticModel) : TransformSpatial(transform, AABB(model.boundingVolume.localAABB)) {
-    override fun update(deltaSeconds: Float) = boundingVolume.recalculate(transform)
+class StaticTransformSpatial(transform: Transform, val aabb: AABB) : TransformSpatial(transform, aabb) {
+    init {
+        recalculate(transform)
+    }
+    override fun update(deltaSeconds: Float) { }
+    override fun getBoundingVolume(transform: Matrix4f): AABB = boundingVolume
 }
-// TODO: Is this still needed?
-class AnimatedTransformSpatial(transform: Transform, model: AnimatedModel) : TransformSpatial(transform, AABB(model.boundingVolume.localAABB)) {
-    override fun update(deltaSeconds: Float) = boundingVolume.recalculate(transform)
+class DynamicTransformSpatial(transform: Transform, val model: StaticModel) : TransformSpatial(transform, AABB(model.boundingVolume.localAABB)) {
+    override fun update(deltaSeconds: Float) = recalculate(transform)
+    override fun getBoundingVolume(transform: Matrix4f): AABB = boundingVolume
 }

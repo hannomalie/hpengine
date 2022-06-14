@@ -30,7 +30,6 @@ class MaterialManager(
     val singleThreadContext: AddResourceContext
 ) : BaseEntitySystem(), Clearable, Extractor {
 
-    lateinit var modelComponentMapper: ComponentMapper<ModelComponent>
     lateinit var materialComponentMapper: ComponentMapper<MaterialComponent>
 
     val materials: MutableList<Material> = mutableListOf()

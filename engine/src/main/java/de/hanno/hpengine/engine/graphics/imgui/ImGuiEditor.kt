@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
-import com.artemis.Component
+import com.artemis.Aspect
+import com.artemis.ComponentManager
 import com.artemis.World
 import com.artemis.managers.TagManager
 import com.artemis.utils.Bag
@@ -10,6 +11,7 @@ import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.*
+import de.hanno.hpengine.engine.graphics.imgui.dsl.TreeNode
 import de.hanno.hpengine.engine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
@@ -215,38 +217,45 @@ class ImGuiEditor(
         leftPanelWidth: Float,
         screenHeight: Float
     ) {
+        if(!::artemisWorld.isInitialized) return
+
         ImGui.setNextWindowPos(0f, leftPanelYOffset)
         ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
             window("Scene", NoCollapse or NoResize) {
-                val componentsForEntity: Map<Int, Bag<Component>> = renderState.componentsForEntities
-                componentsForEntity.forEach { (entityIndex, components) ->
+                val entities = artemisWorld.aspectSubscriptionManager
+                    .get(Aspect.all())
+                    .entities
+                val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
+                entities.forEach { entityId ->
+                    val components = componentManager.getComponentsFor(entityId, Bag())
+
                     treeNode(
                         components.firstIsInstanceOrNull<NameComponent>()?.name
-                            ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityIndex)
-                                ?: "Entity $entityIndex")
+                            ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityId)
+                                ?: "Entity $entityId")
                     ) {
-                        text("Entity") {
-                            selectOrUnselect(SimpleEntitySelection(entityIndex, components.data.filterNotNull()))
+                        Window.text("Entity") {
+                            selectOrUnselect(SimpleEntitySelection(entityId, components.toList()))
                         }
                         components.forEach { component ->
                             text(component.javaClass.simpleName) {
                                 when (component) {
                                     is ModelComponent -> {
-                                        selectOrUnselect(ModelComponentSelection(entityIndex, component))
+                                        selectOrUnselect(ModelComponentSelection(entityId, component))
                                     }
                                     is MaterialComponent -> {
                                         selectOrUnselect(MaterialSelection(component.material))
                                     }
                                     is NameComponent -> selectOrUnselect(
                                         NameSelection(
-                                            entityIndex,
+                                            entityId,
                                             component.name
                                         )
                                     )
                                     is TransformComponent -> selectOrUnselect(
                                         TransformSelection(
-                                            entityIndex,
+                                            entityId,
                                             component
                                         )
                                     )
@@ -256,6 +265,7 @@ class ImGuiEditor(
                         }
                     }
                 }
+
                 treeNode("Materials") {
                     artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }
                         ?.forEach { material ->
