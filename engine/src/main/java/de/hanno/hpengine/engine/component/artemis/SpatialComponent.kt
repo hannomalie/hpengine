@@ -5,6 +5,7 @@ import com.artemis.Component
 import com.artemis.ComponentMapper
 import com.artemis.annotations.All
 import de.hanno.hpengine.engine.transform.SimpleSpatial
+import de.hanno.hpengine.engine.transform.StaticTransformSpatial
 import de.hanno.hpengine.engine.transform.TransformSpatial
 
 class SpatialComponent: Component() {

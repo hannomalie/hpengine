@@ -19,7 +19,8 @@ fun <T: Struct> de.hanno.struct.StructArray<T>.copyTo(target: de.hanno.struct.St
     buffer.copyTo(target.buffer, rewindBuffers, slidingWindow.sizeInBytes * offset)
 }
 
-sealed class Model<T>(val meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
+sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
+    val meshes: Array<Mesh<T>> = _meshes.toTypedArray()
 
     val meshIndexCounts = meshes.map { it.indexBufferValues.size }
     val meshIndexSum = meshIndexCounts.sum()

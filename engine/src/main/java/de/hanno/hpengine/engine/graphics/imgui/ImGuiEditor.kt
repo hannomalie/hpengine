@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
 import com.artemis.Aspect
+import com.artemis.Component
 import com.artemis.ComponentManager
 import com.artemis.World
 import com.artemis.managers.TagManager
@@ -68,6 +69,8 @@ class ImGuiEditor(
     val output = ImInt(-1)
     val renderTargetTextures: List<Texture> get() = gpuContext.registeredRenderTargets.flatMap { it.textures } + textureManager.texturesForDebugOutput.values
     val currentOutputTexture: Texture get() = renderTargetTextures[output.get()]
+
+    private val fillBag = Bag<Component>()
 
     override lateinit var artemisWorld: World
 
@@ -228,7 +231,8 @@ class ImGuiEditor(
                     .entities
                 val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
                 entities.forEach { entityId ->
-                    val components = componentManager.getComponentsFor(entityId, Bag())
+                    fillBag.clear()
+                    val components = componentManager.getComponentsFor(entityId, fillBag)
 
                     treeNode(
                         components.firstIsInstanceOrNull<NameComponent>()?.name

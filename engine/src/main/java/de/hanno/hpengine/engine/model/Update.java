@@ -4,13 +4,13 @@ public enum Update {
     STATIC(1),
     DYNAMIC(0);
 
-    private final double d;
-    Update(double d) {
-        this.d = d;
+    public final int value;
+    Update(int d) {
+        this.value = d;
     }
 
     public double getAsDouble() {
-        return d;
+        return value;
     }
 
 }
