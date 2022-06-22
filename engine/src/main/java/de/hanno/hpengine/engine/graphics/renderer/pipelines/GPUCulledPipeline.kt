@@ -121,13 +121,15 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         entitiesCount = 0
 
         fun CommandOrganizationGpuCulled.prepare(batches: List<RenderBatch>) {
+            // TODO: This should be abstracted into "state change needed"
             filteredRenderBatches = batches.filterNot {
                 if(config.debug.isUseCpuFrustumCulling) {
                     it.isCulledOrForwardRendered(renderState.camera)
                 } else {
                     it.isForwardRendered()
                 }
-            }.filterNot { it.hasOwnProgram }
+            }.filterNot { it.hasOwnProgram }.filter { it.material.writesDepth }.filter { it.material.renderPriority == null }
+
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commands, offsetsForCommand)
         }

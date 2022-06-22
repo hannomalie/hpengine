@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.imgui
 
 import com.artemis.Component
+import de.hanno.hpengine.engine.component.artemis.CameraComponent
 import de.hanno.hpengine.engine.component.artemis.GiVolumeComponent
 import de.hanno.hpengine.engine.component.artemis.OceanWaterComponent
 import de.hanno.hpengine.engine.component.artemis.TransformComponent
@@ -44,6 +45,8 @@ data class ModelComponentSelection(private val _entity: Int, val modelComponent:
         is StaticModelComponentDescription -> "[" + description.directory.name + "]" + description.file
     }
 }
+data class CameraSelection(private val _entity: Int, val cameraComponent: CameraComponent): EntitySelection(_entity)
+
 data class GiVolumeSelection(val giVolumeComponent: GiVolumeComponent): Selection()
 data class OceanWaterSelection(val oceanWater: OceanWaterComponent): Selection()
 data class ReflectionProbeSelection(val reflectionProbe: ReflectionProbe): Selection()

@@ -30,6 +30,7 @@ import de.hanno.hpengine.engine.model.texture.FileBasedTexture2D
 import de.hanno.hpengine.engine.model.texture.Texture
 import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.util.Util
 import imgui.ImGui
 import imgui.flag.*
@@ -50,7 +51,8 @@ class ImGuiEditor(
     private val config: ConfigImpl,
     private val sharedDepthBuffer: SharedDepthBuffer,
     private val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
-    private val renderExtensions: List<DeferredRenderExtension<OpenGl>>
+    private val renderExtensions: List<DeferredRenderExtension<OpenGl>>,
+    val addResourceContext: AddResourceContext,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
@@ -203,10 +205,14 @@ class ImGuiEditor(
                 menuBar {
                     menu("File") {
                         menuItem("New Scene") {
-                            artemisWorld.clear()
+                            addResourceContext.launch {
+                                artemisWorld.clear()
+                            }
                         }
                         menuItem("Load Demo") {
-                            artemisWorld.loadDemoScene()
+                            addResourceContext.launch {
+                                artemisWorld.loadDemoScene()
+                            }
                         }
                     }
                 }
@@ -223,60 +229,58 @@ class ImGuiEditor(
         if(!::artemisWorld.isInitialized) return
 
         ImGui.setNextWindowPos(0f, leftPanelYOffset)
-        ImGui.setNextWindowSize(leftPanelWidth, screenHeight)
+        ImGui.setNextWindowSize(leftPanelWidth, screenHeight - leftPanelYOffset)
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
-            window("Scene", NoCollapse or NoResize) {
-                val entities = artemisWorld.aspectSubscriptionManager
-                    .get(Aspect.all())
-                    .entities
-                val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
-                entities.forEach { entityId ->
-                    fillBag.clear()
-                    val components = componentManager.getComponentsFor(entityId, fillBag)
+            window("Scene", NoCollapse or NoTitleBar or NoResize or AlwaysVerticalScrollbar or AlwaysHorizontalScrollbar) {
+                treeNode("Scene") {
 
-                    treeNode(
-                        components.firstIsInstanceOrNull<NameComponent>()?.name
-                            ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityId)
-                                ?: "Entity $entityId")
-                    ) {
-                        Window.text("Entity") {
-                            selectOrUnselect(SimpleEntitySelection(entityId, components.toList()))
-                        }
-                        components.forEach { component ->
-                            text(component.javaClass.simpleName) {
-                                when (component) {
-                                    is ModelComponent -> {
-                                        selectOrUnselect(ModelComponentSelection(entityId, component))
-                                    }
-                                    is MaterialComponent -> {
-                                        selectOrUnselect(MaterialSelection(component.material))
-                                    }
-                                    is NameComponent -> selectOrUnselect(
-                                        NameSelection(
-                                            entityId,
-                                            component.name
+                    val entities = artemisWorld.aspectSubscriptionManager
+                        .get(Aspect.all())
+                        .entities
+                    val componentManager = artemisWorld.getSystem(ComponentManager::class.java)!!
+                    entities.forEach { entityId ->
+                        fillBag.clear()
+                        val components = componentManager.getComponentsFor(entityId, fillBag)
+
+                        Window.treeNode(
+                            components.firstIsInstanceOrNull<NameComponent>()?.name
+                                ?: (artemisWorld.getSystem(TagManager::class.java).getTag(entityId)
+                                    ?: "Entity $entityId")
+                        ) {
+                            Window.text("Entity") {
+                                selectOrUnselect(SimpleEntitySelection(entityId, components.toList()))
+                            }
+                            components.forEach { component ->
+                                text(component.javaClass.simpleName) {
+                                    when (component) {
+                                        is ModelComponent -> {
+                                            selectOrUnselect(ModelComponentSelection(entityId, component))
+                                        }
+                                        is MaterialComponent -> {
+                                            selectOrUnselect(MaterialSelection(component.material))
+                                        }
+                                        is NameComponent -> selectOrUnselect(
+                                            NameSelection(entityId, component.name)
                                         )
-                                    )
-                                    is TransformComponent -> selectOrUnselect(
-                                        TransformSelection(
-                                            entityId,
-                                            component
+                                        is TransformComponent -> selectOrUnselect(
+                                            TransformSelection(entityId, component)
                                         )
-                                    )
-                                    is OceanWaterComponent -> selectOrUnselect(OceanWaterSelection(component))
+                                        is OceanWaterComponent -> selectOrUnselect(OceanWaterSelection(component))
+                                        is CameraComponent -> selectOrUnselect(CameraSelection(entityId, component))
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                treeNode("Materials") {
-                    artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }
-                        ?.forEach { material ->
-                            text(material.name) {
-                                selectOrUnselect(MaterialSelection(material))
+                    Window.treeNode("Materials") {
+                        artemisWorld.getSystem(MaterialManager::class.java)?.materials?.sortedBy { it.name }
+                            ?.forEach { material ->
+                                text(material.name) {
+                                    selectOrUnselect(MaterialSelection(material))
+                                }
                             }
-                        }
+                    }
                 }
             }
         }
@@ -292,7 +296,7 @@ class ImGuiEditor(
         ImGui.setNextWindowSize(rightPanelWidth, screenHeight)
         ImGui.getStyle().windowMenuButtonPosition = ImGuiDir.None
         de.hanno.hpengine.engine.graphics.imgui.dsl.ImGui.run {
-            window("Right panel", NoCollapse or NoResize or NoTitleBar) {
+            window("Right panel", NoCollapse or NoResize or NoTitleBar or AlwaysVerticalScrollbar or AlwaysHorizontalScrollbar) {
                 tabBar("Foo") {
 
                     when (val selection = selection) {
@@ -399,6 +403,17 @@ class ImGuiEditor(
                             if(ImGui.button("Reset transform")) {
                                 selection.transform.transform.identity()
                             } else Unit
+                        }
+                        is CameraSelection -> tab("Entity") {
+                            floatInput("Near plane", selection.cameraComponent.near, min = 0.0001f, max = 10f) { floatArray ->
+                                selection.cameraComponent.near = floatArray[0]
+                            }
+                            floatInput("Far plane", selection.cameraComponent.far, min = 1f, max = 2000f) { floatArray ->
+                                selection.cameraComponent.far = floatArray[0]
+                            }
+                            floatInput("Field of view", selection.cameraComponent.fov, min = 45f, max = 170f) { floatArray ->
+                                selection.cameraComponent.fov = floatArray[0]
+                            }
                         }
                     }!!
 

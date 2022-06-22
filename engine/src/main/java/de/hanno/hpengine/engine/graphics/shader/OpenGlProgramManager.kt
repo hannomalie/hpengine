@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.model.material.ProgramDescription
 import de.hanno.hpengine.engine.transform.Transform
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.ressources.FileBasedCodeSource
-import de.hanno.hpengine.util.ressources.ReloadableCodeSource
 import de.hanno.hpengine.util.ressources.StringBasedCodeSource
 import de.hanno.hpengine.util.ressources.WrappedCodeSource
 import de.hanno.hpengine.util.ressources.hasChanged
@@ -167,7 +166,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
         if(config.debug.isUseFileReloading) {
             programsCache.forEach { program ->
                 program.shaders.forEach { shader ->
-                    if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource || shader.source is ReloadableCodeSource) {
+                    if (shader.source is StringBasedCodeSource || shader.source is FileBasedCodeSource || shader.source is WrappedCodeSource) {
                         programsSourceCache.putIfAbsent(shader, shader.source.source.hashCode())
                         if (shader.source.hasChanged(programsSourceCache[shader]!!)) {
                             program.reload()
@@ -183,7 +182,7 @@ class OpenGlProgramManager(override val gpuContext: OpenGLContext,
     override fun CodeSource.toResultingShaderSource(defines: Defines): String {
         return gpuContext.getOpenGlVersionsDefine() +
                 gpuContext.getOpenGlExtensionsDefine() +
-                defines.toString() +
+                defines.joinToString { it.defineString + "\n" } +
                 ShaderDefine.getGlobalDefinesString(config) +
                 Shader.replaceIncludes(config.directories.engineDir, source, 0).left
     }

@@ -89,7 +89,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll())
+        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll(), get())
     }
 }
 val textureRendererModule = module {
@@ -99,14 +99,17 @@ val textureRendererModule = module {
 
         RenderTarget(
             gpuContext,
-            FrameBuffer(gpuContext,
+            FrameBuffer(
+                gpuContext,
                 depthBuffer = DepthBuffer(gpuContext, config.width, config.height)
             ),
             name = "Final Image",
             width = config.width,
             height = config.height,
             textures = listOf(
-                ColorAttachmentDefinition("Color", GL30.GL_RGBA8)).toTextures(gpuContext, config.width, config.height
+                ColorAttachmentDefinition("Color", GL30.GL_RGBA8)
+            ).toTextures(
+                gpuContext, config.width, config.height
             )
         )
 
@@ -124,13 +127,13 @@ val textureRendererModule = module {
         val renderTarget: RenderTarget2D = get()
         val gpuContext: GpuContext<OpenGl> = get()
 
-        object: SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
+        object : SimpleTextureRenderer(get(), get(), textureManager.defaultTexture.backingTexture, get(), get()) {
             override val sharedRenderTarget = renderTarget
             override val requiresClearSharedRenderTarget = true
             override lateinit var artemisWorld: World
 
             override fun render(result: DrawResult, renderState: RenderState) {
-                gpuContext.clearColor(1f,0f,0f,1f)
+                gpuContext.clearColor(1f, 0f, 0f, 1f)
                 drawToQuad(texture = texture)
             }
         }
@@ -143,7 +146,10 @@ val baseModule = module {
         system.fpsCounter
     }
     single { RenderManager(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), getAll()) }
-    single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(ProgramManager::class, OpenGlProgramManager::class)
+    single { OpenGlProgramManager(get(), get(), get()) } binds arrayOf(
+        ProgramManager::class,
+        OpenGlProgramManager::class
+    )
     single { TextureManager(get(), get(), get()) }
 
     single { GlfwWindow(get()) } bind Window::class
@@ -210,13 +216,13 @@ fun Module.addBackendModule() {
 
 // TODO: Don't duplicate, move to core
 object SwingUtils {
-    fun invokeLater(block: () -> Unit) = if(SwingUtilities.isEventDispatchThread()) {
+    fun invokeLater(block: () -> Unit) = if (SwingUtilities.isEventDispatchThread()) {
         block()
     } else {
         SwingUtilities.invokeLater(block)
     }
 
-    fun <T> invokeAndWait(block: () -> T) = if(SwingUtilities.isEventDispatchThread()) {
+    fun <T> invokeAndWait(block: () -> T) = if (SwingUtilities.isEventDispatchThread()) {
         block()
     } else {
         var result: T? = null
@@ -230,31 +236,35 @@ object SwingUtils {
 @All(GiVolumeComponent::class)
 class GiVolumeSystem(
     val textureManager: TextureManager,
-): BaseEntitySystem() {
+) : BaseEntitySystem() {
     private val grids = mutableMapOf<Int, VoxelConeTracingExtension.GIVolumeGrids>()
     override fun inserted(entityId: Int) {
         grids[entityId] = textureManager.createGIVolumeGrids()
     }
+
     override fun removed(entityId: Int) {
         grids.remove(entityId)
     }
-    override fun processSystem() { }
+
+    override fun processSystem() {}
 }
 
-class SkyBoxComponent: Component()
+class SkyBoxComponent : Component()
+
 @All(SkyBoxComponent::class)
-class SkyBoxSystem: BaseEntitySystem(), WorldPopulator {
+class SkyBoxSystem : BaseEntitySystem(), WorldPopulator {
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
     lateinit var tagManager: TagManager
+
     @Wire
     lateinit var config: ConfigImpl
 
     override fun processSystem() {
-        if(!tagManager.isRegistered(primaryCamera)) return
+        if (!tagManager.isRegistered(primaryCamera)) return
 
         val primaryCameraEntityId = tagManager.getEntityId(primaryCamera)
 
-        if(subscription.entities.size() > 0) {
+        if (subscription.entities.size() > 0) {
             subscription.entities.data.firstOrNull()?.let { skyBoxEntityId ->
                 val transform = transformComponentMapper[skyBoxEntityId].transform
                 val primaryCameraTransform = transformComponentMapper[primaryCameraEntityId].transform
@@ -289,19 +299,22 @@ fun World.addSkyBox(config: Config) {
                 name = "Skybox",
                 materialType = Material.MaterialType.UNLIT,
                 cullBackFaces = false,
+                renderPriority = -1,
+                writesDepth = false,
+                depthTest = true,
                 isShadowCasting = false,
                 programDescription = ProgramDescription(
                     vertexShaderSource = config.EngineAsset("shaders/first_pass_vertex.glsl")
                         .toCodeSource(),
                     fragmentShaderSource = config.EngineAsset("shaders/first_pass_fragment.glsl")
-                        .toCodeSource().enhanced {
-                            replace(
-                                "//END",
-                                """
+                        .toCodeSource().enhanced(
+                            name = "skybox_first_pass_fragment",
+                            replacements = arrayOf(
+                                "//END" to """
                             out_colorMetallic.rgb = 0.25f*textureLod(environmentMap, V, 0).rgb;
                         """.trimIndent()
                             )
-                        }
+                        )
                 )
             ).apply {
                 this.put(Material.MAP.ENVIRONMENT, getSystem(TextureManager::class.java).cubeMap)

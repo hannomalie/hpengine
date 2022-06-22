@@ -123,6 +123,9 @@ class ModelSystem(
         requiredEntityBufferSize = calculateRequiredEntityBufferSize()
     }
 
+    override fun removed(entities: IntBag?) {
+        cacheEntityIndices()
+    }
     override fun removed(entityId: Int) {
         cacheEntityIndices()
     }
@@ -387,6 +390,7 @@ class ModelSystem(
     }
 
     override fun extract(currentWriteState: RenderState) {
+        cacheEntityIndices() // TODO: Don't do this here, on insert/remove should be sufficient
         currentWriteState.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic
         currentWriteState.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated
 

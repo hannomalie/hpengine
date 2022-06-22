@@ -20,6 +20,8 @@ data class Material(
     var materialType: MaterialType = MaterialType.DEFAULT,
     var transparencyType: TransparencyType = TransparencyType.BINARY,
     var cullBackFaces: Boolean = materialType != MaterialType.FOLIAGE,
+    var renderPriority: Int? = null,
+    var writesDepth: Boolean = true,
     var depthTest: Boolean = true,
     val maps: MutableMap<MAP, Texture> = mutableMapOf(),
     var environmentMapType: ENVIRONMENTMAP_TYPE = ENVIRONMENTMAP_TYPE.GENERATED,

@@ -30,7 +30,7 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
 
     val fileListeners: MutableList<OnFileChangeListener> = ArrayList()
 
-    protected val uniformBindings = HashMap<String, UniformBinding>()
+    private val uniformBindings = HashMap<String, UniformBinding>()
 
     fun use() {
         GL20.glUseProgram(id)

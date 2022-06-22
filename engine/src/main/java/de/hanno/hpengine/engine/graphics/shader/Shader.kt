@@ -41,6 +41,7 @@ sealed class Shader(private val programManager: ProgramManager<*>,
                 System.err.println("Problematic line:")
                 System.err.println(lines[Regex("""\d\((.*)\)""").find(shaderInfoLog)!!.groups[1]!!.value.toInt()-1])
                 shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, lines.size)
+                System.err.println(resultingShaderSource)
                 ShaderLoadException(shaderInfoLog)
             } else null
         }

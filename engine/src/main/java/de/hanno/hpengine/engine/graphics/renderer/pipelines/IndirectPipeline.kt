@@ -42,8 +42,11 @@ open class IndirectPipeline @JvmOverloads constructor(
         entitiesCount = 0
 
         fun CommandOrganization.prepare(batches: List<RenderBatch>) {
+            // TODO: This should be abstracted into "state change needed"
             filteredRenderBatches =
-                batches.filterNot { it.isCulledOrForwardRendered(camera) }.filterNot { it.hasOwnProgram }
+                batches.filterNot { it.isCulledOrForwardRendered(camera) }
+                    .filterNot { it.hasOwnProgram }
+                    .filter { it.material.writesDepth }
             commandCount = filteredRenderBatches.size
             addCommands(filteredRenderBatches, commandBuffer, entityOffsetBuffer)
 

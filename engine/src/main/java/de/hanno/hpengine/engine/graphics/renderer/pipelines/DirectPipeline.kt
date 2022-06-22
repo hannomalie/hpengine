@@ -79,8 +79,29 @@ open class DirectPipeline(
 
 fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<OpenGl>) {
     beforeDraw(renderState, program, drawCam)
+    val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
     vertexIndexBuffer.indexBuffer.bind()
-    for (batch in renderBatches.filter { !it.hasOwnProgram }) {
+    for (groupedBatches in batchesWithOwnProgram) {
+        var program: Program<T> // TODO: Assign this program in the loop below and use() only on change
+        for(batch in groupedBatches.value.sortedBy { it.material.renderPriority }) {
+            program = (batch.program ?: this.program) as Program<T>
+            program.use()
+            program.uniforms.entityIndex = batch.entityBufferIndex
+            beforeDraw(renderState, program, drawCam)
+            gpuContext.cullFace = batch.material.cullBackFaces
+            gpuContext.depthTest = batch.material.depthTest
+            gpuContext.depthMask = batch.material.writesDepth
+            program.setTextureUniforms(batch.material.maps)
+            val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
+
+            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = primitiveType)
+        }
+    }
+
+    beforeDraw(renderState, program, drawCam)
+    vertexIndexBuffer.indexBuffer.bind()
+    for (batch in renderBatches.filter { !it.hasOwnProgram }.sortedBy { it.material.renderPriority }) {
+        gpuContext.depthMask = batch.material.writesDepth
         gpuContext.cullFace = batch.material.cullBackFaces
         gpuContext.depthTest = batch.material.depthTest
         program.setTextureUniforms(batch.material.maps)
@@ -88,24 +109,7 @@ fun <T: FirstPassUniforms> DirectDrawDescription<T>.draw(gpuContext: GpuContext<
         vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = PrimitiveType.Triangles)
     }
 
-    val batchesWithOwnProgram: Map<Material, List<RenderBatch>> = renderBatches.filter { it.hasOwnProgram }.groupBy { it.material }
-    vertexIndexBuffer.indexBuffer.bind()
-    for (groupedBatches in batchesWithOwnProgram) {
-
-        var program: Program<T> // TODO: Assign this program in the loop below and use() only on change
-        for(batch in groupedBatches.value) {
-            program = (batch.program ?: this.program) as Program<T>
-            program.use()
-            program.uniforms.entityIndex = batch.entityBufferIndex
-            beforeDraw(renderState, program, drawCam)
-            gpuContext.cullFace = batch.material.cullBackFaces
-            gpuContext.depthTest = batch.material.depthTest
-            program.setTextureUniforms(batch.material.maps)
-            val primitiveType = if(program.tesselationControlShader != null) PrimitiveType.Patches else PrimitiveType.Triangles
-
-            vertexIndexBuffer.indexBuffer.actuallyDraw(batch.entityBufferIndex, batch.drawElementsIndirectCommand, program, mode = mode, primitiveType = primitiveType)
-        }
-    }
+    gpuContext.depthMask = true // TODO: Resetting defaults here should not be necessary
 }
 
 fun RenderBatch.isCulledOrForwardRendered(cullCam: Camera): Boolean {

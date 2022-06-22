@@ -152,6 +152,11 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
                 withContext(updateScopeDispatcher) {
                     update(deltaSeconds)
                 }
+                world.delta = deltaSeconds
+                try {
+                    world.process()
+                } catch (_: Exception) { }
+
                 extract(deltaSeconds)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -224,8 +229,6 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
                 val deltaSeconds = deltaTime.toFloat()
 
                 actualUpdateStep(deltaSeconds)
-                world.delta = deltaTime.toFloat()
-                world.process()
 
                 frameTimeS -= deltaTime
                 yield()

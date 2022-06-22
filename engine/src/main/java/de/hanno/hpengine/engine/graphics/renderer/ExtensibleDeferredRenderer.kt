@@ -61,14 +61,18 @@ class ExtensibleDeferredRenderer(
         config.engineDir.resolve("shaders/first_pass_vertex.glsl").toCodeSource(),
         config.engineDir.resolve("shaders/first_pass_fragment.glsl").toCodeSource(),
         null,
-        Defines(Define.getDefine("ANIMATED", true)),
+        Defines(Define("ANIMATED", true)),
         AnimatedFirstPassUniforms(gpuContext)
     )
 
     private val useIndirectRendering
         get() = config.performance.isIndirectRendering && gpuContext.isSupported(BindlessTextures)
     private val shouldBeSkippedForDirectRendering: RenderBatch.(Camera) -> Boolean = {
-        if (useIndirectRendering) !hasOwnProgram else false
+        if (useIndirectRendering) {
+            !hasOwnProgram || material.writesDepth
+        } else {
+            false
+        }
     }
 
     val pipeline: StateRef<DirectPipeline> = renderStateManager.renderState.registerState {
@@ -187,6 +191,13 @@ class ExtensibleDeferredRenderer(
         profiled("FirstPass") {
 
             profiled("MainPipeline") {
+                renderState[pipeline].draw(
+                    renderState,
+                    simpleColorProgramStatic,
+                    simpleColorProgramAnimated,
+                    result.firstPassResult
+                )
+
                 if (useIndirectRendering) {
                     renderState[indirectPipeline].draw(
                         renderState,
@@ -195,13 +206,6 @@ class ExtensibleDeferredRenderer(
                         result.firstPassResult
                     )
                 }
-
-                renderState[pipeline].draw(
-                    renderState,
-                    simpleColorProgramStatic,
-                    simpleColorProgramAnimated,
-                    result.firstPassResult
-                )
             }
 
             for (extension in extensions) {

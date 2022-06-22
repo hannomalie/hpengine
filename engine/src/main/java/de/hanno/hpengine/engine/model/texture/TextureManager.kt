@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.engine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.engine.graphics.shader.OpenGlProgramManager
-import de.hanno.hpengine.engine.graphics.shader.define.Define.getDefine
+import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.model.texture.DDSConverter.availableAsDDS
 import de.hanno.hpengine.engine.model.texture.DDSConverter.getFullPathAsDDS
@@ -117,11 +117,11 @@ class TextureManager(
     //    var cubeMap = getCubeMap("assets/textures/skybox/skybox1.jpg", config.directories.engineDir.resolve("assets/textures/skybox/skybox5.jpg"))
     private val blur2dProgramSeparableHorizontal = programManager.getComputeProgram(
         programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}")
-            .toCodeSource(), Defines(getDefine("HORIZONTAL", true))
+            .toCodeSource(), Defines(Define("HORIZONTAL", true))
     )
     private val blur2dProgramSeparableVertical = programManager.getComputeProgram(
         programManager.config.directories.engineDir.resolve("shaders/${"blur2D_seperable_vertical_or_horizontal_compute.glsl"}")
-            .toCodeSource(), Defines(getDefine("VERTICAL", true))
+            .toCodeSource(), Defines(Define("VERTICAL", true))
     )
 
     private val temp = loadDefaultTexture()

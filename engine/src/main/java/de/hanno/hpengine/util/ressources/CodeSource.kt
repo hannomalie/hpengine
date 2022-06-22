@@ -3,12 +3,12 @@ package de.hanno.hpengine.util.ressources
 import de.hanno.hpengine.engine.directory.Asset
 import java.io.File
 import java.io.IOException
+import java.util.*
 
 interface CodeSource: Reloadable {
     val source: String
 }
-interface ReloadableCodeSource: CodeSource
-class StringBasedCodeSource(override val name: String, override val source: String): CodeSource
+data class StringBasedCodeSource(override val name: String, override val source: String): CodeSource
 
 class FileBasedCodeSource(val file: File) : CodeSource {
     init {
@@ -32,6 +32,10 @@ class FileBasedCodeSource(val file: File) : CodeSource {
         System.err.println("Cannot reload shader file, old one is kept ($filename)")
         throw e
     }
+
+    override fun equals(other: Any?): Boolean = other is FileBasedCodeSource && file.path == other.file.path
+    override fun hashCode(): Int = file.path.hashCode()
+
     companion object {
         fun File.toCodeSource() = FileBasedCodeSource(this)
         fun Asset.toCodeSource() = resolve().toCodeSource()
@@ -40,16 +44,28 @@ class FileBasedCodeSource(val file: File) : CodeSource {
 
 class WrappedCodeSource(val underlying: FileBasedCodeSource,
                         override val name: String = underlying.name + System.currentTimeMillis().toString(),
-                        val enhancer: String.() -> String): CodeSource {
+                        val replacements: Array<Pair<String, String>>): CodeSource {
 
     override val source: String
-        get() = underlying.source.enhancer()
+        get() {
+            var result = underlying.source
+            replacements.forEach { (oldValue, newValue) ->
+                result = result.replace(oldValue, newValue)
+            }
+            return result
+        }
 
     override fun load() = underlying.load()
+    override fun equals(other: Any?): Boolean {
+        return other is WrappedCodeSource && other.name == name && replacements.contentEquals(other.replacements)
+    }
+
+    override fun hashCode(): Int = name.hashCode() + replacements.contentHashCode()
 }
 
-fun FileBasedCodeSource.enhanced(name: String = this.name + System.currentTimeMillis().toString(),
-                                 enhancer: String.() -> String) = WrappedCodeSource(this, name, enhancer)
+fun FileBasedCodeSource.enhanced(name: String,
+                                 replacements: Array<Pair<String, String>>) = WrappedCodeSource(this, name, replacements)
+
 
 fun CodeSource.hasChanged(reference: String): Boolean = reference != source
 fun CodeSource.hasChanged(reference: Int): Boolean = reference != source.hashCode()
