@@ -171,10 +171,11 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                 beforeDrawAnimated(renderState, program, renderCam)
             }
 
-            beforeDraw(drawDescriptionStatic, drawDescriptionAnimated)
+            cullAndRender(drawDescriptionStatic, drawDescriptionAnimated)
 
-            drawDescriptionStatic.draw()
-            drawDescriptionAnimated.draw()
+//            redundant, because it's done above as long as i skip phase two of culling
+//            drawDescriptionStatic.draw()
+//            drawDescriptionAnimated.draw()
 
             firstPassResult.verticesDrawn += verticesCount
             firstPassResult.entitiesDrawn += entitiesCount
@@ -198,7 +199,7 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         program.setUniforms(renderState, renderCam, config, true)
     }
 
-    private fun beforeDraw(
+    private fun cullAndRender(
         drawDescriptionStatic: IndirectCulledDrawDescription<StaticFirstPassUniforms>,
         drawDescriptionAnimated: IndirectCulledDrawDescription<AnimatedFirstPassUniforms>
     ) {
@@ -209,9 +210,9 @@ open class GPUCulledPipeline @JvmOverloads constructor(
                 }
                 debugPrintPhase1(drawDescriptionStatic, CullingPhase.STATIC_ONE)
 
-                cullAndRender(drawDescriptionAnimated, phase.animatedPhase) {
-                    beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program, drawDescriptionAnimated.drawCam)
-                }
+            cullAndRender(drawDescriptionAnimated, phase.animatedPhase) {
+                beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program, drawDescriptionAnimated.drawCam)
+            }
                 debugPrintPhase1(drawDescriptionAnimated, CullingPhase.ANIMATED_ONE)
 
                 renderHighZMap()
@@ -334,7 +335,8 @@ open class GPUCulledPipeline @JvmOverloads constructor(
         if (drawDescription.commandOrganization.commandCount != 0) {
             with(drawDescription) {
                 cullPhase(renderState, commandOrganization, phase, cullCam)
-                render(renderState, program, commandOrganization, vertexIndexBuffer, drawDescription.mode, beforeRender)
+//                render(renderState, program, commandOrganization, vertexIndexBuffer, drawDescription.mode, beforeRender)
+                drawDescription.draw()
             }
         }
     }

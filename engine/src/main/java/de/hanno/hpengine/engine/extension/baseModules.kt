@@ -89,7 +89,7 @@ val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll(), get())
+        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll(), get(), get())
     }
 }
 val textureRendererModule = module {

@@ -12,7 +12,7 @@ import kotlin.math.max
 
 object GPUProfiler {
     var dumpAveragesRequested = false
-    var porfiling = false
+    var profiling = false
     var printing = false
 
     private var queryObjects: ArrayList<Int> = ArrayList()
@@ -38,7 +38,7 @@ object GPUProfiler {
     var currentTimings = ""
     var currentAverages = ""
 
-    fun start(name: String): ProfilingTask? = if (porfiling) {
+    fun start(name: String): ProfilingTask? = if (profiling) {
         val newTask = ProfilingTask(name, currentTask)
         currentTask = newTask
         newTask

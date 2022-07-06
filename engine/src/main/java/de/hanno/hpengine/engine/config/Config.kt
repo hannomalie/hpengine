@@ -93,7 +93,7 @@ interface IEffectsConfig {
 class ProfilingConfig {
     var showFps = false
     var dumpAverages by GPUProfiler::dumpAveragesRequested
-    var profiling by GPUProfiler::porfiling
+    var profiling by GPUProfiler::profiling
     var printing by GPUProfiler::printing
 }
 

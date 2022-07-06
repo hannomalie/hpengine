@@ -50,7 +50,7 @@ class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
         return glGetQueryObjectui(endQuery, GL_QUERY_RESULT_AVAILABLE) == GL_TRUE
     }
     fun dumpTimings(): String {
-        if (GPUProfiler.porfiling) {
+        if (GPUProfiler.profiling) {
             val builder = StringBuilder()
             this.dump(builder)
             return builder.toString()

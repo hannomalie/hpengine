@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.component.artemis.*
 import de.hanno.hpengine.engine.config.ConfigImpl
 import de.hanno.hpengine.engine.extension.SharedDepthBuffer
 import de.hanno.hpengine.engine.graphics.*
-import de.hanno.hpengine.engine.graphics.imgui.dsl.TreeNode
 import de.hanno.hpengine.engine.graphics.imgui.dsl.Window
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderExtensionConfig
 import de.hanno.hpengine.engine.graphics.renderer.ExtensibleDeferredRenderer
@@ -32,6 +31,9 @@ import de.hanno.hpengine.engine.model.texture.Texture2D
 import de.hanno.hpengine.engine.model.texture.TextureManager
 import de.hanno.hpengine.engine.scene.AddResourceContext
 import de.hanno.hpengine.util.Util
+import de.hanno.hpengine.util.fps.FPSCounter
+import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.hpengine.util.stopwatch.ProfilingTask
 import imgui.ImGui
 import imgui.flag.*
 import imgui.flag.ImGuiWindowFlags.*
@@ -53,6 +55,7 @@ class ImGuiEditor(
     private val deferredRenderExtensionConfig: DeferredRenderExtensionConfig,
     private val renderExtensions: List<DeferredRenderExtension<OpenGl>>,
     val addResourceContext: AddResourceContext,
+    private val fpsCounter: FPSCounter,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
@@ -164,7 +167,7 @@ class ImGuiEditor(
             }
             menu(screenWidth, screenHeight)
 
-            leftPanel(renderState, leftPanelYOffset, leftPanelWidth, screenHeight)
+            leftPanel(leftPanelYOffset, leftPanelWidth, screenHeight)
 
             rightPanel(screenWidth, rightPanelWidthPercentage, rightPanelWidth, screenHeight)
 
@@ -221,7 +224,6 @@ class ImGuiEditor(
     }
 
     private fun leftPanel(
-        renderState: RenderState,
         leftPanelYOffset: Float,
         leftPanelWidth: Float,
         screenHeight: Float
@@ -415,7 +417,7 @@ class ImGuiEditor(
                                 selection.cameraComponent.fov = floatArray[0]
                             }
                         }
-                    }!!
+                    }.let {}
 
                     tab("Output") {
 
@@ -437,7 +439,7 @@ class ImGuiEditor(
                             debugOutput.texture2D = null
                         }
                         gpuContext.registeredRenderTargets.forEach { target ->
-                            target.renderedTextures.forEachIndexed { textureIndex, texture ->
+                            target.renderedTextures.forEachIndexed { textureIndex, _ ->
                                 if (ImGui.radioButton(target.name + "[$textureIndex]", output, counter)) {
                                     (currentOutputTexture as? Texture2D)?.let {
                                         debugOutput.texture2D = it
@@ -446,7 +448,7 @@ class ImGuiEditor(
                                 counter++
                             }
                         }
-                        textureManager.texturesForDebugOutput.forEach { (name, texture) ->
+                        textureManager.texturesForDebugOutput.forEach { (name, _) ->
                             if (ImGui.radioButton(name, output, counter)) {
                                 (currentOutputTexture as? Texture2D)?.let {
                                     debugOutput.texture2D = it
@@ -496,8 +498,28 @@ class ImGuiEditor(
                         if (ImGui.checkbox("Editor", config.debug.isEditorOverlay)) {
                             config.debug.isEditorOverlay = !config.debug.isEditorOverlay
                         }
+                        if (ImGui.checkbox("GPU Profiling", GPUProfiler.profiling)) {
+                            GPUProfiler.profiling = !GPUProfiler.profiling
+                        }
+                        if (ImGui.checkbox("VSync", window.vSync)) {
+                            window.vSync = !window.vSync
+                        }
                     }
                     tab("Render") {
+                        text("FPS: ${fpsCounter.fps}") {}
+                        fun ProfilingTask.dump(indentation: Int = 0) {
+                            var indentationString = ""
+                            for (i in (0 until indentation)) {
+                                indentationString += "  "
+                            }
+                            text(indentationString + String.format("%s : %.5fms (CPU: %.5fms)", name, timeTaken.toFloat() / 1000f / 1000f, timeTakenCpu.toFloat() / 1000f / 1000f) + "\n") {}
+
+                            children.forEach {
+                                it.dump(indentation+1)
+                            }
+                        }
+                        GPUProfiler.currentTask?.dump()
+
                         val renderManager = artemisWorld.getSystem(RenderManager::class.java)!!
                         val renderMode = renderManager.renderMode
                         if (ImGui.button("Use ${if (renderMode is RenderMode.Normal) "Single Step" else "Normal"}")) {
