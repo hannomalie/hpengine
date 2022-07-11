@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.vertexbuffer
 
+import de.hanno.hpengine.engine.graphics.profiled
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.PrimitiveType
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.RenderingMode
@@ -242,7 +243,9 @@ fun multiDrawElementsIndirectCount(
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
         GL11.glLineWidth(1f)
     }
-    glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
+    profiled("glMultiDrawElementsIndirectCountARB") {
+        glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, drawCount, maxDrawCount, 0)
+    }
     GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
     drawCountBuffer.unbind()
     indexBuffer.unbind()

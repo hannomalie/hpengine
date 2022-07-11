@@ -14,9 +14,7 @@ import java.util.ArrayList
 class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
 
     init {
-        parent?.let {
-            it.children.add(this)
-        }
+        parent?.children?.add(this)
     }
 
     val children = ArrayList<ProfilingTask>()
@@ -43,7 +41,18 @@ class ProfilingTask(val name: String, val parent: ProfilingTask? = null) {
         this.endQuery = GPUProfiler.query
         this.endTimeCpu = System.nanoTime()
         currentTask = parent ?: currentTask
+        if(parent == null) {
+            val last100 = GPUProfiler.collectedTimes.takeLast(100)
+            GPUProfiler.collectedTimes.clear()
+            GPUProfiler.collectedTimes.addAll(last100)
+            saveRecordsHelper()
+        }
+    }
+    private fun saveRecordsHelper() {
         GPUProfiler.collectedTimes.add(GPUProfiler.Record(name, timeTaken, timeTakenCpu))
+        children.forEach {
+            it.saveRecordsHelper()
+        }
     }
 
     fun resultsAvailable(): Boolean {
