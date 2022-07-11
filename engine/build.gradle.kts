@@ -28,11 +28,6 @@ tasks.build {
     finalizedBy(tasks.named("weave"))
 }
 
-kotlin.sourceSets {
-    getByName("main").kotlin.srcDirs("src/main/java")
-    getByName("test").kotlin.srcDirs("src/test/java")
-}
-
 val kotlinVersion: String by rootProject.extra
 val lwjgl_version = "3.2.3"
 val lwjgl_natives = when (OperatingSystem.current()) {
@@ -41,8 +36,8 @@ val lwjgl_natives = when (OperatingSystem.current()) {
     OperatingSystem.WINDOWS -> "natives-windows"
     else -> throw Error("Unrecognized or unsupported Operating system. Please set \"lwjglNatives\" manually")
 }
-dependencies {
 
+dependencies {
     api(kotlin("stdlib"))
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
@@ -139,6 +134,7 @@ kotlin {
         kotlin.srcDir("build/generated/ksp/main/kotlin/")
     }
 }
+
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjvm-default=all", "-Xcontext-receivers")
