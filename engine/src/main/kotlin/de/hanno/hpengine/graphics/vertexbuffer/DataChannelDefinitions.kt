@@ -1,4 +1,4 @@
-package de.hanno.hpengine.vertexbuffer
+package de.hanno.hpengine.graphics.vertexbuffer
 
 import com.google.common.collect.ImmutableSet
 

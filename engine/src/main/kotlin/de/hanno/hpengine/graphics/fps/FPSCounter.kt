@@ -1,4 +1,4 @@
-package de.hanno.hpengine.fps
+package de.hanno.hpengine.graphics.fps
 
 import com.artemis.BaseSystem
 import com.artemis.World

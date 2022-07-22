@@ -3,7 +3,7 @@ package de.hanno.hpengine.graphics.shader
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.shader.define.Defines
-import de.hanno.hpengine.vertexbuffer.DataChannels
+import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import de.hanno.hpengine.ressources.FileMonitor
 import de.hanno.hpengine.ressources.OnFileChangeListener

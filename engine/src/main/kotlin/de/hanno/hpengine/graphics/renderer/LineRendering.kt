@@ -8,7 +8,7 @@ import de.hanno.hpengine.graphics.shader.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.math.identityMatrix4fBuffer
 import de.hanno.hpengine.scene.HpVector4f
-import de.hanno.hpengine.vertexbuffer.drawLines
+import de.hanno.hpengine.graphics.vertexbuffer.drawLines
 import org.joml.Vector3fc
 import java.nio.FloatBuffer
 import kotlin.math.min

@@ -11,10 +11,10 @@ import org.lwjgl.opengl.GL15
 
 import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D
 import de.hanno.hpengine.graphics.renderer.pipelines.DrawElementsIndirectCommand
-import de.hanno.hpengine.vertexbuffer.IndexBuffer
-import de.hanno.hpengine.vertexbuffer.drawInstancedBaseVertex
-import de.hanno.hpengine.vertexbuffer.drawLinesInstancedBaseVertex
-import de.hanno.hpengine.vertexbuffer.drawPatchesInstancedBaseVertex
+import de.hanno.hpengine.graphics.vertexbuffer.IndexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.drawInstancedBaseVertex
+import de.hanno.hpengine.graphics.vertexbuffer.drawLinesInstancedBaseVertex
+import de.hanno.hpengine.graphics.vertexbuffer.drawPatchesInstancedBaseVertex
 import org.jetbrains.kotlin.util.profile
 import org.lwjgl.opengl.GL40.GL_PATCHES
 import org.lwjgl.opengl.GL42.GL_LINES

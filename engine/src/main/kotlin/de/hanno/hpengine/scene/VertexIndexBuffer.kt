@@ -5,7 +5,7 @@ import VertexStruktPackedImpl.Companion.type
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
-import de.hanno.hpengine.vertexbuffer.IndexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.IndexBuffer
 import org.lwjgl.BufferUtils
 
 class VertexIndexBuffer(gpuContext: GpuContext<*>,

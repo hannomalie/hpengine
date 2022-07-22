@@ -24,8 +24,8 @@ import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.transform.Spatial.Companion.isInFrustum
 import de.hanno.hpengine.transform.Transform
-import de.hanno.hpengine.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.AxisAngle4f

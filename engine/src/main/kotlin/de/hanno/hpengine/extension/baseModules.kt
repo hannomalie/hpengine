@@ -39,7 +39,7 @@ import de.hanno.hpengine.scene.AddResourceContext
 import de.hanno.hpengine.scene.OceanWaterRenderSystem
 import de.hanno.hpengine.scene.dsl.Directory
 import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.fps.FPSCounterSystem
+import de.hanno.hpengine.graphics.fps.FPSCounterSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.graphics.*

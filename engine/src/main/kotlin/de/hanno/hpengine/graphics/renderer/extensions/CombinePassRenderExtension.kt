@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.TextureManager
-import de.hanno.hpengine.vertexbuffer.draw
+import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 
 class CombinePassRenderExtension(private val config: Config,

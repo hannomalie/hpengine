@@ -1,4 +1,4 @@
-package de.hanno.hpengine.vertexbuffer
+package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.struct.copyTo
 import de.hanno.hpengine.graphics.GpuContext

@@ -33,7 +33,7 @@ import de.hanno.hpengine.model.texture.Texture2D.TextureUploadInfo.Texture2DUplo
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.scene.VertexIndexBuffer
-import de.hanno.hpengine.vertexbuffer.multiDrawElementsIndirectCount
+import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.jetbrains.kotlin.utils.addToStdlib.sumByLong

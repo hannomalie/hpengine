@@ -13,7 +13,7 @@ import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
-import de.hanno.hpengine.vertexbuffer.multiDrawElementsIndirectCount
+import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
 import de.hanno.hpengine.graphics.profiled
 
 open class IndirectPipeline @JvmOverloads constructor(

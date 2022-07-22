@@ -14,7 +14,7 @@ import de.hanno.hpengine.graphics.state.multithreading.TripleBuffer
 import de.hanno.hpengine.input.Input
 import de.hanno.hpengine.launchEndlessRenderLoop
 import de.hanno.hpengine.model.texture.Texture2D
-import de.hanno.hpengine.fps.FPSCounter
+import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.stopwatch.GPUProfiler
 import net.miginfocom.swing.MigLayout
 import org.lwjgl.opengl.GL11

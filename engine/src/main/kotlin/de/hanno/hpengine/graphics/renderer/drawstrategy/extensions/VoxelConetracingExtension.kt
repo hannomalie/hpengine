@@ -40,7 +40,7 @@ import de.hanno.hpengine.model.Update
 import de.hanno.hpengine.model.texture.Texture3D
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.transform.Transform
-import de.hanno.hpengine.vertexbuffer.draw
+import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import org.joml.Vector3f
 import org.joml.Vector3fc

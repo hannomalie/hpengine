@@ -18,7 +18,7 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.model.texture.Texture
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.scene.AddResourceContext
-import de.hanno.hpengine.fps.FPSCounter
+import de.hanno.hpengine.graphics.fps.FPSCounter
 import de.hanno.hpengine.graphics.DebugOutput
 import de.hanno.hpengine.graphics.FinalOutput
 import de.hanno.hpengine.graphics.GlfwWindow

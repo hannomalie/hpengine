@@ -13,9 +13,9 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture
 import de.hanno.hpengine.scene.VertexIndexBuffer
-import de.hanno.hpengine.vertexbuffer.DataChannels
-import de.hanno.hpengine.vertexbuffer.QuadVertexBuffer
-import de.hanno.hpengine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.DataChannels
+import de.hanno.hpengine.graphics.vertexbuffer.QuadVertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

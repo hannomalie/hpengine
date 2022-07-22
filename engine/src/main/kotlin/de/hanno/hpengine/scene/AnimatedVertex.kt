@@ -1,7 +1,7 @@
 package de.hanno.hpengine.scene
 
 import com.google.common.collect.ImmutableSet
-import de.hanno.hpengine.vertexbuffer.DataChannelComponent.*
+import de.hanno.hpengine.graphics.vertexbuffer.DataChannelComponent.*
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector4f

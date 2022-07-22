@@ -29,7 +29,7 @@ import de.hanno.hpengine.model.texture.CubeMap
 import de.hanno.hpengine.model.texture.TextureDimension
 import de.hanno.hpengine.model.texture.TextureManager
 import de.hanno.hpengine.model.texture.createView
-import de.hanno.hpengine.vertexbuffer.draw
+import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.*

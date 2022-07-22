@@ -1,4 +1,4 @@
-package de.hanno.hpengine.vertexbuffer
+package de.hanno.hpengine.graphics.vertexbuffer
 
 import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.AtomicCounterBuffer

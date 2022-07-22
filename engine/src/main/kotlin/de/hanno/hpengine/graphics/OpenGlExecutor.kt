@@ -11,7 +11,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.model.texture.Texture
-import de.hanno.hpengine.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.lwjgl.opengl.GL11

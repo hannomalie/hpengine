@@ -17,8 +17,8 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.model.texture.CubeMap
 import de.hanno.hpengine.model.texture.Texture2D
 import de.hanno.hpengine.model.texture.createView
-import de.hanno.hpengine.vertexbuffer.VertexBuffer
-import de.hanno.hpengine.vertexbuffer.draw
+import de.hanno.hpengine.graphics.vertexbuffer.VertexBuffer
+import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.ressources.FileBasedCodeSource
 import org.lwjgl.opengl.GL11
 
