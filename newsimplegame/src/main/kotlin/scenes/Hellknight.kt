@@ -1,17 +1,13 @@
 package scenes
 
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.addAnimatedModelEntity
-import de.hanno.hpengine.engine.addStaticModelEntity
-import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.directory.EngineDirectory
-import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.loadScene
-import de.hanno.hpengine.engine.scene.dsl.AnimatedModelComponentDescription
-import de.hanno.hpengine.engine.scene.dsl.Directory
-import de.hanno.hpengine.engine.scene.dsl.entity
-import de.hanno.hpengine.engine.transform.AABBData
+import de.hanno.hpengine.Engine
+import de.hanno.hpengine.addAnimatedModelEntity
+import de.hanno.hpengine.config.ConfigImpl
+import de.hanno.hpengine.directory.Directories
+import de.hanno.hpengine.directory.EngineDirectory
+import de.hanno.hpengine.directory.GameDirectory
+import de.hanno.hpengine.loadScene
+import de.hanno.hpengine.transform.AABBData
 import org.joml.Vector3f
 import java.io.File
 

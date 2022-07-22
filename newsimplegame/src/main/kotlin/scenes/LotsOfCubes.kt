@@ -1,12 +1,10 @@
 package scenes
 
-import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.model.material.Material
-import de.hanno.hpengine.engine.model.texture.TextureManager
-import de.hanno.hpengine.engine.scene.dsl.Directory
-import de.hanno.hpengine.engine.scene.dsl.StaticModelComponentDescription
-import de.hanno.hpengine.engine.scene.dsl.entity
-import de.hanno.hpengine.engine.transform.AABBData
+import de.hanno.hpengine.Engine
+import de.hanno.hpengine.scene.dsl.StaticModelComponentDescription
+import de.hanno.hpengine.scene.dsl.entity
+import de.hanno.hpengine.transform.AABBData
+import de.hanno.hpengine.scene.dsl.scene
 import org.joml.Vector3f
 
 var maxDistance = 15
@@ -20,12 +18,12 @@ var clusterLocations = arrayOf(
 )
 
 val Engine.lotsOfCubesScene
-    get() = de.hanno.hpengine.engine.scene.dsl.scene("Hellknight") {
+    get() = scene("Hellknight") {
         entity("Plane") {
             add(
                 StaticModelComponentDescription(
                     file = "assets/models/cube.obj",
-                    Directory.Game,
+                    de.hanno.hpengine.scene.dsl.Directory.Game,
                     AABBData(
                         Vector3f(-60f, -10f, -35f),
                         Vector3f(60f, 130f, 50f)

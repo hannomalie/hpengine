@@ -12,7 +12,7 @@ buildscript {
 
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp") version "1.6.21-1.0.5"
+    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
 plugins.apply("artemis")
@@ -26,6 +26,10 @@ tasks.named("weave", net.onedaybeard.gradle.ArtemisWeavingTask::class) {
 }
 tasks.build {
     finalizedBy(tasks.named("weave"))
+}
+
+tasks.classes {
+    dependsOn(tasks.named("kspKotlin"))
 }
 
 val kotlinVersion: String by rootProject.extra
@@ -132,12 +136,5 @@ dependencies {
 kotlin {
     sourceSets["main"].apply {
         kotlin.srcDir("build/generated/ksp/main/kotlin/")
-    }
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjvm-default=all", "-Xcontext-receivers")
-        jvmTarget = "1.8"
     }
 }

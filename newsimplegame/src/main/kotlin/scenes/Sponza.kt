@@ -1,11 +1,12 @@
 package scenes
 
-import de.hanno.hpengine.engine.*
-import de.hanno.hpengine.engine.config.ConfigImpl
-import de.hanno.hpengine.engine.directory.Directories
-import de.hanno.hpengine.engine.directory.EngineDirectory
-import de.hanno.hpengine.engine.directory.GameDirectory
-import de.hanno.hpengine.engine.scene.dsl.Directory
+import de.hanno.hpengine.Engine
+import de.hanno.hpengine.addStaticModelEntity
+import de.hanno.hpengine.config.ConfigImpl
+import de.hanno.hpengine.directory.Directories
+import de.hanno.hpengine.directory.EngineDirectory
+import de.hanno.hpengine.directory.GameDirectory
+import de.hanno.hpengine.loadScene
 import java.io.File
 
 fun main() {

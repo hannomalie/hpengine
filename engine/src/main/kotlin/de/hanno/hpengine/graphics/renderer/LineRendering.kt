@@ -1,0 +1,76 @@
+package de.hanno.hpengine.graphics.renderer
+
+import de.hanno.hpengine.backend.OpenGl
+import de.hanno.hpengine.graphics.RenderStateManager
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.graphics.shader.ProgramManager
+import de.hanno.hpengine.graphics.shader.safePut
+import de.hanno.hpengine.graphics.shader.useAndBind
+import de.hanno.hpengine.math.identityMatrix4fBuffer
+import de.hanno.hpengine.scene.HpVector4f
+import de.hanno.hpengine.vertexbuffer.drawLines
+import org.joml.Vector3fc
+import java.nio.FloatBuffer
+import kotlin.math.min
+
+fun drawLines(
+    renderStateManager: RenderStateManager,
+    programManager: ProgramManager<OpenGl>,
+    vertices: PersistentMappedStructBuffer<HpVector4f>,
+    linePoints: List<Vector3fc>,
+    lineWidth: Float = 5f,
+    modelMatrix: FloatBuffer = identityMatrix4fBuffer,
+    viewMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.viewMatrixAsBuffer,
+    projectionMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.projectionMatrixAsBuffer,
+    color: Vector3fc
+) {
+
+    if (linePoints.isEmpty()) return
+
+    vertices.putLinesPoints(linePoints)
+
+    drawLines(
+        renderStateManager,
+        programManager,
+        vertices,
+        lineWidth,
+        linePoints.size,
+        modelMatrix,
+        viewMatrix,
+        projectionMatrix,
+        color
+    )
+}
+
+fun PersistentMappedStructBuffer<HpVector4f>.putLinesPoints(linePoints: List<Vector3fc>) {
+    ensureCapacityInBytes(linePoints.size * slidingWindow.sizeInBytes)
+
+    for (i in linePoints.indices) {
+        this[i].set(linePoints[i])
+    }
+}
+
+fun drawLines(
+    renderStateManager: RenderStateManager,
+    programManager: ProgramManager<OpenGl>,
+    vertices: PersistentMappedStructBuffer<HpVector4f>,
+    lineWidth: Float = 5f,
+    verticesCount: Int,
+    modelMatrix: FloatBuffer = identityMatrix4fBuffer,
+    viewMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.viewMatrixAsBuffer,
+    projectionMatrix: FloatBuffer = renderStateManager.renderState.currentReadState.camera.projectionMatrixAsBuffer,
+    color: Vector3fc
+) {
+
+    if (verticesCount <= 0) return
+
+    programManager.linesProgram.useAndBind { uniforms ->
+        uniforms.modelMatrix.safePut(modelMatrix)
+        uniforms.projectionMatrix.safePut(projectionMatrix)
+        uniforms.viewMatrix.safePut(viewMatrix)
+        uniforms.color.set(color)
+        uniforms.vertices = vertices
+    }
+    drawLines(min(lineWidth, programManager.gpuContext.maxLineWidth), verticesCount)
+}
+
