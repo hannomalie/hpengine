@@ -38,9 +38,7 @@ class SkyboxRenderExtension(
         config.EngineAsset("shaders/second_pass_skybox_reflection.glsl")
     )
     val skyBoxTexture = renderStateManager.renderState.registerState {
-        IntStruct().apply {
-            value = textureManager.cubeMap.id
-        }
+        textureManager.cubeMap.id
     }
 
     override fun extract(renderState: RenderState, world: World) {
@@ -56,7 +54,7 @@ class SkyboxRenderExtension(
         gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.lightAccumulationMapOneId)
         gpuContext.bindTexture(5, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
         // TODO: Reimplement with artemis system extraction
-            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture].value)
+            gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, renderState[skyBoxTexture])
         gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(

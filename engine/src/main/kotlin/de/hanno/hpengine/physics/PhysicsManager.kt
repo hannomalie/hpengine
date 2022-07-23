@@ -1,5 +1,7 @@
 package de.hanno.hpengine.physics
 
+import Vector4fStruktImpl.Companion.sizeInBytes
+import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
@@ -34,6 +36,9 @@ import de.hanno.hpengine.graphics.state.RenderSystem
 import de.hanno.hpengine.threads.TimeStepThread
 import de.hanno.hpengine.commandqueue.CommandQueue
 import de.hanno.hpengine.commandqueue.FutureCallable
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
+import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3fc
 import java.util.concurrent.CompletableFuture
 import java.util.function.Supplier
@@ -51,7 +56,8 @@ class PhysicsManager(
     gravity: Vector3f = Vector3f(0f, -20f, 0f)
 ) : BaseEntitySystem(), RenderSystem {
     override lateinit var artemisWorld: World
-    private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
+
     val linePoints = mutableListOf<Vector3fc>()
 
     private var dynamicsWorld: DynamicsWorld? = null

@@ -1,5 +1,8 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
+import BvhNodeGpuImpl.Companion.type
+import Vector4fStruktImpl.Companion.sizeInBytes
+import Vector4fStruktImpl.Companion.type
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
@@ -14,14 +17,17 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.DeferredRenderingBuffer
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStruct
+import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.math.Vector4fStrukt
+import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.transform.Transform
-import de.hanno.struct.Struct
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.joml.Vector4f
@@ -29,13 +35,17 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL42
+import struktgen.api.Strukt
+import java.nio.ByteBuffer
 
-class BvhNodeGpu: Struct() {
-    val positionRadius by de.hanno.hpengine.scene.HpVector4f()
-    val missPointer by IntStruct()
-    val lightIndex by IntStruct()
-    val dummy0 by IntStruct()
-    val dummy1 by IntStruct()
+interface BvhNodeGpu: Strukt {
+    context(ByteBuffer) val positionRadius: Vector4fStrukt
+    context(ByteBuffer) val missPointer: IntStrukt
+    context(ByteBuffer) val lightIndex: IntStrukt
+    context(ByteBuffer) val dummy0: IntStrukt
+    context(ByteBuffer) val dummy1: IntStrukt
+
+    companion object
 }
 typealias BoundingSphere = Vector4f
 typealias Bvh = BvhNode
@@ -48,7 +58,7 @@ sealed class BvhNode(val boundingSphere: BoundingSphere) {
             children.add(child)
         }
     }
-    class Leaf(boundingSphere: BoundingSphere, val lightIndex: Int): BvhNode(boundingSphere)
+    class Leaf(boundingSphere: BoundingSphere, var lightIndex: Int): BvhNode(boundingSphere)
 }
 
 val BvhNode.nodes: List<BvhNode>
@@ -120,14 +130,14 @@ class BvHPointLightSecondPassExtension(
     val programManager: ProgramManager<OpenGl>,
     val deferredRenderingBuffer: DeferredRenderingBuffer
 ): DeferredRenderExtension<OpenGl> {
-    private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
 
     private val secondPassPointBvhComputeProgram = programManager.getComputeProgram(config.EngineAsset("shaders/second_pass_point_trivial_bvh_compute.glsl"))
 
     private val identityMatrix44Buffer = BufferUtils.createFloatBuffer(16).apply {
         Transform().get(this)
     }
-    val bvh = PersistentMappedStructBuffer(0, gpuContext, { BvhNodeGpu() })
+    val bvh = PersistentMappedBuffer(BvhNodeGpu.type.sizeInBytes, gpuContext).typed(BvhNodeGpu.type)
 
     fun Vector4f.set(other: Vector3f) {
         x = other.x
@@ -140,24 +150,24 @@ class BvHPointLightSecondPassExtension(
 
     private fun BvhNode.Inner.putToBuffer() {
         this@BvHPointLightSecondPassExtension.nodeCount = nodeCount
-        bvh.enlarge(nodeCount)
+        bvh.typedBuffer.enlarge(nodeCount)
         var counter = 0
 
         fun BvhNode.putToBufferHelper() {
             when(this) {
                 is BvhNode.Inner -> {
-                    bvh[counter].apply {
-                        positionRadius.set(boundingSphere)
-                        missPointer.value = counter + nodeCount
+                    bvh.typedBuffer.forIndex(counter) {
+                        it.positionRadius.set(boundingSphere)
+                        it.missPointer.value = counter + nodeCount
                     }
                     counter++
                     children.forEach { it.putToBufferHelper() }
                 }
                 is BvhNode.Leaf -> {
-                    bvh[counter].apply {
-                        positionRadius.set(boundingSphere)
-                        missPointer.value = counter + 1
-                        lightIndex.value = this@putToBufferHelper.lightIndex
+                    bvh.typedBuffer.forIndex(counter) {
+                        it.positionRadius.set(boundingSphere)
+                        it.missPointer.value = counter + 1
+                        lightIndex = this@putToBufferHelper.lightIndex
                     }
                     counter++
                 }

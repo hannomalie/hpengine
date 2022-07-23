@@ -1,5 +1,6 @@
 package de.hanno.hpengine.camera
 
+import Vector4fStruktImpl.Companion.type
 import com.artemis.World
 import com.artemis.hackedOutComponents
 import de.hanno.hpengine.backend.Backend
@@ -11,9 +12,11 @@ import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
+import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3f
 import org.joml.Vector3fc
 
@@ -25,7 +28,7 @@ class CameraRenderExtension(
 ): DeferredRenderExtension<OpenGl> {
 
     private val frustumLines = renderStateManager.renderState.registerState { mutableListOf<Vector3fc>() }
-    private val lineVertices = PersistentMappedStructBuffer(24, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+    private val lineVertices = PersistentMappedBuffer(24 * Vector4fStrukt.type.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
 
     override fun renderFirstPass(
         backend: Backend<OpenGl>,

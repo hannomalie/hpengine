@@ -14,32 +14,6 @@ import org.lwjgl.BufferUtils
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
-class Vector3f : Struct() {
-    var x by 0.0f
-    var y by 0.0f
-    var z by 0.0f
-
-    fun set(target: org.joml.Vector3fc) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-    }
-
-    fun set(target: Vector4fc) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-    }
-
-    fun toJoml(): org.joml.Vector3f = org.joml.Vector3f(x, y, z)
-    override fun toString() = "($x, $y, $z)"
-}
-
-fun org.joml.Vector3f.toHp() = Vector3f().apply {
-    x = x()
-    y = y()
-    z = z()
-}
 
 class Vector4f : Struct() {
     var x by 0.0f
@@ -66,30 +40,7 @@ class Vector4f : Struct() {
 
     override fun toString() = "($x, $y, $z, $w)"
 }
-class Vector4i : Struct() {
-    var x by 0
-    var y by 0
-    var z by 0
-    var w by 0
 
-    fun set(target: org.joml.Vector4i) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-        this.w = target.w
-    }
-    override fun toString() = "($x, $y, $z, $w)"
-}
-class Vector2f : Struct() {
-    var x by 0.0f
-    var y by 0.0f
-
-    fun set(target: org.joml.Vector2f) {
-        this.x = target.x
-        this.y = target.y
-    }
-    override fun toString() = "($x, $y)"
-}
 class Matrix4f : Struct() {
     var m00 by 0.0f
     var m01 by 0.0f

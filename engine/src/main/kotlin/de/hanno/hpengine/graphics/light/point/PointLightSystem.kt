@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.light.point
 
+import PointLightStructImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.ComponentMapper
 import com.artemis.World
@@ -12,14 +13,17 @@ import de.hanno.hpengine.artemis.forEachEntity
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.safeCopyTo
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem
+import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.Transform
 import de.hanno.hpengine.util.Util
-import de.hanno.struct.StructArray
+import de.hanno.struct.copyTo
 import de.hanno.struct.enlarge
 
 // TODO: Autoadd Transform
@@ -29,7 +33,7 @@ class PointLightSystem(
     gpuContext: GpuContext<OpenGl>
 ): BaseEntitySystem(), RenderSystem, Extractor {
     override lateinit var artemisWorld: World
-    private var gpuPointLightArray = StructArray(size = 20) { PointLightStruct() }
+    private var gpuPointLights = PersistentMappedBuffer(20 * PointLightStruct.type.sizeInBytes, gpuContext).typed(PointLightStruct.type)
     lateinit var pointLightComponentMapper: ComponentMapper<PointLightComponent>
     lateinit var transformComponentMapper: ComponentMapper<TransformComponent>
 
@@ -63,7 +67,7 @@ class PointLightSystem(
     override fun extract(currentWriteState: RenderState) {
         currentWriteState.pointLightMovedInCycle = pointLightMovedInCycle
 
-        gpuPointLightArray.safeCopyTo(currentWriteState.lightState.pointLightBuffer)
+        gpuPointLights.buffer.copyTo(currentWriteState.lightState.pointLightBuffer.buffer)
         currentWriteState.lightState.pointLightShadowMapStrategy = shadowMapStrategy
     }
 
@@ -76,17 +80,18 @@ class PointLightSystem(
         forEachEntity { entityId ->
             pointLightCount++
         }
-        gpuPointLightArray = gpuPointLightArray.enlarge(pointLightCount)
+        gpuPointLights.typedBuffer.enlarge(pointLightCount)
 
         var index = 0
         forEachEntity { entityId ->
             val transform = transformComponentMapper[entityId].transform
             val pointLight = pointLightComponentMapper[entityId]
 
-            val target = gpuPointLightArray.getAtIndex(index)
-            target.position.set(transform.position)
-            target.radius = pointLight.radius
-            target.color.set(pointLight.color)
+            gpuPointLights.typedBuffer.forIndex(index) { target ->
+                target.position.set(transform.position)
+                target.radius = pointLight.radius
+                target.color.set(pointLight.color)
+            }
             index++
         }
 

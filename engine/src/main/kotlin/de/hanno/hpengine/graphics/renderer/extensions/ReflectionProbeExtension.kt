@@ -1,5 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
+import Vector4fStruktImpl.Companion.sizeInBytes
+import Vector4fStruktImpl.Companion.type
 import com.artemis.BaseEntitySystem
 import com.artemis.World
 import com.artemis.annotations.All
@@ -21,6 +23,8 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRende
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -33,6 +37,7 @@ import de.hanno.hpengine.graphics.vertexbuffer.draw
 import de.hanno.hpengine.util.Util
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
+import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3f
 import org.joml.Vector3fc
 import org.lwjgl.BufferUtils
@@ -127,7 +132,7 @@ class ReflectionProbeRenderExtension(
 
     }
 
-    private val lineVertices = PersistentMappedStructBuffer(100, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+    private val lineVertices = PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
     override fun renderEditor(renderState: RenderState, result: DrawResult) {
 
         if (config.debug.isEditorOverlay) {
@@ -180,7 +185,7 @@ class ReflectionProbeRenderExtension(
         gpuContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.normalMap)
         gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, gBuffer.colorReflectivenessMap)
         gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, gBuffer.motionMap)
-        gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
+        gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
         gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, cubeMapArray.id)
         renderState.lightState.pointLightShadowMapStrategy.bindTextures()
 
@@ -236,7 +241,7 @@ class ReflectionProbeRenderExtension(
                     gpuContext.bindTexture(
                         8,
                         GlTextureTarget.TEXTURE_2D,
-                        renderState.directionalLightState[0].shadowMapId
+                        renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 gpuContext.bindTexture(8, skyBox)

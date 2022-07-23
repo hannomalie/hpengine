@@ -1,15 +1,14 @@
 package de.hanno.hpengine.graphics.light.point
 
-import de.hanno.hpengine.math.Vector3f
-import de.hanno.struct.Struct
+import de.hanno.hpengine.math.Vector3fStrukt
+import struktgen.api.Strukt
+import java.nio.ByteBuffer
 
-class PointLightStruct : Struct() {
-    val position by Vector3f()
-    var radius by 0.0f
-    val color by Vector3f()
-    val dummy by 0
+interface PointLightStruct : Strukt {
+    context(ByteBuffer) val position: Vector3fStrukt
+    context(ByteBuffer) var radius: Float
+    context(ByteBuffer) val color: Vector3fStrukt
+    context(ByteBuffer) val dummy: Float
 
-    companion object {
-        fun getBytesPerInstance() = java.lang.Double.BYTES * 8
-    }
+    companion object
 }

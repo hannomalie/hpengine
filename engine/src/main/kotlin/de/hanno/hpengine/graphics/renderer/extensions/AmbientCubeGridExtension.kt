@@ -173,7 +173,7 @@ class ProbeRenderer(
                     gpuContext.bindTexture(
                         8,
                         GlTextureTarget.TEXTURE_2D,
-                        renderState.directionalLightState[0].shadowMapId
+                        renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 gpuContext.bindTexture(8, skyBox)

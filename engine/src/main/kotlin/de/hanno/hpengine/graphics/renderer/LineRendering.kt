@@ -3,12 +3,14 @@ package de.hanno.hpengine.graphics.renderer
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.math.identityMatrix4fBuffer
 import de.hanno.hpengine.scene.HpVector4f
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
+import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3fc
 import java.nio.FloatBuffer
 import kotlin.math.min
@@ -16,7 +18,7 @@ import kotlin.math.min
 fun drawLines(
     renderStateManager: RenderStateManager,
     programManager: ProgramManager<OpenGl>,
-    vertices: PersistentMappedStructBuffer<HpVector4f>,
+    vertices: PersistentTypedBuffer<Vector4fStrukt>,
     linePoints: List<Vector3fc>,
     lineWidth: Float = 5f,
     modelMatrix: FloatBuffer = identityMatrix4fBuffer,
@@ -42,18 +44,18 @@ fun drawLines(
     )
 }
 
-fun PersistentMappedStructBuffer<HpVector4f>.putLinesPoints(linePoints: List<Vector3fc>) {
-    ensureCapacityInBytes(linePoints.size * slidingWindow.sizeInBytes)
+fun PersistentTypedBuffer<Vector4fStrukt>.putLinesPoints(linePoints: List<Vector3fc>) {
+    ensureCapacityInBytes(linePoints.size * type.sizeInBytes)
 
     for (i in linePoints.indices) {
-        this[i].set(linePoints[i])
+        this.typedBuffer.forIndex(i) { it.set(linePoints[i]) }
     }
 }
 
 fun drawLines(
     renderStateManager: RenderStateManager,
     programManager: ProgramManager<OpenGl>,
-    vertices: PersistentMappedStructBuffer<HpVector4f>,
+    vertices: PersistentTypedBuffer<Vector4fStrukt>,
     lineWidth: Float = 5f,
     verticesCount: Int,
     modelMatrix: FloatBuffer = identityMatrix4fBuffer,

@@ -13,7 +13,6 @@ import org.joml.Vector3fc
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
-typealias HpVector3f = de.hanno.hpengine.math.Vector3f
 typealias HpVector4f = Vector4f
 
 interface VertexStruktPacked : Strukt {

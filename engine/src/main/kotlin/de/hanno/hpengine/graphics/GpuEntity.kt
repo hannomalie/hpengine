@@ -5,12 +5,9 @@ import de.hanno.hpengine.math.Vector3fStrukt
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.BoundingSphere
 import de.hanno.hpengine.transform.BoundingVolume
-import de.hanno.hpengine.math.Matrix4f
 import org.joml.Matrix4fc
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
-
-typealias HpMatrix = Matrix4f
 
 enum class BoundingVolumeType(val value: Float) {
     AABB(0f),

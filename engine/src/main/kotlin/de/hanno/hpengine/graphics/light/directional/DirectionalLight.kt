@@ -74,15 +74,15 @@ class DirectionalLightSystem: BaseEntitySystem(), Extractor, WorldPopulator {
         val light = entries.entries.first().value.firstIsInstance<DirectionalLightComponent>()
         val transform = entries.entries.first().value.firstIsInstance<TransformComponent>().transform
 
-        val directionalLightState = currentWriteState.directionalLightState[0]
-
-        directionalLightState.color.set(light.color)
-        directionalLightState.direction.set(transform.viewDirection)
-        directionalLightState.scatterFactor = light.scatterFactor
-        val viewMatrix = Matrix4f(transform).invert()
-        directionalLightState.viewMatrix.set(viewMatrix)
-        directionalLightState.projectionMatrix.set(light.camera.projectionMatrix)
-        directionalLightState.viewProjectionMatrix.set(Matrix4f(light.camera.projectionMatrix).mul(viewMatrix))
+        currentWriteState.directionalLightState.typedBuffer.forIndex(0) { directionalLightState ->
+            directionalLightState.color.set(light.color)
+            directionalLightState.direction.set(transform.viewDirection)
+            directionalLightState.scatterFactor = light.scatterFactor
+            val viewMatrix = Matrix4f(transform).invert()
+            directionalLightState.viewMatrix.set(viewMatrix)
+            directionalLightState.projectionMatrix.set(light.camera.projectionMatrix)
+            directionalLightState.viewProjectionMatrix.set(Matrix4f(light.camera.projectionMatrix).mul(viewMatrix))
+        }
     }
 
     override fun World.populate() {

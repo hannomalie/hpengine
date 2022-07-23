@@ -1,56 +1,52 @@
 package de.hanno.hpengine.graphics.renderer.drawstrategy.extensions
 
-import de.hanno.struct.Struct
+import de.hanno.hpengine.math.Matrix4fStrukt
+import de.hanno.hpengine.math.Vector3fStrukt
+import struktgen.api.Strukt
+import java.nio.ByteBuffer
 
-open class VoxelGrid : Struct() {
-    var albedoGrid by 0
-    var normalGrid by 0
-    var grid by 0
-    var indexGrid by 0
+interface VoxelGrid : Strukt {
+    context(ByteBuffer) var albedoGrid: Int
+    context(ByteBuffer) var normalGrid: Int
+    context(ByteBuffer) var grid: Int
+    context(ByteBuffer) var indexGrid: Int
 
-    private var _gridSize by 0
-    private var _gridSizeHalf by 0
-    val dummy2 by 0
-    val dummy3 by 0
+    context(ByteBuffer) var _gridSize: Int
+    context(ByteBuffer) var _gridSizeHalf: Int
+    context(ByteBuffer) val dummy2: Int
+    context(ByteBuffer) val dummy3: Int
 
-    var gridSize
+    context(ByteBuffer) var gridSize
         get() = _gridSize
         set(value) {
             _gridSize = value
-            _gridSizeHalf = value/2
+            _gridSizeHalf = value / 2
         }
-    val gridSizeHalf
+    context(ByteBuffer) val gridSizeHalf
         get() = _gridSizeHalf
 
-    val projectionMatrix by de.hanno.hpengine.graphics.HpMatrix()
+    context(ByteBuffer) val projectionMatrix: Matrix4fStrukt
 
-    var position by de.hanno.hpengine.scene.HpVector3f()
-    var scale by 0f
+    context(ByteBuffer) val position: Vector3fStrukt
+    context(ByteBuffer) var scale: Float
 
-    var albedoGridHandle by 0L
-    var normalGridHandle by 0L
-    var gridHandle by 0L
-    var indexGridHandle by 0L
+    context(ByteBuffer) var albedoGridHandle: Long
+    context(ByteBuffer) var normalGridHandle: Long
+    context(ByteBuffer) var gridHandle: Long
+    context(ByteBuffer) var indexGridHandle: Long
 
-    val gridSizeScaled: Int
+    context(ByteBuffer) val gridSizeScaled: Int
         get() = (gridSize * scale).toInt()
 
-    val gridSizeHalfScaled: Int
+    context(ByteBuffer) val gridSizeHalfScaled: Int
         get() = (gridSizeHalf * scale).toInt()
 
 
-    val currentVoxelTarget: Int
+    context(ByteBuffer) val currentVoxelTarget: Int
         get() = indexGrid
-    val currentVoxelSource: Int
+    context(ByteBuffer) val currentVoxelSource: Int
         get() = grid
 
 
-
-    companion object {
-        operator fun invoke(gridSize: Int): VoxelGrid {
-            return VoxelGrid().apply {
-                this@apply.gridSize = gridSize
-            }
-        }
-    }
+    companion object
 }

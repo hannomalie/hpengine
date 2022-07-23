@@ -58,8 +58,10 @@ class DirectionalLightShadowMapExtension(
     val shadowMapId = renderTarget.renderedTexture
 
     override fun extract(renderState: RenderState, world: World) {
-        renderState.directionalLightState[0].shadowMapHandle = renderTarget.renderedTextureHandles[0]
-        renderState.directionalLightState[0].shadowMapId = renderTarget.renderedTextures[0]
+        renderState.directionalLightState.typedBuffer.forIndex(0) {
+            it.shadowMapHandle = renderTarget.renderedTextureHandles[0]
+            it.shadowMapId = renderTarget.renderedTextures[0]
+        }
     }
     override fun renderZeroPass(renderState: RenderState) {
         profiled("Directional shadowmap") {

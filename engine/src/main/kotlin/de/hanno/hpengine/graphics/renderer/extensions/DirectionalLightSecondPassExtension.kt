@@ -56,13 +56,13 @@ class DirectionalLightSecondPassExtension(
                 gpuContext.bindTexture(2, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.colorReflectivenessMap)
                 gpuContext.bindTexture(3, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.motionMap)
                 gpuContext.bindTexture(4, GlTextureTarget.TEXTURE_CUBE_MAP, textureManager.cubeMap.id)
-                gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState[0].shadowMapId)
+                gpuContext.bindTexture(6, GlTextureTarget.TEXTURE_2D, renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId })
                 gpuContext.bindTexture(7, GlTextureTarget.TEXTURE_2D, deferredRenderingBuffer.visibilityMap)
                 if (!gpuContext.isSupported(BindlessTextures)) {
                     gpuContext.bindTexture(
                         8,
                         GlTextureTarget.TEXTURE_2D,
-                        renderState.directionalLightState[0].shadowMapId
+                        renderState.directionalLightState.typedBuffer.forIndex(0) { it.shadowMapId }
                     )
                 }
                 gpuContext.bindTexture(

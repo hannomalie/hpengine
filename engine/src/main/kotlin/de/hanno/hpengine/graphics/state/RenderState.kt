@@ -1,5 +1,6 @@
 package de.hanno.hpengine.graphics.state
 
+import DirectionalLightStateImpl.Companion.type
 import com.artemis.Component
 import com.artemis.World
 import com.artemis.utils.Bag
@@ -11,14 +12,17 @@ import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.transform.Transform
 import de.hanno.struct.copyFrom
+import de.hanno.struct.copyTo
 import org.joml.Vector3f
 
 class RenderState(private val gpuContext: GpuContext<*>) {
@@ -31,7 +35,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
 
     var time = System.currentTimeMillis()
 
-    val directionalLightState = PersistentMappedStructBuffer(1, gpuContext, { DirectionalLightState() })
+    val directionalLightState = PersistentMappedBuffer(DirectionalLightState.type.sizeInBytes, gpuContext).typed(DirectionalLightState.type)
 
     val lightState = LightState(gpuContext)
 
@@ -72,7 +76,7 @@ class RenderState(private val gpuContext: GpuContext<*>) {
         entitiesState.vertexIndexBufferStatic = source.entitiesState.vertexIndexBufferStatic
         entitiesState.vertexIndexBufferAnimated = source.entitiesState.vertexIndexBufferAnimated
         camera.init(source.camera)
-        directionalLightState[0].copyFrom(source.directionalLightState[0])
+        source.directionalLightState.buffer.copyTo(directionalLightState.buffer)
         lightState.pointLights = source.lightState.pointLights
         lightState.pointLightBuffer = source.lightState.pointLightBuffer
         lightState.pointLightShadowMapStrategy = source.lightState.pointLightShadowMapStrategy
