@@ -1,6 +1,6 @@
 package de.hanno.hpengine.graphics.vertexbuffer
 
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.AbstractPersistentMappedBuffer
 import java.nio.IntBuffer

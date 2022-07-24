@@ -2,7 +2,7 @@ package de.hanno.hpengine.model
 
 import EntityStruktImpl.Companion.type
 import de.hanno.hpengine.graphics.EntityStrukt
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import struktgen.typed

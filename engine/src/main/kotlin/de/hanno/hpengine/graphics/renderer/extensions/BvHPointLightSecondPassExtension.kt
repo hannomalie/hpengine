@@ -19,7 +19,6 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.pipelines.IntStrukt
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState

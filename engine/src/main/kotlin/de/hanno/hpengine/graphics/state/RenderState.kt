@@ -13,7 +13,6 @@ import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.SecondPassResult
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget
@@ -21,8 +20,7 @@ import de.hanno.hpengine.lifecycle.Updatable
 import de.hanno.hpengine.model.material.MaterialStrukt
 import de.hanno.hpengine.scene.VertexIndexBuffer
 import de.hanno.hpengine.transform.Transform
-import de.hanno.struct.copyFrom
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import org.joml.Vector3f
 
 class RenderState(private val gpuContext: GpuContext<*>) {

@@ -20,7 +20,6 @@ import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.drawstrategy.*
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer

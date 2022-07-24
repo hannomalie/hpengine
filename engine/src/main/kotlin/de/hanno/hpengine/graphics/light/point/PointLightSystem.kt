@@ -14,7 +14,6 @@ import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.safeCopyTo
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
@@ -23,8 +22,7 @@ import de.hanno.hpengine.model.enlarge
 import de.hanno.hpengine.system.Extractor
 import de.hanno.hpengine.transform.Transform
 import de.hanno.hpengine.util.Util
-import de.hanno.struct.copyTo
-import de.hanno.struct.enlarge
+import de.hanno.hpengine.buffers.copyTo
 
 // TODO: Autoadd Transform
 @All(PointLightComponent::class, TransformComponent::class)

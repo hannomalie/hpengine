@@ -2,7 +2,6 @@ package de.hanno.hpengine.graphics.shader
 
 import de.hanno.hpengine.graphics.buffer.GPUBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.shader.define.Defines
 import de.hanno.hpengine.transform.x
@@ -155,9 +154,6 @@ abstract class AbstractProgram<T: Uniforms>(val id: Int, val defines: Defines = 
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, block.id)
     }
 
-    fun bindShaderStorageBuffer(index: Int, buffer: PersistentMappedStructBuffer<*>) {
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, buffer.id)
-    }
     fun bindShaderStorageBuffer(index: Int, buffer: PersistentMappedBuffer) {
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, buffer.id)
     }

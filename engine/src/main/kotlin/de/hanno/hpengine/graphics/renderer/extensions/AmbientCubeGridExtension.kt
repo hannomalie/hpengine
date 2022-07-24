@@ -13,7 +13,6 @@ import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
 import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -31,7 +30,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
 import de.hanno.hpengine.math.Vector4fStrukt
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.lwjgl.BufferUtils

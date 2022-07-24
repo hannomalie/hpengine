@@ -6,8 +6,6 @@ import de.hanno.hpengine.transform.w
 import de.hanno.hpengine.transform.x
 import de.hanno.hpengine.transform.y
 import de.hanno.hpengine.transform.z
-import de.hanno.struct.Struct
-import org.joml.Matrix4f
 import org.joml.Vector4fc
 import org.joml.Vector4ic
 import org.lwjgl.BufferUtils

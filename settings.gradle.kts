@@ -8,5 +8,4 @@ pluginManagement {
 include("engine")
 include("newsimplegame")
 
-includeBuild("../kotlin-structs")
 includeBuild("../StruktGen")

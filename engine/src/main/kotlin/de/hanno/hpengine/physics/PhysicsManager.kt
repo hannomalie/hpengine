@@ -29,7 +29,6 @@ import de.hanno.hpengine.graphics.RenderStateManager
 import de.hanno.hpengine.graphics.renderer.addLine
 import de.hanno.hpengine.graphics.renderer.drawLines
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.state.RenderSystem

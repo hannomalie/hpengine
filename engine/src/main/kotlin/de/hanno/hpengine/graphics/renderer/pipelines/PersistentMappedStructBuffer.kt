@@ -5,11 +5,7 @@ import IntStruktImpl.Companion.sizeInBytes
 import IntStruktImpl.Companion.type
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.flags
-import de.hanno.struct.Array
-import de.hanno.struct.SlidingWindow
-import de.hanno.struct.Struct
-import de.hanno.struct.StructArray
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL30
@@ -21,24 +17,23 @@ import struktgen.TypedBuffer
 import struktgen.api.Strukt
 import struktgen.api.StruktType
 import java.nio.ByteBuffer
-import kotlin.math.max
-import kotlin.math.min
 
 interface Buffer {
     val buffer: ByteBuffer
 }
 
-interface GpuBuffer: Buffer {
+interface GpuBuffer : Buffer {
     val target: Int
     val id: Int
     override val buffer: ByteBuffer
 }
-interface TypedGpuBuffer<T>: GpuBuffer {
+
+interface TypedGpuBuffer<T> : GpuBuffer {
     val typedBuffer: TypedBuffer<T>
 }
 
 
-interface Allocator<T: Buffer> {
+interface Allocator<T : Buffer> {
     fun allocate(capacityInBytes: Int) = allocate(capacityInBytes, null)
     fun allocate(capacityInBytes: Int, current: T?): T
 }
@@ -46,7 +41,7 @@ interface Allocator<T: Buffer> {
 class PersistentMappedBufferAllocator(
     val gpuContext: GpuContext<*>,
     val target: Int = GL43.GL_SHADER_STORAGE_BUFFER
-): Allocator<GpuBuffer> {
+) : Allocator<GpuBuffer> {
 
     override fun allocate(capacityInBytes: Int, current: GpuBuffer?): GpuBuffer = gpuContext.window.invoke {
         require(capacityInBytes > 0) { "Cannot allocate buffer of size 0!" }
@@ -55,7 +50,7 @@ class PersistentMappedBufferAllocator(
         GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)
         val newBuffer = mapBuffer(capacityInBytes.toLong(), current)
 
-        object: GpuBuffer {
+        object : GpuBuffer {
             override val target = this@PersistentMappedBufferAllocator.target
             override val id = id
             override val buffer = newBuffer
@@ -107,219 +102,37 @@ class PersistentMappedBufferAllocator(
 }
 
 
-class PersistentMappedStructBuffer<T : Struct>(
-    initialSize: Int,
-    val gpuContext: GpuContext<*>,
-    val factory: () -> T,
-    override val target: Int = GL43.GL_SHADER_STORAGE_BUFFER
-) : Array<T>, GpuBuffer {
-
-    var slidingWindow = createSlidingWindow()
-        private set
-
-    fun createSlidingWindow(): SlidingWindow<T> {
-        return SlidingWindow(factory()).apply {
-            underlying.provideBuffer = { buffer }
-        }
-    }
-
-    override lateinit var buffer: ByteBuffer
-
-    override val size
-        get() = buffer.capacity() / slidingWindow.sizeInBytes
-
-    override var id: Int = -1
-        private set
-
-    init {
-        gpuContext.window.invoke {
-            val (id, newBuffer) = createBuffer(max(initialSize * slidingWindow.sizeInBytes, 1))
-            this.buffer = newBuffer
-            this.id = id
-        }
-    }
-
-    override val indices
-        get() = 0 until size
-
-    override val sizeInBytes: Int
-        get() = size * slidingWindow.sizeInBytes
-
-    fun mapBuffer(capacityInBytes: Long): ByteBuffer {
-//            TODO: This causes segfaults in Unsafe class, wtf...
-        val xxxx = BufferUtils.createByteBuffer(capacityInBytes.toInt());
-        val byteBuffer = GL30.glMapBufferRange(
-            target,
-            0, capacityInBytes, flags,
-//                null)!!
-            xxxx
-        )!!
-        copyOldBufferTo(byteBuffer)
-        return byteBuffer
-    }
-
-    private fun copyOldBufferTo(byteBuffer: ByteBuffer) {
-        if (::buffer.isInitialized) {
-            val array = ByteArray(min(byteBuffer.capacity(), buffer.capacity()))
-            buffer.rewind()
-            buffer.get(array)
-//            byteBuffer.put(buffer)
-            byteBuffer.put(array)
-            byteBuffer.rewind()
-        }
-    }
-
-    @Synchronized
-    fun setCapacityInBytes(requestedCapacity: Int) {
-        var capacityInBytes = requestedCapacity
-        if (capacityInBytes <= 0) {
-            capacityInBytes = 10
-        }
-
-        if (::buffer.isInitialized) {
-            val needsResize = buffer.capacity() != capacityInBytes
-            if (needsResize) {
-                gpuContext.invoke {
-                    val (newId, newBuffer) = createBuffer(capacityInBytes)
-                    val oldId = this.id
-                    GL15.glDeleteBuffers(oldId)
-                    this.buffer = newBuffer
-                    this.slidingWindow = createSlidingWindow()
-                    this.id = newId
-                }
-            }
-        } else {
-            val (id, newBuffer) = createBuffer(capacityInBytes)
-            this.buffer = newBuffer
-            this.slidingWindow = createSlidingWindow()
-            this.id = id
-        }
-    }
-    @Synchronized
-    fun ensureCapacityInBytes(requestedCapacity: Int) {
-        var capacityInBytes = requestedCapacity
-        if (capacityInBytes <= 0) {
-            capacityInBytes = 10
-        }
-
-        if (::buffer.isInitialized) {
-            val needsResize = buffer.capacity() < capacityInBytes
-            if (needsResize) {
-                gpuContext.invoke {
-                    val (newId, newBuffer) = createBuffer(capacityInBytes)
-                    copyOldBufferTo(newBuffer)
-                    val oldId = this.id
-                    GL15.glDeleteBuffers(oldId)
-                    this.buffer = newBuffer
-                    this.slidingWindow = createSlidingWindow()
-                    this.id = newId
-                }
-            }
-        } else {
-            val (id, newBuffer) = createBuffer(capacityInBytes)
-            copyOldBufferTo(newBuffer)
-            this.buffer = newBuffer
-            this.slidingWindow = createSlidingWindow()
-            this.id = id
-        }
-    }
-
-    fun bind() {
-        gpuContext.invoke {
-            if (id <= 0) {
-                id = GL15.glGenBuffers()
-            }
-            GL15.glBindBuffer(target, id)
-        }
-    }
-
-    fun unbind() {
-        gpuContext.invoke { GL15.glBindBuffer(target, 0) }
-    }
-
-    @Synchronized
-    fun resize(requestedCapacity: Int) {
-        ensureCapacityInBytes(requestedCapacity * slidingWindow.sizeInBytes)
-    }
-
-    private fun createBuffer(capacityInBytes: Int): Pair<Int, ByteBuffer> = gpuContext.invoke {
-        val id = GL15.glGenBuffers()
-        GL15.glBindBuffer(target, id)
-        GL44.glBufferStorage(target, capacityInBytes.toLong(), flags)
-        val newBuffer = mapBuffer(capacityInBytes.toLong())
-        Pair(id, newBuffer)
-    }
-
-    fun shrink(sizeInBytes: Int, copyContent: Boolean = true): PersistentMappedStructBuffer<T> {
-        if (buffer.capacity() > sizeInBytes) {
-            resize(sizeInBytes)
-        }
-        return this
-    }
-
-    fun enlarge(size: Int, copyContent: Boolean = true) = enlargeToBytes(size * slidingWindow.sizeInBytes, copyContent)
-
-    fun enlargeBy(size: Int, copyContent: Boolean = true) = enlarge(this.size + size, copyContent)
-
-    fun enlargeByBytes(sizeInBytes: Int, copyContent: Boolean = true) = enlarge(this.size + (sizeInBytes + slidingWindow.sizeInBytes), copyContent)
-
-    fun enlargeToBytes(sizeInBytes: Int, copyContent: Boolean = true) {
-        ensureCapacityInBytes(sizeInBytes)
-    }
-
-    override operator fun get(index: Int): T {
-        val currentSlidingWindow = slidingWindow
-        currentSlidingWindow.localByteOffset = (index * currentSlidingWindow.sizeInBytes).toLong()
-        return currentSlidingWindow.underlying
-    }
-
-    operator fun get(index: Int, slidingWindow: SlidingWindow<T>): T {
-        slidingWindow.localByteOffset = (index * slidingWindow.sizeInBytes).toLong()
-        return slidingWindow.underlying
-    }
-
-    fun addAll(elements: StructArray<T>) {
-        val sizeBefore = size
-        enlargeBy(elements.size)
-        elements.buffer.copyTo(buffer, targetOffset = sizeBefore * slidingWindow.sizeInBytes)
-    }
-    fun addAll(elements: ByteBuffer) {
-        val sizeBefore = size
-        enlargeByBytes(elements.capacity())
-        elements.copyTo(buffer, targetOffset = sizeBefore * slidingWindow.sizeInBytes)
-    }
-}
-
-@JvmOverloads
-fun <T : Struct> Array<T>.safeCopyTo(target: PersistentMappedStructBuffer<T>, rewindBuffers: Boolean = true) {
-    target.resize(size)
-    copyTo(target, rewindBuffers)
-}
-
 fun CommandBuffer(
     gpuContext: GpuContext<*>,
     size: Int = 1000
-) = PersistentMappedBuffer( size * DrawElementsIndirectCommandStrukt.type.sizeInBytes, gpuContext, GL_DRAW_INDIRECT_BUFFER).typed(
-    DrawElementsIndirectCommandStrukt.type)
+) = PersistentMappedBuffer(
+    size * DrawElementsIndirectCommandStrukt.type.sizeInBytes,
+    gpuContext,
+    GL_DRAW_INDIRECT_BUFFER
+).typed(
+    DrawElementsIndirectCommandStrukt.type
+)
 
-interface IntStrukt: Strukt {
+interface IntStrukt : Strukt {
     context(ByteBuffer) var value: Int
+
     companion object
 }
 
-fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) = PersistentMappedBuffer(size * IntStrukt.sizeInBytes, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
+fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) =
+    PersistentMappedBuffer(size * IntStrukt.sizeInBytes, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
 
-data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>): GpuBuffer by persistentMappedBuffer,
+data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>) :
+    GpuBuffer by persistentMappedBuffer,
     TypedGpuBuffer<T> {
-    override val typedBuffer = object: TypedBuffer<T>(type) {
-        override val byteBuffer: ByteBuffer
-            get() = persistentMappedBuffer.buffer
+    override val typedBuffer = object : TypedBuffer<T>(type) {
+        override val byteBuffer: ByteBuffer get() = persistentMappedBuffer.buffer
     }
-    override val buffer: ByteBuffer
-        get() = persistentMappedBuffer.buffer
+    override val buffer: ByteBuffer get() = persistentMappedBuffer.buffer
 
     @Synchronized
     fun ensureCapacityInBytes(requestedCapacity: Int) = persistentMappedBuffer.ensureCapacityInBytes(requestedCapacity)
+
     @Synchronized
     fun resize(requestedCapacity: Int) = persistentMappedBuffer.resize(requestedCapacity)
 
@@ -337,7 +150,7 @@ class PersistentMappedBuffer(
     initialSizeInBytes: Int,
     private val gpuContext: GpuContext<*>,
     _target: Int = GL43.GL_SHADER_STORAGE_BUFFER
-): GpuBuffer {
+) : GpuBuffer {
 
     private val allocator = PersistentMappedBufferAllocator(gpuContext, _target)
 

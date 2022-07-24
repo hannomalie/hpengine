@@ -42,7 +42,7 @@ import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.StaticTransformSpatial
 import de.hanno.hpengine.transform.TransformSpatial
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import org.joml.FrustumIntersection
 import org.joml.Vector3f
 import org.lwjgl.BufferUtils

@@ -5,19 +5,13 @@ import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.Spatial
 import de.hanno.hpengine.transform.boundingSphereRadius
-import de.hanno.struct.Struct
-import de.hanno.struct.copyTo
+import de.hanno.hpengine.buffers.copyTo
 import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import struktgen.api.Strukt
 import java.io.File
 
-
-@JvmOverloads
-fun <T: Struct> de.hanno.struct.StructArray<T>.copyTo(target: de.hanno.struct.StructArray<T>, offset: Int, rewindBuffers: Boolean = true) {
-    buffer.copyTo(target.buffer, rewindBuffers, slidingWindow.sizeInBytes * offset)
-}
 
 sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
     val meshes: Array<Mesh<T>> = _meshes.toTypedArray()
