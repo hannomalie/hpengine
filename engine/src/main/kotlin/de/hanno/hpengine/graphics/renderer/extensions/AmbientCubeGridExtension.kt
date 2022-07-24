@@ -1,5 +1,7 @@
 package de.hanno.hpengine.graphics.renderer.extensions
 
+import Vector4fStruktImpl.Companion.sizeInBytes
+import Vector4fStruktImpl.Companion.type
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.graphics.BindlessTextures
@@ -10,8 +12,10 @@ import de.hanno.hpengine.graphics.renderer.constants.GlTextureTarget
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.draw
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.setTextureUniforms
+import de.hanno.hpengine.graphics.renderer.pipelines.typed
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.Uniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
@@ -26,6 +30,7 @@ import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinitio
 import de.hanno.hpengine.graphics.renderer.rendertarget.DepthBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.FrameBuffer
 import de.hanno.hpengine.graphics.renderer.rendertarget.toCubeMaps
+import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.struct.copyTo
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -62,13 +67,13 @@ class ProbeRenderer(
     val probeResolution = 16
     val probePositions = mutableListOf<Vector3f>()
     val probePositionsStructBuffer = gpuContext.window.invoke {
-        PersistentMappedStructBuffer(probeCount, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+        PersistentMappedBuffer(probeCount * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValues = gpuContext.window.invoke {
-        PersistentMappedStructBuffer(probeCount * 6, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
     }
     val probeAmbientCubeValuesOld = gpuContext.window.invoke {
-        PersistentMappedStructBuffer(probeCount * 6, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+        PersistentMappedBuffer(probeCount * 6 * Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
     }
 
     init {
@@ -92,7 +97,7 @@ class ProbeRenderer(
             }
         }
         probePositions.mapIndexed { i, position ->
-            probePositionsStructBuffer[i].set(position)
+            probePositionsStructBuffer.typedBuffer.forIndex(i) { it.set(position) }
         }
     }
 
@@ -133,7 +138,7 @@ class ProbeRenderer(
             sceneMax.set(renderState.sceneMax)
             initProbePositions()
         }
-        probeAmbientCubeValues.copyTo(probeAmbientCubeValuesOld)
+        probeAmbientCubeValues.buffer.copyTo(probeAmbientCubeValuesOld.buffer)
 
         val gpuContext = gpuContext
 
@@ -220,7 +225,7 @@ class ProbeRenderer(
                 }
                 val baseProbeIndex = 6 * probeIndex
                 for (faceIndex in 0 until 6) {
-                    probeAmbientCubeValues[baseProbeIndex + faceIndex].set(ambientCubeValues[faceIndex])
+                    probeAmbientCubeValues.typedBuffer.forIndex(baseProbeIndex + faceIndex) { it.set(ambientCubeValues[faceIndex]) }
                 }
             }
         }

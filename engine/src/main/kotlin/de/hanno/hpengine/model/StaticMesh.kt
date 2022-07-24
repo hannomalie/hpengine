@@ -1,21 +1,12 @@
 package de.hanno.hpengine.model
 
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.model.Mesh.Companion.IDENTITY
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.scene.Vertex
-import de.hanno.hpengine.transform.AABB
-import de.hanno.hpengine.transform.AABBData
-import de.hanno.hpengine.transform.SimpleSpatial
-import de.hanno.hpengine.transform.absoluteMaximum
-import de.hanno.hpengine.transform.absoluteMinimum
-import org.joml.Matrix4f
-import org.joml.Vector2f
-import org.joml.Vector3f
-import org.joml.Vector3fc
-import org.joml.Vector4f
+import de.hanno.hpengine.transform.*
+import org.joml.*
 import java.io.Serializable
-import java.util.UUID
+import java.util.*
 
 
 data class IndexedFace(val a: Int, val b: Int, val c: Int)
@@ -33,13 +24,7 @@ class StaticMesh(
         boundingVolume.localAABB = calculateAABB(IDENTITY, vertices, faces)
     }
 
-    override val indexBufferValues = de.hanno.struct.StructArray(faces.size * 3) { IntStruct() }.apply {
-        faces.withIndex().forEach { (index, face) ->
-            getAtIndex(index * 3).value = face.a
-            getAtIndex(index * 3 + 1).value = face.b
-            getAtIndex(index * 3 + 2).value = face.c
-        }
-    }
+    override val indexBufferValues = faces.extractIndices()
 
     override val triangleCount: Int
         get() = faces.size

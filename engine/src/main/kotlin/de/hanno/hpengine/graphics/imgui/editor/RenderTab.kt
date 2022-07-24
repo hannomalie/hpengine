@@ -83,7 +83,7 @@ fun TabBar.renderTab() {
                         ImGui.text("Draw commands compacted: $commandCount")
                         commandOrganization.commandsCompacted.typedBuffer.forEach(batchCount) {
                             if (counter < commandCount) {
-                                val entityOffset = commandOrganization.offsetsCompacted[counter].value
+                                val entityOffset = commandOrganization.offsetsCompacted.typedBuffer.forIndex(counter) { it.value }
                                 ImGui.text("$entityOffset - ")
                                 ImGui.sameLine()
                                 ImGui.text(it.print())

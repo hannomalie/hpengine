@@ -232,6 +232,7 @@ class ModelSystem(
                             it.update(world.delta)
                         }
                         is StaticModel -> {  }
+                        else -> throw IllegalStateException("Hello compiler bug")
                     }
                     val transformComponent = transformComponentMapper.getOrNull(entityId) ?: transformComponentMapper.getOrNull(instanceComponent!!.targetEntity)
                     val transform = transformComponent!!.transform
@@ -349,7 +350,7 @@ class ModelSystem(
 
     fun VertexIndexBuffer.allocateForComponent(modelComponent: ModelComponent): VertexIndexBuffer.VertexIndexOffsets {
         val model = modelCache[modelComponent.modelComponentDescription]!!
-        return allocate(model.uniqueVertices.size, model.indices.size)
+        return allocate(model.uniqueVertices.size, model.indices.capacity() / Integer.BYTES)
     }
 
     fun ModelComponent.captureIndexAndVertexOffsets(vertexIndexOffsets: VertexIndexBuffer.VertexIndexOffsets): List<VertexIndexBuffer.VertexIndexOffsets> {
@@ -361,7 +362,7 @@ class ModelSystem(
         return model.meshes.indices.map { i ->
             val mesh = model.meshes[i] as Mesh<*>
             VertexIndexBuffer.VertexIndexOffsets(currentVertexOffset, currentIndexOffset).apply {
-                currentIndexOffset += mesh.indexBufferValues.size
+                currentIndexOffset += mesh.indexBufferValues.capacity() / Integer.BYTES
                 currentVertexOffset += mesh.vertices.size
             }
         }
@@ -384,6 +385,7 @@ class ModelSystem(
                     vertexIndexOffsets.vertexOffset * AnimatedVertexStruktPacked.sizeInBytes,
                     model.verticesPacked.byteBuffer
                 )
+                else -> throw IllegalStateException("Hello compiler bug")
             } // TODO: sealed classes!!
 
             indexBuffer.indexBuffer.appendIndices(vertexIndexOffsets.indexOffset, model.indices)

@@ -66,7 +66,7 @@ class ReflectionProbeRenderState(val gpuContext: GpuContext<OpenGl>, val renderS
     var reRenderProbesInCycle = 0L
     var probeCount: Int = 0
     val probeMinMaxStructBuffer = gpuContext.window.invoke {
-        PersistentMappedStructBuffer(1, gpuContext, { de.hanno.hpengine.scene.HpVector4f() })
+        PersistentMappedBuffer(Vector4fStrukt.sizeInBytes, gpuContext).typed(Vector4fStrukt.type)
     }
     val probePositions = mutableListOf<Vector3f>()
 }
@@ -125,8 +125,8 @@ class ReflectionProbeRenderExtension(
         val probePositions = targetState.probePositions
         probePositions.clear()
         components.forEachIndexed { index, probe ->
-            probeMinMaxStructBuffer[2 * index].set(Vector3f(probe.transformComponent.transform.position).sub(probe.halfExtents))
-            probeMinMaxStructBuffer[2 * index + 1].set(Vector3f(probe.transformComponent.transform.position).add(probe.halfExtents))
+            probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index) { it.set(Vector3f(probe.transformComponent.transform.position).sub(probe.halfExtents)) }
+            probeMinMaxStructBuffer.typedBuffer.forIndex(2 * index + 1) { it.set(Vector3f(probe.transformComponent.transform.position).add(probe.halfExtents)) }
             probePositions.add(Vector3f(probe.transformComponent.transform.position))
         }
 
@@ -137,10 +137,8 @@ class ReflectionProbeRenderExtension(
 
         if (config.debug.isEditorOverlay) {
             val linePoints = (0 until renderState[reflectionProbeRenderState].probeCount).flatMap {
-                val min = renderState[reflectionProbeRenderState].probeMinMaxStructBuffer[2 * it]
-                val minWorld = Vector3f(min.x, min.y, min.z)
-                val max = renderState[reflectionProbeRenderState].probeMinMaxStructBuffer[2 * it + 1]
-                val maxWorld = Vector3f(max.x, max.y, max.z)
+                val minWorld = renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it) { Vector3f(it.x, it.y, it.z) }
+                val maxWorld = renderState[reflectionProbeRenderState].probeMinMaxStructBuffer.typedBuffer.forIndex(2 * it + 1) { Vector3f(it.x, it.y, it.z) }
                 mutableListOf<Vector3fc>().apply { addAABBLines(minWorld, maxWorld) }
             }
 

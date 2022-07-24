@@ -1,5 +1,7 @@
 package de.hanno.hpengine.scene
 
+import IntStruktImpl.Companion.sizeInBytes
+import IntStruktImpl.Companion.type
 import com.artemis.World
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.artemis.MaterialComponent
@@ -14,8 +16,7 @@ import de.hanno.hpengine.graphics.renderer.constants.MagFilter
 import de.hanno.hpengine.graphics.renderer.constants.MinFilter
 import de.hanno.hpengine.graphics.renderer.constants.TextureFilterConfig
 import de.hanno.hpengine.graphics.renderer.drawstrategy.DrawResult
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStruct
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.graphics.renderer.rendertarget.toTextures
 import de.hanno.hpengine.graphics.shader.ProgramManager
@@ -128,9 +129,9 @@ class OceanWaterRenderSystem(
     private val h0MinuskMap = listOf(ColorAttachmentDefinition("h0MinuskMap", GL30.GL_RGBA32F)).toTextures(gpuContext, N, N).first()
     private val log2N = (ln(N.toFloat()) / ln(2.0f)).toInt()
     private val twiddleIndicesMap = listOf(ColorAttachmentDefinition("h0kMap", GL30.GL_RGBA32F)).toTextures(gpuContext, log2N, N).first()
-    private val bitReversedIndices = PersistentMappedStructBuffer(N, gpuContext, { IntStruct() }).apply {
+    private val bitReversedIndices = PersistentMappedBuffer(N * IntStrukt.sizeInBytes, gpuContext).typed(IntStrukt.type).apply {
         initBitReversedIndices(N).forEachIndexed { index, value ->
-            get(index).value = value
+            typedBuffer.forIndex(index) { it.value = value }
         }
     }
 

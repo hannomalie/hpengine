@@ -1,7 +1,6 @@
 package de.hanno.hpengine.scene
 
 import com.google.common.collect.ImmutableSet
-import de.hanno.hpengine.math.Vector4f
 import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.math.Vector4iStrukt
 import de.hanno.hpengine.graphics.vertexbuffer.DataChannelComponent.FloatThree
@@ -12,8 +11,6 @@ import org.joml.Vector3f
 import org.joml.Vector3fc
 import struktgen.api.Strukt
 import java.nio.ByteBuffer
-
-typealias HpVector4f = Vector4f
 
 interface VertexStruktPacked : Strukt {
     context(ByteBuffer) val position: Vector4fStrukt

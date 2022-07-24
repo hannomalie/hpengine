@@ -1,20 +1,21 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
 import DrawElementsIndirectCommandStruktImpl.Companion.sizeInBytes
+import IntStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.camera.Camera
 import de.hanno.hpengine.config.Config
+import de.hanno.hpengine.graphics.GpuContext
+import de.hanno.hpengine.graphics.profiled
 import de.hanno.hpengine.graphics.renderer.IndirectDrawDescription
 import de.hanno.hpengine.graphics.renderer.RenderBatch
 import de.hanno.hpengine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Faces
 import de.hanno.hpengine.graphics.renderer.drawstrategy.RenderingMode.Lines
-import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.shader.Program
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.graphics.state.RenderState
 import de.hanno.hpengine.graphics.vertexbuffer.multiDrawElementsIndirectCount
-import de.hanno.hpengine.graphics.profiled
 
 open class IndirectPipeline @JvmOverloads constructor(
     private val config: Config,
@@ -111,10 +112,10 @@ open class IndirectPipeline @JvmOverloads constructor(
 fun addCommands(
     renderBatches: List<RenderBatch>,
     commandBuffer: PersistentTypedBuffer<DrawElementsIndirectCommandStrukt>,
-    entityOffsetBuffer: PersistentMappedStructBuffer<IntStruct>
+    entityOffsetBuffer: PersistentTypedBuffer<IntStrukt>
 ) {
     val resultingCommandCount = renderBatches.size
-    entityOffsetBuffer.enlarge(resultingCommandCount)
+    entityOffsetBuffer.resize(resultingCommandCount * IntStrukt.sizeInBytes)
     entityOffsetBuffer.buffer.rewind()
     commandBuffer.persistentMappedBuffer.enlarge(resultingCommandCount * DrawElementsIndirectCommandStrukt.sizeInBytes)
     commandBuffer.persistentMappedBuffer.buffer.rewind()
@@ -130,7 +131,7 @@ fun addCommands(
                 baseVertex = batch.drawElementsIndirectCommand.baseVertex
                 baseInstance = batch.drawElementsIndirectCommand.baseInstance
             }
-            entityOffsetBuffer[index].value = batch.entityBufferIndex
+            entityOffsetBuffer.typedBuffer.forIndex(index) { it.value = batch.entityBufferIndex }
 
             index += 1
         }

@@ -2,13 +2,11 @@ package de.hanno.hpengine.graphics.renderer
 
 import de.hanno.hpengine.backend.OpenGl
 import de.hanno.hpengine.graphics.RenderStateManager
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.PersistentTypedBuffer
 import de.hanno.hpengine.graphics.shader.ProgramManager
 import de.hanno.hpengine.graphics.shader.safePut
 import de.hanno.hpengine.graphics.shader.useAndBind
 import de.hanno.hpengine.math.identityMatrix4fBuffer
-import de.hanno.hpengine.scene.HpVector4f
 import de.hanno.hpengine.graphics.vertexbuffer.drawLines
 import de.hanno.hpengine.math.Vector4fStrukt
 import org.joml.Vector3fc

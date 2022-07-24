@@ -1,6 +1,8 @@
 package de.hanno.hpengine.graphics.renderer.pipelines
 
 import DrawElementsIndirectCommandStruktImpl.Companion.type
+import IntStruktImpl.Companion.sizeInBytes
+import IntStruktImpl.Companion.type
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.flags
 import de.hanno.struct.Array
@@ -300,16 +302,12 @@ fun CommandBuffer(
 ) = PersistentMappedBuffer( size * DrawElementsIndirectCommandStrukt.type.sizeInBytes, gpuContext, GL_DRAW_INDIRECT_BUFFER).typed(
     DrawElementsIndirectCommandStrukt.type)
 
-class IntStruct : Struct() {
-    var value by 0
-    override fun toString() = "$value"
-}
 interface IntStrukt: Strukt {
     context(ByteBuffer) var value: Int
     companion object
 }
 
-fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) = PersistentMappedStructBuffer(size, gpuContext, { IntStruct() }, GL40.GL_ELEMENT_ARRAY_BUFFER)
+fun IndexBuffer(gpuContext: GpuContext<*>, size: Int = 1000) = PersistentMappedBuffer(size * IntStrukt.sizeInBytes, gpuContext, GL40.GL_ELEMENT_ARRAY_BUFFER).typed(IntStrukt.type)
 
 data class PersistentTypedBuffer<T>(val persistentMappedBuffer: PersistentMappedBuffer, val type: StruktType<T>): GpuBuffer by persistentMappedBuffer,
     TypedGpuBuffer<T> {

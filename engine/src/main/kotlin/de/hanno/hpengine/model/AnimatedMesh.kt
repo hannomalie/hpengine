@@ -2,7 +2,6 @@ package de.hanno.hpengine.model
 
 import AnimatedVertexStruktPackedImpl.Companion.sizeInBytes
 import AnimatedVertexStruktPackedImpl.Companion.type
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.model.animation.Animation
 import de.hanno.hpengine.model.animation.AnimationController
 import de.hanno.hpengine.model.material.Material
@@ -14,13 +13,13 @@ import de.hanno.hpengine.transform.AABBData.Companion.getSurroundingAABB
 import de.hanno.hpengine.transform.SimpleSpatial
 import de.hanno.hpengine.transform.absoluteMaximum
 import de.hanno.hpengine.transform.absoluteMinimum
-import de.hanno.struct.StructArray
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import org.joml.Vector4f
 import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import java.io.File
+import java.nio.ByteBuffer
 
 class AnimatedMesh(
     override var name: String,
@@ -31,13 +30,7 @@ class AnimatedMesh(
 ) : Mesh<AnimatedVertex> {
     var model: AnimatedModel? = null
 
-    override val indexBufferValues = StructArray(faces.size * 3) { IntStruct() }.apply {
-        faces.forEachIndexed { index, face ->
-            this.getAtIndex(3 * index).value = face.a
-            this.getAtIndex(3 * index + 1).value = face.b
-            this.getAtIndex(3 * index + 2).value = face.c
-        }
-    }
+    override val indexBufferValues = faces.extractIndices()
 
     override val triangleCount: Int
         get() = faces.size
@@ -81,6 +74,7 @@ class AnimatedMesh(
 
             return AABBData(Vector3f(min).toImmutable(), Vector3f(max).toImmutable())
         }
+
     }
 }
 
@@ -134,3 +128,13 @@ class AnimatedModel(
         AABB(meshes.map { it.spatial.boundingVolume.localAABB }.getSurroundingAABB())
 }
 
+internal fun List<IndexedFace>.extractIndices(): ByteBuffer =
+    BufferUtils.createByteBuffer(Integer.BYTES * size * 3).apply {
+        asIntBuffer().apply {
+            forEachIndexed { index, face ->
+                put(3 * index, face.a)
+                put(3 * index + 1, face.b)
+                put(3 * index + 2, face.c)
+            }
+        }
+    }

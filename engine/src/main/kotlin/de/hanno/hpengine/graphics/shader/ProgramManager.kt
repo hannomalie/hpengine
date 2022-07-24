@@ -1,13 +1,15 @@
 package de.hanno.hpengine.graphics.shader
 
+import Vector4fStruktImpl.Companion.sizeInBytes
 import de.hanno.hpengine.backend.BackendType
 import de.hanno.hpengine.config.Config
 import de.hanno.hpengine.directory.Asset
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.renderer.pipelines.FirstPassUniforms
-import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedStructBuffer
+import de.hanno.hpengine.graphics.renderer.pipelines.PersistentMappedBuffer
 import de.hanno.hpengine.graphics.renderer.pipelines.StaticFirstPassUniforms
 import de.hanno.hpengine.graphics.shader.define.Defines
+import de.hanno.hpengine.math.Vector4fStrukt
 import de.hanno.hpengine.model.material.ProgramDescription
 import de.hanno.hpengine.transform.Transform
 import de.hanno.hpengine.ressources.CodeSource
@@ -74,7 +76,7 @@ interface ProgramManager<BACKEND: BackendType> {
 }
 
 class LinesProgramUniforms(gpuContext: GpuContext<*>) : Uniforms() {
-    var vertices by SSBO("vec4", 7, PersistentMappedStructBuffer(100, gpuContext, { de.hanno.hpengine.scene.HpVector4f() }))
+    var vertices by SSBO("vec4", 7, PersistentMappedBuffer(100 * Vector4fStrukt.sizeInBytes, gpuContext))
     val modelMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val viewMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })
     val projectionMatrix by Mat4(BufferUtils.createFloatBuffer(16).apply { Transform().get(this) })

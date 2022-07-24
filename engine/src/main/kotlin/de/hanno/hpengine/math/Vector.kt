@@ -15,63 +15,6 @@ import struktgen.api.Strukt
 import java.nio.ByteBuffer
 
 
-class Vector4f : Struct() {
-    var x by 0.0f
-    var y by 0.0f
-    var z by 0.0f
-    var w by 0.0f
-
-    fun set(target: Vector4fc) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-        this.w = target.w
-    }
-    fun set(target: org.joml.Vector3fc) {
-        this.x = target.x
-        this.y = target.y
-        this.z = target.z
-        this.w = 1.0f
-    }
-    fun set(target: org.joml.Vector2fc) {
-        this.x = target.x()
-        this.y = target.y()
-    }
-
-    override fun toString() = "($x, $y, $z, $w)"
-}
-
-class Matrix4f : Struct() {
-    var m00 by 0.0f
-    var m01 by 0.0f
-    var m02 by 0.0f
-    var m03 by 0.0f
-    var m10 by 0.0f
-    var m11 by 0.0f
-    var m12 by 0.0f
-    var m13 by 0.0f
-    var m20 by 0.0f
-    var m21 by 0.0f
-    var m22 by 0.0f
-    var m23 by 0.0f
-    var m30 by 0.0f
-    var m31 by 0.0f
-    var m32 by 0.0f
-    var m33 by 0.0f
-
-    override fun toString(): String {
-        return """
-            |$m00 $m01 $m02 $m03
-            |$m10 $m11 $m12 $m13
-            |$m20 $m21 $m22 $m23
-            |$m30 $m31 $m32 $m33
-            """.trimMargin()
-    }
-
-    fun <T: Matrix4f> set(source: T) {
-        source.get(baseByteOffset.toInt(), buffer)
-    }
-}
 interface Vector2fStrukt : Strukt {
     context(ByteBuffer) var x: Float
     context(ByteBuffer) var y: Float

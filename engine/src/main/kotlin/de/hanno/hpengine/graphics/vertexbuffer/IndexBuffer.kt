@@ -4,9 +4,8 @@ import de.hanno.struct.copyTo
 import de.hanno.hpengine.graphics.GpuContext
 import de.hanno.hpengine.graphics.buffer.AbstractPersistentMappedBuffer
 import java.nio.IntBuffer
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStruct
-import de.hanno.struct.StructArray
 import org.lwjgl.opengl.GL15
+import java.nio.ByteBuffer
 
 open class IndexBuffer(gpuContext: GpuContext<*>?, target: Int) : AbstractPersistentMappedBuffer(
     gpuContext!!, target
@@ -62,9 +61,9 @@ open class IndexBuffer(gpuContext: GpuContext<*>?, target: Int) : AbstractPersis
     val size: Int
         get() = sizeInBytes / Integer.BYTES
 
-    fun appendIndices(indexOffset: Int, indices: StructArray<IntStruct>) {
+    fun appendIndices(indexOffset: Int, indices: ByteBuffer) {
         buffer.rewind()
-        ensureCapacityInBytes((indexOffset + indices.size) * Integer.BYTES)
-        indices.buffer.copyTo(buffer, true, indexOffset * Integer.BYTES)
+        ensureCapacityInBytes((indexOffset + (indices.capacity() / Integer.BYTES)) * Integer.BYTES)
+        indices.copyTo(buffer, true, indexOffset * Integer.BYTES)
     }
 }

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.model
 
-import de.hanno.hpengine.graphics.renderer.pipelines.IntStruct
 import de.hanno.hpengine.model.material.Material
 import de.hanno.hpengine.transform.AABB
 import de.hanno.hpengine.transform.SimpleSpatial
@@ -9,6 +8,7 @@ import de.hanno.hpengine.transform.boundingSphereRadius
 import de.hanno.struct.Struct
 import de.hanno.struct.copyTo
 import org.joml.Matrix4f
+import org.lwjgl.BufferUtils
 import struktgen.TypedBuffer
 import struktgen.api.Strukt
 import java.io.File
@@ -22,17 +22,17 @@ fun <T: Struct> de.hanno.struct.StructArray<T>.copyTo(target: de.hanno.struct.St
 sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
     val meshes: Array<Mesh<T>> = _meshes.toTypedArray()
 
-    val meshIndexCounts = meshes.map { it.indexBufferValues.size }
+    val meshIndexCounts = meshes.map { it.indexBufferValues.capacity() / Integer.BYTES }
     val meshIndexSum = meshIndexCounts.sum()
 
     var triangleCount: Int = meshes.sumBy { it.triangleCount }
     val uniqueVertices: List<T> = meshes.flatMap { it.vertices }
 
-    var indices = de.hanno.struct.StructArray(meshIndexSum) { IntStruct() }.apply {
+    var indices = BufferUtils.createByteBuffer(Integer.BYTES * meshIndexSum).apply {
         var offsetPerMesh = 0
         meshes.forEach { mesh ->
-            mesh.indexBufferValues.copyTo(this, offset = offsetPerMesh)
-            offsetPerMesh += mesh.indexBufferValues.size
+            mesh.indexBufferValues.copyTo(this, targetOffset = offsetPerMesh)
+            offsetPerMesh += mesh.indexBufferValues.capacity() / Integer.BYTES
         }
     }
 
