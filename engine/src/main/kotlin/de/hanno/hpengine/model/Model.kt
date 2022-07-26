@@ -26,7 +26,7 @@ sealed class Model<T>(val _meshes: List<Mesh<T>>) : SimpleSpatial(), Spatial {
         var offsetPerMesh = 0
         meshes.forEach { mesh ->
             mesh.indexBufferValues.copyTo(this, targetOffset = offsetPerMesh)
-            offsetPerMesh += mesh.indexBufferValues.capacity() / Integer.BYTES
+            offsetPerMesh += mesh.indexBufferValues.capacity()
         }
     }
 

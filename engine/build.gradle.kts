@@ -45,11 +45,11 @@ dependencies {
     api(kotlin("stdlib"))
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
-    api(kotlin("script-runtime"))
+    api(kotlin("compiler-embeddable"))
+
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.5")
-    api(kotlin("compiler-embeddable"))
 
     api("javax.inject:javax.inject:1")
 
@@ -111,11 +111,11 @@ dependencies {
 
     val imguiVersion = "1.86.1"
 
-    implementation("io.github.spair:imgui-java-binding:$imguiVersion")
-    implementation("io.github.spair:imgui-java-lwjgl3:$imguiVersion")
-    implementation("io.github.spair:imgui-java-natives-windows:$imguiVersion") // TODO Make OS aware
+    api("io.github.spair:imgui-java-binding:$imguiVersion")
+    api("io.github.spair:imgui-java-lwjgl3:$imguiVersion")
+    api("io.github.spair:imgui-java-natives-windows:$imguiVersion") // TODO Make OS aware
 
-    implementation("io.github.config4k:config4k:0.4.2")
+    api("io.github.config4k:config4k:0.4.2")
 
     val koinVersion= "3.1.1"
     api("io.insert-koin:koin-core:$koinVersion")

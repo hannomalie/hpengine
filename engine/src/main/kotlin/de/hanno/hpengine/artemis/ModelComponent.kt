@@ -150,6 +150,7 @@ class ModelSystem(
                 this.allocation = allocations[descr]!!
             }
         }
+        requiredEntityBufferSize = calculateRequiredEntityBufferSize()
     }
 
     private fun loadModelToCache(entityId: Int) {

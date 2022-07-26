@@ -25,7 +25,7 @@ application {
     mainClassName = "scenes.InstancingDemoKt"
 }
 dependencies {
-    implementation(project(":engine"))
+    api(project(":engine"))
 }
 
 val bundleLinux by tasks.registering {

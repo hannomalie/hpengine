@@ -101,7 +101,7 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
         GiVolumeSystem(koin.get()),
         PhysicsManager(config, koin.get(), koin.get(), koin.get()),
         ReflectionProbeManager(config),
-        KotlinComponentSystem(),
+        koin.get<KotlinComponentSystem>(),
         CameraSystem(),
     ) + koin.getAll<BaseSystem>()
 
@@ -157,7 +157,9 @@ class Engine(config: ConfigImpl, afterInit: Engine.() -> Unit = { world.loadDemo
                 world.delta = deltaSeconds
                 try {
                     world.process()
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 extract(deltaSeconds)
             } catch (e: Exception) {

@@ -43,6 +43,8 @@ import de.hanno.hpengine.graphics.fps.FPSCounterSystem
 import de.hanno.hpengine.ressources.FileBasedCodeSource.Companion.toCodeSource
 import de.hanno.hpengine.ressources.enhanced
 import de.hanno.hpengine.graphics.*
+import de.hanno.hpengine.graphics.imgui.editor.ImGuiEditorExtension
+import de.hanno.hpengine.graphics.renderer.drawstrategy.extensions.DeferredRenderExtension
 import de.hanno.hpengine.graphics.renderer.extensions.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.*
 import de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget.Companion.invoke
@@ -58,7 +60,7 @@ data class IdTexture(val texture: Texture2D) // TODO: Move to a proper place
 data class SharedDepthBuffer(val depthBuffer: DepthBuffer<*>)
 
 val deferredRendererModule = module {
-    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll()) }
+    renderSystem { ExtensibleDeferredRenderer(get(), get(), get(), get(), get(), get(), getAll<DeferredRenderExtension<OpenGl>>().distinct()) }
     single {
         val config: Config = get()
         SharedDepthBuffer(DepthBuffer(get(), config.width, config.height))
@@ -83,14 +85,14 @@ val deferredRendererModule = module {
         FinalOutput(deferredRenderingBuffer.finalMap)
     }
     single { DebugOutput(null, 0) }
-    single { DeferredRenderExtensionConfig(getAll()) }
+    single { DeferredRenderExtensionConfig(getAll<DeferredRenderExtension<*>>().distinct()) }
 }
 
 val imGuiEditorModule = module {
     renderSystem {
         val gpuContext: GpuContext<OpenGl> = get()
         val finalOutput: FinalOutput = get()
-        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll(), get(), get())
+        ImGuiEditor(get(), gpuContext, get(), finalOutput, get(), get(), get(), get(), getAll<DeferredRenderExtension<OpenGl>>().distinct(), get(), get(), getAll<ImGuiEditorExtension>().distinct())
     }
 }
 val textureRendererModule = module {
@@ -98,7 +100,7 @@ val textureRendererModule = module {
         val config: Config = get()
         val gpuContext: GpuContext<OpenGl> = get()
 
-        de.hanno.hpengine.graphics.renderer.rendertarget.RenderTarget(
+        RenderTarget(
             gpuContext,
             FrameBuffer(
                 gpuContext,
@@ -163,6 +165,11 @@ val baseModule = module {
     addGIModule()
     addOceanWaterModule()
     addDirectionalLightModule()
+
+    single { KotlinComponentSystem() } binds arrayOf(
+        KotlinComponentSystem::class,
+        ImGuiEditorExtension::class
+    )
 
     renderExtension { ForwardRenderExtension(get(), get(), get(), get()) }
     renderExtension { AOScatteringExtension(get(), get(), get(), get(), get()) }

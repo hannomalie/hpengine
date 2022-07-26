@@ -31,6 +31,9 @@ import imgui.glfw.ImGuiImplGlfw
 import imgui.type.ImInt
 import org.lwjgl.glfw.GLFW
 
+interface ImGuiEditorExtension {
+    fun render(imGuiEditor: ImGuiEditor)
+}
 class ImGuiEditor(
     internal val window: GlfwWindow,
     internal val gpuContext: GpuContext<OpenGl>,
@@ -43,6 +46,7 @@ class ImGuiEditor(
     internal val renderExtensions: List<DeferredRenderExtension<OpenGl>>,
     internal val addResourceContext: AddResourceContext,
     internal val fpsCounter: FPSCounter,
+    internal val editorExtensions: List<ImGuiEditorExtension>,
 ) : RenderSystem {
     private val glslVersion = "#version 450" // TODO: Derive from configured version, wikipedia OpenGl_Shading_Language
     private val renderTarget = RenderTarget(
@@ -161,6 +165,13 @@ class ImGuiEditor(
 
             rightPanel(screenWidth, rightPanelWidth, screenHeight)
 
+            editorExtensions.forEach {
+                try {
+                    it.render(this)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
 //            ImGui.showDemoWindow(ImBoolean(true))
         } catch (it: Exception) {
             it.printStackTrace()
